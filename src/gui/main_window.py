@@ -22,7 +22,11 @@ class MainWindow(QMainWindow, DataAndCoreSetter, WindowSystemController):
     def __init__(self, parent ,data, core):
         super(MainWindow, self).__init__(data=data, core=core)
         self.init_ui()
-        
+        data.subscribe_update_func(self.init_ui)
+        data.subscribe_update_func(self.tesstt)
+
+    def tesstt(self):
+        pass
 
     def init_ui(self):
         self.setWindowTitle("Plume Creator")
@@ -155,6 +159,7 @@ class SideBar(QWidget, WindowSystemActionHandler):
         Must only be used as a slot for Qt signals ! 
         '''
         self.detach_sub_window()
+        
         
     def onAttachClicked(self):
         '''

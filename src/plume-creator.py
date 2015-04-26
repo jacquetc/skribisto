@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     data = Database(app)
-    core = Core(app)
+    core = Core(app, data)
     
     gui = launch_gui(data, core)
 

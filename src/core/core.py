@@ -11,8 +11,9 @@ class Core(QObject):
     '''
 
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, data=None):
         '''
         Constructor
         '''
         super(Core, self).__init__(parent)
+        self.data = data
