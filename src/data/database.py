@@ -31,9 +31,7 @@ class Database(QObject):
         
         
         
-        self.sql_engine = None
-        
-        self.db = self.load_test_project_db()
+        self.db = None
 
             
     def create_new_empty_database(self):
@@ -54,7 +52,8 @@ class Database(QObject):
         # Dump old database in the new one. 
         new_db.executescript(query)
         
-        return new_db
+        self.db = new_db
+        self.story_tree.db = new_db
         
     def load(self, path):
         pass

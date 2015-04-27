@@ -4,8 +4,10 @@ Created on 25 avr. 2015
 @author: Cyril Jacquet
 '''
 
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QTreeView
 from .common import DataAndCoreSetter
+from PyQt5.QtWidgets import QDockWidget
+from PyQt5.QtCore import Qt
 
 
 class SubWindow(QMainWindow, DataAndCoreSetter):
@@ -61,13 +63,24 @@ class WritingTabSubWindow(SubWindow):
 
     def __init__(self, parent=None, parent_window_system_controller=None, data=None, core=None):
         '''
-        Constructor
+        Constructor= None 
         '''
         super(WritingTabSubWindow, self).__init__(parent=parent, data=data, core=core)
         
         self.setWindowTitle("WriteTab")
         self.writing_zone = WritingZone(self, data, core)
         self.setCentralWidget(self.writing_zone)
+        
+        
+        tree_view = QTreeView()
+        tree_view.setModel(self.core.story_tree_model)
+        
+        dock = QDockWidget("Tree", self)
+        dock.setWidget(tree_view)
+        
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        
+        
 
 from PyQt5.QtWidgets import QLabel
 
@@ -87,6 +100,10 @@ class BinderSubWindow(SubWindow):
         
         label = QLabel("Binder")
         self.setCentralWidget(label)
+        
+        
+
+        
         
         
                     

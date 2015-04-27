@@ -8,7 +8,7 @@ Created on 25 avr. 2015
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup, QLabel, \
                              QHBoxLayout, QVBoxLayout, QPushButton, QAction, \
-                             QToolBar)
+                             QToolBar, QMenuBar)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QObject, Qt
 from gui.writingzone.writingzone import WritingZone
@@ -22,11 +22,7 @@ class MainWindow(QMainWindow, DataAndCoreSetter, WindowSystemController):
     def __init__(self, parent ,data, core):
         super(MainWindow, self).__init__(data=data, core=core)
         self.init_ui()
-        data.subscribe_update_func(self.init_ui)
-        data.subscribe_update_func(self.tesstt)
 
-    def tesstt(self):
-        pass
 
     def init_ui(self):
         self.setWindowTitle("Plume Creator")
@@ -79,6 +75,19 @@ class MainWindow(QMainWindow, DataAndCoreSetter, WindowSystemController):
         self.add_action_to_window_system(binder_action)       
         self._sub_window_action_group.addAction(binder_action)
         
+
+
+        # menu bar
+        menu_bar = self.menuBar()
+        
+        
+        project_menu = QMenu("Project", self)
+        
+        open_project_act = QAction("&Open project",self)
+        open_project_act.triggered.connect(self.core.load_project)
+        project_menu.addAction(open_project_act)
+        
+        menu_bar.addMenu(project_menu)
 
 class SubWindow(QMainWindow):
 

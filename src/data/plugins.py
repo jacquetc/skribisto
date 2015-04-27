@@ -11,6 +11,7 @@ class Plugins(object):
 
 
     def __init__(self):
+        super(Plugins, self).__init__()
         '''
         Constructor
         '''

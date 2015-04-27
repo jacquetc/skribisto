@@ -11,6 +11,7 @@ class Tree(object):
 
 
     def __init__(self):
+        super(Tree, self).__init__()
         '''
         Constructor
         '''

@@ -11,6 +11,7 @@ class Project(object):
 
 
     def __init__(self):
+        super(Project, self).__init__()
         '''
         Constructor
         '''

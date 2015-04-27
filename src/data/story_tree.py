@@ -12,21 +12,30 @@ class StoryTree(Tree):
 
 
     def __init__(self):
+        super(StoryTree, self).__init__()
         '''
         Constructor
         '''
         self.table_name = "story_table"
+        self.db = None
 
 
-    def get_name_and_parent_id_and_children_ids(self):
+    def get_tree_model_necessities(self):
         '''
+        
         Quick way to get the necessary to build a Qt treeModel
         
-        return [[name, parent_id, children_ids], [...]]
+        return [(sheet_id, name, parent_id, children_id, properties), (...)]
         '''
-        pass
+        
+        db = self.db
+               
+        cur = db.cursor()
+        cur.execute("SELECT sheet_id, name, parent_id, children_id, properties FROM story_table")
 
 
+        
+        return cur.fetchall()
 
 
         
