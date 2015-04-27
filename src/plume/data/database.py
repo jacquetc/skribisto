@@ -46,7 +46,7 @@ class Database(QObject):
         import sqlite3
 
         new_db = sqlite3.connect(':memory:') # create a memory database
-        old_db = sqlite3.connect('/home/cyril/Devel/workspace_eclipse/plume-creator/resources/plume_test_project.sqlite')
+        old_db = sqlite3.connect('/home/cyril/Devel/workspace_eclipse/plumecreator-creator/resources/plume_test_project.sqlite')
         query = "".join(line for line in old_db.iterdump())
 
         # Dump old database in the new one. 
