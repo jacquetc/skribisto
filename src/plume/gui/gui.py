@@ -17,8 +17,7 @@ class Gui(QObject):
 
     def init_gui(self):
   
-        from gui.main_window import MainWindow
-        from .sub_window import WriteSubWindow
+        from .main_window import MainWindow
 
         self.window = MainWindow(self, self.data, self.core)
         self.window.show()

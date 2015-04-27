@@ -14,3 +14,17 @@ def create_new_database():
     return database
 
     
+
+
+'''
+        node.sheet_id = int(sheet_id)
+        node.name = str(name)
+        if parent_id != None :
+            node.parent_id = int(parent_id)
+        if children_id != None :
+            node.children_id = []
+            for txt in children_id.split(","):
+                node.children_id.append(int(txt))
+        if properties != None :
+            node.properties = dict(properties)
+'''

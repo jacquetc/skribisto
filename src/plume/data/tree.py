@@ -16,3 +16,4 @@ class Tree(object):
         Constructor
         '''
         self.table_name = None
+        

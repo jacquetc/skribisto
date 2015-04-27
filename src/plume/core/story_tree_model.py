@@ -72,7 +72,7 @@ class StoryTreeModel(QAbstractItemModel):
        
     
         if role == Qt.DisplayRole | role == Qt.EditRole & col == 0:
-            return node.name
+            return node.title
     
         # properties :
         if role == Qt.UserRole:
@@ -117,12 +117,13 @@ class StoryTreeModel(QAbstractItemModel):
         
         limit = [role]
         
-        # name :
+        # title :
         if index.isValid() & role == Qt.EditRole & index.column() == 0:
             
             node = self.nodeFromIndex(index) 
             
-            self.data_.rename(node.sheet_id, value)
+            self.data_.story_tree.rename(node.sheet_id, value)
+            node.title = value
             
             
             self.dataChanged.emit(index, index, limit)
@@ -209,6 +210,7 @@ parentIndex, parentIndex)
         
         list_ = self.data_.story_tree.get_tree_model_necessities()
         
+        # create a nice dict
         self._dict = {}
         for tuple_ in list_:
             self._dict[tuple_[0]] = tuple_
@@ -224,17 +226,9 @@ parentIndex, parentIndex)
         
         """
         tuple_ = self._dict[sheet_id]
-        sheet_id, name, parent_id, children_id, properties = tuple_
-        node.sheet_id = int(sheet_id)
-        node.name = str(name)
-        if parent_id != None :
-            node.parent_id = int(parent_id)
-        if children_id != None :
-            node.children_id = []
-            for txt in children_id.split(","):
-                node.children_id.append(int(txt))
-        if properties != None :
-            node.properties = dict(properties)
+        node.sheet_id, node.title, node.parent_id, node.children_id, node.properties = tuple_
+        
+
 
     def create_child_nodes(self, parent_node):
         
@@ -271,7 +265,7 @@ parentIndex, parentIndex)
 class TreeNode(object):
     def __init__(self, parent=None):
        
-        self.name = "name"
+        self.title = "title"
         self.sheet_id = None
         self.parent_id = None
         self.children_id = None
