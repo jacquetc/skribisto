@@ -11,16 +11,17 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup, QLabel, \
                              QToolBar, QMenuBar)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QObject, Qt
-from gui.writingzone.writingzone import WritingZone
+from .writingzone.writingzone import WritingZone
 from .common import DataAndCoreSetter
 from .window_system import WindowSystemController
 from .sub_window import WriteSubWindow, BinderSubWindow
 from PyQt5.Qt import QToolButton
+from .cfg import core
 
-class MainWindow(QMainWindow, DataAndCoreSetter, WindowSystemController):
+class MainWindow(QMainWindow, WindowSystemController):
 
-    def __init__(self, parent ,data, core):
-        super(MainWindow, self).__init__(data=data, core=core)
+    def __init__(self, parent):
+        super(MainWindow, self).__init__()
         self.init_ui()
 
 
@@ -56,7 +57,7 @@ class MainWindow(QMainWindow, DataAndCoreSetter, WindowSystemController):
        
         ##write window
         self.write_sub_window = WriteSubWindow(parent=self, parent_window_system_controller=self \
-                                               , data=self.data, core=self.core)       
+                                               )       
         self.attach_sub_window(self.write_sub_window)
         write_action = QAction("Write", self)
         write_action.setProperty("sub_window_object_name", "write_sub_window")
@@ -66,7 +67,7 @@ class MainWindow(QMainWindow, DataAndCoreSetter, WindowSystemController):
 
         ##binder window
         self.binder_sub_window = BinderSubWindow(parent=self, parent_window_system_controller=self\
-                                           , data=self.data, core=self.core) 
+                                           ) 
         self.binder_sub_window.setWindowTitle("Binder")
         self.binder_sub_window.setObjectName("binder_sub_window")
         self.attach_sub_window(self.binder_sub_window)
@@ -84,10 +85,16 @@ class MainWindow(QMainWindow, DataAndCoreSetter, WindowSystemController):
         project_menu = QMenu("Project", self)
         
         open_project_act = QAction("&Open project",self)
-        open_project_act.triggered.connect(self.core.load_project)
+        open_project_act.triggered.connect(core.load_project)
         project_menu.addAction(open_project_act)
         
         menu_bar.addMenu(project_menu)
+
+        core.subscriber.subscribe_update_func(self.rrrrr)
+        
+    def rrrrr(self):
+        print("rrrr")
+
 
 class SubWindow(QMainWindow):
 

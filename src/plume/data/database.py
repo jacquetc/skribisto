@@ -5,7 +5,7 @@ from . import sql
 from .plugins import Plugins
 from .story_tree import StoryTree
 from .project import Project
-
+from . import subscriber
 
 class Database(QObject):
     
@@ -14,7 +14,7 @@ class Database(QObject):
     def __init__(self, parent=None):
         super(Database, self).__init__(parent)
         
-        self._update_funcs = []
+        self.subscriber = subscriber
         
         
         #init all :
@@ -69,19 +69,4 @@ class Database(QObject):
     
     def close_db(self):
         pass
-    
-
-    def subscribe_update_func(self, func):
-        if func not in self._update_funcs:
-            self._update_funcs.append(func)
-            
-
-    def unsubscribe_update_func(self, func):
-        if func in self._update_funcs:
-            self._update_funcs.remove(func)
-            
-
-    def announce_update(self):
-        for func in self._update_funcs:
-            func()
     

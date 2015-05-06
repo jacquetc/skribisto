@@ -3,7 +3,17 @@
 
 import os
 
+### translation
 
+import gettext
+
+gettext.textdomain('plume-creator')
+gettext.install('plume-creator', '/path/to/my/language/directory')
+
+
+core = None
+
+### Auto converter .ui -> .py for developpers
 
 def find_forms(srcdir):
     base = os.path.join(srcdir, 'src', 'plume', "gui")

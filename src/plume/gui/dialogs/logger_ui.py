@@ -2,8 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eclipse/plume-creator/src/plume/gui/dialogs/logger.ui'
 #
-# Created: Mon Apr 27 17:19:27 2015
-#      by: PyQt5 UI code generator 5.2.1
+# Created by: PyQt5 UI code generator 5.4.1
 #
 # WARNING! All changes made in this file will be lost!
 

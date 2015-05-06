@@ -2,22 +2,24 @@ from PyQt5.QtWidgets import QWidget,  QTextEdit, QGridLayout, QMenu, QApplicatio
 from ..common import DataAndCoreSetter
 
 
-class WritingZone(QWidget, DataAndCoreSetter):
+class WritingZone(QWidget):
     
-    def __init__(self, parent=None, data=None, core=None):
-        super(QWidget, self).__init__(parent=parent, data=data, core=core)
+    def __init__(self, parent=None, core=None):
+        super(QWidget, self).__init__(parent=parent)
         
-        text_edit = RichTextEdit(self, data, core)
+        core = core
+        
+        text_edit = RichTextEdit(self)
         grid_layout = QGridLayout()
         grid_layout.addWidget(text_edit)
         self.setLayout(grid_layout)
         
 
 
-class RichTextEdit(QTextEdit, DataAndCoreSetter):
+class RichTextEdit(QTextEdit):
     
-    def __init__(self, parent=None, data=None, core=None):
-        super(QTextEdit, self).__init__(parent=parent, data=data, core=core)
+    def __init__(self, parent=None):
+        super(QTextEdit, self).__init__(parent=parent)
         
     def contextMenuEvent(self, event):
 #        self.popMenu = QtWidgets.QMenu(self)

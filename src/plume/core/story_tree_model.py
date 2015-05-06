@@ -5,6 +5,7 @@ Created on 26 avr. 2015
 '''
 from PyQt5.Qt import QAbstractItemModel, QVariant, QModelIndex 
 from PyQt5.QtCore import Qt
+from . import subscriber, cfg
 
 
 class StoryTreeModel(QAbstractItemModel):
@@ -13,12 +14,11 @@ class StoryTreeModel(QAbstractItemModel):
     '''
 
 
-    def __init__(self, parent=None, data=None):
+    def __init__(self, parent=None):
         super(StoryTreeModel, self).__init__(parent)
         '''
         Constructor
         '''
-        self.data_ = data
         self.root_node = TreeNode()
         
         
@@ -122,7 +122,7 @@ class StoryTreeModel(QAbstractItemModel):
             
             node = self.nodeFromIndex(index) 
             
-            self.data_.story_tree.rename(node.sheet_id, value)
+            cfg.data.story_tree.rename(node.sheet_id, value)
             node.title = value
             
             
@@ -208,7 +208,7 @@ parentIndex, parentIndex)
         self.root_node = TreeNode()
           
         
-        list_ = self.data_.story_tree.get_tree_model_necessities()
+        list_ = cfg.data.story_tree.get_tree_model_necessities()
         
         # create a nice dict
         self._dict = {}

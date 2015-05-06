@@ -10,13 +10,11 @@ class DataAndCoreSetter(object):
     '''
     
 
-    def __init__(self, data, core):
+    def __init__(self):
         '''
         Constructor
         '''
         super().__init__()
         
-        self.data = data
-        self.core = core
     
  
