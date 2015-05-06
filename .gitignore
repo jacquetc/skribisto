@@ -60,3 +60,10 @@ target/
 .project
 .pydevproject
 .settings
+
+#KDE
+.directory
+
+#cx_Freeze
+build/
+build

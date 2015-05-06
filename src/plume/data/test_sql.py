@@ -1,5 +1,6 @@
 import unittest
 import sqlite3
+'''
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 
 from sql import select
@@ -26,3 +27,4 @@ class Test_SQL(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+'''
