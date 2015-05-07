@@ -5,3 +5,4 @@ Created on 6 mai 2015
 '''
 
 core = None
+gui_plugins = None

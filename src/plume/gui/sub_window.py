@@ -7,7 +7,7 @@ Created on 25 avr. 2015
 from PyQt5.QtWidgets import QMainWindow, QTreeView
 from PyQt5.QtWidgets import QDockWidget
 from PyQt5.QtCore import Qt
-from .cfg import core
+from . import cfg
 
 
 class SubWindow(QMainWindow):
@@ -55,7 +55,8 @@ class WriteSubWindow(SubWindow):
         
         
 from .writingzone.writingzone import WritingZone
-        
+from .docks import DockTemplate
+       
 class WritingTabSubWindow(SubWindow):
     '''
     Inner tab in the WriteSubWindoow. Detachable
@@ -73,10 +74,13 @@ class WritingTabSubWindow(SubWindow):
         
         
         tree_view = QTreeView()
-        tree_view.setModel(core.story_tree_model)
+        tree_view.setModel(cfg.core.story_tree_model)
         
-        dock = QDockWidget("Tree", self)
+        dock = DockTemplate(self)
+        dock.setWindowTitle("Tree")
         dock.setWidget(tree_view)
+        prop_dock = cfg.gui_plugins.GuiPropertyDock()
+        dock.setWidget(prop_dock.get_widget())
         
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
         

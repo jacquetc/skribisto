@@ -4,7 +4,7 @@ Created on 6 mai 2015
 @author:  Cyril Jacquet
 '''
 
-from . import subscriber, cfg
+from . import cfg
 import imp
 import os
 from yapsy.PluginManager import PluginManager
@@ -33,12 +33,12 @@ class Plugins():
         # Define the various categories corresponding to the different
         # kinds of plugins you have defined
         self._plugin_manager.setCategoriesFilter({
-                                                 "CoreStoryDockPlugin" : CoreStoryDockPlugin
+                                                 "GuiStoryDockPlugin" : GuiStoryDockPlugin
                                                  })
 
         self._plugin_manager.collectPlugins()
         
-        self.load_plugins(["CoreStoryDockPlugin"])
+        self.load_plugins(["GuiStoryDockPlugin"])
 
 
             
@@ -50,17 +50,16 @@ class Plugins():
         for category in categories:
             for pluginInfo in self._plugin_manager.getPluginsOfCategory(category):
                 pluginInfo.plugin_object.print_name()
-                print(pluginInfo.plugin_object.core_class().__name__)
-                setattr(self, pluginInfo.plugin_object.core_class().__name__ \
-                        , pluginInfo.plugin_object.core_class())
-        
+                print(pluginInfo.plugin_object.gui_class().__name__)
+                setattr(self, pluginInfo.plugin_object.gui_class().__name__ \
+                        , pluginInfo.plugin_object.gui_class())
 
         
     
     
-class CoreStoryDockPlugin(IPlugin):
+class GuiStoryDockPlugin(IPlugin):
     '''
-    CoreStoryDockPlugin
+    GuiStoryDockPlugin
     '''
 
     def __init__(self):
@@ -68,7 +67,7 @@ class CoreStoryDockPlugin(IPlugin):
         Constructor
         '''
 
-        super(CoreStoryDockPlugin, self).__init__()
+        super(GuiStoryDockPlugin, self).__init__()
 
 
 

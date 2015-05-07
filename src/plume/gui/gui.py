@@ -4,7 +4,8 @@ Created on 3 mars 2015
 @author: cyril
 '''
 from PyQt5.Qt import QObject
-from . import cfg
+from . import cfg, plugins
+
 
 class Gui(QObject):
 
@@ -13,6 +14,7 @@ class Gui(QObject):
   
         super(Gui, self).__init__()
         cfg.core = core
+        cfg.gui_plugins = plugins.Plugins()
 
 
     def init_gui(self):

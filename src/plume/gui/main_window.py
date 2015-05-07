@@ -16,7 +16,7 @@ from .common import DataAndCoreSetter
 from .window_system import WindowSystemController
 from .sub_window import WriteSubWindow, BinderSubWindow
 from PyQt5.Qt import QToolButton
-from .cfg import core
+from . import cfg
 
 class MainWindow(QMainWindow, WindowSystemController):
 
@@ -85,12 +85,12 @@ class MainWindow(QMainWindow, WindowSystemController):
         project_menu = QMenu("Project", self)
         
         open_project_act = QAction("&Open project",self)
-        open_project_act.triggered.connect(core.load_project)
+        open_project_act.triggered.connect(cfg.core.load_project)
         project_menu.addAction(open_project_act)
         
         menu_bar.addMenu(project_menu)
 
-        core.subscriber.subscribe_update_func(self.rrrrr)
+        cfg.core.subscriber.subscribe_update_func(self.rrrrr)
         
     def rrrrr(self):
         print("rrrr")
