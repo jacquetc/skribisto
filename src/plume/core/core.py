@@ -40,4 +40,3 @@ class Core(QObject):
         cfg.data.load_test_project_db()
         self.story_tree_model.reset_model()
         subscriber.announce_update()
-    

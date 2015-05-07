@@ -79,6 +79,7 @@ class WritingTabSubWindow(SubWindow):
         dock = DockTemplate(self)
         dock.setWindowTitle("Tree")
         dock.setWidget(tree_view)
+        
         prop_dock = cfg.gui_plugins.GuiPropertyDock()
         dock.setWidget(prop_dock.get_widget())
         

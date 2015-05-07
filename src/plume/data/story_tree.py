@@ -86,7 +86,19 @@ class StoryTree(Tree):
         pass
     
     def get_properties(self,sheet_id):
-        pass
+        prop_dict = {}
+        db = self.db
+               
+        cur = db.cursor()
+        cur.execute("SELECT properties FROM story_table WHERE sheet_id=:id" \
+                                 , {"id": sheet_id})
+        
+        result = cur.fetchone()
+        for row in result:
+            properties = row
+            prop_dict = transform_properties_text_into_dict(properties)
+        
+        return prop_dict
     
     def set_properties(self,sheet_id, properties):
         pass

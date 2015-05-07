@@ -264,7 +264,8 @@ parentIndex, parentIndex)
 
 class TreeNode(object):
     def __init__(self, parent=None):
-       
+        super(TreeNode, self).__init__()
+  
         self.title = "title"
         self.sheet_id = None
         self.parent_id = None

@@ -29,8 +29,7 @@ includes = [ "PyQt5.QtCore",
             "PyQt5.Qt",
             "sip"
             ]  # nommer les modules non trouves par cx_freeze
-excludes = ["PyQt5.QtNetwork",
-            "PyQt5.QtSql",
+excludes = ["PyQt5.QtNetwork"
             "PyQt5.QtSvg",
             "PyQt5.QtXml",
             "PyQt5.QtTest",
