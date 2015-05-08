@@ -14,7 +14,7 @@ from PyQt5.QtCore import QObject, Qt
 from .writingzone.writingzone import WritingZone
 from .common import DataAndCoreSetter
 from .window_system import WindowSystemController
-from .sub_window import WriteSubWindow, BinderSubWindow
+from .sub_window import WritePanel, BinderPanel
 from PyQt5.Qt import QToolButton
 from . import cfg
 
@@ -56,7 +56,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         self._sub_window_action_group = QActionGroup(self)
        
         ##write window
-        self.write_sub_window = WriteSubWindow(parent=self, parent_window_system_controller=self \
+        self.write_sub_window = WritePanel(parent=self, parent_window_system_controller=self \
                                                )       
         self.attach_sub_window(self.write_sub_window)
         write_action = QAction("Write", self)
@@ -66,7 +66,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         
 
         ##binder window
-        self.binder_sub_window = BinderSubWindow(parent=self, parent_window_system_controller=self\
+        self.binder_sub_window = BinderPanel(parent=self, parent_window_system_controller=self\
                                            ) 
         self.binder_sub_window.setWindowTitle("Binder")
         self.binder_sub_window.setObjectName("binder_sub_window")

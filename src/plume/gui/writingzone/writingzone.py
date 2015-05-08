@@ -30,7 +30,7 @@ class RichTextEdit(QTextEdit):
 #        self.popMenu.exec_(event.globalPos())
 
         menu = QMenu(self)
-        quitAction = menu.addAction("Quit")
+        quitAction = menu.addAction(_("Quit"))
         action = menu.exec_(self.mapToGlobal(event.pos()))
         if action == quitAction:
             QApplication.quit()

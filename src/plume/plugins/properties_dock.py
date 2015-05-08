@@ -92,6 +92,8 @@ class GuiPropertyDock():
             table_model = self.core_property_dock.property_table_model
             self.tableView.setModel(table_model)
         return self.tableView
+    
+
        
        
 from PyQt5.QtCore import QAbstractTableModel, QVariant, QModelIndex, Qt

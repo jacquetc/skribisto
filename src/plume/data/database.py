@@ -3,7 +3,7 @@ from PyQt5.QtCore import pyqtSignal
 from . import sql
 
 from .plugins import Plugins
-from .story_tree import StoryTree
+from .tree import Tree
 from .project import Project
 from . import subscriber
 
@@ -19,7 +19,7 @@ class Database(QObject):
         
         #init all :
         self.project = Project()
-        self.story_tree = StoryTree()
+        self.main_tree = Tree()
         self.plugins = Plugins()
         
         
@@ -53,7 +53,7 @@ class Database(QObject):
         new_db.executescript(query)
         
         self.db = new_db
-        self.story_tree.db = new_db
+        self.main_tree.db = new_db
         
     def load(self, path):
         pass

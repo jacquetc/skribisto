@@ -34,62 +34,64 @@ class SubWindow(QMainWindow):
         
 
 from PyQt5.QtWidgets import QTabWidget
+from .docks import DockTemplate
+from .story_tree import StoryTreeView
 
-class WriteSubWindow(SubWindow):
+class WritePanel(SubWindow):
     '''
-    Write Sub Window. 
+    'Write' main panel. Detachable
     '''
 
     def __init__(self, parent=None, parent_window_system_controller=None):
         '''
         
         '''
-        super(WriteSubWindow, self).__init__(parent=parent)
+        super(WritePanel, self).__init__(parent=parent)
         
         self.setWindowTitle("Write")
         self.setObjectName("write_sub_window")
-        self.tabWidget = QTabWidget(self)
-        self.setCentralWidget(self.tabWidget)
+
         
-        self.tabWidget.addTab(WritingTabSubWindow(self), _("WritingTabSubWindow"))
+        # Project tree view dock :
+        tree_view = StoryTreeView()
+        tree_view.setModel(cfg.core.story_tree_model)
         
+        dock = DockTemplate(self)
+        dock.setWindowTitle(_("Project"))
+        dock.setWidget(tree_view) 
         
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+               
 from .writingzone.writingzone import WritingZone
-from .docks import DockTemplate
        
-class WritingTabSubWindow(SubWindow):
+class WriteTab(SubWindow):
     '''
-    Inner tab in the WriteSubWindoow. Detachable
+    Inner tab in the Write panel. Detachable
     '''
 
     def __init__(self, parent=None, parent_window_system_controller=None):
         '''
         Constructor= None 
         '''
-        super(WritingTabSubWindow, self).__init__(parent=parent)
+        super(WriteTab, self).__init__(parent=parent)
         
         self.setWindowTitle("WriteTab")
         self.writing_zone = WritingZone(self)
         self.setCentralWidget(self.writing_zone)
         
-        
-        tree_view = QTreeView()
-        tree_view.setModel(cfg.core.story_tree_model)
-        
+
         dock = DockTemplate(self)
-        dock.setWindowTitle("Tree")
-        dock.setWidget(tree_view)
-        
+        dock.setWindowTitle(_("Properties"))
         prop_dock = cfg.gui_plugins.GuiPropertyDock()
         dock.setWidget(prop_dock.get_widget())
         
-        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
         
         
 
 from PyQt5.QtWidgets import QLabel
 
-class BinderSubWindow(SubWindow):
+class BinderPanel(SubWindow):
     '''
     classdocs
     '''
@@ -98,7 +100,7 @@ class BinderSubWindow(SubWindow):
         '''
         Constructor
         '''
-        super(BinderSubWindow, self).__init__(parent=parent)
+        super(BinderPanel, self).__init__(parent=parent)
         
         self.setWindowTitle("Binder")
         self.setObjectName("binder_sub_window")

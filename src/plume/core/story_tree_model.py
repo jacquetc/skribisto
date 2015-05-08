@@ -70,14 +70,17 @@ class StoryTreeModel(QAbstractItemModel):
                    
         node = self.nodeFromIndex(index)
        
-    
+        
         if role == Qt.DisplayRole | role == Qt.EditRole & col == 0:
             return node.title
     
         # properties :
         if role == Qt.UserRole:
             return node.properties;
-    
+        # sheet_id :
+        if role == 37:
+            return node.sheet_id;
+            
         return QVariant();
 
     def parent(self, child):
@@ -122,7 +125,7 @@ class StoryTreeModel(QAbstractItemModel):
             
             node = self.nodeFromIndex(index) 
             
-            cfg.data.story_tree.rename(node.sheet_id, value)
+            cfg.data.main_tree.set_title(node.sheet_id, value)
             node.title = value
             
             
@@ -208,14 +211,14 @@ parentIndex, parentIndex)
         self.root_node = TreeNode()
           
         
-        list_ = cfg.data.story_tree.get_tree_model_necessities()
+        list_ = cfg.data.main_tree.get_tree_model_necessities("story")
         
         # create a nice dict
         self._dict = {}
         for tuple_ in list_:
             self._dict[tuple_[0]] = tuple_
 
-        self.root_node.sheet_id = 0
+        self.root_node.sheet_id = cfg.data.main_tree.get_root_id("story")
         self.create_child_nodes(self.root_node)
 
 
@@ -251,7 +254,18 @@ parentIndex, parentIndex)
 
         
         
-        
+    def get_synopsys(self,sheet_id):
+        pass
+    
+    def set_synopsys(self,sheet_id, content):
+        pass
+    
+    def get_notes(self,sheet_id):
+        pass
+    
+    def set_notes(self,sheet_id, content):
+        pass
+            
         
         
 
