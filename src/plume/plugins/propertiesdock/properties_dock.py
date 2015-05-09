@@ -21,9 +21,6 @@ class PropertiesDockPlugin(core_plugins.CoreStoryDockPlugin, gui_plugins.GuiStor
 
         super(PropertiesDockPlugin, self).__init__()
 
-
-    def print_name(self):
-        print("PropertiesDockPlugin")
         
     def core_class(self):        
         return CorePropertyDock
@@ -36,6 +33,8 @@ class CorePropertyDock():
     CorePropertyDock
     '''
 
+    dock_name = "properties-dock" 
+    
     def __init__(self):
         '''
         Constructor
@@ -44,17 +43,22 @@ class CorePropertyDock():
         super(CorePropertyDock, self).__init__()
         self._property_table_model = None
         self._sheet_id = None
-        self.dock_name = "properties-dock" 
-   
+        self.tree_sheet = None        
+
     @property
     def sheet_id(self):
         return self._sheet_id
     
     @sheet_id.setter
     def sheet_id(self, sheet_id):
+        if self._sheet_id == sheet_id:
+            pass
         self._sheet_id = sheet_id
         if self.sheet_id is not None:
-            self._property_table_model.set_sheet_id(sheet_id)
+            self.tree_sheet = gui_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
+            _ = self.property_table_model
+            
+            
         
     @property   
     def property_table_model(self):
@@ -62,7 +66,8 @@ class CorePropertyDock():
             self._property_table_model = PropertyTableModel(self)  
             if self._sheet_id is not None:
                 self._property_table_model.set_sheet_id(self._sheet_id)
-            
+                self._property_table_model.tree_sheet \
+                 = gui_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
             
         return self._property_table_model
 
@@ -83,9 +88,9 @@ class GuiPropertyDock():
         '''
         super(GuiPropertyDock, self).__init__()
         self.widget = None
-        self.core_property_dock = None           
+        self.core_part = None     #      CorePropertyDock
         self._sheet_id = None
-        
+        self.tree_sheet = None        
 
     @property
     def sheet_id(self):
@@ -93,11 +98,14 @@ class GuiPropertyDock():
     
     @sheet_id.setter
     def sheet_id(self, sheet_id):
+        if self._sheet_id == sheet_id:
+            pass
         self._sheet_id = sheet_id
         if self.sheet_id is not None:
-            self.core_property_dock.sheet_id = sheet_id
-         
-        
+            self.tree_sheet = gui_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
+            self.core_part = self.tree_sheet.get_instance_of(self.dock_name)
+            self.core_part.sheet_id = sheet_id
+
     def get_widget(self):
         
         if self.widget is None:
@@ -105,11 +113,10 @@ class GuiPropertyDock():
             self.ui = properties_dock_ui.Ui_PropertiesDock()
             self.ui.setupUi(self.widget)
 
-            
-                       
-            self.core_property_dock = gui_cfg.core.plugins.CorePropertyDock()
-            table_model = self.core_property_dock.property_table_model
-            self.ui.tableView.setModel(table_model)
+
+            if self.tree_sheet is not None and self.core_part is not None:
+                table_model = self.core_part.property_table_model
+                self.ui.tableView.setModel(table_model)
             self.widget.gui_part = self
         return self.widget
     
@@ -264,18 +271,26 @@ class PropertyTableModel(QAbstractTableModel):
         :param role:
         '''
         limit = [role]
-        
+        if not index.isValid():
+            return False        
         # title :
-        if index.isValid() & role == Qt.EditRole & index.column() == 0:
+        if role == Qt.EditRole and index.column() == 0:
             
             node = self.nodeFromIndex(index) 
-            
-            #cfg.data.story_tree.rename(node.sheet_id, value)
+            self.tree_sheet.change_property_key(node.key, value)
             node.key = value
             
             self.dataChanged.emit(index, index, limit)
             return True
         
+        if role == Qt.EditRole and index.column() == 1:
+            
+            node = self.nodeFromIndex(index)            
+            self.tree_sheet.set_property(node.key, value)
+            node.value = value
+            
+            self.dataChanged.emit(index, index, limit)
+            return True        
         return False
         
 

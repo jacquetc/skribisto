@@ -22,7 +22,9 @@ class Plugins():
         '''
 
         super(Plugins, self).__init__()
-    
+        
+        self.story_dock_plugin_dict = {}
+            
         # Build the manager
         self._plugin_manager = PluginManager()
         # Tell it the default place(s) where to find plugins
@@ -49,11 +51,12 @@ class Plugins():
         '''
         for category in categories:
             for pluginInfo in self._plugin_manager.getPluginsOfCategory(category):
-                pluginInfo.plugin_object.print_name()
-                print(pluginInfo.plugin_object.core_class().__name__)
                 setattr(self, pluginInfo.plugin_object.core_class().__name__ \
                         , pluginInfo.plugin_object.core_class())
         
+                if category is "CoreStoryDockPlugin":
+                    self.story_dock_plugin_dict[pluginInfo.plugin_object.core_class().dock_name] \
+                    = pluginInfo.plugin_object.core_class()
 
         
     

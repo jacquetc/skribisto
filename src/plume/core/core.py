@@ -28,7 +28,8 @@ class Core(QObject):
         
         #init all :
         self.project = Project()
-        self.plugins = Plugins() 
+        self.plugins = Plugins()
+        cfg.core_plugins = self.plugins
         self.tree_sheet_manager = TreeSheetManager()
         
         

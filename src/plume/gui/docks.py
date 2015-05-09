@@ -32,8 +32,8 @@ class DockSystem(QObject):
         function:: split_dock(dock)
         :param dock:
         '''
-        area = self.main_window.dockWidgetArea()
-        self.add_dock(dock.current_type)
+        area = self.main_window.dockWidgetArea(dock)
+        self.add_dock(dock.current_type, area)
         pass
 
     def add_dock(self, type_str, area=Qt.RightDockWidgetArea):
@@ -48,6 +48,7 @@ class DockSystem(QObject):
         self.dock_list.append(dock)
         
         self.main_window.addDockWidget(area, dock)
+        
     def change_type(self, dock, type_str):
         '''
         function:: change_type(dock, type_str)
@@ -55,7 +56,10 @@ class DockSystem(QObject):
         :param type_str:
         '''
         gui_part = self.story_dock_type_dict[type_str]
-        widget = gui_part().get_widget()
+        gui_part = gui_part()
+        gui_part.sheet_id = self.sheet_id
+        widget = gui_part.get_widget()
+        dock.current_type = type_str
         dock.setWindowTitle(gui_part.dock_displayed_name)
         dock.setWidget(widget)
 
@@ -76,7 +80,7 @@ class DockSystem(QObject):
     def sheet_id(self, sheet_id):
         self._sheet_id = sheet_id
         if self.sheet_id is not None:
-            for dock in self.dock_list:
+            for dock in self.dock_list: #update all docks' sheet_id
                 dock.widget().gui_part.sheet_id = sheet_id
          
         
@@ -148,7 +152,7 @@ class DockTitleWidget(QWidget):
     
     @pyqtSlot()
     def on_addDockButton_clicked(self):
-        self.parent_dock.dock_system.splitDock(self.parent_dock)
+        self.parent_dock.dock_system.split_dock(self.parent_dock)
         
     def fill_comboBox_with_types(self):
         #types_name_dict = {}

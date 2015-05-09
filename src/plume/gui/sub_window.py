@@ -75,7 +75,9 @@ class WritePanel(SubWindow, WindowSystemController):
 
         new_write_tab = WriteTab(self, self)
         new_write_tab.tree_sheet = tree_sheet
-        self.tab_widget.addTab(new_write_tab, new_write_tab.tab_title)        
+        self.tab_widget.addTab(new_write_tab, new_write_tab.tab_title) 
+        #temp for test:       
+        new_write_tab.dock_system.add_dock("properties-dock")
         
                
 from .writingzone.writingzone import WritingZone
@@ -100,7 +102,6 @@ class WriteTab(SubWindow):
         self.writing_zone = WritingZone(self)
         self.setCentralWidget(self.writing_zone)
         
-        self.dock_system.add_dock("properties-dock")
         
     @property
     def tree_sheet(self):

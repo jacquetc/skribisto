@@ -5,9 +5,16 @@ Created on 6 mai 2015
 '''
 from . import subscriber, cfg
 from PyQt5.QtCore import QObject, pyqtSignal
+from _csv import Error
 
 
+class TreeSheetError(OSError):
+    '''root for TreeSheetErrors, only used to except any reeSheet error, never raised'''
+    pass
 
+class KeyAlreadyPresentError(TreeSheetError):
+    '''An error if the name is already present'''
+    pass
 
 class TreeSheet(QObject):
     '''
@@ -34,7 +41,14 @@ class TreeSheet(QObject):
         
         if sheet_id is not None:
             self.load()
-    
+            
+        #dict of instances, like for core_part of docks
+        self._object_dict = {}
+        #dict of class in waiting to be instantiated on demand
+        self._class_to_instanciate_dict = {}
+        # fill it with plugins
+        self._class_to_instanciate_dict = cfg.core_plugins.story_dock_plugin_dict
+            
     def load(self):
         #fill the sheet :
         
@@ -46,9 +60,18 @@ class TreeSheet(QObject):
         self._last_modification_date = cfg.data.main_tree.get_modification_date(self.sheet_id)
         self._creation_date = cfg.data.main_tree.get_creation_date(self.sheet_id)
         self._version = cfg.data.main_tree.get_version(self.sheet_id)
+
+    def get_instance_of(self, instance_name):
+        if instance_name in self._object_dict.keys():
+            return  self._object_dict[instance_name]
+        
+        class_name = self._class_to_instanciate_dict[instance_name]
+        instance = class_name()
+        self._object_dict[instance_name] = instance
+        return instance
     
     def get_title(self):
-        return self._title
+        return cfg.data.main_tree.get_title(self.sheet_id)
     
     def change_title(self, new_title):
         cfg.data.main_tree.set_title(self.sheetid, new_title)
@@ -61,7 +84,7 @@ class TreeSheet(QObject):
         :rtype: content
 
         '''
-        content = self._content
+        content = cfg.data.main_tree.get_content(self.sheet_id)
         return content
 
     def set_content(self, content):
@@ -78,7 +101,7 @@ class TreeSheet(QObject):
         :rtype other_contents:
 
         '''
-        other_contents = self._other_contents
+        other_contents = cfg.data.main_tree.get_other_contents(self.sheet_id)
         return other_contents
 
     def set_other_contents(self, dict_):
@@ -93,7 +116,7 @@ class TreeSheet(QObject):
         :rtype content_type:
 
         '''
-        content_type = self.content_type
+        content_type = cfg.data.main_tree.get_content_type(self.sheet_id)
         return content_type
     def set_content_type(self, content_type):
         '''
@@ -105,28 +128,40 @@ class TreeSheet(QObject):
 
     def get_properties(self):
         '''
-        function:: get_properties(self)
+        function:: get_properties()
         :rtype properties_dict:
 
         '''
-        properties_dict = self._properties
-        return properties_dict
+        return cfg.data.main_tree.get_properties(self.sheet_id)
 
     def set_property(self, key, value): 
         '''
-        function:: set_property(self, key, value):
+        function:: set_property(key, value):
         :param key:
         :param value:
         '''
+        self._properties[key] = value
+        cfg.data.main_tree.set_properties(self.sheet_id, self._properties)
 
-        pass
-    
+    def change_property_key(self, key, new_key): 
+        '''
+        function:: change_property_key(key, new_key):
+        :param key:
+        :param new_key:
+        '''
+        if new_key in self._properties.keys():
+            raise KeyAlreadyPresentError(key,'already present in as property key')
+        value = self._properties.pop(key)
+        self._properties[new_key] = value
+        cfg.data.main_tree.set_properties(self.sheet_id, self._properties)
+        
+        
     def get_modification_date(self):
         '''
         function:: get_modification_date(self)
         :rtype modification_date:
         '''
-        modification_date = self._last_modification_date
+        modification_date = cfg.data.main_tree.get_modification_date(self.sheet_id)
         return modification_date
     
     def set_modification_date(self, date):
@@ -141,7 +176,7 @@ class TreeSheet(QObject):
         :rtype creation_date:
 
         '''
-        creation_date = self._creation_date
+        creation_date = cfg.data.main_tree.get_creation_date(self.sheet_id)
         return creation_date
 
     def set_creation_date(self, date):
@@ -158,7 +193,7 @@ class TreeSheet(QObject):
         :rtype version:
 
         '''
-        version = self._version
+        version = cfg.data.main_tree.get_version(self.sheet_id)
         return version
 
 
@@ -177,27 +212,27 @@ class StoryTreeSheet(TreeSheet):
         self.notes = ""
         self.synopsys = ""
         
-    def load(self):
+
     
-        '''
-        function:: load(sheet_id)
-        '''
-        TreeSheet.load(self)          
+    def get_synopsys(self):
+        other_content = TreeSheet.get_other_contents(self)
+        if 'synopsys' in other_content.keys():
+            return str(other_content['synopsys'])
+        else:
+            return ''
         
-        self.notes = cfg.data.main_tree.get_synopsys(self.sheet_id)
-        self.synopsys = cfg.data.main_tree.get_notes(self.sheet_id)
-    
-        def get_synopsys(self):
-            pass
+    def set_synopsys(self, content):
+        pass
         
-        def set_synopsys(self, content):
-            pass
+    def get_notes(self):
+        other_content = TreeSheet.get_other_contents(self)
+        if 'note' in other_content.keys():
+            return str(other_content['note'])
+        else:
+            return ''
         
-        def get_notes(self):
-            pass
-        
-        def set_notes(self):
-            pass
+    def set_notes(self):
+        pass
 
 
 class TreeSheetManager(QObject):
@@ -214,7 +249,12 @@ class TreeSheetManager(QObject):
         super(TreeSheetManager, self).__init__(parent)
 
         self.sheet_list = []
-
+    def get_tree_sheet_from_sheet_id(self, sheet_id):
+        for sheet in self.sheet_list:
+            if sheet.sheet_id == sheet_id:
+                return sheet
+        return None
+    
     def open_sheet(self, sheet_id):
         '''
         function:: open_sheet(sheet_id)
