@@ -24,15 +24,16 @@ class DockSystem(QObject):
         self.dock_list = []
         self._default_dock = "properties-dock" 
         
-        self.story_dock_plugin_dict = cfg.gui_plugins.story_dock_plugin_dict
-        
+        story_dock_plugin_dict = cfg.gui_plugins.story_dock_plugin_dict
+        self.story_dock_type_dict = story_dock_plugin_dict # add there other dicts with built-in docks 
 
     def split_dock(self, dock):
         '''
         function:: split_dock(dock)
         :param dock:
         '''
-
+        area = self.main_window.dockWidgetArea()
+        self.add_dock(dock.current_type)
         pass
 
     def add_dock(self, type_str, area=Qt.RightDockWidgetArea):
@@ -41,22 +42,31 @@ class DockSystem(QObject):
         :param type_str: type of dock
         :param zone:
         '''
-        gui_part = self.story_dock_plugin_dict[type_str]
-        widget = gui_part().get_widget()
-        dock = DockTemplate(self)
-        dock.setWindowTitle(gui_part.dock_displayed_name)
+
+        dock = DockTemplate(self, dock_system=self)
+        self.change_type(dock, type_str)
         self.dock_list.append(dock)
-        dock.setWidget(widget)
         
         self.main_window.addDockWidget(area, dock)
-    
+    def change_type(self, dock, type_str):
+        '''
+        function:: change_type(dock, type_str)
+        :param dock:
+        :param type_str:
+        '''
+        gui_part = self.story_dock_type_dict[type_str]
+        widget = gui_part().get_widget()
+        dock.setWindowTitle(gui_part.dock_displayed_name)
+        dock.setWidget(widget)
+
     def remove_dock(self, dock):
         '''
         function:: remove_dock(dock)
         :param dock:
         '''
-
-        pass
+        self.dock_list.remove(dock)
+        dock.close()
+        dock.deleteLater()
     
     @property
     def sheet_id(self):
@@ -93,17 +103,26 @@ class DockTemplate(QDockWidget):
     DockTemplate
     '''
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, dock_system=None):
         '''
         Constructor
         '''
 
         super(DockTemplate, self).__init__(parent=None)
-        
+        self.current_type = None
         title_widget = DockTitleWidget(self, self)
         self.setTitleBarWidget(title_widget)
+        self.dock_system = dock_system
 
-
+    @property
+    def dock_system(self):
+        return self._dock_system
+    
+    @dock_system.setter
+    def dock_system(self, dock_system):
+        if dock_system is not None:
+            self._dock_system = dock_system
+            self.titleBarWidget().fill_comboBox_with_types()
 
 from .dock_title_bar_ui import Ui_DockTitleBar
 
@@ -120,9 +139,27 @@ class DockTitleWidget(QWidget):
 
         super(DockTitleWidget, self).__init__(parent=None)
         self.parent_dock = parent_dock
-        ui = Ui_DockTitleBar()
-        ui.setupUi(self)
+        self.ui = Ui_DockTitleBar()
+        self.ui.setupUi(self)
         
     @pyqtSlot()
     def on_closeButton_clicked(self):
         self.parent_dock.close()
+    
+    @pyqtSlot()
+    def on_addDockButton_clicked(self):
+        self.parent_dock.dock_system.splitDock(self.parent_dock)
+        
+    def fill_comboBox_with_types(self):
+        #types_name_dict = {}
+        gui_parts = self.parent_dock.dock_system.story_dock_type_dict.values()
+        for part in gui_parts:
+            #types_name_dict[part.dock_displayed_name] = part.dock_name
+            self.ui.comboBox.addItem(part.dock_displayed_name, userData=part.dock_name)
+    
+    @pyqtSlot(int)    
+    def on_comboBox_currentIndexChanged(self, index):
+        print(self.ui.comboBox.itemData(index, Qt.UserRole))
+        
+        
+        

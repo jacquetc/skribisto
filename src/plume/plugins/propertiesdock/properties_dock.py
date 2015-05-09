@@ -67,8 +67,9 @@ class CorePropertyDock():
         return self._property_table_model
 
 
-from PyQt5.QtWidgets import QTableView
+from PyQt5.QtWidgets import QTableView, QWidget
 from gui import cfg as gui_cfg
+from plugins.propertiesdock import properties_dock_ui
 
 class GuiPropertyDock():
     '''
@@ -81,7 +82,7 @@ class GuiPropertyDock():
         Constructor
         '''
         super(GuiPropertyDock, self).__init__()
-        self.tableView = None
+        self.widget = None
         self.core_property_dock = None           
         self._sheet_id = None
         
@@ -99,13 +100,18 @@ class GuiPropertyDock():
         
     def get_widget(self):
         
-        if self.tableView is None:
-            self.tableView = QTableView()
+        if self.widget is None:
+            self.widget = QWidget()
+            self.ui = properties_dock_ui.Ui_PropertiesDock()
+            self.ui.setupUi(self.widget)
+
+            
+                       
             self.core_property_dock = gui_cfg.core.plugins.CorePropertyDock()
             table_model = self.core_property_dock.property_table_model
-            self.tableView.setModel(table_model)
-            self.tableView.gui_part = self
-        return self.tableView
+            self.ui.tableView.setModel(table_model)
+            self.widget.gui_part = self
+        return self.widget
     
 
        

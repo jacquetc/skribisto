@@ -58,9 +58,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="QToolButton" name="filterButton">
+      <widget class="QToolButton" name="displayOptionsButton">
        <property name="text">
-        <string>F</string>
+        <string>O</string>
        </property>
        <property name="checkable">
         <bool>true</bool>

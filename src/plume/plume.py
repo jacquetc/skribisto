@@ -1,3 +1,4 @@
+import ui_converter
 from PyQt5.Qt import QApplication
 from core.core import Core
 from data.database import Database

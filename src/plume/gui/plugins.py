@@ -5,8 +5,7 @@ Created on 6 mai 2015
 '''
 
 
-import imp
-import os
+import os, sys
 from yapsy.PluginManager import PluginManager
 from yapsy.IPlugin import IPlugin
 import importlib
@@ -27,11 +26,17 @@ class Plugins():
     
         # Build the manager
         self._plugin_manager = PluginManager()
+        # List all sub-directories of "plugins"
+        plugin_path = os.path.sep.join([os.getcwd(), "plugins"])
+        plugin_places = [plugin_path]
+        for dirname, dirnames, filenames in os.walk(plugin_path):
+            # print path to all subdirectories first.
+            for subdirname in dirnames:
+                plugin_places.append(os.path.join(dirname, subdirname))
         # Tell it the default place(s) where to find plugins
-        self._plugin_manager.setPluginPlaces([os.path.sep.join([os.getcwd(), "plugins"])
-                                        , "/home/cyril/Devel/workspace_eclipse/plume-creator/src/plugins/"
-                                        , "/home/cyril/Devel/workspace_eclipse/plume-creator/src/plume/plugins/"])
-        #print(os.path.sep.join([os.getcwd(), "plugins"]))
+        self._plugin_manager.setPluginPlaces(plugin_places)
+        sys.path.append(plugin_path)
+
         # Define the various categories corresponding to the different
         # kinds of plugins you have defined
         self._plugin_manager.setCategoriesFilter({

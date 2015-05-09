@@ -25,11 +25,11 @@ class Ui_DockTitleBar(object):
         self.horizontalLayout.addWidget(self.comboBox)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
-        self.filterButton = QtWidgets.QToolButton(DockTitleBar)
-        self.filterButton.setCheckable(True)
-        self.filterButton.setAutoRaise(True)
-        self.filterButton.setObjectName("filterButton")
-        self.horizontalLayout.addWidget(self.filterButton)
+        self.displayOptionsButton = QtWidgets.QToolButton(DockTitleBar)
+        self.displayOptionsButton.setCheckable(True)
+        self.displayOptionsButton.setAutoRaise(True)
+        self.displayOptionsButton.setObjectName("displayOptionsButton")
+        self.horizontalLayout.addWidget(self.displayOptionsButton)
         self.addDockButton = QtWidgets.QToolButton(DockTitleBar)
         self.addDockButton.setAutoRaise(True)
         self.addDockButton.setObjectName("addDockButton")
@@ -49,7 +49,7 @@ class Ui_DockTitleBar(object):
     def retranslateUi(self, DockTitleBar):
 
         DockTitleBar.setWindowTitle(_("Form"))
-        self.filterButton.setText(_("F"))
+        self.displayOptionsButton.setText(_("O"))
         self.addDockButton.setText(_("+"))
         self.closeButton.setText(_("x"))
 
