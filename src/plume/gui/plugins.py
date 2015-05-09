@@ -4,7 +4,7 @@ Created on 6 mai 2015
 @author:  Cyril Jacquet
 '''
 
-from . import cfg
+
 import imp
 import os
 from yapsy.PluginManager import PluginManager
@@ -22,6 +22,8 @@ class Plugins():
         '''
 
         super(Plugins, self).__init__()
+    
+        self.story_dock_plugin_dict = {}
     
         # Build the manager
         self._plugin_manager = PluginManager()
@@ -46,13 +48,15 @@ class Plugins():
         '''
         function:: load_plugins(categories)
         :param categories: list
-        '''
+        '''        
+        
         for category in categories:
             for pluginInfo in self._plugin_manager.getPluginsOfCategory(category):
-                pluginInfo.plugin_object.print_name()
-                print(pluginInfo.plugin_object.gui_class().__name__)
                 setattr(self, pluginInfo.plugin_object.gui_class().__name__ \
                         , pluginInfo.plugin_object.gui_class())
+                if category is "GuiStoryDockPlugin":
+                    self.story_dock_plugin_dict[pluginInfo.plugin_object.gui_class().dock_name] \
+                    = pluginInfo.plugin_object.gui_class()
 
         
     

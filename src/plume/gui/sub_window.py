@@ -34,7 +34,7 @@ class SubWindow(QMainWindow):
         
 
 from PyQt5.QtWidgets import QTabWidget
-from .docks import DockTemplate
+from .docks import DockTemplate, DockSystem
 from .story_tree import StoryTreeView
 from .window_system import WindowSystemController
 
@@ -94,17 +94,13 @@ class WriteTab(SubWindow):
         self._tree_sheet = None
         self.tab_title = "Error"
         
+        self.dock_system = DockSystem(self, self)
+        
         self.setWindowTitle("WriteTab")
         self.writing_zone = WritingZone(self)
         self.setCentralWidget(self.writing_zone)
         
-
-        dock = DockTemplate(self)
-        dock.setWindowTitle(_("Properties"))
-        self.prop_dock = cfg.gui_plugins.GuiPropertyDock()
-        dock.setWidget(self.prop_dock.get_widget())
-        
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.dock_system.add_dock("properties-dock")
         
     @property
     def tree_sheet(self):
@@ -118,9 +114,8 @@ class WriteTab(SubWindow):
     def _load_from_tree_sheet(self, tree_sheet_object):
         self.tab_title = tree_sheet_object.get_title()
         self.writing_zone.rich_text_edit.setText(tree_sheet_object.get_content())
-        
-        #temp :
-        self.prop_dock.sheet_id = tree_sheet_object.sheet_id        
+        self.dock_system.sheet_id = tree_sheet_object.sheet_id
+                
     def change_tab_title(self, new_title):
         tab_widget = self.parent().tab_widget
         index = tab_widget.indexOf(self)

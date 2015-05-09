@@ -44,7 +44,8 @@ class CorePropertyDock():
         super(CorePropertyDock, self).__init__()
         self._property_table_model = None
         self._sheet_id = None
-    
+        self.dock_name = "properties-dock" 
+   
     @property
     def sheet_id(self):
         return self._sheet_id
@@ -73,7 +74,8 @@ class GuiPropertyDock():
     '''
     GuiPropertyDock
     '''
-
+    dock_name = "properties-dock" 
+    dock_displayed_name = _("Properties")
     def __init__(self):
         '''
         Constructor
@@ -82,6 +84,7 @@ class GuiPropertyDock():
         self.tableView = None
         self.core_property_dock = None           
         self._sheet_id = None
+        
 
     @property
     def sheet_id(self):
@@ -101,6 +104,7 @@ class GuiPropertyDock():
             self.core_property_dock = gui_cfg.core.plugins.CorePropertyDock()
             table_model = self.core_property_dock.property_table_model
             self.tableView.setModel(table_model)
+            self.tableView.gui_part = self
         return self.tableView
     
 
