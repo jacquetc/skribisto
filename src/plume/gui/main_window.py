@@ -90,10 +90,10 @@ class MainWindow(QMainWindow, WindowSystemController):
         
         menu_bar.addMenu(project_menu)
 
-        cfg.core.subscriber.subscribe_update_func(self.rrrrr)
+        #cfg.core.subscriber.subscribe_update_func(self.rrrrr)
         
-    def rrrrr(self):
-        print("rrrr")
+    #def rrrrr(self):
+        #print("rrrr")
 
 
 class SubWindow(QMainWindow):

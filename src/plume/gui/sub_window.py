@@ -36,8 +36,9 @@ class SubWindow(QMainWindow):
 from PyQt5.QtWidgets import QTabWidget
 from .docks import DockTemplate
 from .story_tree import StoryTreeView
+from .window_system import WindowSystemController
 
-class WritePanel(SubWindow):
+class WritePanel(SubWindow, WindowSystemController):
     '''
     'Write' main panel. Detachable
     '''
@@ -51,6 +52,9 @@ class WritePanel(SubWindow):
         self.setWindowTitle("Write")
         self.setObjectName("write_sub_window")
 
+
+        #connect core signal to open sheets :
+        cfg.core.tree_sheet_manager.sheet_is_opening.connect(self.open_write_tab)
         
         # Project tree view dock :
         tree_view = StoryTreeView()
@@ -61,6 +65,18 @@ class WritePanel(SubWindow):
         dock.setWidget(tree_view) 
         
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        
+        #set TabWidget:
+        self.tab_widget = QTabWidget(self)
+        self.setCentralWidget(self.tab_widget)
+        
+            
+    def open_write_tab(self, tree_sheet):
+
+        new_write_tab = WriteTab(self, self)
+        new_write_tab.tree_sheet = tree_sheet
+        self.tab_widget.addTab(new_write_tab, new_write_tab.tab_title)        
+        
                
 from .writingzone.writingzone import WritingZone
        
@@ -75,6 +91,9 @@ class WriteTab(SubWindow):
         '''
         super(WriteTab, self).__init__(parent=parent)
         
+        self._tree_sheet = None
+        self.tab_title = "Error"
+        
         self.setWindowTitle("WriteTab")
         self.writing_zone = WritingZone(self)
         self.setCentralWidget(self.writing_zone)
@@ -87,7 +106,23 @@ class WriteTab(SubWindow):
         
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         
+    @property
+    def tree_sheet(self):
+        return self._tree_sheet
+    
+    @tree_sheet.setter
+    def tree_sheet(self, tree_sheet_object):
+        self._tree_sheet = tree_sheet_object
+        self._load_from_tree_sheet(tree_sheet_object)
         
+    def _load_from_tree_sheet(self, tree_sheet_object):
+        self.tab_title = tree_sheet_object.get_title()
+        self.writing_zone.rich_text_edit.setText(tree_sheet_object.get_content())
+        
+    def change_tab_title(self, new_title):
+        tab_widget = self.parent().tab_widget
+        index = tab_widget.indexOf(self)
+        tab_widget.setTabText(index, new_title)
 
 from PyQt5.QtWidgets import QLabel
 

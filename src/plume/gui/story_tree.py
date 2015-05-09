@@ -15,40 +15,36 @@ class StoryTreeView(QTreeView):
         '''
         Constructor
         '''
-
         super(StoryTreeView, self).__init__(parent=None)
+        
+        self._old_index = None
+        
+        self.setEditTriggers(QTreeView.NoEditTriggers)
+        self.setExpandsOnDoubleClick(False)
+        
         self.old_index = None
+        self.clicked.connect(self.itemClicked)
 
 
     def itemClicked(self, index):
 
-
-
-        if index != self.oldIndex: # reset if change
-            oneClickCheckpoint = False
-            twoClicksCheckpoint = False
-    
-            self.oldIndex = index
-
-
-        if oneClickCheckpoint & twoClicksCheckpoint: # third click
-
+        if index != self._old_index: # reset if change
+            self._one_click_checkpoint = False
+            self._two_clicks_checkpoint = False    
+        self._old_index= index
+        if self._one_click_checkpoint & self._two_clicks_checkpoint: # third click
             #if(!index.data(37).toBool()) #if no separator
-            #   self.edit(index);
+            self.setCurrentIndex(index)
+            self.edit(index)
             
             #reset :
-            oneClickCheckpoint = False; 
-            twoClicksCheckpoint = False
-    
-        elif oneClickCheckpoint == True: # second click
+            self._one_click_checkpoint = False
+            self._two_clicks_checkpoint = False    
+        elif self._one_click_checkpoint == True: # second click
 
             #if !index.data(37).toBool()) #if no separator
-
-
-            
-            sheet_id = index.data(37)
-            
-            cfg.core.story_tree
+            sheet_id = index.data(37)           
+            cfg.core.tree_sheet_manager.open_sheet(sheet_id)
             #Sheet *sheet = Core::instance()->project()->openSheet(path)
 
 
@@ -59,8 +55,8 @@ class StoryTreeView(QTreeView):
         #        emit currentOpenedSheetSignal(index.data(Qt::UserRole).toInt())
         
 
-            twoClicksCheckpoint = True
+            self._two_clicks_checkpoint = True
     
         else: # first click
-            oneClickCheckpoint = True
+            self._one_click_checkpoint = True
 

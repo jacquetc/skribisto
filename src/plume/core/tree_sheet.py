@@ -6,83 +6,20 @@ Created on 6 mai 2015
 from . import subscriber, cfg
 from PyQt5.QtCore import QObject, pyqtSignal
 
-class TreeSheetManager(QObject):
-    '''
-    TreeSheetManager
-    '''
-    sheet_is_opening = pyqtSignal(int, name='sheet_is_opening')
-
-    def __init__(self, parent=None):
-        '''
-        Constructor
-        '''
-
-        super(TreeSheetManager, self).__init__(parent)
-
-        self.sheet_list = []
-
-    def open_sheet(self, sheet_id):
-        '''
-        function:: open_sheet(sheet_id)
-        :param sheet_id:
-        :rtype: tree_sheet:
-
-        '''
-        for sheet in self.sheet_list:
-            if sheet_id == sheet.sheet_id:
-                return sheet
-            
-        tree_sheet = self.only_load_sheet(sheet_id)
-        self.sheet_list.append(tree_sheet)
-        
-        #emit signal to Gui
-        self.sheet_is_opening.emit(sheet_id)
-        
-        return tree_sheet
-    
-    def only_load_sheet(self, sheet_id):
-        '''
-        function:: only_load_sheet(sheet_id)
-        :param sheet_id:
-        :rtype: tree_sheet:
-        
-        It doesn't add the TreeSheet to the manager. Good if you want only to use a TreeSheet temporarily
-        '''
-        tree_sheet = TreeSheet()
-        
 
 
-        
-        return tree_sheet
 
-    def close_sheet(self, tree_sheet):
-        '''
-        function:: close_sheet(tree_sheet)
-        :param tree_sheet: id or TreeSheet object
-        ''' 
-        if isinstance(tree_sheet, int):
-            sheet_id = tree_sheet
-            for sheet in self.sheet_list:
-                if sheet_id == sheet.sheet_id:
-                    self.sheet_list.remove(tree_sheet)
-                    
-        if isinstance(tree_sheet, TreeSheet):
-                self.sheet_list.remove(tree_sheet)
-            
-        
-
-
-class TreeSheet():
+class TreeSheet(QObject):
     '''
     TreeSheet
     '''
 
-    def __init__(self, sheet_id=None):
+    def __init__(self, parent=None, sheet_id=None):
         '''
         Constructor
         '''
 
-        super(TreeSheet, self).__init__()
+        super(TreeSheet, self).__init__(parent)
 
         self.sheet_id = sheet_id
         self._content = None
@@ -96,7 +33,7 @@ class TreeSheet():
         self._version = -1
         
         if sheet_id is not None:
-            self.load_sheet()
+            self.load()
     
     def load(self):
         #fill the sheet :
@@ -109,7 +46,10 @@ class TreeSheet():
         self._last_modification_date = cfg.data.main_tree.get_modification_date(self.sheet_id)
         self._creation_date = cfg.data.main_tree.get_creation_date(self.sheet_id)
         self._version = cfg.data.main_tree.get_version(self.sheet_id)
-
+    
+    def get_title(self):
+        return self._title
+    
     def change_title(self, new_title):
         cfg.data.main_tree.set_title(self.sheetid, new_title)
 
@@ -259,5 +199,70 @@ class StoryTreeSheet(TreeSheet):
         def set_notes(self):
             pass
 
+
+class TreeSheetManager(QObject):
+    '''
+    TreeSheetManager
+    '''
+    sheet_is_opening = pyqtSignal(TreeSheet, name='sheet_is_opening')
+
+    def __init__(self, parent=None):
+        '''
+        Constructor
+        '''
+
+        super(TreeSheetManager, self).__init__(parent)
+
+        self.sheet_list = []
+
+    def open_sheet(self, sheet_id):
+        '''
+        function:: open_sheet(sheet_id)
+        :param sheet_id:
+        :rtype: tree_sheet:
+
+        '''
+        for sheet in self.sheet_list:
+            if sheet_id == sheet.sheet_id:
+                return sheet
+            
+        tree_sheet = self.only_load_sheet(sheet_id)
+        self.sheet_list.append(tree_sheet)
         
+        #emit signal to Gui
+        self.sheet_is_opening.emit(tree_sheet)
+        
+        return tree_sheet
+    
+    def only_load_sheet(self, sheet_id):
+        '''
+        function:: only_load_sheet(sheet_id)
+        :param sheet_id:
+        :rtype: tree_sheet:
+        
+        It doesn't add the TreeSheet to the manager. Good if you want only to use a TreeSheet temporarily
+        '''
+        tree_sheet = TreeSheet(parent=self, sheet_id=sheet_id)
+
+
+        
+        return tree_sheet
+
+    def close_sheet(self, tree_sheet):
+        '''
+        function:: close_sheet(tree_sheet)
+        :param tree_sheet: id or TreeSheet object
+        ''' 
+        if isinstance(tree_sheet, int):
+            sheet_id = tree_sheet
+            for sheet in self.sheet_list:
+                if sheet_id == sheet.sheet_id:
+                    self.sheet_list.remove(tree_sheet)
+                    
+        if isinstance(tree_sheet, TreeSheet):
+                self.sheet_list.remove(tree_sheet)
+                tree_sheet.deleteLater()
+            
+        
+       
         

@@ -8,7 +8,7 @@ from .story_tree_model import StoryTreeModel
 from . import subscriber, cfg
 from .project import Project
 from .plugins import Plugins
-from .tree_sheet import StoryTreeSheet
+from .tree_sheet import TreeSheetManager
 
 
 class Core(QObject):
@@ -28,8 +28,8 @@ class Core(QObject):
         
         #init all :
         self.project = Project()
-        self.story_tree = StoryTreeSheet()
         self.plugins = Plugins() 
+        self.tree_sheet_manager = TreeSheetManager()
         
         
         self.story_tree_model = StoryTreeModel(self)

@@ -12,7 +12,7 @@ This window system is used to attach or detach QWidget using controls like butto
 
 from PyQt5.QtCore import Qt
     
-class WindowSystemController(object):
+class WindowSystemController():
     '''
     The WSC manage what are the WindowSystemActionHandler and the WindowSystemActionHandler
     ''' 

@@ -48,23 +48,26 @@ class Tree(object):
         return final_result
 
     def get_root_id(self, tree_type):
-        db = self.db
-               
+        db = self.db               
         cur = db.cursor()
         cur.execute("SELECT sheet_id FROM main_table WHERE tree=:tree AND is_root=1 ", {"tree" : tree_type})
         result = cur.fetchone()
         for row in result:
-            sheet_id = int(row)
-
-        
-        return sheet_id
-       
+            sheet_id = int(row)        
+        return sheet_id       
     
     def move(self, sheet_id, old_position_in_children, old_parent_id, new_position_in_children, new_parent_id):
         pass
 
-    def get_title(self):
-        pass
+    def get_title(self, sheet_id):
+        db = self.db               
+        cur = db.cursor()
+        cur.execute("SELECT title FROM main_table WHERE sheet_id=:id" \
+                                 , {"id": sheet_id})
+        result = cur.fetchone()
+        for row in result:
+            title = row     
+        return title            
     
     def set_title(self, sheet_id, new_title):
         self.db.cursor().execute("UPDATE main_table SET title=:title WHERE sheet_id=:id" \
@@ -81,7 +84,14 @@ class Tree(object):
     
 
     def get_content(self, sheet_id):
-        pass
+        db = self.db               
+        cur = db.cursor()
+        cur.execute("SELECT content FROM main_table WHERE sheet_id=:id" \
+                                 , {"id": sheet_id})
+        result = cur.fetchone()
+        for row in result:
+            content = row     
+        return content              
     
     def set_content(self, sheet_id, content):
         pass

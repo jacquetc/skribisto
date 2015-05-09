@@ -9,9 +9,9 @@ class WritingZone(QWidget):
         
         core = core
         
-        text_edit = RichTextEdit(self)
+        self.rich_text_edit = RichTextEdit(self)
         grid_layout = QGridLayout()
-        grid_layout.addWidget(text_edit)
+        grid_layout.addWidget(self.rich_text_edit)
         self.setLayout(grid_layout)
         
 
