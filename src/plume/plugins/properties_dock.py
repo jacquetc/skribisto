@@ -54,13 +54,13 @@ class CorePropertyDock():
         self._sheet_id = sheet_id
         if self.sheet_id is not None:
             self._property_table_model.set_sheet_id(sheet_id)
-            self._property_table_model.reset_model()
         
     @property   
     def property_table_model(self):
         if self._property_table_model is None:
-            self._property_table_model = PropertyTableModel(self)            
-            self.sheet_id = self._sheet_id
+            self._property_table_model = PropertyTableModel(self)  
+            if self._sheet_id is not None:
+                self._property_table_model.set_sheet_id(self._sheet_id)
             
             
         return self._property_table_model
@@ -78,11 +78,21 @@ class GuiPropertyDock():
         '''
         Constructor
         '''
+        super(GuiPropertyDock, self).__init__()
         self.tableView = None
         self.core_property_dock = None           
-        super(GuiPropertyDock, self).__init__()
+        self._sheet_id = None
 
-        
+    @property
+    def sheet_id(self):
+        return self._sheet_id
+    
+    @sheet_id.setter
+    def sheet_id(self, sheet_id):
+        self._sheet_id = sheet_id
+        if self.sheet_id is not None:
+            self.core_property_dock.sheet_id = sheet_id
+         
         
     def get_widget(self):
         
@@ -131,16 +141,13 @@ class PropertyTableModel(QAbstractTableModel):
         function:: rowCount(parent)
         :param parent:
         '''
-        if parent.column() > 0:
-            return 0
+        #if parent.column() > 0:
+         #   return 0
 
-        if not parent.isValid():
-            parent_node = self.root_node
+  
+        parent_node = self.root_node
             
-            return len(parent_node)
-        else:
-            parent_node = self.nodeFromIndex(parent)
-            return len(parent_node)
+        return len(parent_node)
         
         
 
@@ -187,10 +194,10 @@ class PropertyTableModel(QAbstractTableModel):
                    
         node = self.nodeFromIndex(index)
        
-    
-        if role == Qt.DisplayRole | role == Qt.EditRole & col == 0:
+        
+        if col == 0 and (role == Qt.DisplayRole or role == Qt.EditRole) :
             return node.key
-        if role == Qt.DisplayRole | role == Qt.EditRole & col == 1:
+        if col == 1 and (role == Qt.DisplayRole or role == Qt.EditRole) :
             return node.value
         
 
@@ -255,7 +262,6 @@ class PropertyTableModel(QAbstractTableModel):
             
             #cfg.data.story_tree.rename(node.sheet_id, value)
             node.key = value
-            
             
             self.dataChanged.emit(index, index, limit)
             return True
@@ -347,10 +353,9 @@ class PropertyTableModel(QAbstractTableModel):
         
         
         # create a nice dict
-        self.prop_dict = core_cfg.data.story_tree.get_properties(self._sheet_id)
+        self.prop_dict = core_cfg.data.main_tree.get_properties(self._sheet_id)
         
-
-        self.root_node.sheet_id = 0
+        self.root_node.sheet_id = self._sheet_id
         self.create_child_nodes(self.root_node)
 
 
@@ -386,7 +391,6 @@ class PropertyTableModel(QAbstractTableModel):
                 child_node.key = child_key
                 child_node.value = self.prop_dict[child_key]
                 child_node.sheet_id = self._sheet_id
-                child_node.parent_id = 0
                 child_node.children_id = None                
                 parent_node.appendChild(child_node)
                 #self.create_child_nodes(child_node)

@@ -71,7 +71,7 @@ class StoryTreeModel(QAbstractItemModel):
         node = self.nodeFromIndex(index)
        
         
-        if role == Qt.DisplayRole | role == Qt.EditRole & col == 0:
+        if (role == Qt.DisplayRole or role == Qt.EditRole) and col == 0:
             return node.title
     
         # properties :

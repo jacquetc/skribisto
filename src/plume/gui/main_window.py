@@ -43,7 +43,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-        self.resize(1024, 780)
+        self.resize(900, 500)
         
      
         

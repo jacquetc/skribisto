@@ -101,8 +101,8 @@ class WriteTab(SubWindow):
 
         dock = DockTemplate(self)
         dock.setWindowTitle(_("Properties"))
-        prop_dock = cfg.gui_plugins.GuiPropertyDock()
-        dock.setWidget(prop_dock.get_widget())
+        self.prop_dock = cfg.gui_plugins.GuiPropertyDock()
+        dock.setWidget(self.prop_dock.get_widget())
         
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         
@@ -119,6 +119,8 @@ class WriteTab(SubWindow):
         self.tab_title = tree_sheet_object.get_title()
         self.writing_zone.rich_text_edit.setText(tree_sheet_object.get_content())
         
+        #temp :
+        self.prop_dock.sheet_id = tree_sheet_object.sheet_id        
     def change_tab_title(self, new_title):
         tab_widget = self.parent().tab_widget
         index = tab_widget.indexOf(self)

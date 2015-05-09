@@ -32,7 +32,7 @@ class StoryTreeView(QTreeView):
             self._one_click_checkpoint = False
             self._two_clicks_checkpoint = False    
         self._old_index= index
-        if self._one_click_checkpoint & self._two_clicks_checkpoint: # third click
+        if self._one_click_checkpoint and self._two_clicks_checkpoint: # third click
             #if(!index.data(37).toBool()) #if no separator
             self.setCurrentIndex(index)
             self.edit(index)
