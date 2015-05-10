@@ -222,7 +222,10 @@ class StoryTreeSheet(TreeSheet):
             return ''
         
     def set_synopsys(self, content):
-        pass
+        other_contents = TreeSheet.get_other_contents(self)
+        other_contents['synopsys'] = content
+        cfg.data.main_tree.set_other_contents(self.sheetid, other_contents)
+
         
     def get_notes(self):
         other_content = TreeSheet.get_other_contents(self)
@@ -231,8 +234,10 @@ class StoryTreeSheet(TreeSheet):
         else:
             return ''
         
-    def set_notes(self):
-        pass
+    def set_notes(self, content):
+        other_contents = TreeSheet.get_other_contents(self)
+        other_contents['note'] = content
+        cfg.data.main_tree.set_other_contents(self.sheetid, other_contents)
 
 
 class TreeSheetManager(QObject):

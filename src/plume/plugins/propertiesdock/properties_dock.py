@@ -5,9 +5,8 @@ Created on 6 mai 2015
 '''
 from core import plugins as core_plugins
 from gui import plugins as gui_plugins
-
 from core import cfg as core_cfg
-
+from PyQt5.Qt import pyqtSlot
 
 class PropertiesDockPlugin(core_plugins.CoreStoryDockPlugin, gui_plugins.GuiStoryDockPlugin):
     '''
@@ -55,7 +54,7 @@ class CorePropertyDock():
             pass
         self._sheet_id = sheet_id
         if self.sheet_id is not None:
-            self.tree_sheet = gui_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
+            self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
             _ = self.property_table_model
             
             
@@ -67,12 +66,19 @@ class CorePropertyDock():
             if self._sheet_id is not None:
                 self._property_table_model.set_sheet_id(self._sheet_id)
                 self._property_table_model.tree_sheet \
-                 = gui_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
+                 = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
             
         return self._property_table_model
+    
+    @pyqtSlot()
+    def add_property_row(self, index):
+        self._property_table_model.insertRow(1, index)
+    
+    @pyqtSlot()
+    def remove_property_row(self, index):
+        self._property_table_model.removeRow(index.row(), self._property_table_model.root_model_index())
 
-
-from PyQt5.QtWidgets import QTableView, QWidget
+from PyQt5.QtWidgets import QWidget
 from gui import cfg as gui_cfg
 from plugins.propertiesdock import properties_dock_ui
 
@@ -117,11 +123,27 @@ class GuiPropertyDock():
             if self.tree_sheet is not None and self.core_part is not None:
                 table_model = self.core_part.property_table_model
                 self.ui.tableView.setModel(table_model)
+                #connect :
+                self.ui.addPropButton.clicked.connect(self.add_property_row)
+                self.ui.removePropButton.clicked.connect(self.remove_property_row)
+                self.ui.tableView.clicked.connect(self.set_current_row)
+                
             self.widget.gui_part = self
         return self.widget
     
-
-       
+    @pyqtSlot()
+    def add_property_row(self):
+        index = self.ui.tableView.currentIndex()
+        self.core_part.add_property_row(index)
+    
+    @pyqtSlot()
+    def remove_property_row(self):
+        index = self.ui.tableView.currentIndex()
+        self.core_part.remove_property_row(index)
+    
+    @pyqtSlot('QModelIndex')        
+    def set_current_row(self, model_index):
+        self.ui.tableView.setCurrentIndex(model_index)
        
 from PyQt5.QtCore import QAbstractTableModel, QVariant, QModelIndex, Qt
 
@@ -138,11 +160,13 @@ class PropertyTableModel(QAbstractTableModel):
 
         super(PropertyTableModel, self).__init__(parent=None)
         
+        self.tree_sheet = None
         self.root_node = TableNode()        
         self.headers = ["property", "value"]
         
     def set_sheet_id(self, sheet_id):
         self._sheet_id = sheet_id
+        self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(sheet_id)
         self.reset_model()
 
     def columnCount(self, parent):
@@ -258,7 +282,12 @@ class PropertyTableModel(QAbstractTableModel):
         :param index:
         '''
         return index.internalPointer() if index.isValid() else self.root_node
-        
+    
+    def root_model_index(self):
+        '''
+        function:: root_model_index()
+        ''' 
+        return QModelIndex()       
 #------------------------------------------
 #------------------Editing-----------------
 #------------------------------------------
@@ -336,6 +365,7 @@ class PropertyTableModel(QAbstractTableModel):
         :param parent:
         '''
         self.beginInsertRows(parent, row, (row + (count - 1)))
+        self.create_child_nodes(self.root_node, {"":""})
         self.endInsertRows()
         return True
 
@@ -364,6 +394,7 @@ class PropertyTableModel(QAbstractTableModel):
 
         pass
 
+        
     def reset_model(self):
         '''
         function:: reset_model()
@@ -378,16 +409,16 @@ class PropertyTableModel(QAbstractTableModel):
         
         
         # create a nice dict
-        self.prop_dict = core_cfg.data.main_tree.get_properties(self._sheet_id)
+        self.prop_dict = self.tree_sheet.get_properties()
         
         self.root_node.sheet_id = self._sheet_id
-        self.create_child_nodes(self.root_node)
+        self.create_child_nodes(self.root_node, self.prop_dict)
 
 
         self.endResetModel()
         
 
-    def apply_node_variables_from_dict(self, node, sheet_id, dict_):
+    def apply_node_variables_from_dict(self, node, sheet_id):
         '''
         function:: apply_node_variables_from_dict(node, sheet_id, dict_)
         :param node:
@@ -398,7 +429,7 @@ class PropertyTableModel(QAbstractTableModel):
   
         
 
-    def create_child_nodes(self, parent_node):
+    def create_child_nodes(self, parent_node, key_value_dict):
         '''
         function:: create_child_nodes(parent_node)
         :param parent_node:
@@ -408,13 +439,13 @@ class PropertyTableModel(QAbstractTableModel):
         #add & scan children :
         
 
-        if list(self.prop_dict.keys()) != []:
-            for child_key in self.prop_dict.keys():
+        if list(key_value_dict.keys()) != []:
+            for child_key in key_value_dict.keys():
             
 
                 child_node = TableNode(parent_node) 
                 child_node.key = child_key
-                child_node.value = self.prop_dict[child_key]
+                child_node.value = key_value_dict[child_key]
                 child_node.sheet_id = self._sheet_id
                 child_node.children_id = None                
                 parent_node.appendChild(child_node)

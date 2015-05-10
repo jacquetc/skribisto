@@ -22,6 +22,7 @@ class Core(QObject):
         Constructor
         '''
         super(Core, self).__init__(parent)
+        cfg.core = self
         cfg.data = data
         self.subscriber = subscriber
         
