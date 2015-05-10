@@ -79,6 +79,7 @@ class CorePropertyDock():
         self._property_table_model.removeRow(index.row(), self._property_table_model.root_model_index())
 
 from PyQt5.QtWidgets import QWidget
+from PyQt5.QtCore import QSortFilterProxyModel
 from gui import cfg as gui_cfg
 from plugins.propertiesdock import properties_dock_ui
 
@@ -122,10 +123,20 @@ class GuiPropertyDock():
 
             if self.tree_sheet is not None and self.core_part is not None:
                 table_model = self.core_part.property_table_model
-                self.ui.tableView.setModel(table_model)
+                
+                #filter :
+                self.filter = QSortFilterProxyModel(self.widget)
+                self.filter.setFilterKeyColumn(-1)
+                self.filter.setFilterCaseSensitivity(False)
+                self.filter.setSourceModel(table_model)
+                
+                #model :
+                self.ui.tableView.setModel(self.filter)
+                
                 #connect :
                 self.ui.addPropButton.clicked.connect(self.add_property_row)
                 self.ui.removePropButton.clicked.connect(self.remove_property_row)
+                self.ui.filterLineEdit.textChanged.connect(self.filter.setFilterFixedString)
                 self.ui.tableView.clicked.connect(self.set_current_row)
                 
             self.widget.gui_part = self
@@ -541,5 +552,6 @@ class TableNode():
         '''
 
         return len(self.children)
+
 
 
