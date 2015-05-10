@@ -48,6 +48,8 @@ class TreeSheet(QObject):
         self._class_to_instanciate_dict = {}
         # fill it with plugins
         self._class_to_instanciate_dict = cfg.core_plugins.story_dock_plugin_dict
+        
+        self._subscribe_to_data()
             
     def load(self):
         #fill the sheet :
@@ -60,7 +62,22 @@ class TreeSheet(QObject):
         self._last_modification_date = cfg.data.main_tree.get_modification_date(self.sheet_id)
         self._creation_date = cfg.data.main_tree.get_creation_date(self.sheet_id)
         self._version = cfg.data.main_tree.get_version(self.sheet_id)
-
+    
+    def _subscribe_to_data(self):
+        
+        list_ = [[self.get_title, "data.tree.title"],
+                 [self.get_content, "data.tree.content"],
+                 [self.get_other_contents, "data.tree.other_contents"],
+                 [self.get_content_type, "data.tree.content_type"],
+                 [self.get_properties, "data.tree.properties"],
+                 [self.get_modification_date, "data.tree.modification_date"],
+                 [self.get_creation_date, "data.tree.creation_date"],
+                 [self.get_properties, "data.tree.properties"],
+                 [self.get_version, "data.tree.version"],
+                 ]
+        for func, domain in list_ :
+            cfg.data.subscriber.subscribe_update_func_to_domain(func, domain)
+        
     def get_instance_of(self, instance_name):
         if instance_name in self._object_dict.keys():
             return  self._object_dict[instance_name]

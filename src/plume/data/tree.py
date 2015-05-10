@@ -4,6 +4,8 @@ Created on 26 avr. 2015
 @author:  Cyril Jacquet
 '''
 
+from . import subscriber
+
 class Tree(object):
     '''
     classdocs
@@ -73,14 +75,17 @@ class Tree(object):
         self.db.cursor().execute("UPDATE main_table SET title=:title WHERE sheet_id=:id" \
                                  , {"title": new_title, "id": sheet_id})
         self.db.commit()
+        subscriber.announce_update("data.tree.title", sheet_id)
         
         
     def get_other_contents(self, sheet_id):
         pass
     
     def set_other_contents(self, sheet_id, dict_):
-        pass
-    
+        self.db.cursor().execute("UPDATE main_table SET other_contents=:other_contents WHERE sheet_id=:id" \
+                                 , {"other_contents": dict_, "id": sheet_id})
+        self.db.commit()                   
+        subscriber.announce_update("data.tree.other_contents", sheet_id)
     
 
     def get_content(self, sheet_id):
@@ -94,13 +99,26 @@ class Tree(object):
         return content              
     
     def set_content(self, sheet_id, content):
-        pass
-   
+        self.db.cursor().execute("UPDATE main_table SET content=:content WHERE sheet_id=:id" \
+                                 , {"content": content, "id": sheet_id})
+        self.db.commit()        
+        subscriber.announce_update("data.tree.content", sheet_id)
+
     def get_content_type(self,sheet_id):
-        pass
+        db = self.db               
+        cur = db.cursor()
+        cur.execute("SELECT content_type FROM main_table WHERE sheet_id=:id" \
+                                 , {"id": sheet_id})
+        result = cur.fetchone()
+        for row in result:
+            content_type = row     
+        return content_type
     
     def set_content_type(self,sheet_id, content_type):
-        pass
+        self.db.cursor().execute("UPDATE main_table SET content_type=:content_type WHERE sheet_id=:id" \
+                                 , {"content": content_type, "id": sheet_id})
+        self.db.commit()        
+        subscriber.announce_update("data.tree.content_type", sheet_id)        
    
 
     def get_properties(self,sheet_id):
@@ -119,23 +137,58 @@ class Tree(object):
         return prop_dict
     
     def set_properties(self,sheet_id, properties):
-        pass
+        self.db.cursor().execute("UPDATE main_table SET properties=:properties WHERE sheet_id=:id" \
+                                 , {"properties": properties, "id": sheet_id})
+        self.db.commit()
     
     def get_modification_date(self,sheet_id):
-        pass
+        db = self.db               
+        cur = db.cursor()
+        cur.execute("SELECT modification_date FROM main_table WHERE sheet_id=:id" \
+                                 , {"id": sheet_id})
+        result = cur.fetchone()
+        for row in result:
+            modification_date = row     
+        return modification_date
     
-    def set_modification_date(self,sheet_id, date):
-        pass
+    def set_modification_date(self,sheet_id, modification_date):
+        self.db.cursor().execute("UPDATE main_table SET modification_date=:modification_date WHERE sheet_id=:id" \
+                                 , {"modification_date": modification_date, "id": sheet_id})
+        self.db.commit()        
+        subscriber.announce_update("data.tree.modification_date", sheet_id)
     
     def get_creation_date(self,sheet_id):
-        pass
+        db = self.db               
+        cur = db.cursor()
+        cur.execute("SELECT creation_date FROM main_table WHERE sheet_id=:id" \
+                                 , {"id": sheet_id})
+        result = cur.fetchone()
+        for row in result:
+            creation_date = row     
+        return creation_date
 
-    def set_creation_date(self,sheet_id, date):
-        pass
+    def set_creation_date(self,sheet_id, creation_date):
+        self.db.cursor().execute("UPDATE main_table SET creation_date=:creation_date WHERE sheet_id=:id" \
+                                 , {"creation_date": creation_date, "id": sheet_id})
+        self.db.commit()        
+        subscriber.announce_update("data.tree.creation_date", sheet_id)
     
     def get_version(self,sheet_id):
-        pass
-
+        db = self.db               
+        cur = db.cursor()
+        cur.execute("SELECT version FROM main_table WHERE sheet_id=:id" \
+                                 , {"id": sheet_id})
+        result = cur.fetchone()
+        for row in result:
+            version = row     
+        return version
+    
+    def set_version(self,sheet_id, version):
+        self.db.cursor().execute("UPDATE main_table SET version=:version WHERE sheet_id=:id" \
+                                 , {"version": version, "id": sheet_id})
+        self.db.commit()        
+        subscriber.announce_update("data.tree.version", sheet_id)
+    
 def transform_children_id_text_into_int_tuple(children_id_text):
     int_tuple = ()
     int_list = []
