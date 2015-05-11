@@ -3,7 +3,7 @@ Created on 8 mai 2015
 
 @author:  Cyril Jacquet
 '''
-from PyQt5.QtWidgets import QTreeView
+from PyQt5.QtWidgets import QTreeView, QMenu
 from . import cfg
 
 class StoryTreeView(QTreeView):
@@ -24,6 +24,11 @@ class StoryTreeView(QTreeView):
         
         self.old_index = None
         self.clicked.connect(self.itemClicked)
+        
+        self._init_actions()
+        
+    def _init_actions(self):
+        pass
 
 
     def itemClicked(self, index):
@@ -58,5 +63,24 @@ class StoryTreeView(QTreeView):
             self._two_clicks_checkpoint = True
     
         else: # first click
+            self.setCurrentIndex(index)
             self._one_click_checkpoint = True
+            
+    def contextMenuEvent(self, event):
 
+        menu = QMenu(self)
+        attachAction = menu.addAction(_("Add sheet"))
+        attachAction.triggered.connect(self.add_sheet)
+        menu.exec_(self.mapToGlobal(event.pos()))
+
+        return QTreeView.contextMenuEvent(self, event)    
+    
+    def add_sheet(self):
+        parent_index = self.currentIndex()
+        self.model().insertRow(len(self.model().nodeFromIndex(parent_index)), parent_index)
+        id = self.model().id_of_last_created_sheet
+        index = self.model().find_index_from_id(id)
+        #temp :
+        self.expandAll()
+        self.edit(index)
+        

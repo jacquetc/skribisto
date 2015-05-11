@@ -5,6 +5,7 @@ Created on 26 avr. 2015
 '''
 
 from . import subscriber
+import ast
 
 class Tree(object):
     '''
@@ -22,7 +23,7 @@ class Tree(object):
 
     def get_tree_model_necessities(self, tree_type=None):
         '''
-        
+        :param tree_type: restrict to a given tree. Ex : story
         Quick way to get the necessary to build a Qt treeModel
         
         return [(sheet_id, title, parent_id, children_id, properties), (...)]
@@ -60,7 +61,45 @@ class Tree(object):
     
     def move(self, sheet_id, old_position_in_children, old_parent_id, new_position_in_children, new_parent_id):
         pass
-
+    
+    def create_new_sheet(self ,parent_id, tree_type):
+        '''
+        function:: create_new_tree_item(parent, tree_type)
+        Append to parent
+        :param parent: int, sheet_id of parent 
+        :param tree_type: string, Ex : "story"
+        :rtype sheet_id: int, sheet_id of the new sheet
+        '''
+        c = self.db.cursor()
+        c.execute("INSERT INTO main_table (parent_id, title, tree) \
+        VALUES (:parent_id, '', :tree)", {"parent_id": parent_id, "tree": tree_type})
+        # get new sheet_id:  
+        c.execute("SELECT last_insert_rowid()")
+        result = c.fetchone()
+        for row in result:
+            sheet_id = row
+        #get parent sheet :
+        c.execute("SELECT children_id FROM main_table WHERE sheet_id=:id" \
+                                 , {"id": parent_id})       
+        result = c.fetchone()
+        for row in result:
+            children_id = row
+        # modify parent's children_i :
+        t = transform_children_id_text_into_int_tuple(children_id)
+        children_list = list(t)
+        children_list.append(sheet_id)
+        if len(children_list) == 0: 
+            children_list_str = ""            
+        else:
+            children_list_str = [str(child_id) for child_id in children_list]
+        children_id = ",".join(children_list_str)
+        self.db.cursor().execute("UPDATE main_table SET children_id=:children_id WHERE sheet_id=:id" \
+                                 , {"children_id": children_id, "id": parent_id})        
+        self.db.commit()
+        subscriber.announce_update("data.tree")        
+        
+        return sheet_id
+    
     def get_title(self, sheet_id):
         db = self.db               
         cur = db.cursor()
@@ -137,8 +176,9 @@ class Tree(object):
         return prop_dict
     
     def set_properties(self,sheet_id, properties):
+        properties_str = transform_dict_into_text(properties)
         self.db.cursor().execute("UPDATE main_table SET properties=:properties WHERE sheet_id=:id" \
-                                 , {"properties": properties, "id": sheet_id})
+                                 , {"properties": properties_str, "id": sheet_id})
         self.db.commit()
     
     def get_modification_date(self,sheet_id):
@@ -194,15 +234,21 @@ def transform_children_id_text_into_int_tuple(children_id_text):
     int_list = []
     if children_id_text is not None:
         for txt in children_id_text.split(","):
-            int_list.append(int(txt))            
+            if txt != None:
+                int_list.append(int(txt))                        
         int_tuple = tuple(int_list)
     return int_tuple
 
-def transform_properties_text_into_dict(properties):
-    import ast
-    
+def transform_properties_text_into_dict(properties):    
     properties_dict = {}
     if properties is not None:
         properties_dict = ast.literal_eval(properties)
     
     return properties_dict
+
+def transform_dict_into_text(properties):
+    properties_str = "{}"
+    if properties is not {}:
+        properties_str = str(properties)
+    
+    return properties_str

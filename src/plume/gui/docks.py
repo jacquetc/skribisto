@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt
 class DockSystem(QObject):
     '''
     DockSystem
+    For now, it's only for tl story_tree docks
     '''
 
     def __init__(self, parent, main_window):

@@ -23,6 +23,8 @@ class StoryTreeModel(QAbstractItemModel):
         
         
         self.headers = ["name"]
+        self._id_of_last_created_sheet = None     
+        cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.tree")
         
     def columnCount(self, parent):
         return 1
@@ -181,6 +183,8 @@ parentIndex, parentIndex)
 
     def insertRows(self, row, count, parent):
         self.beginInsertRows(parent, row, (row + (count - 1)))
+        for _ in range(0, count):
+            self._id_of_last_created_sheet = cfg.data.main_tree.create_new_sheet(self.nodeFromIndex(parent).sheet_id, "story")
         self.endInsertRows()
         return True
 
@@ -199,10 +203,18 @@ parentIndex, parentIndex)
 
 
 
+    @property
+    def id_of_last_created_sheet(self):       
+        return self._id_of_last_created_sheet
 
-
-
-
+    def find_index_from_id(self, id):
+        start_index = self.index(0,0, QModelIndex())
+        index_list = self.match(start_index, 37, id, 1, Qt.MatchExactly | Qt.MatchRecursive)
+        if len(index_list) == 0:
+            return None
+        else:
+            return index_list[0]
+    
     def reset_model(self):
         self.beginResetModel()
         

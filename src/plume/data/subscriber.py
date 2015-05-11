@@ -33,7 +33,7 @@ def unsubscribe_update_func(func):
             _update_funcs.remove(update_function)
             
 
-def announce_update(self, domain, sheet_id=None):
+def announce_update(domain, sheet_id=None):
     '''
     function:: announce_update(domain)
     :param domain:
@@ -42,9 +42,10 @@ def announce_update(self, domain, sheet_id=None):
     for update_function in _update_funcs:
         if update_function.domain == domain and update_function.sheet_id == sheet_id:
             update_function.function()
-            #for the subscriber interested by all updates from every sheet:
+        #for the subscriber interested by all updates from every sheet:
         if update_function.domain == domain and update_function.sheet_id == None:
-            update_function.function()
+            f = update_function.function
+            f()
         
 class UpdateFunction():
     '''
