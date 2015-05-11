@@ -38,7 +38,6 @@ class StoryTreeView(QTreeView):
             self._two_clicks_checkpoint = False    
         self._old_index= index
         if self._one_click_checkpoint and self._two_clicks_checkpoint: # third click
-            #if(!index.data(37).toBool()) #if no separator
             self.setCurrentIndex(index)
             self.edit(index)
             
@@ -46,19 +45,9 @@ class StoryTreeView(QTreeView):
             self._one_click_checkpoint = False
             self._two_clicks_checkpoint = False    
         elif self._one_click_checkpoint == True: # second click
-
-            #if !index.data(37).toBool()) #if no separator
             sheet_id = index.data(37)           
             cfg.core.tree_sheet_manager.open_sheet(sheet_id)
-            #Sheet *sheet = Core::instance()->project()->openSheet(path)
 
-
-
-            #emit openSheetInView(sheet, "mainTextWritingZone")
-            #emit openSheetInView(sheet, "noteDockWritingZone")
-            #emit openSheetInView(sheet, "synopsisDockWritingZone")
-        #        emit currentOpenedSheetSignal(index.data(Qt::UserRole).toInt())
-        
 
             self._two_clicks_checkpoint = True
     

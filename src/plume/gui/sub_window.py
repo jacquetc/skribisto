@@ -80,7 +80,7 @@ class WritePanel(SubWindow, WindowSystemController):
         new_write_tab.dock_system.add_dock("properties-dock")
         
                
-from .writingzone.writingzone import WritingZone
+from .writingzone.writing_zone import WritingZone
        
 class WriteTab(SubWindow):
     '''
@@ -114,7 +114,7 @@ class WriteTab(SubWindow):
         
     def _load_from_tree_sheet(self, tree_sheet_object):
         self.tab_title = tree_sheet_object.get_title()
-        self.writing_zone.rich_text_edit.setText(tree_sheet_object.get_content())
+        self.writing_zone.set_rich_text(tree_sheet_object.get_content())
         self.dock_system.sheet_id = tree_sheet_object.sheet_id
                 
     def change_tab_title(self, new_title):

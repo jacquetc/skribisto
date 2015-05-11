@@ -1,20 +1,10 @@
-from PyQt5.QtWidgets import QWidget,  QTextEdit, QGridLayout, QMenu, QApplication
-from ..common import DataAndCoreSetter
+'''
+Created on 11 mai 2015
 
+@author: cyril
+'''
 
-class WritingZone(QWidget):
-    
-    def __init__(self, parent=None, core=None):
-        super(QWidget, self).__init__(parent=parent)
-        
-        core = core
-        
-        self.rich_text_edit = RichTextEdit(self)
-        grid_layout = QGridLayout()
-        grid_layout.addWidget(self.rich_text_edit)
-        self.setLayout(grid_layout)
-        
-
+from PyQt5.QtWidgets import QTextEdit, QMenu
 
 class RichTextEdit(QTextEdit):
     
@@ -33,4 +23,5 @@ class RichTextEdit(QTextEdit):
         quitAction = menu.addAction(_("Quit"))
         action = menu.exec_(self.mapToGlobal(event.pos()))
         if action == quitAction:
-            QApplication.quit()
+            pass
+            #QApplication.quit()

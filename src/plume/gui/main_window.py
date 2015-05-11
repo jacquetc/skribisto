@@ -11,8 +11,6 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup, QLabel, \
                              QToolBar, QMenuBar)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QObject, Qt
-from .writingzone.writingzone import WritingZone
-from .common import DataAndCoreSetter
 from .window_system import WindowSystemController
 from .sub_window import WritePanel, BinderPanel
 from PyQt5.Qt import QToolButton
