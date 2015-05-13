@@ -9,6 +9,7 @@ class WritingZone(QWidget):
         super(QWidget, self).__init__(parent=parent)
         self.ui = Ui_WritingZone()
         self.ui.setupUi(self)
+        self.ui.minimap.text_edit = self.ui.richTextEdit
         
 
         

@@ -75,7 +75,7 @@ class Ui_WritingZone(object):
         self.horizontalLayout.addWidget(self.sizehandle)
         spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem4)
-        self.minimap = QtWidgets.QWidget(WritingZone)
+        self.minimap = Minimap(WritingZone)
         self.minimap.setObjectName("minimap")
         self.horizontalLayout.addWidget(self.minimap)
         self.verticalScrollBar = QtWidgets.QScrollBar(WritingZone)
@@ -95,4 +95,5 @@ class Ui_WritingZone(object):
         self.findPreviousToolButton.setText(_("<-"))
         self.findNextToolButton.setText(_("->"))
 
+from .minimap import Minimap
 from .rich_text_edit import RichTextEdit

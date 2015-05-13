@@ -176,7 +176,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QWidget" name="minimap" native="true"/>
+      <widget class="Minimap" name="minimap" native="true"/>
      </item>
      <item>
       <widget class="QScrollBar" name="verticalScrollBar">
@@ -194,6 +194,12 @@
    <class>RichTextEdit</class>
    <extends>QTextEdit</extends>
    <header>.rich_text_edit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Minimap</class>
+   <extends>QWidget</extends>
+   <header>.minimap.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
