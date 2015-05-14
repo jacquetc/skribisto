@@ -270,8 +270,8 @@ class DocItem():
         return self._image
     
     def _generate_image(self):
-        h = 3
-        w = 2        
+        h = 2
+        w = 1        
     
         def draw_char(pos, pen_color):
             pix_paint.setPen(QPen(pen_color))

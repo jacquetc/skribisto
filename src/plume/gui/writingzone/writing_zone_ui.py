@@ -64,6 +64,7 @@ class Ui_WritingZone(object):
         self.verticalLayout_2.addItem(spacerItem3)
         self.horizontalLayout.addLayout(self.verticalLayout_2)
         self.richTextEdit = RichTextEdit(WritingZone)
+        self.richTextEdit.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.richTextEdit.setObjectName("richTextEdit")
         self.horizontalLayout.addWidget(self.richTextEdit)
         self.sizehandle = QtWidgets.QWidget(WritingZone)
@@ -75,6 +76,9 @@ class Ui_WritingZone(object):
         self.horizontalLayout.addWidget(self.sizehandle)
         spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem4)
+        self.minimap_graphicsView = Minimap2(WritingZone)
+        self.minimap_graphicsView.setObjectName("minimap_graphicsView")
+        self.horizontalLayout.addWidget(self.minimap_graphicsView)
         self.minimap = Minimap(WritingZone)
         self.minimap.setObjectName("minimap")
         self.horizontalLayout.addWidget(self.minimap)
@@ -97,3 +101,4 @@ class Ui_WritingZone(object):
 
 from .minimap import Minimap
 from .rich_text_edit import RichTextEdit
+from .minimap_text_browser import Minimap2

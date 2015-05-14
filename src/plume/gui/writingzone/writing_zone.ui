@@ -141,7 +141,11 @@
       </layout>
      </item>
      <item>
-      <widget class="RichTextEdit" name="richTextEdit"/>
+      <widget class="RichTextEdit" name="richTextEdit">
+       <property name="horizontalScrollBarPolicy">
+        <enum>Qt::ScrollBarAlwaysOff</enum>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QWidget" name="sizehandle" native="true">
@@ -176,6 +180,9 @@
       </spacer>
      </item>
      <item>
+      <widget class="Minimap2" name="minimap_graphicsView"/>
+     </item>
+     <item>
       <widget class="Minimap" name="minimap" native="true"/>
      </item>
      <item>
@@ -200,6 +207,11 @@
    <extends>QWidget</extends>
    <header>.minimap.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Minimap2</class>
+   <extends>QGraphicsView</extends>
+   <header>.minimap_text_browser.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
