@@ -57,6 +57,7 @@ class Plugins():
                 if category is "CoreStoryDockPlugin":
                     self.story_dock_plugin_dict[pluginInfo.plugin_object.core_class().dock_name] \
                     = pluginInfo.plugin_object.core_class()
+                    
 
         
     

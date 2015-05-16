@@ -30,8 +30,8 @@ class SubWindow(QMainWindow):
     def attach_back_to_parent_window_system(self):
         self.parent_window_system_controller.attach_window(self)
     
-    
-        
+
+
 
 from PyQt5.QtWidgets import QTabWidget
 from .docks import DockTemplate, DockSystem

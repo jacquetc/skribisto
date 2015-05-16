@@ -153,6 +153,8 @@ class DockTitleWidget(QWidget):
     
     @pyqtSlot()
     def on_addDockButton_clicked(self):
+        if self.parent_dock == none:
+            return
         self.parent_dock.dock_system.split_dock(self.parent_dock)
         
     def fill_comboBox_with_types(self):

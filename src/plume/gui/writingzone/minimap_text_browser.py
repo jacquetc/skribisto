@@ -7,7 +7,7 @@ Created on 13 mai 2015
 from PyQt5.QtWidgets import QTextEdit, QMenu, QGraphicsView, QGraphicsScene,\
     QGraphicsItem
 from PyQt5.QtCore import pyqtSlot, Qt, pyqtSignal
-from PyQt5.QtOpenGL import QGLWidget
+from PyQt5.QtWidgets import QOpenGLWidget
 from PyQt5.QtGui import QPainter, QPen
 from PyQt5.Qt import QRectF
 
@@ -29,7 +29,7 @@ class Minimap2(QGraphicsView):
         self._text_browser = TextBrowser()
         self._scrollbar = None
         self.setAutoFillBackground(True)
-        self.setViewport(QGLWidget())
+        self.setViewport(QOpenGLWidget())
         self.setScene(self._scene)
         self.setAlignment(Qt.AlignTop)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -43,7 +43,7 @@ class Minimap2(QGraphicsView):
         self._text_edit = None
         
         self._graphics_proxy_text_browser = self._scene.addWidget(self._text_browser)
-        self._scale = 0.3
+        self._scale = 0.2
         self._graphics_proxy_text_browser.setScale(self._scale)
         
         
@@ -64,9 +64,7 @@ class Minimap2(QGraphicsView):
         self.setFixedWidth(self._text_edit.width() * self._scale)
         
         self._text_browser.setDocument(self._text_edit.document())       
-        
-        #set cursor:
-        
+     
         
         #connect scrollbar
         baseScrollBar = self._text_edit.verticalScrollBar()
@@ -75,6 +73,12 @@ class Minimap2(QGraphicsView):
         self._text_browser.verticalScrollBar().valueChanged.connect(baseScrollBar.setValue)        
         self._text_browser.verticalScrollBar().hide()
         
+        
+      
+        #set cursor:
+        self._text_browser.verticalScrollBar().valueChanged.connect(self.set_nav_cursor_y)
+                                                                    
+                                                                    
     @pyqtSlot()
     def update(self):
         #if self._is_cursor_moved:
@@ -85,6 +89,10 @@ class Minimap2(QGraphicsView):
     def _change_scrollbar_value(self, value):
         #self._scrollbar.setValue(value)
         pass 
+    
+    @pyqtSlot('int')
+    def set_nav_cursor_y(self, value):
+        self._nav_cursor.setY(value)
      
     @pyqtSlot('QSize')
     def update_size(self, size):
@@ -198,6 +206,8 @@ class Cursor(QGraphicsItem):
                           
     def mouseMoveEvent(self, event): 
         #pos = self.mapFromGlobal(event.globalPos())
+        if self.graphics_view == None:
+            return
         self.graphics_view._is_cursor_moved = True
         QGraphicsItem.mouseMoveEvent(self, event)
         if event.buttons() == Qt.LeftButton:
