@@ -180,10 +180,10 @@
       </spacer>
      </item>
      <item>
-      <widget class="Minimap2" name="minimap_graphicsView"/>
+      <widget class="Minimap2" name="minimap"/>
      </item>
      <item>
-      <widget class="Minimap" name="minimap" native="true"/>
+      <widget class="Minimap" name="minimap_old" native="true"/>
      </item>
      <item>
       <widget class="QScrollBar" name="verticalScrollBar">

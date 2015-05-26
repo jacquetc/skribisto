@@ -100,6 +100,9 @@ class WriteTab(SubWindow):
         
         self.setWindowTitle("WriteTab")
         self.writing_zone = WritingZone(self)
+        self.writing_zone.has_minimap = True
+        self.writing_zone.has_scrollbar = True
+        
         self.setCentralWidget(self.writing_zone)
         
         

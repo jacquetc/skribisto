@@ -22,6 +22,7 @@ def build_forms(srcdir, info=None, summary=False):
     import re
     from io import StringIO
     from PyQt5.uic import compileUi
+    import datetime
 
     pat = re.compile(r'''(['"]):/images/([^'"]+)\1''')
     def sub(match):
@@ -39,7 +40,7 @@ def build_forms(srcdir, info=None, summary=False):
     forms = find_forms(srcdir)
     for form in forms:
         compiled_form = form_to_compiled_form(form)
-        if not os.path.exists(compiled_form) or os.stat(form).st_mtime > os.stat(compiled_form).st_mtime:
+        if not os.path.exists(compiled_form) or os.path.getmtime(form) > os.path.getmtime(compiled_form):
             if not summary:
                 print('\tCompiling form', form)
             buf = StringIO()

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eclipse/plume-creator/src/plume/gui/writingzone/writing_zone.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eric/plume-creator/src/plume/gui/writingzone/writing_zone.ui'
 #
 # Created by: PyQt5 UI code generator 5.4.1
 #
@@ -76,12 +76,12 @@ class Ui_WritingZone(object):
         self.horizontalLayout.addWidget(self.sizehandle)
         spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem4)
-        self.minimap_graphicsView = Minimap2(WritingZone)
-        self.minimap_graphicsView.setObjectName("minimap_graphicsView")
-        self.horizontalLayout.addWidget(self.minimap_graphicsView)
-        self.minimap = Minimap(WritingZone)
+        self.minimap = Minimap2(WritingZone)
         self.minimap.setObjectName("minimap")
         self.horizontalLayout.addWidget(self.minimap)
+        self.minimap_old = Minimap(WritingZone)
+        self.minimap_old.setObjectName("minimap_old")
+        self.horizontalLayout.addWidget(self.minimap_old)
         self.verticalScrollBar = QtWidgets.QScrollBar(WritingZone)
         self.verticalScrollBar.setOrientation(QtCore.Qt.Vertical)
         self.verticalScrollBar.setObjectName("verticalScrollBar")
@@ -100,5 +100,5 @@ class Ui_WritingZone(object):
         self.findNextToolButton.setText(_("->"))
 
 from .minimap import Minimap
-from .rich_text_edit import RichTextEdit
 from .minimap_text_browser import Minimap2
+from .rich_text_edit import RichTextEdit

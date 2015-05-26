@@ -94,11 +94,7 @@ class Minimap2(QGraphicsView):
         self.setFixedWidth(self._text_edit.width() * self._scale)
         
         self._doc = self._text_edit.document()
-        self._minimap_doc = self._doc.clone(self)
-        
-        self._doc.contentsChange.connect(self.update_minimap_doc)
-        
-        self._text_browser.setDocument(self._minimap_doc)   
+
      
         
         #connect scrollbar
@@ -112,8 +108,20 @@ class Minimap2(QGraphicsView):
       
         #set cursor:
         #self._text_browser.verticalScrollBar().valueChanged.connect(self._set_nav_cursor_y)
-        baseScrollBar.valueChanged.connect(self._set_nav_cursor_y)                               
-                                                                    
+        baseScrollBar.valueChanged.connect(self._set_nav_cursor_y)
+
+        self.set_activated(True)
+    
+    def set_activated(self,  value):
+        if value is True:
+            self.blockSignals(False)
+            self._minimap_doc = self._doc.clone(self)
+            self._text_browser.setDocument(self._minimap_doc)   
+            self._doc.contentsChange.connect(self.update_minimap_doc)
+        else:
+            self.blockSignals(True)            
+            self._doc.contentsChange.disconnect(self.update_minimap_doc)
+
     @pyqtSlot()
     def update(self):
         #if self._is_cursor_moved:
