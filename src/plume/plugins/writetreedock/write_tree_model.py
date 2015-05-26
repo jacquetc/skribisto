@@ -5,17 +5,17 @@ Created on 26 avr. 2015
 '''
 from PyQt5.Qt import QAbstractItemModel, QVariant, QModelIndex 
 from PyQt5.QtCore import Qt
-from . import subscriber, cfg
+from core import subscriber, cfg
 
 
-class StoryTreeModel(QAbstractItemModel):
+class WriteTreeModel(QAbstractItemModel):
     '''
     classdocs
     '''
 
 
     def __init__(self, parent=None):
-        super(StoryTreeModel, self).__init__(parent)
+        super(WriteTreeModel, self).__init__(parent)
         '''
         Constructor
         '''

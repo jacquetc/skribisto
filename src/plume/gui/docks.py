@@ -7,14 +7,18 @@ from PyQt5.QtWidgets import QDockWidget, QWidget
 from PyQt5.Qt import pyqtSlot, QObject
 from . import cfg
 from PyQt5.QtCore import Qt
+from enum import Enum
+
+
 
 class DockSystem(QObject):
     '''
     DockSystem
-    For now, it's only for tl story_tree docks
+    For now, it's only for the story_tree docks
     '''
-
-    def __init__(self, parent, main_window):
+    DockTypes = Enum('DockType', 'WriteTabDock WritePanelDock')
+    
+    def __init__(self, parent, main_window,  dock_type):
         '''
         Constructor
         '''
@@ -23,10 +27,16 @@ class DockSystem(QObject):
         self._sheet_id = None
         self.main_window = main_window
         self.dock_list = []
-        self._default_dock = "properties-dock" 
         
-        story_dock_plugin_dict = cfg.gui_plugins.story_dock_plugin_dict
-        self.story_dock_type_dict = story_dock_plugin_dict # add there other dicts with built-in docks 
+        if dock_type is self.DockTypes.WriteTabDock:
+            self._default_dock = "properties-dock" 
+            write_tab_dock_plugin_dict = cfg.gui_plugins.write_tab_dock_plugin_dict
+            self. dock_type_dict = write_tab_dock_plugin_dict # add there other dicts with built-in docks 
+            
+        if dock_type is self.DockTypes.WritePanelDock:
+            self._default_dock = "write-tree-dock" 
+            write_panel_dock_plugin_dict = cfg.gui_plugins.write_panel_dock_plugin_dict
+            self.dock_type_dict = write_panel_dock_plugin_dict # add there other dicts with built-in docks 
 
     def split_dock(self, dock):
         '''
@@ -56,7 +66,7 @@ class DockSystem(QObject):
         :param dock:
         :param type_str:
         '''
-        gui_part = self.story_dock_type_dict[type_str]
+        gui_part = self.dock_type_dict[type_str]
         gui_part = gui_part()
         gui_part.sheet_id = self.sheet_id
         widget = gui_part.get_widget()
@@ -153,13 +163,13 @@ class DockTitleWidget(QWidget):
     
     @pyqtSlot()
     def on_addDockButton_clicked(self):
-        if self.parent_dock == none:
+        if self.parent_dock == None:
             return
         self.parent_dock.dock_system.split_dock(self.parent_dock)
         
     def fill_comboBox_with_types(self):
         #types_name_dict = {}
-        gui_parts = self.parent_dock.dock_system.story_dock_type_dict.values()
+        gui_parts = self.parent_dock.dock_system.dock_type_dict.values()
         for part in gui_parts:
             #types_name_dict[part.dock_displayed_name] = part.dock_name
             self.ui.comboBox.addItem(part.dock_displayed_name, userData=part.dock_name)

@@ -22,8 +22,9 @@ class Plugins():
 
         super(Plugins, self).__init__()
     
-        self.story_dock_plugin_dict = {}
-    
+        self.write_tab_dock_plugin_dict = {}
+        self.write_panel_dock_plugin_dict = {}
+
         # Build the manager
         self._plugin_manager = PluginManager()
         # List all sub-directories of "plugins"
@@ -40,12 +41,13 @@ class Plugins():
         # Define the various categories corresponding to the different
         # kinds of plugins you have defined
         self._plugin_manager.setCategoriesFilter({
-                                                 "GuiStoryDockPlugin" : GuiStoryDockPlugin
+                                                 "GuiWriteTabDockPlugin" : GuiWriteTabDockPlugin, 
+                                                 "GuiWritePanelDockPlugin" : GuiWritePanelDockPlugin 
                                                  })
 
         self._plugin_manager.collectPlugins()
         
-        self.load_plugins(["GuiStoryDockPlugin"])
+        self.load_plugins(["GuiWriteTabDockPlugin",  "GuiWritePanelDockPlugin"])
 
 
             
@@ -59,16 +61,19 @@ class Plugins():
             for pluginInfo in self._plugin_manager.getPluginsOfCategory(category):
                 setattr(self, pluginInfo.plugin_object.gui_class().__name__ \
                         , pluginInfo.plugin_object.gui_class())
-                if category is "GuiStoryDockPlugin":
-                    self.story_dock_plugin_dict[pluginInfo.plugin_object.gui_class().dock_name] \
+                if category is "GuiWriteTabDockPlugin":
+                    self.write_tab_dock_plugin_dict[pluginInfo.plugin_object.gui_class().dock_name] \
+                    = pluginInfo.plugin_object.gui_class()
+                if category is "GuiWritePanelDockPlugin":
+                    self.write_panel_dock_plugin_dict[pluginInfo.plugin_object.gui_class().dock_name] \
                     = pluginInfo.plugin_object.gui_class()
 
         
     
     
-class GuiStoryDockPlugin(IPlugin):
+class GuiWriteTabDockPlugin(IPlugin):
     '''
-    GuiStoryDockPlugin
+    GuiWriteTabDockPlugin
     '''
 
     def __init__(self):
@@ -76,7 +81,22 @@ class GuiStoryDockPlugin(IPlugin):
         Constructor
         '''
 
-        super(GuiStoryDockPlugin, self).__init__()
+        super(GuiWriteTabDockPlugin, self).__init__()
+
+
+
+class GuiWritePanelDockPlugin(IPlugin):
+    '''
+    GuiWriteTabDockPlugin
+    '''
+
+    def __init__(self):
+        '''
+        Constructor
+        '''
+
+        super(GuiWritePanelDockPlugin, self).__init__()
+
 
 
 

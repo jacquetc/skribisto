@@ -44,6 +44,8 @@ class Project(object):
         cfg.data.db = new_db
         cfg.data.main_tree.db = new_db
         
+        subscriber.announce_update("data.tree")
+        
     def load(self, path):
         pass
         

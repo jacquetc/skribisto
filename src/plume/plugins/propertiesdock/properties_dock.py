@@ -8,7 +8,7 @@ from gui import plugins as gui_plugins
 from core import cfg as core_cfg
 from PyQt5.Qt import pyqtSlot
 
-class PropertiesDockPlugin(core_plugins.CoreStoryDockPlugin, gui_plugins.GuiStoryDockPlugin):
+class PropertiesDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
     '''
     PropertiesDockPlugin
     '''

@@ -6,7 +6,7 @@ Created on 6 mai 2015
 
 from . import subscriber, cfg
 import imp
-import os
+import os,  sys
 from yapsy.PluginManager import PluginManager
 from yapsy.IPlugin import IPlugin
 import importlib
@@ -23,24 +23,31 @@ class Plugins():
 
         super(Plugins, self).__init__()
         
-        self.story_dock_plugin_dict = {}
-            
+        self.write_tab_dock_plugin_dict = {}
+        self. write_panel_dock_plugin_dict = {}
+        
         # Build the manager
         self._plugin_manager = PluginManager()
+        # List all sub-directories of "plugins"
+        plugin_path = os.path.sep.join([os.getcwd(), "plugins"])
+        plugin_places = [plugin_path]
+        for dirname, dirnames, filenames in os.walk(plugin_path):
+            # print path to all subdirectories first.
+            for subdirname in dirnames:
+                plugin_places.append(os.path.join(dirname, subdirname))
         # Tell it the default place(s) where to find plugins
-        self._plugin_manager.setPluginPlaces([os.path.sep.join([os.getcwd(), "plugins"])
-                                        , "/home/cyril/Devel/workspace_eclipse/plume-creator/src/plugins/"
-                                        , "/home/cyril/Devel/workspace_eclipse/plume-creator/src/plume/plugins/"])
-        #print(os.path.sep.join([os.getcwd(), "plugins"]))
+        self._plugin_manager.setPluginPlaces(plugin_places)
+        sys.path.append(plugin_path)
         # Define the various categories corresponding to the different
         # kinds of plugins you have defined
         self._plugin_manager.setCategoriesFilter({
-                                                 "CoreStoryDockPlugin" : CoreStoryDockPlugin
+                                                 "CoreWriteTabDockPlugin" : CoreWriteTabDockPlugin, 
+                                                 "CoreWritePanelDockPlugin" : CoreWritePanelDockPlugin
                                                  })
 
         self._plugin_manager.collectPlugins()
         
-        self.load_plugins(["CoreStoryDockPlugin"])
+        self.load_plugins(["CoreWriteTabDockPlugin", "CoreWritePanelDockPlugin" ])
 
 
             
@@ -54,17 +61,20 @@ class Plugins():
                 setattr(self, pluginInfo.plugin_object.core_class().__name__ \
                         , pluginInfo.plugin_object.core_class())
         
-                if category is "CoreStoryDockPlugin":
-                    self.story_dock_plugin_dict[pluginInfo.plugin_object.core_class().dock_name] \
+                if category is "CoreWriteTabDockPlugin":
+                    self.write_tab_dock_plugin_dict[pluginInfo.plugin_object.core_class().dock_name] \
+                    = pluginInfo.plugin_object.core_class()
+                if category is "CoreWritePanelDockPlugin":
+                    self.write_panel_dock_plugin_dict[pluginInfo.plugin_object.core_class().dock_name] \
                     = pluginInfo.plugin_object.core_class()
                     
 
         
     
     
-class CoreStoryDockPlugin(IPlugin):
+class CoreWriteTabDockPlugin(IPlugin):
     '''
-    CoreStoryDockPlugin
+    CoreWriteTabDockPlugin
     '''
 
     def __init__(self):
@@ -72,7 +82,23 @@ class CoreStoryDockPlugin(IPlugin):
         Constructor
         '''
 
-        super(CoreStoryDockPlugin, self).__init__()
+        super(CoreWriteTabDockPlugin, self).__init__()
+
+
+
+
+   
+class CoreWritePanelDockPlugin(IPlugin):
+    '''
+    CoreWritePanelDockPlugin
+    '''
+
+    def __init__(self):
+        '''
+        Constructor
+        '''
+
+        super(CoreWritePanelDockPlugin, self).__init__()
 
 
 

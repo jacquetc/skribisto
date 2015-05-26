@@ -35,7 +35,6 @@ class SubWindow(QMainWindow):
 
 from PyQt5.QtWidgets import QTabWidget
 from .docks import DockTemplate, DockSystem
-from .story_tree import StoryTreeView
 from .window_system import WindowSystemController
 
 class WritePanel(SubWindow, WindowSystemController):
@@ -51,20 +50,13 @@ class WritePanel(SubWindow, WindowSystemController):
         
         self.setWindowTitle("Write")
         self.setObjectName("write_sub_window")
-
+        self.dock_system = DockSystem(self, self,  DockSystem.DockTypes.WritePanelDock)
 
         #connect core signal to open sheets :
         cfg.core.tree_sheet_manager.sheet_is_opening.connect(self.open_write_tab)
         
         # Project tree view dock :
-        tree_view = StoryTreeView()
-        tree_view.setModel(cfg.core.story_tree_model)
-        
-        dock = DockTemplate(self)
-        dock.setWindowTitle(_("Project"))
-        dock.setWidget(tree_view) 
-        
-        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        self.dock_system.add_dock("write-tree-dock",  Qt.LeftDockWidgetArea)
         
         #set TabWidget:
         self.tab_widget = QTabWidget(self)
@@ -96,7 +88,7 @@ class WriteTab(SubWindow):
         self._tree_sheet = None
         self.tab_title = "Error"
         
-        self.dock_system = DockSystem(self, self)
+        self.dock_system = DockSystem(self, self, DockSystem.DockTypes.WriteTabDock )
         
         self.setWindowTitle("WriteTab")
         self.writing_zone = WritingZone(self)

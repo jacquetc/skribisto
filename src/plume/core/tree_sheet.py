@@ -47,7 +47,7 @@ class TreeSheet(QObject):
         #dict of class in waiting to be instantiated on demand
         self._class_to_instanciate_dict = {}
         # fill it with plugins
-        self._class_to_instanciate_dict = cfg.core_plugins.story_dock_plugin_dict
+        self._class_to_instanciate_dict = cfg.core_plugins.write_tab_dock_plugin_dict
         
         self._subscribe_to_data()
             

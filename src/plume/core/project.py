@@ -23,7 +23,6 @@ class Project():
     @pyqtSlot()
     def load_test_project(self):
         cfg.data.project.load_test_project_db()
-        cfg.core.story_tree_model.reset_model()
         #subscriber.announce_update()        
 
     @pyqtSlot(str)

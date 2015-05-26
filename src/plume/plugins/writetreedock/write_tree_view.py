@@ -4,18 +4,18 @@ Created on 8 mai 2015
 @author:  Cyril Jacquet
 '''
 from PyQt5.QtWidgets import QTreeView, QMenu
-from . import cfg
+from gui import cfg
 
-class StoryTreeView(QTreeView):
+class WriteTreeView(QTreeView):
     '''
-    StoryTreeView
+    WriteTreeView
     '''
 
     def __init__(self, parent=None):
         '''
         Constructor
         '''
-        super(StoryTreeView, self).__init__(parent=None)
+        super(WriteTreeView, self).__init__(parent=None)
         
         self._old_index = None
         
