@@ -6,9 +6,9 @@ Created on 13 mai 2015
 
 from PyQt5.QtWidgets import QTextEdit, QMenu, QGraphicsView, QGraphicsScene,\
     QGraphicsItem
-from PyQt5.QtCore import pyqtSlot, Qt, pyqtSignal
+from PyQt5.QtCore import pyqtSlot, Qt, pyqtSignal,  QPoint
 from PyQt5.QtWidgets import QOpenGLWidget
-from PyQt5.QtGui import QPainter, QPen
+from PyQt5.QtGui import QPainter, QPen, QTextCursor
 from PyQt5.Qt import QRectF
 
 class Minimap2(QGraphicsView):
@@ -37,16 +37,46 @@ class Minimap2(QGraphicsView):
         
         #cursor:
         self._nav_cursor = Cursor()
+        self._nav_cursor.graphics_view = self
         self._scene.addItem(self._nav_cursor)
         self._nav_cursor.setZValue(1)
         
         self._text_edit = None
+        self._minimap_doc = None
+        self._doc = None
         
         self._graphics_proxy_text_browser = self._scene.addWidget(self._text_browser)
         self._scale = 0.2
         self._graphics_proxy_text_browser.setScale(self._scale)
         
+    def update_minimap_doc(self, position, charsRemoved, charsAdded):
         
+        def select_blocks(first_block,  last_block):
+            first_block_pos = first_block.position()
+            doc_cursor.setPosition(first_block_pos)
+            last_block_pos = last_block.position()
+            doc_cursor.setPosition(last_block_pos,  QTextCursor.KeepAnchor)
+            doc_cursor.movePosition(QTextCursor.EndOfBlock,  QTextCursor.KeepAnchor)
+            print("selected text :" ,  doc_cursor.selectedText())
+            return doc_cursor.selectedText()
+            
+        doc_cursor  = QTextCursor(self._doc)
+        minimap_cursor = QTextCursor(self._minimap_doc)
+        
+        
+        #IF one same block is modified
+        if self._minimap_doc.blockCount() == self._doc.blockCount() :
+            doc_cursor.setPosition(position)
+            doc_cursor.select(QTextCursor.BlockUnderCursor)
+            minimap_cursor.setPosition(position)
+            minimap_cursor.select(QTextCursor.BlockUnderCursor)
+            minimap_cursor.insertFragment(doc_cursor.selection())
+        #TODO: if the doc is modified on more than one block but resulting in the same count of blocks (right now only the first block would be updated)
+        else :
+        #ELSE
+            doc_cursor.select(QTextCursor.Document)
+            minimap_cursor.select(QTextCursor.Document)
+            minimap_cursor.insertFragment(doc_cursor.selection())
         
     @property
     def text_edit(self):
@@ -63,21 +93,26 @@ class Minimap2(QGraphicsView):
 
         self.setFixedWidth(self._text_edit.width() * self._scale)
         
-        self._text_browser.setDocument(self._text_edit.document())       
+        self._doc = self._text_edit.document()
+        self._minimap_doc = self._doc.clone(self)
+        
+        self._doc.contentsChange.connect(self.update_minimap_doc)
+        
+        self._text_browser.setDocument(self._minimap_doc)   
      
         
         #connect scrollbar
         baseScrollBar = self._text_edit.verticalScrollBar()
         baseScrollBar.rangeChanged.connect(self._set_scrollBar_range)
-        baseScrollBar.valueChanged.connect(self._text_browser.verticalScrollBar().setValue)         
+        #baseScrollBar.valueChanged.connect(self._text_browser.verticalScrollBar().setValue)         
         self._text_browser.verticalScrollBar().valueChanged.connect(baseScrollBar.setValue)        
         self._text_browser.verticalScrollBar().hide()
         
         
       
         #set cursor:
-        self._text_browser.verticalScrollBar().valueChanged.connect(self.set_nav_cursor_y)
-                                                                    
+        #self._text_browser.verticalScrollBar().valueChanged.connect(self._set_nav_cursor_y)
+        baseScrollBar.valueChanged.connect(self._set_nav_cursor_y)                               
                                                                     
     @pyqtSlot()
     def update(self):
@@ -91,14 +126,22 @@ class Minimap2(QGraphicsView):
         pass 
     
     @pyqtSlot('int')
-    def set_nav_cursor_y(self, value):
-        self._nav_cursor.setY(value)
+    def _set_nav_cursor_y(self, value):
+        sc_bar = self._text_edit.verticalScrollBar()
+        max = sc_bar.maximum()
+        print(self._doc.size().height())
+        if max == 0:
+            self._nav_cursor.setY(0)
+            return
+        ratio = value / max
+        self._nav_cursor.setY( self._doc.size().height()* self._scale * ratio)
      
     @pyqtSlot('QSize')
     def update_size(self, size):
         self.setFixedWidth(self._text_edit.width() * self._scale)
         
     def resizeEvent(self, event):
+        cursor = QTextCursor(self._text_edit.cursorForPosition(QPoint(0, 0)))
         
 
 
@@ -109,7 +152,10 @@ class Minimap2(QGraphicsView):
                                                               , event.size().height() / self._scale))
         self.setSceneRect(0, 0, event.size().width(), event.size().height())
         self._nav_cursor.set_width(event.size().width())
-        self._nav_cursor.set_height(self._text_edit.height() * self._scale)
+        
+        # cursor height :
+        
+        self._nav_cursor.set_height((self._text_edit.viewport().height() - 1)  * self._scale)
         #return QGraphicsView.resizeEvent(self, event)    
 
     def _set_scrollBar_range(self, min_, max_):
