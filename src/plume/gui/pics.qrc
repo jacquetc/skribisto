@@ -100,5 +100,11 @@
         <file>pics/48x48/accessories-text-editor.png</file>
         <file>pics/48x48/scribus.png</file>
         <file>pics/48x48/system-file-manager.png</file>
+        <file>pics/48x48/format-fill-color.png</file>
+        <file>pics/48x48/preferences-plugin.png</file>
+        <file>pics/48x48/preferences-system-time.png</file>
+        <file>pics/48x48/story-editor.png</file>
+        <file>pics/48x48/tools-check-spelling.png</file>
+        <file>pics/48x48/tools-wizard.png</file>
     </qresource>
 </RCC>

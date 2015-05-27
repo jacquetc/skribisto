@@ -5,17 +5,15 @@ Created on 25 avr. 2015
 @author: Cyril Jacquet
 '''
 
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup, QLabel, \
-                             QHBoxLayout, QVBoxLayout, QPushButton, QAction, \
-                             QToolBar, QMenuBar)
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QObject, Qt
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,  \
+                             QHBoxLayout)
+from PyQt5.QtCore import Qt
 from .window_system import WindowSystemController
 from .sub_window import WritePanel, BinderPanel
-from PyQt5.Qt import QToolButton
+from PyQt5.Qt import QToolButton, pyqtSlot
 from . import cfg
 from .main_window_ui import Ui_MainWindow
+from .preferences import Preferences
 
 class MainWindow(QMainWindow, WindowSystemController):
 
@@ -77,7 +75,13 @@ class MainWindow(QMainWindow, WindowSystemController):
 
         # menu bar actions
         self.ui.actionOpen_test_project.triggered.connect(cfg.core.project.open_test_project)
-
+        self.ui.actionPreferences.triggered.connect(self.launch_preferences)
+        
+    @pyqtSlot()
+    def launch_preferences(self):
+        pref = Preferences(self)
+        pref.exec_()
+        
 
 class SubWindow(QMainWindow):
 
