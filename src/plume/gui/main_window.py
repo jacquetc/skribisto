@@ -82,16 +82,13 @@ class MainWindow(QMainWindow, WindowSystemController):
         
         project_menu = QMenu("Project", self)
         
-        open_project_act = QAction("&Open project",self)
+        open_project_act = QAction("&Open test project",self)
         open_project_act.triggered.connect(cfg.core.project.load_test_project)
         project_menu.addAction(open_project_act)
         
         menu_bar.addMenu(project_menu)
 
-        #cfg.core.subscriber.subscribe_update_func(self.rrrrr)
-        
-    #def rrrrr(self):
-        #print("rrrr")
+
 
 
 class SubWindow(QMainWindow):

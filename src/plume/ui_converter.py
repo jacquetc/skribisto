@@ -24,7 +24,7 @@ def build_forms(srcdir, info=None, summary=False):
     from PyQt5.uic import compileUi
     import datetime
 
-    pat = re.compile(r'''(['"]):/images/([^'"]+)\1''')
+
     def sub(match):
         ans = 'I(%s%s%s)'%(match.group(1), match.group(2), match.group(1))
         return ans
@@ -46,12 +46,12 @@ def build_forms(srcdir, info=None, summary=False):
             buf = StringIO()
             compileUi(form, buf)
             dat = buf.getvalue()
-            dat = dat.replace('import images_rc', '')
+            #dat = dat.replace('import pics_rc', '')
             dat = transdef_pat.sub('', dat)
             dat = transpat.sub(r'_("\1")', dat)
             dat = dat.replace('_("MMM yyyy")', '"MMM yyyy"')
             dat = dat.replace('_("d MMM yyyy")', '"d MMM yyyy"')
-            dat = pat.sub(sub, dat)
+            dat = dat.replace('"pics/', '":/pics/')
 
             open(compiled_form, 'w').write(dat)
             num += 1

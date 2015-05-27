@@ -4,7 +4,7 @@ Created on 3 mars 2015
 @author: cyril
 '''
 from PyQt5.Qt import QObject
-from . import cfg, plugins
+from . import cfg, plugins,  pics_rc
 
 
 class Gui(QObject):

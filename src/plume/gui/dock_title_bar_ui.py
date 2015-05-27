@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eclipse/plume-creator/src/plume/gui/dock_title_bar.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eric/plume-creator/src/plume/gui/dock_title_bar.ui'
 #
 # Created by: PyQt5 UI code generator 5.4.1
 #
@@ -31,6 +31,11 @@ class Ui_DockTitleBar(object):
         self.displayOptionsButton.setObjectName("displayOptionsButton")
         self.horizontalLayout.addWidget(self.displayOptionsButton)
         self.addDockButton = QtWidgets.QToolButton(DockTitleBar)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/pics/32x32/list-add.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.addDockButton.setIcon(icon)
+        self.addDockButton.setCheckable(False)
+        self.addDockButton.setAutoRepeat(False)
         self.addDockButton.setAutoRaise(True)
         self.addDockButton.setObjectName("addDockButton")
         self.horizontalLayout.addWidget(self.addDockButton)
