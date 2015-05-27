@@ -92,5 +92,13 @@
         <file>pics/16x16/tree/tree-chapter.png</file>
         <file>pics/16x16/tree/tree-scene.png</file>
         <file>pics/16x16/tree/tree-trash.png</file>
+        <file>pics/16x16/document-print-direct.png</file>
+        <file>pics/16x16/document-properties.png</file>
+        <file>pics/16x16/document-save-all.png</file>
+        <file>pics/16x16/document-save-as.png</file>
+        <file>pics/16x16/document-save.png</file>
+        <file>pics/48x48/accessories-text-editor.png</file>
+        <file>pics/48x48/scribus.png</file>
+        <file>pics/48x48/system-file-manager.png</file>
     </qresource>
 </RCC>

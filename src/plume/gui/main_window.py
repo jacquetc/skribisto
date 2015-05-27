@@ -15,6 +15,7 @@ from .window_system import WindowSystemController
 from .sub_window import WritePanel, BinderPanel
 from PyQt5.Qt import QToolButton
 from . import cfg
+from .main_window_ui import Ui_MainWindow
 
 class MainWindow(QMainWindow, WindowSystemController):
 
@@ -24,6 +25,8 @@ class MainWindow(QMainWindow, WindowSystemController):
 
 
     def init_ui(self):
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
         self.setWindowTitle("Plume Creator")
 
         widget = QWidget()
@@ -57,10 +60,9 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.write_sub_window = WritePanel(parent=self, parent_window_system_controller=self \
                                                )       
         self.attach_sub_window(self.write_sub_window)
-        write_action = QAction("Write", self)
-        write_action.setProperty("sub_window_object_name", "write_sub_window")
-        self.add_action_to_window_system(write_action)
-        self._sub_window_action_group.addAction(write_action)
+        self.ui.actionWrite.setProperty("sub_window_object_name", "write_sub_window")
+        self.add_action_to_window_system(self.ui.actionWrite)
+        self._sub_window_action_group.addAction(self.ui.actionWrite)
         
 
         ##binder window
@@ -69,24 +71,16 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.binder_sub_window.setWindowTitle("Binder")
         self.binder_sub_window.setObjectName("binder_sub_window")
         self.attach_sub_window(self.binder_sub_window)
-        binder_action = QAction("Binder", self)
-        binder_action.setProperty("sub_window_object_name", "binder_sub_window")
-        self.add_action_to_window_system(binder_action)       
-        self._sub_window_action_group.addAction(binder_action)
+        self.ui.actionBinder.setProperty("sub_window_object_name", "binder_sub_window")
+        self.add_action_to_window_system(self.ui.actionBinder)       
+        self._sub_window_action_group.addAction(self.ui.actionBinder)
         
 
 
-        # menu bar
-        menu_bar = self.menuBar()
-        
-        
-        project_menu = QMenu("Project", self)
-        
-        open_project_act = QAction("&Open test project",self)
-        open_project_act.triggered.connect(cfg.core.project.load_test_project)
-        project_menu.addAction(open_project_act)
-        
-        menu_bar.addMenu(project_menu)
+        # menu bar actions
+        self.ui.actionOpen_test_project.triggered.connect(cfg.core.project.open_test_project)
+
+
 
 
 
@@ -142,13 +136,10 @@ class SubWindowStack(QStackedWidget,WindowSystemParentWidget):
 
 from .window_system import WindowSystemActionHandler
 from PyQt5.QtWidgets import QToolButton, QMenu
+from PyQt5.QtCore import QSize
 
 class SideBar(QWidget, WindowSystemActionHandler):
 
-    
-    
-    
-    
     #detach_signal = QtCore.pyqtSignal(QMainWindow)
 
     
@@ -237,21 +228,9 @@ class SideBar(QWidget, WindowSystemActionHandler):
             action.toggled.connect(self.action_toggled_slot)
             
             button = SideBarButton(self, action)
+            button.setIconSize(QSize(48, 48))
             self.side_bar_button_list.append(button)
             self.sub_window_buttons_layout.addWidget(button)
             self.side_bar_button_list.append(button)
-        
-
-
-            
-            
-class TestforSideBar(QObject):
-
-    def __init__(self, parent=None):
-        super(SideBar, self).__init__(parent)
-
-        self.action = QAction(QIcon('test'), 'Test', self)
-        self.action.setProperty('linked_widget', )
-        
 
 

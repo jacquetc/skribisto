@@ -21,7 +21,7 @@ class Project():
         self._project_path = None
         
     @pyqtSlot()
-    def load_test_project(self):
+    def open_test_project(self):
         cfg.data.project.load_test_project_db()
         #subscriber.announce_update()        
 

@@ -67,3 +67,6 @@ target/
 #cx_Freeze
 build/
 build
+
+#gedit
+*~
