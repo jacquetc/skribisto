@@ -14,6 +14,7 @@ from PyQt5.Qt import QToolButton, pyqtSlot
 from . import cfg
 from .main_window_ui import Ui_MainWindow
 from .preferences import Preferences
+from .start_window import StartWindow
 
 class MainWindow(QMainWindow, WindowSystemController):
 
@@ -76,10 +77,17 @@ class MainWindow(QMainWindow, WindowSystemController):
         # menu bar actions
         self.ui.actionOpen_test_project.triggered.connect(cfg.core.project.open_test_project)
         self.ui.actionPreferences.triggered.connect(self.launch_preferences)
+        self.ui.actionStart_window.triggered.connect(self.launch_start_window)
+
         
     @pyqtSlot()
     def launch_preferences(self):
         pref = Preferences(self)
+        pref.exec_()
+        
+    @pyqtSlot()
+    def launch_start_window(self):
+        pref = StartWindow(self)
         pref.exec_()
         
 

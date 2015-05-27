@@ -32,7 +32,7 @@
      <string>Project</string>
     </property>
     <addaction name="actionNew_project"/>
-    <addaction name="actionProject_manager"/>
+    <addaction name="actionStart_window"/>
     <addaction name="actionOpen_test_project"/>
     <addaction name="actionOpen"/>
     <addaction name="separator"/>
@@ -80,7 +80,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionPreferences"/>
-   <addaction name="actionProject_manager"/>
+   <addaction name="actionStart_window"/>
    <addaction name="actionOpen_test_project"/>
    <addaction name="actionSave"/>
   </widget>
@@ -179,13 +179,13 @@
     <string>New project</string>
    </property>
   </action>
-  <action name="actionProject_manager">
+  <action name="actionStart_window">
    <property name="icon">
     <iconset>
      <normaloff>pics/16x16/go-home.png</normaloff>pics/16x16/go-home.png</iconset>
    </property>
    <property name="text">
-    <string>Project manager</string>
+    <string>Start window</string>
    </property>
   </action>
   <action name="actionAbout_Plume_Creator">
