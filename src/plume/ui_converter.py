@@ -22,7 +22,7 @@ def build_forms(srcdir, info=None, summary=False):
     import re
     from io import StringIO
     from PyQt5.uic import compileUi
-    import datetime
+    
 
 
     def sub(match):
@@ -46,7 +46,7 @@ def build_forms(srcdir, info=None, summary=False):
             buf = StringIO()
             compileUi(form, buf)
             dat = buf.getvalue()
-            #dat = dat.replace('import pics_rc', '')
+            dat = dat.replace('import pics_rc', '')
             dat = transdef_pat.sub('', dat)
             dat = transpat.sub(r'_("\1")', dat)
             dat = dat.replace('_("MMM yyyy")', '"MMM yyyy"')
