@@ -70,3 +70,7 @@ build
 
 #gedit
 *~
+
+#eric6
+.eric6project
+*.e4p
