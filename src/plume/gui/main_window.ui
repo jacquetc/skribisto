@@ -6,12 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1197</width>
+    <height>766</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Plume Creator</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>pics/plume-creator.png</normaloff>pics/plume-creator.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
@@ -19,7 +23,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1197</width>
      <height>25</height>
     </rect>
    </property>
@@ -34,6 +38,8 @@
     <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="actionSave_as"/>
+    <addaction name="separator"/>
+    <addaction name="actionPreferences"/>
     <addaction name="separator"/>
     <addaction name="actionPrint"/>
     <addaction name="separator"/>
@@ -73,6 +79,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionPreferences"/>
    <addaction name="actionProject_manager"/>
    <addaction name="actionOpen_test_project"/>
    <addaction name="actionSave"/>
@@ -206,6 +213,15 @@
    </property>
    <property name="text">
     <string>Print</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="icon">
+    <iconset>
+     <normaloff>pics/16x16/preferences-system.png</normaloff>pics/16x16/preferences-system.png</iconset>
+   </property>
+   <property name="text">
+    <string>Preferences</string>
    </property>
   </action>
  </widget>

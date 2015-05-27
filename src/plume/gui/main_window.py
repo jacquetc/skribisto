@@ -27,7 +27,6 @@ class MainWindow(QMainWindow, WindowSystemController):
     def init_ui(self):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle("Plume Creator")
 
         widget = QWidget()
         layout = QHBoxLayout()
@@ -44,7 +43,6 @@ class MainWindow(QMainWindow, WindowSystemController):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-        self.resize(900, 500)
         
      
         
@@ -75,14 +73,10 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.add_action_to_window_system(self.ui.actionBinder)       
         self._sub_window_action_group.addAction(self.ui.actionBinder)
         
-
+        self.ui.actionWrite.trigger()
 
         # menu bar actions
         self.ui.actionOpen_test_project.triggered.connect(cfg.core.project.open_test_project)
-
-
-
-
 
 
 class SubWindow(QMainWindow):
@@ -135,8 +129,9 @@ class SubWindowStack(QStackedWidget,WindowSystemParentWidget):
 
 
 from .window_system import WindowSystemActionHandler
-from PyQt5.QtWidgets import QToolButton, QMenu
+from PyQt5.QtWidgets import QToolButton, QMenu,  QSizePolicy
 from PyQt5.QtCore import QSize
+from .side_bar_ui import Ui_SideBar
 
 class SideBar(QWidget, WindowSystemActionHandler):
 
@@ -145,15 +140,11 @@ class SideBar(QWidget, WindowSystemActionHandler):
     
     def __init__(self, parent=None):
         super(SideBar, self).__init__(parent)
-
-        self.side_bar_button_list = []
-
-        layout = QVBoxLayout()
-        self.sub_window_buttons_layout = QVBoxLayout()
+        self.ui = Ui_SideBar()
+        self.ui.setupUi(self)
         
-
-        layout.addLayout(self.sub_window_buttons_layout)
-        self.setLayout(layout)
+        self.side_bar_button_list = []
+        
         
 
     def onDetachClicked(self):
@@ -230,7 +221,7 @@ class SideBar(QWidget, WindowSystemActionHandler):
             button = SideBarButton(self, action)
             button.setIconSize(QSize(48, 48))
             self.side_bar_button_list.append(button)
-            self.sub_window_buttons_layout.addWidget(button)
+            self.ui.actionLayout.addWidget(button)
             self.side_bar_button_list.append(button)
 
 
