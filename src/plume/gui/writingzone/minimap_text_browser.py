@@ -4,10 +4,9 @@ Created on 13 mai 2015
 @author: cyril
 '''
 
-from PyQt5.QtWidgets import QTextEdit, QMenu, QGraphicsView, QGraphicsScene,\
+from PyQt5.QtWidgets import QTextEdit, QGraphicsView, QGraphicsScene,\
     QGraphicsItem
-from PyQt5.QtCore import pyqtSlot, Qt, pyqtSignal,  QPoint
-from PyQt5.QtWidgets import QOpenGLWidget
+from PyQt5.QtCore import pyqtSlot, Qt, pyqtSignal,  QPoint    
 from PyQt5.QtGui import QPainter, QPen, QTextCursor
 from PyQt5.Qt import QRectF
 
@@ -29,7 +28,14 @@ class Minimap2(QGraphicsView):
         self._text_browser = TextBrowser()
         self._scrollbar = None
         self.setAutoFillBackground(True)
-        self.setViewport(QOpenGLWidget())
+        
+        try:
+            from PyQt5.QtWidgets import QOpenGLWidget
+            self.setViewport(QOpenGLWidget())
+        except ImportError: # work around for pyQt 5.2 
+            from PyQt5.QtOpenGL import QGLWidget
+            self.setViewport(QGLWidget())             
+            
         self.setScene(self._scene)
         self.setAlignment(Qt.AlignTop)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
