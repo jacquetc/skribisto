@@ -27,15 +27,19 @@ includes = [ "PyQt5.QtCore",
 #            "PyQt5.Qt",
             "PyQt5.QtGui",
             "PyQt5.Qt",
-            "sip"
+            "sip", 
+            "yapsy"
             ]  # nommer les modules non trouves par cx_freeze
-excludes = ["PyQt5.QtNetwork"
-            "PyQt5.QtSvg",
-            "PyQt5.QtXml",
-            "PyQt5.QtTest",
-            "PyQt5.Enginio",
-            "PyQt5.DBus",
-            "PyQt5.Multimedia"
+excludes = [
+#            "PyQt5.QtNetwork", 
+#            "PyQt5.QtSvg",
+#            "PyQt5.QtXml",
+#            "PyQt5.QtTest",
+#            "PyQt5.Enginio",
+#            "PyQt5.DBus",
+#            "PyQt5.Qsci",
+#            "PyQt5.QtWebKit",
+#            "PyQt5.Multimedia"
             
            # "PyQt5.",
             ]
@@ -43,8 +47,8 @@ packages = []  # nommer les packages utilises
  
 
 # copier les fichiers non-Python et/ou repertoires et leur contenu:
-includefiles = []
- 
+includefiles = ["src/plume/plugins", "resources" ]
+
 if sys.platform == "win32":
     pass
     # includefiles += [...] : ajouter les recopies specifiques à Windows
@@ -115,7 +119,7 @@ exe = Executable(
    compress = True,
    appendScriptToExe = True,
    appendScriptToLibrary = True,
-   icon = None # if you want to use an icon file, specify the file name here
+   icon = "resources/plume-creator.png" # if you want to use an icon file, specify the file name here
 )
 
 
