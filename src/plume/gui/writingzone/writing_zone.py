@@ -6,7 +6,7 @@ from .writing_zone_ui import Ui_WritingZone
 class WritingZone(QWidget):
     
     def __init__(self, parent=None):
-        super(QWidget, self).__init__(parent=parent)
+        super(WritingZone, self).__init__(parent=parent)
         self.ui = Ui_WritingZone()
         self.ui.setupUi(self)
         #self.ui.minimap_old.text_edit = self.ui.richTextEdit
@@ -27,7 +27,18 @@ class WritingZone(QWidget):
         
         self.has_minimap = False
         self.has_scrollbar = False
-    
+        
+        
+        
+        self.ui.toolBar.action_list = [self.ui.actionCopy, 
+                                                    self.ui.actionCut, 
+                                                    self.ui.actionPaste, 
+                                                    self.ui.actionBold, 
+                                                    self.ui.actionStrikethrough, 
+                                                    self.ui.actionUnderline, 
+                                                    self.ui.actionPrint_directly, 
+                                                    ]
+        
     def set_rich_text(self, text):
         self.ui.richTextEdit.setText(text)
    

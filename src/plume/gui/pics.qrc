@@ -106,5 +106,22 @@
         <file>pics/48x48/story-editor.png</file>
         <file>pics/48x48/tools-check-spelling.png</file>
         <file>pics/48x48/tools-wizard.png</file>
+        <file>pics/32x32/document-print-direct.png</file>
+        <file>pics/32x32/edit-cut.png</file>
+        <file>pics/32x32/edit-find-replace.png</file>
+        <file>pics/32x32/edit-paste.png</file>
+        <file>pics/32x32/edit-redo.png</file>
+        <file>pics/32x32/edit-undo.png</file>
+        <file>pics/32x32/format-indent-less.png</file>
+        <file>pics/32x32/format-indent-more.png</file>
+        <file>pics/32x32/format-list-ordered.png</file>
+        <file>pics/32x32/format-list-unordered.png</file>
+        <file>pics/32x32/format-text-bold.png</file>
+        <file>pics/32x32/format-text-italic.png</file>
+        <file>pics/32x32/format-text-strikethrough.png</file>
+        <file>pics/32x32/format-text-underline.png</file>
+        <file>pics/32x32/insert-image.png</file>
+        <file>pics/32x32/insert-link.png</file>
+        <file>pics/32x32/edit-copy.png</file>
     </qresource>
 </RCC>

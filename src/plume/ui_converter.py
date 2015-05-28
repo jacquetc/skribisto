@@ -52,6 +52,8 @@ def build_forms(srcdir, info=None, summary=False):
             dat = dat.replace('_("MMM yyyy")', '"MMM yyyy"')
             dat = dat.replace('_("d MMM yyyy")', '"d MMM yyyy"')
             dat = dat.replace('"pics/', '":/pics/')
+            dat = dat.replace('"./pics/', '":/pics/')
+            dat = dat.replace('"../pics/', '":/pics/')
 
             open(compiled_form, 'w').write(dat)
             num += 1
