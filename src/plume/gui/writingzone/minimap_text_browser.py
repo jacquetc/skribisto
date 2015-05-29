@@ -125,8 +125,11 @@ class Minimap2(QGraphicsView):
             self._text_browser.setDocument(self._minimap_doc)   
             self._doc.contentsChange.connect(self.update_minimap_doc)
         else:
-            self.blockSignals(True)            
-            self._doc.contentsChange.disconnect(self.update_minimap_doc)
+            self.blockSignals(True)
+            try:           
+                self._doc.contentsChange.disconnect(self.update_minimap_doc)
+            except TypeError:
+                pass
 
     @pyqtSlot()
     def update(self):

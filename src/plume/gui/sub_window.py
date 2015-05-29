@@ -4,8 +4,7 @@ Created on 25 avr. 2015
 @author: Cyril Jacquet
 '''
 
-from PyQt5.QtWidgets import QMainWindow, QTreeView
-from PyQt5.QtWidgets import QDockWidget
+from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import Qt
 from . import cfg
 
@@ -94,6 +93,7 @@ class WriteTab(SubWindow):
         self.writing_zone = WritingZone(self)
         self.writing_zone.has_minimap = True
         self.writing_zone.has_scrollbar = True
+        self.writing_zone.is_resizable = True
         
         self.setCentralWidget(self.writing_zone)
         

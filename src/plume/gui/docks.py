@@ -176,7 +176,11 @@ class DockTitleWidget(QWidget):
     
     @pyqtSlot(int)    
     def on_comboBox_currentIndexChanged(self, index):
-        print(self.ui.comboBox.itemData(index, Qt.UserRole))
+        #print(self.ui.comboBox.itemData(index, Qt.UserRole))
         
+        if self.parent_dock == None:
+            return
+        dock_type = self.ui.comboBox.itemData(index, Qt.UserRole)
+        self.parent_dock.dock_system.change_type(self.parent_dock,  dock_type)        
         
         
