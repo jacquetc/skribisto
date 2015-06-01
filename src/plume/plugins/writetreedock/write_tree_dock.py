@@ -13,7 +13,7 @@ class WriteTreeDockPlugin(core_plugins.CoreWritePanelDockPlugin, gui_plugins.Gui
     '''
     WriteTreeDockPlugin
     '''
-
+    is_builtin_plugin = True
     def __init__(self):
         '''
         Constructor

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QGridLayout
+from PyQt5.QtWidgets import QWidget, QGridLayout,  QSizePolicy
 from ..cfg import core
 from .writing_zone_ui import Ui_WritingZone
 
@@ -27,13 +27,14 @@ class WritingZone(QWidget):
         
         self.has_minimap = False
         self.has_scrollbar = False
-        
-        
+        self.has_side_tool_bar = True        
+        self.is_resizable = False        
         
         self.ui.toolBar.action_list = [self.ui.actionCopy, 
                                                     self.ui.actionCut, 
                                                     self.ui.actionPaste, 
                                                     self.ui.actionBold, 
+                                                    self.ui.actionItalic, 
                                                     self.ui.actionStrikethrough, 
                                                     self.ui.actionUnderline, 
                                                     self.ui.actionPrint_directly, 
@@ -42,6 +43,9 @@ class WritingZone(QWidget):
     def set_rich_text(self, text):
         self.ui.richTextEdit.setText(text)
    
+    @property
+    def text_edit(self):
+        return self.ui.richTextEdit
 
     def _set_scrollBar_range(self, min_, max_):
 
@@ -77,3 +81,33 @@ class WritingZone(QWidget):
             self.ui.verticalScrollBar.show()            
         else:
             self.ui.verticalScrollBar.hide()
+            
+    @property
+    def has_side_tool_bar(self):
+        return self._has_side_tool_bar
+    
+    @has_side_tool_bar.setter
+    def has_side_tool_bar(self,  value):
+        self._has_side_tool_bar = value
+        if value is True:
+            self.ui.toolBar.show()            
+        else:
+            self.ui.toolBar.hide()
+            
+    @property
+    def is_resizable(self):
+        return self._has_size_handle
+    
+    @is_resizable.setter
+    def is_resizable(self,  value):
+        self._is_resizable = value
+        if value is True:
+            self.ui.sizeHandle.show()
+            self.ui.sizeHorizontalSpacer_left.show()
+            self.ui.sizeHorizontalSpacer_right.show()
+            self.ui.richTextEdit.setFixedWidth(500) #TODO: fetch value from settings file (use objectName)
+        else:
+            self.ui.sizeHandle.hide()
+            self.ui.sizeHorizontalSpacer_left.hide()
+            self.ui.sizeHorizontalSpacer_right.hide()
+            self.ui.richTextEdit.setFixedWidth(((1 << 24) - 1)) # workaround for QWIDGETSIZE_MAX

@@ -4,8 +4,7 @@ Created on 25 avr. 2015
 @author: Cyril Jacquet
 '''
 
-from PyQt5.QtWidgets import QMainWindow, QTreeView
-from PyQt5.QtWidgets import QDockWidget
+from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import Qt
 from . import cfg
 
@@ -71,9 +70,9 @@ class WritePanel(SubWindow, WindowSystemController):
         #temp for test:       
         new_write_tab.dock_system.add_dock("properties-dock")
         
-               
-from .writingzone.writing_zone import WritingZone
-       
+from PyQt5.QtWidgets import QWidget
+from .write_tab_ui import Ui_WriteTab
+  
 class WriteTab(SubWindow):
     '''
     Inner tab in the Write panel. Detachable
@@ -85,17 +84,22 @@ class WriteTab(SubWindow):
         '''
         super(WriteTab, self).__init__(parent=parent)
         
+        self.ui = Ui_WriteTab()
+        central_widget = QWidget()
+        self.ui.setupUi(central_widget)     
+        
+        
         self._tree_sheet = None
         self.tab_title = "Error"
         
         self.dock_system = DockSystem(self, self, DockSystem.DockTypes.WriteTabDock )
         
         self.setWindowTitle("WriteTab")
-        self.writing_zone = WritingZone(self)
-        self.writing_zone.has_minimap = True
-        self.writing_zone.has_scrollbar = True
+        self.ui.writeTabWritingZone.has_minimap = True
+        self.ui.writeTabWritingZone.has_scrollbar = True
+        self.ui.writeTabWritingZone.is_resizable = True
         
-        self.setCentralWidget(self.writing_zone)
+        self.setCentralWidget(central_widget)
         
         
     @property
@@ -109,7 +113,7 @@ class WriteTab(SubWindow):
         
     def _load_from_tree_sheet(self, tree_sheet_object):
         self.tab_title = tree_sheet_object.get_title()
-        self.writing_zone.set_rich_text(tree_sheet_object.get_content())
+        self.ui.writeTabWritingZone.set_rich_text(tree_sheet_object.get_content())
         self.dock_system.sheet_id = tree_sheet_object.sheet_id
                 
     def change_tab_title(self, new_title):

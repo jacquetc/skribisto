@@ -72,6 +72,7 @@ class DockSystem(QObject):
         widget = gui_part.get_widget()
         dock.current_type = type_str
         dock.setWindowTitle(gui_part.dock_displayed_name)
+        dock.setObjectName(gui_part.dock_displayed_name)
         dock.setWidget(widget)
         dock.titleBarWidget().ui.comboBox.setCurrentText(gui_part.dock_displayed_name)
         
@@ -178,7 +179,11 @@ class DockTitleWidget(QWidget):
     
     @pyqtSlot(int)    
     def on_comboBox_currentIndexChanged(self, index):
-        print(self.ui.comboBox.itemData(index, Qt.UserRole))
+        #print(self.ui.comboBox.itemData(index, Qt.UserRole))
         
+        if self.parent_dock == None:
+            return
+        dock_type = self.ui.comboBox.itemData(index, Qt.UserRole)
+        self.parent_dock.dock_system.change_type(self.parent_dock,  dock_type)        
         
         

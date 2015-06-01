@@ -12,7 +12,7 @@ class PropertiesDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiW
     '''
     PropertiesDockPlugin
     '''
-
+    is_builtin_plugin = True
     def __init__(self):
         '''
         Constructor

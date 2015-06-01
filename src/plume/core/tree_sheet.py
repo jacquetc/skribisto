@@ -121,12 +121,22 @@ class TreeSheet(QObject):
         other_contents = cfg.data.main_tree.get_other_contents(self.sheet_id)
         return other_contents
 
-    def set_other_contents(self, dict_):
+    def _set_other_contents(self, dict_):
         '''
         function:: set_other_contents(self, dict_)
 
         '''
+        cfg.data.main_tree.set_other_contents(self.sheet_id, dict_)
+       
+    def set_other_content(self, key,  value):
+        '''
+        function:: set_other_content(self, key, value)
 
+        '''
+        dict_ = self.get_other_contents()
+        dict_[key] = value
+        self._set_other_contents(dict_)
+    
     def get_content_type(self):
         '''
         function:: get_content_type(self)

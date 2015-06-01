@@ -29,12 +29,12 @@ class Minimap2(QGraphicsView):
         self._scrollbar = None
         self.setAutoFillBackground(True)
         
-        try:
-            from PyQt5.QtWidgets import QOpenGLWidget
-            self.setViewport(QOpenGLWidget())
-        except ImportError: # work around for pyQt 5.2 
-            from PyQt5.QtOpenGL import QGLWidget
-            self.setViewport(QGLWidget())             
+#        try:
+#            from PyQt5.QtWidgets import QOpenGLWidget
+#            self.setViewport(QOpenGLWidget())
+#        except ImportError: # work around for pyQt 5.2 
+#            from PyQt5.QtOpenGL import QGLWidget
+#            self.setViewport(QGLWidget())
             
         self.setScene(self._scene)
         self.setAlignment(Qt.AlignTop)
@@ -125,8 +125,11 @@ class Minimap2(QGraphicsView):
             self._text_browser.setDocument(self._minimap_doc)   
             self._doc.contentsChange.connect(self.update_minimap_doc)
         else:
-            self.blockSignals(True)            
-            self._doc.contentsChange.disconnect(self.update_minimap_doc)
+            self.blockSignals(True)
+            try:           
+                self._doc.contentsChange.disconnect(self.update_minimap_doc)
+            except TypeError:
+                pass
 
     @pyqtSlot()
     def update(self):

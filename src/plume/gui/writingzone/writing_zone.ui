@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>816</width>
-    <height>522</height>
+    <height>523</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,106 +18,80 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QWidget" name="widget" native="true">
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>40</height>
-      </size>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="QToolButton" name="historyPreviousToolButton">
-          <property name="text">
-           <string>&lt;-</string>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>../pics/32x32/arrow-left.png</normaloff>../pics/32x32/arrow-left.png</iconset>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="historyNextToolButton">
-          <property name="text">
-           <string>-&gt;</string>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>../pics/32x32/arrow-right.png</normaloff>../pics/32x32/arrow-right.png</iconset>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="browserComboBox"/>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
-        <item>
-         <widget class="QComboBox" name="findComboBox">
-          <property name="editable">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="findPreviousToolButton">
-          <property name="text">
-           <string>&lt;-</string>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>../pics/32x32/arrow-left.png</normaloff>../pics/32x32/arrow-left.png</iconset>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="findNextToolButton">
-          <property name="text">
-           <string>-&gt;</string>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>../pics/32x32/arrow-right.png</normaloff>../pics/32x32/arrow-right.png</iconset>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+      <widget class="QWidget" name="sizeHorizontalSpacer_left" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
+       <property name="palette">
+        <palette>
+         <active>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="0">
+             <red>242</red>
+             <green>241</green>
+             <blue>240</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </active>
+         <inactive>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="0">
+             <red>242</red>
+             <green>241</green>
+             <blue>240</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </inactive>
+         <disabled>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="0">
+             <red>242</red>
+             <green>241</green>
+             <blue>240</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="0">
+             <red>242</red>
+             <green>241</green>
+             <blue>240</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </disabled>
+        </palette>
        </property>
-      </spacer>
+      </widget>
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -161,13 +135,16 @@
      </item>
      <item>
       <widget class="RichTextEdit" name="richTextEdit">
+       <property name="verticalScrollBarPolicy">
+        <enum>Qt::ScrollBarAlwaysOff</enum>
+       </property>
        <property name="horizontalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QWidget" name="sizehandle" native="true">
+      <widget class="QWidget" name="sizeHandle" native="true">
        <property name="minimumSize">
         <size>
          <width>4</width>
@@ -186,20 +163,88 @@
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+      <widget class="QWidget" name="sizeHorizontalSpacer_right" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
+       <property name="palette">
+        <palette>
+         <active>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="0">
+             <red>242</red>
+             <green>241</green>
+             <blue>240</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </active>
+         <inactive>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="0">
+             <red>242</red>
+             <green>241</green>
+             <blue>240</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </inactive>
+         <disabled>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="0">
+             <red>242</red>
+             <green>241</green>
+             <blue>240</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="0">
+             <red>242</red>
+             <green>241</green>
+             <blue>240</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </disabled>
+        </palette>
        </property>
-      </spacer>
+      </widget>
      </item>
      <item>
-      <widget class="Minimap2" name="minimap"/>
+      <widget class="Minimap2" name="minimap">
+       <property name="verticalScrollBarPolicy">
+        <enum>Qt::ScrollBarAlwaysOff</enum>
+       </property>
+       <property name="horizontalScrollBarPolicy">
+        <enum>Qt::ScrollBarAlwaysOff</enum>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="Minimap" name="minimap_old" native="true"/>
