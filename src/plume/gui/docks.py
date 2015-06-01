@@ -73,6 +73,8 @@ class DockSystem(QObject):
         dock.current_type = type_str
         dock.setWindowTitle(gui_part.dock_displayed_name)
         dock.setWidget(widget)
+        dock.titleBarWidget().ui.comboBox.setCurrentText(gui_part.dock_displayed_name)
+        
 
     def remove_dock(self, dock):
         '''
