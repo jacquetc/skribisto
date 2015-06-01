@@ -34,6 +34,7 @@ class CoreSynopsisDock():
     '''
 
     dock_name = "synopsis-dock" 
+    note_type_name = "synopsis"
     
     def __init__(self):
         '''
@@ -67,7 +68,7 @@ class CoreSynopsisDock():
             if self._sheet_id is not None:
                 other_contents_dict = self.tree_sheet.get_other_contents()
                 try :
-                    self._synopsis_rich_text = other_contents_dict["synopsis"]
+                    self._synopsis_rich_text = other_contents_dict[self.note_type_name]
                 except KeyError:
                     self._synopsis_rich_text = ""
             
@@ -77,7 +78,7 @@ class CoreSynopsisDock():
     def synopsis_rich_text(self,  text):
         if self.sheet_id is not None:
             self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
-            self.tree_sheet.set_other_content("synopsis",  text) 
+            self.tree_sheet.set_other_content(self.note_type_name,  text) 
             self._synopsis_rich_text = text
     
 
