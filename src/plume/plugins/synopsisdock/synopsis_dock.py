@@ -11,6 +11,7 @@ from PyQt5.Qt import pyqtSlot
 class SynopsisDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
     '''
     SynopsisDockPlugin
+    Be careful, this plugin is the basis for the NotesDockPlugin in plugin/notesdock
     '''
     is_builtin_plugin = True
 
