@@ -6,8 +6,8 @@ Created on 25 avr. 2015
 '''
 
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,  \
-                             QHBoxLayout)
-from PyQt5.QtCore import Qt
+                             QHBoxLayout,  QFileDialog)
+from PyQt5.QtCore import Qt,  QDir
 from .window_system import WindowSystemController
 from .sub_window import WritePanel, BinderPanel
 from PyQt5.Qt import QToolButton, pyqtSlot
@@ -30,7 +30,6 @@ class MainWindow(QMainWindow, WindowSystemController):
         widget = QWidget()
         layout = QHBoxLayout()
 
-        #self.sub_window = SubWindow()
         self.stackWidget = SubWindowStack(self)
         self.side_bar = SideBar(self)
         #self.side_bar.detach_signal.connect(self.detach_window)
@@ -78,6 +77,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.ui.actionOpen_test_project.triggered.connect(cfg.core.project.open_test_project)
         self.ui.actionPreferences.triggered.connect(self.launch_preferences)
         self.ui.actionStart_window.triggered.connect(self.launch_start_window)
+        self.ui.actionSave_as.triggered.connect(self.launch_save_as_dialog)
 
         
     @pyqtSlot()
@@ -90,17 +90,17 @@ class MainWindow(QMainWindow, WindowSystemController):
         pref = StartWindow(self)
         pref.exec_()
         
-
-class SubWindow(QMainWindow):
-
-    def __init__(self, parent=None):
-        super(SubWindow, self).__init__(parent)
-        writing_zone = WritingZone()
-        widget = QWidget()
-        layout = QHBoxLayout()  
-        layout.addWidget(writing_zone)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+    @pyqtSlot()
+    def launch_save_as_dialog(self):
+        working_directory = QDir.homePath()
+        fileName, selectedFilter = QFileDialog.getSaveFileName(
+            self,
+            _("Save as"),
+            working_directory,
+            _(".sqlite"),
+            None)
+        
+        
 
 
 from PyQt5.QtWidgets import QStackedWidget
