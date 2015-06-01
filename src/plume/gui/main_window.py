@@ -97,8 +97,10 @@ class MainWindow(QMainWindow, WindowSystemController):
             self,
             _("Save as"),
             working_directory,
-            _(".sqlite"),
-            None)
+            _("Databases (*.sqlite *.plume);;All files (*)"), 
+            _(".sqlite"))
+
+        cfg.core.project.save_as(fileName,  selectedFilter)
         
         
 

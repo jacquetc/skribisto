@@ -5,6 +5,7 @@ Created on 26 avr. 2015
 '''
 
 from . import subscriber, sql, cfg
+import sqlite3
 
 class Project(object):
     '''
@@ -29,9 +30,6 @@ class Project(object):
         """
         This func is only temporary. To have something to work with...
         """
-        
-        
-        import sqlite3
 
         new_db = sqlite3.connect(':memory:') # create a memory database
         old_db = sqlite3.connect('../../resources/plume_test_project.sqlite')
@@ -49,9 +47,15 @@ class Project(object):
     def load(self, path):
         pass
         
-    def save_as(self, path):
-        pass
-        
+    def save_as(self, file_name,   file_type):
+        if file_type == ".sqlite":
+            if not file_name.endswith(".sqlite"):  
+                file_name = "".join([file_name, ".sqlite"])
+            on_disk_db = sqlite3.connect(file_name)
+            query = "".join(line for line in self.db.iterdump())
+            on_disk_db.executescript(query)
+            subscriber.announce_update("data.saved")
+            
     def save(self):
         pass
         

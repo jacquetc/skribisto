@@ -44,13 +44,15 @@ class Project():
 
         pass
 
-    def save_as(self):
+    def save_as(self, file_name, file_type):
         '''
-        function:: save_as()
+        function:: save_as(file_name,   file_type)
+        :param file_name:
+        :param file_type:
         :param :
         '''
+        cfg.data.project.save_as(file_name, file_type)
 
-        pass
 
     def close_project(self):
         '''
