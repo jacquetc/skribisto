@@ -72,6 +72,7 @@ class DockSystem(QObject):
         widget = gui_part.get_widget()
         dock.current_type = type_str
         dock.setWindowTitle(gui_part.dock_displayed_name)
+        dock.setObjectName(gui_part.dock_displayed_name)
         dock.setWidget(widget)
 
     def remove_dock(self, dock):

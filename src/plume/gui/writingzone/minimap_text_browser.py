@@ -29,12 +29,12 @@ class Minimap2(QGraphicsView):
         self._scrollbar = None
         self.setAutoFillBackground(True)
         
-        try:
-            from PyQt5.QtWidgets import QOpenGLWidget
-            self.setViewport(QOpenGLWidget())
-        except ImportError: # work around for pyQt 5.2 
-            from PyQt5.QtOpenGL import QGLWidget
-            self.setViewport(QGLWidget())             
+#        try:
+#            from PyQt5.QtWidgets import QOpenGLWidget
+#            self.setViewport(QOpenGLWidget())
+#        except ImportError: # work around for pyQt 5.2 
+#            from PyQt5.QtOpenGL import QGLWidget
+#            self.setViewport(QGLWidget())
             
         self.setScene(self._scene)
         self.setAlignment(Qt.AlignTop)

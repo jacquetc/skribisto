@@ -12,6 +12,7 @@ class SynopsisDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWri
     '''
     SynopsisDockPlugin
     '''
+    is_builtin_plugin = True
 
     def __init__(self):
         '''
@@ -71,24 +72,31 @@ class CoreSynopsisDock():
                     self._synopsis_rich_text = ""
             
         return self._synopsis_rich_text
+        
+    @synopsis_rich_text.setter
+    def synopsis_rich_text(self,  text):
+        if self.sheet_id is not None:
+            self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
+            self.tree_sheet.set_other_content("synopsis",  text) 
+            self._synopsis_rich_text = text
     
 
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import QSortFilterProxyModel
+from PyQt5.QtCore import QObject
 from gui import cfg as gui_cfg
 from plugins.synopsisdock import synopsis_dock_ui
 
-class GuiSynopsisDock():
+class GuiSynopsisDock(QObject):
     '''
     GuiSynopsisDock
     '''
     dock_name = "synopsis-dock" 
     dock_displayed_name = _("Synopsis")
-    def __init__(self):
+    def __init__(self,  parent = None):
         '''
         Constructor
         '''
-        super(GuiSynopsisDock, self).__init__()
+        super(GuiSynopsisDock, self).__init__(parent)
         self.widget = None
         self.core_part = None     #      CoreSynopsisDock
         self._sheet_id = None
@@ -118,7 +126,7 @@ class GuiSynopsisDock():
             self.ui.writingZone.has_minimap = False
             self.ui.writingZone.has_scrollbar = False
             self.ui.writingZone.is_resizable = False
-            self.ui.has_side_tool_bar = True        
+            self.ui.has_side_tool_bar = False        
 
             if self.tree_sheet is not None and self.core_part is not None:
                 text = self.core_part.synopsis_rich_text
@@ -126,8 +134,11 @@ class GuiSynopsisDock():
                 self.ui.writingZone.set_rich_text(text)
                 
                 #connect :
-
+                self.ui.writingZone.text_edit.textChanged.connect(self.apply_text_change)
                 
             self.widget.gui_part = self
         return self.widget
     
+    @pyqtSlot()
+    def apply_text_change(self):
+        self.core_part.synopsis_rich_text = self.ui.writingZone.text_edit.toHtml()

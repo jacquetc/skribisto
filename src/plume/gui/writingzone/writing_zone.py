@@ -34,6 +34,7 @@ class WritingZone(QWidget):
                                                     self.ui.actionCut, 
                                                     self.ui.actionPaste, 
                                                     self.ui.actionBold, 
+                                                    self.ui.actionItalic, 
                                                     self.ui.actionStrikethrough, 
                                                     self.ui.actionUnderline, 
                                                     self.ui.actionPrint_directly, 
@@ -42,6 +43,9 @@ class WritingZone(QWidget):
     def set_rich_text(self, text):
         self.ui.richTextEdit.setText(text)
    
+    @property
+    def text_edit(self):
+        return self.ui.richTextEdit
 
     def _set_scrollBar_range(self, min_, max_):
 

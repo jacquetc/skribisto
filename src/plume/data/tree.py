@@ -118,12 +118,67 @@ class Tree(object):
         
         
     def get_other_contents(self, sheet_id):
-        pass
+        db = self.db               
+        cur = db.cursor()
+        cur.execute("SELECT other_sheet_contents_id FROM main_table WHERE sheet_id=:id" \
+                                 , {"id": sheet_id})
+        result = cur.fetchone()
+        for row in result:
+            other_id = row
+        # create a new one if no other_sheet_contents_id :
+        if other_id is None:
+            c = self.db.cursor()
+            c.execute("INSERT INTO other_sheet_contents DEFAULT VALUES")
+            # get new sheet_id:  
+            c.execute("SELECT last_insert_rowid()")   
+            result = c.fetchone()
+            for row in result:
+                other_id = row
+            c.execute("UPDATE main_table SET other_sheet_contents_id=:other_id WHERE sheet_id=:id" \
+                                 , {"other_id": other_id, "id": sheet_id})
+            db.commit()
+     
+        #insert in dict each column:
+        dict_ = {}
+        cursor = cur.execute('SELECT * FROM other_sheet_contents')
+        names = [description[0] for description in cursor.description]
+        for name in names:
+            cur.execute("SELECT :col FROM other_sheet_contents WHERE other_sheet_contents_id=:id" \
+                                 , {"col": name, "id": other_id })
+            result = cur.fetchone()
+            for row in result:
+                dat = row
+            dict_[name] = dat
+        
+        print(dict_)
+        return dict_        
     
     def set_other_contents(self, sheet_id, dict_):
-        self.db.cursor().execute("UPDATE main_table SET other_contents=:other_contents WHERE sheet_id=:id" \
-                                 , {"other_contents": dict_, "id": sheet_id})
-        self.db.commit()                   
+        db = self.db               
+        cur = db.cursor()
+        cur.execute("SELECT other_sheet_contents_id FROM main_table WHERE sheet_id=:id" \
+                                 , {"id": sheet_id})
+        result = cur.fetchone()
+        for row in result:
+            other_id = row                             
+         
+        cursor = cur.execute('select * from other_sheet_contents')
+        names = [description[0] for description in cursor.description]
+  
+        for key in dict_.keys():
+            if key == "other_sheet_contents_id":
+                continue
+            if key not in names: # create column
+               query = "".join(["ALTER TABLE other_sheet_contents ADD COLUMN ",  key, " NONE"])
+               self.db.cursor().execute(query)        
+               self.db.commit()
+            #insert date in column :
+            dat = dict_[key]
+            query = "".join(["UPDATE other_sheet_contents SET ",  key, "=:dat WHERE other_sheet_contents_id=:id"])
+            self.db.cursor().execute(query \
+                                     , {"dat": dat,  "id": other_id})
+            self.db.commit()
+
         subscriber.announce_update("data.tree.other_contents", sheet_id)
     
 
