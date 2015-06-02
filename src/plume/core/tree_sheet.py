@@ -63,7 +63,7 @@ class TreeSheet(QObject):
         self._creation_date = cfg.data.main_tree.get_creation_date(self.sheet_id)
         self._version = cfg.data.main_tree.get_version(self.sheet_id)
     
-    def _subscribe_to_data(self):
+    def _subscribe_to_data(self,  is_subscribing=True):
         
         list_ = [[self.get_title, "data.tree.title"],
                  [self.get_content, "data.tree.content"],
@@ -76,8 +76,14 @@ class TreeSheet(QObject):
                  [self.get_version, "data.tree.version"],
                  ]
         for func, domain in list_ :
-            cfg.data.subscriber.subscribe_update_func_to_domain(func, domain)
-        
+            if is_subscribing is True:
+                cfg.data.subscriber.subscribe_update_func_to_domain(func, domain)
+            else:
+                 cfg.data.subscriber.unsubscribe_update_func_to_domain(func)
+               
+                
+            
+       
     def get_instance_of(self, instance_name):
         if instance_name in self._object_dict.keys():
             return  self._object_dict[instance_name]
@@ -110,7 +116,8 @@ class TreeSheet(QObject):
         :param content:
         '''
 
-        pass
+        cfg.data.main_tree.set_content(self.sheet_id, content)
+      
 
     def get_other_contents(self):
         '''
@@ -266,7 +273,11 @@ class StoryTreeSheet(TreeSheet):
         other_contents['note'] = content
         cfg.data.main_tree.set_other_contents(self.sheetid, other_contents)
 
-
+    def __del__(self):
+        #unsubscribe :
+        self._subscribe_to_data(False)
+        
+        
 class TreeSheetManager(QObject):
     '''
     TreeSheetManager
@@ -281,6 +292,9 @@ class TreeSheetManager(QObject):
         super(TreeSheetManager, self).__init__(parent)
 
         self.sheet_list = []
+        
+        cfg.data.subscriber.subscribe_update_func_to_domain(self.close_all_sheets,  "data.project.close")
+        
     def get_tree_sheet_from_sheet_id(self, sheet_id):
         for sheet in self.sheet_list:
             if sheet.sheet_id == sheet_id:
@@ -335,6 +349,7 @@ class TreeSheetManager(QObject):
                 self.sheet_list.remove(tree_sheet)
                 tree_sheet.deleteLater()
             
-        
-       
+    def close_all_sheets(self):
+       for sheet in self.sheet_list:
+           self.close_sheet(sheet)
         

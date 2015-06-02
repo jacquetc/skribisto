@@ -6,6 +6,7 @@ Created on 26 avr. 2015
 
 from . import subscriber, sql, cfg
 import sqlite3
+import os
 
 class Project(object):
     '''
@@ -21,7 +22,7 @@ class Project(object):
  
         
         self.db = None
-
+        self._is_open = False
             
     def create_new_empty_database(self):
         self.database = sql.create_new_database()
@@ -43,14 +44,27 @@ class Project(object):
         cfg.data.main_tree.db = new_db
         
         subscriber.announce_update("data.tree")
-        
-    def load(self, path):
-        pass
-        
+        subscriber.announce_update("data.project.close")
+        subscriber.announce_update("data.project.load")
+        self._is_open = True
+    
+    def load(self, file_name):
+        if file_name.endswith(".sqlite"):          
+            self.db =  sqlite3.connect(file_name)
+            cfg.data.db = self.db
+            cfg.data.main_tree.db = self.db       
+            subscriber.announce_update("data.tree")      
+            subscriber.announce_update("data.project.close")
+            subscriber.announce_update("data.project.load")
+            self._is_open = True
+            
     def save_as(self, file_name,   file_type):
-        if file_type == ".sqlite":
+        if "*.sqlite" in file_type :
             if not file_name.endswith(".sqlite"):  
                 file_name = "".join([file_name, ".sqlite"])
+            #delete if already exist:
+            if os.path.exists(file_name):
+                os.remove(file_name)
             on_disk_db = sqlite3.connect(file_name)
             query = "".join(line for line in self.db.iterdump())
             on_disk_db.executescript(query)
@@ -59,9 +73,13 @@ class Project(object):
     def save(self):
         pass
         
-    def is_opened(self):
-        pass
+    def is_open(self):
+        return self._is_open
     
     def close_db(self):
-        pass
-                   
+        self.db = None
+        cfg.data.db = None
+        cfg.data.main_tree.db = None
+        subscriber.announce_update("data.project.close")
+        self._is_open = False
+       

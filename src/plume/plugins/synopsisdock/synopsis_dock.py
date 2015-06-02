@@ -7,6 +7,7 @@ from core import plugins as core_plugins
 from gui import plugins as gui_plugins
 from core import cfg as core_cfg
 from PyQt5.Qt import pyqtSlot
+from PyQt5.QtCore import Qt
 
 class SynopsisDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
     '''
@@ -117,6 +118,8 @@ class GuiSynopsisDock(QObject):
             self.tree_sheet = gui_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
             self.core_part = self.tree_sheet.get_instance_of(self.dock_name)
             self.core_part.sheet_id = sheet_id
+            core_cfg.data.subscriber.unsubscribe_update_func(self.get_update)
+            core_cfg.data.subscriber.subscribe_update_func_to_domain(self.get_update,"data.tree.other_contents", self._sheet_id)
 
     def get_widget(self):
         
@@ -131,16 +134,25 @@ class GuiSynopsisDock(QObject):
             self.ui.has_side_tool_bar = False        
 
             if self.tree_sheet is not None and self.core_part is not None:
-                text = self.core_part.synopsis_rich_text
+                self.get_update()
 
-                self.ui.writingZone.set_rich_text(text)
                 
                 #connect :
-                self.ui.writingZone.text_edit.textChanged.connect(self.apply_text_change)
+                self.ui.writingZone.text_edit.textChanged.connect(self.apply_text_change, type=Qt.UniqueConnection )
                 
             self.widget.gui_part = self
         return self.widget
-    
+ 
+    def get_update(self):
+        self.ui.writingZone.text_edit.blockSignals(True)
+        if self.tree_sheet is not None and self.core_part is not None:
+            text = self.core_part.synopsis_rich_text
+            self.ui.writingZone.set_rich_text(text)
+        self.ui.writingZone.text_edit.blockSignals(False) 
+        
     @pyqtSlot()
     def apply_text_change(self):
+        core_cfg.data.subscriber.disable_func(self.get_update)
         self.core_part.synopsis_rich_text = self.ui.writingZone.text_edit.toHtml()
+        core_cfg.data.subscriber.enable_func(self.get_update)
+
