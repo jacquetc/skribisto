@@ -44,7 +44,7 @@ class CoreSynopsisDock():
         '''
 
         super(CoreSynopsisDock, self).__init__()
-        self._synopsis_rich_text = ""
+        self._synopsis_rich_text = None
         self._sheet_id = None
         self.tree_sheet = None        
 
@@ -55,7 +55,7 @@ class CoreSynopsisDock():
     @sheet_id.setter
     def sheet_id(self, sheet_id):
         if self._sheet_id == sheet_id:
-            pass
+            return
         self._sheet_id = sheet_id
         if self.sheet_id is not None:
             self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)

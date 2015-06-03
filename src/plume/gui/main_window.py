@@ -23,7 +23,9 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.init_ui()
         
         cfg.core.subscriber.subscribe_update_func_to_domain(self._clear_project,  "core.project.close")
-
+        cfg.core.subscriber.subscribe_update_func_to_domain(self._enable_actions,  "core.project.load")
+        cfg.core.subscriber.subscribe_update_func_to_domain(self.set_project_is_saved, "core.project.saved")
+        cfg.core.subscriber.subscribe_update_func_to_domain(self.set_project_is_not_saved, "core.project.notsaved")
 
     def init_ui(self):
         self.ui = Ui_MainWindow()
@@ -79,6 +81,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.ui.actionOpen_test_project.triggered.connect(self.launch_open_test_project)
         self.ui.actionPreferences.triggered.connect(self.launch_preferences)
         self.ui.actionStart_window.triggered.connect(self.launch_start_window)
+        self.ui.actionSave.triggered.connect(cfg.core.project.save)
         self.ui.actionSave_as.triggered.connect(self.launch_save_as_dialog)
         self.ui.actionOpen.triggered.connect(self.launch_open_dialog)
         self.ui.actionClose_project.triggered.connect(self.launch_close_dialog)
@@ -90,8 +93,7 @@ class MainWindow(QMainWindow, WindowSystemController):
                 return
         cfg.core.project.open_test_project()
         #enable Gui :
-        self.setWindowTitle("Plume Creator - TEST")      
-        self._enable_actions(True)        
+        self.setWindowTitle("Plume Creator - TEST")  
         
     @pyqtSlot()
     def launch_preferences(self):
@@ -159,12 +161,17 @@ class MainWindow(QMainWindow, WindowSystemController):
             cfg.core.project.save()
             cfg.core.project.close_project()
             
-            
+    def set_project_is_saved(self):
+        self.ui.actionSave.setEnabled(False)
+        
+    def set_project_is_not_saved(self):
+        self.ui.actionSave.setEnabled(True)      
+        
     def _clear_project(self):
         self.setWindowTitle("Plume Creator")
         self._enable_actions(False)
 
-    def _enable_actions(self,  value):
+    def _enable_actions(self,  value=True):
         self.ui.actionSave_as.setEnabled(value)
         self.ui.actionSave.setEnabled(value)
         self.ui.actionClose_project.setEnabled(value)

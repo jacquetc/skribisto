@@ -5,7 +5,7 @@ Created on 6 mai 2015
 '''
 
 from . import subscriber, cfg
-from PyQt5.Qt import QObject, pyqtSlot
+from PyQt5.Qt import pyqtSlot
 
 class Project():
     '''
@@ -18,7 +18,9 @@ class Project():
         '''
 
         super(Project, self).__init__()
-        self._project_path = None
+        cfg.data.subscriber.subscribe_update_func_to_domain(self.signal_project_is_saved, "data.project.saved")
+        cfg.data.subscriber.subscribe_update_func_to_domain(self.signal_project_is_not_saved, "data.project.notsaved")
+
         
         
     @pyqtSlot()
@@ -44,7 +46,7 @@ class Project():
         :param :
         '''
 
-        pass
+        cfg.data.project.save()
 
     def save_as(self, file_name, file_type):
         '''
@@ -101,3 +103,10 @@ class Project():
         
     def is_open(self):
         return cfg.data.project.is_open()
+        
+        
+    def signal_project_is_saved(self):
+        subscriber.announce_update("core.project.saved")
+       
+    def signal_project_is_not_saved(self):
+        subscriber.announce_update("core.project.notsaved")       

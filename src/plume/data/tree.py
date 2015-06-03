@@ -102,6 +102,7 @@ class Tree(object):
                                  , {"children_id": children_id, "id": parent_id})        
         self.db.commit()
         subscriber.announce_update("data.tree")        
+        subscriber.announce_update("data.project.notsaved")
         
         return sheet_id
     
@@ -120,6 +121,7 @@ class Tree(object):
                                  , {"title": new_title, "id": sheet_id})
         self.db.commit()
         subscriber.announce_update("data.tree.title", sheet_id)
+        subscriber.announce_update("data.project.notsaved")
         
         
     def get_other_contents(self, sheet_id):
@@ -186,6 +188,7 @@ class Tree(object):
             self.db.commit()
 
         subscriber.announce_update("data.tree.other_contents", sheet_id)
+        subscriber.announce_update("data.project.notsaved")
     
 
     def get_content(self, sheet_id):
@@ -203,6 +206,7 @@ class Tree(object):
                                  , {"content": content, "id": sheet_id})
         self.db.commit()
         subscriber.announce_update("data.tree.content", sheet_id)
+        subscriber.announce_update("data.project.notsaved")
 
     def get_content_type(self,sheet_id):
         db = self.db               
@@ -219,6 +223,7 @@ class Tree(object):
                                  , {"content": content_type, "id": sheet_id})
         self.db.commit()        
         subscriber.announce_update("data.tree.content_type", sheet_id)        
+        subscriber.announce_update("data.project.notsaved")
    
 
     def get_properties(self,sheet_id):
@@ -242,7 +247,8 @@ class Tree(object):
                                  , {"properties": properties_str, "id": sheet_id})
         self.db.commit()
         subscriber.announce_update("data.tree.properties", sheet_id)        
-    
+        subscriber.announce_update("data.project.notsaved")
+   
     def get_modification_date(self,sheet_id):
         db = self.db               
         cur = db.cursor()
@@ -258,6 +264,7 @@ class Tree(object):
                                  , {"modification_date": modification_date, "id": sheet_id})
         self.db.commit()        
         subscriber.announce_update("data.tree.modification_date", sheet_id)
+        subscriber.announce_update("data.project.notsaved")
     
     def get_creation_date(self,sheet_id):
         db = self.db               
@@ -274,6 +281,7 @@ class Tree(object):
                                  , {"creation_date": creation_date, "id": sheet_id})
         self.db.commit()        
         subscriber.announce_update("data.tree.creation_date", sheet_id)
+        subscriber.announce_update("data.project.notsaved")
     
     def get_version(self,sheet_id):
         db = self.db               
@@ -290,6 +298,7 @@ class Tree(object):
                                  , {"version": version, "id": sheet_id})
         self.db.commit()        
         subscriber.announce_update("data.tree.version", sheet_id)
+        subscriber.announce_update("data.project.notsaved")
     
 def transform_children_id_text_into_int_tuple(children_id_text):
     int_tuple = ()
