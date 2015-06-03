@@ -44,7 +44,7 @@ class WindowSystemController():
         self.window_system_parent_widget.attach_sub_window(sub_window)
 
         self.window_dict[sub_window.objectName()] = [sub_window, "attached"]
-        pass
+
     
     
     def add_action_to_window_system(self, action):

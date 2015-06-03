@@ -6,10 +6,11 @@ Created on 25 avr. 2015
 '''
 
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,  \
-                             QHBoxLayout,  QFileDialog, QMessageBox )
+                             QHBoxLayout,  QFileDialog, QMessageBox,  QApplication)
 from PyQt5.QtCore import Qt,  QDir
 from .window_system import WindowSystemController
-from .sub_window import WritePanel, BinderPanel
+from .sub_window import WritePanel
+from .binder import BinderPanel
 from PyQt5.Qt import QToolButton, pyqtSlot
 from . import cfg
 from .main_window_ui import Ui_MainWindow
@@ -57,8 +58,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         self._sub_window_action_group = QActionGroup(self)
        
         ##write window
-        self.write_sub_window = WritePanel(parent=self, parent_window_system_controller=self \
-                                               )       
+        self.write_sub_window = WritePanel(parent=self, parent_window_system_controller=self)       
         self.attach_sub_window(self.write_sub_window)
         self.ui.actionWrite.setProperty("sub_window_object_name", "write_sub_window")
         self.add_action_to_window_system(self.ui.actionWrite)
@@ -66,10 +66,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         
 
         ##binder window
-        self.binder_sub_window = BinderPanel(parent=self, parent_window_system_controller=self\
-                                           ) 
-        self.binder_sub_window.setWindowTitle("Binder")
-        self.binder_sub_window.setObjectName("binder_sub_window")
+        self.binder_sub_window = BinderPanel(parent=self, parent_window_system_controller=self) 
         self.attach_sub_window(self.binder_sub_window)
         self.ui.actionBinder.setProperty("sub_window_object_name", "binder_sub_window")
         self.add_action_to_window_system(self.ui.actionBinder)       
@@ -85,8 +82,8 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.ui.actionSave_as.triggered.connect(self.launch_save_as_dialog)
         self.ui.actionOpen.triggered.connect(self.launch_open_dialog)
         self.ui.actionClose_project.triggered.connect(self.launch_close_dialog)
-        
-        
+        self.ui.actionExit.triggered.connect(self.launch_exit_dialog)
+     
         self._enable_actions(False)
 
     @pyqtSlot()
@@ -161,6 +158,15 @@ class MainWindow(QMainWindow, WindowSystemController):
             cfg.core.project.save()
             cfg.core.project.close_project()
             
+    def launch_exit_dialog(self):
+        if cfg.core.project.is_open() == False:
+            QApplication.quit()
+
+        result = self.launch_close_dialog()
+        if result == QMessageBox.Cancel:
+            return QMessageBox.Cancel
+        QApplication.quit()
+            
     def set_project_is_saved(self):
         self.ui.actionSave.setEnabled(False)
         
@@ -179,8 +185,14 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.ui.actionExport.setEnabled(value)
         self.ui.actionPrint.setEnabled(value)        
         
+    def closeEvent(self,  event):
+        result = self.launch_exit_dialog()
+        if result == QMessageBox.Cancel:
+            event.ignore()
+        else:
+            event.accept()
+        
 from PyQt5.QtWidgets import QStackedWidget
-from PyQt5.QtCore import Qt
 from .window_system import WindowSystemParentWidget
 
 class SubWindowStack(QStackedWidget,WindowSystemParentWidget):
@@ -240,6 +252,11 @@ class SideBar(QWidget, WindowSystemActionHandler):
         Must only be used as a slot for Qt signals ! 
         '''
         self.detach_sub_window()
+        for button in self.side_bar_button_list:
+            if button.property("sub_window_object_name") != self.sender().property("sub_window_object_name"):
+                button.click()
+                break
+       
         
         
     def onAttachClicked(self):

@@ -24,16 +24,20 @@ class SubWindow(QMainWindow):
         
         
     def detach_this_window(self):
-        self.parent_window_system_controller.detach_window(self)
+        self.parent_window_system_controller.detach_sub_window(self)
     
     def attach_back_to_parent_window_system(self):
-        self.parent_window_system_controller.attach_window(self)
+        self.parent_window_system_controller.attach_sub_window(self)
+        
+    def closeEvent(self,  event):
+        self.attach_back_to_parent_window_system()
+        event.ignore()
     
 
 
 
 from PyQt5.QtWidgets import QTabWidget
-from .docks import DockTemplate, DockSystem
+from .docks import DockSystem
 from .window_system import WindowSystemController
 
 class WritePanel(SubWindow, WindowSystemController):
@@ -45,7 +49,7 @@ class WritePanel(SubWindow, WindowSystemController):
         '''
         
         '''
-        super(WritePanel, self).__init__(parent=parent)
+        super(WritePanel, self).__init__(parent=parent, parent_window_system_controller=parent_window_system_controller)
         
         self.setWindowTitle("Write")
         self.setObjectName("write_sub_window")
@@ -141,31 +145,3 @@ class WriteTab(SubWindow):
         index = tab_widget.indexOf(self)
         tab_widget.setTabText(index, new_title)
         
-from PyQt5.QtWidgets import QLabel
-
-class BinderPanel(SubWindow):
-    '''
-    classdocs
-    '''
-
-    def __init__(self, parent=None, parent_window_system_controller=None):
-        '''
-        Constructor
-        '''
-        super(BinderPanel, self).__init__(parent=parent)
-        
-        self.setWindowTitle("Binder")
-        self.setObjectName("binder_sub_window")
-        
-        label = QLabel("Binder")
-        self.setCentralWidget(label)
-        
-        
-
-        
-        
-        
-                    
-            
-                
-
