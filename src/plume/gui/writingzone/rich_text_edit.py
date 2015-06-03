@@ -5,7 +5,7 @@ Created on 11 mai 2015
 '''
 
 from PyQt5.QtWidgets import QTextEdit, QMenu
-from PyQt5.QtCore import pyqtSignal,  pyqtSlot
+from PyQt5.QtCore import pyqtSignal,  pyqtSlot,  Qt
 from PyQt5.QtGui import QTextCharFormat
 
 class RichTextEdit(QTextEdit):
@@ -56,28 +56,33 @@ class RichTextEdit(QTextEdit):
     def action_set(self,  action_set):
         self._action_set = action_set
         
-        self._action_set.actionCut.triggered.connect(self._cut)
-        self._action_set.actionCopy.triggered.connect(self._copy)
-        self._action_set.actionPaste.triggered.connect(self._paste)
-        self._action_set.actionBold.triggered.connect(self._bold)
-        self._action_set.actionItalic.triggered.connect(self._italic)
-        self._action_set.actionStrikethrough.triggered.connect(self._strikethrough)
-        self._action_set.actionUnderline.triggered.connect(self._underline)
-
+        if self._action_set.actionCut.receivers(self._action_set.actionCut.triggered) != 1:
+            return # prevent exception if connection not unique...
+        
+        self._action_set.actionCut.triggered.connect(self._cut, Qt.UniqueConnection)
+        self._action_set.actionCopy.triggered.connect(self._copy, Qt.UniqueConnection)
+        self._action_set.actionPaste.triggered.connect(self._paste, Qt.UniqueConnection)
+        self._action_set.actionBold.triggered.connect(self._bold, Qt.UniqueConnection)
+        self._action_set.actionItalic.triggered.connect(self._italic, Qt.UniqueConnection)
+        self._action_set.actionStrikethrough.triggered.connect(self._strikethrough, Qt.UniqueConnection)
+        self._action_set.actionUnderline.triggered.connect(self._underline, Qt.UniqueConnection)
 
     def set_action_set(self,  action_set):
         self.action_set = action_set
         
+    @pyqtSlot()
     def _cut(self):
         self.cut()
         
+    @pyqtSlot()        
     def _copy(self):
         self.copy()
         
+    @pyqtSlot()       
     def _paste(self):
         self.paste()
         
-    @pyqtSlot("bool")
+    @pyqtSlot(bool)
     def _bold(self,  value):
         if value == True:
             self.setFontWeight(75)
@@ -85,17 +90,17 @@ class RichTextEdit(QTextEdit):
             self.setFontWeight(50)
             
         
-    @pyqtSlot("bool")
+    @pyqtSlot(bool)
     def _italic(self,  value):
         self.setFontItalic(value)
         
-    @pyqtSlot("bool")
+    @pyqtSlot(bool)
     def _strikethrough(self,  value):
         charFormat = QTextCharFormat()
         charFormat.setFontStrikeOut(value)  
         self.mergeCurrentCharFormat(charFormat)
         
-    @pyqtSlot("bool")
+    @pyqtSlot(bool)
     def _underline(self,  value):
         self.setFontUnderline(value)
 

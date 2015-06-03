@@ -48,7 +48,6 @@ class WritingZone(QWidget):
             def add_action(self,  action):
                 self.added_actions_list.append(action)
                 setattr(self, action.objectName(), action)
-                self.update_action_set_setters()
                 
             def subscribe_action_set_setter(self,  property_func):
                 self._action_set_setters.append(property_func)
