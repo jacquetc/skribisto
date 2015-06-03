@@ -140,29 +140,7 @@ class WriteTab(SubWindow):
         tab_widget = self.parent().tab_widget
         index = tab_widget.indexOf(self)
         tab_widget.setTabText(index, new_title)
-        
-from PyQt5.QtWidgets import QLabel
 
-class BinderPanel(SubWindow):
-    '''
-    classdocs
-    '''
-
-    def __init__(self, parent=None, parent_window_system_controller=None):
-        '''
-        Constructor
-        '''
-        super(BinderPanel, self).__init__(parent=parent)
-        
-        self.setWindowTitle("Binder")
-        self.setObjectName("binder_sub_window")
-        
-        label = QLabel("Binder")
-        self.setCentralWidget(label)
-        
-        
-
-        
         
         
                     

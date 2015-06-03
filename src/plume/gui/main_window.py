@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,  \
                              QHBoxLayout,  QFileDialog, QMessageBox )
 from PyQt5.QtCore import Qt,  QDir
 from .window_system import WindowSystemController
-from .sub_window import WritePanel, BinderPanel
+from .sub_window import WritePanel
+from .binder import  BinderPanel
 from PyQt5.Qt import QToolButton, pyqtSlot
 from . import cfg
 from .main_window_ui import Ui_MainWindow
