@@ -6,8 +6,8 @@ Created on 25 avr. 2015
 '''
 
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,  \
-                             QHBoxLayout)
-from PyQt5.QtCore import Qt
+                             QHBoxLayout,  QFileDialog, QMessageBox )
+from PyQt5.QtCore import Qt,  QDir
 from .window_system import WindowSystemController
 from .sub_window import WritePanel, BinderPanel
 from PyQt5.Qt import QToolButton, pyqtSlot
@@ -21,7 +21,11 @@ class MainWindow(QMainWindow, WindowSystemController):
     def __init__(self, parent):
         super(MainWindow, self).__init__()
         self.init_ui()
-
+        
+        cfg.core.subscriber.subscribe_update_func_to_domain(self._clear_project,  "core.project.close")
+        cfg.core.subscriber.subscribe_update_func_to_domain(self._enable_actions,  "core.project.load")
+        cfg.core.subscriber.subscribe_update_func_to_domain(self.set_project_is_saved, "core.project.saved")
+        cfg.core.subscriber.subscribe_update_func_to_domain(self.set_project_is_not_saved, "core.project.notsaved")
 
     def init_ui(self):
         self.ui = Ui_MainWindow()
@@ -30,7 +34,6 @@ class MainWindow(QMainWindow, WindowSystemController):
         widget = QWidget()
         layout = QHBoxLayout()
 
-        #self.sub_window = SubWindow()
         self.stackWidget = SubWindowStack(self)
         self.side_bar = SideBar(self)
         #self.side_bar.detach_signal.connect(self.detach_window)
@@ -75,10 +78,22 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.ui.actionWrite.trigger()
 
         # menu bar actions
-        self.ui.actionOpen_test_project.triggered.connect(cfg.core.project.open_test_project)
+        self.ui.actionOpen_test_project.triggered.connect(self.launch_open_test_project)
         self.ui.actionPreferences.triggered.connect(self.launch_preferences)
         self.ui.actionStart_window.triggered.connect(self.launch_start_window)
+        self.ui.actionSave.triggered.connect(cfg.core.project.save)
+        self.ui.actionSave_as.triggered.connect(self.launch_save_as_dialog)
+        self.ui.actionOpen.triggered.connect(self.launch_open_dialog)
+        self.ui.actionClose_project.triggered.connect(self.launch_close_dialog)
 
+    @pyqtSlot()
+    def launch_open_test_project(self):
+        if cfg.core.project.is_open() == True:
+            if self.launch_close_dialog() == QMessageBox.Cancel:
+                return
+        cfg.core.project.open_test_project()
+        #enable Gui :
+        self.setWindowTitle("Plume Creator - TEST")  
         
     @pyqtSlot()
     def launch_preferences(self):
@@ -90,19 +105,80 @@ class MainWindow(QMainWindow, WindowSystemController):
         pref = StartWindow(self)
         pref.exec_()
         
+    @pyqtSlot()
+    def launch_save_as_dialog(self):
+        working_directory = QDir.homePath()
+        fileName, selectedFilter = QFileDialog.getSaveFileName(
+            self,
+            _("Save as"),
+            working_directory,
+            _("Databases (*.sqlite *.plume);;All files (*)"), 
+            _(".sqlite"))
+        if fileName is None:
+            return
+        cfg.core.project.save_as(fileName,  selectedFilter)
+        
+    @pyqtSlot()
+    def launch_open_dialog(self):
+        working_directory = QDir.homePath()
+        fileName, selectedFilter = QFileDialog.getOpenFileName(
+            self,
+            _("Open"),
+            working_directory,
+            _("Databases (*.sqlite *.plume);;All files (*)"), 
+            _(".sqlite"))
+        
+        if fileName is None:
+            return
+        if cfg.core.project.is_open() == True:
+            if self.launch_close_dialog() == QMessageBox.Cancel:
+                return
+        cfg.core.project.open(fileName) 
+        
+        #enable Gui :
+        self.setWindowTitle("Plume Creator - " + fileName)      
+        self._enable_actions(True)
+       
+    def launch_close_dialog(self):
+        if cfg.core.project.is_open() == False:
+            return
 
-class SubWindow(QMainWindow):
+        result = QMessageBox.question(
+            self,
+            _("Close the current project"),
+            _("The last changes are not yet saved. Do you really want to close the current project ?"),
+            QMessageBox.StandardButtons(
+                QMessageBox.Cancel |
+                QMessageBox.Discard |
+                QMessageBox.Save),
+            QMessageBox.Cancel)
+            
+        if result == QMessageBox.Cancel:
+            return QMessageBox.Cancel
+        elif result == QMessageBox.Discard:
+            cfg.core.project.close_project()
+        elif result == QMessageBox.Save:
+            cfg.core.project.save()
+            cfg.core.project.close_project()
+            
+    def set_project_is_saved(self):
+        self.ui.actionSave.setEnabled(False)
+        
+    def set_project_is_not_saved(self):
+        self.ui.actionSave.setEnabled(True)      
+        
+    def _clear_project(self):
+        self.setWindowTitle("Plume Creator")
+        self._enable_actions(False)
 
-    def __init__(self, parent=None):
-        super(SubWindow, self).__init__(parent)
-        writing_zone = WritingZone()
-        widget = QWidget()
-        layout = QHBoxLayout()  
-        layout.addWidget(writing_zone)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
-
-
+    def _enable_actions(self,  value=True):
+        self.ui.actionSave_as.setEnabled(value)
+        self.ui.actionSave.setEnabled(value)
+        self.ui.actionClose_project.setEnabled(value)
+        self.ui.actionImport.setEnabled(value)
+        self.ui.actionExport.setEnabled(value)
+        self.ui.actionPrint.setEnabled(value)        
+        
 from PyQt5.QtWidgets import QStackedWidget
 from PyQt5.QtCore import Qt
 from .window_system import WindowSystemParentWidget

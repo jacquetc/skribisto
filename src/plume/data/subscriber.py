@@ -5,6 +5,7 @@ Created on 6 mai 2015
 '''
 
 _update_funcs = []
+_disabled_funcs = []
 _domain_list = []
 
 def subscribe_update_func_to_domain(func, domain, sheet_id=None):
@@ -32,8 +33,19 @@ def unsubscribe_update_func(func):
         if update_function.function == func:
             _update_funcs.remove(update_function)
             
-
-def announce_update(domain, sheet_id=None):
+def disable_func(func):
+    for update_function in _update_funcs:   
+        if update_function.function == func:
+            _update_funcs.remove(update_function)
+            _disabled_funcs.append(update_function)
+            
+def enable_func(func):
+    for update_function in _update_funcs:   
+        if update_function.function == func:
+            _disabled_funcs.remove(update_function)
+            _update_funcs.append(update_function)
+            
+def announce_update(domain, sheet_id=-1):
     '''
     function:: announce_update(domain)
     :param domain:

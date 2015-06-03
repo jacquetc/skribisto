@@ -5,7 +5,7 @@ Created on 6 mai 2015
 '''
 
 from . import subscriber, cfg
-from PyQt5.Qt import QObject, pyqtSlot
+from PyQt5.Qt import pyqtSlot
 
 class Project():
     '''
@@ -18,7 +18,10 @@ class Project():
         '''
 
         super(Project, self).__init__()
-        self._project_path = None
+        cfg.data.subscriber.subscribe_update_func_to_domain(self.signal_project_is_saved, "data.project.saved")
+        cfg.data.subscriber.subscribe_update_func_to_domain(self.signal_project_is_not_saved, "data.project.notsaved")
+
+        
         
     @pyqtSlot()
     def open_test_project(self):
@@ -26,12 +29,13 @@ class Project():
         #subscriber.announce_update()        
 
     @pyqtSlot(str)
-    def open(self, project_path):
+    def open(self, file_name):
         '''
-        function:: open(project_path)
-        :param project_path:
+        function:: open(file_name)
+        :param file_name:
         '''
-
+        cfg.data.project.load(file_name)
+        
     def project_path(self):
         return self._project_path
         
@@ -42,24 +46,35 @@ class Project():
         :param :
         '''
 
-        pass
+        cfg.data.project.save()
 
-    def save_as(self):
+    def save_as(self, file_name, file_type):
         '''
-        function:: save_as()
+        function:: save_as(file_name,   file_type)
+        :param file_name:
+        :param file_type:
         :param :
         '''
+        cfg.data.project.save_as(file_name, file_type)
 
-        pass
 
     def close_project(self):
         '''
         function:: close_project()
         :param :
         '''
+        self._clear_project()
 
-        pass
-
+        
+    def _clear_project(self):
+        '''
+        function:: _clear_project()
+        :param :
+        Clear all project from core
+        '''
+        cfg.data.project.close_db()
+        subscriber.announce_update("core.project.close")
+        
     def quit(self):
         '''
         function:: quit()
@@ -85,3 +100,13 @@ class Project():
         '''
 
         pass
+        
+    def is_open(self):
+        return cfg.data.project.is_open()
+        
+        
+    def signal_project_is_saved(self):
+        subscriber.announce_update("core.project.saved")
+       
+    def signal_project_is_not_saved(self):
+        subscriber.announce_update("core.project.notsaved")       

@@ -24,6 +24,7 @@ class WriteTreeModel(QAbstractItemModel):
         
         self.headers = ["name"]
         self._id_of_last_created_sheet = None     
+        cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.project.close")
         cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.tree")
         
     def columnCount(self, parent):
@@ -224,6 +225,10 @@ parentIndex, parentIndex)
           
         
         list_ = cfg.data.main_tree.get_tree_model_necessities("story")
+        if list_ == []: #empty /close
+            self.root_node = TreeNode()
+            self.endResetModel()
+            return           
         
         # create a nice dict
         self._dict = {}

@@ -175,9 +175,14 @@ class PropertyTableModel(QAbstractTableModel):
         self.root_node = TableNode()        
         self.headers = ["property", "value"]
         
+        
     def set_sheet_id(self, sheet_id):
+        #unsubscribe:
+        core_cfg.data.subscriber.unsubscribe_update_func(self.reset_model)
         self._sheet_id = sheet_id
         self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(sheet_id)
+        #subscribe:
+        core_cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model,  "data.tree.properties",  self._sheet_id)
         self.reset_model()
 
     def columnCount(self, parent):
