@@ -146,7 +146,7 @@ class Minimap2(QGraphicsView):
     def _set_nav_cursor_y(self, value):
         sc_bar = self._text_edit.verticalScrollBar()
         max = sc_bar.maximum()
-        print(self._doc.size().height())
+        #print(self._doc.size().height())
         if max == 0:
             self._nav_cursor.setY(0)
             return

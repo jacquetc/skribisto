@@ -30,15 +30,52 @@ class WritingZone(QWidget):
         self.has_side_tool_bar = True        
         self.is_resizable = False        
         
-        self.ui.toolBar.action_list = [self.ui.actionCopy, 
-                                                    self.ui.actionCut, 
-                                                    self.ui.actionPaste, 
-                                                    self.ui.actionBold, 
-                                                    self.ui.actionItalic, 
-                                                    self.ui.actionStrikethrough, 
-                                                    self.ui.actionUnderline, 
-                                                    self.ui.actionPrint_directly, 
-                                                    ]
+        self._init_actions()
+
+        
+        
+    def _init_actions(self):
+        
+        class ActionSet():
+            def __init__(self,  basic_actions_list):
+                super(ActionSet, self).__init__()
+                self._basic_actions_list = basic_actions_list
+                self.added_actions_list = []
+                self._action_set_setters = []
+                for action in self._basic_actions_list:
+                    setattr(self, action.objectName(), action)
+        
+            def add_action(self,  action):
+                self.added_actions_list.append(action)
+                setattr(self, action.objectName(), action)
+                self.update_action_set_setters()
+                
+            def subscribe_action_set_setter(self,  property_func):
+                self._action_set_setters.append(property_func)
+                
+            def update_action_set_setters(self):
+                for property_func in self._action_set_setters:
+                    property_func(self)
+                
+                
+        
+        # actions 
+        action_list =  [self.ui.actionCopy, 
+                                self.ui.actionCut, 
+                                self.ui.actionPaste, 
+                                self.ui.actionBold, 
+                                self.ui.actionItalic, 
+                                self.ui.actionStrikethrough, 
+                                self.ui.actionUnderline
+                                ]
+        self._action_set = ActionSet(action_list)
+        self._action_set.subscribe_action_set_setter(self.ui.toolBar.set_action_set)
+        self._action_set.subscribe_action_set_setter(self.ui.richTextEdit.set_action_set)
+        self._action_set.update_action_set_setters()
+        
+        
+#        test :
+        self._action_set.add_action(self.ui.actionPrint_directly)
         
     def set_rich_text(self, text):
         self.ui.richTextEdit.setText(text)
@@ -111,3 +148,8 @@ class WritingZone(QWidget):
             self.ui.sizeHorizontalSpacer_left.hide()
             self.ui.sizeHorizontalSpacer_right.hide()
             self.ui.richTextEdit.setFixedWidth(((1 << 24) - 1)) # workaround for QWIDGETSIZE_MAX
+            
+    def add_action(self,  action):
+        self._action_set.add_action(action)
+
+

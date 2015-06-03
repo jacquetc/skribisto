@@ -113,6 +113,7 @@ class Ui_WritingZone(object):
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/pics/32x32/edit-copy.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionCopy.setIcon(icon)
+        self.actionCopy.setShortcutContext(QtCore.Qt.WidgetWithChildrenShortcut)
         self.actionCopy.setObjectName("actionCopy")
         self.actionPaste = QtWidgets.QAction(WritingZone)
         icon1 = QtGui.QIcon()
@@ -125,21 +126,25 @@ class Ui_WritingZone(object):
         self.actionCut.setIcon(icon2)
         self.actionCut.setObjectName("actionCut")
         self.actionBold = QtWidgets.QAction(WritingZone)
+        self.actionBold.setCheckable(True)
         icon3 = QtGui.QIcon()
         icon3.addPixmap(QtGui.QPixmap(":/pics/32x32/format-text-bold.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionBold.setIcon(icon3)
         self.actionBold.setObjectName("actionBold")
         self.actionStrikethrough = QtWidgets.QAction(WritingZone)
+        self.actionStrikethrough.setCheckable(True)
         icon4 = QtGui.QIcon()
         icon4.addPixmap(QtGui.QPixmap(":/pics/32x32/format-text-strikethrough.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionStrikethrough.setIcon(icon4)
         self.actionStrikethrough.setObjectName("actionStrikethrough")
         self.actionItalic = QtWidgets.QAction(WritingZone)
+        self.actionItalic.setCheckable(True)
         icon5 = QtGui.QIcon()
         icon5.addPixmap(QtGui.QPixmap(":/pics/32x32/format-text-italic.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionItalic.setIcon(icon5)
         self.actionItalic.setObjectName("actionItalic")
         self.actionUnderline = QtWidgets.QAction(WritingZone)
+        self.actionUnderline.setCheckable(True)
         icon6 = QtGui.QIcon()
         icon6.addPixmap(QtGui.QPixmap(":/pics/32x32/format-text-underline.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionUnderline.setIcon(icon6)
@@ -172,7 +177,7 @@ class Ui_WritingZone(object):
         self.actionPrint_directly.setText(_("Print directly"))
         self.actionPrint_directly.setShortcut(_("Ctrl+Shift+P"))
 
-from .minimap_text_browser import Minimap2
-from .tool_bar import ToolBar
-from .rich_text_edit import RichTextEdit
 from .minimap import Minimap
+from .tool_bar import ToolBar
+from .minimap_text_browser import Minimap2
+from .rich_text_edit import RichTextEdit

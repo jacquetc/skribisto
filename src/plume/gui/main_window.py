@@ -85,6 +85,9 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.ui.actionSave_as.triggered.connect(self.launch_save_as_dialog)
         self.ui.actionOpen.triggered.connect(self.launch_open_dialog)
         self.ui.actionClose_project.triggered.connect(self.launch_close_dialog)
+        
+        
+        self._enable_actions(False)
 
     @pyqtSlot()
     def launch_open_test_project(self):
@@ -92,7 +95,6 @@ class MainWindow(QMainWindow, WindowSystemController):
             if self.launch_close_dialog() == QMessageBox.Cancel:
                 return
         cfg.core.project.open_test_project()
-        #enable Gui :
         self.setWindowTitle("Plume Creator - TEST")  
         
     @pyqtSlot()
@@ -135,9 +137,7 @@ class MainWindow(QMainWindow, WindowSystemController):
                 return
         cfg.core.project.open(fileName) 
         
-        #enable Gui :
         self.setWindowTitle("Plume Creator - " + fileName)      
-        self._enable_actions(True)
        
     def launch_close_dialog(self):
         if cfg.core.project.is_open() == False:

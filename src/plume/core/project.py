@@ -26,7 +26,8 @@ class Project():
     @pyqtSlot()
     def open_test_project(self):
         cfg.data.project.load_test_project_db()
-        #subscriber.announce_update()        
+        subscriber.announce_update("core.project.load")
+       #subscriber.announce_update()        
 
     @pyqtSlot(str)
     def open(self, file_name):
@@ -35,6 +36,7 @@ class Project():
         :param file_name:
         '''
         cfg.data.project.load(file_name)
+        subscriber.announce_update("core.project.load")
         
     def project_path(self):
         return self._project_path
