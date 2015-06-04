@@ -185,7 +185,7 @@ parentIndex, parentIndex)
     def insertRows(self, row, count, parent):
         self.beginInsertRows(parent, row, (row + (count - 1)))
         for _ in range(0, count):
-            self._id_of_last_created_sheet = cfg.data.main_tree.create_new_sheet(self.nodeFromIndex(parent).sheet_id, "story")
+            self._id_of_last_created_sheet = cfg.data.main_tree.create_new_sheet(self.nodeFromIndex(parent).sheet_id, "write")
         self.endInsertRows()
         return True
 
@@ -224,7 +224,7 @@ parentIndex, parentIndex)
         self.root_node = TreeNode()
           
         
-        list_ = cfg.data.main_tree.get_tree_model_necessities("story")
+        list_ = cfg.data.main_tree.get_tree_model_necessities("write")
         if list_ == []: #empty /close
             self.root_node = TreeNode()
             self.endResetModel()
@@ -235,7 +235,7 @@ parentIndex, parentIndex)
         for tuple_ in list_:
             self._dict[tuple_[0]] = tuple_
 
-        self.root_node.sheet_id = cfg.data.main_tree.get_root_id("story")
+        self.root_node.sheet_id = cfg.data.main_tree.get_root_id("write")
         self.create_child_nodes(self.root_node)
 
 

@@ -14,6 +14,7 @@ export PLUME_DEVELOP_FROM=/home/cyril/Devel/workspace_eclipse/plume-creator
 ### Necessities :
 Make sure you have pyQt 5.4 (for python3) or more, and it's dev tools (pyrcc5), installed
 
+sudo apt-get install pyqt5-dev-tools
 sudo apt-get install python3-pyqt5
 sudo apt-get install python3-pyqt5.qtsql
 sudo apt-get install python3-pyqt5.qtopengl

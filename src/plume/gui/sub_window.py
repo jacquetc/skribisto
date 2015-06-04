@@ -51,7 +51,7 @@ class WritePanel(SubWindow, WindowSystemController):
         '''
         super(WritePanel, self).__init__(parent=parent, parent_window_system_controller=parent_window_system_controller)
         
-        self.setWindowTitle("Write")
+        self.setWindowTitle(_("Write"))
         self.setObjectName("write_sub_window")
         self.dock_system = DockSystem(self, self,  DockSystem.DockTypes.WritePanelDock)
 
@@ -144,4 +144,4 @@ class WriteTab(SubWindow):
         tab_widget = self.parent().tab_widget
         index = tab_widget.indexOf(self)
         tab_widget.setTabText(index, new_title)
-        
+
