@@ -22,12 +22,16 @@ class SubWindow(QMainWindow):
         super(SubWindow, self).__init__(parent=parent)
         self.parent_window_system_controller = parent_window_system_controller
         
+    def is_attached(self):
+        return self._is_attached
         
     def detach_this_window(self):
-        self.parent_window_system_controller.detach_sub_window(self)
+        if self.parent_window_system_controller.is_window_attached() == True :
+            self.parent_window_system_controller.detach_sub_window(self)
     
     def attach_back_to_parent_window_system(self):
-        self.parent_window_system_controller.attach_sub_window(self)
+        if self.parent_window_system_controller.is_window_attached() == False :
+            self.parent_window_system_controller.attach_sub_window(self)
         
     def closeEvent(self,  event):
         self.attach_back_to_parent_window_system()

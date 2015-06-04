@@ -96,8 +96,8 @@ class TreeSheet(QObject):
     def get_title(self):
         return cfg.data.main_tree.get_title(self.sheet_id)
     
-    def change_title(self, new_title):
-        cfg.data.main_tree.set_title(self.sheetid, new_title)
+    def set_title(self, new_title):
+        cfg.data.main_tree.set_title(self.sheet_id, new_title)
 
 
     def get_content(self):
