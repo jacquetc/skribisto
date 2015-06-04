@@ -23,7 +23,7 @@ class Tree(object):
 
     def get_tree_model_necessities(self, tree_type=None):
         '''
-        :param tree_type: restrict to a given tree. Ex : story
+        :param tree_type: restrict to a given tree. Ex : write
         Quick way to get the necessary to build a Qt treeModel
         
         return [(sheet_id, title, parent_id, children_id, properties), (...)]
@@ -72,7 +72,7 @@ class Tree(object):
         function:: create_new_tree_item(parent, tree_type)
         Append to parent
         :param parent: int, sheet_id of parent 
-        :param tree_type: string, Ex : "story"
+        :param tree_type: string, Ex : "write"
         :rtype sheet_id: int, sheet_id of the new sheet
         '''
         c = self.db.cursor()

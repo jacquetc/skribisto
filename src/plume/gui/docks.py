@@ -14,7 +14,7 @@ from enum import Enum
 class DockSystem(QObject):
     '''
     DockSystem
-    For now, it's only for the story_tree docks
+    For now, it's only for the write_tree docks
     '''
     DockTypes = Enum('DockType', 'WriteTabDock WritePanelDock')
     
