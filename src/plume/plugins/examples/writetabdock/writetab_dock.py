@@ -1,5 +1,5 @@
 '''
-Created on 2 juin 2015
+Created on 4 juin 2015
 
 @author:  Cyril Jacquet
 '''
@@ -54,9 +54,10 @@ class CoreWriteTabDock():
         '''
 
         super(CoreWriteTabDock, self).__init__()
-        self._title_text = None
         self._sheet_id = None
         self.tree_sheet = None        
+        # property variable :
+        self._title_text = None
 
     @property
     def sheet_id(self):
@@ -70,12 +71,13 @@ class CoreWriteTabDock():
         if self.sheet_id is not None:
             # you fetch the current sheet :
             self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
+            # initialize title_text()
             _ = self.title_text
             
             
         
     @property   
-    def title_text(self):
+    def title_text(self): #rename the property as you see fit
         if self._title_text is None:
             self._title_text = ""
             if self._sheet_id is not None:
@@ -84,11 +86,12 @@ class CoreWriteTabDock():
             
         return self._title_text
         
-    @title_text.setter
-    def title_text(self,  text):
+    @title_text.setter #rename the property here too !
+    def title_text(self,  text): #rename the property here too !
         if self.sheet_id is not None:
+            # you fetch the current sheet :
             self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
-            self.tree_sheet.set_title(text) 
+            self.tree_sheet.set_title(text) # apply the change
             self._title_text = text
     
 
@@ -128,6 +131,7 @@ class GuiWriteTabDock(QObject):
             self.core_part = self.tree_sheet.get_instance_of(self.dock_name)
             self.core_part.sheet_id = sheet_id
             core_cfg.data.subscriber.unsubscribe_update_func(self.get_update)
+            # subscribe to an updater, so to be up to date when changes occur : 
             core_cfg.data.subscriber.subscribe_update_func_to_domain(self.get_update,"data.tree.title", self._sheet_id)
 
     def get_widget(self):
@@ -141,7 +145,6 @@ class GuiWriteTabDock(QObject):
             if self.tree_sheet is not None and self.core_part is not None:
                 self.get_update()
 
-                
                 #connect :
                 self.ui.lineEdit.editingFinished.connect(self.apply_text_change, type=Qt.UniqueConnection )
                 

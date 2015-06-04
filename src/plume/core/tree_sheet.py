@@ -80,9 +80,6 @@ class TreeSheet(QObject):
                 cfg.data.subscriber.subscribe_update_func_to_domain(func, domain)
             else:
                  cfg.data.subscriber.unsubscribe_update_func_to_domain(func)
-               
-                
-            
        
     def get_instance_of(self, instance_name):
         if instance_name in self._object_dict.keys():
@@ -152,6 +149,7 @@ class TreeSheet(QObject):
         '''
         content_type = cfg.data.main_tree.get_content_type(self.sheet_id)
         return content_type
+        
     def set_content_type(self, content_type):
         '''
         function:: set_content_type(self, content_type)

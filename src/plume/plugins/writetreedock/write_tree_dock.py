@@ -126,5 +126,3 @@ class GuiWriteTreeDock():
 #    def set_current_row(self, model_index):
 #        self.ui.tableView.setCurrentIndex(model_index)
 #       
-from PyQt5.QtCore import QSortFilterProxyModel, QVariant, QModelIndex, Qt
-from plugins.writetreedock import write_tree_model
