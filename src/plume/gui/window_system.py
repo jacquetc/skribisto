@@ -44,6 +44,17 @@ class WindowSystemController():
         self.window_system_parent_widget.attach_sub_window(sub_window)
 
         self.window_dict[sub_window.objectName()] = [sub_window, "attached"]
+        
+    def is_window_attached(self, sub_window):
+        try:
+            sub_window, state_str = self.window_dict[sub_window.objectName()]
+        except KeyError:
+            return True
+       
+        if state_str == "detached":
+            return False
+        else:
+            return True
 
     
     
@@ -69,7 +80,7 @@ class WindowSystemController():
 
 
 
-class WindowSystemParentWidget(object):
+class WindowSystemParentWidget():
     '''
 
 
@@ -83,7 +94,7 @@ class WindowSystemParentWidget(object):
     def set_sub_window_visible(self, sub_window):
         pass
 
-class WindowSystemActionHandler(object):
+class WindowSystemActionHandler():
     '''
     The QActions added to the action handler must have the QObject.property("sub_window_object_name") 
     filled with the object name of the corresponding sub_window

@@ -247,6 +247,7 @@ class SideBar(QWidget, WindowSystemActionHandler):
         
         
 
+    @pyqtSlot()
     def onDetachClicked(self):
         '''
         Must only be used as a slot for Qt signals ! 
@@ -259,6 +260,7 @@ class SideBar(QWidget, WindowSystemActionHandler):
        
         
         
+    @pyqtSlot()
     def onAttachClicked(self):
         '''
         Must only be used as a slot for Qt signals ! 
@@ -268,14 +270,19 @@ class SideBar(QWidget, WindowSystemActionHandler):
             if button.property("sub_window_object_name") == self.sender().property("sub_window_object_name"):
                 button.click()
         
-
+    @pyqtSlot(bool)
     def action_toggled_slot(self, value):
         '''
         Must only be used as a slot for Qt signals ! 
         '''
         if value == True:
             self.set_sub_window_visible()
+#            for button in self.side_bar_button_list:
+#                if button.property("sub_window_object_name") != self.sender().property("sub_window_object_name"):
+#                    button.setChecked(True)
+#                    break
             
+    @pyqtSlot()
     def set_sub_window_visible(self):
         '''
         Must only be used as a slot for Qt signals ! 
