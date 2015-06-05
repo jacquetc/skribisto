@@ -27,6 +27,7 @@ class WriteTreeModel(QAbstractItemModel):
         cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.project.close")
         cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.tree")
         cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.tree.title")
+        cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.tree.properties")
 
     def columnCount(self, parent):
         return 1
