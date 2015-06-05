@@ -181,9 +181,13 @@ class TreeSheet(QObject):
         :param key:
         :param new_key:
         '''
-        if new_key in self._properties.keys():
-            raise KeyAlreadyPresentError(key,'already present in as property key')
-        value = self._properties.pop(key)
+#        if new_key in self._properties.keys():
+#            raise KeyAlreadyPresentError(key,'already present in as property key')
+        if key not in self._properties.keys():
+            value = ""
+        else:
+            value = self._properties.pop(key)
+        
         self._properties[new_key] = value
         cfg.data.main_tree.set_properties(self.sheet_id, self._properties)
         

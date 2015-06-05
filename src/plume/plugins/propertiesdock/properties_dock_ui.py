@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eclipse/plume-creator/src/plume/plugins/properties_dock.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eric/plume-creator/src/plume/plugins/propertiesdock/properties_dock.ui'
 #
 # Created by: PyQt5 UI code generator 5.4.1
 #
@@ -31,11 +31,17 @@ class Ui_PropertiesDock(object):
         self.verticalLayout.addWidget(self.topWidget)
         self.tableView = QtWidgets.QTableView(PropertiesDock)
         self.tableView.setAlternatingRowColors(True)
+        self.tableView.setSortingEnabled(True)
         self.tableView.setObjectName("tableView")
         self.tableView.horizontalHeader().setCascadingSectionResizes(True)
-        self.tableView.horizontalHeader().setDefaultSectionSize(100)
-        self.tableView.horizontalHeader().setMinimumSectionSize(40)
+        self.tableView.horizontalHeader().setDefaultSectionSize(70)
+        self.tableView.horizontalHeader().setHighlightSections(False)
+        self.tableView.horizontalHeader().setMinimumSectionSize(50)
+        self.tableView.horizontalHeader().setSortIndicatorShown(True)
         self.tableView.horizontalHeader().setStretchLastSection(True)
+        self.tableView.verticalHeader().setVisible(False)
+        self.tableView.verticalHeader().setDefaultSectionSize(20)
+        self.tableView.verticalHeader().setMinimumSectionSize(20)
         self.verticalLayout.addWidget(self.tableView)
 
         self.retranslateUi(PropertiesDock)

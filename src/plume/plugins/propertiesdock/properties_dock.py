@@ -144,12 +144,12 @@ class GuiPropertyDock():
     
     @pyqtSlot()
     def add_property_row(self):
-        index = self.ui.tableView.currentIndex()
+        index = self.filter.mapToSource(self.ui.tableView.currentIndex())
         self.core_part.add_property_row(index)
     
     @pyqtSlot()
     def remove_property_row(self):
-        index = self.ui.tableView.currentIndex()
+        index = self.filter.mapToSource(self.ui.tableView.currentIndex())
         self.core_part.remove_property_row(index)
     
     @pyqtSlot('QModelIndex')        
