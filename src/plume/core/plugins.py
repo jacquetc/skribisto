@@ -6,12 +6,15 @@ Created on 6 mai 2015
 
 from . import subscriber, cfg
 import imp
-import os,  sys
+import os
+import sys
 from yapsy.PluginManager import PluginManager
 from yapsy.IPlugin import IPlugin
 import importlib
 
+
 class Plugins():
+
     '''
     Plugins
     '''
@@ -22,10 +25,10 @@ class Plugins():
         '''
 
         super(Plugins, self).__init__()
-        
+
         self.write_tab_dock_plugin_dict = {}
         self. write_panel_dock_plugin_dict = {}
-        
+
         # Build the manager
         self._plugin_manager = PluginManager()
         # List all sub-directories of "plugins"
@@ -41,16 +44,15 @@ class Plugins():
         # Define the various categories corresponding to the different
         # kinds of plugins you have defined
         self._plugin_manager.setCategoriesFilter({
-                                                 "CoreWriteTabDockPlugin" : CoreWriteTabDockPlugin, 
-                                                 "CoreWritePanelDockPlugin" : CoreWritePanelDockPlugin
+                                                 "CoreWriteTabDockPlugin": CoreWriteTabDockPlugin,
+                                                 "CoreWritePanelDockPlugin": CoreWritePanelDockPlugin
                                                  })
 
         self._plugin_manager.collectPlugins()
-        
-        self.load_plugins(["CoreWriteTabDockPlugin", "CoreWritePanelDockPlugin" ])
 
+        self.load_plugins(
+            ["CoreWriteTabDockPlugin", "CoreWritePanelDockPlugin"])
 
-            
     def load_plugins(self, categories):
         '''
         function:: load_plugins(categories)
@@ -58,21 +60,19 @@ class Plugins():
         '''
         for category in categories:
             for pluginInfo in self._plugin_manager.getPluginsOfCategory(category):
-                setattr(self, pluginInfo.plugin_object.core_class().__name__ \
-                        , pluginInfo.plugin_object.core_class())
-        
+                setattr(self, pluginInfo.plugin_object.core_class(
+                ).__name__, pluginInfo.plugin_object.core_class())
+
                 if category is "CoreWriteTabDockPlugin":
                     self.write_tab_dock_plugin_dict[pluginInfo.plugin_object.core_class().dock_name] \
-                    = pluginInfo.plugin_object.core_class()
+                        = pluginInfo.plugin_object.core_class()
                 if category is "CoreWritePanelDockPlugin":
                     self.write_panel_dock_plugin_dict[pluginInfo.plugin_object.core_class().dock_name] \
-                    = pluginInfo.plugin_object.core_class()
-                    
+                        = pluginInfo.plugin_object.core_class()
 
-        
-    
-    
+
 class CoreWriteTabDockPlugin(IPlugin):
+
     '''
     CoreWriteTabDockPlugin
     '''
@@ -85,10 +85,8 @@ class CoreWriteTabDockPlugin(IPlugin):
         super(CoreWriteTabDockPlugin, self).__init__()
 
 
-
-
-   
 class CoreWritePanelDockPlugin(IPlugin):
+
     '''
     CoreWritePanelDockPlugin
     '''
@@ -101,19 +99,15 @@ class CoreWritePanelDockPlugin(IPlugin):
         super(CoreWritePanelDockPlugin, self).__init__()
 
 
-
-
-
-
 '''
         self.plugin_folder = "./plugins"
         self.main_module = "__init__"
-        
+
         for i in self.get_plugins():
             print("Loading plugin " + i["name"])
             plugin = self.load_plugin(i)
             plugin.run()
-            
+
     def get_plugins(self):
         plugins = []
         possibleplugins = os.listdir(self.plugin_folder)
@@ -127,5 +121,5 @@ class CoreWritePanelDockPlugin(IPlugin):
 
     def load_plugin(self,plugin):
         return imp.load_module(self.main_module, *plugin["info"])
-        
+
     '''

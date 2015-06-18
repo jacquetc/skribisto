@@ -10,26 +10,24 @@ from PyQt5.QtCore import pyqtSlot,  QSize,  Qt
 from .preferences_ui import Ui_Preferences
 from enum import Enum
 
+
 class Preferences(QDialog):
-    
+
     PageCategories = Enum('PageCategory', 'Interface Editor Advanced')
 
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         super(Preferences, self).__init__(parent)
         self.ui = Ui_Preferences()
         self.ui.setupUi(self)
-        
+
         self.page_dict = {}
-        
+
         self.ui.previousButton.clicked.connect(self.show_main_page)
 
-
-        
         self.add_page(ThemesPreferences,  self.PageCategories.Interface)
         self.add_page(PluginsPreferences,  self.PageCategories.Advanced)
-        
-        self.show_main_page()
 
+        self.show_main_page()
 
     def add_page(self,  class_name,  page_category):
         page = class_name()
@@ -48,13 +46,12 @@ class Preferences(QDialog):
             self.ui.editorLayout.addWidget(button)
         if page_category is self.PageCategories.Advanced:
             self.ui.advancedLayout.addWidget(button)
-            
-            
-    @pyqtSlot() 
+
+    @pyqtSlot()
     def show_main_page(self):
         self.ui.stackedWidget.setCurrentIndex(0)
         self.ui.titleButton.hide()
-    
+
     @pyqtSlot()
     def change_page(self):
         sender = self.sender()
@@ -65,30 +62,31 @@ class Preferences(QDialog):
         self.ui.titleButton.setText(widget.title)
         self.ui.titleButton.setIcon(widget.icon)
 
-        
 
 class PreferencesPageTemplate(QWidget):
-    def __init__(self, parent = None):
+
+    def __init__(self, parent=None):
         super(PreferencesPageTemplate, self).__init__(parent)
         self.page_name = ""
         self._icon = ""
         self.title = _("")
 
-    
     @property
     def icon(self):
         return self._icon
-        
-    @icon.setter   
+
+    @icon.setter
     def icon(self,  path):
-        self._icon  = QIcon(QPixmap(path))
+        self._icon = QIcon(QPixmap(path))
 
 #-------------------- Plugins
 
 from .preferences_plugins_ui import Ui_PluginsPage
 
+
 class PluginsPreferences(PreferencesPageTemplate):
-    def __init__(self, parent = None):
+
+    def __init__(self, parent=None):
         super(PluginsPreferences, self).__init__(parent)
         self.ui = Ui_PluginsPage()
         self.ui.setupUi(self)
@@ -101,8 +99,10 @@ class PluginsPreferences(PreferencesPageTemplate):
 
 from .preferences_themes_ui import Ui_ThemesPage
 
+
 class ThemesPreferences(PreferencesPageTemplate):
-    def __init__(self, parent = None):
+
+    def __init__(self, parent=None):
         super(ThemesPreferences, self).__init__(parent)
         self.ui = Ui_ThemesPage()
         self.ui.setupUi(self)

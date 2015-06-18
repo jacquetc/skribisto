@@ -7,7 +7,9 @@ Created on 6 mai 2015
 from . import subscriber, cfg
 from PyQt5.Qt import pyqtSlot
 
+
 class Project():
+
     '''
     Project
     '''
@@ -18,16 +20,16 @@ class Project():
         '''
 
         super(Project, self).__init__()
-        cfg.data.subscriber.subscribe_update_func_to_domain(self.signal_project_is_saved, "data.project.saved")
-        cfg.data.subscriber.subscribe_update_func_to_domain(self.signal_project_is_not_saved, "data.project.notsaved")
+        cfg.data.subscriber.subscribe_update_func_to_domain(
+            self.signal_project_is_saved, "data.project.saved")
+        cfg.data.subscriber.subscribe_update_func_to_domain(
+            self.signal_project_is_not_saved, "data.project.notsaved")
 
-        
-        
     @pyqtSlot()
     def open_test_project(self):
         cfg.data.project.load_test_project_db()
         subscriber.announce_update("core.project.load")
-       #subscriber.announce_update()        
+       # subscriber.announce_update()
 
     @pyqtSlot(str)
     def open(self, file_name):
@@ -37,10 +39,9 @@ class Project():
         '''
         cfg.data.project.load(file_name)
         subscriber.announce_update("core.project.load")
-        
+
     def project_path(self):
         return self._project_path
-        
 
     def save(self):
         '''
@@ -59,7 +60,6 @@ class Project():
         '''
         cfg.data.project.save_as(file_name, file_type)
 
-
     def close_project(self):
         '''
         function:: close_project()
@@ -67,7 +67,6 @@ class Project():
         '''
         self._clear_project()
 
-        
     def _clear_project(self):
         '''
         function:: _clear_project()
@@ -76,7 +75,7 @@ class Project():
         '''
         cfg.data.project.close_db()
         subscriber.announce_update("core.project.close")
-        
+
     def quit(self):
         '''
         function:: quit()
@@ -102,13 +101,12 @@ class Project():
         '''
 
         pass
-        
+
     def is_open(self):
         return cfg.data.project.is_open()
-        
-        
+
     def signal_project_is_saved(self):
         subscriber.announce_update("core.project.saved")
-       
+
     def signal_project_is_not_saved(self):
-        subscriber.announce_update("core.project.notsaved")       
+        subscriber.announce_update("core.project.notsaved")

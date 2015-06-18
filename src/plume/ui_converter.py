@@ -1,36 +1,36 @@
 
 
-### Auto converter .ui -> .py for developpers
+# Auto converter .ui -> .py for developpers
 import os
+
 
 def find_forms(srcdir):
     base = os.path.join(srcdir, 'src', 'plume')
     forms = []
-    for root, _, files in os.walk(base):        
+    for root, _, files in os.walk(base):
         for name in files:
-            if name.endswith('.ui'):                
+            if name.endswith('.ui'):
                 forms.append(os.path.abspath(os.path.join(root, name)))
 
     return forms
 
-def form_to_compiled_form(form):
-    return form.rpartition('.')[0]+'_ui.py'
 
+def form_to_compiled_form(form):
+    return form.rpartition('.')[0] + '_ui.py'
 
 
 def build_forms(srcdir, info=None, summary=False):
     import re
     from io import StringIO
     from PyQt5.uic import compileUi
-    
-
 
     def sub(match):
-        ans = 'I(%s%s%s)'%(match.group(1), match.group(2), match.group(1))
+        ans = 'I(%s%s%s)' % (match.group(1), match.group(2), match.group(1))
         return ans
 
     num = 0
-    transdef_pat = re.compile(r'^\s+_translate\s+=\s+QtCore.QCoreApplication.translate$', flags=re.M)
+    transdef_pat = re.compile(
+        r'^\s+_translate\s+=\s+QtCore.QCoreApplication.translate$', flags=re.M)
     transpat = re.compile(r'_translate\s*\(.+?,\s+"(.+?)(?<!\\)"\)', re.DOTALL)
 
     # Ensure that people running from source have all their forms rebuilt for
@@ -60,7 +60,6 @@ def build_forms(srcdir, info=None, summary=False):
     if num:
         print('Compiled %d forms' % num)
 
-        
 
 _df = os.environ.get('PLUME_DEVELOP_FROM', None)
 if _df and os.path.exists(_df):

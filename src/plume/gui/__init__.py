@@ -3,7 +3,7 @@
 
 import os
 
-### translation
+# translation
 
 import gettext
 

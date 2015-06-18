@@ -8,6 +8,7 @@ from PyQt5.QtCore import QSortFilterProxyModel, QVariant, QModelIndex, Qt
 
 
 class WriteTreeProxyModel(QSortFilterProxyModel):
+
     '''
     WriteTreeProxyModel
     '''
@@ -18,4 +19,3 @@ class WriteTreeProxyModel(QSortFilterProxyModel):
         '''
 
         super(WriteTreeProxyModel, self).__init__(parent=None)
-        

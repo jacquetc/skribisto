@@ -9,6 +9,7 @@ from gui import plugins as gui_plugins
 
 
 class NotesDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
+
     '''
     NotesDockPlugin, based on SynopsisDockPlugin
     '''
@@ -21,21 +22,22 @@ class NotesDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteT
 
         super(NotesDockPlugin, self).__init__()
 
-        
-    def core_class(self):        
+    def core_class(self):
         return CoreNotesDock
-    
+
     def gui_class(self):
         return GuiNotesDock
-    
+
+
 class CoreNotesDock(CoreSynopsisDock):
+
     '''
     CoreNotesDock, based on CoreSynopsisDock
     '''
 
-    dock_name = "notes-dock" 
+    dock_name = "notes-dock"
     note_type_name = "notes"
-    
+
     def __init__(self):
         '''
         Constructor
@@ -43,16 +45,17 @@ class CoreNotesDock(CoreSynopsisDock):
 
         super(CoreNotesDock, self).__init__()
 
+
 class GuiNotesDock(GuiSynopsisDock):
+
     '''
     GuiNotesDock, based on GuiSynopsisDock
     '''
-    dock_name = "notes-dock" 
+    dock_name = "notes-dock"
     dock_displayed_name = _("Notes")
-    def __init__(self,  parent = None):
+
+    def __init__(self,  parent=None):
         '''
         Constructor
         '''
         super(GuiNotesDock, self).__init__(parent)
-        
-        
