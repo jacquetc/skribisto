@@ -55,3 +55,22 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Eclipse
+.project
+.pydevproject
+.settings
+
+#KDE
+.directory
+
+#cx_Freeze
+build/
+build
+
+#gedit
+*~
+
+#eric6
+.eric6project
+*.e4p

@@ -1,0 +1,9 @@
+[Core]
+Name = WriteTab Dock
+Module = writetab_dock
+
+[Documentation]
+Author = Cyril Jacquet
+Version = 0.1
+Website = http://www.plume-creator.eu
+Description = Example of dock displaying sheet's title
