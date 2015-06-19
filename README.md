@@ -1,15 +1,27 @@
 # plume-creator
 Software for writers
 
+This software is the continuation of Plume Creator from http://sourceforge.net/projects/plume-creator/
+
+The main change is the coding language : python 4 / PyQt5 instead of the c++ / Qt5 of the original software.
+
+To avoid confusion with version numbers, this new Plume will start at version 1.5.0 . To point out the sofware is still under development, all releases will be tagged "alpha" until the 2.0 release.
+
+Of course, the projects from the old Plume will be importable.
+
+Help in testing or coding is always welcome !
 
 ## For developers 
+
+
+
 You must set up the workspace before beginning to develop Plume.
 Add to your environnmeent variables :
 
 PLUME_DEVELOP_FROM=/path/to/plume/source/code
 
 ### In linux :
-export PLUME_DEVELOP_FROM=/home/cyril/Devel/workspace_eclipse/plume-creator
+export PLUME_DEVELOP_FROM=/home/[username]/Devel/workspace_eclipse/plume-creator
 
 #### Necessities :
 Make sure you have pyQt 5.4 (for python3) or more, and it's dev tools (pyrcc5), installed
@@ -31,7 +43,9 @@ sudo easy_install3 pip
 sudo pip3 install yapsy
 
 ### In Windows :
-    1.Create an account on GitHub (ex : gmcduling)
+Development of Plume being done on Linux, I can't be sure about this setup.
+
+    1.Create an account on GitHub
     
     2.Fetch the last update of Plume (and stay in sync every update) :
     
