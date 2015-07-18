@@ -90,29 +90,10 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.ui.actionExit.triggered.connect(self.launch_exit_dialog)
 
         # Help menu actions
-        self.ui.actionAbout_Plume_Creator.triggered.connect(self.aboutPlume)
+        self.ui.actionAbout_Plume_Creator.triggered.connect(self.about_Plume)
         self.ui.actionAbout_Qt.triggered.connect(QApplication.instance().aboutQt)
 
         self._enable_actions(False)
-
-    @pyqtSlot()
-    def aboutPlume(self):
-        QMessageBox.about(self, "About Plume Creator", "<p><center><b>Plume Creator</b></center></p>"
-        "<p><center><b>A Project Manager and Rich Text Editor for Writers.</b></center></p>"
-        "<p><center>Version 1.5.0-alpha" + str(QApplication.applicationVersion()) + "</center></p>"
-        "<p><center><address><a href=http://www.plume-creator.eu>http://www.plume-creator.eu</a></address></center></p>"
-        "<p><center>Copyright (C)" + str(QDate.currentDate().year()) + ", created by Cyril Jacquet</center></p>"
-        "<p><center>cyril.jacquet@plume-creator.eu</center></p>"
-        "<p>Plume Creator is free software: you can redistribute it and/or modify "
-        "it under the terms of the GNU General Public License as published by "
-        "the Free Software Foundation, either version 3 of the License, or "
-        "(at your option) any later version.</p> "
-        "<p>Plume Creator is distributed in the hope that it will be useful, "
-        "but WITHOUT ANY WARRANTY; without even the implied warranty of "
-        "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
-        "GNU General Public License for more details.</p>"
-        "<p>You should have received a copy of the GNU General Public License "
-        "along with Plume Creator.  If not, see <address>http://www.gnu.org/licenses</address>.</p>")
 
     @pyqtSlot()
     def launch_open_test_project(self):
@@ -164,6 +145,7 @@ class MainWindow(QMainWindow, WindowSystemController):
 
         self.setWindowTitle("Plume Creator - " + fileName)
 
+    @pyqtSlot()
     def launch_close_dialog(self):
         if cfg.core.project.is_open() == False:
             return
@@ -186,6 +168,7 @@ class MainWindow(QMainWindow, WindowSystemController):
             cfg.core.project.save()
             cfg.core.project.close_project()
 
+    @pyqtSlot()
     def launch_exit_dialog(self):
         if cfg.core.project.is_open() == False:
             QApplication.quit()
@@ -194,6 +177,27 @@ class MainWindow(QMainWindow, WindowSystemController):
         if result == QMessageBox.Cancel:
             return QMessageBox.Cancel
         QApplication.quit()
+
+
+    @pyqtSlot()
+    def about_Plume(self):
+        QMessageBox.about(self, "About Plume Creator", "<p><center><b>Plume Creator</b></center></p>"
+        "<p><center><b>A Project Manager and Rich Text Editor for Writers.</b></center></p>"
+        "<p><center>Version 1.5.0-alpha" + str(QApplication.applicationVersion()) + "</center></p>"
+        "<p><center><address><a href=http://www.plume-creator.eu>http://www.plume-creator.eu</a></address></center></p>"
+        "<p><center>Copyright (C)" + str(QDate.currentDate().year()) + ", created by Cyril Jacquet</center></p>"
+        "<p><center>cyril.jacquet@plume-creator.eu</center></p>"
+        "<p>Plume Creator is free software: you can redistribute it and/or modify "
+        "it under the terms of the GNU General Public License as published by "
+        "the Free Software Foundation, either version 3 of the License, or "
+        "(at your option) any later version.</p> "
+        "<p>Plume Creator is distributed in the hope that it will be useful, "
+        "but WITHOUT ANY WARRANTY; without even the implied warranty of "
+        "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
+        "GNU General Public License for more details.</p>"
+        "<p>You should have received a copy of the GNU General Public License "
+        "along with Plume Creator.  If not, see <address>http://www.gnu.org/licenses</address>.</p>")
+
 
     def set_project_is_saved(self):
         self.ui.actionSave.setEnabled(False)
