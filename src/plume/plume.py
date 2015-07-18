@@ -1,9 +1,10 @@
 import ui_converter
 import qrc_converter
+import except_handler
 from PyQt5.Qt import QApplication
 from core.core import Core
 from data.database import Database
-
+import sys
 
 def launch_gui(core):
     from gui import gui
@@ -12,10 +13,7 @@ def launch_gui(core):
 
     return gui
 
-
 if __name__ == '__main__':
-
-    import sys
 
     app = QApplication(sys.argv)
     data = Database(app)
