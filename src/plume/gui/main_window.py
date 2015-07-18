@@ -7,7 +7,7 @@ Created on 25 avr. 2015
 
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,
                              QHBoxLayout,  QFileDialog, QMessageBox,  QApplication)
-from PyQt5.QtCore import Qt,  QDir
+from PyQt5.QtCore import Qt,  QDir, QDate
 from .window_system import WindowSystemController
 from .sub_window import WritePanel
 from .binder import BinderPanel
@@ -89,7 +89,30 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.ui.actionClose_project.triggered.connect(self.launch_close_dialog)
         self.ui.actionExit.triggered.connect(self.launch_exit_dialog)
 
+        # Help menu actions
+        self.ui.actionAbout_Plume_Creator.triggered.connect(self.aboutPlume)
+        self.ui.actionAbout_Qt.triggered.connect(QApplication.instance().aboutQt)
+
         self._enable_actions(False)
+
+    @pyqtSlot()
+    def aboutPlume(self):
+        QMessageBox.about(self, "About Plume Creator", "<p><center><b>Plume Creator</b></center></p>"
+        "<p><center><b>A Project Manager and Rich Text Editor for Writers.</b></center></p>"
+        "<p><center>Version 1.5.0-alpha" + str(QApplication.applicationVersion()) + "</center></p>"
+        "<p><center><address><a href=http://www.plume-creator.eu>http://www.plume-creator.eu</a></address></center></p>"
+        "<p><center>Copyright (C)" + str(QDate.currentDate().year()) + ", created by Cyril Jacquet</center></p>"
+        "<p><center>cyril.jacquet@plume-creator.eu</center></p>"
+        "<p>Plume Creator is free software: you can redistribute it and/or modify "
+        "it under the terms of the GNU General Public License as published by "
+        "the Free Software Foundation, either version 3 of the License, or "
+        "(at your option) any later version.</p> "
+        "<p>Plume Creator is distributed in the hope that it will be useful, "
+        "but WITHOUT ANY WARRANTY; without even the implied warranty of "
+        "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
+        "GNU General Public License for more details.</p>"
+        "<p>You should have received a copy of the GNU General Public License "
+        "along with Plume Creator.  If not, see <address>http://www.gnu.org/licenses</address>.</p>")
 
     @pyqtSlot()
     def launch_open_test_project(self):
