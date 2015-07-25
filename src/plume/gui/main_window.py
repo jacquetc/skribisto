@@ -181,22 +181,33 @@ class MainWindow(QMainWindow, WindowSystemController):
 
     @pyqtSlot()
     def about_Plume(self):
-        QMessageBox.about(self, "About Plume Creator", "<p><center><b>Plume Creator</b></center></p>"
-        "<p><center><b>A Project Manager and Rich Text Editor for Writers.</b></center></p>"
-        "<p><center>Version 1.5.0-alpha" + str(QApplication.applicationVersion()) + "</center></p>"
-        "<p><center><address><a href=http://www.plume-creator.eu>http://www.plume-creator.eu</a></address></center></p>"
-        "<p><center>Copyright (C)" + str(QDate.currentDate().year()) + ", created by Cyril Jacquet</center></p>"
-        "<p><center>cyril.jacquet@plume-creator.eu</center></p>"
-        "<p>Plume Creator is free software: you can redistribute it and/or modify "
-        "it under the terms of the GNU General Public License as published by "
-        "the Free Software Foundation, either version 3 of the License, or "
-        "(at your option) any later version.</p> "
-        "<p>Plume Creator is distributed in the hope that it will be useful, "
-        "but WITHOUT ANY WARRANTY; without even the implied warranty of "
-        "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
-        "GNU General Public License for more details.</p>"
-        "<p>You should have received a copy of the GNU General Public License "
-        "along with Plume Creator.  If not, see <address>http://www.gnu.org/licenses</address>.</p>")
+        plumeDescr = 'A Project Manager and Rich Text Editor for Writers.'
+        plumeName = QApplication.applicationName()
+        plumeVersion = QApplication.applicationVersion()
+        plumeDomain = QApplication.organizationDomain()
+        plumeLicense = 'http://www.gnu.org/licenses'
+
+        QMessageBox.about(self, "About " + plumeName,
+            "<p><center><b>" + plumeName + "</b></center></p>"
+            "<p><center><b>" + plumeDescr + "</b></center></p>"
+            "<p><center>Version " + plumeVersion + "</center></p>"
+            "<p><center><address><a href=" + plumeDomain + ">" + plumeDomain +
+            "</a></address></center></p>"
+            "<p><center>Copyright (C)" + str(QDate.currentDate().year()) +
+            ", created by Cyril Jacquet</center></p>"
+            "<p><center>cyril.jacquet@plume-creator.eu</center></p>"
+            "<p>Plume Creator is free software: you can redistribute it and/or "
+            "modify it under the terms of the GNU General Public License as "
+            "published by the Free Software Foundation, either version 3 of the"
+            " License, or (at your option) any later version.</p>"
+            "<p>Plume Creator is distributed in the hope that it will be "
+            "useful, but WITHOUT ANY WARRANTY; without even the implied "
+            "warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. "
+            "See the GNU General Public License for more details.</p>"
+            "<p>You should have received a copy of the GNU General Public "
+            "License along with Plume Creator.  If not, see:<br>"
+            "<address><a href=" + plumeLicense + ">" + plumeLicense +
+            "</a></address>.</p>")
 
 
     def set_project_is_saved(self):
