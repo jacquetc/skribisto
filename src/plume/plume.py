@@ -16,6 +16,9 @@ def launch_gui(core):
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
+    app.setApplicationName('Plume Creator')
+    app.setApplicationVersion('1.5.0-alpha')
+    app.setOrganizationDomain('http://www.plume-creator.eu')
     data = Database(app)
     core = Core(app, data)
 
