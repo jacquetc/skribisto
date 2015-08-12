@@ -1,6 +1,5 @@
 import ui_converter
 import qrc_converter
-import except_handler
 from PyQt5.Qt import QApplication
 from core.core import Core
 from data.database import Database
@@ -16,6 +15,7 @@ def launch_gui(core):
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
+    import except_handler
     data = Database(app)
     core = Core(app, data)
 
