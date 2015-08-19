@@ -305,7 +305,7 @@ def transform_children_id_text_into_int_tuple(children_id_text):
     int_list = []
     if children_id_text is not None:
         for txt in children_id_text.split(","):
-            if txt != None:
+            if txt is not None:
                 int_list.append(int(txt))
         int_tuple = tuple(int_list)
     return int_tuple

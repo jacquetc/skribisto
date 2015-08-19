@@ -6,6 +6,7 @@ from core.core import Core
 from data.database import Database
 import sys
 
+
 def launch_gui(core):
     from gui import gui
     gui = gui.Gui(core)
