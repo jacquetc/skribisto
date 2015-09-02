@@ -67,10 +67,10 @@ class Project(object):
             self.db = new_db
             cfg.data.db = self.db
             cfg.data.main_tree.db = self.db
-            subscriber.announce_update("data.tree")
-            subscriber.announce_update("data.project.close")
-            subscriber.announce_update("data.project.load")
-            subscriber.announce_update("data.project.saved")
+            cfg.database.announce_update("data.tree")
+            cfg.database.announce_update("data.project.close")
+            cfg.database.announce_update("data.project.load")
+            cfg.database.announce_update("data.project.saved")
             self._is_open = True
             self._project_path = file_name
             self._project_file_type = "*.sqlite"
@@ -85,7 +85,7 @@ class Project(object):
             on_disk_db = sqlite3.connect(file_name)
             query = "".join(line for line in self.db.iterdump())
             on_disk_db.executescript(query)
-            subscriber.announce_update("data.project.saved")
+            cfg.database.announce_update("data.project.saved")
             self._project_path = file_name
             self._project_file_type = "*.sqlite"
 
@@ -106,5 +106,5 @@ class Project(object):
         self.db = None
         cfg.data.db = None
         cfg.data.main_tree.db = None
-        subscriber.announce_update("data.project.close")
+        cfg.database.announce_update("data.project.close")
         self._is_open = False
