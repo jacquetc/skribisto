@@ -20,7 +20,7 @@ if __name__ == '__main__':
     app.setApplicationName('Plume Creator')
     app.setApplicationVersion('1.5.0-alpha')
     app.setOrganizationDomain('http://www.plume-creator.eu')
-    data = Database(app)
+    data = Database()
     core = Core(app, data)
 
     gui = launch_gui(core)

@@ -4,19 +4,20 @@ Created on 26 avr. 2015
 @author:  Cyril Jacquet
 '''
 
-from . import subscriber, sql, cfg
+from . import sql, cfg
+from .base import DatabaseBaseClass
 import sqlite3
 import os
 
 
-class Project(object):
+class Project(DatabaseBaseClass):
 
     '''
     classdocs
     '''
 
-    def __init__(self):
-        super(Project, self).__init__()
+    def __init__(self, database_subsriber):
+        super(Project, self).__init__(database_subsriber)
         '''
         Constructor
         '''
@@ -67,10 +68,10 @@ class Project(object):
             self.db = new_db
             cfg.data.db = self.db
             cfg.data.main_tree.db = self.db
-            cfg.database.announce_update("data.tree")
-            cfg.database.announce_update("data.project.close")
-            cfg.database.announce_update("data.project.load")
-            cfg.database.announce_update("data.project.saved")
+            self.subscriber.announce_update("data.tree")
+            self.subscriber.announce_update("data.project.close")
+            self.subscriber.announce_update("data.project.load")
+            self.subscriber.announce_update("data.project.saved")
             self._is_open = True
             self._project_path = file_name
             self._project_file_type = "*.sqlite"
@@ -85,7 +86,7 @@ class Project(object):
             on_disk_db = sqlite3.connect(file_name)
             query = "".join(line for line in self.db.iterdump())
             on_disk_db.executescript(query)
-            cfg.database.announce_update("data.project.saved")
+            self.subscriber.announce_update("data.project.saved")
             self._project_path = file_name
             self._project_file_type = "*.sqlite"
 
@@ -106,5 +107,5 @@ class Project(object):
         self.db = None
         cfg.data.db = None
         cfg.data.main_tree.db = None
-        cfg.database.announce_update("data.project.close")
+        self.subscriber.announce_update("data.project.close")
         self._is_open = False

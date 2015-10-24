@@ -3,17 +3,17 @@ Created on 26 avr. 2015
 
 @author:  Cyril Jacquet
 '''
-from . import subscriber
+from .base import DatabaseBaseClass
 
 
-class Plugins(object):
+class Plugins(DatabaseBaseClass):
 
     '''
     classdocs
     '''
 
-    def __init__(self):
-        super(Plugins, self).__init__()
+    def __init__(self, database_subsriber):
+        super(Plugins, self).__init__(database_subsriber)
         '''
         Constructor
         '''

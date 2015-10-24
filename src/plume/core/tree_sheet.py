@@ -86,9 +86,9 @@ class TreeSheet(QObject):
         for func, domain in list_:
             if is_subscribing is True:
                 cfg.data.subscriber.subscribe_update_func_to_domain(
-                    func, domain)
+                    0, func, domain)
             else:
-                cfg.data.subscriber.unsubscribe_update_func_to_domain(func)
+                cfg.data.subscriber.unsubscribe_update_func_to_domain(0, func)
 
     def get_instance_of(self, instance_name):
         if instance_name in self._object_dict.keys():

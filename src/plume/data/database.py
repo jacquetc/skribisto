@@ -6,24 +6,16 @@ from . import cfg, subscriber
 
 class Database(object):
 
-    def __init__(self, is_main_database=False):
-        super(Database, self).__init__(is_main_database)
-        self.is_main_db = is_main_database
-        if is_main_database is True:
+    def __init__(self):
+        super(Database, self).__init__()
+        self._database_id = subscriber.get_new_database_id(self)
+        #shortcut :
+        if self._database_id is 0:
             cfg.database = self
-
+        # init Database subscriber
+        self.subscriber = subscriber.DatabaseSubscriber(self._database_id)
 
         # init all :
-        self.project = Project(self)
-        self.main_tree = Tree(self)
-        self.plugins = Plugins(self)
-
-
-    def announce_update(self, domain, sheet_id=-1):
-        '''
-        function:: announce_update(domain)
-        :param domain:
-        :param sheet_id: int. optional. if present, can narrow_down the update.
-        '''
-        if self.is_main_database is True:
-            subscriber.announce_update(domain, sheet_id)
+        self.project = Project(self.subscriber)
+        self.main_tree = Tree(self.subscriber)
+        self.plugins = Plugins(self.subscriber)

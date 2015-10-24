@@ -3,19 +3,18 @@ Created on 26 avr. 2015
 
 @author:  Cyril Jacquet
 '''
-
-from . import subscriber
+from .base import DatabaseBaseClass
 import ast
 
 
-class Tree(object):
+class Tree(DatabaseBaseClass):
 
     '''
     classdocs
     '''
 
-    def __init__(self):
-        super(Tree, self).__init__()
+    def __init__(self, database_subsriber):
+        super(Tree, self).__init__(database_subsriber)
         '''
         Constructor
         '''
@@ -101,8 +100,8 @@ class Tree(object):
         self.db.cursor().execute("UPDATE main_table SET children_id=:children_id WHERE sheet_id=:id",
                                  {"children_id": children_id, "id": parent_id})
         self.db.commit()
-        subscriber.announce_update("data.tree")
-        subscriber.announce_update("data.project.notsaved")
+        self.subscriber.announce_update("data.tree")
+        self.subscriber.announce_update("data.project.notsaved")
 
         return sheet_id
 
@@ -120,8 +119,8 @@ class Tree(object):
         self.db.cursor().execute("UPDATE main_table SET title=:title WHERE sheet_id=:id",
                                  {"title": new_title, "id": sheet_id})
         self.db.commit()
-        subscriber.announce_update("data.tree.title", sheet_id)
-        subscriber.announce_update("data.project.notsaved")
+        self.subscriber.announce_update("data.tree.title", sheet_id)
+        self.subscriber.announce_update("data.project.notsaved")
 
     def get_other_contents(self, sheet_id):
         db = self.db
@@ -188,8 +187,8 @@ class Tree(object):
             self.db.cursor().execute(query, {"dat": dat,  "id": other_id})
             self.db.commit()
 
-        subscriber.announce_update("data.tree.other_contents", sheet_id)
-        subscriber.announce_update("data.project.notsaved")
+        self.subscriber.announce_update("data.tree.other_contents", sheet_id)
+        self.subscriber.announce_update("data.project.notsaved")
 
     def get_content(self, sheet_id):
         db = self.db
@@ -205,8 +204,8 @@ class Tree(object):
         self.db.cursor().execute("UPDATE main_table SET content=:content WHERE sheet_id=:id",
                                  {"content": content, "id": sheet_id})
         self.db.commit()
-        subscriber.announce_update("data.tree.content", sheet_id)
-        subscriber.announce_update("data.project.notsaved")
+        self.subscriber.announce_update("data.tree.content", sheet_id)
+        self.subscriber.announce_update("data.project.notsaved")
 
     def get_content_type(self, sheet_id):
         db = self.db
@@ -222,8 +221,8 @@ class Tree(object):
         self.db.cursor().execute("UPDATE main_table SET content_type=:content_type WHERE sheet_id=:id",
                                  {"content": content_type, "id": sheet_id})
         self.db.commit()
-        subscriber.announce_update("data.tree.content_type", sheet_id)
-        subscriber.announce_update("data.project.notsaved")
+        self.subscriber.announce_update("data.tree.content_type", sheet_id)
+        self.subscriber.announce_update("data.project.notsaved")
 
     def get_properties(self, sheet_id):
         prop_dict = {}
@@ -245,8 +244,8 @@ class Tree(object):
         self.db.cursor().execute("UPDATE main_table SET properties=:properties WHERE sheet_id=:id",
                                  {"properties": properties_str, "id": sheet_id})
         self.db.commit()
-        subscriber.announce_update("data.tree.properties", sheet_id)
-        subscriber.announce_update("data.project.notsaved")
+        self.subscriber.announce_update("data.tree.properties", sheet_id)
+        self.subscriber.announce_update("data.project.notsaved")
 
     def get_modification_date(self, sheet_id):
         db = self.db
@@ -262,8 +261,8 @@ class Tree(object):
         self.db.cursor().execute("UPDATE main_table SET modification_date=:modification_date WHERE sheet_id=:id",
                                  {"modification_date": modification_date, "id": sheet_id})
         self.db.commit()
-        subscriber.announce_update("data.tree.modification_date", sheet_id)
-        subscriber.announce_update("data.project.notsaved")
+        self.subscriber.announce_update("data.tree.modification_date", sheet_id)
+        self.subscriber.announce_update("data.project.notsaved")
 
     def get_creation_date(self, sheet_id):
         db = self.db
@@ -279,8 +278,8 @@ class Tree(object):
         self.db.cursor().execute("UPDATE main_table SET creation_date=:creation_date WHERE sheet_id=:id",
                                  {"creation_date": creation_date, "id": sheet_id})
         self.db.commit()
-        subscriber.announce_update("data.tree.creation_date", sheet_id)
-        subscriber.announce_update("data.project.notsaved")
+        self.subscriber.announce_update("data.tree.creation_date", sheet_id)
+        self.subscriber.announce_update("data.project.notsaved")
 
     def get_version(self, sheet_id):
         db = self.db
@@ -296,8 +295,8 @@ class Tree(object):
         self.db.cursor().execute("UPDATE main_table SET version=:version WHERE sheet_id=:id",
                                  {"version": version, "id": sheet_id})
         self.db.commit()
-        subscriber.announce_update("data.tree.version", sheet_id)
-        subscriber.announce_update("data.project.notsaved")
+        self.subscriber.announce_update("data.tree.version", sheet_id)
+        self.subscriber.announce_update("data.project.notsaved")
 
 
 def transform_children_id_text_into_int_tuple(children_id_text):
