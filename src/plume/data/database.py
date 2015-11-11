@@ -12,7 +12,8 @@ class Database(object):
         #shortcut :
         if self._database_id is 0:
             cfg.database = self
-        # init Database subscriber
+        self.sqlite_db = None
+        # init this Database subscriber
         self.subscriber = subscriber.DatabaseSubscriber(self._database_id)
 
         # init all :

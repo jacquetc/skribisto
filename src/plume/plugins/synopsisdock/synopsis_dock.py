@@ -65,14 +65,13 @@ class CoreSynopsisDock():
         
     @property   
     def synopsis_rich_text(self):
-        if self._synopsis_rich_text is None:
-            self._synopsis_rich_text = ""
-            if self._sheet_id is not None:
-                other_contents_dict = self.tree_sheet.get_other_contents()
-                try :
-                    self._synopsis_rich_text = other_contents_dict[self.note_type_name]
-                except KeyError:
-                    self._synopsis_rich_text = ""
+        self._synopsis_rich_text = ""
+            # if self._sheet_id is not None:
+            #     other_contents_dict = self.tree_sheet.get_other_contents()
+            #     try :
+            #         self._synopsis_rich_text = other_contents_dict[self.note_type_name]
+            #     except KeyError:
+            #         self._synopsis_rich_text = ""
             
         return self._synopsis_rich_text
         

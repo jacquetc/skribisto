@@ -23,12 +23,11 @@ class Project(DatabaseBaseClass):
         '''
 
         self.db = None
-        self._is_open = False
         self._project_path = None
         self._project_file_type = None
 
     def create_new_empty_database(self):
-        self.database = sql.create_new_database()
+        self.sqlite_db = sql.create_new_database()
 
     def load_test_project_db(self):
         """
@@ -60,19 +59,19 @@ class Project(DatabaseBaseClass):
         if file_name.endswith(".sqlite"):
             old_db = sqlite3.connect(file_name)
             new_db = sqlite3.connect(':memory:')  # create a memory database
+            new_db.executescript("CREATE TABLE table_name (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT);")
             query = "".join(line for line in old_db.iterdump())
 
             # Dump old database in the new one.
             new_db.executescript(query)
 
-            self.db = new_db
-            cfg.data.db = self.db
-            cfg.data.main_tree.db = self.db
+            self.sqlite_db = new_db
+            cfg.data.database.sqlite_db = self.db
+            cfg.data.database.main_tree.a_db = self.sqlite_db
             self.subscriber.announce_update("data.tree")
             self.subscriber.announce_update("data.project.close")
             self.subscriber.announce_update("data.project.load")
             self.subscriber.announce_update("data.project.saved")
-            self._is_open = True
             self._project_path = file_name
             self._project_file_type = "*.sqlite"
 
@@ -84,18 +83,15 @@ class Project(DatabaseBaseClass):
             if os.path.exists(file_name):
                 os.remove(file_name)
             on_disk_db = sqlite3.connect(file_name)
-            query = "".join(line for line in self.db.iterdump())
+            query = "".join(line for line in self.sqlite_db.iterdump())
             on_disk_db.executescript(query)
             self.subscriber.announce_update("data.project.saved")
             self._project_path = file_name
             self._project_file_type = "*.sqlite"
 
     def save(self):
-        file_name = self.project_path()
+        file_name = self._project_path()
         self.save_as(file_name,  self._project_file_type)
-
-    def is_open(self):
-        return self._is_open
 
     def project_path(self):
         return self._project_path
@@ -106,6 +102,5 @@ class Project(DatabaseBaseClass):
     def close_db(self):
         self.db = None
         cfg.data.db = None
-        cfg.data.main_tree.db = None
+        cfg.data.database.main_tree.db = None
         self.subscriber.announce_update("data.project.close")
-        self._is_open = False

@@ -59,24 +59,21 @@ class TreeSheet(QObject):
     def load(self):
         # fill the sheet :
 
-        self._content = cfg.data.main_tree.get_content(self.sheet_id)
-        self._title = cfg.data.main_tree.get_title(self.sheet_id)
-        self._content_type = cfg.data.main_tree.get_content_type(self.sheet_id)
-        self._other_contents = cfg.data.main_tree.get_other_contents(
+        self._content = cfg.data.database.main_tree.get_content(self.sheet_id)
+        self._title = cfg.data.database.main_tree.get_title(self.sheet_id)
+        #self._content_type = cfg.data.database.main_tree.get_content_type(self.sheet_id)
+        self._properties = cfg.data.database.main_tree.get_properties(self.sheet_id)
+        self._last_modification_date = cfg.data.database.main_tree.get_modification_date(
             self.sheet_id)
-        self._properties = cfg.data.main_tree.get_properties(self.sheet_id)
-        self._last_modification_date = cfg.data.main_tree.get_modification_date(
+        self._creation_date = cfg.data.database.main_tree.get_creation_date(
             self.sheet_id)
-        self._creation_date = cfg.data.main_tree.get_creation_date(
-            self.sheet_id)
-        self._version = cfg.data.main_tree.get_version(self.sheet_id)
+        self._version = cfg.data.database.main_tree.get_version(self.sheet_id)
 
     def _subscribe_to_data(self,  is_subscribing=True):
 
         list_ = [[self.get_title, "data.tree.title"],
                  [self.get_content, "data.tree.content"],
-                 [self.get_other_contents, "data.tree.other_contents"],
-                 [self.get_content_type, "data.tree.content_type"],
+                 #[self.get_content_type, "data.tree.content_type"],
                  [self.get_properties, "data.tree.properties"],
                  [self.get_modification_date, "data.tree.modification_date"],
                  [self.get_creation_date, "data.tree.creation_date"],
@@ -100,10 +97,10 @@ class TreeSheet(QObject):
         return instance
 
     def get_title(self):
-        return cfg.data.main_tree.get_title(self.sheet_id)
+        return cfg.data.database.main_tree.get_title(self.sheet_id)
 
     def set_title(self, new_title):
-        cfg.data.main_tree.set_title(self.sheet_id, new_title)
+        cfg.data.database.main_tree.set_title(self.sheet_id, new_title)
 
     def get_content(self):
         '''
@@ -112,7 +109,7 @@ class TreeSheet(QObject):
         :rtype: content
 
         '''
-        content = cfg.data.main_tree.get_content(self.sheet_id)
+        content = cfg.data.database.main_tree.get_content(self.sheet_id)
         return content
 
     def set_content(self, content):
@@ -121,49 +118,7 @@ class TreeSheet(QObject):
         :param content:
         '''
 
-        cfg.data.main_tree.set_content(self.sheet_id, content)
-
-    def get_other_contents(self):
-        '''
-        function:: get_other_contents(self)
-        :rtype other_contents:
-
-        '''
-        other_contents = cfg.data.main_tree.get_other_contents(self.sheet_id)
-        return other_contents
-
-    def _set_other_contents(self, dict_):
-        '''
-        function:: set_other_contents(self, dict_)
-
-        '''
-        cfg.data.main_tree.set_other_contents(self.sheet_id, dict_)
-
-    def set_other_content(self, key,  value):
-        '''
-        function:: set_other_content(self, key, value)
-
-        '''
-        dict_ = self.get_other_contents()
-        dict_[key] = value
-        self._set_other_contents(dict_)
-
-    def get_content_type(self):
-        '''
-        function:: get_content_type(self)
-        :rtype content_type:
-
-        '''
-        content_type = cfg.data.main_tree.get_content_type(self.sheet_id)
-        return content_type
-
-    def set_content_type(self, content_type):
-        '''
-        function:: set_content_type(self, content_type)
-        :param content_type:
-
-        '''
-        pass
+        cfg.data.database.main_tree.set_content(self.sheet_id, content)
 
     def get_properties(self):
         '''
@@ -171,7 +126,7 @@ class TreeSheet(QObject):
         :rtype properties_dict:
 
         '''
-        return cfg.data.main_tree.get_properties(self.sheet_id)
+        return cfg.data.database.main_tree.get_properties(self.sheet_id)
 
     def set_property(self, key, value):
         '''
@@ -180,7 +135,7 @@ class TreeSheet(QObject):
         :param value:
         '''
         self._properties[key] = value
-        cfg.data.main_tree.set_properties(self.sheet_id, self._properties)
+        cfg.data.database.main_tree.set_properties(self.sheet_id, self._properties)
 
     def change_property_key(self, key, new_key):
         '''
@@ -194,14 +149,14 @@ class TreeSheet(QObject):
             value = self._properties.pop(key)
 
         self._properties[new_key] = value
-        cfg.data.main_tree.set_properties(self.sheet_id, self._properties)
+        cfg.data.database.main_tree.set_properties(self.sheet_id, self._properties)
 
     def get_modification_date(self):
         '''
         function:: get_modification_date(self)
         :rtype modification_date:
         '''
-        modification_date = cfg.data.main_tree.get_modification_date(
+        modification_date = cfg.data.database.main_tree.get_modification_date(
             self.sheet_id)
         return modification_date
 
@@ -217,7 +172,7 @@ class TreeSheet(QObject):
         :rtype creation_date:
 
         '''
-        creation_date = cfg.data.main_tree.get_creation_date(self.sheet_id)
+        creation_date = cfg.data.database.main_tree.get_creation_date(self.sheet_id)
         return creation_date
 
     def set_creation_date(self, date):
@@ -234,7 +189,7 @@ class TreeSheet(QObject):
         :rtype version:
 
         '''
-        version = cfg.data.main_tree.get_version(self.sheet_id)
+        version = cfg.data.database.main_tree.get_version(self.sheet_id)
         return version
 
 
@@ -264,7 +219,7 @@ class StoryTreeSheet(TreeSheet):
     def set_synopsys(self, content):
         other_contents = TreeSheet.get_other_contents(self)
         other_contents['synopsys'] = content
-        cfg.data.main_tree.set_other_contents(self.sheetid, other_contents)
+        cfg.data.database.main_tree.set_other_contents(self.sheetid, other_contents)
 
     def get_notes(self):
         other_content = TreeSheet.get_other_contents(self)
@@ -276,7 +231,7 @@ class StoryTreeSheet(TreeSheet):
     def set_notes(self, content):
         other_contents = TreeSheet.get_other_contents(self)
         other_contents['note'] = content
-        cfg.data.main_tree.set_other_contents(self.sheetid, other_contents)
+        cfg.data.database.main_tree.set_other_contents(self.sheetid, other_contents)
 
     def __del__(self):
         # unsubscribe :
@@ -300,7 +255,7 @@ class TreeSheetManager(QObject):
         self.sheet_list = []
 
         cfg.data.subscriber.subscribe_update_func_to_domain(
-            self.close_all_sheets,  "data.project.close")
+            0, self.close_all_sheets,  "data.project.close")
 
     def get_tree_sheet_from_sheet_id(self, sheet_id):
         for sheet in self.sheet_list:
