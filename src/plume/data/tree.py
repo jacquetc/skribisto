@@ -190,15 +190,19 @@ class Tree(DatabaseBaseClass):
         a_sh = DbSheet(self.a_db, sheet_id, False)
         return a_sh.get_properties()
 
-
     def set_properties(self, sheet_id, properties):
+        pass
+
+    def set_property(self, sheet_id, property_name, property_value):
         # properties_str = transform_dict_into_text(properties)
         # self.a_db.cursor().execute("UPDATE main_table SET properties=:properties WHERE sheet_id=:id",
         #                            {"properties": properties_str, "id": sheet_id})
         # self.a_db.commit()
-        # self.subscriber.announce_update("data.tree.properties", sheet_id)
-        # self.subscriber.announce_update("data.project.notsaved")
-        pass
+        a_sh = DbSheet(self.a_db, sheet_id, True)
+        a_sh.set_property(property_name, property_value)
+        self.subscriber.announce_update("data.tree.properties", sheet_id)
+        self.subscriber.announce_update("data.project.notsaved")
+
 
     def get_modification_date(self, sheet_id):
         # db = self.a_db
@@ -778,7 +782,7 @@ class DbSheet:
             self.a_err.set_status(DbErr.E_RECNOTFOU, 1, 'Sheet does not exist')
             return DbErr.R_ERROR  # Failed,
         else:
-            return a_row['l_sort_order']
+            return a_row[0]
 
     def set_sort_order(self, i_sort_order: int):
         #
@@ -971,6 +975,75 @@ class DbSheet:
         for row in result:
             dict_[row[0]] = row[1]
         return dict_
+
+    def set_property(self, name, value):
+        s_sql = """
+            SELECT
+                t_name
+            FROM
+                tbl_sheet_property
+            WHERE
+                l_sheet_code=:sheet_code
+                """
+        a_curs = self.a_db.cursor()
+        a_curs.execute(s_sql, {"sheet_code": self.i_sheet_id})
+        a_row = a_qry.fetchone()
+        if a_row is None:
+            # sheet does not exist
+            self.a_err.set_status(DbErr.E_RECNOTFOU, 1, 'Sheet does not exist')
+            return DbErr.R_ERROR  # Failed,
+        if a_row is []:
+            s_sql = """
+                insert into
+                    tbl_sheet
+                (
+                    l_sheet_code,
+                    t_name,
+                    t_value,
+                    dt_created,
+                    dt_updated
+                )
+                values(
+                    :sheet_code
+                    :name,
+                    :value,
+                    CURRENT_TIMESTAMP,
+                    CURRENT_TIMESTAMP
+                )
+                """
+
+            a_curs = self.a_db.cursor()
+            a_curs.execute(s_sql, {'sheet_code': self.i_sheet_id,'name': name, 'value': value})
+
+        else:
+            s_sql = """
+                update
+                    tbl_sheet
+                (
+                    t_name,
+                    t_value,
+                    dt_created,
+                    dt_updated
+                )
+                values(
+                    :name,
+                    :value,
+                    CURRENT_TIMESTAMP,
+                    CURRENT_TIMESTAMP
+                )
+                WHERE
+                    l_sheet_code=:sheet_code
+                """
+
+            a_curs = self.a_db.cursor()
+            a_curs.execute(s_sql, {'name': name, 'value': value, 'sheet_code': self.i_sheet_id})
+
+        if self.b_commit:
+            self.a_db.commit()
+
+        return DbErr.R_OK
+
+
 
     def set_sheet(self, a_rec: dict):
         #
@@ -1315,3 +1388,16 @@ class DbSheet:
         #
         self.a_db.commit()
         return DbErr.R_OK
+
+########################################################################################################################
+
+
+class Property:
+    #
+    # A class to manipulate single sheets
+    #
+    def __init__(self):
+        self.key = ""
+        self.value = ""
+        self.created = None
+        self.updated = None
