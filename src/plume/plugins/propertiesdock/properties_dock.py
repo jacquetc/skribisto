@@ -237,7 +237,7 @@ class PropertyTableModel(QAbstractTableModel):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
 
-        node = self.nodeFromIndex(parent)
+        node = self.node_from_index(parent)
         return self.createIndex(row, column, node.childAtRow(row))
 
     def data(self, index, role):
@@ -252,7 +252,7 @@ class PropertyTableModel(QAbstractTableModel):
         if not index.isValid():
             return QVariant()
 
-        node = self.nodeFromIndex(index)
+        node = self.node_from_index(index)
 
         if col == 0 and (role == Qt.DisplayRole or role == Qt.EditRole):
             return node.key
@@ -269,7 +269,7 @@ class PropertyTableModel(QAbstractTableModel):
         if not child.isValid():
             return QModelIndex()
 
-        node = self.nodeFromIndex(child)
+        node = self.node_from_index(child)
 
         if node is None:
             return QModelIndex()
@@ -289,9 +289,9 @@ class PropertyTableModel(QAbstractTableModel):
         assert row != - 1
         return self.createIndex(row, 0, parent)
 
-    def nodeFromIndex(self, index):
+    def node_from_index(self, index):
         '''
-        function:: nodeFromIndex(index)
+        function:: node_from_index(index)
         :param index:
         '''
         return index.internalPointer() if index.isValid() else self.root_node
@@ -318,7 +318,7 @@ class PropertyTableModel(QAbstractTableModel):
         # title :
         if role == Qt.EditRole and index.column() == 0:
 
-            node = self.nodeFromIndex(index)
+            node = self.node_from_index(index)
             self.tree_sheet.change_property_key(node.key, value)
             node.key = value
 
@@ -327,7 +327,7 @@ class PropertyTableModel(QAbstractTableModel):
 
         if role == Qt.EditRole and index.column() == 1:
 
-            node = self.nodeFromIndex(index)
+            node = self.node_from_index(index)
             self.tree_sheet.set_property(node.key, value)
             node.value = value
 
@@ -398,7 +398,7 @@ class PropertyTableModel(QAbstractTableModel):
         if not parentIndex.isValid():
             return False
         # self.beginRemoveRows(parentIndex, row, row)
-        # node = self.nodeFromIndex(parentIndex)
+        # node = self.node_from_index(parentIndex)
         # node.removeChild(row)
         # self.endRemoveRows()
 

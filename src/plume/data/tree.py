@@ -45,7 +45,8 @@ class Tree(DatabaseBaseClass):
 
         cur = db.cursor()
         # if tree_type is None:  # select only designated tree type
-        cur.execute("SELECT l_sheet_id, t_title, l_sort_order, l_indent, b_deleted FROM tbl_sheet")
+        cur.execute("SELECT l_sheet_id, t_title, l_sort_order, l_indent, b_deleted FROM tbl_sheet "
+                    "        order by l_sort_order")
         # else:  # take all
         #     cur.execute(
         #         "SELECT sheet_id, title, parent_id, children_id, properties FROM main_table")
@@ -134,7 +135,7 @@ class Tree(DatabaseBaseClass):
 
         #  Move sheet to desired position
         a_tree.move_list([i_sheet_id], int(i_dest))
-        b_renum = True
+        self.b_renum = True
 
         self.renum_all()
 
@@ -147,8 +148,8 @@ class Tree(DatabaseBaseClass):
         a_parent_sh = DbSheet(self.a_db, parent_sheet_id, False)
 
         list_of_child_id = a_parent_sh.get_list_of_child_id()
-        if list_of_child_id is []:
-            dest_sheet_id = a_parent_sh
+        if not list_of_child_id:
+            dest_sheet_id = parent_sheet_id
         else:
             dest_sheet_id = list_of_child_id[-1]
 
@@ -156,7 +157,13 @@ class Tree(DatabaseBaseClass):
 
     def create_new_sheet_next(self, destination_sheet_id) -> int:
         a_dest_sh = DbSheet(self.a_db, destination_sheet_id, False)
-        return self._create_new_sheet(a_dest_sh ,a_dest_sh.get_indent())
+        a_parent_sh = a_dest_sh
+        list_of_child_id = a_parent_sh.get_list_of_child_id()
+        if not list_of_child_id:
+            dest_sheet_id = destination_sheet_id
+        else:
+            dest_sheet_id = list_of_child_id[-1]
+        return self._create_new_sheet(dest_sheet_id, a_dest_sh.get_indent())
 
     def get_title(self, sheet_id: int) -> str:
 
@@ -429,7 +436,7 @@ class DbTree:
         i_dest = DbTree.RENUM_INT
         for a_row in a_rows:
             # For each sheet to renumber, pass it to the renum function.. For speed we commit after all rows renumbered
-            a_sh = DbSheet(self.a_db, a_row['l_sheet_id'], False)
+            a_sh = DbSheet(self.a_db, a_row[0], False)
             a_sh.set_sort_order(i_dest)
             i_dest += DbTree.RENUM_INT
 
@@ -992,6 +999,24 @@ class DbSheet:
 
         return DbErr.R_OK
 
+    def get_version(self) -> int:
+
+        s_sql = """
+            SELECT
+                l_version_code
+            FROM
+                tbl_sheet
+            WHERE
+                l_sheet_id=:id
+        """
+        a_curs = self.a_db.cursor()
+        a_curs.execute(s_sql, {"id": self.i_sheet_id})
+        result = a_curs.fetchone()
+        for row in result:
+            version = row
+        return version
+
+
     def get_properties(self) -> dict:
         s_sql = """
             SELECT
@@ -1203,15 +1228,14 @@ class DbSheet:
             self.a_err.set_status(DbErr.E_RECNOTFOU, 1, 'Sheet does not exist')
             return DbErr.R_ERROR  # Failed,
 
-        i_parent_order = a_row['l_sort_order']
-        i_parent_indent = a_row['l_indent']
+        i_parent_order = a_row[1]
+        i_parent_indent = a_row[0]
 
         # Now get children that appear AFTER this sheet (sort Order > current)
         s_sql = """
         select
-            l_indent,
-            l_char_count,
-            l_word_count
+            l_sheet_id,
+            l_indent
         from
             tbl_sheet
         where
@@ -1223,9 +1247,9 @@ class DbSheet:
         a_curs.execute(s_sql, {'sort': i_parent_order})
 
         for a_row in a_curs:
-            children.append(a_row['l_sheet_id'])
-            if a_row['l_indent'] <= i_parent_indent:
+            if a_row[1] <= i_parent_indent:
                 break       # No more children
+            children.append(a_row[0])
 
         return children
 
@@ -1241,6 +1265,7 @@ class DbSheet:
                 dt_created,
                 dt_updated,
                 dt_content,
+                l_version_code,
                 l_dna_code,
                 b_deleted
             )
@@ -1249,13 +1274,14 @@ class DbSheet:
                 CURRENT_TIMESTAMP,
                 CURRENT_TIMESTAMP,
                 CURRENT_TIMESTAMP,
+                :version_code,
                 0,
                 0
             )
             """
 
         a_curs = self.a_db.cursor()
-        a_curs.execute(s_sql, {'title': 'new'})
+        a_curs.execute(s_sql, {'title': 'new', 'version_code': 0})
 
         self.i_sheet_id = a_curs.lastrowid
         if self.b_commit:
@@ -1298,7 +1324,7 @@ class DbSheet:
             select
                 l_sort_order + :incr,
                 l_indent,
-                l_version_code,
+                :version_code,
                 l_dna_code,
                 :prefix || t_title,
                 m_content,
@@ -1323,7 +1349,8 @@ class DbSheet:
         else:
             # It's a copy, add 1 to sort order to position the new sheet under the old one
             i_incr = 1
-        a_curs.execute(s_sql, {'sheet': self.i_sheet_id, 'prefix': s_title_prefix, 'incr': i_incr})
+        a_curs.execute(s_sql, {'sheet': self.i_sheet_id, 'prefix': s_title_prefix,
+                               'version_code': self.get_version(), 'incr': i_incr})
 
         i_new_sheet_id = a_curs.lastrowid
 

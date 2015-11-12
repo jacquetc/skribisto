@@ -42,7 +42,7 @@ class WriteTreeModel(QAbstractItemModel):
             
             return len(parent_node)
         else:
-            parent_node = self.nodeFromIndex(parent)
+            parent_node = self.node_from_index(parent)
             return len(parent_node)
         
         
@@ -57,7 +57,7 @@ class WriteTreeModel(QAbstractItemModel):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
 
-        node = self.nodeFromIndex(parent)
+        node = self.node_from_index(parent)
         return self.createIndex(row, column, node.childAtRow(row))
 
 
@@ -72,7 +72,7 @@ class WriteTreeModel(QAbstractItemModel):
         
 
                    
-        node = self.nodeFromIndex(index)
+        node = self.node_from_index(index)
        
         
         if (role == Qt.DisplayRole or role == Qt.EditRole) and col == 0:
@@ -91,7 +91,7 @@ class WriteTreeModel(QAbstractItemModel):
         if not child.isValid():
             return QModelIndex()
 
-        node = self.nodeFromIndex(child)
+        node = self.node_from_index(child)
        
         if node is None:
             return QModelIndex()
@@ -113,7 +113,7 @@ class WriteTreeModel(QAbstractItemModel):
         return self.createIndex(row, 0, parent)
     
     
-    def nodeFromIndex(self, index):
+    def node_from_index(self, index):
         return index.internalPointer() if index.isValid() else self.root_node
    
 #------------------------------------------
@@ -127,7 +127,7 @@ class WriteTreeModel(QAbstractItemModel):
         # title :
         if index.isValid() & role == Qt.EditRole & index.column() == 0:
             
-            node = self.nodeFromIndex(index) 
+            node = self.node_from_index(index)
             
             cfg.data.database.main_tree.set_title(node.sheet_id, value)
             node.title = value
@@ -158,7 +158,7 @@ class WriteTreeModel(QAbstractItemModel):
         return types
 
     def mimeData(self, index):
-        node = self.nodeFromIndex(index[0])       
+        node = self.node_from_index(index[0])
         mimeData = PyMimeData(node)
         return mimeData
 
@@ -168,7 +168,7 @@ class WriteTreeModel(QAbstractItemModel):
             return True
 
         dragNode = mimedata.instance()
-        parentNode = self.nodeFromIndex(parentIndex)
+        parentNode = self.node_from_index(parentIndex)
 
         # make an copy of the node being moved
         newNode = deepcopy(dragNode)
@@ -179,6 +179,10 @@ parentIndex, parentIndex)
         return True
 
     '''
+    def insert_child_row(self, parent_index):
+        self._id_of_last_created_sheet = \
+                cfg.data.database.main_tree.create_new_child_sheet(self.node_from_index(parent_index).sheet_id)
+
     def insertRow(self, row, parent):
         return self.insertRows(row, 1, parent)
 
@@ -186,7 +190,8 @@ parentIndex, parentIndex)
     def insertRows(self, row, count, parent):
         self.beginInsertRows(parent, row, (row + (count - 1)))
         for _ in range(0, count):
-            self._id_of_last_created_sheet = cfg.data.main_tree.create_new_sheet(self.nodeFromIndex(parent).sheet_id, "write")
+            self._id_of_last_created_sheet = \
+                cfg.data.database.main_tree.create_new_sheet_next(self.node_from_index(parent).sheet_id)
         self.endInsertRows()
         return True
 
@@ -197,7 +202,7 @@ parentIndex, parentIndex)
 
     def removeRows(self, row, count, parentIndex):
         self.beginRemoveRows(parentIndex, row, row)
-        node = self.nodeFromIndex(parentIndex)
+        node = self.node_from_index(parentIndex)
         node.removeChild(row)
         self.endRemoveRows()
        
@@ -209,9 +214,9 @@ parentIndex, parentIndex)
     def id_of_last_created_sheet(self):       
         return self._id_of_last_created_sheet
 
-    def find_index_from_id(self, id):
+    def find_index_from_id(self, id_):
         start_index = self.index(0,0, QModelIndex())
-        index_list = self.match(start_index, 37, id, 1, Qt.MatchExactly | Qt.MatchRecursive)
+        index_list = self.match(start_index, 37, id_, 1, Qt.MatchExactly | Qt.MatchRecursive)
         if len(index_list) == 0:
             return None
         else:

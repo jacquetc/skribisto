@@ -59,18 +59,29 @@ class WriteTreeView(QTreeView):
     def contextMenuEvent(self, event):
 
         menu = QMenu(self)
-        attachAction = menu.addAction(_("Add sheet"))
-        attachAction.triggered.connect(self.add_sheet)
+        attachAction = menu.addAction(_("Add sheet after"))
+        attachAction.triggered.connect(self.add_sheet_after)
+        addChildSheetAction = menu.addAction(_("Add child sheet"))
+        addChildSheetAction.triggered.connect(self.add_child_sheet)
         menu.exec_(self.mapToGlobal(event.pos()))
 
         return QTreeView.contextMenuEvent(self, event)
 
-    def add_sheet(self):
+    def add_sheet_after(self):
         parent_index = self.currentIndex()
         self.model().insertRow(
-            len(self.model().nodeFromIndex(parent_index)), parent_index)
-        id = self.model().id_of_last_created_sheet
-        index = self.model().find_index_from_id(id)
+            len(self.model().node_from_index(parent_index)), parent_index)
+        id_ = self.model().id_of_last_created_sheet
+        index = self.model().find_index_from_id(id_)
+        # temp :
+        self.expandAll()
+        self.edit(index)
+
+    def add_child_sheet(self):
+        parent_index = self.currentIndex()
+        self.model().insert_child_row(parent_index)
+        id_ = self.model().id_of_last_created_sheet
+        index = self.model().find_index_from_id(id_)
         # temp :
         self.expandAll()
         self.edit(index)
