@@ -60,6 +60,7 @@ class Project(DatabaseBaseClass):
             old_db = sqlite3.connect(file_name)
             new_db = sqlite3.connect(':memory:')  # create a memory database
             new_db.executescript("CREATE TABLE table_name (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT);")
+            new_db.executescript("DROP TABLE IF EXISTS table_name")
             query = "".join(line for line in old_db.iterdump())
 
             # Dump old database in the new one.
@@ -83,6 +84,8 @@ class Project(DatabaseBaseClass):
             if os.path.exists(file_name):
                 os.remove(file_name)
             on_disk_db = sqlite3.connect(file_name)
+            on_disk_db.executescript("CREATE TABLE table_name (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT);")
+            on_disk_db.executescript("DROP TABLE IF EXISTS table_name")
             query = "".join(line for line in self.sqlite_db.iterdump())
             on_disk_db.executescript(query)
             self.subscriber.announce_update("data.project.saved")
@@ -90,7 +93,7 @@ class Project(DatabaseBaseClass):
             self._project_file_type = "*.sqlite"
 
     def save(self):
-        file_name = self._project_path()
+        file_name = self.project_path()
         self.save_as(file_name,  self._project_file_type)
 
     def project_path(self):

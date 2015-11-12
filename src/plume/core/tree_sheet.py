@@ -135,7 +135,7 @@ class TreeSheet(QObject):
         :param value:
         '''
         self._properties[key] = value
-        cfg.data.database.main_tree.set_properties(self.sheet_id, self._properties)
+        cfg.data.database.main_tree.set_property(self.sheet_id, key, value)
 
     def change_property_key(self, key, new_key):
         '''

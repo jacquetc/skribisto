@@ -75,7 +75,8 @@ class CorePropertyDock():
 
     @pyqtSlot()
     def add_property_row(self, index):
-        self._property_table_model.insertRow(1, index)
+        core_cfg.data.database.main_tree.set_property(self.sheet_id, "", "")
+        #self._property_table_model.insertRow(1, index)
 
     @pyqtSlot()
     def remove_property_row(self, index):
@@ -192,7 +193,7 @@ class PropertyTableModel(QAbstractTableModel):
         self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(
             sheet_id)
         # subscribe:
-        core_cfg.data.subscriber.subscribe_update_func_to_domain(
+        core_cfg.data.subscriber.subscribe_update_func_to_domain(0,
             self.reset_model,  "data.tree.properties",  self._sheet_id)
         self.reset_model()
 
@@ -372,9 +373,11 @@ class PropertyTableModel(QAbstractTableModel):
         :param count:
         :param parent:
         '''
-        self.beginInsertRows(parent, row, (row + (count - 1)))
-        self.create_child_nodes(self.root_node, {"": ""})
-        self.endInsertRows()
+        if not parent.isValid():
+            parent = QModelIndex()
+        #self.beginInsertRows(parent, row, (row + (count - 1)))
+        #self.create_child_nodes(self.root_node, {"": ""})
+        #self.endInsertRows()
         return True
 
     def removeRow(self, row, parentIndex):
@@ -392,10 +395,12 @@ class PropertyTableModel(QAbstractTableModel):
         :param count:
         :param parentIndex:
         '''
-        self.beginRemoveRows(parentIndex, row, row)
-        node = self.nodeFromIndex(parentIndex)
-        node.removeChild(row)
-        self.endRemoveRows()
+        if not parentIndex.isValid():
+            return False
+        # self.beginRemoveRows(parentIndex, row, row)
+        # node = self.nodeFromIndex(parentIndex)
+        # node.removeChild(row)
+        # self.endRemoveRows()
 
         return True
 

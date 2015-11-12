@@ -143,6 +143,21 @@ class Tree(DatabaseBaseClass):
 
         return i_sheet_id
 
+    def create_new_child_sheet(self, parent_sheet_id) -> int:
+        a_parent_sh = DbSheet(self.a_db, parent_sheet_id, False)
+
+        list_of_child_id = a_parent_sh.get_list_of_child_id()
+        if list_of_child_id is []:
+            dest_sheet_id = a_parent_sh
+        else:
+            dest_sheet_id = list_of_child_id[-1]
+
+        return self._create_new_sheet(dest_sheet_id ,a_parent_sh.get_indent() + 1)
+
+    def create_new_sheet_next(self, destination_sheet_id) -> int:
+        a_dest_sh = DbSheet(self.a_db, destination_sheet_id, False)
+        return self._create_new_sheet(a_dest_sh ,a_dest_sh.get_indent())
+
     def get_title(self, sheet_id: int) -> str:
 
         a_sh = DbSheet(self.a_db, sheet_id, False)
@@ -160,7 +175,7 @@ class Tree(DatabaseBaseClass):
         return a_sh.get_content()
 
     def set_content(self, sheet_id, content, char_count: int = 0, word_count: int = 0):
-        a_sh = DbSheet(self.a_db, sheet_id, False)
+        a_sh = DbSheet(self.a_db, sheet_id, True)
         a_sh.set_content(content, char_count, word_count)
         self.subscriber.announce_update("data.tree.content", sheet_id)
         self.subscriber.announce_update("data.project.notsaved")
@@ -388,6 +403,8 @@ class DbTree:
 
     def get_version(self) -> int:
         return self.i_version
+
+
 
     def renum_all(self):
         #
@@ -876,7 +893,7 @@ class DbSheet:
         set
             m_content = :content,
             l_char_count = :charc,
-            l_word_count = :wordc
+            l_word_count = :wordc,
             dt_content = CURRENT_TIMESTAMP
         where
             l_sheet_id = :sheet
@@ -923,6 +940,22 @@ class DbSheet:
 
         return DbErr.R_OK
 
+    def get_indent(self) -> str:
+        s_sql = """
+            SELECT
+                l_indent
+            FROM
+                tbl_sheet
+            WHERE
+                l_sheet_id=:id
+        """
+        a_curs = self.a_db.cursor()
+        a_curs.execute(s_sql, {"id": self.i_sheet_id})
+        result = a_curs.fetchone()
+        for row in result:
+            indent = row
+        return indent
+
     def set_indent(self, i_indent: int):
         s_sql = """
         update
@@ -966,36 +999,33 @@ class DbSheet:
             FROM
                 tbl_sheet_property
             WHERE
-                l_sheet_code=:sheet_code
+                l_sheet_code = :sheet_code
                 """
         a_curs = self.a_db.cursor()
         a_curs.execute(s_sql, {"sheet_code": self.i_sheet_id})
         result = a_curs.fetchall()
         dict_ = {}
         for row in result:
-            dict_[row[0]] = row[1]
+            dict_[row[1]] = row[2]
         return dict_
 
     def set_property(self, name, value):
         s_sql = """
             SELECT
-                t_name
+                *
             FROM
                 tbl_sheet_property
             WHERE
-                l_sheet_code=:sheet_code
+                l_sheet_code = :sheet_code
+                and t_name = :name
                 """
         a_curs = self.a_db.cursor()
-        a_curs.execute(s_sql, {"sheet_code": self.i_sheet_id})
-        a_row = a_qry.fetchone()
+        a_curs.execute(s_sql, {"sheet_code": self.i_sheet_id, "name": name})
+        a_row = a_curs.fetchone()
         if a_row is None:
-            # sheet does not exist
-            self.a_err.set_status(DbErr.E_RECNOTFOU, 1, 'Sheet does not exist')
-            return DbErr.R_ERROR  # Failed,
-        if a_row is []:
             s_sql = """
                 insert into
-                    tbl_sheet
+                    tbl_sheet_property
                 (
                     l_sheet_code,
                     t_name,
@@ -1004,7 +1034,7 @@ class DbSheet:
                     dt_updated
                 )
                 values(
-                    :sheet_code
+                    :sheet_code,
                     :name,
                     :value,
                     CURRENT_TIMESTAMP,
@@ -1013,26 +1043,19 @@ class DbSheet:
                 """
 
             a_curs = self.a_db.cursor()
-            a_curs.execute(s_sql, {'sheet_code': self.i_sheet_id,'name': name, 'value': value})
+            a_curs.execute(s_sql, {'sheet_code': self.i_sheet_id, 'name': name, 'value': value})
 
         else:
             s_sql = """
-                update
-                    tbl_sheet
-                (
-                    t_name,
-                    t_value,
-                    dt_created,
-                    dt_updated
-                )
-                values(
-                    :name,
-                    :value,
-                    CURRENT_TIMESTAMP,
-                    CURRENT_TIMESTAMP
-                )
+                UPDATE
+                    tbl_sheet_property
+                SET
+                    t_name = :name,
+                    t_value = :value,
+                    dt_updated = CURRENT_TIMESTAMP
                 WHERE
-                    l_sheet_code=:sheet_code
+                    l_sheet_code = :sheet_code
+                    and t_name = :name
                 """
 
             a_curs = self.a_db.cursor()
@@ -1157,6 +1180,54 @@ class DbSheet:
             i_word += a_row['l_word_count']
 
         return (i_char, i_word)
+
+    def get_list_of_child_id(self) -> list:
+        children = []
+        # Get current sheet values. I'm sure you can do this in a single query...
+        s_sql = """
+        select
+            l_indent,
+            l_sort_order
+        from
+            tbl_sheet
+        where
+            l_sheet_id = :sheet
+        """
+
+        a_curs = self.a_db.cursor()
+        a_qry = a_curs.execute(s_sql, {'sheet': self.i_sheet_id})
+
+        a_row = a_qry.fetchone()
+        if a_row is None:
+            # sheet does not exist
+            self.a_err.set_status(DbErr.E_RECNOTFOU, 1, 'Sheet does not exist')
+            return DbErr.R_ERROR  # Failed,
+
+        i_parent_order = a_row['l_sort_order']
+        i_parent_indent = a_row['l_indent']
+
+        # Now get children that appear AFTER this sheet (sort Order > current)
+        s_sql = """
+        select
+            l_indent,
+            l_char_count,
+            l_word_count
+        from
+            tbl_sheet
+        where
+            l_sort_order > :sort
+        order by
+            l_sort_order
+        """
+        a_curs = self.a_db.cursor()
+        a_curs.execute(s_sql, {'sort': i_parent_order})
+
+        for a_row in a_curs:
+            children.append(a_row['l_sheet_id'])
+            if a_row['l_indent'] <= i_parent_indent:
+                break       # No more children
+
+        return children
 
     def add(self) -> int:
         #
