@@ -118,7 +118,7 @@ class GuiSynopsisDock(QObject):
             self.core_part = self.tree_sheet.get_instance_of(self.dock_name)
             self.core_part.sheet_id = sheet_id
             core_cfg.data.subscriber.unsubscribe_update_func(self.get_update)
-            core_cfg.data.subscriber.subscribe_update_func_to_domain(self.get_update,"data.tree.other_contents", self._sheet_id)
+            core_cfg.data.subscriber.subscribe_update_func_to_domain(self.get_update,"data.sheet_tree.other_contents", self._sheet_id)
 
     def get_widget(self):
         

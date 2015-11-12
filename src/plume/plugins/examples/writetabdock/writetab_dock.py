@@ -137,7 +137,7 @@ class GuiWriteTabDock(QObject):
             core_cfg.data.subscriber.unsubscribe_update_func(self.get_update)
             # subscribe to an updater, so to be up to date when changes occur :
             core_cfg.data.subscriber.subscribe_update_func_to_domain(
-                self.get_update, "data.tree.title", self._sheet_id)
+                self.get_update, "data.sheet_tree.title", self._sheet_id)
 
     def get_widget(self):
 

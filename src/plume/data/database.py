@@ -1,5 +1,6 @@
 from .plugins import Plugins
-from .tree import Tree
+from .sheet_tree import SheetTree
+from .note_tree import NoteTree
 from .project import Project
 from . import cfg, subscriber
 
@@ -18,5 +19,6 @@ class Database(object):
 
         # init all :
         self.project = Project(self.subscriber)
-        self.main_tree = Tree(self.subscriber)
+        self.sheet_tree = SheetTree(self.subscriber)
+        self.sheet_tree = NoteTree(self.subscriber)
         self.plugins = Plugins(self.subscriber)

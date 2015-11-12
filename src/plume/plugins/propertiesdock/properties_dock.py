@@ -75,7 +75,7 @@ class CorePropertyDock():
 
     @pyqtSlot()
     def add_property_row(self, index):
-        core_cfg.data.database.main_tree.set_property(self.sheet_id, "", "")
+        core_cfg.data.database.sheet_tree.set_property(self.sheet_id, "", "")
         #self._property_table_model.insertRow(1, index)
 
     @pyqtSlot()
@@ -194,7 +194,7 @@ class PropertyTableModel(QAbstractTableModel):
             sheet_id)
         # subscribe:
         core_cfg.data.subscriber.subscribe_update_func_to_domain(0,
-            self.reset_model,  "data.tree.properties",  self._sheet_id)
+            self.reset_model,  "data.sheet_tree.properties",  self._sheet_id)
         self.reset_model()
 
     def columnCount(self, parent):

@@ -16,7 +16,7 @@ def subscribe_update_func_to_domain(database_id: int, func, domain, sheet_id=Non
     function:: subscribe_update_func_to_domain(func, domain)
     :param database_id:
     :param func:
-    :param domain: string like "data.tree.properties"
+    :param domain: string like "data.sheet_tree.properties"
     :param sheet_id: int. optional. if present, can narrow_down the update.
     '''
     has_already_update_function = False

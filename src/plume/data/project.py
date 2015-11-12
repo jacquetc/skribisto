@@ -42,9 +42,9 @@ class Project(DatabaseBaseClass):
 #
 #        self.db = new_db
 #        cfg.data.db = new_db
-#        cfg.data.main_tree.db = new_db
+#        cfg.data.sheet_tree.db = new_db
 #
-#        subscriber.announce_update("data.tree")
+#        subscriber.announce_update("data.sheet_tree")
 #        subscriber.announce_update("data.project.close")
 #        subscriber.announce_update("data.project.load")
 #        subscriber.announce_update("data.project.saved")
@@ -68,8 +68,8 @@ class Project(DatabaseBaseClass):
 
             self.sqlite_db = new_db
             cfg.data.database.sqlite_db = self.db
-            cfg.data.database.main_tree.a_db = self.sqlite_db
-            self.subscriber.announce_update("data.tree")
+            cfg.data.database.sheet_tree.a_db = self.sqlite_db
+            self.subscriber.announce_update("data.sheet_tree")
             self.subscriber.announce_update("data.project.close")
             self.subscriber.announce_update("data.project.load")
             self.subscriber.announce_update("data.project.saved")
@@ -105,5 +105,5 @@ class Project(DatabaseBaseClass):
     def close_db(self):
         self.db = None
         cfg.data.db = None
-        cfg.data.database.main_tree.db = None
+        cfg.data.database.sheet_tree.db = None
         self.subscriber.announce_update("data.project.close")

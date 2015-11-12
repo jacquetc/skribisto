@@ -24,9 +24,9 @@ class WriteTreeModel(QAbstractItemModel):
         self.headers = ["name"]
         self._id_of_last_created_sheet = None     
         cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.project.close")
-        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.tree")
-        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.tree.title")
-        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.tree.properties")
+        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.sheet_tree")
+        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.sheet_tree.title")
+        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.sheet_tree.properties")
 
     def columnCount(self, parent):
         return 1
@@ -129,7 +129,7 @@ class WriteTreeModel(QAbstractItemModel):
             
             node = self.node_from_index(index)
             
-            cfg.data.database.main_tree.set_title(node.sheet_id, value)
+            cfg.data.database.sheet_tree.set_title(node.sheet_id, value)
             node.title = value
             
             
@@ -181,7 +181,7 @@ parentIndex, parentIndex)
     '''
     def insert_child_row(self, parent_index):
         self._id_of_last_created_sheet = \
-                cfg.data.database.main_tree.create_new_child_sheet(self.node_from_index(parent_index).sheet_id)
+                cfg.data.database.sheet_tree.create_new_child_item(self.node_from_index(parent_index).sheet_id)
 
     def insertRow(self, row, parent):
         return self.insertRows(row, 1, parent)
@@ -191,7 +191,7 @@ parentIndex, parentIndex)
         self.beginInsertRows(parent, row, (row + (count - 1)))
         for _ in range(0, count):
             self._id_of_last_created_sheet = \
-                cfg.data.database.main_tree.create_new_sheet_next(self.node_from_index(parent).sheet_id)
+                cfg.data.database.sheet_tree.create_new_item_after(self.node_from_index(parent).sheet_id)
         self.endInsertRows()
         return True
 
@@ -232,7 +232,7 @@ parentIndex, parentIndex)
         self.root_node.indent = -1
         self.root_node.sort_order = -1
 
-        self._tree_in_tuple = cfg.data.database.main_tree.get_tree_model_necessities()
+        self._tree_in_tuple = cfg.data.database.sheet_tree.get_tree_model_necessities()
 
         if self._tree_in_tuple is []:        #empty /close
             self.endResetModel()
