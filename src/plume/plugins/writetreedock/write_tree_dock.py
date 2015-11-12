@@ -63,7 +63,7 @@ class CoreWriteTreeDock():
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import QSortFilterProxyModel
 from gui import cfg as gui_cfg
-from plugins.writetreedock import write_tree_dock_ui,  write_tree_view
+from plugins.writetreedock import write_tree_dock_ui,  write_tree_view, write_tree_proxy_model
 
 class GuiWriteTreeDock():
     '''
@@ -79,6 +79,7 @@ class GuiWriteTreeDock():
         self.widget = None
         self.core_part = None     #      CoreWriteTreeDock
         self.core_part = gui_cfg.core.write_panel_core.get_instance_of(self.dock_name)
+        self.filter = None
         
     def get_widget(self):
         
@@ -95,7 +96,7 @@ class GuiWriteTreeDock():
                 tree_model = self.core_part.write_tree_model
                 
                 #filter :
-                self.filter = QSortFilterProxyModel(self.widget)
+                self.filter = write_tree_proxy_model.WriteTreeProxyModel(self.widget)
                 self.filter.setFilterKeyColumn(-1)
                 self.filter.setFilterCaseSensitivity(False)
                 self.filter.setSourceModel(tree_model)

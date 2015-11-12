@@ -28,7 +28,7 @@ class NotesDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteT
     def gui_class(self):
         return GuiNotesDock
 
-
+# TODO: redo a dock displaying a list of notes
 class CoreNotesDock(CoreSynopsisDock):
 
     '''
@@ -36,7 +36,6 @@ class CoreNotesDock(CoreSynopsisDock):
     '''
 
     dock_name = "notes-dock"
-    note_type_name = "notes"
 
     def __init__(self):
         '''

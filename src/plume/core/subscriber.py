@@ -59,7 +59,7 @@ def announce_update(domain, sheet_id=-1):
         if update_function.domain == domain and update_function.sheet_id == sheet_id:
             update_function.function()
         # for the subscriber interested by all updates from every sheet:
-        if update_function.domain == domain and update_function.sheet_id == None:
+        if update_function.domain == domain and update_function.sheet_id is None:
             f = update_function.function
             f()
 

@@ -2,8 +2,9 @@ import ui_converter
 import qrc_converter
 from PyQt5.Qt import QApplication
 from core.core import Core
-from data.database import Database
+from data.data import Data
 import sys
+
 
 def launch_gui(core):
     from gui import gui
@@ -19,7 +20,7 @@ if __name__ == '__main__':
     app.setApplicationName('Plume Creator')
     app.setApplicationVersion('1.5.0-alpha')
     app.setOrganizationDomain('http://www.plume-creator.eu')
-    data = Database(app)
+    data = Data()
     core = Core(app, data)
 
     gui = launch_gui(core)

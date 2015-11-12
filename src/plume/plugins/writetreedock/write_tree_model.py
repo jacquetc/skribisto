@@ -20,14 +20,13 @@ class WriteTreeModel(QAbstractItemModel):
         Constructor
         '''
         self.root_node = TreeNode()
-        
-        
+
         self.headers = ["name"]
         self._id_of_last_created_sheet = None     
-        cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.project.close")
-        cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.tree")
-        cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.tree.title")
-        cfg.data.subscriber.subscribe_update_func_to_domain(self.reset_model, "data.tree.properties")
+        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.project.close")
+        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.tree")
+        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.tree.title")
+        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.reset_model, "data.tree.properties")
 
     def columnCount(self, parent):
         return 1
@@ -43,7 +42,7 @@ class WriteTreeModel(QAbstractItemModel):
             
             return len(parent_node)
         else:
-            parent_node = self.nodeFromIndex(parent)
+            parent_node = self.node_from_index(parent)
             return len(parent_node)
         
         
@@ -58,7 +57,7 @@ class WriteTreeModel(QAbstractItemModel):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
 
-        node = self.nodeFromIndex(parent)
+        node = self.node_from_index(parent)
         return self.createIndex(row, column, node.childAtRow(row))
 
 
@@ -73,7 +72,7 @@ class WriteTreeModel(QAbstractItemModel):
         
 
                    
-        node = self.nodeFromIndex(index)
+        node = self.node_from_index(index)
        
         
         if (role == Qt.DisplayRole or role == Qt.EditRole) and col == 0:
@@ -92,7 +91,7 @@ class WriteTreeModel(QAbstractItemModel):
         if not child.isValid():
             return QModelIndex()
 
-        node = self.nodeFromIndex(child)
+        node = self.node_from_index(child)
        
         if node is None:
             return QModelIndex()
@@ -114,7 +113,7 @@ class WriteTreeModel(QAbstractItemModel):
         return self.createIndex(row, 0, parent)
     
     
-    def nodeFromIndex(self, index):
+    def node_from_index(self, index):
         return index.internalPointer() if index.isValid() else self.root_node
    
 #------------------------------------------
@@ -128,9 +127,9 @@ class WriteTreeModel(QAbstractItemModel):
         # title :
         if index.isValid() & role == Qt.EditRole & index.column() == 0:
             
-            node = self.nodeFromIndex(index) 
+            node = self.node_from_index(index)
             
-            cfg.data.main_tree.set_title(node.sheet_id, value)
+            cfg.data.database.main_tree.set_title(node.sheet_id, value)
             node.title = value
             
             
@@ -159,7 +158,7 @@ class WriteTreeModel(QAbstractItemModel):
         return types
 
     def mimeData(self, index):
-        node = self.nodeFromIndex(index[0])       
+        node = self.node_from_index(index[0])
         mimeData = PyMimeData(node)
         return mimeData
 
@@ -169,7 +168,7 @@ class WriteTreeModel(QAbstractItemModel):
             return True
 
         dragNode = mimedata.instance()
-        parentNode = self.nodeFromIndex(parentIndex)
+        parentNode = self.node_from_index(parentIndex)
 
         # make an copy of the node being moved
         newNode = deepcopy(dragNode)
@@ -180,6 +179,10 @@ parentIndex, parentIndex)
         return True
 
     '''
+    def insert_child_row(self, parent_index):
+        self._id_of_last_created_sheet = \
+                cfg.data.database.main_tree.create_new_child_sheet(self.node_from_index(parent_index).sheet_id)
+
     def insertRow(self, row, parent):
         return self.insertRows(row, 1, parent)
 
@@ -187,7 +190,8 @@ parentIndex, parentIndex)
     def insertRows(self, row, count, parent):
         self.beginInsertRows(parent, row, (row + (count - 1)))
         for _ in range(0, count):
-            self._id_of_last_created_sheet = cfg.data.main_tree.create_new_sheet(self.nodeFromIndex(parent).sheet_id, "write")
+            self._id_of_last_created_sheet = \
+                cfg.data.database.main_tree.create_new_sheet_next(self.node_from_index(parent).sheet_id)
         self.endInsertRows()
         return True
 
@@ -198,7 +202,7 @@ parentIndex, parentIndex)
 
     def removeRows(self, row, count, parentIndex):
         self.beginRemoveRows(parentIndex, row, row)
-        node = self.nodeFromIndex(parentIndex)
+        node = self.node_from_index(parentIndex)
         node.removeChild(row)
         self.endRemoveRows()
        
@@ -210,9 +214,9 @@ parentIndex, parentIndex)
     def id_of_last_created_sheet(self):       
         return self._id_of_last_created_sheet
 
-    def find_index_from_id(self, id):
+    def find_index_from_id(self, id_):
         start_index = self.index(0,0, QModelIndex())
-        index_list = self.match(start_index, 37, id, 1, Qt.MatchExactly | Qt.MatchRecursive)
+        index_list = self.match(start_index, 37, id_, 1, Qt.MatchExactly | Qt.MatchRecursive)
         if len(index_list) == 0:
             return None
         else:
@@ -224,51 +228,90 @@ parentIndex, parentIndex)
 
         del self.root_node
         self.root_node = TreeNode()
-          
-        
-        list_ = cfg.data.main_tree.get_tree_model_necessities("write")
-        if list_ == []: #empty /close
-            self.root_node = TreeNode()
+        self.root_node.sheet_id = -1
+        self.root_node.indent = -1
+        self.root_node.sort_order = -1
+
+        self._tree_in_tuple = cfg.data.database.main_tree.get_tree_model_necessities()
+
+        if self._tree_in_tuple is []:        #empty /close
             self.endResetModel()
             return           
-        
+
+        # create tuple of elements
+        list_of_tree_nodes = []
+        for tuple_ in self._tree_in_tuple:
+            node = TreeNode()
+            node.sheet_id = tuple_[0]
+            node.title = tuple_[1]
+            node.sort_order = tuple_[2]
+            node.indent = tuple_[3]
+            node.deleted = tuple_[4]
+            list_of_tree_nodes.append(node)
+        self.tuple_of_tree_nodes = (list_of_tree_nodes)
+
         # create a nice dict
-        self._dict = {}
-        for tuple_ in list_:
-            self._dict[tuple_[0]] = tuple_
+        # for node in self.tuple_of_tree_nodes:
+        #     self._dict_node_by_sheet_id[node.sheet_id] = node
+            #self._dict_sheet_id_by_sort_order[tuple_[2]] = tuple_[0]
 
-        self.root_node.sheet_id = cfg.data.main_tree.get_root_id("write")
+
         self.create_child_nodes(self.root_node)
-
 
         self.endResetModel()
 
-    def apply_node_variables_from_dict(self, node, sheet_id, dict_):
-        """
-        
-        """
-        tuple_ = self._dict[sheet_id]
-        node.sheet_id, node.title, node.parent_id, node.children_id, node.properties = tuple_
-        
+    # def apply_node_variables_from_dict(self, node, sheet_id):
+    #     """
+    #
+    #     """
+    #     if sheet_id == -1:
+    #         return
+    #
+    #     tuple_ = self._dict_node_by_sheet_id[sheet_id]
+    #     node.sheet_id, node.title, node.sort_order, node.indent, node.deleted = tuple_
+    #
+    #     self._dict_sheet_id_by_sort_order[]
+    #     node.parent_id = self.find_parent_id_from_child_sheet_id(sheet_id)
+    #
+    #     , node.children_id
+
+    def find_parent_id_from_child_sheet_id(self, child_sheet_id):
+        # find child
+        parent_node = None
+        for node in self.tuple_of_tree_nodes:
+            if node.sheet_id == child_sheet_id:
+                child_index = self.tuple_of_tree_nodes.index(node)
+                child_indent = node.indent
+        # find parent
+        for node in self.tuple_of_tree_nodes:
+            index = self.tuple_of_tree_nodes.index(node)
+            if node.indent is child_indent - 1 and index < child_index:
+                parent_node = node
+
+        if parent_node is None:
+            return -1
+
+        return parent_node.sheet_id
 
 
     def create_child_nodes(self, parent_node):
-        
-        
-        
-        #add & scan children :
-        
-        self.apply_node_variables_from_dict(parent_node, parent_node.sheet_id, self._dict)
+
+        # self.apply_node_variables_from_dict(parent_node, parent_node.sheet_id, self._dict)
+
+        list_of_direct_child_nodes = []
+        for node in self.tuple_of_tree_nodes:
+            if node.sort_order > parent_node.sort_order and node.indent <= parent_node.indent:
+                break
+            if node.sort_order > parent_node.sort_order and node.indent is parent_node.indent + 1:
+                list_of_direct_child_nodes.append(node)
 
 
-        if parent_node.children_id != None:
-            for child_id in parent_node.children_id:
-            
+        for child_node in list_of_direct_child_nodes:
+            parent_node.appendChild(child_node)
+            child_node.setParent(parent_node)
+            self.create_child_nodes(child_node)
 
-                child_node = TreeNode(parent_node) 
-                child_node.sheet_id = child_id  
-                parent_node.appendChild(child_node)
-                self.create_child_nodes(child_node)
+
 
 
         
@@ -288,13 +331,6 @@ parentIndex, parentIndex)
         
         
 
-
-
-
-
-
-
-
 class TreeNode(object):
     def __init__(self, parent=None):
         super(TreeNode, self).__init__()
@@ -304,6 +340,10 @@ class TreeNode(object):
         self.parent_id = None
         self.children_id = None
         self.properties = None
+
+        self.indent = None
+        self.sort_order = None
+        self.deleted = None
        
         self.parent = parent
         self.children = []

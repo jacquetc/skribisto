@@ -1,23 +1,22 @@
-from PyQt5.Qt import QObject
-from PyQt5.QtCore import pyqtSignal
-
 from .plugins import Plugins
 from .tree import Tree
 from .project import Project
-from . import subscriber, cfg
+from . import cfg, subscriber
 
 
-class Database(QObject):
+class Database(object):
 
-    state_changed = pyqtSignal(str, int, name='stateChanged')
-
-    def __init__(self, parent=None):
-        super(Database, self).__init__(parent)
-
-        cfg.data = self
-        self.subscriber = subscriber
+    def __init__(self):
+        super(Database, self).__init__()
+        self._database_id = subscriber.get_new_database_id(self)
+        #shortcut :
+        if self._database_id is 0:
+            cfg.database = self
+        self.sqlite_db = None
+        # init this Database subscriber
+        self.subscriber = subscriber.DatabaseSubscriber(self._database_id)
 
         # init all :
-        self.project = Project()
-        self.main_tree = Tree()
-        self.plugins = Plugins()
+        self.project = Project(self.subscriber)
+        self.main_tree = Tree(self.subscriber)
+        self.plugins = Plugins(self.subscriber)

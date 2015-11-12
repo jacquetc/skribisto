@@ -1,314 +1,8 @@
-'''
-Created on 26 avr. 2015
-
-@author:  Cyril Jacquet
-'''
-from .base import DatabaseBaseClass
-import ast, sqlite3
+import sqlite3
+import time
 
 
-class Tree(DatabaseBaseClass):
-
-    '''
-    classdocs
-    '''
-
-    def __init__(self, database_subsriber):
-        super(Tree, self).__init__(database_subsriber)
-        '''
-        Constructor
-        '''
-        self.a_db = None
-        self.b_renum = False
-        self.i_ver = 0
-
-    def renum_all(self):
-        # Renum
-        a_tree = DbTree(self.a_db)
-        #a_tree.set_version(i_ver)
-        a_tree.renum_all()
-        self.a_db.commit()
-        self.b_renum = False
-
-    def get_tree_model_necessities(self):
-        '''
-        :param tree_type: restrict to a given tree. Ex : write
-        Quick way to get the necessary to build a Qt treeModel
-
-        return [(sheet_id, title, parent_id, children_id, properties), (...)]
-        '''
-
-        db = self.a_db
-
-        if db is None:  # closed
-            return []
-
-        cur = db.cursor()
-        # if tree_type is None:  # select only designated tree type
-        cur.execute("SELECT l_sheet_id, t_title, l_sort_order, l_indent, b_deleted FROM tbl_sheet "
-                    "        order by l_sort_order")
-        # else:  # take all
-        #     cur.execute(
-        #         "SELECT sheet_id, title, parent_id, children_id, properties FROM main_table")
-
-        result = cur.fetchall()
-        final_result = []
-        for row in result:
-            l_sheet_id, t_title, l_sort_order, l_indent, b_deleted = row
-            tuple_ = (l_sheet_id, t_title, l_sort_order, l_indent, b_deleted)
-            final_result.append(tuple_)
-
-        return final_result
-
-    # def get_root_id(self, tree_type):
-    #     db = self.sqlite_db
-    #     if db is None:  # closed
-    #         return -1
-    #     cur = db.cursor()
-    #     cur.execute("SELECT sheet_id FROM main_table WHERE tree=:tree AND is_root=1 ", {
-    #                 "tree": tree_type})
-    #     result = cur.fetchone()
-    #     for row in result:
-    #         sheet_id = int(row)
-    #     return sheet_id
-
-    def _move(self, sheet_id_list, indent: int, destination_sheet_id: int):
-        # Move list of sheets
-        a_tree = DbTree(self.a_db)
-        a_tree.set_version(self.i_ver)
-
-        # Move sheets
-        a_list = [int(n, 10) for n in sheet_id_list]
-        # 'Move to after Sheet Id [0=move to top] '
-        i_dest = destination_sheet_id
-        if a_tree.move_list(a_list, int(i_dest)):
-            print('Move ok')
-            self.b_renum = True
-        else:
-            print(a_tree)
-
-    def _create_new_sheet(self, id_to_insert_after: int, indent: int):
-        '''
-        function:: _create_new_tree_item(id_to_insert_after, indent)
-        Append to parent as the las of children
-        :param : int, sheet_id of parent
-        :rtype sheet_id: int, sheet_id of the new sheet
-        '''
-        # c = self.a_db.cursor()
-        # # fetch parent info :
-        # c.execute(
-        #     "SELECT l_sort_order, l_indent FROM tbl_sheet WHERE l_sheet_id=:id", {"id": parent_id})
-        # result = c.fetchone()
-        # for row in result:
-        #     parent_l_sort_order, parent_l_indent = row
-        #
-        # c.execute("INSERT INTO tbl_sheet (l_sort_order, l_indent) \
-        # VALUES (:l_sort_order, '', :l_indent)",
-        #           {"l_sort_order": parent_l_sort_order + 999, "l_indent": parent_l_indent + 1})
-        # # get new sheet_id:
-        # c.execute("SELECT last_insert_rowid()")
-        # result = c.fetchone()
-        # for row in result:
-        #     sheet_id = row
-        # c.execute("UPDATE tbl_sheet SET l_sheet_id WHERE l_sort_order \
-        # VALUES (:sheet_id, :l_sort_order)",
-        #           {"l_sheet_id": sheet_id, "l_sort_order": parent_l_sort_order + 999})
-
-
-        # Add sheet
-        a_tree = DbTree(self.a_db)
-
-        #print('Add sheet')
-        #'Id to insert after [0=top, -1=bottom]
-        i_dest = id_to_insert_after
-        s_title = "title"
-        i_indent = indent
-
-        # Add sheet
-        a_sh = DbSheet(self.a_db, 0, False)
-        i_sheet_id = a_sh.add()
-        # Set title, version + indent
-        # You can use individual setters:
-        a_sh.set_title(s_title)
-        # Or a dict to do multiple columns at once.
-        a_sh.set_sheet({'l_indent': i_indent})
-
-        #  Move sheet to desired position
-        a_tree.move_list([i_sheet_id], int(i_dest))
-        self.b_renum = True
-
-        self.renum_all()
-
-        self.subscriber.announce_update("data.tree")
-        self.subscriber.announce_update("data.project.notsaved")
-
-        return i_sheet_id
-
-    def create_new_child_sheet(self, parent_sheet_id) -> int:
-        a_parent_sh = DbSheet(self.a_db, parent_sheet_id, False)
-
-        list_of_child_id = a_parent_sh.get_list_of_child_id()
-        if not list_of_child_id:
-            dest_sheet_id = parent_sheet_id
-        else:
-            dest_sheet_id = list_of_child_id[-1]
-
-        return self._create_new_sheet(dest_sheet_id ,a_parent_sh.get_indent() + 1)
-
-    def create_new_sheet_next(self, destination_sheet_id) -> int:
-        a_dest_sh = DbSheet(self.a_db, destination_sheet_id, False)
-        a_parent_sh = a_dest_sh
-        list_of_child_id = a_parent_sh.get_list_of_child_id()
-        if not list_of_child_id:
-            dest_sheet_id = destination_sheet_id
-        else:
-            dest_sheet_id = list_of_child_id[-1]
-        return self._create_new_sheet(dest_sheet_id, a_dest_sh.get_indent())
-
-    def get_title(self, sheet_id: int) -> str:
-
-        a_sh = DbSheet(self.a_db, sheet_id, False)
-        return a_sh.get_title()
-
-    def set_title(self, sheet_id, new_title):
-
-        a_sh = DbSheet(self.a_db, sheet_id, True)
-        a_sh.set_title(new_title)
-        self.subscriber.announce_update("data.tree.title", sheet_id)
-        self.subscriber.announce_update("data.project.notsaved")
-
-    def get_content(self, sheet_id):
-        a_sh = DbSheet(self.a_db, sheet_id, False)
-        return a_sh.get_content()
-
-    def set_content(self, sheet_id, content, char_count: int = 0, word_count: int = 0):
-        a_sh = DbSheet(self.a_db, sheet_id, True)
-        a_sh.set_content(content, char_count, word_count)
-        self.subscriber.announce_update("data.tree.content", sheet_id)
-        self.subscriber.announce_update("data.project.notsaved")
-
-    def get_content_type(self, sheet_id):
-        # db = self.a_db
-        # cur = db.cursor()
-        # cur.execute(
-        #     "SELECT content_type FROM main_table WHERE sheet_id=:id", {"id": sheet_id})
-        # result = cur.fetchone()
-        # for row in result:
-        #     content_type = row
-        # return content_type
-        pass
-
-    def set_content_type(self, sheet_id, content_type):
-        # self.a_db.cursor().execute("UPDATE main_table SET content_type=:content_type WHERE sheet_id=:id",
-        #                            {"content": content_type, "id": sheet_id})
-        # self.a_db.commit()
-        # self.subscriber.announce_update("data.tree.content_type", sheet_id)
-        # self.subscriber.announce_update("data.project.notsaved")
-        pass
-
-
-    def get_properties(self, sheet_id):
-
-        a_sh = DbSheet(self.a_db, sheet_id, False)
-        return a_sh.get_properties()
-
-    def set_properties(self, sheet_id, properties):
-        pass
-
-    def set_property(self, sheet_id, property_name, property_value):
-        # properties_str = transform_dict_into_text(properties)
-        # self.a_db.cursor().execute("UPDATE main_table SET properties=:properties WHERE sheet_id=:id",
-        #                            {"properties": properties_str, "id": sheet_id})
-        # self.a_db.commit()
-        a_sh = DbSheet(self.a_db, sheet_id, True)
-        a_sh.set_property(property_name, property_value)
-        self.subscriber.announce_update("data.tree.properties", sheet_id)
-        self.subscriber.announce_update("data.project.notsaved")
-
-
-    def get_modification_date(self, sheet_id):
-        # db = self.a_db
-        # cur = db.cursor()
-        # cur.execute(
-        #     "SELECT modification_date FROM main_table WHERE sheet_id=:id", {"id": sheet_id})
-        # result = cur.fetchone()
-        # for row in result:
-        #     modification_date = row
-        # return modification_date
-        pass
-
-    def set_modification_date(self, sheet_id, modification_date):
-        # self.a_db.cursor().execute("UPDATE main_table SET modification_date=:modification_date WHERE sheet_id=:id",
-        #                            {"modification_date": modification_date, "id": sheet_id})
-        # self.a_db.commit()
-        # self.subscriber.announce_update("data.tree.modification_date", sheet_id)
-        # self.subscriber.announce_update("data.project.notsaved")
-        pass
-
-    def get_creation_date(self, sheet_id):
-        # db = self.a_db
-        # cur = db.cursor()
-        # cur.execute(
-        #     "SELECT creation_date FROM main_table WHERE sheet_id=:id", {"id": sheet_id})
-        # result = cur.fetchone()
-        # for row in result:
-        #     creation_date = row
-        # return creation_date
-        pass
-
-    def set_creation_date(self, sheet_id, creation_date):
-        # self.a_db.cursor().execute("UPDATE main_table SET creation_date=:creation_date WHERE sheet_id=:id",
-        #                            {"creation_date": creation_date, "id": sheet_id})
-        # self.a_db.commit()
-        # self.subscriber.announce_update("data.tree.creation_date", sheet_id)
-        # self.subscriber.announce_update("data.project.notsaved")
-        pass
-
-    def get_version(self, sheet_id):
-        # db = self.a_db
-        # cur = db.cursor()
-        # cur.execute(
-        #     "SELECT version FROM main_table WHERE sheet_id=:id", {"id": sheet_id})
-        # result = cur.fetchone()
-        # for row in result:
-        #     version = row
-        # return version
-        pass
-
-    def set_version(self, sheet_id, version):
-        # self.a_db.cursor().execute("UPDATE main_table SET version=:version WHERE sheet_id=:id",
-        #                            {"version": version, "id": sheet_id})
-        # self.a_db.commit()
-        # self.subscriber.announce_update("data.tree.version", sheet_id)
-        # self.subscriber.announce_update("data.project.notsaved")
-        pass
-
-
-def transform_children_id_text_into_int_tuple(children_id_text):
-    int_tuple = ()
-    int_list = []
-    if children_id_text is not None:
-        for txt in children_id_text.split(","):
-            if txt is not None:
-                int_list.append(int(txt))
-        int_tuple = tuple(int_list)
-    return int_tuple
-
-
-def transform_properties_text_into_dict(properties):
-    properties_dict = {}
-    if properties is not None:
-        properties_dict = ast.literal_eval(properties)
-
-    return properties_dict
-
-
-def transform_dict_into_text(properties):
-    properties_str = "{}"
-    if properties is not {}:
-        properties_str = str(properties)
-
-    return properties_str
+i_ver = 0   # Version to operate on
 
 
 
@@ -370,7 +64,13 @@ class DbErr:
         self.i_param = i_param
         self.s_err_msg = s_err_msg
 
+
 ########################################################################################################################
+
+
+
+
+
 
 
 class DbTree:
@@ -411,8 +111,6 @@ class DbTree:
     def get_version(self) -> int:
         return self.i_version
 
-
-
     def renum_all(self):
         #
         # Renumber all non-deleted sheet in this version. DOES NOT COMMIT - Caller should
@@ -436,41 +134,10 @@ class DbTree:
         i_dest = DbTree.RENUM_INT
         for a_row in a_rows:
             # For each sheet to renumber, pass it to the renum function.. For speed we commit after all rows renumbered
-            a_sh = DbSheet(self.a_db, a_row[0], False)
+            a_sh = DbSheet(self.a_db, a_row['l_sheet_id'], False)
             a_sh.set_sort_order(i_dest)
             i_dest += DbTree.RENUM_INT
 
-        return DbErr.R_OK
-
-    def renum_test(self, i_interval):
-        #
-        # Renumber all non-deleted sheet in this version using the specifed interval. This function is meant to be for
-        # testing only
-        #
-        s_sql = """
-        select
-            l_sheet_id
-        from
-            tbl_sheet
-        where
-            b_deleted = 0
-            and l_version_code = :ver
-        order by
-            l_sort_order
-            """
-
-        a_curs = self.a_db.cursor()
-        a_qry = a_curs.execute(s_sql, {'ver': self.i_version})
-        a_rows = a_qry.fetchall()
-
-        i_dest = i_interval
-        for a_row in a_rows:
-            # For each sheet to renumber, pass it to the renum function.. For speed we commit after all rows renumbered
-            a_sh = DbSheet(self.a_db, a_row['l_sheet_id'], False)
-            a_sh.set_sort_order(i_dest)
-            i_dest += i_interval
-
-        self.a_db.commit()
         return DbErr.R_OK
 
     def move_list(self, a_list: list, i_after_sheet: int) -> int:
@@ -519,7 +186,7 @@ class DbTree:
             i_dest += 1
 
         # Renumber all sheets to restore default spacing
-#??? self.renum_all()
+        self.renum_all()
         self.a_db.commit()
 
         return DbErr.R_OK
@@ -543,7 +210,7 @@ class DbTree:
             a_sh.copy('Copy of ')
 
         # Renumber all sheets to restore default spacing
-#??? self.renum_all()
+        self.renum_all()
         self.a_db.commit()
 
         return DbErr.R_OK
@@ -569,7 +236,7 @@ class DbTree:
             a_sh.version(i_new_version)
 
         # Renumber all sheets to restore default spacing
-#??? self.renum_all()
+        self.renum_all()
         self.a_db.commit()
         return DbErr.R_OK
 
@@ -593,7 +260,7 @@ class DbTree:
             a_sh.delete()
 
         # Renumber all sheets to restore default spacing
-#??? self.renum_all()
+        self.renum_all()
         self.a_db.commit()
         return DbErr.R_OK
 
@@ -617,7 +284,7 @@ class DbTree:
             a_sh.undelete()
 
         # Renumber all sheets to restore default spacing
-#??? self.renum_all()
+        self.renum_all()
         self.a_db.commit()
         return DbErr.R_OK
 
@@ -687,28 +354,6 @@ class DbTree:
 
         return a_list
 
-    def list_version(self):
-        #
-        #  Returns a list of sheet ids for the current version. Probably only useful for testing?
-        #
-        s_sql = """
-        select
-            l_sheet_id
-        from
-            tbl_sheet
-        where
-            l_version_code = :ver
-        order by
-            l_sort_order
-            """
-
-        a_curs = self.a_db.cursor()
-        a_qry = a_curs.execute(s_sql, {'ver': self.i_version})
-        a_list = []
-        for a_row in a_qry:
-            a_list.append(a_row['l_sheet_id'])
-
-        return a_list
 
     def list_all(self):
         #
@@ -733,6 +378,7 @@ class DbTree:
 
 
 ########################################################################################################################
+
 
 
 class DbSheet:
@@ -806,7 +452,7 @@ class DbSheet:
             self.a_err.set_status(DbErr.E_RECNOTFOU, 1, 'Sheet does not exist')
             return DbErr.R_ERROR  # Failed,
         else:
-            return a_row[0]
+            return a_row['l_sort_order']
 
     def set_sort_order(self, i_sort_order: int):
         #
@@ -888,7 +534,7 @@ class DbSheet:
             self.a_err.set_status(DbErr.E_RECNOTFOU, 1, 'Sheet does not exist')
             return DbErr.R_ERROR  # Failed,
         else:
-            return a_row[0]
+            return a_row['m_content']
 
     def set_content(self, s_content: str, i_char_count: int, i_word_count: int):
         #
@@ -900,7 +546,7 @@ class DbSheet:
         set
             m_content = :content,
             l_char_count = :charc,
-            l_word_count = :wordc,
+            l_word_count = :wordc
             dt_content = CURRENT_TIMESTAMP
         where
             l_sheet_id = :sheet
@@ -912,22 +558,6 @@ class DbSheet:
             self.a_db.commit()
 
         return DbErr.R_OK
-
-    def get_title(self) -> str:
-        s_sql = """
-            SELECT
-                t_title
-            FROM
-                tbl_sheet
-            WHERE
-                l_sheet_id=:id
-        """
-        a_curs = self.a_db.cursor()
-        a_curs.execute(s_sql, {"id": self.i_sheet_id})
-        result = a_curs.fetchone()
-        for row in result:
-            title = row
-        return title
 
     def set_title(self, s_title: str):
         s_sql = """
@@ -946,22 +576,6 @@ class DbSheet:
             self.a_db.commit()
 
         return DbErr.R_OK
-
-    def get_indent(self) -> str:
-        s_sql = """
-            SELECT
-                l_indent
-            FROM
-                tbl_sheet
-            WHERE
-                l_sheet_id=:id
-        """
-        a_curs = self.a_db.cursor()
-        a_curs.execute(s_sql, {"id": self.i_sheet_id})
-        result = a_curs.fetchone()
-        for row in result:
-            indent = row
-        return indent
 
     def set_indent(self, i_indent: int):
         s_sql = """
@@ -998,100 +612,6 @@ class DbSheet:
             self.a_db.commit()
 
         return DbErr.R_OK
-
-    def get_version(self) -> int:
-
-        s_sql = """
-            SELECT
-                l_version_code
-            FROM
-                tbl_sheet
-            WHERE
-                l_sheet_id=:id
-        """
-        a_curs = self.a_db.cursor()
-        a_curs.execute(s_sql, {"id": self.i_sheet_id})
-        result = a_curs.fetchone()
-        for row in result:
-            version = row
-        return version
-
-
-    def get_properties(self) -> dict:
-        s_sql = """
-            SELECT
-                *
-            FROM
-                tbl_sheet_property
-            WHERE
-                l_sheet_code = :sheet_code
-                """
-        a_curs = self.a_db.cursor()
-        a_curs.execute(s_sql, {"sheet_code": self.i_sheet_id})
-        result = a_curs.fetchall()
-        dict_ = {}
-        for row in result:
-            dict_[row[1]] = row[2]
-        return dict_
-
-    def set_property(self, name, value):
-        s_sql = """
-            SELECT
-                *
-            FROM
-                tbl_sheet_property
-            WHERE
-                l_sheet_code = :sheet_code
-                and t_name = :name
-                """
-        a_curs = self.a_db.cursor()
-        a_curs.execute(s_sql, {"sheet_code": self.i_sheet_id, "name": name})
-        a_row = a_curs.fetchone()
-        if a_row is None:
-            s_sql = """
-                insert into
-                    tbl_sheet_property
-                (
-                    l_sheet_code,
-                    t_name,
-                    t_value,
-                    dt_created,
-                    dt_updated
-                )
-                values(
-                    :sheet_code,
-                    :name,
-                    :value,
-                    CURRENT_TIMESTAMP,
-                    CURRENT_TIMESTAMP
-                )
-                """
-
-            a_curs = self.a_db.cursor()
-            a_curs.execute(s_sql, {'sheet_code': self.i_sheet_id, 'name': name, 'value': value})
-
-        else:
-            s_sql = """
-                UPDATE
-                    tbl_sheet_property
-                SET
-                    t_name = :name,
-                    t_value = :value,
-                    dt_updated = CURRENT_TIMESTAMP
-                WHERE
-                    l_sheet_code = :sheet_code
-                    and t_name = :name
-                """
-
-            a_curs = self.a_db.cursor()
-            a_curs.execute(s_sql, {'name': name, 'value': value, 'sheet_code': self.i_sheet_id})
-
-        if self.b_commit:
-            self.a_db.commit()
-
-        return DbErr.R_OK
-
-
 
     def set_sheet(self, a_rec: dict):
         #
@@ -1206,53 +726,6 @@ class DbSheet:
 
         return (i_char, i_word)
 
-    def get_list_of_child_id(self) -> list:
-        children = []
-        # Get current sheet values. I'm sure you can do this in a single query...
-        s_sql = """
-        select
-            l_indent,
-            l_sort_order
-        from
-            tbl_sheet
-        where
-            l_sheet_id = :sheet
-        """
-
-        a_curs = self.a_db.cursor()
-        a_qry = a_curs.execute(s_sql, {'sheet': self.i_sheet_id})
-
-        a_row = a_qry.fetchone()
-        if a_row is None:
-            # sheet does not exist
-            self.a_err.set_status(DbErr.E_RECNOTFOU, 1, 'Sheet does not exist')
-            return DbErr.R_ERROR  # Failed,
-
-        i_parent_order = a_row[1]
-        i_parent_indent = a_row[0]
-
-        # Now get children that appear AFTER this sheet (sort Order > current)
-        s_sql = """
-        select
-            l_sheet_id,
-            l_indent
-        from
-            tbl_sheet
-        where
-            l_sort_order > :sort
-        order by
-            l_sort_order
-        """
-        a_curs = self.a_db.cursor()
-        a_curs.execute(s_sql, {'sort': i_parent_order})
-
-        for a_row in a_curs:
-            if a_row[1] <= i_parent_indent:
-                break       # No more children
-            children.append(a_row[0])
-
-        return children
-
     def add(self) -> int:
         #
         # Adds a blank sheet, Returns the sheet id, and sets the internal sheet id to the new one.
@@ -1265,7 +738,6 @@ class DbSheet:
                 dt_created,
                 dt_updated,
                 dt_content,
-                l_version_code,
                 l_dna_code,
                 b_deleted
             )
@@ -1274,14 +746,13 @@ class DbSheet:
                 CURRENT_TIMESTAMP,
                 CURRENT_TIMESTAMP,
                 CURRENT_TIMESTAMP,
-                :version_code,
                 0,
                 0
             )
             """
 
         a_curs = self.a_db.cursor()
-        a_curs.execute(s_sql, {'title': 'new', 'version_code': 0})
+        a_curs.execute(s_sql, {'title': 'new'})
 
         self.i_sheet_id = a_curs.lastrowid
         if self.b_commit:
@@ -1307,11 +778,13 @@ class DbSheet:
             insert into
                 tbl_sheet
             (
+                t_status_code,
                 l_sort_order,
                 l_indent,
                 l_version_code,
                 l_dna_code,
                 t_title,
+                t_badge,
                 m_content,
                 t_synopsis,
                 l_char_count,
@@ -1322,11 +795,13 @@ class DbSheet:
                 b_deleted
             )
             select
+                t_status_code,
                 l_sort_order + :incr,
                 l_indent,
-                :version_code,
+                l_version_code,
                 l_dna_code,
                 :prefix || t_title,
+                t_badge,
                 m_content,
                 t_synopsis,
                 l_char_count,
@@ -1349,8 +824,7 @@ class DbSheet:
         else:
             # It's a copy, add 1 to sort order to position the new sheet under the old one
             i_incr = 1
-        a_curs.execute(s_sql, {'sheet': self.i_sheet_id, 'prefix': s_title_prefix,
-                               'version_code': self.get_version(), 'incr': i_incr})
+        a_curs.execute(s_sql, {'sheet': self.i_sheet_id, 'prefix': s_title_prefix, 'incr': i_incr})
 
         i_new_sheet_id = a_curs.lastrowid
 
@@ -1486,16 +960,3 @@ class DbSheet:
         #
         self.a_db.commit()
         return DbErr.R_OK
-
-########################################################################################################################
-
-
-class Property:
-    #
-    # A class to manipulate single sheets
-    #
-    def __init__(self):
-        self.key = ""
-        self.value = ""
-        self.created = None
-        self.updated = None

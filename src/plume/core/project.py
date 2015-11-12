@@ -21,13 +21,13 @@ class Project():
 
         super(Project, self).__init__()
         cfg.data.subscriber.subscribe_update_func_to_domain(
-            self.signal_project_is_saved, "data.project.saved")
+            0, self.signal_project_is_saved, "data.project.saved")
         cfg.data.subscriber.subscribe_update_func_to_domain(
-            self.signal_project_is_not_saved, "data.project.notsaved")
+            0, self.signal_project_is_not_saved, "data.project.notsaved")
 
     @pyqtSlot()
     def open_test_project(self):
-        cfg.data.project.load_test_project_db()
+        cfg.data.open_test_project()
         subscriber.announce_update("core.project.load")
        # subscriber.announce_update()
 
@@ -37,7 +37,7 @@ class Project():
         function:: open(file_name)
         :param file_name:
         '''
-        cfg.data.project.load(file_name)
+        cfg.data.database.project.load(file_name)
         subscriber.announce_update("core.project.load")
 
     def project_path(self):
@@ -49,7 +49,7 @@ class Project():
         :param :
         '''
 
-        cfg.data.project.save()
+        cfg.data.database.project.save()
 
     def save_as(self, file_name, file_type):
         '''
@@ -58,7 +58,7 @@ class Project():
         :param file_type:
         :param :
         '''
-        cfg.data.project.save_as(file_name, file_type)
+        cfg.data.database.project.save_as(file_name, file_type)
 
     def close_project(self):
         '''
@@ -73,7 +73,7 @@ class Project():
         :param :
         Clear all project from core
         '''
-        cfg.data.project.close_db()
+        cfg.data.database.project.close_db()
         subscriber.announce_update("core.project.close")
 
     def quit(self):
@@ -103,7 +103,10 @@ class Project():
         pass
 
     def is_open(self):
-        return cfg.data.project.is_open()
+        if cfg.data.database is None:
+            return False
+        else:
+            return True
 
     def signal_project_is_saved(self):
         subscriber.announce_update("core.project.saved")
