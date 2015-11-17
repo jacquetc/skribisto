@@ -169,7 +169,7 @@ class SheetTree(DatabaseBaseClass):
     def set_content(self, item_id, content):
         a_item = DbSheet(self.a_db, item_id, True)
         a_item.set_content(content)
-        self.subscriber.announce_update("data." + self.tree_name + ".content", item_id)
+        self.subscriber.announce_update("data." + self._tree_name + ".content", item_id)
         self.subscriber.announce_update("data.project.notsaved")
 
     def get_content_type(self, sheet_id):

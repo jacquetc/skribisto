@@ -20,5 +20,5 @@ class Database(object):
         # init all :
         self.project = Project(self.subscriber)
         self.sheet_tree = SheetTree(self.subscriber)
-        self.sheet_tree = NoteTree(self.subscriber)
+        self.note_tree = NoteTree(self.subscriber)
         self.plugins = Plugins(self.subscriber)

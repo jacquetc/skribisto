@@ -156,7 +156,7 @@ class DbSheet:
         else:
             return a_row[0]
 
-    def set_content(self, s_content: str, i_char_count: int, i_word_count: int):
+    def set_content(self, s_content: str, i_char_count: int = 0, i_word_count: int = 0):
         #
         # Updates the content of the sheet + the cword/char count + timestamp
         #
