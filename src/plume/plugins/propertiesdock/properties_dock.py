@@ -80,8 +80,10 @@ class CorePropertyDock():
 
     @pyqtSlot()
     def remove_property_row(self, index):
-        self._property_table_model.removeRow(
-            index.row(), self._property_table_model.root_model_index())
+        node = self.property_table_model.node_from_index(index)
+        core_cfg.data.database.sheet_tree.remove_property(self.sheet_id, node.key)
+        #self._property_table_model.removeRow(
+        #    index.row(), self._property_table_model.root_model_index())
 
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import QSortFilterProxyModel
@@ -417,10 +419,10 @@ class PropertyTableModel(QAbstractTableModel):
         self.root_node = TableNode()
 
         # create a nice dict
-        self.prop_dict = self.tree_sheet.get_properties()
+        self.prop_list = self.tree_sheet.get_properties()
 
         self.root_node.sheet_id = self._sheet_id
-        self.create_child_nodes(self.root_node, self.prop_dict)
+        self.create_child_nodes(self.root_node, self.prop_list)
 
         self.endResetModel()
 
@@ -433,7 +435,7 @@ class PropertyTableModel(QAbstractTableModel):
         '''
         pass
 
-    def create_child_nodes(self, parent_node, key_value_dict):
+    def create_child_nodes(self, parent_node, property_list):
         '''
         function:: create_child_nodes(parent_node)
         :param parent_node:
@@ -442,12 +444,12 @@ class PropertyTableModel(QAbstractTableModel):
         '''
         # add & scan children :
 
-        if list(key_value_dict.keys()) != []:
-            for child_key in key_value_dict.keys():
+        if len(property_list) is not 0:
+            for property_ in property_list:
 
                 child_node = TableNode(parent_node)
-                child_node.key = child_key
-                child_node.value = key_value_dict[child_key]
+                child_node.key = property_.name
+                child_node.value = property_.value
                 child_node.sheet_id = self._sheet_id
                 child_node.children_id = None
                 parent_node.appendChild(child_node)

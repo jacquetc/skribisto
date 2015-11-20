@@ -1,5 +1,6 @@
 import sqlite3
 from .exceptions import DbErr
+from .db_property import DbProperty
 
 class DbSheet:
     #
@@ -282,11 +283,10 @@ class DbSheet:
             version = row
         return version
 
-
-    def get_properties(self) -> dict:
+    def get_properties(self) -> list:
         s_sql = """
             SELECT
-                *
+                t_name
             FROM
                 tbl_sheet_property
             WHERE
@@ -295,10 +295,12 @@ class DbSheet:
         a_curs = self.a_db.cursor()
         a_curs.execute(s_sql, {"sheet_code": self.i_sheet_id})
         result = a_curs.fetchall()
-        dict_ = {}
+        list_ = []
         for row in result:
-            dict_[row[1]] = row[2]
-        return dict_
+            name = row[0]
+            p = DbSheetProperty(self.a_db, self.i_sheet_id, name, False)
+            list_.append(p.property())
+        return list_
 
     def set_property(self, name, value):
         s_sql = """
@@ -314,50 +316,44 @@ class DbSheet:
         a_curs.execute(s_sql, {"sheet_code": self.i_sheet_id, "name": name})
         a_row = a_curs.fetchone()
         if a_row is None:
-            s_sql = """
-                insert into
-                    tbl_sheet_property
-                (
-                    l_sheet_code,
-                    t_name,
-                    t_value,
-                    dt_created,
-                    dt_updated
-                )
-                values(
-                    :sheet_code,
-                    :name,
-                    :value,
-                    CURRENT_TIMESTAMP,
-                    CURRENT_TIMESTAMP
-                )
-                """
 
-            a_curs = self.a_db.cursor()
-            a_curs.execute(s_sql, {'sheet_code': self.i_sheet_id, 'name': name, 'value': value})
+            db_property = DbSheetProperty(self.a_db, self.i_sheet_id, name, False)
+            db_property.add()
+            db_property.value = value
 
         else:
-            s_sql = """
-                UPDATE
-                    tbl_sheet_property
-                SET
-                    t_name = :name,
-                    t_value = :value,
-                    dt_updated = CURRENT_TIMESTAMP
-                WHERE
-                    l_sheet_code = :sheet_code
-                    and t_name = :name
-                """
 
-            a_curs = self.a_db.cursor()
-            a_curs.execute(s_sql, {'name': name, 'value': value, 'sheet_code': self.i_sheet_id})
+            db_property = DbSheetProperty(self.a_db, self.i_sheet_id, name, False)
+            db_property.value = value
 
         if self.b_commit:
             self.a_db.commit()
 
         return DbErr.R_OK
 
+    def remove_property(self, name):
+        s_sql = """
+            DELETE FROM
+                tbl_sheet_property
+            WHERE
+                l_sheet_code = :sheet_code
+                and t_name = :name
+                """
+        a_curs = self.a_db.cursor()
+        a_curs.execute(s_sql, {"sheet_code": self.i_sheet_id, "name": name})
+        if self.b_commit:
+            self.a_db.commit()
 
+        return DbErr.R_OK
+
+    def change_property_name(self, old_name, new_name):
+
+        db_property = DbSheetProperty(self.a_db, self.i_sheet_id, old_name, False)
+        db_property.name = new_name
+        if self.b_commit:
+            self.a_db.commit()
+
+        return DbErr.R_OK
 
     def set_sheet(self, a_rec: dict):
         #
@@ -756,12 +752,10 @@ class DbSheet:
 ########################################################################################################################
 
 
-class Property:
+class DbSheetProperty(DbProperty):
     #
-    # A class to manipulate single sheets
+    # A class to manipulate single note properties
     #
-    def __init__(self):
-        self.key = ""
-        self.value = ""
-        self.created = None
-        self.updated = None
+    def __init__(self, a_db: sqlite3.Connection, i_sheet_id: int, t_name: str, b_commit: bool):
+        super(DbSheetProperty, self).__init__(table_name="tbl_sheet_property", code_column_name="l_sheet_code",
+                                             a_db=a_db, i_item_code=i_sheet_id, t_name=t_name, b_commit=b_commit)
