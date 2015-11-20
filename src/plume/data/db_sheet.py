@@ -1,3 +1,9 @@
+'''
+Created on 8 aug. 2015
+
+@author: Bardi9 + Cyril Jacquet
+'''
+
 import sqlite3
 from .exceptions import DbErr
 from .db_property import DbProperty
