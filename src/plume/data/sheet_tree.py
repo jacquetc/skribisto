@@ -5,7 +5,8 @@ Created on 26 avr. 2015
 '''
 from .base import DatabaseBaseClass
 import ast
-from .db_sheet_tree import DbSheetTree, DbSheet
+from .db_sheet_tree import DbSheetTree
+from .db_sheet import DbSheet, DbSheetProperty
 
 
 class SheetTree(DatabaseBaseClass):

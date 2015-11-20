@@ -1,5 +1,6 @@
 import sqlite3
 from .exceptions import DbErr
+from .db_property import DbProperty
 
 class DbSheet:
     #
@@ -756,12 +757,10 @@ class DbSheet:
 ########################################################################################################################
 
 
-class Property:
+class DbSheetProperty(DbProperty):
     #
-    # A class to manipulate single sheets
+    # A class to manipulate single note properties
     #
-    def __init__(self):
-        self.key = ""
-        self.value = ""
-        self.created = None
-        self.updated = None
+    def __init__(self, a_db: sqlite3.Connection, i_sheet_id: int, t_name: str, b_commit: bool):
+        super(DbSheetProperty, self).__init__(table_name="tbl_sheet_property", code_column_name="l_sheet_code",
+                                             a_db=a_db, i_item_code=i_sheet_id, t_name=t_name, b_commit=b_commit)

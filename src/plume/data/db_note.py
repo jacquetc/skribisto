@@ -1,6 +1,6 @@
 import sqlite3
 from .exceptions import DbErr
-
+from .db_property import DbProperty
 
 class DbNote:
     #
@@ -740,12 +740,3 @@ class DbNote:
 ########################################################################################################################
 
 
-class Property:
-    #
-    # A class to manipulate single notes
-    #
-    def __init__(self):
-        self.key = ""
-        self.value = ""
-        self.created = None
-        self.updated = None
