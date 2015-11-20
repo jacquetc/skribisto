@@ -13,7 +13,7 @@ class Database(object):
         #shortcut :
         if self._database_id is 0:
             cfg.database = self
-        self.sqlite_db = None
+        self._sqlite_db = None
         # init this Database subscriber
         self.subscriber = subscriber.DatabaseSubscriber(self._database_id)
 
@@ -22,3 +22,13 @@ class Database(object):
         self.sheet_tree = SheetTree(self.subscriber)
         self.note_tree = NoteTree(self.subscriber)
         self.plugins = Plugins(self.subscriber)
+
+    @property
+    def sqlite_db(self):
+        return self._sqlite_db
+
+    @sqlite_db.setter
+    def sqlite_db(self, db):
+        self._sqlite_db = db
+        self.sheet_tree.a_db = db
+        self.note_tree.a_db = db

@@ -123,7 +123,7 @@ class TreeSheet(QObject):
     def get_properties(self):
         '''
         function:: get_properties()
-        :rtype properties_dict:
+        :rtype properties_list:
 
         '''
         return cfg.data.database.sheet_tree.get_properties(self.sheet_id)
@@ -134,22 +134,19 @@ class TreeSheet(QObject):
         :param key:
         :param value:
         '''
-        self._properties[key] = value
+        #self._properties_list[key] = value
         cfg.data.database.sheet_tree.set_property(self.sheet_id, key, value)
 
-    def change_property_key(self, key, new_key):
+    def change_property_key(self, old_name, new_name):
         '''
         function:: change_property_key(key, new_key):
         :param key:
         :param new_key:
         '''
-        if key not in self._properties.keys():
-            value = ""
-        else:
-            value = self._properties.pop(key)
+        cfg.data.database.sheet_tree.change_property_name(self.sheet_id, old_name, new_name)
 
-        self._properties[new_key] = value
-        cfg.data.database.sheet_tree.set_properties(self.sheet_id, self._properties)
+    def remove_property(self, key):
+        pass
 
     def get_modification_date(self):
         '''

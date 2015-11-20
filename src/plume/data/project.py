@@ -67,8 +67,7 @@ class Project(DatabaseBaseClass):
             new_db.executescript(query)
 
             self.sqlite_db = new_db
-            cfg.data.database.sqlite_db = self.db
-            cfg.data.database.sheet_tree.a_db = self.sqlite_db
+            cfg.data.database.sqlite_db = new_db
             self.subscriber.announce_update("data.sheet_tree")
             self.subscriber.announce_update("data.project.close")
             self.subscriber.announce_update("data.project.load")

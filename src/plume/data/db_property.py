@@ -34,11 +34,11 @@ class DbProperty:
             dt_updated = CURRENT_TIMESTAMP
         where
             """ + self._code_column_name + """ = :code
-            AND t_name = :name
+            AND t_name = :name_
             """
 
         a_curs = self._a_db.cursor()
-        a_curs.execute(s_sql, {'code': self._item_code, 'content': item_code, 'name': self._name})
+        a_curs.execute(s_sql, {'code': self._item_code, 'content': item_code, 'name_': self._name})
         if self._b_commit:
             self._a_db.commit()
 
@@ -54,6 +54,8 @@ class DbProperty:
         #
         # Updates the name + timestamp
         #
+        if self.is_name_already_used(new_name):
+            return DbErr.R_ERROR
         s_sql = """
         update
             """ + self._table_name + """
@@ -73,6 +75,25 @@ class DbProperty:
         self._name = new_name
         return DbErr.R_OK
 
+    def is_name_already_used(self, name):
+        s_sql = """
+            SELECT
+                *
+            FROM
+            """ + self._table_name + """
+            WHERE
+            """ + self._code_column_name + """ = :code
+                AND t_name = :name_
+             """
+        a_curs = self._a_db.cursor()
+        a_curs.execute(s_sql, {'code': self._item_code, 'name_': self._name})
+        result = a_curs.fetchone()
+        if result is None:
+            return False
+        else:
+            return True
+
+
     @property
     def value(self):
         if self._value is None:
@@ -83,10 +104,10 @@ class DbProperty:
                 """ + self._table_name + """
                 WHERE
                 """ + self._code_column_name + """ = :code
-                AND t_name = :name
+                AND t_name = :name_
                  """
             a_curs = self._a_db.cursor()
-            a_curs.execute(s_sql, {'code': self._item_code, 'name': self._name})
+            a_curs.execute(s_sql, {'code': self._item_code, 'name_': self._name})
             result = a_curs.fetchone()
             for row in result:
                 self._value = row
@@ -102,17 +123,16 @@ class DbProperty:
             dt_updated = CURRENT_TIMESTAMP
         where
             """ + self._code_column_name + """ = :code
-            AND t_name = :name
+            AND t_name = :name_
             """
 
         a_curs = self._a_db.cursor()
-        a_curs.execute(s_sql, {'code': self._item_code, 'content': new_value, 'name': self._name})
+        a_curs.execute(s_sql, {'code': self._item_code, 'content': new_value, 'name_': self._name})
         if self._b_commit:
             self._a_db.commit()
 
         self._value = new_value
         return DbErr.R_OK
-
 
     @property
     def is_system(self):
@@ -128,11 +148,11 @@ class DbProperty:
             dt_updated = CURRENT_TIMESTAMP
         where
             """ + self._code_column_name + """ = :code
-            AND t_name = :name
+            AND t_name = :name_
             """
 
         a_curs = self._a_db.cursor()
-        a_curs.execute(s_sql, {'code': self._item_code, 'content': is_system, 'name': self._name})
+        a_curs.execute(s_sql, {'code': self._item_code, 'content': is_system, 'name_': self._name})
         if self._b_commit:
             self._a_db.commit()
 
@@ -149,10 +169,10 @@ class DbProperty:
                 """ + self._table_name + """
                 WHERE
                 """ + self._code_column_name + """ = :code
-                AND t_name = :name
+                AND t_name = :name_
                  """
             a_curs = self._a_db.cursor()
-            a_curs.execute(s_sql, {'code': self._item_code, 'name': self._name})
+            a_curs.execute(s_sql, {'code': self._item_code, 'name_': self._name})
             result = a_curs.fetchone()
             for row in result:
                 self._created = row
@@ -168,10 +188,10 @@ class DbProperty:
                 """ + self._table_name + """
                 WHERE
                 """ + self._code_column_name + """ = :code
-                AND t_name = :name
+                AND t_name = :name_
                  """
             a_curs = self._a_db.cursor()
-            a_curs.execute(s_sql, {'code': self._item_code, 'name': self._name})
+            a_curs.execute(s_sql, {'code': self._item_code, 'name_': self._name})
             result = a_curs.fetchone()
             for row in result:
                 self._updated = row
@@ -191,13 +211,14 @@ class DbProperty:
             (
                 """ + self._code_column_name + """,
                 t_name,
+                t_value,
                 dt_created,
                 dt_updated,
                 b_system
             )
             values(
-                :item_code;
-                :name,
+                :item_code,
+                :name_,
                 :value,
                 CURRENT_TIMESTAMP,
                 CURRENT_TIMESTAMP,
@@ -206,14 +227,14 @@ class DbProperty:
             """
 
         a_curs = self._a_db.cursor()
-        a_curs.execute(s_sql, {'code': self._item_code, 'name': self._name, 'value': self._value})
+        a_curs.execute(s_sql, {'item_code': self._item_code, 'name_': self._name, 'value': self._value})
 
         if self._b_commit:
             self._a_db.commit()
         return self.property()
 
     def property(self):
-        return Property(self._item_code, self._name, self._value, self._created, self._updated, self._is_system)
+        return Property(self._item_code, self._name, self.value, self._created, self._updated, self._is_system)
 
 
 class Property:

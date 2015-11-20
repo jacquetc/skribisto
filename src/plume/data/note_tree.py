@@ -20,6 +20,7 @@ class NoteTree(DatabaseBaseClass):
         Constructor
         '''
         self.DBTree = DbNoteTree
+        self.DBTreeItem = DbNote
         self.a_db = None
         self.b_renum = False
         self.i_ver = 0
@@ -192,22 +193,30 @@ class NoteTree(DatabaseBaseClass):
 
     def get_properties(self, item_id):
 
-        a_item = DbNote(self.a_db, item_id, False)
+        a_item = self.DBTreeItem(self.a_db, item_id, False)
         return a_item.get_properties()
 
-    def set_properties(self, item_id, properties):
-        pass
-#TODO : very crappy getter setter for property :-/
     def set_property(self, item_id, property_name, property_value):
         # properties_str = transform_dict_into_text(properties)
-        # self.a_db.cursor().execute("UPDATE main_table SET properties=:properties WHERE note_id=:id",
-        #                            {"properties": properties_str, "id": note_id})
+        # self.a_db.cursor().execute("UPDATE main_table SET properties=:properties WHERE sheet_id=:id",
+        #                            {"properties": properties_str, "id": sheet_id})
         # self.a_db.commit()
-        a_item = DbNote(self.a_db, item_id, True)
+        a_item = self.DBTreeItem(self.a_db, item_id, True)
         a_item.set_property(property_name, property_value)
         self.subscriber.announce_update("data." + self._tree_name + ".properties", item_id)
         self.subscriber.announce_update("data.project.notsaved")
 
+    def remove_property(self, item_id, property_name):
+        a_item = self.DBTreeItem(self.a_db, item_id, True)
+        a_item.remove_property(property_name)
+        self.subscriber.announce_update("data." + self._tree_name + ".properties", item_id)
+        self.subscriber.announce_update("data.project.notsaved")
+
+    def change_property_name(self, item_id, old_name, new_name):
+        a_item = self.DBTreeItem(self.a_db, item_id, True)
+        a_item.change_property_name(old_name, new_name)
+        self.subscriber.announce_update("data." + self._tree_name + ".properties", item_id)
+        self.subscriber.announce_update("data.project.notsaved")
 
     def get_modification_date(self, note_id):
         # db = self.a_db
