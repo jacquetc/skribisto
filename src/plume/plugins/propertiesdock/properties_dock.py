@@ -3,18 +3,17 @@ Created on 6 mai 2015
 
 @author:  Cyril Jacquet
 '''
-from core import plugins as core_plugins
 from gui import plugins as gui_plugins
-from core import cfg as core_cfg
 from PyQt5.Qt import pyqtSlot
 
 
-class PropertiesDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
+class PropertiesDockPlugin(gui_plugins.GuiWriteTabDockPlugin):
 
     '''
     PropertiesDockPlugin
     '''
     is_builtin_plugin = True
+    ignore = True
 
     def __init__(self):
         '''
@@ -23,67 +22,64 @@ class PropertiesDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiW
 
         super(PropertiesDockPlugin, self).__init__()
 
-    def core_class(self):
-        return CorePropertyDock
-
     def gui_class(self):
         return GuiPropertyDock
 
 
-class CorePropertyDock():
-
-    '''
-    CorePropertyDock
-    '''
-
-    dock_name = "properties-dock"
-
-    def __init__(self):
-        '''
-        Constructor
-        '''
-
-        super(CorePropertyDock, self).__init__()
-        self._property_table_model = None
-        self._sheet_id = None
-        self.tree_sheet = None
-
-    @property
-    def sheet_id(self):
-        return self._sheet_id
-
-    @sheet_id.setter
-    def sheet_id(self, sheet_id):
-        if self._sheet_id == sheet_id:
-            pass
-        self._sheet_id = sheet_id
-        if self.sheet_id is not None:
-            self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(
-                self.sheet_id)
-            _ = self.property_table_model
-
-    @property
-    def property_table_model(self):
-        if self._property_table_model is None:
-            self._property_table_model = PropertyTableModel(self)
-            if self._sheet_id is not None:
-                self._property_table_model.set_sheet_id(self._sheet_id)
-                self._property_table_model.tree_sheet \
-                    = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
-
-        return self._property_table_model
-
-    @pyqtSlot()
-    def add_property_row(self, index):
-        core_cfg.data.database.sheet_tree.set_property(self.sheet_id, "", "")
-        #self._property_table_model.insertRow(1, index)
-
-    @pyqtSlot()
-    def remove_property_row(self, index):
-        node = self.property_table_model.node_from_index(index)
-        core_cfg.data.database.sheet_tree.remove_property(self.sheet_id, node.key)
-        #self._property_table_model.removeRow(
-        #    index.row(), self._property_table_model.root_model_index())
+# class CorePropertyDock():
+#
+#     '''
+#     CorePropertyDock
+#     '''
+#
+#     dock_name = "properties-dock"
+#
+#     def __init__(self):
+#         '''
+#         Constructor
+#         '''
+#
+#         super(CorePropertyDock, self).__init__()
+#         self._property_table_model = None
+#         self._sheet_id = None
+#         self.tree_sheet = None
+#
+#     @property
+#     def sheet_id(self):
+#         return self._sheet_id
+#
+#     @sheet_id.setter
+#     def sheet_id(self, sheet_id):
+#         if self._sheet_id == sheet_id:
+#             pass
+#         self._sheet_id = sheet_id
+#         if self.sheet_id is not None:
+#             self.tree_sheet = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(
+#                 self.sheet_id)
+#             _ = self.property_table_model
+#
+#     @property
+#     def property_table_model(self):
+#         if self._property_table_model is None:
+#             self._property_table_model = PropertyTableModel(self)
+#             if self._sheet_id is not None:
+#                 self._property_table_model.set_sheet_id(self._sheet_id)
+#                 self._property_table_model.tree_sheet \
+#                     = core_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
+#
+#         return self._property_table_model
+#
+#     @pyqtSlot()
+#     def add_property_row(self, index):
+#         core_cfg.data.database.sheet_tree.set_property(self.sheet_id, "", "")
+#         #self._property_table_model.insertRow(1, index)
+#
+#     @pyqtSlot()
+#     def remove_property_row(self, index):
+#         node = self.property_table_model.node_from_index(index)
+#         core_cfg.data.database.sheet_tree.remove_property(self.sheet_id, node.key)
+#         #self._property_table_model.removeRow(
+#         #    index.row(), self._property_table_model.root_model_index())
 
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import QSortFilterProxyModel
@@ -105,7 +101,7 @@ class GuiPropertyDock():
         '''
         super(GuiPropertyDock, self).__init__()
         self.widget = None
-        self.core_part = None  # CorePropertyDock
+        # self.core_part = None  # CorePropertyDock
         self._sheet_id = None
         self.tree_sheet = None
 
@@ -121,7 +117,7 @@ class GuiPropertyDock():
         if self.sheet_id is not None:
             self.tree_sheet = gui_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(
                 self.sheet_id)
-            self.core_part = self.tree_sheet.get_instance_of(self.dock_name)
+            # self.core_part = self.tree_sheet.get_instance_of(self.dock_name)
             self.core_part.sheet_id = sheet_id
 
     def get_widget(self):
@@ -452,7 +448,7 @@ class PropertyTableModel(QAbstractTableModel):
                 child_node.value = property_.value
                 child_node.sheet_id = self._sheet_id
                 child_node.children_id = None
-                parent_node.appendChild(child_node)
+                parent_node.append_child(child_node)
                 # self.create_child_nodes(child_node)
 
 
@@ -484,7 +480,7 @@ class TableNode():
         '''
         if parent != None:
             self.parent = parent
-            self.parent.appendChild(self)
+            self.parent.append_child(self)
         else:
             self.parent = None
 

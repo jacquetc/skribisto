@@ -3,19 +3,17 @@ Created on 6 mai 2015
 
 @author:  Cyril Jacquet
 '''
-from core import plugins as core_plugins
 from gui import plugins as gui_plugins
-from core import cfg as core_cfg
 from PyQt5.Qt import pyqtSlot
 from PyQt5.QtCore import Qt
 
-class SynopsisDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
+class SynopsisDockPlugin(gui_plugins.GuiWriteTabDockPlugin):
     '''
     SynopsisDockPlugin
     Be careful, this plugin is the basis for the NotesDockPlugin in plugin/notesdock
     '''
     is_builtin_plugin = True
-
+    ignore = True
     def __init__(self):
         '''
         Constructor

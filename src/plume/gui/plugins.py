@@ -61,6 +61,8 @@ class Plugins():
 
         for category in categories:
             for pluginInfo in self._plugin_manager.getPluginsOfCategory(category):
+                if pluginInfo.plugin_object.ignore is True:  # force ignore a plugin
+                    continue
                 setattr(self, pluginInfo.plugin_object.gui_class(
                 ).__name__, pluginInfo.plugin_object.gui_class())
                 if category is "GuiWriteTabDockPlugin":

@@ -3,14 +3,14 @@ Created on 4 juin 2015
 
 @author:  Cyril Jacquet
 '''
-from core import plugins as core_plugins
 from gui import plugins as gui_plugins
-from core import cfg as core_cfg
+# from core import cfg as core_cfg
 from PyQt5.Qt import pyqtSlot
 from PyQt5.QtCore import Qt
 
 
-class WriteTabDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
+# class WriteTabDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
+class WriteTabDockPlugin(gui_plugins.GuiWriteTabDockPlugin):
 
     '''
     WriteTabDockPlugin
@@ -21,7 +21,7 @@ class WriteTabDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWri
     The goal of this dock is to display and modify the title of the current sheet. Nothing really useful...
     '''
     is_builtin_plugin = False
-
+    ignore = True
     def __init__(self):
         '''
         Constructor

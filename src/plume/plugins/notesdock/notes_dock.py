@@ -4,17 +4,16 @@ Created on 6 mai 2015
 @author:  Cyril Jacquet
 '''
 from plugins.synopsisdock.synopsis_dock import CoreSynopsisDock,  GuiSynopsisDock
-from core import plugins as core_plugins
 from gui import plugins as gui_plugins
 
 
-class NotesDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
+class NotesDockPlugin(gui_plugins.GuiWriteTabDockPlugin):
 
     '''
     NotesDockPlugin, based on SynopsisDockPlugin
     '''
     is_builtin_plugin = True
-
+    ignore = True
     def __init__(self):
         '''
         Constructor

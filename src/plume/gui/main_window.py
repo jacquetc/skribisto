@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,
                              QHBoxLayout,  QFileDialog, QMessageBox,  QApplication)
 from PyQt5.QtCore import Qt,  QDir, QDate
 from .window_system import WindowSystemController
-from .sub_window import WritePanel
+from .write_panel import WritePanel
 from .binder import BinderPanel
 from PyQt5.Qt import QToolButton, pyqtSlot
 from . import cfg
@@ -17,22 +17,21 @@ from .main_window_ui import Ui_MainWindow
 from .preferences import Preferences
 from .start_window import StartWindow
 from .about_plume import AboutPlume
+import os.path
 
 
 class MainWindow(QMainWindow, WindowSystemController):
 
-    def __init__(self, parent):
-        super(MainWindow, self).__init__()
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(parent)
         self.init_ui()
+        cfg.window = self
 
-        cfg.core.subscriber.subscribe_update_func_to_domain(
-            self._clear_project,  "core.project.close")
-        cfg.core.subscriber.subscribe_update_func_to_domain(
-            self._enable_actions,  "core.project.load")
-        cfg.core.subscriber.subscribe_update_func_to_domain(
-            self.set_project_is_saved, "core.project.saved")
-        cfg.core.subscriber.subscribe_update_func_to_domain(
-            self.set_project_is_not_saved, "core.project.notsaved")
+        cfg.data_subscriber.subscribe_update_func_to_domain(0, self._clear_project,  "database_closed")
+        cfg.data_subscriber.subscribe_update_func_to_domain(0, self._activate,  "database_loaded")
+        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.set_project_is_saved, "database_saved")
+        # cfg.core.subscriber.subscribe_update_func_to_domain(
+        #     self.set_project_is_not_saved, "core.project.notsaved")
 
     def init_ui(self):
         self.ui = Ui_MainWindow()
@@ -84,7 +83,7 @@ class MainWindow(QMainWindow, WindowSystemController):
             self.launch_open_test_project)
         self.ui.actionPreferences.triggered.connect(self.launch_preferences)
         self.ui.actionStart_window.triggered.connect(self.launch_start_window)
-        self.ui.actionSave.triggered.connect(cfg.core.project.save)
+        # self.ui.actionSave.triggered.connect(cfg.core.project.save)
         self.ui.actionSave_as.triggered.connect(self.launch_save_as_dialog)
         self.ui.actionOpen.triggered.connect(self.launch_open_dialog)
         self.ui.actionClose_project.triggered.connect(self.launch_close_dialog)
@@ -94,14 +93,33 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.ui.actionAbout_Plume_Creator.triggered.connect(self.about_Plume)
         self.ui.actionAbout_Qt.triggered.connect(QApplication.instance().aboutQt)
 
-        self._enable_actions(False)
+        self._activate(False)
+
+    def set_application_arguments(self, arguments):
+        project_opened_in_arg = False
+        for arg in arguments:
+            if arg[0] is "-":  # actions if other arguments
+                pass
+            elif os.path.exists(arg):
+                cfg.data.load_database(0, arg)
+                project_opened_in_arg = True
+
+        if not project_opened_in_arg:
+            cfg.data.load_database(0, "")  # opens empty default project
+
 
     @pyqtSlot()
     def launch_open_test_project(self):
-        if cfg.core.project.is_open() == True:
+        if cfg.data.is_database_open(0):
             if self.launch_close_dialog() == QMessageBox.Cancel:
                 return
-        cfg.core.project.open_test_project()
+        cfg.data.load_database(0, '../../resources/plume_test_project.sqlite')
+
+        from os.path import expanduser
+        home = expanduser("~")
+        database = cfg.data.get_database(0)
+        database.path = os.path.join(home, "test_project.sqlite")
+
         self.setWindowTitle("Plume Creator - TEST")
 
     @pyqtSlot()
@@ -148,7 +166,7 @@ class MainWindow(QMainWindow, WindowSystemController):
 
     @pyqtSlot()
     def launch_close_dialog(self):
-        if cfg.core.project.is_open() == False:
+        if not cfg.data.is_database_open:
             return
 
         result = QMessageBox.question(
@@ -164,14 +182,14 @@ class MainWindow(QMainWindow, WindowSystemController):
         if result == QMessageBox.Cancel:
             return QMessageBox.Cancel
         elif result == QMessageBox.Discard:
-            cfg.core.project.close_project()
+            cfg.data.close_database(0)
         elif result == QMessageBox.Save:
-            cfg.core.project.save()
-            cfg.core.project.close_project()
+            cfg.data.save_database(0, cfg.data.database.path)
+            cfg.data.close_database(0)
 
     @pyqtSlot()
     def launch_exit_dialog(self):
-        if cfg.core.project.is_open() == False:
+        if cfg.data.is_database_open(0) == False:
             QApplication.quit()
 
         result = self.launch_close_dialog()
@@ -193,9 +211,9 @@ class MainWindow(QMainWindow, WindowSystemController):
 
     def _clear_project(self):
         self.setWindowTitle("Plume Creator")
-        self._enable_actions(False)
+        self._activate(False)
 
-    def _enable_actions(self,  value=True):
+    def _activate(self, value=True):
         self.ui.actionSave_as.setEnabled(value)
         self.ui.actionSave.setEnabled(value)
         self.ui.actionClose_project.setEnabled(value)
