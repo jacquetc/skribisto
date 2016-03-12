@@ -8,6 +8,7 @@ Created on 13 february 2016
 import sqlite3
 from .db_tree import DbTree
 from .db_paper import DbPaper
+from .. import cfg
 
 
 class Tree:
@@ -136,6 +137,7 @@ class Tree:
         self._move_papers_as_child_of(new_id_list, parent_id, False)
         if commit:
             self.sql_db.commit()
+            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")
 
         return new_id_list
 
@@ -154,6 +156,7 @@ class Tree:
         self._move_papers_below(new_id_list, paper_id, False)
         if commit:
             self.sql_db.commit()
+            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")
 
         return new_id_list
 
@@ -181,6 +184,7 @@ class Tree:
 
         if commit:
             self.sql_db.commit()
+            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")
 
     def _move_papers_above(self, paper_id_list, dest_id: int, commit: bool):
         '''
@@ -203,6 +207,7 @@ class Tree:
 
         if commit:
             self.sql_db.commit()
+            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")
 
     def _move_papers_below(self, paper_id_list, dest_id: int, commit: bool):
         '''
@@ -212,9 +217,13 @@ class Tree:
         :param commit: bool:
         '''
         tree = DbTree(self.sql_db, self.table_name, self.id_name, False)
-        tree.move_list(paper_id_list, dest_id)
-
         paper = DbPaper(self.sql_db, self.table_name, self.id_name,  dest_id, False)
+        child_id_list = paper.list_children()
+        if len(child_id_list) == 0:
+            tree.move_list(paper_id_list, dest_id)
+        else:
+            tree.move_list(paper_id_list, child_id_list[-1])
+
         dest_indent = paper.indent
         for paper_id in paper_id_list:
             child_paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, False)
@@ -224,3 +233,4 @@ class Tree:
 
         if commit:
             self.sql_db.commit()
+            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")

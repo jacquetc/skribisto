@@ -4,6 +4,7 @@ Created on 8 mai 2015
 @author:  Cyril Jacquet
 '''
 from PyQt5.QtWidgets import QTreeView, QMenu
+from PyQt5.QtCore import Qt
 from gui import cfg
 
 
@@ -48,7 +49,7 @@ class WriteTreeView(QTreeView):
             self._two_clicks_checkpoint = False
         elif self._one_click_checkpoint == True:  # second click
             sheet_id = index.data(37)
-            cfg.core.tree_sheet_manager.open_sheet(sheet_id)
+            # TODO cfg.core.tree_sheet_manager.open_sheet(sheet_id)
 
             self._two_clicks_checkpoint = True
 
@@ -69,12 +70,13 @@ class WriteTreeView(QTreeView):
 
     def add_sheet_after(self):
         parent_index = self.currentIndex()
-        self.model().insertRow(
-            len(self.model().node_from_index(parent_index)), parent_index)
+        self.model().insert_row_after(parent_index)
+        # len(self.model().node_from_index(parent_index)),
         id_ = self.model().id_of_last_created_sheet
         index = self.model().find_index_from_id(id_)
-        # temp :
+        # temp :# TODO to correct
         self.expandAll()
+        self.setCurrentIndex(index)
         self.edit(index)
 
     def add_child_sheet(self):
@@ -82,6 +84,8 @@ class WriteTreeView(QTreeView):
         self.model().insert_child_row(parent_index)
         id_ = self.model().id_of_last_created_sheet
         index = self.model().find_index_from_id(id_)
-        # temp :
+        print(index.isValid())
+        # temp : # TODO to correct
         self.expandAll()
+        self.setCurrentIndex(index)
         self.edit(index)

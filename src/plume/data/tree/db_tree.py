@@ -86,8 +86,7 @@ class DbTree:
         select """ + self.id_name + """
         from """ + self.table_name + """
         where
-            b_deleted = 0
-            and l_version = :ver
+            l_version = :ver
         order by
             l_sort_order
             """

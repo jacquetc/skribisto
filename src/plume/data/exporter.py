@@ -13,7 +13,7 @@ class Exporter:
 
     @staticmethod
     def export_sqlite_db_to(sqlite_db: sqlite3.Connection, file_type: str, file_name: str):
-        if "*.sqlite" in file_type:
+        if "SQLITE" in file_type:
             if not file_name.endswith(".sqlite"):
                 file_name = "".join([file_name, ".sqlite"])
             # delete if already exist:

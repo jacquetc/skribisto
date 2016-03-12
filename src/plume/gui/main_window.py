@@ -83,7 +83,7 @@ class MainWindow(QMainWindow, WindowSystemController):
             self.launch_open_test_project)
         self.ui.actionPreferences.triggered.connect(self.launch_preferences)
         self.ui.actionStart_window.triggered.connect(self.launch_start_window)
-        # self.ui.actionSave.triggered.connect(cfg.core.project.save)
+        self.ui.actionSave.triggered.connect(self.save)
         self.ui.actionSave_as.triggered.connect(self.launch_save_as_dialog)
         self.ui.actionOpen.triggered.connect(self.launch_open_dialog)
         self.ui.actionClose_project.triggered.connect(self.launch_close_dialog)
@@ -104,8 +104,9 @@ class MainWindow(QMainWindow, WindowSystemController):
                 cfg.data.load_database(0, arg)
                 project_opened_in_arg = True
 
-        if not project_opened_in_arg:
-            cfg.data.load_database(0, "")  # opens empty default project
+        # TODO open default project
+        # if not project_opened_in_arg:
+        #     cfg.data.load_database(0, "")  # opens empty default project
 
 
     @pyqtSlot()
@@ -143,7 +144,11 @@ class MainWindow(QMainWindow, WindowSystemController):
             _(".sqlite"))
         if fileName is None:
             return
-        cfg.core.project.save_as(fileName,  selectedFilter)
+        cfg.data.save_database(0, fileName) # ,  selectedFilter
+
+    @pyqtSlot()
+    def save(self):
+        cfg.data.save_database(0, cfg.data.database.path)
 
     @pyqtSlot()
     def launch_open_dialog(self):

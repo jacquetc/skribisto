@@ -9,7 +9,7 @@ from .database import Database
 from .exporter import Exporter
 
 
-class Data(object):
+class Data:
     def __init__(self):
         super(Data, self).__init__()
 
@@ -49,6 +49,8 @@ class Data(object):
 
         db = Database(project_id, file_name)
         self.database_for_int_dict[project_id] = db
+        if project_id == 0:
+            self.database = db
         self.subscriber.announce_update(project_id, "database_loaded")
 
     def save_database(self, project_id: int, file_name: str):
@@ -61,7 +63,7 @@ class Data(object):
             raise ValueError("no database number {id} to save".format(id=repr(project_id)))
 
         database = self.database_for_int_dict[project_id]
-        return Exporter.export_sqlite_db_to(database, database.type, file_name)
+        return Exporter.export_sqlite_db_to(database.sqlite_db, database.type, file_name)
 
     def get_database(self, project_id: int):
         '''
@@ -84,4 +86,6 @@ class Data(object):
             raise ValueError("no database number {id} to fetch".format(id=repr(project_id)))
 
         self.database_for_int_dict[project_id].close()
+        if project_id == 0:
+            self.database = None
 

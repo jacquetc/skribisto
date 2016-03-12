@@ -35,6 +35,7 @@ class TreeModel(QAbstractItemModel):
         self._table_name = table_name
         self._id_name = id_name
         self._all_data = []
+        self._node_list = []
 
     @property
     def tree_db(self):
@@ -140,16 +141,16 @@ class TreeModel(QAbstractItemModel):
 
         limit = [role]
 
-        # title :
-        if index.isValid() & role == self.TitleRole & index.column() == 0:
-
-            node = self.node_from_index(index)
-
-            self.tree_db.set_title(node.id, value)
-            node.title = value
-
-            self.dataChanged.emit(index, index, limit)
-            return True
+        # # title :
+        # if index.isValid() & role == self.TitleRole & index.column() == 0:
+        #
+        #     node = self.node_from_index(index)
+        #
+        #     self.tree_db.set_title(node.id, value)
+        #     node.title = value
+        #
+        #     self.dataChanged.emit(index, index, limit)
+        #     return True
 
         return False
 
@@ -187,6 +188,7 @@ class TreeModel(QAbstractItemModel):
             self.endResetModel()
             return
 
+        self._node_list = []
         self._populate_item(self._root_node)
 
         self.endResetModel()
@@ -201,7 +203,7 @@ class TreeModel(QAbstractItemModel):
                 item.data = data_dict
                 item.id = data_dict[self._id_name]
                 self._populate_item(item)
-                self._item_list.append(item)
+                self._node_list.append(item)
                 parent_item.append_child(item)
             else:
                 return

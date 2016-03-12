@@ -28,7 +28,18 @@ class WriteTreeProxyModel(QSortFilterProxyModel):
         return self.sourceModel().id_of_last_created_sheet
 
     def find_index_from_id(self, id_):
-        return self.mapFromSource(self.sourceModel().find_index_from_id(id_))
+        index = self.sourceModel().find_index_from_id(id_)
+        print(index.isValid())
+        return self.mapFromSource(index)
 
     def insert_child_row(self, parent_index):
         return self.sourceModel().insert_child_row(self.mapToSource(parent_index))
+
+    def insert_row_after(self, parent_index):
+        return self.sourceModel().insert_row_by(self.mapToSource(parent_index))
+
+    def filterAcceptsRow(self, p_int, index):
+        if index.data(self.sourceModel().DeletedRole) == 1:
+            return False
+        else:
+            return QSortFilterProxyModel.filterAcceptsRow(self, p_int, index)

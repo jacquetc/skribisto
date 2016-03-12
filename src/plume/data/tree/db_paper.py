@@ -41,7 +41,7 @@ class DbPaper:
         """
 
         a_curs = self.sql_db.cursor()
-        a_qry = a_curs.execute(s_sql, {'sheet': self.paper_id})
+        a_qry = a_curs.execute(s_sql, {'id': self.paper_id})
         a_row = a_qry.fetchone()
         if a_row is None:
             return False
@@ -183,7 +183,7 @@ class DbPaper:
         :return:
         '''
 
-        return self.get("b_delete")
+        return self.get("b_deleted")
 
     @delete_state.setter
     def delete_state(self, value: bool):
@@ -192,7 +192,7 @@ class DbPaper:
         :return:
         '''
 
-        self.set("b_delete", value)
+        self.set("b_deleted", value)
 
     def add(self):
         '''
@@ -210,7 +210,7 @@ class DbPaper:
         b_deleted
         )
         VALUES (
-        :title
+        :title,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP,
@@ -228,13 +228,51 @@ class DbPaper:
         return self.paper_id
 
     def list_children(self) -> list:
+        children = []
+        # Get current sheet values. I'm sure you can do this in a single query...
         s_sql = """
-        select l_indent, l_sort_order, b_deleted
+        select
+            l_indent,
+            l_sort_order
         from """ + self.table_name + """
         where
         """ + self.id_name + """ =:id
-        ORDER BY l_sort_order
+            and
+            b_deleted =:deleted
         """
 
         a_curs = self.sql_db.cursor()
-        a_qry = a_curs.execute(s_sql, {'sheet': self.paper_id})
+        a_qry = a_curs.execute(s_sql, {'id': self.paper_id, 'deleted': self.delete_state})
+
+        a_row = a_qry.fetchone()
+        if a_row is None:
+            # paper does not exist
+            self.a_error.set_status(DbError.E_RECNOTFOU, 1, 'Paper does not exist')
+            return DbError.R_ERROR  # Failed,
+
+        i_parent_order = a_row[1]
+        i_parent_indent = a_row[0]
+
+        # Now get children that appear AFTER this sheet (sort Order > current)
+        s_sql = """
+        select
+            """ + self.id_name + """ ,
+            l_indent
+        from
+        """ + self.table_name + """
+        where
+            l_sort_order > :sort
+            and
+            b_deleted =:deleted
+        order by
+            l_sort_order
+        """
+        a_curs = self.sql_db.cursor()
+        a_curs.execute(s_sql, {'sort': i_parent_order, 'deleted': self.delete_state})
+
+        for a_row in a_curs:
+            if a_row[1] <= i_parent_indent:
+                break       # No more children
+            children.append(a_row[0])
+
+        return children
