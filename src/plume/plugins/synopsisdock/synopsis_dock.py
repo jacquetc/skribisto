@@ -7,23 +7,20 @@ from gui import plugins as gui_plugins
 from PyQt5.Qt import pyqtSlot
 from PyQt5.QtCore import Qt
 
-class SynopsisDockPlugin(gui_plugins.GuiWriteTabDockPlugin):
+
+class SynopsisDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
     '''
     SynopsisDockPlugin
     Be careful, this plugin is the basis for the NotesDockPlugin in plugin/notesdock
     '''
     is_builtin_plugin = True
-    ignore = True
+    ignore = False
     def __init__(self):
         '''
         Constructor
         '''
 
         super(SynopsisDockPlugin, self).__init__()
-
-        
-    def core_class(self):        
-        return CoreSynopsisDock
     
     def gui_class(self):
         return GuiSynopsisDock
@@ -84,6 +81,7 @@ class CoreSynopsisDock():
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import QObject
 from gui import cfg as gui_cfg
+from gui.paper_manager import NotePaper
 from plugins.synopsisdock import synopsis_dock_ui
 
 class GuiSynopsisDock(QObject):
@@ -92,15 +90,32 @@ class GuiSynopsisDock(QObject):
     '''
     dock_name = "synopsis-dock" 
     dock_displayed_name = _("Synopsis")
-    def __init__(self,  parent = None):
+    note_type_name = "synopsis"
+
+    def __init__(self, parent=None):
         '''
         Constructor
         '''
         super(GuiSynopsisDock, self).__init__(parent)
         self.widget = None
-        self.core_part = None     #      CoreSynopsisDock
         self._sheet_id = None
-        self.tree_sheet = None        
+        self._note_id = None
+
+    @property
+    def paper_id(self):
+        """
+        Only used for compatibility with API, return sheet_id
+        :return:
+        """
+        return self.sheet_id
+
+    @paper_id.setter
+    def paper_id(self, paper_id):
+        """
+        Only used for compatibility with API, call sheet_id
+        :param id:
+        """
+        self.sheet_id = paper_id
 
     @property
     def sheet_id(self):
@@ -112,11 +127,9 @@ class GuiSynopsisDock(QObject):
             pass
         self._sheet_id = sheet_id
         if self.sheet_id is not None:
-            self.tree_sheet = gui_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(self.sheet_id)
-            self.core_part = self.tree_sheet.get_instance_of(self.dock_name)
-            self.core_part.sheet_id = sheet_id
-            core_cfg.data.subscriber.unsubscribe_update_func(self.get_update)
-            core_cfg.data.subscriber.subscribe_update_func_to_domain(self.get_update,"data.sheet_tree.other_contents", self._sheet_id)
+            gui_cfg.data.subscriber.unsubscribe_update_func(self.get_update)
+            gui_cfg.data.subscriber.subscribe_update_func_to_domain(0, self.get_update,
+                                                                     "note.content_changed", self._sheet_id)
 
     def get_widget(self):
         
@@ -130,26 +143,26 @@ class GuiSynopsisDock(QObject):
             self.ui.writingZone.is_resizable = False
             self.ui.has_side_tool_bar = False        
 
-            if self.tree_sheet is not None and self.core_part is not None:
+            if self.sheet_id is not None:
                 self.get_update()
-
-                
-                #connect :
-                self.ui.writingZone.text_edit.textChanged.connect(self.apply_text_change, type=Qt.UniqueConnection )
+                # connect :
+                self.ui.writingZone.text_edit.textChanged.connect(self.apply_text_change, type=Qt.UniqueConnection)
                 
             self.widget.gui_part = self
         return self.widget
  
     def get_update(self):
-        self.ui.writingZone.text_edit.blockSignals(True)
-        if self.tree_sheet is not None and self.core_part is not None:
-            text = self.core_part.synopsis_rich_text
+        if self.sheet_id is not None:
+            # determine the synopsis (note) of this sheet
+            self._note_id = gui_cfg.data.database.note_tree.find_synopsis_from_sheet_code(self.sheet_id)[0]
+            # apply changes :
+            self.ui.writingZone.text_edit.blockSignals(True)
+            text = NotePaper(self._note_id).content
             self.ui.writingZone.set_rich_text(text)
-        self.ui.writingZone.text_edit.blockSignals(False) 
+            self.ui.writingZone.text_edit.blockSignals(False)
         
     @pyqtSlot()
     def apply_text_change(self):
-        core_cfg.data.subscriber.disable_func(self.get_update)
-        self.core_part.synopsis_rich_text = self.ui.writingZone.text_edit.toHtml()
-        core_cfg.data.subscriber.enable_func(self.get_update)
-
+        gui_cfg.data.subscriber.disable_func(self.get_update)
+        NotePaper(self._note_id).content = self.ui.writingZone.text_edit.toHtml()
+        gui_cfg.data.subscriber.enable_func(self.get_update)

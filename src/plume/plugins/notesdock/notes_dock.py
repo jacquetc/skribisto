@@ -3,11 +3,11 @@ Created on 6 mai 2015
 
 @author:  Cyril Jacquet
 '''
-from plugins.synopsisdock.synopsis_dock import CoreSynopsisDock,  GuiSynopsisDock
+
 from gui import plugins as gui_plugins
 
 
-class NotesDockPlugin(gui_plugins.GuiWriteTabDockPlugin):
+class NotesDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
 
     '''
     NotesDockPlugin, based on SynopsisDockPlugin
@@ -21,30 +21,17 @@ class NotesDockPlugin(gui_plugins.GuiWriteTabDockPlugin):
 
         super(NotesDockPlugin, self).__init__()
 
-    def core_class(self):
-        return CoreNotesDock
-
     def gui_class(self):
         return GuiNotesDock
 
 # TODO: redo a dock displaying a list of notes
-class CoreNotesDock(CoreSynopsisDock):
 
-    '''
-    CoreNotesDock, based on CoreSynopsisDock
-    '''
+from PyQt5.QtWidgets import QWidget
+from PyQt5.QtCore import QObject
+from gui import cfg as gui_cfg
+from gui.paper_manager import NotePaper
 
-    dock_name = "notes-dock"
-
-    def __init__(self):
-        '''
-        Constructor
-        '''
-
-        super(CoreNotesDock, self).__init__()
-
-
-class GuiNotesDock(GuiSynopsisDock):
+class GuiNotesDock(QObject):
 
     '''
     GuiNotesDock, based on GuiSynopsisDock

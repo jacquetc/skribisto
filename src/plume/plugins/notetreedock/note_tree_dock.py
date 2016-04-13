@@ -7,9 +7,9 @@ from gui import plugins as gui_plugins
 from PyQt5.Qt import pyqtSlot
 
 
-class WriteTreeDockPlugin(gui_plugins.GuiWritePanelDockPlugin):
+class NoteTreeDockPlugin(gui_plugins.GuiNotePanelDockPlugin):
     '''
-    WriteTreeDockPlugin
+    NoteTreeDockPlugin
     '''
     is_builtin_plugin = True
     ignore = False
@@ -19,10 +19,10 @@ class WriteTreeDockPlugin(gui_plugins.GuiWritePanelDockPlugin):
         Constructor
         '''
 
-        super(WriteTreeDockPlugin, self).__init__()
+        super(NoteTreeDockPlugin, self).__init__()
 
     def gui_class(self):
-        return GuiWriteTreeDock
+        return GuiNoteTreeDock
     
 #    @pyqtSlot()
 #    def add_property_row(self, index):
@@ -35,50 +35,50 @@ class WriteTreeDockPlugin(gui_plugins.GuiWritePanelDockPlugin):
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import QSortFilterProxyModel
 from gui import cfg as gui_cfg
-from plugins.writetreedock import write_tree_dock_ui, write_tree_view, write_tree_proxy_model
+from plugins.notetreedock import note_tree_dock_ui, note_tree_view, note_tree_proxy_model
 
 
-class GuiWriteTreeDock:
+class GuiNoteTreeDock:
     '''
-    GuiWriteTreeDock
+    GuiNoteTreeDock
     '''
-    dock_name = "write-tree-dock" 
-    dock_displayed_name = _("Project")
+    dock_name = "note-tree-dock"
+    dock_displayed_name = _("Notes")
 
     def __init__(self):
         '''
         Constructor
         '''
-        super(GuiWriteTreeDock, self).__init__()
+        super(GuiNoteTreeDock, self).__init__()
         self.widget = None
         self.filter = None
-        self._write_tree_model = None
+        self._note_tree_model = None
 
     @property
-    def write_tree_model(self):
-        if self._write_tree_model is None:
-            # self._write_tree_model = gui_cfg.window.window.write_sub_window.tree_model
-            self._write_tree_model = gui_cfg.models["0_sheet_tree_model"]
+    def note_tree_model(self):
+        if self._note_tree_model is None:
+            # self._Note_tree_model = gui_cfg.window.window.Note_sub_window.tree_model
+            self._note_tree_model = gui_cfg.models["0_note_tree_model"]
 
-        return self._write_tree_model
+        return self._note_tree_model
 
     def get_widget(self):
         
         if self.widget is None:
             self.widget = QWidget()
-            self.ui = write_tree_dock_ui.Ui_WriteTreeDock()
+            self.ui = note_tree_dock_ui.Ui_NoteTreeDock()
             self.ui.setupUi(self.widget)
             
             self.ui.treeView.hide()
-            tree_view = write_tree_view.WriteTreeView()
+            tree_view = note_tree_view.NoteTreeView()
             self.ui.mainVerticalLayout.addWidget(tree_view)
-#                self.ui.treeView = write_tree_view.WriteTreeView()
+#                self.ui.treeView = Note_tree_view.NoteTreeView()
 
             #filter :
-            self.filter = write_tree_proxy_model.WriteTreeProxyModel(self.widget)
+            self.filter = note_tree_proxy_model.NoteTreeProxyModel(self.widget)
             self.filter.setFilterKeyColumn(-1)
             self.filter.setFilterCaseSensitivity(False)
-            self.filter.setSourceModel(self.write_tree_model)
+            self.filter.setSourceModel(self.note_tree_model)
 
             #model :
             tree_view.setModel(self.filter)

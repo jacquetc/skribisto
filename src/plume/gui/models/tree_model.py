@@ -5,29 +5,30 @@ Created on 17 february 2016
 '''
 
 from PyQt5.QtCore import QAbstractItemModel, QVariant, QModelIndex
-from PyQt5.QtCore import Qt, QObject
+from PyQt5.QtCore import Qt, QObject, QMimeData, QByteArray, QDataStream, QIODevice
 from .. import cfg
 
 class TreeModel(QAbstractItemModel):
     '''
     Tree
     '''
+    IdRole = Qt.UserRole
+    TitleRole = Qt.UserRole + 1
+    ContentRole = Qt.UserRole + 2
+    SortOrderRole = Qt.UserRole + 3
+    IndentRole = Qt.UserRole + 4
+    DateCreatedRole = Qt.UserRole + 5
+    DateUpdatedRole = Qt.UserRole + 6
+    DateContentRole = Qt.UserRole + 7
+    DeletedRole = Qt.UserRole + 8
+    VersionRole = Qt.UserRole + 9
+    CharCountRole = Qt.UserRole + 10
+    WordCountRole = Qt.UserRole + 11
 
     def __init__(self, table_name: str, id_name: str, parent: QObject, project_id: int):
         super(TreeModel, self).__init__(parent)
 
-        self.IdRole = Qt.UserRole
-        self.TitleRole = Qt.UserRole + 1
-        self.ContentRole = Qt.UserRole + 2
-        self.SortOrderRole = Qt.UserRole + 3
-        self.IndentRole = Qt.UserRole + 4
-        self.DateCreatedRole = Qt.UserRole + 5
-        self.DateUpdatedRole = Qt.UserRole + 6
-        self.DateContentRole = Qt.UserRole + 7
-        self.DeletedRole = Qt.UserRole + 8
-        self.VersionRole = Qt.UserRole + 9
-        self.CharCountRole = Qt.UserRole + 10
-        self.WordCountRole = Qt.UserRole + 11
+
         # inheriting classes will start at Qt.UserRole + 20
 
         self._project_id = project_id
@@ -36,6 +37,7 @@ class TreeModel(QAbstractItemModel):
         self._id_name = id_name
         self._all_data = []
         self._node_list = []
+        self._id_of_last_created_node = None
 
     @property
     def tree_db(self):
@@ -79,6 +81,8 @@ class TreeModel(QAbstractItemModel):
 
         node = self.node_from_index(index)
 
+        if role == self.IdRole and col == 0:
+            return node.id
         if role == self.TitleRole and col == 0:
             return node.title
         if role == self.SortOrderRole and col == 0:
@@ -154,9 +158,6 @@ class TreeModel(QAbstractItemModel):
 
         return False
 
-    def supportedDropActions(self):
-        return Qt.CopyAction | Qt.MoveAction
-
     def flags(self, index):
         default_flags = QAbstractItemModel.flags(self, index)
 
@@ -217,6 +218,124 @@ class TreeModel(QAbstractItemModel):
     @property
     def item_list(self):
         return self._item_list
+
+    def insert_child_node(self, parent_index):
+        self.id_of_last_created_node = \
+                cfg.data.database.get_tree(self._table_name).add_new_child_papers(self.node_from_index(parent_index).id, 1)
+
+    def insert_node_by(self, index):
+        self.id_of_last_created_node = \
+                cfg.data.database.get_tree(self._table_name).add_new_papers_by(self.node_from_index(index).id, 1)
+
+    def remove_node(self, index):
+        cfg.data.database.get_tree(self._table_name).remove_papers(self.node_from_index(index).id, 1)
+
+    # def insertRow(self, row, parent):
+    #     return self.insertRows(row, 1, parent)
+    #
+    #
+    # def insertRows(self, row, count, parent):
+    #     self.beginInsertRows(parent, row, (row + (count - 1)))
+    #
+    #     self.id_of_last_created_node = \
+    #         cfg.data.database.get_tree(self._table_name).add_new_papers_by(self.node_from_index(parent).id, count)
+    #     self.endInsertRows()
+    #     return True
+    #
+    #
+    # def removeRow(self, row, parentIndex):
+    #     return self.removeRows(row, 1, parentIndex)
+    #
+    #
+    # def removeRows(self, row, count, parentIndex):
+    #     # TODO wrong
+    #     self.beginRemoveRows(parentIndex, row, row)
+    #     cfg.data.database.get_tree(self._table_name).remove_papers(self.node_from_index(parent).id, count)
+    #     self.endRemoveRows()
+    #
+    #     return True
+
+
+
+    @property
+    def id_of_last_created_node(self):
+        return self._id_of_last_created_node
+
+    @id_of_last_created_node.setter
+    def id_of_last_created_node(self, value):
+        self._id_of_last_created_node = value[-1]
+
+    def find_index_from_id(self, id_: int):
+        for node in self._node_list:
+            if node.id == id_:
+                return node.index
+
+        return None
+
+    def find_parent_id_from_child_node_id(self, child_node_id):
+        # find child
+        parent_node = None
+        child_indent = -1
+        child_index = -1
+        for node in self.tuple_of_tree_nodes:
+            if node.id == child_node_id:
+                child_index = self.tuple_of_tree_nodes.index(node)
+                child_indent = node.indent
+        # find parent
+        for node in self.tuple_of_tree_nodes:
+            index = self.tuple_of_tree_nodes.index(node)
+            if node.indent is child_indent - 1 and index < child_index:
+                parent_node = node
+
+        if parent_node is None:
+            return -1
+
+        return parent_node.id
+
+# TODO : drag drop
+#     def mimeData(self, list_of_QModelIndex):
+#         custom_mime_data = QMimeData()
+#         encoded_data = QByteArray()
+#
+#         stream = QDataStream(encoded_data, QIODevice.WriteOnly)
+#
+#         for index in list_of_QModelIndex:
+#             if index.isValid():
+#                 stream.writeQVariant(self.node_from_index(index).data)
+#
+#         custom_mime_data.setData("application/plume-creator-tree", encoded_data)
+#
+#         return custom_mime_data
+#
+#     def mimeTypes(self):
+#         return ["application/plume-creator-tree"]
+#
+#     def dropMimeData(self, mimedata, action, row, column, parentIndex):
+#         if action == Qt.IgnoreAction:
+#             return True
+#
+#         if
+#
+#         return True
+
+    def supportedDropActions(self):
+        return Qt.CopyAction
+
+    def insertRow(self, row, parent):
+        return self.insertRows(row, 1, parent)
+
+    def insertRows(self, row, count, parent):
+        self.beginInsertRows(parent, row, (row + (count - 1)))
+        self.endInsertRows()
+        return True
+
+    def removeRow(self, row, parentIndex):
+        return self.removeRows(row, 1, parentIndex)
+
+    def removeRows(self, row, count, parentIndex):
+        self.beginRemoveRows(parentIndex, row, row)
+        self.endRemoveRows()
+        return True
 
 
 class TreeItem(object):

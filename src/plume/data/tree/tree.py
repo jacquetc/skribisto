@@ -16,7 +16,7 @@ class Tree:
     Tree
     '''
 
-    def __init__(self, sql_db: sqlite3.Connection, table_name: str, id_name: str):
+    def __init__(self, sql_db: sqlite3.Connection, table_name: str, paper_type: str, id_name: str):
         '''
         Constructor
         :type table_name: str
@@ -25,6 +25,7 @@ class Tree:
         '''
 
         self.table_name = table_name
+        self.paper_type = paper_type
         self.id_name = id_name
         self.sql_db = sql_db
 
@@ -122,6 +123,15 @@ class Tree:
 
         return self._move_papers_below(paper_id_list, dest_id, True)
 
+    def remove_papers(self, paper_id_list, dest_id: int):
+        """
+
+        :param paper_id_list:
+        :param dest_id:
+        :return: list of removed papers
+        """
+        return self._remove_papers(paper_id_list, dest_id, True)
+
     def _add_new_child_papers(self, parent_id: int, number: int, commit: bool):
         '''
         function:: _add_new_child_papers(parent_id: int, number: int, commit: bool)
@@ -137,7 +147,7 @@ class Tree:
         self._move_papers_as_child_of(new_id_list, parent_id, False)
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
 
         return new_id_list
 
@@ -156,7 +166,7 @@ class Tree:
         self._move_papers_below(new_id_list, paper_id, False)
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
 
         return new_id_list
 
@@ -184,7 +194,7 @@ class Tree:
 
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
 
     def _move_papers_above(self, paper_id_list, dest_id: int, commit: bool):
         '''
@@ -207,7 +217,7 @@ class Tree:
 
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
 
     def _move_papers_below(self, paper_id_list, dest_id: int, commit: bool):
         '''
@@ -233,4 +243,15 @@ class Tree:
 
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update("sheet_tree.structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
+
+    def _remove_papers(self, paper_id_list, dest_id: int, commit: bool):
+        """
+
+        :param paper_id_list:
+        :param dest_id:
+        :param commit:
+        """
+        if commit:
+            self.sql_db.commit()
+            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")

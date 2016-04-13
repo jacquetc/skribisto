@@ -12,7 +12,7 @@ from yapsy.IPlugin import IPlugin
 import importlib
 
 
-class Plugins():
+class Plugins:
 
     '''
     Plugins
@@ -25,8 +25,10 @@ class Plugins():
 
         super(Plugins, self).__init__()
 
-        self.write_tab_dock_plugin_dict = {}
+        self.write_subwindow_dock_plugin_dict = {}
         self.write_panel_dock_plugin_dict = {}
+        self.note_subwindow_dock_plugin_dict = {}
+        self.note_panel_dock_plugin_dict = {}
 
         # Build the manager
         self._plugin_manager = PluginManager()
@@ -44,14 +46,17 @@ class Plugins():
         # Define the various categories corresponding to the different
         # kinds of plugins you have defined
         self._plugin_manager.setCategoriesFilter({
-                                                 "GuiWriteTabDockPlugin": GuiWriteTabDockPlugin,
-                                                 "GuiWritePanelDockPlugin": GuiWritePanelDockPlugin
+                                                 "GuiWriteSubWindowDockPlugin": GuiWriteSubWindowDockPlugin,
+                                                 "GuiWritePanelDockPlugin": GuiWritePanelDockPlugin,
+                                                 "GuiNoteSubWindowDockPlugin": GuiNoteSubWindowDockPlugin,
+                                                 "GuiNotePanelDockPlugin": GuiNotePanelDockPlugin
                                                  })
 
         self._plugin_manager.collectPlugins()
 
         self.load_plugins(
-            ["GuiWriteTabDockPlugin",  "GuiWritePanelDockPlugin"])
+            ["GuiWriteSubWindowDockPlugin",  "GuiWritePanelDockPlugin",
+             "GuiNoteSubWindowDockPlugin", "GuiNotePanelDockPlugin"])
 
     def load_plugins(self, categories):
         '''
@@ -63,17 +68,22 @@ class Plugins():
             for pluginInfo in self._plugin_manager.getPluginsOfCategory(category):
                 if pluginInfo.plugin_object.ignore is True:  # force ignore a plugin
                     continue
-                setattr(self, pluginInfo.plugin_object.gui_class(
-                ).__name__, pluginInfo.plugin_object.gui_class())
-                if category is "GuiWriteTabDockPlugin":
-                    self.write_tab_dock_plugin_dict[pluginInfo.plugin_object.gui_class().dock_name] \
+                setattr(self, pluginInfo.plugin_object.gui_class().__name__, pluginInfo.plugin_object.gui_class())
+                if category is "GuiWriteSubWindowDockPlugin":
+                    self.write_subwindow_dock_plugin_dict[pluginInfo.plugin_object.gui_class().dock_name] \
                         = pluginInfo.plugin_object.gui_class()
                 if category is "GuiWritePanelDockPlugin":
                     self.write_panel_dock_plugin_dict[pluginInfo.plugin_object.gui_class().dock_name] \
                         = pluginInfo.plugin_object.gui_class()
+                if category is "GuiNoteSubWindowDockPlugin":
+                    self.note_subwindow_dock_plugin_dict[pluginInfo.plugin_object.gui_class().dock_name] \
+                        = pluginInfo.plugin_object.gui_class()
+                if category is "GuiNotePanelDockPlugin":
+                    self.note_panel_dock_plugin_dict[pluginInfo.plugin_object.gui_class().dock_name] \
+                        = pluginInfo.plugin_object.gui_class()
 
 
-class GuiWriteTabDockPlugin(IPlugin):
+class GuiWriteSubWindowDockPlugin(IPlugin):
 
     '''
     GuiWriteTabDockPlugin
@@ -84,7 +94,7 @@ class GuiWriteTabDockPlugin(IPlugin):
         Constructor
         '''
 
-        super(GuiWriteTabDockPlugin, self).__init__()
+        super(GuiWriteSubWindowDockPlugin, self).__init__()
 
 
 class GuiWritePanelDockPlugin(IPlugin):
@@ -100,6 +110,33 @@ class GuiWritePanelDockPlugin(IPlugin):
 
         super(GuiWritePanelDockPlugin, self).__init__()
 
+
+class GuiNoteSubWindowDockPlugin(IPlugin):
+
+    '''
+    GuiNoteSubWindowDockPlugin
+    '''
+
+    def __init__(self):
+        '''
+        Constructor
+        '''
+
+        super(GuiNoteSubWindowDockPlugin, self).__init__()
+
+
+class GuiNotePanelDockPlugin(IPlugin):
+
+    '''
+    GuiNotePanelDockPlugin
+    '''
+
+    def __init__(self):
+        '''
+        Constructor
+        '''
+
+        super(GuiNotePanelDockPlugin, self).__init__()
 
 '''
         self.plugin_folder = "./plugins"

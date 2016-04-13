@@ -7,6 +7,7 @@ from PyQt5.QtCore import QAbstractItemModel, QVariant, QModelIndex
 from PyQt5.QtCore import Qt
 from .. import cfg
 from .tree_model import TreeModel
+from ..paper_manager import SheetPaper
 
 
 class SheetTreeModel(TreeModel):
@@ -22,18 +23,12 @@ class SheetTreeModel(TreeModel):
         '''
 
 
-
-
-        self._item_list = []
-
         self.headers = ["name"]
-        self._id_of_last_created_sheet = None     
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.clear, "database_closed")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "database_loaded")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet.title_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet_tree.structure_modified")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "data.sheet_tree.title")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "data.sheet_tree.properties")
+        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet.tree_structure_modified")
+        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet.properties")
 
     def data(self, index, role):
         
@@ -66,11 +61,11 @@ class SheetTreeModel(TreeModel):
 
             node = self.node_from_index(index)
 
-            cfg.data.database.sheet_tree.set_title(node.id, value)
-            # node.title = value
+            sheet = SheetPaper(node.id)
+            sheet.title = value
 
             self.dataChanged.emit(index, index, limit)
-            cfg.data_subscriber.announce_update(self._project_id, "sheet.title_changed", node.id)
+            # cfg.data_subscriber.announce_update(self._project_id, "sheet.title_changed", node.id)
             return True
         
         return TreeModel.setData(self, index, value, role)
@@ -107,86 +102,6 @@ parentIndex, parentIndex)
 
 
 
-
-    def insert_child_row(self, parent_index):
-        self.id_of_last_created_sheet = \
-                cfg.data.database.sheet_tree.add_new_child_papers(self.node_from_index(parent_index).id, 1)
-
-    def insert_row_by(self, index):
-        self.id_of_last_created_sheet = \
-                cfg.data.database.sheet_tree.add_new_papers_by(self.node_from_index(index).id, 1)
-
-
-    def insertRow(self, row, parent):
-        return self.insertRows(row, 1, parent)
-
-
-    def insertRows(self, row, count, parent):
-        self.beginInsertRows(parent, row, (row + (count - 1)))
-
-        self.id_of_last_created_sheet = \
-            cfg.data.database.sheet_tree.add_new_papers_by(self.node_from_index(parent).id, count)
-                # cfg.data.database.sheet_tree.add_new_papers_by(self.node_from_index(parent).id, count)
-        self.endInsertRows()
-        return True
-
-
-    def removeRow(self, row, parentIndex):
-        return self.removeRows(row, 1, parentIndex)
-
-
-    def removeRows(self, row, count, parentIndex):
-        # TODO wrong
-        self.beginRemoveRows(parentIndex, row, row)
-        node = self.node_from_index(parentIndex)
-        node.removeChild(row)
-        self.endRemoveRows()
-       
-        return True
-
-
-
-    @property
-    def id_of_last_created_sheet(self):       
-        return self._id_of_last_created_sheet
-
-    @id_of_last_created_sheet.setter
-    def id_of_last_created_sheet(self, value):
-        self._id_of_last_created_sheet = value[-1]
-
-    def find_index_from_id(self, id_: int):
-        # start_index = self.index(0, 0, QModelIndex())
-        # index_list = self.match(start_index, self.IdRole, id_, 1, Qt.MatchExactly | Qt.MatchRecursive)
-        # if len(index_list) == 0:
-        #     return None
-        # else:
-        #     return index_list[0]
-
-        for node in self._node_list:
-            if node.id is id_:
-                return node.index
-
-        return None
-
-    def find_parent_id_from_child_sheet_id(self, child_sheet_id):
-        # find child
-        parent_node = None
-        child_indent = -1
-        child_index = -1
-        for node in self.tuple_of_tree_nodes:
-            if node.sheet_id == child_sheet_id:
-                child_index = self.tuple_of_tree_nodes.index(node)
-                child_indent = node.indent
-        # find parent
-        for node in self.tuple_of_tree_nodes:
-            index = self.tuple_of_tree_nodes.index(node)
-            if node.indent is child_indent - 1 and index < child_index:
-                parent_node = node
-
-        if parent_node is None:
-            return -1
-
-        return parent_node.sheet_id
     #
     #
     # def create_child_nodes(self, parent_node):

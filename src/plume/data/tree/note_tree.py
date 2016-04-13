@@ -7,6 +7,7 @@ Created on 13 february 2016
 
 from .tree import Tree
 from .db_paper import DbPaper
+from .db_tree import DbTree
 
 
 class NoteTree(Tree):
@@ -19,7 +20,7 @@ class NoteTree(Tree):
         Constructor
         '''
 
-        super(NoteTree, self).__init__(sql_db, "tbl_note", "l_note_id")
+        super(NoteTree, self).__init__(sql_db, "tbl_note", "note", "l_note_id")
 
     def add_new_child_note(self, parent_note_id: int = -1):
         '''
@@ -53,6 +54,20 @@ class NoteTree(Tree):
         '''
         a_paper = DbPaper(self.sql_db, self.table_name, self.id_name,  note_id, False)
         a_paper.set("b_synopsis", value)
+
+    def find_synopsis_from_sheet_code(self, sheet_code: int):
+        """
+        Self explanatory
+        :param sheet_code: sheet id
+        """
+        a_tree = DbTree(self.sql_db, self.table_name, self.id_name, False)
+        synopsis_list = a_tree.find_ids("b_synopsis", True)
+        note_list = a_tree.find_ids("l_sheet_code", sheet_code)
+
+        synopsis_note = list(set(synopsis_list).intersection(note_list))
+
+        return synopsis_note
+
 
     def get_sheet_code(self, note_id: int):
         '''

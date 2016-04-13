@@ -13,10 +13,11 @@ from enum import Enum
 class DockSystem(QObject):
 
     '''
+
     DockSystem
     For now, it's only for the write_tree docks
     '''
-    DockTypes = Enum('DockType', 'WriteTabDock WritePanelDock')
+    DockTypes = Enum('DockType', 'WriteSubWindowDock WritePanelDock NotePanelDock NoteSubWindowDock')
 
     def __init__(self, parent, main_window,  dock_type):
         '''
@@ -24,21 +25,34 @@ class DockSystem(QObject):
         '''
 
         super(DockSystem, self).__init__(parent)
-        self._sheet_id = None
+        self._paper_id = None
         self.main_window = main_window
         self.dock_list = []
 
-        if dock_type is self.DockTypes.WriteTabDock:
-            self._default_dock = "properties-dock"
-            write_tab_dock_plugin_dict = cfg.gui_plugins.write_tab_dock_plugin_dict
+        if dock_type is self.DockTypes.WriteSubWindowDock:
+            self._default_dock = "write-properties-dock"
+            write_subwindow_dock_plugin_dict = cfg.gui_plugins.write_subwindow_dock_plugin_dict
             # add there other dicts with built-in docks
-            self. dock_type_dict = write_tab_dock_plugin_dict
+            self.dock_type_dict = write_subwindow_dock_plugin_dict
 
         if dock_type is self.DockTypes.WritePanelDock:
             self._default_dock = "write-tree-dock"
             write_panel_dock_plugin_dict = cfg.gui_plugins.write_panel_dock_plugin_dict
             # add there other dicts with built-in docks
             self.dock_type_dict = write_panel_dock_plugin_dict
+
+        if dock_type is self.DockTypes.NoteSubWindowDock:
+            self._default_dock = "note-properties-dock"
+            note_subwindow_dock_plugin_dict = cfg.gui_plugins.note_subwindow_dock_plugin_dict
+            # add there other dicts with built-in docks
+            self.dock_type_dict = note_subwindow_dock_plugin_dict
+
+        if dock_type is self.DockTypes.NotePanelDock:
+            self._default_dock = "note-tree-dock"
+            note_panel_dock_plugin_dict = cfg.gui_plugins.note_panel_dock_plugin_dict
+            # add there other dicts with built-in docks
+            self.dock_type_dict = note_panel_dock_plugin_dict
+
 
     def split_dock(self, dock):
         '''
@@ -70,7 +84,7 @@ class DockSystem(QObject):
         '''
         gui_part = self.dock_type_dict[type_str]
         gui_part = gui_part()
-        gui_part.sheet_id = self.sheet_id
+        gui_part.paper_id = self.paper_id
         widget = gui_part.get_widget()
         dock.current_type = type_str
         dock.setWindowTitle(gui_part.dock_displayed_name)
@@ -89,15 +103,15 @@ class DockSystem(QObject):
         dock.deleteLater()
 
     @property
-    def sheet_id(self):
-        return self._sheet_id
+    def paper_id(self):
+        return self._paper_id
 
-    @sheet_id.setter
-    def sheet_id(self, sheet_id):
-        self._sheet_id = sheet_id
-        if self.sheet_id is not None:
+    @paper_id.setter
+    def paper_id(self, paper_id):
+        self._paper_id = paper_id
+        if self._paper_id is not None:
             for dock in self.dock_list:  # update all docks' sheet_id
-                dock.widget().gui_part.sheet_id = sheet_id
+                dock.widget().gui_part.paper_id = paper_id
 
     def load_settings(self):
         '''

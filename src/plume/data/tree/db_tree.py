@@ -75,7 +75,6 @@ class DbTree:
 
         return header_list
 
-
     def renum_all(self):
         '''
         function:: renum_all()
@@ -100,6 +99,8 @@ class DbTree:
             a_paper = DbPaper(self.sql_db, self.table_name, self.id_name, a_row[0], False)
             a_paper. sort_order = i_dest
             i_dest += DbTree.renum_interval
+
+        # TODO add a way to fix possible indent errors
 
         if self.commit_state:
             self.sql_db.commit()
@@ -197,7 +198,6 @@ class DbTree:
         self.sql_db.commit()
         return DbError.R_OK
 
-
     def undelete_list(self, id_list):
         '''
         function:: undelete_list(id_list)
@@ -222,7 +222,6 @@ class DbTree:
 
         self.sql_db.commit()
         return DbError.R_OK
-
 
     def empty_trash(self):
         '''
@@ -298,7 +297,6 @@ class DbTree:
 
         return a_list
 
-
     def list_all(self):
         '''
         function:: list_all()
@@ -354,3 +352,23 @@ class DbTree:
             return -1
 
         return self.list_visible_id()[self.list_visible_id().index(paper_id) - 1]
+
+    def find_ids(self, name: str, value):
+
+        s_sql = """
+        select """ + self.id_name + """
+        from """ + self.table_name + """
+        where
+            """ + name + """ = :val
+            and l_version = :ver
+        order by
+            l_sort_order
+            """
+
+        a_curs = self.sql_db.cursor()
+        a_qry = a_curs.execute(s_sql, {'val': value, 'ver': self.version})
+        a_list = []
+        for a_row in a_qry:
+            a_list.append(a_row[0])
+
+        return a_list

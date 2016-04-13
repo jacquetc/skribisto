@@ -7,7 +7,7 @@ from gui import plugins as gui_plugins
 from PyQt5.Qt import pyqtSlot
 
 
-class PropertiesDockPlugin(gui_plugins.GuiWriteTabDockPlugin):
+class PropertiesDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
 
     '''
     PropertiesDockPlugin

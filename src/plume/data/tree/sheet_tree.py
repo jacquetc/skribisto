@@ -17,7 +17,7 @@ class SheetTree(Tree):
         '''
         Constructor
         '''
-        super(SheetTree, self).__init__(sql_db, "tbl_sheet", "l_sheet_id")
+        super(SheetTree, self).__init__(sql_db, "tbl_sheet", "sheet", "l_sheet_id")
 
     def get_word_count(self, sheet_id: int):
         '''

@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,
 from PyQt5.QtCore import Qt,  QDir, QDate
 from .window_system import WindowSystemController
 from .write_panel import WritePanel
-from .binder import BinderPanel
+from .note_panel import NotePanel
 from PyQt5.Qt import QToolButton, pyqtSlot
 from . import cfg
 from .main_window_ui import Ui_MainWindow
@@ -59,24 +59,26 @@ class MainWindow(QMainWindow, WindowSystemController):
         self._sub_window_action_group = QActionGroup(self)
 
         # write window
-        self.write_sub_window = WritePanel(
+        self.write_panel = WritePanel(
             parent=self, parent_window_system_controller=self)
-        self.attach_sub_window(self.write_sub_window)
+        self.attach_sub_window(self.write_panel)
         self.ui.actionWrite.setProperty(
             "sub_window_object_name", "write_sub_window")
         self.add_action_to_window_system(self.ui.actionWrite)
         self._sub_window_action_group.addAction(self.ui.actionWrite)
 
         # binder window
-        self.binder_sub_window = BinderPanel(
+        self.note_panel = NotePanel(
             parent=self, parent_window_system_controller=self)
-        self.attach_sub_window(self.binder_sub_window)
-        self.ui.actionBinder.setProperty(
-            "sub_window_object_name", "binder_sub_window")
-        self.add_action_to_window_system(self.ui.actionBinder)
-        self._sub_window_action_group.addAction(self.ui.actionBinder)
+        self.attach_sub_window(self.note_panel)
+        self.ui.actionNote.setProperty(
+            "sub_window_object_name", "note_sub_window")
+        self.add_action_to_window_system(self.ui.actionNote)
+        self._sub_window_action_group.addAction(self.ui.actionNote)
 
         self.ui.actionWrite.trigger()
+
+
 
         # menu bar actions
         self.ui.actionOpen_test_project.triggered.connect(

@@ -9,7 +9,7 @@ from gui import cfg
 from gui.models.sheet_tree_model import SheetTreeModel
 
 
-class WriteTreeView(QTreeView):
+class NoteTreeView(QTreeView):
 
     '''
     WriteTreeView
@@ -19,7 +19,7 @@ class WriteTreeView(QTreeView):
         '''
         Constructor
         '''
-        super(WriteTreeView, self).__init__(parent=None)
+        super(NoteTreeView, self).__init__(parent=None)
 
         self._old_index = None
 
@@ -51,8 +51,8 @@ class WriteTreeView(QTreeView):
             self._one_click_checkpoint = False
             self._two_clicks_checkpoint = False
         elif self._one_click_checkpoint == True:  # second click
-            sheet_id = index.data(SheetTreeModel.IdRole)
-            cfg.window.write_panel.open_sheet(sheet_id)
+            note_id = index.data(SheetTreeModel.IdRole)
+            cfg.window.note_sub_window.open_note(note_id)
 
             self._two_clicks_checkpoint = True
 
