@@ -4,7 +4,7 @@ Created on 26 avr. 2015
 @author:  Cyril Jacquet
 '''
 
-from . import sql, cfg
+from . import cfg
 from .base import DatabaseBaseClass
 import sqlite3
 import os
@@ -22,7 +22,7 @@ class Project(DatabaseBaseClass):
         Constructor
         '''
 
-        self.db = None
+        self.sqlite_db = None
         self._project_path = None
         self._project_file_type = None
 
@@ -99,7 +99,7 @@ class Project(DatabaseBaseClass):
         return self._project_path
 
     def project_file_type(self):
-        return self._file_type
+        return self._project_file_type
 
     def close_db(self):
         self.db = None

@@ -1,5 +1,4 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout,  QSizePolicy
-from ..cfg import core
 from .writing_zone_ui import Ui_WritingZone
 
 

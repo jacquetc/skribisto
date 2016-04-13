@@ -3,31 +3,31 @@ Created on 4 juin 2015
 
 @author:  Cyril Jacquet
 '''
-from core import plugins as core_plugins
 from gui import plugins as gui_plugins
-from core import cfg as core_cfg
+# from core import cfg as core_cfg
 from PyQt5.Qt import pyqtSlot
 from PyQt5.QtCore import Qt
 
 
-class WriteTabDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
+# class WriteTabDockPlugin(core_plugins.CoreWriteTabDockPlugin, gui_plugins.GuiWriteTabDockPlugin):
+class WriteSubWindowDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
 
     '''
-    WriteTabDockPlugin
+    WriteSubWindowDockPlugin
 
-    This is an example of dock for the WriteTab, in the "Write" panel. This is a minimal dock with two parts : Core and Gui .
+    This is an example of dock for the WriteSubWindow, in the "Write" panel. This is a minimal dock with two parts : Core and Gui .
     The Gui part calls a writetab_dock.ui form. The compiled form writetab_dock_ui.py is build automaticaly if the environement variable PLUME_DEVELOP_FROM points to a parent directory of this plugin.
 
     The goal of this dock is to display and modify the title of the current sheet. Nothing really useful...
     '''
     is_builtin_plugin = False
-
+    ignore = True
     def __init__(self):
         '''
         Constructor
         '''
 
-        super(WriteTabDockPlugin, self).__init__()
+        super(WriteSubWindowDockPlugin, self).__init__()
 
     def core_class(self):
         '''

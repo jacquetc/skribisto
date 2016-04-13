@@ -4,5 +4,8 @@ Created on 6 mai 2015
 @author:  Cyril Jacquet
 '''
 
-core = None
+data = None
+data_subscriber = None
 gui_plugins = None
+window = None
+models = {}

@@ -7,7 +7,7 @@ Created on 26 may 2015
 from PyQt5.QtCore import QSortFilterProxyModel
 
 
-class WriteTreeProxyModel(QSortFilterProxyModel):
+class NoteTreeProxyModel(QSortFilterProxyModel):
 
     '''
     WriteTreeProxyModel
@@ -18,7 +18,7 @@ class WriteTreeProxyModel(QSortFilterProxyModel):
         Constructor
         '''
 
-        super(WriteTreeProxyModel, self).__init__(parent=None)
+        super(NoteTreeProxyModel, self).__init__(parent=None)
 
     def node_from_index(self, index):
         return self.sourceModel().node_from_index(self.mapToSource(index))

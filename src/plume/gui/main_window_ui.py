@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eric/plume-creator/src/plume/gui/main_window.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator/src/plume/gui/main_window.ui'
 #
-# Created by: PyQt5 UI code generator 5.4.1
+# Created by: PyQt5 UI code generator 5.5.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -41,11 +41,11 @@ class Ui_MainWindow(object):
         icon1.addPixmap(QtGui.QPixmap(":/pics/48x48/scribus.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionWrite.setIcon(icon1)
         self.actionWrite.setObjectName("actionWrite")
-        self.actionBinder = QtWidgets.QAction(MainWindow)
+        self.actionNote = QtWidgets.QAction(MainWindow)
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap(":/pics/48x48/system-file-manager.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionBinder.setIcon(icon2)
-        self.actionBinder.setObjectName("actionBinder")
+        icon2.addPixmap(QtGui.QPixmap(":/pics/48x48/accessories-text-editor.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionNote.setIcon(icon2)
+        self.actionNote.setObjectName("actionNote")
         self.actionExit = QtWidgets.QAction(MainWindow)
         icon3 = QtGui.QIcon()
         icon3.addPixmap(QtGui.QPixmap(":/pics/16x16/application-exit.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -127,7 +127,7 @@ class Ui_MainWindow(object):
         self.menuProject.addAction(self.actionClose_project)
         self.menuProject.addAction(self.actionExit)
         self.menuView.addAction(self.actionWrite)
-        self.menuView.addAction(self.actionBinder)
+        self.menuView.addAction(self.actionNote)
         self.menuView.addSeparator()
         self.menuHelp.addAction(self.actionAbout_Plume_Creator)
         self.menuHelp.addAction(self.actionAbout_Qt)
@@ -151,7 +151,8 @@ class Ui_MainWindow(object):
         self.toolBar.setWindowTitle(_("toolBar"))
         self.actionOpen_test_project.setText(_("Open test project"))
         self.actionWrite.setText(_("Write"))
-        self.actionBinder.setText(_("Binder"))
+        self.actionNote.setText(_("Note"))
+        self.actionNote.setToolTip(_("Note"))
         self.actionExit.setText(_("Exit"))
         self.actionClose_project.setText(_("Close project"))
         self.actionImport.setText(_("Import"))
