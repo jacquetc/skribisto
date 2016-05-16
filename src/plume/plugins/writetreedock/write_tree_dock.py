@@ -89,7 +89,7 @@ class GuiWriteTreeDock:
             self.ui.filterLineEdit.textChanged.connect(self.filter.setFilterFixedString)
             #TODO: #self.ui.treeView.clicked.connect(self.set_current_row)
                 
-            self.widget.gui_part = self
+            #self.widget.gui_part = self
         return self.widget
     
 #    @pyqtSlot()
