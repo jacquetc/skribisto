@@ -63,7 +63,7 @@ class MainWindow(QMainWindow, WindowSystemController):
             parent=self, parent_window_system_controller=self)
         self.attach_sub_window(self.write_panel)
         self.ui.actionWrite.setProperty(
-            "sub_window_object_name", "write_sub_window")
+            "sub_window_object_name", "write_panel")
         self.add_action_to_window_system(self.ui.actionWrite)
         self._sub_window_action_group.addAction(self.ui.actionWrite)
 
@@ -72,7 +72,7 @@ class MainWindow(QMainWindow, WindowSystemController):
             parent=self, parent_window_system_controller=self)
         self.attach_sub_window(self.note_panel)
         self.ui.actionNote.setProperty(
-            "sub_window_object_name", "note_sub_window")
+            "sub_window_object_name", "note_panel")
         self.add_action_to_window_system(self.ui.actionNote)
         self._sub_window_action_group.addAction(self.ui.actionNote)
 

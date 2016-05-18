@@ -1,5 +1,5 @@
 
-from PyQt5.QtWidgets import QStackedWidget
+from PyQt5.QtWidgets import QStackedWidget, QMainWindow
 from PyQt5.QtCore import Qt,  pyqtSlot
 from .docks import DockSystem
 from .window_system import WindowSystemController
@@ -23,9 +23,12 @@ class WritePanel(SubWindow, WindowSystemController):
             parent=parent, parent_window_system_controller=parent_window_system_controller)
 
         self.setWindowTitle(_("Write"))
-        self.setObjectName("write_sub_window")
+        self.setObjectName("write_panel")
         self.dock_system = DockSystem(
             self, self,  DockSystem.DockTypes.WritePanelDock)
+
+        self.setDockNestingEnabled(False)
+        self.setDockOptions(self.dockOptions() ^ QMainWindow.AnimatedDocks)
 
         # init Sheet Tree Model
         self.tree_model = SheetTreeModel(self, 0)

@@ -22,7 +22,7 @@ class NotePanel(SubWindow):
             parent=parent, parent_window_system_controller=parent_window_system_controller)
 
         self.setWindowTitle(_("Note"))
-        self.setObjectName("note_sub_window")
+        self.setObjectName("note_panel")
 
         # init Sheet Tree Model
         self.tree_model = NoteTreeModel(self, 0)
