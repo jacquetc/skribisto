@@ -13,7 +13,7 @@ class PropertiesDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
     PropertiesDockPlugin
     '''
     is_builtin_plugin = True
-    ignore = True
+    ignore = False
 
     def __init__(self):
         '''
@@ -118,7 +118,6 @@ class GuiPropertyDock():
             self.tree_sheet = gui_cfg.core.tree_sheet_manager.get_tree_sheet_from_sheet_id(
                 self.sheet_id)
             # self.core_part = self.tree_sheet.get_instance_of(self.dock_name)
-            self.core_part.sheet_id = sheet_id
 
     def get_widget(self):
 

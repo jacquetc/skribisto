@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt,  pyqtSlot
 from .docks import DockSystem
 from .models.note_tree_model import NoteTreeModel
 from .models.note_list_model import NoteListModel
+from .models.note_property_model import NotePropertyModel
 from . import cfg
 from .sub_window import SubWindow
 from .paper_manager import PaperManager, NotePaper
@@ -29,6 +30,8 @@ class NotePanel(SubWindow):
         cfg.models["0_note_tree_model"] = self.tree_model
         self.list_model = NoteListModel(self, 0)
         cfg.models["0_note_list_model"] = self.list_model
+        self.property_model = NotePropertyModel(self, 0)
+        cfg.models["0_note_property_model"] = self.property_model
 
         self.paper_manager = PaperManager()
 
