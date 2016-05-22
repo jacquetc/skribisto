@@ -14,6 +14,7 @@ class NoteTreeModel(TreeModel):
     '''
     classdocs
     '''
+    SheetCodeRole = Qt.UserRole + 20
 
     def __init__(self, parent, project_id):
         super(NoteTreeModel, self).__init__("tbl_note", "l_note_id", parent, project_id)
@@ -42,6 +43,9 @@ class NoteTreeModel(TreeModel):
         if (role == Qt.DisplayRole or role == Qt.EditRole) and col == 0:
             return self.data(index, self.TitleRole)
 
+        if role == self.SheetCodeRole and col == 0:
+            return node.data["l_sheet_code"]
+
         return TreeModel.data(self, index, role)
 
 
@@ -60,8 +64,8 @@ class NoteTreeModel(TreeModel):
 
             node = self.node_from_index(index)
 
-            sheet = NotePaper(node.id)
-            sheet.title = value
+            note = NotePaper(node.id)
+            note.title = value
 
             self.dataChanged.emit(index, index, limit)
             # cfg.data_subscriber.announce_update(self._project_id, "sheet.title_changed", node.id)

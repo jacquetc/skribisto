@@ -147,6 +147,10 @@ class DockTemplate(QDockWidget):
         self.setTitleBarWidget(title_widget)
         self.dock_system = dock_system
 
+        self.setFeatures(self.features() | (QDockWidget.DockWidgetFloatable |
+                                            QDockWidget.DockWidgetMovable))
+
+
     @property
     def dock_system(self):
         return self._dock_system

@@ -75,3 +75,6 @@ build
 .eric6project
 *.e4p
 .idea
+
+#Qt Creator
+.pro.user
