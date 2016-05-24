@@ -134,3 +134,8 @@ class PropertyList:
             cfg.database.subscriber.announce_update(self.property_type + ".structure_changed")
 
         return True
+
+    def find_id(self, paper_code: int, name: str):
+        propertyList = DbPropertyList(self.sql_db, self.table_name, self.id_name, False)
+        return propertyList.find_id(self.code_name, paper_code, name)
+

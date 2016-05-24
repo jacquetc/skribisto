@@ -105,7 +105,7 @@ class Property:
     def add(self, paper_id: int):
         new_list = cfg.data.database.get_table(self._table_name).add_new_properties(1, paper_id)
         cfg.data_subscriber.announce_update(0, self._property_type + ".structure_changed")
-        return new_list
+        return new_list[0]
 
     def remove(self):
         if cfg.data.database.get_table(self._table_name).remove_properties([self.id]):
@@ -114,11 +114,41 @@ class Property:
         else:
             return False
 
+    def _find_id(self, paper_id:int, name:str):
+        """
+
+        :param paper_id:
+        :param name:
+        :return: return None if nothing or id
+        """
+        return cfg.data.database.get_table(self._table_name)
+
+
+
 class SheetProperty(Property):
 
     def __init__(self, property_id: int):
         super(SheetProperty, self).__init__(table_name="tbl_sheet_property", code_name="l_sheet_code"
                                             , property_type="sheet_property", property_id=property_id)
+
+    def set_property(paper_id: int, name: str, value: str):
+        property_id = SheetProperty(-1)._find_id(paper_id, name)
+        if property_id is not None:
+            property_id = SheetProperty(-1).add(paper_id)
+        sheet_property = SheetProperty(property_id)
+        sheet_property.name = name
+        sheet_property.value = value
+
+
+    def get_property(paper_id: int, name: str, default_value: str):
+        property_id = SheetProperty(-1)._find_id(paper_id, name)
+        if property_id is None:
+            property_id = SheetProperty(-1).add(paper_id)
+            sheet_property = SheetProperty(property_id)
+            sheet_property.value = default_value
+
+        return  SheetProperty(property_id).value
+
 
 
 class NoteProperty(Property):
@@ -126,3 +156,20 @@ class NoteProperty(Property):
     def __init__(self, property_id: int):
         super(NoteProperty, self).__init__(table_name="tbl_note_property", code_name="l_note_code"
                                            , property_type="note_property", property_id=property_id)
+    def set_property(paper_id: int, name: str, value: str):
+        property_id = NoteProperty(-1)._find_id(paper_id, name)
+        if property_id is not None:
+            property_id = NoteProperty(-1).add(paper_id)
+        sheet_property = NoteProperty(property_id)
+        sheet_property.name = name
+        sheet_property.value = value
+
+
+    def get_property(paper_id: int, name: str, default_value: str):
+        property_id = NoteProperty(-1)._find_id(paper_id, name)
+        if property_id is None:
+            property_id = NoteProperty(-1).add(paper_id)
+            sheet_property = NoteProperty(property_id)
+            sheet_property.value = default_value
+
+        return  NoteProperty(property_id).value

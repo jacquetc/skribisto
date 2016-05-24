@@ -185,18 +185,25 @@ class DbPropertyList:
 
         return a_list
 
-    def find_ids(self, name: str, value):
+    def find_id(self, code_name: str, paper_code: int, name: str):
 
         s_sql = """
         select """ + self.id_name + """
         from """ + self.table_name + """
         where
-            """ + name + """ = :val """
+            t_name = :property_name
+            AND
+            """ + code_name + """:code_name"""
 
         a_curs = self.sql_db.cursor()
-        a_qry = a_curs.execute(s_sql, {'val': value})
+        a_qry = a_curs.execute(s_sql, {'property_name': name, 'code_name': code_name})
         a_list = []
         for a_row in a_qry:
             a_list.append(a_row[0])
 
-        return a_list
+        if a_list is []:
+            result = None
+        else:
+            result = a_list[0]
+
+        return result
