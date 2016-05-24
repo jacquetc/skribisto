@@ -5,12 +5,11 @@ Created on 11 mai 2015
 '''
 
 from PyQt5.QtWidgets import QTextEdit, QMenu, QGraphicsView, QGraphicsScene, QLabel,\
-    QGraphicsItem
+    QGraphicsItem, QOpenGLWidget
 from PyQt5.QtCore import pyqtSlot, Qt, QThread, pyqtSignal, QRectF
 from PyQt5.QtGui import QPixmap, QPalette, QTextBlockFormat
 from PyQt5.Qt import QPainterPath, QImage, QPainter, QPen, QPoint, QRect,\
     QAbstractTextDocumentLayout, QFontMetrics
-from PyQt5.QtOpenGL import QGLWidget
 
 
 class Minimap(QGraphicsView):
@@ -28,7 +27,7 @@ class Minimap(QGraphicsView):
 
         self._scene = QGraphicsScene()
         self.setAutoFillBackground(True)
-        self.setViewport(QGLWidget())
+        self.setViewport(QOpenGLWidget())
         self.setScene(self._scene)
         self.setAlignment(Qt.AlignTop)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)

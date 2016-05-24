@@ -320,8 +320,6 @@ class DbTree:
 
         return a_list
 
-        pass
-
     def get_paper_above(self, paper_id: int):
         '''
         function:: get_paper_above(paper_id: int)

@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt,  pyqtSlot
 from .docks import DockSystem
 from .window_system import WindowSystemController
 from .models.sheet_tree_model import SheetTreeModel
+from .models.sheet_property_model import SheetPropertyModel
 from . import cfg
 from .sub_window import SubWindow
 from .paper_manager import PaperManager, SheetPaper
@@ -33,6 +34,9 @@ class WritePanel(SubWindow, WindowSystemController):
         # init Sheet Tree Model
         self.tree_model = SheetTreeModel(self, 0)
         cfg.models["0_sheet_tree_model"] = self.tree_model
+        self.property_model = SheetPropertyModel(self, 0)
+        cfg.models["0_sheet_property_model"] = self.property_model
+
 
         self.sheet_manager = PaperManager()
 
@@ -121,8 +125,7 @@ class WriteSubWindow(SubWindow):
     @paper.setter
     def paper(self, paper_object):
         self._paper = paper_object
-        self.ui.writeTabWritingZone.text_edit.textChanged.connect(
-            self.save_content)
+        self.ui.writeTabWritingZone.text_edit.textChanged.connect(self.save_content)
         self._load_from_paper(paper_object)
 
     @pyqtSlot()

@@ -4,11 +4,11 @@ Created on 17 february 2016
 @author:  Cyril Jacquet
 '''
 
-from PyQt5.Qt import QAbstractListModel, QVariant, QModelIndex
+from PyQt5.Qt import QAbstractTableModel, QVariant, QModelIndex
 from PyQt5.QtCore import Qt, QObject
 from .. import cfg
 
-class PropertyModel(QAbstractListModel):
+class PropertyModel(QAbstractTableModel):
     '''
     Tree
     '''
@@ -19,6 +19,9 @@ class PropertyModel(QAbstractListModel):
     DateCreatedRole = Qt.UserRole + 3
     DateUpdatedRole = Qt.UserRole + 4
     SystemRole = Qt.UserRole + 5
+    CodeRole = Qt.UserRole + 6
+
+    PropertyClass=None
 
     def __init__(self, table_name: str, id_name: str, code_name: str, parent: QObject, project_id: int):
 
@@ -33,6 +36,8 @@ class PropertyModel(QAbstractListModel):
         self._all_data = []
         self._node_list = []
         self._id_of_last_created_node = None
+
+        self.headers = [_("name"), _("value")]
 
     @property
     def tree_db(self):
@@ -50,6 +55,9 @@ class PropertyModel(QAbstractListModel):
         else:
             parent_node = self.node_from_index(parent)
             return len(parent_node)
+
+    def columnCount(self, parent=None):
+        return 2
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -73,19 +81,24 @@ class PropertyModel(QAbstractListModel):
 
         node = self.node_from_index(index)
 
-        if role == self.IdRole and col == 0:
-            return node.id
-        if role == self.CodeRole and col == 0:
-            return node.data[self._code_name]
-        if role == self.NameRole and col == 0:
+        if role == Qt.DisplayRole and col == 0:
             return node.name
-        if role == self.ValueRole and col == 0:
+        if role == Qt.DisplayRole and col == 1:
             return node.value
-        if role == self.DateCreatedRole and col == 0:
+
+        if role == self.NameRole :
+            return node.name
+        if role == self.ValueRole:
+            return node.value
+        if role == self.IdRole:
+            return node.id
+        if role == self.CodeRole:
+            return node.data[self._code_name]
+        if role == self.DateCreatedRole:
             return node.data["dt_created"]
-        if role == self.ContentRole and col == 0:
+        if role == self.DateUpdatedRole:
             return node.data["dt_updated"]
-        if role == self.SystemRole and col == 0:
+        if role == self.SystemRole:
             return node.data["b_system"]
 
 
@@ -130,22 +143,29 @@ class PropertyModel(QAbstractListModel):
     def setData(self, index, value, role):
 
         limit = [role]
+        # name :
+        if index.isValid() and index.column() == 0 and role == (Qt.EditRole or self.NameRole):
 
-        # # title :
-        # if index.isValid() & role == self.TitleRole & index.column() == 0:
-        #
-        #     node = self.node_from_index(index)
-        #
-        #     self.tree_db.set_title(node.id, value)
-        #     node.title = value
-        #
-        #     self.dataChanged.emit(index, index, limit)
-        #     return True
+            node = self.node_from_index(index)
+
+            self.PropertyClass(node.id).name = value
+
+            self.dataChanged.emit(index, index, limit)
+            return True
+
+        if index.isValid() and index.column() == 1 and role == (Qt.EditRole or self.ValueRole):
+
+            node = self.node_from_index(index)
+
+            self.PropertyClass(node.id).value = value
+
+            self.dataChanged.emit(index, index, limit)
+            return True
 
         return False
 
     def flags(self, index):
-        default_flags = QAbstractListModel.flags(self, index)
+        default_flags = QAbstractTableModel.flags(self, index)
 
         if index.isValid():
             return Qt.ItemIsEditable | Qt.ItemIsDragEnabled | \
@@ -157,8 +177,8 @@ class PropertyModel(QAbstractListModel):
     def reset_model(self):
         self.beginResetModel()
 
-        self._all_data = cfg.data.get_database(0).get_list(self._table_name).get_all()
-        all_headers = cfg.data.get_database(0).get_list(self._table_name).get_all_headers()
+        self._all_data = cfg.data.get_database(0).get_table(self._table_name).get_all()
+        all_headers = cfg.data.get_database(0).get_table(self._table_name).get_all_headers()
         header_dict = {}
         for header in all_headers:
             header_dict[header] = QVariant()
@@ -274,8 +294,8 @@ class ListItem(object):
     def name(self):
         return self.data["t_name"]
 
-    @name.setter
-    def name(self, value: str):
-        self.data["t_name"] = value
+    @property
+    def value(self):
+        return self.data["t_value"]
 
 

@@ -73,15 +73,14 @@ class Paper:
         cfg.data.database.get_tree(self._table_name).set_modification_date(self.id, value)
         cfg.data_subscriber.announce_update(0, self._paper_type + ".last_modification_changed", self.id)
 
-    @property
-    def properties(self):
-        return cfg.data.database.get_tree(self._table_name).get_properties(self.id)
-# TODO : set prop one by one
-
-    @properties.setter
-    def properties(self, value: dict):
-        cfg.data.database.get_tree(self._table_name).set_properties(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".properties_changed", self.id)
+    # @property
+    # def properties(self):
+    #     return cfg.data.database.get_tree(self._table_name).get_properties(self.id)
+    #
+    # @properties.setter
+    # def properties(self, value: dict):
+    #     cfg.data.database.get_tree(self._table_name).set_properties(self.id, value)
+    #     cfg.data_subscriber.announce_update(0, self._paper_type + ".properties_changed", self.id)
 
     @property
     def version(self):

@@ -1,6 +1,8 @@
 from .plugins import Plugins
 from .tree.sheet_tree import SheetTree
 from .tree.note_tree import NoteTree
+from .property.sheet_property_list import SheetPropertyList
+from .property.note_property_list import NotePropertyList
 from .project import Project
 from . import cfg, subscriber
 from .importer import Importer
@@ -60,3 +62,17 @@ class Database:
             return self.sheet_tree
         elif table_name == "tbl_note":
             return self.note_tree
+
+    @property
+    def sheet_property_list(self):
+        return SheetPropertyList(self._sqlite_db)
+
+    @property
+    def note_property_list(self):
+        return NotePropertyList(self._sqlite_db)
+
+    def get_table(self, table_name: str):
+        if table_name == "tbl_sheet_property":
+            return self.sheet_property_list
+        elif table_name == "tbl_note_property":
+            return self.note_property_list
