@@ -193,17 +193,18 @@ class DbPropertyList:
         where
             t_name = :property_name
             AND
-            """ + code_name + """:code_name"""
+            """ + code_name + """= :paper_code"""
 
         a_curs = self.sql_db.cursor()
-        a_qry = a_curs.execute(s_sql, {'property_name': name, 'code_name': code_name})
+        a_qry = a_curs.execute(s_sql, {'property_name': name, 'paper_code': paper_code})
         a_list = []
         for a_row in a_qry:
             a_list.append(a_row[0])
 
-        if a_list is []:
+        if a_list == []:
             result = None
         else:
             result = a_list[0]
+        print(result)
 
         return result

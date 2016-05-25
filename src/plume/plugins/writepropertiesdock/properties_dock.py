@@ -191,7 +191,6 @@ class GuiPropertyDock():
     def set_current_id(self, model_index):
         #self.ui.tableView.setCurrentIndex(model_index)
         self._current_property_id = model_index.data(PropertyModel.IdRole)
-        print(self._current_property_id)
 
 from PyQt5.QtCore import QSortFilterProxyModel, Qt
 from gui.models.property_model import PropertyModel
@@ -203,8 +202,6 @@ class TableFilter(QSortFilterProxyModel):
         self._current_paper_id = -1
 
     def filterAcceptsRow(self, row, index):
-        name = self.sourceModel().index(row, 0,index).data(Qt.DisplayRole)
-
         code = self.sourceModel().index(row, 0,index).data(PropertyModel.CodeRole)
         if code == self._current_paper_id:
             return True

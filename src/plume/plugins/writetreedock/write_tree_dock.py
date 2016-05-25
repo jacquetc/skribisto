@@ -33,7 +33,6 @@ class WriteTreeDockPlugin(gui_plugins.GuiWritePanelDockPlugin):
 #        self._property_table_model.removeRow(index.row(), self._property_table_model.root_model_index())
 
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import QSortFilterProxyModel
 from gui import cfg as gui_cfg
 from plugins.writetreedock import write_tree_dock_ui, write_tree_view, write_tree_proxy_model
 
@@ -82,27 +81,18 @@ class GuiWriteTreeDock:
 
             #model :
             tree_view.setModel(self.filter)
-
+            tree_view.init()
             #connect :
-            #self.ui.addPropButton.clicked.connect(self.add_property_row)
-            #self.ui.removePropButton.clicked.connect(self.remove_property_row)
             self.ui.filterLineEdit.textChanged.connect(self.filter.setFilterFixedString)
             #TODO: #self.ui.treeView.clicked.connect(self.set_current_row)
+
+
+
                 
             #self.widget.gui_part = self
         return self.widget
-    
-#    @pyqtSlot()
-#    def add_property_row(self):
-#        index = self.ui.tableView.currentIndex()
-#        self.core_part.add_property_row(index)
-#    
-#    @pyqtSlot()
-#    def remove_property_row(self):
-#        index = self.ui.tableView.currentIndex()
-#        self.core_part.remove_property_row(index)
-#    
-#    @pyqtSlot('QModelIndex')        
-#    def set_current_row(self, model_index):
-#        self.ui.tableView.setCurrentIndex(model_index)
-#       
+
+
+
+
+

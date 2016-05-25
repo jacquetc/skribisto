@@ -69,7 +69,8 @@ class TreeModel(QAbstractItemModel):
             return QModelIndex()
 
         node = self.node_from_index(parent)
-        return self.createIndex(row, column, node.child_at_row(row))
+        index = self.createIndex(row, column, node.child_at_row(row))
+        return index
 
     def data(self, index, role):
 
@@ -277,13 +278,13 @@ class TreeModel(QAbstractItemModel):
         parent_node = None
         child_indent = -1
         child_index = -1
-        for node in self.tuple_of_tree_nodes:
+        for node in self._node_list:
             if node.id == child_node_id:
                 child_index = self.tuple_of_tree_nodes.index(node)
                 child_indent = node.indent
         # find parent
-        for node in self.tuple_of_tree_nodes:
-            index = self.tuple_of_tree_nodes.index(node)
+        for node in self._node_list:
+            index = self._node_list.index(node)
             if node.indent is child_indent - 1 and index < child_index:
                 parent_node = node
 

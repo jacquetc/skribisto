@@ -121,7 +121,7 @@ class Property:
         :param name:
         :return: return None if nothing or id
         """
-        return cfg.data.database.get_table(self._table_name)
+        return cfg.data.database.get_table(self._table_name).find_id(paper_id, name)
 
 
 
@@ -133,7 +133,7 @@ class SheetProperty(Property):
 
     def set_property(paper_id: int, name: str, value: str):
         property_id = SheetProperty(-1)._find_id(paper_id, name)
-        if property_id is not None:
+        if property_id is None:
             property_id = SheetProperty(-1).add(paper_id)
         sheet_property = SheetProperty(property_id)
         sheet_property.name = name
@@ -145,6 +145,7 @@ class SheetProperty(Property):
         if property_id is None:
             property_id = SheetProperty(-1).add(paper_id)
             sheet_property = SheetProperty(property_id)
+            sheet_property.name = name
             sheet_property.value = default_value
 
         return  SheetProperty(property_id).value
@@ -158,7 +159,7 @@ class NoteProperty(Property):
                                            , property_type="note_property", property_id=property_id)
     def set_property(paper_id: int, name: str, value: str):
         property_id = NoteProperty(-1)._find_id(paper_id, name)
-        if property_id is not None:
+        if property_id is None:
             property_id = NoteProperty(-1).add(paper_id)
         sheet_property = NoteProperty(property_id)
         sheet_property.name = name
@@ -170,6 +171,7 @@ class NoteProperty(Property):
         if property_id is None:
             property_id = NoteProperty(-1).add(paper_id)
             sheet_property = NoteProperty(property_id)
+            sheet_property.name = name
             sheet_property.value = default_value
 
         return  NoteProperty(property_id).value

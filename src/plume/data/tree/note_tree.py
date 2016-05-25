@@ -64,8 +64,17 @@ class NoteTree(Tree):
         synopsis_list = a_tree.find_ids("b_synopsis", True)
         note_list = a_tree.find_ids("l_sheet_code", sheet_code)
 
-        synopsis_note = list(set(synopsis_list).intersection(note_list))
+        synopsis_note_list = list(set(synopsis_list).intersection(note_list))
 
+        if  synopsis_note_list == []:
+            a_paper = DbPaper(self.sql_db, self.table_name, self.id_name, -1, False)
+            new_note_id = a_paper.add()
+            self.set_sheet_code(new_note_id, sheet_code)
+            self.set_is_synopsis(new_note_id, sheet_code)
+            a_paper.commit()
+            synopsis_note = new_note_id
+        else:
+            synopsis_note = synopsis_note_list[0]
         return synopsis_note
 
 

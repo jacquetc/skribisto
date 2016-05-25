@@ -154,7 +154,7 @@ class GuiSynopsisDock(QObject):
     def get_update(self):
         if self.sheet_id is not None:
             # determine the synopsis (note) of this sheet
-            self._note_id = gui_cfg.data.database.note_tree.find_synopsis_from_sheet_code(self.sheet_id)[0]
+            self._note_id = gui_cfg.data.database.note_tree.find_synopsis_from_sheet_code(self.sheet_id)
             # apply changes :
             self.ui.writingZone.text_edit.blockSignals(True)
             text = NotePaper(self._note_id).content
