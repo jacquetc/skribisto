@@ -64,6 +64,24 @@ class Tree:
         paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, True)
         paper.set("m_content", value)
 
+    def get_deleted(self, paper_id: int)-> bool:
+        '''
+        function:: get_deleted(id: int)
+        :param paper_id: int:
+        '''
+        paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, False)
+        return paper.delete_state
+
+    def set_deleted(self, paper_id: int, value: bool):
+        '''
+        function:: set_deleted(id: int, value)
+        :param paper_id: int:
+        :param value: bool
+        '''
+        paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, True)
+        paper.delete_state = value
+
+
     def get_title(self, paper_id: int):
         '''
         function:: get_title(id: int)
@@ -81,21 +99,24 @@ class Tree:
         paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, True)
         paper.set("t_title", value)
 
-    def add_new_child_papers(self, parent_id: int, number: int):
+    def add_new_child_papers(self, parent_id: int, number: int, new_child_ids: list =[]):
         '''
         function:: add_new_child_papers(parent_id: int, number: int)
         :param parent_id: int:
         :param number: int:
-        '''
-        return self._add_new_child_papers(parent_id, number, True)
+        :param new_child_ids:
+       '''
+        return self._add_new_child_papers(parent_id, number, True, new_child_ids)
 
-    def add_new_papers_by(self, paper_id: int, number: int):
+    def add_new_papers_by(self, paper_id: int, number: int, new_child_ids: list =[]):
         '''
-        function:: add_new_papers_by(parent_id: int, number: int)
+        function:: add_new_papers_by(parent_id: int, number: int, new_child_ids: list)
+        :return:
         :param paper_id: int:
         :param number: int:
-        '''
-        return self._add_new_papers_by(paper_id, number, True)
+        :param new_child_ids:
+       '''
+        return self._add_new_papers_by(paper_id, number, True, new_child_ids)
 
     def move_papers_as_child_of(self, paper_id_list, dest_parent_id: int):
         '''
@@ -123,50 +144,58 @@ class Tree:
 
         return self._move_papers_below(paper_id_list, dest_id, True)
 
-    def remove_papers(self, paper_id_list, dest_id: int):
+    def remove_papers(self, paper_id_list):
         """
 
         :param paper_id_list:
-        :param dest_id:
         :return: list of removed papers
         """
-        return self._remove_papers(paper_id_list, dest_id, True)
+        return self._remove_papers(paper_id_list, True)
 
-    def _add_new_child_papers(self, parent_id: int, number: int, commit: bool):
+    def _add_new_child_papers(self, parent_id: int, number: int, commit: bool, new_child_ids: list =[]):
         '''
         function:: _add_new_child_papers(parent_id: int, number: int, commit: bool)
         :param parent_id: int:
         :param number: int:
         :param commit: bool:
+        :param new_child_ids:
         '''
+        imposed_child_ids = list(new_child_ids)
+        if len(imposed_child_ids) != number or imposed_child_ids == []:
+            imposed_child_ids = [-1]
 
         new_id_list = []
         for i in range(number):
             paper = DbPaper(self.sql_db, self.table_name, self.id_name,  -1, False)
-            new_id_list.append(paper.add())
+            new_id_list.append(paper.add(imposed_child_ids[i]))
         self._move_papers_as_child_of(new_id_list, parent_id, False)
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".structure_changed")
 
         return new_id_list
 
-    def _add_new_papers_by(self, paper_id: int, number: int, commit: bool):
+    def _add_new_papers_by(self, paper_id: int, number: int, commit: bool, new_child_ids: list =[]):
         '''
         function:: _add_new_papers_by(parent_id: int, number: int, commit: bool)
         :param paper_id: int:
         :param number: int:
         :param commit: bool:
+        :param new_child_ids:
         '''
+        imposed_child_ids = list(new_child_ids)
+        if len(imposed_child_ids) != number or imposed_child_ids == []:
+            imposed_child_ids = [-1]
+
 
         new_id_list = []
         for i in range(number):
             paper = DbPaper(self.sql_db, self.table_name, self.id_name,  -1, False)
-            new_id_list.append(paper.add())
+            new_id_list.append(paper.add(imposed_child_ids[i]))
         self._move_papers_below(new_id_list, paper_id, False)
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".structure_changed")
 
         return new_id_list
 
@@ -194,7 +223,7 @@ class Tree:
 
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".structure_changed")
 
     def _move_papers_above(self, paper_id_list, dest_id: int, commit: bool):
         '''
@@ -217,7 +246,7 @@ class Tree:
 
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".structure_changed")
 
     def _move_papers_below(self, paper_id_list, dest_id: int, commit: bool):
         '''
@@ -243,15 +272,23 @@ class Tree:
 
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".structure_changed")
 
-    def _remove_papers(self, paper_id_list, dest_id: int, commit: bool):
+    def _remove_papers(self, paper_id_list, commit: bool)-> int:
         """
 
+        :rtype: DbError code integer
         :param paper_id_list:
-        :param dest_id:
         :param commit:
         """
+        id_list = paper_id_list
+        result = False
+        for paper_id in id_list:
+            paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, False)
+            result = paper.remove()
+
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update(self.paper_type + ".tree_structure_modified")
+            cfg.database.subscriber.announce_update(self.paper_type + ".structure_changed")
+
+        return result

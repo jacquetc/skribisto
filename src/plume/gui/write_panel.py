@@ -34,9 +34,9 @@ class WritePanel(SubWindow, WindowSystemController):
         # init Sheet Tree Model
         self.tree_model = SheetTreeModel(self, 0)
         cfg.models["0_sheet_tree_model"] = self.tree_model
+        cfg.undo_group.addStack(self.tree_model.undo_stack)
         self.property_model = SheetPropertyModel(self, 0)
         cfg.models["0_sheet_property_model"] = self.property_model
-
 
         self.sheet_manager = PaperManager()
 

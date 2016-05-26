@@ -16,7 +16,7 @@ class SheetTreeModel(TreeModel):
     '''
 
     def __init__(self, parent, project_id):
-        super(SheetTreeModel, self).__init__("tbl_sheet", "l_sheet_id", parent, project_id)
+        super(SheetTreeModel, self).__init__("tbl_sheet", "l_sheet_id", "sheet", parent, project_id)
 
         '''
         Constructor
@@ -27,7 +27,8 @@ class SheetTreeModel(TreeModel):
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.clear, "database_closed")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "database_loaded")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet.title_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet.tree_structure_modified")
+        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet.deleted_changed")
+        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet.structure_changed")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet.properties")
 
     def data(self, index, role):
@@ -55,18 +56,18 @@ class SheetTreeModel(TreeModel):
     def setData(self, index, value, role):
         
         limit = [role]
-        
-        # title :
-        if index.isValid() & role == Qt.EditRole & index.column() == 0:
-
-            node = self.node_from_index(index)
-
-            sheet = SheetPaper(node.id)
-            sheet.title = value
-
-            self.dataChanged.emit(index, index, limit)
-            # cfg.data_subscriber.announce_update(self._project_id, "sheet.title_changed", node.id)
-            return True
+        #
+        # # title :
+        # if index.isValid() & role == Qt.EditRole & index.column() == 0:
+        #
+        #     node = self.node_from_index(index)
+        #
+        #     sheet = SheetPaper(node.id)
+        #     sheet.title = value
+        #
+        #     self.dataChanged.emit(index, index, limit)
+        #     # cfg.data_subscriber.announce_update(self._project_id, "sheet.title_changed", node.id)
+        #     return True
         
         return TreeModel.setData(self, index, value, role)
 
@@ -139,3 +140,4 @@ parentIndex, parentIndex)
         pass
 
     '''
+

@@ -205,6 +205,5 @@ class DbPropertyList:
             result = None
         else:
             result = a_list[0]
-        print(result)
 
         return result

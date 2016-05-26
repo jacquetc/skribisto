@@ -9,3 +9,4 @@ data_subscriber = None
 gui_plugins = None
 window = None
 models = {}
+undo_group = None
