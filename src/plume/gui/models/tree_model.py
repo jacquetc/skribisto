@@ -398,7 +398,7 @@ class TreeItem(object):
         return self._parent
 
     @parent.setter
-    def parent(self, parent: QModelIndex()):
+    def parent(self, parent):
         if parent is not None:
             self._parent = parent
         else:

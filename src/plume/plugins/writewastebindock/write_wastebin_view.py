@@ -15,17 +15,17 @@ from gui.models.tree_model import AddChildNodeCommand, AddAfterNodeCommand\
 
 
 
-class WriteTreeView(QTreeView):
+class WriteWastebinView(QTreeView):
 
     '''
-    WriteTreeView
+    WriteWastebinView
     '''
 
     def __init__(self, parent=None):
         '''
         Constructor
         '''
-        super(WriteTreeView, self).__init__(parent=None)
+        super(WriteWastebinView, self).__init__(parent=None)
 
         self._old_index = None
 
@@ -45,8 +45,10 @@ class WriteTreeView(QTreeView):
         self.model().modelReset.connect(self.apply_expand)
         self.apply_expand()
 
+
     def _init_actions(self):
         pass
+
 
     def mousePressEvent(self, event):
         clicked_index = self.indexAt(event.pos())
@@ -64,18 +66,18 @@ class WriteTreeView(QTreeView):
     def set_item_expanded(self, model_index):
         self.setExpanded(model_index, True)
         paper_id = model_index.data(SheetTreeModel.IdRole)
-        SheetProperty().set_property(paper_id, "write_tree_item_expanded", "1")
+        SheetProperty().set_property(paper_id, "write_wastebin_item_expanded", "1")
 
     def set_item_collapsed(self, model_index):
         self.setExpanded(model_index, False)
         paper_id = model_index.data(SheetTreeModel.IdRole)
-        SheetProperty().set_property(paper_id, "write_tree_item_expanded", "0")
+        SheetProperty().set_property(paper_id, "write_wastebin_item_expanded", "0")
 
     def apply_expand(self):
         index = self.indexAt(self.rect().topLeft())
         while index.isValid():
             paper_id = index.data(SheetTreeModel.IdRole)
-            if SheetProperty().get_property(paper_id, "write_tree_item_expanded", "1") == "1":
+            if SheetProperty().get_property(paper_id, "write_wastebin_item_expanded", "1") == "1":
                 self.setExpanded(index, True)
             else:
                 self.setExpanded(index, False)
@@ -110,12 +112,8 @@ class WriteTreeView(QTreeView):
         self.setCurrentIndex(self.indexAt(event.pos()))
 
         menu = QMenu(self)
-        add_child_after_action = menu.addAction(_("Add sheet after"))
-        add_child_after_action.triggered.connect(self.add_sheet_after)
-        add_child_sheet_action = menu.addAction(_("Add child sheet"))
-        add_child_sheet_action.triggered.connect(self.add_child_sheet)
-        remove_sheet_action = menu.addAction(_("Remove sheet"))
-        remove_sheet_action.triggered.connect(self.delete_sheet)
+        remove_sheet_action = menu.addAction(_("Recover sheet"))
+        remove_sheet_action.triggered.connect(self.recover_sheet)
         menu.exec_(self.mapToGlobal(event.pos()))
 
         return QTreeView.contextMenuEvent(self, event)
@@ -174,11 +172,11 @@ class WriteTreeView(QTreeView):
         #         self.setCurrentIndex(index)
         #         self.edit(index)
 
-    def delete_sheet(self):
+    def recover_sheet(self):
         parent_index = self.currentIndex()
         sheet_id = parent_index.data(SheetTreeModel.IdRole)
         model = cfg.models["0_sheet_tree_model"]
 
-        command = DeleteCommand(sheet_id, True, model)
+        command = DeleteCommand(sheet_id, False, model)
         model.undo_stack.push(command)
         model.set_undo_stack_active()

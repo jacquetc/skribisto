@@ -4,13 +4,14 @@ Created on 26 may 2015
 @author:  Cyril Jacquet
 '''
 
-from PyQt5.QtCore import QSortFilterProxyModel, pyqtSlot
+from PyQt5.QtCore import QSortFilterProxyModel, pyqtSlot, QModelIndex, QVariant, Qt
+from PyQt5.QtGui import QBrush, QColor
+from gui.models.tree_model import TreeItem
 
-
-class WriteTreeProxyModel(QSortFilterProxyModel):
+class WriteWastebinProxyModel(QSortFilterProxyModel):
 
     '''
-    WriteTreeProxyModel
+    WriteWastebinProxyModel
     '''
 
     def __init__(self, parent=None):
@@ -18,7 +19,23 @@ class WriteTreeProxyModel(QSortFilterProxyModel):
         Constructor
         '''
 
-        super(WriteTreeProxyModel, self).__init__(parent)
+        super(WriteWastebinProxyModel, self).__init__(parent)
+        self._root_node = TreeItem()
+
+    def data(self, index, role):
+
+        row = index.row()
+        col = index.column()
+
+        if not index.isValid():
+            return QVariant()
+
+        node = self.sourceModel().node_from_index(self.mapToSource(index))
+
+        if role == Qt.ForegroundRole and col == 0 and (node.data["b_deleted"]) == False:
+            return QBrush(QColor(Qt.darkGreen))
+
+        return QSortFilterProxyModel.data(self, index, role)
 
     def filterAcceptsRow(self, source_row, source_parent):
 
@@ -40,16 +57,13 @@ class WriteTreeProxyModel(QSortFilterProxyModel):
             deleted = source_index.data(self.sourceModel().DeletedRole)
             print(source_index.data(self.sourceModel().TitleRole) + "  " + str(deleted))
             if deleted == True:
-                return False
-            key = self.sourceModel().data(source_index, self.filterRole())
-            print(self.filterRegExp().indexIn(key))
-            self.filterRegExp().indexIn(key)
-            if self.filterRegExp().captureCount() > 0:
-                return True
+                key = self.sourceModel().data(source_index, self.filterRole())
+                self.filterRegExp().indexIn(key)
+                if self.filterRegExp().captureCount() > 0:
+                    return True
+
 
 
 
         # parent call for initial behaviour
         return QSortFilterProxyModel.filterAcceptsRow(self, source_row, source_parent)
-
-
