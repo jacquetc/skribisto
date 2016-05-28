@@ -17,6 +17,7 @@ from .main_window_ui import Ui_MainWindow
 from .preferences import Preferences
 from .start_window import StartWindow
 from .about_plume import AboutPlume
+from .signal_hub import SignalHub
 import os.path
 
 
@@ -52,6 +53,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.setCentralWidget(widget)
 
         cfg.undo_group = QUndoGroup(self)
+        cfg.signal_hub = SignalHub(self)
 
         # window system :
         self.window_system_parent_widget = self.stackWidget
@@ -128,8 +130,8 @@ class MainWindow(QMainWindow, WindowSystemController):
 
         self.setWindowTitle("Plume Creator - TEST")
 
-        self.undo_view = QUndoView(cfg.undo_group, None)
-        self.undo_view.show()
+        # self.undo_view = QUndoView(cfg.undo_group, None)
+        # self.undo_view.show()
 
     @pyqtSlot()
     def launch_preferences(self):

@@ -89,7 +89,6 @@ class NoteTreeView(QTreeView):
         self.model().insert_child_node(parent_index)
         id_ = self.model().id_of_last_created_node
         index = self.model().find_index_from_id(id_)
-        print(index.isValid())
         # temp : # TODO to correct
         self.expandAll()
         self.setCurrentIndex(index)

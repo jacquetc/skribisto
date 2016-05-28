@@ -29,7 +29,6 @@ class NoteTreeProxyModel(QSortFilterProxyModel):
 
     def find_index_from_id(self, id_):
         index = self.sourceModel().find_index_from_id(id_)
-        print(index.isValid())
         return self.mapFromSource(index)
 
     def insert_child_node(self, parent_index):

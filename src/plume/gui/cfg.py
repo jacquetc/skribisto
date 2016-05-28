@@ -10,3 +10,4 @@ gui_plugins = None
 window = None
 models = {}
 undo_group = None
+signal_hub = None

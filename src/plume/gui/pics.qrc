@@ -123,5 +123,6 @@
         <file>pics/32x32/insert-image.png</file>
         <file>pics/32x32/insert-link.png</file>
         <file>pics/32x32/edit-copy.png</file>
+        <file>pics/48x48/preferences-other.png</file>
     </qresource>
 </RCC>

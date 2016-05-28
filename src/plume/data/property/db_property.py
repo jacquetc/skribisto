@@ -145,30 +145,39 @@ class DbProperty:
 
         self.set("t_value", property_value)
 
-    def add(self, code_name: str, paper_id: int):
+    def add(self, code_name: str, paper_id: int, imposed_id: int = -1):
         '''
         function:: add()
         :param paper_id:
         :return:
         '''
 
+        if imposed_id == -1:
+            id = ""
+            id_value = ""
+        else:
+            id = self.id_name + ","
+            id_value = str(imposed_id) + ","
+
+
+
         s_sql = """
         INSERT INTO """ + self.table_name + """
         (
+        """ + id + """
         """ + code_name + """,
         t_name,
         t_value,
         dt_created,
-        dt_updated,
-        b_system
+        dt_updated
         )
         VALUES (
+        """ + id_value + """
         :code_id,
         :name,
         "",
         CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP,
-        0
+        CURRENT_TIMESTAMP
         )
         """
 

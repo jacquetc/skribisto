@@ -2,12 +2,12 @@ import ui_converter
 import qrc_converter
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 from PyQt5.QtGui import QPalette, QColor
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSettings
 from data.data import Data
 from data import subscriber
 from gui.main_window import MainWindow
 from gui import cfg, plugins,  pics_rc
-import sys
+import sys, platform
 
 if __name__ == '__main__':
 
@@ -15,9 +15,18 @@ if __name__ == '__main__':
 
     # import is placed here because handler's dialog needs QApplication :
     import except_handler
-    app.setApplicationName('Plume Creator')
+
+    app.setOrganizationName( "plume-creator" )
+    app.setOrganizationDomain( "plume-creator.eu")
     app.setApplicationVersion('1.5.0-alpha')
-    app.setOrganizationDomain('http://www.plume-creator.eu')
+
+    if platform.system() == "Linux":
+        app.setApplicationName('plume-creator')
+        QSettings.setDefaultFormat(QSettings.NativeFormat)
+    else:
+        app.setApplicationName('Plume Creator')
+        QSettings.setDefaultFormat(QSettings.IniFormat)
+
 
     # app.setStyle(QStyleFactory.create("fusion"))
     # palette = QPalette()

@@ -18,16 +18,41 @@ from . import cfg
 
 class Property:
 
-    def __init__(self, table_name: str, property_type: str, code_name: str, property_id):
+    def __init__(self, table_name: str, property_type: str, property_id):
         super(Property, self).__init__()
 
         self._table_name = table_name
         self._property_type = property_type
-        self._code_name = code_name
         self.id = property_id
 
+        # for deep copy :
+        self._name = None
+        self._value = None
+        self._creation_date = None
+        self._last_modification_date = None
+        self._system = None
 
+    def copy_deeply(self):
+        """
+        reapply all data to database. It does not reapply paper_code.
+        """
+        self._name = self.name
+        self._value = self.value
+        self._creation_date = self.creation_date
+        self._last_modification_date = self.last_modification_date
+        self._system = self.system
+
+    def paste_deeply(self):
+        """
+        save all data from database. It does not save paper_code.
+        """
         # self._subscribe_to_data()
+        self.name = self._name
+        self.value = self._value
+        self.creation_date = self._creation_date
+        self.last_modification_date = self._last_modification_date
+        self.system = self._system
+
 
     @property
     def name(self):
@@ -47,6 +72,17 @@ class Property:
     def value(self, val):
         cfg.data.database.get_table(self._table_name).set_value(self.id, val)
         cfg.data_subscriber.announce_update(0, self._property_type + ".value_changed", self.id)
+
+    @property
+    def paper_code(self):
+        val = cfg.data.database.get_table(self._table_name).get_paper_code(self.id)
+        return val
+
+    @paper_code.setter
+    def paper_code(self, val):
+        cfg.data.database.get_table(self._table_name).set_paper_code(self.id, val)
+        cfg.data_subscriber.announce_update(0, self._property_type + ".paper_code_changed", self.id)
+
 
     @property
     def creation_date(self):
@@ -102,48 +138,19 @@ class Property:
     #         else:
     #             cfg.data.subscriber.unsubscribe_update_func_to_domain(0, func)
 
-    def add(self, paper_id: int):
-        new_list = cfg.data.database.get_table(self._table_name).add_new_properties(1, paper_id)
+    def add(self, paper_id: int, imposed_property_ids: list = ()):
+        new_list = cfg.data.database.get_table(self._table_name).add_new_properties(1, paper_id, imposed_property_ids)
         cfg.data_subscriber.announce_update(0, self._property_type + ".structure_changed")
-        return new_list[0]
+        return new_list
 
-    def remove(self):
-        if cfg.data.database.get_table(self._table_name).remove_properties([self.id]):
+    def remove(self, property_ids: list = ()):
+        if property_ids == ():
+            property_ids = [self.id]
+        if cfg.data.database.get_table(self._table_name).remove_properties(property_ids):
             cfg.data_subscriber.announce_update(0, self._property_type + ".structure_changed")
             return True
         else:
             return False
-
-    def _find_id(self, paper_id:int, name:str):
-        """
-
-        :param paper_id:
-        :param name:
-        :return: return None if nothing or id
-        """
-        return cfg.data.database.get_table(self._table_name).find_id(paper_id, name)
-
-
-
-    def set_property(self, paper_id: int, name: str, value: str):
-        property_id = Property(self._table_name, self._code_name, self._property_type, -1)._find_id(paper_id, name)
-        if property_id is None:
-            property_id = Property(self._table_name, self._code_name, self._property_type, -1).add(paper_id)
-        paper_property = Property(self._table_name, self._code_name, self._property_type, property_id)
-        paper_property.name = name
-        paper_property.value = value
-
-
-    def get_property(self, paper_id: int, name: str, default_value: str):
-        property_id = Property(self._table_name, self._code_name, self._property_type, -1)._find_id(paper_id, name)
-        if property_id is None:
-            property_id = Property(self._table_name, self._code_name, self._property_type, -1).add(paper_id)
-            paper_property = Property(self._table_name, self._code_name, self._property_type, property_id)
-            paper_property.name = name
-            paper_property.value = default_value
-
-        return  Property(self._table_name, self._code_name, self._property_type, property_id).value
-
 
 
 
@@ -151,13 +158,13 @@ class Property:
 class SheetProperty(Property):
 
     def __init__(self, property_id: int = -1):
-        super(SheetProperty, self).__init__(table_name="tbl_sheet_property", code_name="l_sheet_code"
-                                            , property_type="sheet_property", property_id=property_id)
+        super(SheetProperty, self).__init__(table_name="tbl_sheet_property", property_type="sheet_property"
+                                            , property_id=property_id)
 
 
 
 class NoteProperty(Property):
 
     def __init__(self, property_id: int = -1):
-        super(NoteProperty, self).__init__(table_name="tbl_note_property", code_name="l_note_code"
-                                           , property_type="note_property", property_id=property_id)
+        super(NoteProperty, self).__init__(table_name="tbl_note_property", property_type="note_property"
+                                            , property_id=property_id)

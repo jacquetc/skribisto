@@ -38,11 +38,9 @@ class WriteTreeProxyModel(QSortFilterProxyModel):
             # check current index itself:
 
             deleted = source_index.data(self.sourceModel().DeletedRole)
-            print(source_index.data(self.sourceModel().TitleRole) + "  " + str(deleted))
             if deleted == True:
                 return False
             key = self.sourceModel().data(source_index, self.filterRole())
-            print(self.filterRegExp().indexIn(key))
             self.filterRegExp().indexIn(key)
             if self.filterRegExp().captureCount() > 0:
                 return True

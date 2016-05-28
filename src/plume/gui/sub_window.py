@@ -34,7 +34,7 @@ class SubWindow(QMainWindow):
         self._is_attached = True
 
     def closeEvent(self,  event):
-        if self.parent_window_system_controller != None:
+        if self.parent_window_system_controller is not None:
             self.attach_back_to_parent_window_system()
             event.ignore()
         else:

@@ -32,7 +32,7 @@ class WriteWastebinProxyModel(QSortFilterProxyModel):
 
         node = self.sourceModel().node_from_index(self.mapToSource(index))
 
-        if role == Qt.ForegroundRole and col == 0 and (node.data["b_deleted"]) == False:
+        if role == Qt.ForegroundRole and col == 0 and node.delete_state == False:
             return QBrush(QColor(Qt.darkGreen))
 
         return QSortFilterProxyModel.data(self, index, role)
@@ -55,7 +55,6 @@ class WriteWastebinProxyModel(QSortFilterProxyModel):
             # check current index itself:
 
             deleted = source_index.data(self.sourceModel().DeletedRole)
-            print(source_index.data(self.sourceModel().TitleRole) + "  " + str(deleted))
             if deleted == True:
                 key = self.sourceModel().data(source_index, self.filterRole())
                 self.filterRegExp().indexIn(key)

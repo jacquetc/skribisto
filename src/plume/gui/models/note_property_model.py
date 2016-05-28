@@ -5,10 +5,9 @@ Created on 22 may 2016
 '''
 
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QObject
 from .property_model import PropertyModel
 from .. import cfg
-from ..property import NoteProperty
 
 
 class NotePropertyModel(PropertyModel):
@@ -16,11 +15,9 @@ class NotePropertyModel(PropertyModel):
     classdocs
     '''
 
-    PropertyClass = NoteProperty
-
-
-    def __init__(self, parent, project_id):
-        super(NotePropertyModel, self).__init__("tbl_note_property", "l_property_id", "l_note_code", parent, project_id)
+    def __init__(self, parent: QObject, project_id: int):
+        super(NotePropertyModel, self).__init__("tbl_note_property", "l_property_id", "l_note_code"
+                                                , "note_property", parent, project_id)
 
         '''
         Constructor

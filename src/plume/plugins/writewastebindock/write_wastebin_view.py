@@ -66,18 +66,18 @@ class WriteWastebinView(QTreeView):
     def set_item_expanded(self, model_index):
         self.setExpanded(model_index, True)
         paper_id = model_index.data(SheetTreeModel.IdRole)
-        SheetProperty().set_property(paper_id, "write_wastebin_item_expanded", "1")
+        cfg.models["0_sheet_system_property_model"].set_property(paper_id, "write_wastebin_item_expanded", "1")
 
     def set_item_collapsed(self, model_index):
         self.setExpanded(model_index, False)
         paper_id = model_index.data(SheetTreeModel.IdRole)
-        SheetProperty().set_property(paper_id, "write_wastebin_item_expanded", "0")
+        cfg.models["0_sheet_system_property_model"].set_property(paper_id, "write_wastebin_item_expanded", "0")
 
     def apply_expand(self):
         index = self.indexAt(self.rect().topLeft())
         while index.isValid():
             paper_id = index.data(SheetTreeModel.IdRole)
-            if SheetProperty().get_property(paper_id, "write_wastebin_item_expanded", "1") == "1":
+            if cfg.models["0_sheet_system_property_model"].get_property(paper_id, "write_wastebin_item_expanded", "1") == "1":
                 self.setExpanded(index, True)
             else:
                 self.setExpanded(index, False)

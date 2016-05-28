@@ -99,7 +99,7 @@ class Tree:
         paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, True)
         paper.set("t_title", value)
 
-    def add_new_child_papers(self, parent_id: int, number: int, new_child_ids: list =[]):
+    def add_new_child_papers(self, parent_id: int, number: int, new_child_ids: list =()):
         '''
         function:: add_new_child_papers(parent_id: int, number: int)
         :param parent_id: int:
@@ -108,7 +108,7 @@ class Tree:
        '''
         return self._add_new_child_papers(parent_id, number, True, new_child_ids)
 
-    def add_new_papers_by(self, paper_id: int, number: int, new_child_ids: list =[]):
+    def add_new_papers_by(self, paper_id: int, number: int, new_child_ids: list =()):
         '''
         function:: add_new_papers_by(parent_id: int, number: int, new_child_ids: list)
         :return:
@@ -152,7 +152,7 @@ class Tree:
         """
         return self._remove_papers(paper_id_list, True)
 
-    def _add_new_child_papers(self, parent_id: int, number: int, commit: bool, new_child_ids: list =[]):
+    def _add_new_child_papers(self, parent_id: int, number: int, commit: bool, new_child_ids: list =()):
         '''
         function:: _add_new_child_papers(parent_id: int, number: int, commit: bool)
         :param parent_id: int:
@@ -175,7 +175,7 @@ class Tree:
 
         return new_id_list
 
-    def _add_new_papers_by(self, paper_id: int, number: int, commit: bool, new_child_ids: list =[]):
+    def _add_new_papers_by(self, paper_id: int, number: int, commit: bool, new_ids: list =()):
         '''
         function:: _add_new_papers_by(parent_id: int, number: int, commit: bool)
         :param paper_id: int:
@@ -183,7 +183,7 @@ class Tree:
         :param commit: bool:
         :param new_child_ids:
         '''
-        imposed_child_ids = list(new_child_ids)
+        imposed_child_ids = list(new_ids)
         if len(imposed_child_ids) != number or imposed_child_ids == []:
             imposed_child_ids = [-1]
 

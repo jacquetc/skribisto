@@ -82,10 +82,10 @@ class WritePropertiesDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
 #         #    index.row(), self._property_table_model.root_model_index())
 
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import QSortFilterProxyModel
+from PyQt5.QtCore import QSortFilterProxyModel, QSettings
 from gui import cfg as gui_cfg
 from gui.property import SheetProperty
-from gui.models.property_model import PropertyModel
+from gui.models.property_model import PropertyModel, AddPropertyCommand, RemovePropertyCommand
 
 from plugins.writepropertiesdock import properties_dock_ui
 
@@ -107,7 +107,25 @@ class GuiPropertyDock():
         # self.core_part = None  # CorePropertyDock
         self._sheet_id = None
         self.paperFilterModel = TableFilter()
+        self.paperFilterSystemModel = TableFilter()
         self._current_property_id = None
+        self._table_model = None
+        self._system_table_model = None
+
+    @property
+    def table_model(self):
+        if self._table_model is None:
+            self._table_model = gui_cfg.models["0_sheet_property_model"]
+
+        return self._table_model
+
+    @property
+    def system_table_model(self):
+        if self._system_table_model is None:
+            self._system_table_model = gui_cfg.models["0_sheet_system_property_model"]
+
+        return self._system_table_model
+
 
     @property
     def paper_id(self):
@@ -135,6 +153,7 @@ class GuiPropertyDock():
             return
         self._sheet_id = sheet_id
         self.paperFilterModel.filterByPaperId(sheet_id)
+        self.paperFilterSystemModel.filterByPaperId(sheet_id)
 
 
     def get_widget(self):
@@ -143,15 +162,33 @@ class GuiPropertyDock():
             self.widget = QWidget()
             self.ui = properties_dock_ui.Ui_WritePropertiesDock()
             self.ui.setupUi(self.widget)
+            gui_cfg.signal_hub.apply_settings_widely_sent.connect(self.apply_settings)
+            self.apply_settings()
 
 
-            table_model = gui_cfg.models["0_sheet_property_model"]
+            self.paperFilterSystemModel.setParent(self.widget)
+            self.paperFilterSystemModel.setFilterKeyColumn(-1)
+            self.paperFilterSystemModel.setFilterCaseSensitivity(False)
+            self.paperFilterSystemModel.setSourceModel(self.system_table_model)
+
+
+            system_filter = QSortFilterProxyModel(self.widget)
+            system_filter.setFilterKeyColumn(0)
+            system_filter.setFilterCaseSensitivity(False)
+            system_filter.setSourceModel(self.paperFilterSystemModel)
+
+            # system model :
+            self.ui.systemTableView.setModel(system_filter)
+
+            # system connect :
+            self.ui.filterLineEdit.textChanged.connect(system_filter.setFilterFixedString)
+
 
             # filter :
             self.paperFilterModel.setParent(self.widget)
             self.paperFilterModel.setFilterKeyColumn(-1)
             self.paperFilterModel.setFilterCaseSensitivity(False)
-            self.paperFilterModel.setSourceModel(table_model)
+            self.paperFilterModel.setSourceModel(self.table_model)
 
             filter = QSortFilterProxyModel(self.widget)
             filter.setFilterKeyColumn(0)
@@ -174,14 +211,25 @@ class GuiPropertyDock():
             self.widget.gui_part = self
         return self.widget
 
+
+
     @pyqtSlot()
     def add_property_row(self):
-        SheetProperty(-1).add(self.sheet_id)
+        command = AddPropertyCommand(self.paper_id, self.table_model)
+        self.table_model.undo_stack.push(command)
+        new_sheet_id = command.last_new_id
+        self.table_model.set_undo_stack_active()
 
     @pyqtSlot()
     def remove_property_row(self):
-        if SheetProperty(self._current_property_id).remove() == True:
-            self._current_property_id = None
+        # if SheetProperty(self._current_property_id).remove() == True:
+        #     self._current_property_id = None
+
+        command = RemovePropertyCommand(self._current_property_id, self.table_model)
+        self._current_property_id = None
+        self.table_model.undo_stack.push(command)
+        self.table_model.set_undo_stack_active()
+
 
     @pyqtSlot('QModelIndex', 'QModelIndex')
     def set_current_id(self, current_index, previous_index):
@@ -192,8 +240,12 @@ class GuiPropertyDock():
         #self.ui.tableView.setCurrentIndex(model_index)
         self._current_property_id = model_index.data(PropertyModel.IdRole)
 
+    @pyqtSlot()
+    def apply_settings(self):
+        settings = QSettings()
+        self.ui.systemTableView.setVisible(bool(settings.value("settings/misc/dev_mode", False)))
+
 from PyQt5.QtCore import QSortFilterProxyModel, Qt
-from gui.models.property_model import PropertyModel
 
 class TableFilter(QSortFilterProxyModel):
 

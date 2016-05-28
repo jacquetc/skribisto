@@ -79,7 +79,7 @@ class CoreSynopsisDock():
     
 
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, QSettings
 from gui import cfg as gui_cfg
 from gui.paper_manager import NotePaper
 from plugins.synopsisdock import synopsis_dock_ui
@@ -137,7 +137,8 @@ class GuiSynopsisDock(QObject):
             self.widget = QWidget()
             self.ui = synopsis_dock_ui.Ui_SynopsisDock()
             self.ui.setupUi(self.widget)
-            
+            gui_cfg.signal_hub.apply_settings_widely_sent.connect(self.apply_settings)
+            self.apply_settings()
             self.ui.writingZone.has_minimap = False
             self.ui.writingZone.has_scrollbar = False
             self.ui.writingZone.is_resizable = False
@@ -166,3 +167,7 @@ class GuiSynopsisDock(QObject):
         gui_cfg.data.subscriber.disable_func(self.get_update)
         NotePaper(self._note_id).content = self.ui.writingZone.text_edit.toHtml()
         gui_cfg.data.subscriber.enable_func(self.get_update)
+
+    @pyqtSlot()
+    def apply_settings(self):
+        settings = QSettings()

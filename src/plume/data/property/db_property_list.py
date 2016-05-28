@@ -149,7 +149,7 @@ class DbPropertyList:
             self.error.set_status(DbError.E_INVTYPE, 1, 'Must be list')
             return DbError.R_ERROR         # Invalid type
 
-        # Delete each sheet
+        # Delete each property
         for i_id in id_list:
             a_property = DbProperty(self.sql_db, self.table_name, self.id_name, i_id, False)
             if not a_property.exists():
