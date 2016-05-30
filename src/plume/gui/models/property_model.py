@@ -227,6 +227,7 @@ class PropertyModel(QAbstractTableModel):
     def clear(self):
         self.beginResetModel()
         self._root_node = ListItem()
+        self.undo_stack.clear()
         self.endResetModel()
 
 

@@ -4,6 +4,7 @@ from .docks import DockSystem
 from .models.note_tree_model import NoteTreeModel
 from .models.note_list_model import NoteListModel
 from .models.note_property_model import NotePropertyModel
+from .models.note_system_property_model import NoteSystemPropertyModel
 from . import cfg
 from .sub_window import SubWindow
 from .paper_manager import PaperManager, NotePaper
@@ -25,13 +26,20 @@ class NotePanel(SubWindow):
         self.setWindowTitle(_("Note"))
         self.setObjectName("note_panel")
 
-        # init Sheet Tree Model
-        self.tree_model = NoteTreeModel(self, 0)
-        cfg.models["0_note_tree_model"] = self.tree_model
-        self.list_model = NoteListModel(self, 0)
-        cfg.models["0_note_list_model"] = self.list_model
+
+        self.system_property_model = NoteSystemPropertyModel(self, 0)
+        cfg.models["0_note_system_property_model"] = self.system_property_model
+        cfg.undo_group.addStack(self.system_property_model.undo_stack)
         self.property_model = NotePropertyModel(self, 0)
         cfg.models["0_note_property_model"] = self.property_model
+        cfg.undo_group.addStack(self.property_model.undo_stack)
+        # init Note Tree Model
+        self.tree_model = NoteTreeModel(self, 0)
+        cfg.models["0_note_tree_model"] = self.tree_model
+        cfg.undo_group.addStack(self.tree_model.undo_stack)
+        self.list_model = NoteListModel(self, 0)
+        cfg.models["0_note_list_model"] = self.list_model
+        #cfg.undo_group.addStack(self.list_model.undo_stack)
 
         self.paper_manager = PaperManager()
 

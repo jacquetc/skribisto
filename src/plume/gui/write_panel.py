@@ -36,9 +36,9 @@ class WritePanel(SubWindow, WindowSystemController):
         self.property_model = SheetPropertyModel(self, 0)
         cfg.models["0_sheet_property_model"] = self.property_model
         cfg.undo_group.addStack(self.property_model.undo_stack)
-        self.property_model = SheetSystemPropertyModel(self, 0)
-        cfg.models["0_sheet_system_property_model"] = self.property_model
-        cfg.undo_group.addStack(self.property_model.undo_stack)
+        self.system_property_model = SheetSystemPropertyModel(self, 0)
+        cfg.models["0_sheet_system_property_model"] = self.system_property_model
+        cfg.undo_group.addStack(self.system_property_model.undo_stack)
         self.tree_model = SheetTreeModel(self, 0)
         cfg.models["0_sheet_tree_model"] = self.tree_model
         cfg.undo_group.addStack(self.tree_model.undo_stack)

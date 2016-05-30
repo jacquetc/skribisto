@@ -237,6 +237,7 @@ class TreeModel(QAbstractItemModel):
     def clear(self):
         self.beginResetModel()
         self._root_node = TreeItem()
+        self.undo_stack.clear()
         self.endResetModel()
 
 
