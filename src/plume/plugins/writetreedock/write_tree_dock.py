@@ -75,7 +75,7 @@ class GuiWriteTreeDock:
 
             #filter :
             self.filter = write_tree_proxy_model.WriteTreeProxyModel(self.widget)
-            self.filter.setFilterKeyColumn(-1)
+            self.filter.setFilterKeyColumn(0)
             self.filter.setFilterCaseSensitivity(False)
             self.filter.setSourceModel(self.write_tree_model)
 

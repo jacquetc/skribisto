@@ -194,14 +194,21 @@ class DbPaper:
 
         self.set("b_deleted", value)
 
-    def add(self):
+    def add(self, imposed_id: int = -1):
         '''
         function:: add()
         '''
+        if imposed_id == -1:
+            id = ""
+            id_value = ""
+        else:
+            id = self.id_name + ","
+            id_value = str(imposed_id) + ","
 
         s_sql = """
         INSERT INTO """ + self.table_name + """
         (
+        """ + id + """
         t_title,
         dt_created,
         dt_updated,
@@ -210,6 +217,7 @@ class DbPaper:
         b_deleted
         )
         VALUES (
+        """ + id_value + """
         :title,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP,
@@ -276,3 +284,26 @@ class DbPaper:
             children.append(a_row[0])
 
         return children
+
+    def remove(self):
+
+        """
+        remove completly
+        :return:
+        """
+        s_sql = """
+         delete from
+         """ + self.table_name + """
+         where
+         """ + self.id_name + """ = :paper_id
+         """
+
+        a_curs = self.sql_db.cursor()
+        a_curs.execute(s_sql, {'paper_id': self.paper_id})
+
+        if self.commit_state:
+            self.sql_db.commit()
+
+        # TODO: remove children
+
+        return DbError.R_OK

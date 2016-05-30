@@ -193,7 +193,7 @@ class DbTree:
                 self.error.set_status(DbError.E_INVPARAM, 1, 'Paper ({0}) not found'.format(i_id))
                 return DbError.R_ERROR         # Invalid value
             # Delete
-            a_paper.delete = True
+            a_paper.delete_state = True
 
         self.sql_db.commit()
         return DbError.R_OK
@@ -218,7 +218,7 @@ class DbTree:
                 self.error.set_status(DbError.E_INVPARAM, 1, 'Paper ({0}) not found'.format(i_id))
                 return DbError.R_ERROR         # Invalid value
             # Delete
-            a_paper.delete = False
+            a_paper.delete_state = False
 
         self.sql_db.commit()
         return DbError.R_OK

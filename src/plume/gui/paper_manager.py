@@ -73,6 +73,16 @@ class Paper:
         cfg.data.database.get_tree(self._table_name).set_modification_date(self.id, value)
         cfg.data_subscriber.announce_update(0, self._paper_type + ".last_modification_changed", self.id)
 
+    @property
+    def deleted(self):
+        return cfg.data.database.get_tree(self._table_name).get_deleted(self.id)
+
+    @deleted.setter
+    def deleted(self, value: bool):
+        cfg.data.database.get_tree(self._table_name).set_deleted(self.id, value)
+        cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed", self.id)
+
+
     # @property
     # def properties(self):
     #     return cfg.data.database.get_tree(self._table_name).get_properties(self.id)
@@ -108,6 +118,24 @@ class Paper:
     #                 0, func, domain)
     #         else:
     #             cfg.data.subscriber.unsubscribe_update_func_to_domain(0, func)
+
+
+
+    def add_paper_after(self, new_child_ids: list =()):
+        new_list = cfg.data.database.get_tree(self._table_name).add_new_papers_by(self.id, 1, new_child_ids)
+        cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
+        return new_list
+
+    def add_child_paper(self, new_child_ids: list =()):
+        db = cfg.data.database
+        new_list = db.get_tree(self._table_name).add_new_child_papers(self.id, 1, new_child_ids)
+        cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
+        return new_list
+
+    def remove_paper(self):
+        cfg.data.database.get_tree(self._table_name).remove_papers([self.id])
+        cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
+
 
 
 class SheetPaper(Paper):

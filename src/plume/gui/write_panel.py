@@ -5,6 +5,7 @@ from .docks import DockSystem
 from .window_system import WindowSystemController
 from .models.sheet_tree_model import SheetTreeModel
 from .models.sheet_property_model import SheetPropertyModel
+from .models.sheet_system_property_model import SheetSystemPropertyModel
 from . import cfg
 from .sub_window import SubWindow
 from .paper_manager import PaperManager, SheetPaper
@@ -32,11 +33,15 @@ class WritePanel(SubWindow, WindowSystemController):
         self.setDockOptions(self.dockOptions() ^ QMainWindow.AnimatedDocks)
 
         # init Sheet Tree Model
-        self.tree_model = SheetTreeModel(self, 0)
-        cfg.models["0_sheet_tree_model"] = self.tree_model
         self.property_model = SheetPropertyModel(self, 0)
         cfg.models["0_sheet_property_model"] = self.property_model
-
+        cfg.undo_group.addStack(self.property_model.undo_stack)
+        self.system_property_model = SheetSystemPropertyModel(self, 0)
+        cfg.models["0_sheet_system_property_model"] = self.system_property_model
+        cfg.undo_group.addStack(self.system_property_model.undo_stack)
+        self.tree_model = SheetTreeModel(self, 0)
+        cfg.models["0_sheet_tree_model"] = self.tree_model
+        cfg.undo_group.addStack(self.tree_model.undo_stack)
 
         self.sheet_manager = PaperManager()
 

@@ -116,8 +116,7 @@ class WindowSystemActionHandler():
     @window_system_controller.setter
     def window_system_controller(self, value):
         if not issubclass(value.__class__, WindowSystemController):
-            print(
-                "WindowSystemActionHandler.window_system_controller value is not a WindowSystemController")
+            print("WindowSystemActionHandler.window_system_controller value is not a WindowSystemController")
         else:
             self._window_system_controller = value
             self._window_system_controller.subscribe_to_window_system_updates(

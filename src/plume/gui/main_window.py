@@ -6,17 +6,18 @@ Created on 25 avr. 2015
 '''
 
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,
-                             QHBoxLayout,  QFileDialog, QMessageBox,  QApplication)
+                             QHBoxLayout,  QFileDialog, QMessageBox,  QApplication, QUndoView)
 from PyQt5.QtCore import Qt,  QDir, QDate
 from .window_system import WindowSystemController
 from .write_panel import WritePanel
 from .note_panel import NotePanel
-from PyQt5.Qt import QToolButton, pyqtSlot
+from PyQt5.Qt import QToolButton, pyqtSlot, QUndoGroup
 from . import cfg
 from .main_window_ui import Ui_MainWindow
 from .preferences import Preferences
 from .start_window import StartWindow
 from .about_plume import AboutPlume
+from .signal_hub import SignalHub
 import os.path
 
 
@@ -51,6 +52,9 @@ class MainWindow(QMainWindow, WindowSystemController):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
+        cfg.undo_group = QUndoGroup(self)
+        cfg.signal_hub = SignalHub(self)
+
         # window system :
         self.window_system_parent_widget = self.stackWidget
         self.side_bar.window_system_controller = self
@@ -77,6 +81,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         self._sub_window_action_group.addAction(self.ui.actionNote)
 
         self.ui.actionWrite.trigger()
+
 
 
 
@@ -124,6 +129,9 @@ class MainWindow(QMainWindow, WindowSystemController):
         database.path = os.path.join(home, "test_project.sqlite")
 
         self.setWindowTitle("Plume Creator - TEST")
+
+        # self.undo_view = QUndoView(cfg.undo_group, None)
+        # self.undo_view.show()
 
     @pyqtSlot()
     def launch_preferences(self):

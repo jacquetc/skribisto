@@ -82,13 +82,65 @@ class PropertyList:
         property = DbProperty(self.sql_db, self.table_name, self.id_name,  property_id, True)
         property.set("t_value", value)
 
+    def get_paper_code(self, property_id: int):
+        '''
+        function:: get_paper_code(id: int)
+        :param property_id: int:
+        '''
+        property = DbProperty(self.sql_db, self.table_name, self.id_name,  property_id, False)
+        return int(property.get(self.code_name))
 
-    def add_new_properties(self, number: int, paper_id: int):
+    def set_paper_code(self, property_id: int, value: int):
+        '''
+        function:: set_paper_code(id: int)
+        :param value:
+        :param property_id: int:
+        '''
+        property = DbProperty(self.sql_db, self.table_name, self.id_name,  property_id, True)
+        property.set(self.code_name, value)
+
+
+    def get_creation_date(self, property_id: int):
+        '''
+        :rtype: str
+        :param property_id: int:
+        '''
+        property = DbProperty(self.sql_db, self.table_name, self.id_name,  property_id, False)
+        return str(property.get("dt_created"))
+
+    def set_creation_date(self, property_id: int, value: str):
+        '''
+        function:: set_creation_date(id: int)
+        :param value: str:
+        :param property_id: bool:
+        '''
+        property = DbProperty(self.sql_db, self.table_name, self.id_name,  property_id, True)
+        property.set("dt_created", value)
+
+    def get_modification_date(self, property_id: int):
+        '''
+        :rtype: str
+        :param property_id: int:
+        '''
+        property = DbProperty(self.sql_db, self.table_name, self.id_name,  property_id, False)
+        return str(property.get("dt_updated"))
+
+    def set_modification_date(self, property_id: int, value: str):
+        '''
+        :param value: str:
+        :param property_id: bool:
+        '''
+        property = DbProperty(self.sql_db, self.table_name, self.id_name,  property_id, True)
+        property.set("dt_updated", value)
+
+
+
+    def add_new_properties(self, number: int, paper_id: int, new_ids: list = ()):
         '''
         function:: add_new_properties(parent_id: int, number: int)
         :param number: int:
         '''
-        return self._add_new_properties(number, paper_id, True)
+        return self._add_new_properties(number, paper_id, True, new_ids)
 
     def remove_properties(self, property_id_list):
         """
@@ -98,18 +150,22 @@ class PropertyList:
         """
         return self._remove_properties(property_id_list, True)
 
-    def _add_new_properties(self, number: int, paper_id: int, commit: bool):
+    def _add_new_properties(self, number: int, paper_id: int, commit: bool, new_ids: list = ()):
         '''
         function:: _add_new_properties(number: int, commit: bool)
         :param number: int:
         :param commit: bool:
         '''
+        imposed_ids = list(new_ids)
+        if len(imposed_ids) != number or imposed_ids == []:
+            imposed_ids = [-1]
+
 
         new_id_list = []
         for i in range(number):
             property = DbProperty(self.sql_db, self.table_name, self.id_name
                                   , -1, False)
-            new_id_list.append(property.add(self.code_name, paper_id))
+            new_id_list.append(property.add(self.code_name, paper_id, imposed_ids[i]))
 
         if commit:
             self.sql_db.commit()

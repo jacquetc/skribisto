@@ -3,6 +3,8 @@ from .tree.sheet_tree import SheetTree
 from .tree.note_tree import NoteTree
 from .property.sheet_property_list import SheetPropertyList
 from .property.note_property_list import NotePropertyList
+from .property.sheet_system_property_list import SheetSystemPropertyList
+from .property.note_system_property_list import NoteSystemPropertyList
 from .project import Project
 from . import cfg, subscriber
 from .importer import Importer
@@ -71,8 +73,20 @@ class Database:
     def note_property_list(self):
         return NotePropertyList(self._sqlite_db)
 
+    @property
+    def sheet_system_property_list(self):
+        return SheetSystemPropertyList(self._sqlite_db)
+
+    @property
+    def note_system_property_list(self):
+        return NoteSystemPropertyList(self._sqlite_db)
+
     def get_table(self, table_name: str):
         if table_name == "tbl_sheet_property":
             return self.sheet_property_list
         elif table_name == "tbl_note_property":
             return self.note_property_list
+        elif table_name == "tbl_sheet_system_property":
+            return self.sheet_system_property_list
+        elif table_name == "tbl_note_system_property":
+            return self.note_system_property_list

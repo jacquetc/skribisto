@@ -5,15 +5,17 @@ Created on 27 may 2015
 @author: Cyril Jacquet
 '''
 from PyQt5.QtGui import QPixmap,  QIcon
-from PyQt5.QtWidgets import QDialog,  QWidget,  QToolButton
-from PyQt5.QtCore import pyqtSlot,  QSize,  Qt
+from PyQt5.QtWidgets import QDialog,  QWidget,  QToolButton, QDialogButtonBox
+from PyQt5.QtCore import pyqtSlot,  QSize,  Qt, QSettings, pyqtSignal
 from .preferences_ui import Ui_Preferences
+from . import cfg
 from enum import Enum
 
 
 class Preferences(QDialog):
 
     PageCategories = Enum('PageCategory', 'Interface Editor Advanced')
+    apply_settings_widely_sent = pyqtSignal(name = "apply_settings_widely_sent")
 
     def __init__(self, parent=None):
         super(Preferences, self).__init__(parent)
@@ -26,6 +28,12 @@ class Preferences(QDialog):
 
         self.add_page(ThemesPreferences,  self.PageCategories.Interface)
         self.add_page(PluginsPreferences,  self.PageCategories.Advanced)
+        self.add_page(MiscellanousPreferences,  self.PageCategories.Advanced)
+
+        for page in self.page_dict.values():
+            page.load_settings()
+
+        self.apply_settings_widely_sent.connect(cfg.signal_hub.apply_settings_widely_sent)
 
         self.show_main_page()
 
@@ -62,6 +70,23 @@ class Preferences(QDialog):
         self.ui.titleButton.setText(widget.title)
         self.ui.titleButton.setIcon(widget.icon)
 
+    def on_buttonBox_clicked(self, button):
+        role = self.ui.buttonBox.buttonRole(button)
+        if role == QDialogButtonBox.ApplyRole:
+            for page in self.page_dict.values():
+                page.save_settings()
+            self.apply_settings_widely_sent.emit()
+        if role == QDialogButtonBox.Cancel:
+            self.close()
+        if role == QDialogButtonBox.AcceptRole:
+            for page in self.page_dict.values():
+                page.save_settings()
+            self.apply_settings_widely_sent.emit()
+            self.close()
+        if role == QDialogButtonBox.ResetRole:
+            for page in self.page_dict.values():
+                page.load_settings()
+
 
 class PreferencesPageTemplate(QWidget):
 
@@ -79,6 +104,12 @@ class PreferencesPageTemplate(QWidget):
     def icon(self,  path):
         self._icon = QIcon(QPixmap(path))
 
+    def save_settings(self):
+        pass
+
+    def load_settings(self):
+        pass
+
 #-------------------- Plugins
 
 from .preferences_plugins_ui import Ui_PluginsPage
@@ -93,6 +124,32 @@ class PluginsPreferences(PreferencesPageTemplate):
         self.page_name = "plugins"
         self.icon = ":/pics/48x48/preferences-plugin.png"
         self.title = _("Plugins")
+
+
+#-------------------- Miscellanous
+
+from .preferences_miscellanous_ui import Ui_MiscellanousPage
+
+
+class MiscellanousPreferences(PreferencesPageTemplate):
+
+    def __init__(self, parent=None):
+        super(MiscellanousPreferences, self).__init__(parent)
+        self.ui = Ui_MiscellanousPage()
+        self.ui.setupUi(self)
+        self.page_name = "miscellanous"
+        self.icon = ":/pics/48x48/preferences-other.png"
+        self.title = _("Miscellanous")
+
+    def save_settings(self):
+        settings = QSettings()
+        settings.setValue("settings/misc/dev_mode", self.ui.dev_mode_checkBox.isChecked())
+        del settings
+
+    def load_settings(self):
+        settings = QSettings()
+        self.ui.dev_mode_checkBox.setChecked(settings.value("settings/misc/dev_mode", True, type=bool))
+        del settings
 
 
 #-------------------- Themes

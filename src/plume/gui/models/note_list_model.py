@@ -44,7 +44,7 @@ class NoteListModel(QAbstractListModel):
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.clear, "database_closed")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "database_loaded")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.title_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.tree_structure_modified")
+        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.structure_changed")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.properties")
 
     @property
@@ -366,7 +366,7 @@ class ListItem(object):
         return self._parent
 
     @parent.setter
-    def parent(self, parent: QModelIndex()):
+    def parent(self, parent):
         if parent is not None:
             self._parent = parent
         else:

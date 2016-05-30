@@ -7,6 +7,7 @@ Created on 17 february 2016
 from PyQt5.Qt import QAbstractTableModel, QVariant, QModelIndex
 from PyQt5.QtCore import Qt, QObject
 from .. import cfg
+from PyQt5.Qt import QUndoStack, QUndoCommand
 
 class PropertyModel(QAbstractTableModel):
     '''
@@ -21,9 +22,8 @@ class PropertyModel(QAbstractTableModel):
     SystemRole = Qt.UserRole + 5
     CodeRole = Qt.UserRole + 6
 
-    PropertyClass=None
-
-    def __init__(self, table_name: str, id_name: str, code_name: str, parent: QObject, project_id: int):
+    def __init__(self, table_name: str, id_name: str, code_name: str, property_type: str
+                 , parent: QObject, project_id: int):
 
         super(PropertyModel, self).__init__(parent)
         # inheriting classes will start at Qt.UserRole + 20
@@ -33,11 +33,22 @@ class PropertyModel(QAbstractTableModel):
         self._table_name = table_name
         self._id_name = id_name
         self._code_name = code_name
+        self._property_type = property_type
         self._all_data = []
         self._node_list = []
         self._id_of_last_created_node = None
 
         self.headers = [_("name"), _("value")]
+
+        self._undo_stack = QUndoStack(self)
+
+    @property
+    def property_type(self):
+        return self._property_type
+
+    @property
+    def table_name(self):
+        return self._table_name
 
     @property
     def tree_db(self):
@@ -98,8 +109,6 @@ class PropertyModel(QAbstractTableModel):
             return node.data["dt_created"]
         if role == self.DateUpdatedRole:
             return node.data["dt_updated"]
-        if role == self.SystemRole:
-            return node.data["b_system"]
 
 
         return QVariant()
@@ -148,18 +157,23 @@ class PropertyModel(QAbstractTableModel):
 
             node = self.node_from_index(index)
 
-            self.PropertyClass(node.id).name = value
-
-            self.dataChanged.emit(index, index, limit)
+            # self.PropertyClass(node.id).name = value
+            #
+            # self.dataChanged.emit(index, index, limit)
+            command = ChangeNameCommand(node.id, value, self)
+            self.undo_stack.push(command)
+            self.undo_stack.setActive(True)
             return True
 
         if index.isValid() and index.column() == 1 and role == (Qt.EditRole or self.ValueRole):
 
             node = self.node_from_index(index)
-
-            self.PropertyClass(node.id).value = value
-
-            self.dataChanged.emit(index, index, limit)
+            command = ChangeValueCommand(node.id, value, self)
+            self.undo_stack.push(command)
+            self.undo_stack.setActive(True)
+            # self.PropertyClass(node.id).value = value
+            #
+            # self.dataChanged.emit(index, index, limit)
             return True
 
         return False
@@ -213,6 +227,7 @@ class PropertyModel(QAbstractTableModel):
     def clear(self):
         self.beginResetModel()
         self._root_node = ListItem()
+        self.undo_stack.clear()
         self.endResetModel()
 
 
@@ -233,6 +248,39 @@ class PropertyModel(QAbstractTableModel):
 
         return None
 
+    @property
+    def undo_stack(self)->QUndoStack:
+        return self._undo_stack
+
+    def set_undo_stack_active(self):
+        self._undo_stack.setActive(True)
+
+
+    def set_property(self, paper_id: int, name: str, value: str):
+        self.undo_stack.push(SetPropertyCommand(paper_id, name, value, self))
+
+
+    def get_property(self, paper_id: int, name: str, default_value: str):
+        property_id = self.find_id(paper_id, name)
+        if property_id is None:
+            property_id = Property(self._table_name, self._property_type, -1).add(paper_id)[0]
+            self.undo_stack.clear()
+            paper_property = Property(self._table_name, self._property_type, property_id)
+            paper_property.name = name
+            paper_property.value = default_value
+
+
+        return Property(self._table_name, self._property_type, property_id).value
+
+
+    def find_id(self, paper_id: int, name: str):
+        """
+
+        :param paper_id:
+        :param name:
+        :return: return None if nothing or id
+        """
+        return cfg.data.get_database(0).get_table(self._table_name).find_id(paper_id, name)
 
 
 class ListItem(object):
@@ -257,7 +305,7 @@ class ListItem(object):
         return self._parent
 
     @parent.setter
-    def parent(self, parent: QModelIndex()):
+    def parent(self, parent):
         if parent is not None:
             self._parent = parent
         else:
@@ -297,5 +345,141 @@ class ListItem(object):
     @property
     def value(self):
         return self.data["t_value"]
+
+
+from ..property import Property
+
+class ChangeNameCommand(QUndoCommand):
+    def __init__(self, property_id: int, new_name: str, model: PropertyModel):
+        super(ChangeNameCommand, self).__init__()
+        self._model = model
+        self._property_id = property_id
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=self._property_id)
+        self._old = property.name
+        self._new = new_name
+        self.setText(_("change property name"))
+
+    def redo(self):
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=self._property_id)
+        property.name = self._new
+
+    def undo(self):
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=self._property_id)
+        property.name = self._old
+
+class ChangeValueCommand(QUndoCommand):
+    def __init__(self, property_id: int, new_value: str, model: PropertyModel):
+        super(ChangeValueCommand, self).__init__()
+        self._model = model
+        self._property_id = property_id
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=self._property_id)
+        self._old = property.value
+        self._new = new_value
+        self.setText(_("change property value"))
+
+    def redo(self):
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=self._property_id)
+        property.value = self._new
+
+    def undo(self):
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=self._property_id)
+        property.value = self._old
+
+
+class RemovePropertyCommand(QUndoCommand):
+    def __init__(self, property_id: int, model: PropertyModel):
+        super(RemovePropertyCommand, self).__init__()
+        self._model = model
+        self._property_id = property_id
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=self._property_id)
+        self._paper_code = property.paper_code
+        self._saved_property = property
+        self._saved_property.copy_deeply()
+        self.setText(_("remove property"))
+
+    def redo(self):
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=self._property_id)
+        property.remove()
+
+    def undo(self):
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=-1)
+        property.add(self._paper_code, [self._property_id])
+        self._saved_property.paste_deeply()
+
+class AddPropertyCommand(QUndoCommand):
+    def __init__(self, paper_id: int, model: PropertyModel):
+        super(AddPropertyCommand, self).__init__()
+        self._model = model
+        self._paper_id = paper_id
+        self.new_id_list = []
+        self._saved_property = None
+        self.setText(_("add property"))
+
+
+    @property
+    def last_new_id(self):
+        return self.new_id_list[0]
+
+    def redo(self):
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=-1)
+        self.new_id_list = property.add(self._paper_id, self.new_id_list)
+        if self._saved_property is not None:
+            self._saved_property.paste_deeply()
+
+
+    def undo(self):
+        property = Property(table_name=self._model.table_name, property_type=self._model.property_type
+                            , property_id=self.new_id_list[0])
+        self._saved_property = property
+        self._saved_property.copy_deeply()
+        property.remove(self.new_id_list)
+
+class SetPropertyCommand(QUndoCommand):
+    def __init__(self, paper_id: int, name: str, value: str, model: PropertyModel):
+        super(SetPropertyCommand, self).__init__()
+        self._model = model
+        self._paper_id = paper_id
+        self._name = name
+        self._value = value
+        self._saved_property = None
+        self._property_id = None
+        self._property_created = False
+        self.setText(_("set property"))
+
+        self._command_add = AddPropertyCommand(self._paper_id, self._model)
+
+    @property
+    def last_new_id(self):
+        return self._property_id
+
+    def redo(self):
+        self._property_id = self._model.find_id(self._paper_id, self._name)
+
+        if self._property_id is None:
+            self._command_add.redo()
+            self._property_id = self._command_add.last_new_id
+            self._property_created = True
+        self._command_change_name = ChangeNameCommand(self._property_id, self._name, self._model)
+        self._command_change_name.redo()
+        self._command_change_value = ChangeValueCommand(self._property_id, self._value, self._model)
+        self._command_change_value.redo()
+
+    def undo(self):
+
+        self._command_change_name.undo()
+        self._command_change_value.undo()
+        if self._property_created:
+            self._command_add.undo()
+
 
 
