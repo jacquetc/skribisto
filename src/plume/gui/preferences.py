@@ -46,6 +46,7 @@ class Preferences(QDialog):
         button.setIconSize(QSize(48, 48))
         button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         button.setText(page.title)
+        button.setAutoRaise(True)
         button.clicked.connect(self.change_page)
         button.setProperty("page", page.page_name)
         if page_category is self.PageCategories.Interface:

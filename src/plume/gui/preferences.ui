@@ -37,6 +37,9 @@
          <height>32</height>
         </size>
        </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
        <property name="arrowType">
         <enum>Qt::NoArrow</enum>
        </property>
@@ -55,6 +58,9 @@
        </property>
        <property name="toolButtonStyle">
         <enum>Qt::ToolButtonTextBesideIcon</enum>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
