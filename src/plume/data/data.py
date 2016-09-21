@@ -4,14 +4,15 @@ Created on 19 aug. 2015
 @author: Cyril Jacquet
 '''
 
+from PyQt5.QtCore import QObject
 from . import subscriber, cfg
 from .database import Database
 from .exporter import Exporter
 
 
-class Data:
-    def __init__(self):
-        super(Data, self).__init__()
+class Data(QObject):
+    def __init__(self, parent = None):
+        super(Data, self).__init__(parent)
 
         self.subscriber = subscriber
 
@@ -65,7 +66,8 @@ class Data:
         database = self.database_for_int_dict[project_id]
         return Exporter.export_sqlite_db_to(database.sqlite_db, database.type, file_name)
 
-    def get_database(self, project_id: int):
+    # TODO : useful ?
+    def _get_database(self, project_id: int):
         '''
         function:: database(project_id: int)
         :param project_id: int:
