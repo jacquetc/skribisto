@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QObject, QThread, pyqtSlot
 from .plugins import Plugins
 from .tree.sheet_tree import SheetTree
 from .tree.note_tree import NoteTree
@@ -8,26 +9,29 @@ from .property.note_system_property_list import NoteSystemPropertyList
 from .project import Project
 from . import cfg, subscriber
 from .importer import Importer
+import os
 
 
-class Database:
+class Database(QObject):
 
-    def __init__(self, project_id: int, file_name: str):
+    def __init__(self):
         super(Database, self).__init__()
+
+    @pyqtSlot(int, str)
+    def init(self, project_id: int, file_name: str):
         self._database_id = project_id
-        #shortcut :
+        # shortcut :
         if self._database_id is 0:
             cfg.database = self
         self._sqlite_db = None
         # init this Database subscriber
         self.subscriber = subscriber.DatabaseSubscriber(self._database_id)
-
         # loading :
         # TODO adapt to other types :
         if file_name == '':
             self._sqlite_db = Importer.create_empty_sqlite_db()
         else:
-            self._sqlite_db = Importer.create_sqlite_db_from("SQLITE", file_name)
+            self._sqlite_db = Importer.create_sqlite_db_from("SQLITE", os.path.normpath(file_name))
 
         self.type = "SQLITE"
         self.path = file_name
@@ -42,7 +46,11 @@ class Database:
         # self.note_tree = NoteTree(self.subscriber, self._sqlite_db)
         self.plugins = Plugins(self.subscriber)
 
-    def close(self):
+    @pyqtSlot(int)
+    def close(self, project_id:int):
+        if project_id != self._project_id:
+            return
+
         self._sqlite_db.close()
         self._sqlite_db = None
         self.subscriber.announce_update("database_closed")

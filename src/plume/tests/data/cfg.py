@@ -1,0 +1,2 @@
+data = None
+app = None
