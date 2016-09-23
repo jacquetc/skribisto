@@ -1,4 +1,5 @@
-from PyQt5.QtCore import QObject, QThread, pyqtSlot
+from PyQt5.QtCore import QThread, pyqtSlot
+from .base_qobject import BaseQObject
 from .plugins import Plugins
 from .tree.sheet_tree import SheetTree
 from .tree.note_tree import NoteTree
@@ -10,9 +11,10 @@ from .project import Project
 from . import cfg, subscriber
 from .importer import Importer
 import os
+import tempfile
 
 
-class Database(QObject):
+class Database(BaseQObject):
 
     def __init__(self):
         super(Database, self).__init__()
@@ -23,6 +25,10 @@ class Database(QObject):
         self.subscriber = None
         self._database_id = None
         self.plugins = None
+        self.a_lock = None
+
+    def __del__(self):
+        self.release_database()
 
     @pyqtSlot(int, str)
     def init(self, project_id: int, file_name: str):
@@ -35,10 +41,17 @@ class Database(QObject):
         if file_name == '':
             self._sqlite_db = Importer.create_empty_sqlite_db()
         else:
-            self._sqlite_db = Importer.create_sqlite_db_from("SQLITE", os.path.normpath(file_name))
+            self.path = os.path.normpath(os.path.abspath(file_name))
+            print(self.is_database_locked_away())
+            if self.is_database_locked_away():
+                print("E_LOCKEDDATABASE")
+                self.error_sent.emit("E_LOCKEDDATABASE")
+                return
+
+            self._sqlite_db = Importer.create_sqlite_db_from("SQLITE", os.path.normpath(self.path))
+            self.lock_away_database()
 
         self.type = "SQLITE"
-        self.path = file_name
         self._project_id = project_id
 
         # self.subscriber.announce_update("data.project.close")
@@ -102,3 +115,30 @@ class Database(QObject):
             return self.sheet_system_property_list
         elif table_name == "tbl_note_system_property":
             return self.note_system_property_list
+
+    def is_database_locked_away(self):
+        if os.path.exists(self.lock_file_name):
+            file_object = open(self.lock_file_name, "r")
+            puid = file_object.readline(1)
+            file_object.close()
+
+            return True
+        else:
+            return False
+
+
+    @property
+    def lock_file_name(self):
+        base = os.path.basename(self.path).ljust(8)
+        return os.path.normpath(os.path.dirname(self.path) + "/.~lock." + base + "#")
+
+    def lock_away_database(self):
+        file_object = open(self.lock_file_name, "w")
+        file_object.write(str(os.getpid()))
+        file_object.close()
+
+    def release_database(self):
+        if os.path.exists(self.lock_file_name):
+            os.remove(self.lock_file_name)
+
+

@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, pyqtSignal, QThread
+from PyQt5.QtCore import QObject, pyqtSignal, QThread, Qt
 from .database import Database
 from .exporter import Exporter
 from . import cfg
@@ -37,11 +37,10 @@ class DatabaseManager(QObject):
         self.close_sent.connect(db.close)
 
         db.moveToThread(self._worker_thread)
-
         self.init_sent.emit(project_id, file_name)
 
         self.database_for_int_dict[project_id] = db
-        cfg.data.subscriber.announce_update(project_id, "database_loaded")
+        # cfg.data.subscriber.announce_update(project_id, "database_loaded")
         return project_id
 
     def save_database(self, project_id: int, file_name: str):

@@ -21,11 +21,12 @@ class Data(QObject):
 
         self.subscriber = subscriber
         self.signal_hub = SignalHub(self)
+        cfg.signal_hub = self.signal_hub
 
         self._worker_thread = QThread(self)
         cfg.worker_thread = self._worker_thread
-        self.task_manager = TaskManager(self, self._worker_thread)
         self.database_manager = DatabaseManager(self, self._worker_thread)
+        self.task_manager = TaskManager(self, self._worker_thread)
 
         self.sheet_hub = SheetHub
         self.project_hub = ProjectHub

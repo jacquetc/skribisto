@@ -7,3 +7,4 @@ Created on 6 mai 2015
 data = None
 data_plugins = None
 database = None
+signal_hub = None
