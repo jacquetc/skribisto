@@ -7,7 +7,8 @@ Created on 19 aug. 2015
 from PyQt5.QtCore import QObject, QThread
 from . import subscriber, cfg
 from .signal_hub import SignalHub
-from .write import Write
+from .sheet_hub import SheetHub
+from .project_hub import ProjectHub
 from .task import TaskManager
 from .database_manager import DatabaseManager
 
@@ -26,6 +27,7 @@ class Data(QObject):
         self.task_manager = TaskManager(self, self._worker_thread)
         self.database_manager = DatabaseManager(self, self._worker_thread)
 
-        self.write = Write
+        self.sheet_hub = SheetHub
+        self.project_hub = ProjectHub
 
 

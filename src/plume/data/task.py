@@ -9,12 +9,18 @@ class Task(QObject):
     # int return_code (0 : no error , 1 : error )
     task_finished = pyqtSignal(int, name='task_finished')
 
+    item_value_changed = pyqtSignal(int, int, 'QString', object, name='item_value_changed')
+    # sent back after a modification, contain the new value
     # int project_id, int paper_id, QString type, QVariant new_value
-    item_value_returned = pyqtSignal(int, int, 'QString', 'QVariant', name='item_value_returned')
+
+    item_value_returned = pyqtSignal(int, int, 'QString', object, name='item_value_returned')
+    # sent back when asking for a value
+    # int project_id, int paper_id, QString type, QVariant value
 
     def __init__(self):
         super(Task, self).__init__()
         self.item_value_returned.connect(cfg.data.signal_hub.item_value_returned)
+        self.item_value_changed.connect(cfg.data.signal_hub.item_value_changed)
 
     def do_task(self):
         pass
@@ -29,15 +35,17 @@ class TaskManager(QObject):
     def __init__(self, parent, worker_thread:QThread):
         super(TaskManager, self).__init__(parent)
         self._task_list = []
+        self._list_was_empty = True
+
         self._worker = worker_thread
         self._worker.start()
         
     def __del__(self):
         self._worker.quit()
+        self._worker.wait()
 
     def append(self, task: Task):
 
-        self._worker.finished.connect(task.deleteLater)
         task.task_finished.connect(self._delete_task)
 
         task.moveToThread(self._worker)

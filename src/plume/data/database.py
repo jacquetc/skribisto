@@ -16,13 +16,17 @@ class Database(QObject):
 
     def __init__(self):
         super(Database, self).__init__()
+        self.type = None
+        self.path = None
+        self._project_id = None
+        self._sqlite_db = None
+        self.subscriber = None
+        self._database_id = None
+        self.plugins = None
 
     @pyqtSlot(int, str)
     def init(self, project_id: int, file_name: str):
         self._database_id = project_id
-        # shortcut :
-        if self._database_id is 0:
-            cfg.database = self
         self._sqlite_db = None
         # init this Database subscriber
         self.subscriber = subscriber.DatabaseSubscriber(self._database_id)

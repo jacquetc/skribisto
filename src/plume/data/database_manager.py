@@ -12,9 +12,9 @@ class DatabaseManager(QObject):
         super(DatabaseManager, self).__init__(parent)
         self._worker_thread = worker_thread
 
-        self.database = None
         self.database_for_int_dict = {}
 
+        self._increment = -1
 
     def create_new_empty_database(self, project_id: int):
         '''
@@ -23,13 +23,14 @@ class DatabaseManager(QObject):
         '''
         self.load_database(project_id, "")
 
-
-    def load_database(self, project_id: int, file_name: str):
+    def load_database(self, file_name: str):
         '''
         function:: load_database(project_id: int, file_name: str)
         :param project_id: int:
         :param file_name: str:
         '''
+        self._increment += 1
+        project_id = self._increment
 
         db = Database()
         self.init_sent.connect(db.init)
@@ -40,10 +41,8 @@ class DatabaseManager(QObject):
         self.init_sent.emit(project_id, file_name)
 
         self.database_for_int_dict[project_id] = db
-        if project_id == 0:
-            self.database = db
         cfg.data.subscriber.announce_update(project_id, "database_loaded")
-
+        return project_id
 
     def save_database(self, project_id: int, file_name: str):
         '''
