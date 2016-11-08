@@ -18,7 +18,8 @@ class ProjectHub:
 
     @staticmethod
     def close_all_projects():
-        for project_id in cfg.data.database_manager.database_for_int_dict.keys():
+        keys = list(cfg.data.database_manager.database_for_int_dict.keys())
+        for project_id in keys:
             task = CloseProject(project_id)
             cfg.data.task_manager.append(task)
 

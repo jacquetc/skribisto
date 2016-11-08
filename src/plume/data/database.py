@@ -27,9 +27,6 @@ class Database(BaseQObject):
         self.plugins = None
         self.a_lock = None
 
-    def __del__(self):
-        self.release_database()
-
     @pyqtSlot(int, str)
     def init(self, project_id: int, file_name: str):
         self._database_id = project_id
@@ -70,6 +67,7 @@ class Database(BaseQObject):
 
         self._sqlite_db.close()
         self._sqlite_db = None
+        self.release_database()
         self.subscriber.announce_update("database_closed")
 
     @property
@@ -129,7 +127,7 @@ class Database(BaseQObject):
 
     @property
     def lock_file_name(self):
-        base = os.path.basename(self.path).ljust(8)
+        base = os.path.basename(self.path)
         return os.path.normpath(os.path.dirname(self.path) + "/.~lock." + base + "#")
 
     def lock_away_database(self):

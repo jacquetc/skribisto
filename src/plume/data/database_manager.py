@@ -80,6 +80,5 @@ class DatabaseManager(QObject):
             raise ValueError("no database number {id} to fetch".format(id=repr(project_id)))
 
         self.close_sent.emit(project_id)
-        if project_id == 0:
-            self.database = None
+        del self.database_for_int_dict[project_id]
 

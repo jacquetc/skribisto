@@ -3,6 +3,7 @@ import sys
 from . import cfg
 from ...data.data import Data
 from PyQt5.QtCore import QCoreApplication
+import os
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -22,6 +23,7 @@ def test_tasks_run_false(status):
     """Return true if tasks_run signal is False."""
     return status == False
 
+
 @pytest.fixture()
 def data_object(request, qtbot):
     print('[setup] Data')
@@ -33,9 +35,16 @@ def data_object(request, qtbot):
     def end():
         print('\n[teardown] Data')
         # ensure the task list is finished before closing
+        print(cfg.data.database_manager.database_for_int_dict.keys())
+
         with qtbot.waitSignal(cfg.data.signal_hub.tasks_run, timeout=1000, check_params_cb=test_tasks_run_false) as blocker:
             cfg.data.project_hub.close_all_projects()
         #cfg.data.deleteLater()
+
+        base = os.path.basename(cfg.test_database_path)
+        lock_path = os.path.normpath(os.path.dirname(cfg.test_database_path) + "/.~lock." + base + "#")
+        if os.path.exists(lock_path):
+            os.remove(lock_path)
 
     request.addfinalizer(end)
 

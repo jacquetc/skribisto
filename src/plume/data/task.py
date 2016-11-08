@@ -1,4 +1,5 @@
-from PyQt5.QtCore import QObject, pyqtSignal, QThread, pyqtSlot, QEventLoop
+from PyQt5.QtCore import QObject, pyqtSignal, QThread, pyqtSlot, QEventLoop, QTimerEvent
+from PyQt5.Qt import QApplication
 from .import cfg
 
 
@@ -26,14 +27,20 @@ class Task(QObject):
     error_sent = pyqtSignal('QString', name='error_sent')
 
 
+
     def __init__(self):
         super(Task, self).__init__()
+
+        self.return_value = None
+
+        self.error_sent.connect(cfg.data.signal_hub.error_sent)
         self.item_value_returned.connect(cfg.data.signal_hub.item_value_returned)
         self.item_value_changed.connect(cfg.data.signal_hub.item_value_changed)
         self.task_started.connect(cfg.data.signal_hub.task_started)
         self.task_finished.connect(cfg.data.signal_hub.task_finished)
         self.task_paused.connect(cfg.data.signal_hub.task_paused)
         self.task_resumed.connect(cfg.data.signal_hub.task_resumed)
+        self.name = self.__class__
 
     def do_task(self):
         pass
@@ -53,8 +60,11 @@ class Task(QObject):
 
     def resume(self):
         self._stop_waiting_sent.emit()
+        print("_stop_waiting_sent")
         self.task_resumed.emit()
 
+    def abort(self):
+        pass
 
 class TaskManager(QObject):
 
@@ -65,6 +75,11 @@ class TaskManager(QObject):
 
     _set_current_task_reply_sent = pyqtSignal(int, 'QString', name='_set_current_task_reply_sent')
 
+    _pause_sent = pyqtSignal(name="_pause_sent")
+
+    _resume_sent = pyqtSignal(name="_resume_sent")
+
+
 
     def __init__(self, parent, worker_thread:QThread):
         super(TaskManager, self).__init__(parent)
@@ -72,6 +87,8 @@ class TaskManager(QObject):
         self._list_was_empty = True
         self._new_tasks_are_refused = False
         self._current_task = None
+        self._timer = None
+        self._return_value = None
 
         self.tasks_run.connect(cfg.data.signal_hub.tasks_run)
 
@@ -84,14 +101,13 @@ class TaskManager(QObject):
 
     def append(self, task: Task):
 
-        if self._new_tasks_are_refused == True:
+        if self._new_tasks_are_refused:
             return
 
+        task.error_sent.connect(self._terminate_all_tasks)
         task.task_finished.connect(self._delete_task)
         task.task_finished.connect(self._start_next_task)
 
-        task.moveToThread(self._worker)
-        
         self._list_was_empty = False
         if not self._task_list:
             self._list_was_empty = True
@@ -101,6 +117,27 @@ class TaskManager(QObject):
         if len(self._task_list) == 1 and self._list_was_empty:
             self._start_next_task()
 
+    def append_and_wait_for_reply(self,  task: Task):
+        task.task_finished.connect(self._allow_for_return_value)
+
+        self.append(task)
+
+        # make task to wait :
+        self.waitForSignal
+    def _allow_for_return_value(self):
+        self.killTimer(self._timer)
+        self._return_value = self._current_task.return_value
+
+    def timerEvent(self, event : QTimerEvent):
+        print("error no reply :" + repr(self._current_task.name))
+        self._current_task.task.error_sent("error no reply :" + repr(self._current_task.name))
+
+    @property
+    def return_value(self):
+        value = self._return_value
+        self._return_value = None
+        return value
+
     @pyqtSlot()
     def _start_next_task(self):
         if not self._task_list:
@@ -109,8 +146,10 @@ class TaskManager(QObject):
 
         self._current_task = self._task_list[0]
 
-        self._set_current_task_reply_sent.connect(self._current_task.set_reply)
+        self._current_task.moveToThread(self._worker)
 
+        #self._set_current_task_reply_sent.connect(self._current_task.set_reply)
+        print("task : " + repr(self._current_task.name))
         self._operate.connect(self._current_task.do_task)
         self._operate.emit()
         self.tasks_run.emit(True)
@@ -122,14 +161,24 @@ class TaskManager(QObject):
         self._task_list.remove(task)
         task.deleteLater()
 
+    @pyqtSlot()
+    def _terminate_all_tasks(self):
+        task = self.sender()
+        task.abort()
+        self.clear()
+
     def set_current_task_reply(self, reply_code: int, reply_string: str):
         self._set_current_task_reply_sent.emit(reply_code, reply_string)
 
     def pause_current_task(self):
-        self._current_task.pause()
+        self._pause_sent.connect(self._current_task.pause)
+        self._pause_sent.emit()
+        self._pause_sent.disconnect(self._current_task.pause)
 
     def resume_current_task(self):
-        self._current_task.resume()
+        self._resume_sent.connect(self._current_task.resume)
+        self._resume_sent.emit()
+        self._resume_sent.disconnect(self._current_task.resume)
 
     def clear(self):
         if not self._task_list:

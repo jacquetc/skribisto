@@ -9,7 +9,8 @@ class SheetHub:
     @staticmethod
     def get_title(project_id: int, sheet_id: int):
         task = GetTitle(project_id, sheet_id)
-        cfg.data.task_manager.append(task)
+        cfg.data.task_manager.append_and_wait_for_reply(task)
+        return cfg.data.task_manager.return_value
 
     @staticmethod
     def set_title(project_id: int, sheet_id: int, new_title: str):
@@ -27,7 +28,8 @@ class GetTitle(Task):
         self.task_started.emit()
 
         title = cfg.data.database_manager.get_database(self.project_id).sheet_tree.get_title(self.sheet_id)
-        self.item_value_returned.emit(self.project_id, self.sheet_id, "sheet_get_title", title)
+        self.return_value = title
+        #self.item_value_returned.emit(self.project_id, self.sheet_id, "sheet_get_title", title)
 
         self.task_finished.emit(0)
 
