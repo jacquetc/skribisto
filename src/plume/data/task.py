@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QObject, pyqtSignal, QThread, pyqtSlot, QEventLoop, QTimerEvent
-from PyQt5.Qt import QApplication
+from PyQt5.QtCore import QObject, pyqtSignal, QThread, pyqtSlot, QEventLoop, QTimer, QEventLoop
+
 from .import cfg
 
 
@@ -89,6 +89,7 @@ class TaskManager(QObject):
         self._current_task = None
         self._timer = None
         self._return_value = None
+        self._timer = QTimer(self)
 
         self.tasks_run.connect(cfg.data.signal_hub.tasks_run)
 
@@ -118,19 +119,24 @@ class TaskManager(QObject):
             self._start_next_task()
 
     def append_and_wait_for_reply(self,  task: Task):
-        task.task_finished.connect(self._allow_for_return_value)
-
         self.append(task)
 
+        self._timer.singleShot(2000, self._send_error_timeout)
         # make task to wait :
-        self.waitForSignal
-    def _allow_for_return_value(self):
-        self.killTimer(self._timer)
+        loop = QEventLoop()
+        self._timer.timeout.connect(loop.quit)
+        task.task_finished.connect(loop.quit)
+        task.error_sent.connect(loop.quit)
+        loop.exec()
+        self._timer.stop()
+
         self._return_value = self._current_task.return_value
 
-    def timerEvent(self, event : QTimerEvent):
-        print("error no reply :" + repr(self._current_task.name))
-        self._current_task.task.error_sent("error no reply :" + repr(self._current_task.name))
+    def _send_error_timeout(self):
+        text = "Timeout ! for " + repr(self._current_task.name)
+        print(text)
+        cfg.data.signal_hub.error_sent.emit("text")
+
 
     @property
     def return_value(self):

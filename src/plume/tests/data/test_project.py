@@ -1,12 +1,15 @@
 from . import cfg
 from PyQt5.QtWidgets import QListWidget
 
+def test_close_database(qtbot, data_object):
+    assert len(data_object.database_manager.database_for_int_dict) == 1
+
 def test_close_and_load_the_same_database(qtbot, data_object):
 
     # window = QListWidget()
     # window.show()
     # qtbot.addWidget(window)
-
+    print("test_close_and_load_the_same_database")
     print(data_object.database_manager.database_for_int_dict.keys())
     # closing already opened project :
     with qtbot.waitSignal(data_object.signal_hub.item_value_returned, timeout=1000) as blocker:
@@ -26,7 +29,6 @@ def test_close_and_load_the_same_database(qtbot, data_object):
 
     assert blocker.signal_triggered
     assert project_id == 1
-
 
 def test_error_when_loading_locked_database(qtbot, data_object):
     # loading project again :

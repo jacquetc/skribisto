@@ -65,7 +65,8 @@ class Database(BaseQObject):
         if project_id != self._project_id:
             return
 
-        self._sqlite_db.close()
+        if self._sqlite_db :
+            self._sqlite_db.close()
         self._sqlite_db = None
         self.release_database()
         self.subscriber.announce_update("database_closed")
