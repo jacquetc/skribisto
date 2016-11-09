@@ -33,8 +33,8 @@ class DatabaseManager(QObject):
         project_id = self._increment
 
         db = Database()
-        self.init_sent.connect(db.init)
-        self.close_sent.connect(db.close)
+        self.init_sent.connect(db.init, Qt.QueuedConnection)
+        self.close_sent.connect(db.close, Qt.QueuedConnection)
 
         db.moveToThread(self._worker_thread)
         self.init_sent.emit(project_id, file_name)
@@ -76,11 +76,12 @@ class DatabaseManager(QObject):
 
 
     def close_database(self, project_id: int):
+        # print(self.database_for_int_dict)
         if project_id not in self.database_for_int_dict:
-            raise ValueError("no database number {id} to fetch".format(id=repr(project_id)))
+            # raise ValueError("no database number {id} to fetch".format(id=repr(project_id)))
+            del self.database_for_int_dict[project_id]
 
         self.close_sent.emit(project_id)
 
-        del self.database_for_int_dict[project_id]
 
 

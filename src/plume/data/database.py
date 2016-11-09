@@ -69,7 +69,7 @@ class Database(BaseQObject):
             self._sqlite_db.close()
         self._sqlite_db = None
         self.release_database()
-        self.subscriber.announce_update("database_closed")
+        # self.subscriber.announce_update("database_closed")
 
     @property
     def sqlite_db(self):
@@ -90,11 +90,11 @@ class Database(BaseQObject):
             return self.note_tree
 
     @property
-    def sheet_property_list(self):
+    def sheet_property_list(self) -> SheetPropertyList:
         return SheetPropertyList(self._sqlite_db)
 
     @property
-    def note_property_list(self):
+    def note_property_list(self) -> NotePropertyList:
         return NotePropertyList(self._sqlite_db)
 
     @property

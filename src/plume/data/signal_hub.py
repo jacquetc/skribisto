@@ -10,11 +10,19 @@ class SignalHub(QObject):
     task_paused = pyqtSignal(name='task_paused')
     task_resumed = pyqtSignal(name='task_resumed')
     task_started = pyqtSignal(name='task_started')
-    # int return_code (0 : no error , 1 : error )
     task_finished = pyqtSignal(int, name='task_finished')
+    # int return_code (0 : no error , 1 : error )
 
 
     error_sent = pyqtSignal('QString', name='error_sent')
+
+
+    sheet_property_changed = pyqtSignal(int, int, 'QString', 'QString', name='sheet_property_changed')
+    # project_id, paper_id, property_name, property_value
+    sheet_system_property_changed = pyqtSignal(int, int, 'QString', 'QString', name='sheet_system_property_changed')
+
+
+
 
     def __init__(self, parent):
         super(SignalHub, self).__init__(parent)

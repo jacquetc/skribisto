@@ -148,8 +148,10 @@ class DbProperty:
     def add(self, code_name: str, paper_id: int, imposed_id: int = -1):
         '''
         function:: add()
-        :param paper_id:
+        :param code_name:
+        :param imposed_id:
         :return:
+        :param paper_id:
         '''
 
         if imposed_id == -1:

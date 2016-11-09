@@ -133,7 +133,13 @@ class PropertyList:
         property = DbProperty(self.sql_db, self.table_name, self.id_name,  property_id, True)
         property.set("dt_updated", value)
 
+    def add_new_property(self, paper_id: int):
+        """
 
+        :param paper_id:
+        :return:
+        """
+        return self.add_new_properties(1, paper_id)[0]
 
     def add_new_properties(self, number: int, paper_id: int, new_ids: list = ()):
         '''
@@ -156,20 +162,21 @@ class PropertyList:
         :param number: int:
         :param commit: bool:
         '''
+        # TODO: find why new_ids / imposed_ids are useful ?
         imposed_ids = list(new_ids)
         if len(imposed_ids) != number or imposed_ids == []:
             imposed_ids = [-1]
 
-
         new_id_list = []
         for i in range(number):
-            property = DbProperty(self.sql_db, self.table_name, self.id_name
-                                  , -1, False)
-            new_id_list.append(property.add(self.code_name, paper_id, imposed_ids[i]))
+            # create new property
+            property_ = DbProperty(self.sql_db, self.table_name, self.id_name, -1, False)
+            # fetch new properties' ids while adding them
+            new_id_list.append(property_.add(self.code_name, paper_id, imposed_ids[i]))
 
         if commit:
             self.sql_db.commit()
-            cfg.database.subscriber.announce_update(self.property_type + ".structure_changed")
+            #cfg.database.subscriber.announce_update(self.property_type + ".structure_changed")
 
         return new_id_list
 
@@ -180,8 +187,8 @@ class PropertyList:
         :param commit:
         """
 
-        propertyList = DbPropertyList(self.sql_db, self.table_name, self.id_name, False)
-        if propertyList.remove_list(property_id_list) == 0:
+        property_list = DbPropertyList(self.sql_db, self.table_name, self.id_name, False)
+        if property_list.remove_list(property_id_list) == 0:
             return False
 
 
@@ -192,6 +199,12 @@ class PropertyList:
         return True
 
     def find_id(self, paper_code: int, name: str):
-        propertyList = DbPropertyList(self.sql_db, self.table_name, self.id_name, False)
-        return propertyList.find_id(self.code_name, paper_code, name)
+        """
+        find property's id with code and name
+        :param paper_code:
+        :param name:
+        :return: int or None if no property
+        """
+        property_list = DbPropertyList(self.sql_db, self.table_name, self.id_name, False)
+        return property_list.find_id(self.code_name, paper_code, name)
 

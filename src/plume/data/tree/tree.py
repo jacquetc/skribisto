@@ -99,6 +99,23 @@ class Tree:
         paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, True)
         paper.set("t_title", value)
 
+    def get_indent(self, paper_id: int):
+        '''
+        function:: get_indent(id: int)
+        :param paper_id: int:
+        '''
+        paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, False)
+        return int(paper.get("l_indent"))
+
+    def set_indent(self, paper_id: int, value: int):
+        '''
+        function:: set_indent(id: int)
+        :param value:
+        :param paper_id: int:
+        '''
+        paper = DbPaper(self.sql_db, self.table_name, self.id_name,  paper_id, True)
+        paper.set("l_indent", value)
+
     def add_new_child_papers(self, parent_id: int, number: int, new_child_ids: list =()):
         '''
         function:: add_new_child_papers(parent_id: int, number: int)

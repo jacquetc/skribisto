@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, pyqtSignal, QThread, pyqtSlot, QEventLoop, QTimer, QEventLoop
+from PyQt5.QtCore import QObject, pyqtSignal, QThread, pyqtSlot, QEventLoop, QTimer, QEventLoop, Qt
 
 from .import cfg
 
@@ -105,9 +105,9 @@ class TaskManager(QObject):
         if self._new_tasks_are_refused:
             return
 
-        task.error_sent.connect(self._terminate_all_tasks)
-        task.task_finished.connect(self._delete_task)
-        task.task_finished.connect(self._start_next_task)
+        task.error_sent.connect(self._terminate_all_tasks, Qt.QueuedConnection)
+        task.task_finished.connect(self._delete_task, Qt.QueuedConnection)
+        task.task_finished.connect(self._start_next_task, Qt.QueuedConnection)
 
         self._list_was_empty = False
         if not self._task_list:
@@ -163,9 +163,11 @@ class TaskManager(QObject):
     @pyqtSlot()
     def _delete_task(self):
         task = self.sender()
-        self._operate.disconnect(task.do_task)
-        self._task_list.remove(task)
-        task.deleteLater()
+        print("tasks_list lenght : " + repr(len(self._task_list)))
+        if task in self._task_list:
+            self._operate.disconnect(task.do_task)
+            self._task_list.remove(task)
+            task.deleteLater()
 
     @pyqtSlot()
     def _terminate_all_tasks(self):
