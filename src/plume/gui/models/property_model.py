@@ -5,7 +5,7 @@ Created on 17 february 2016
 '''
 
 from PyQt5.Qt import QAbstractTableModel, QVariant, QModelIndex
-from PyQt5.QtCore import Qt, QObject
+from PyQt5.QtCore import Qt, QObject, pyqtSlot
 from .. import cfg
 from PyQt5.Qt import QUndoStack, QUndoCommand
 
@@ -224,11 +224,15 @@ class PropertyModel(QAbstractTableModel):
             self._node_list.append(item)
             parent_item.append_child(item)
 
-    def clear(self):
+    @pyqtSlot(int)
+    def clear_from_project(self, project_id: int):
         self.beginResetModel()
         self._root_node = ListItem()
         self.undo_stack.clear()
         self.endResetModel()
+
+    def clear_from_all_projects(self):
+        pass
 
 
     @property

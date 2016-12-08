@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node2" href="$classnotes__dock_1_1_notes_dock_plugin.html" title="NotesDockPlugin, based on SynopsisDockPlugin. " alt="" coords="364,5,559,32"/>
+<area shape="rect" id="node3" href="$classplume-creator_1_1src_1_1plume_1_1plugins_1_1examples_1_1writetabdock_1_1writetab__dock_1_1_write_sub_window_dock_plugin.html" title="WriteSubWindowDockPlugin. " alt="" coords="264,57,659,98"/>
+<area shape="rect" id="node4" href="$classplume-creator_1_1src_1_1plume_1_1plugins_1_1synopsisdock_1_1synopsis__dock_1_1_synopsis_dock_plugin.html" title="SynopsisDockPlugin Be careful, this plugin is the basis for the NotesDockPlugin in plugin/notesdock..." alt="" coords="288,122,635,163"/>
+<area shape="rect" id="node5" href="$classplume-creator_1_1src_1_1plume_1_1plugins_1_1writepropertiesdock_1_1properties__dock_1_1_write_properties_dock_plugin.html" title="PropertiesDockPlugin. " alt="" coords="269,187,654,229"/>
+</map>

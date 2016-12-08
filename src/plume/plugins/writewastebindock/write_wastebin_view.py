@@ -77,7 +77,8 @@ class WriteWastebinView(QTreeView):
         index = self.indexAt(self.rect().topLeft())
         while index.isValid():
             paper_id = index.data(SheetTreeModel.IdRole)
-            if cfg.models["0_sheet_system_property_model"].get_property(paper_id, "write_wastebin_item_expanded", "1") == "1":
+            if True:
+            # TODO if cfg.models["0_sheet_system_property_model"].get_property(paper_id, "write_wastebin_item_expanded", "1") == "1":
                 self.setExpanded(index, True)
             else:
                 self.setExpanded(index, False)

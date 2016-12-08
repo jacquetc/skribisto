@@ -64,18 +64,19 @@ class WriteTreeView(QTreeView):
     def set_item_expanded(self, model_index):
         self.setExpanded(model_index, True)
         paper_id = model_index.data(SheetTreeModel.IdRole)
-        cfg.models["0_sheet_system_property_model"].set_property(paper_id, "write_tree_item_expanded", "1")
+        # TODO icfg.models["0_sheet_system_property_model"].set_property(paper_id, "write_tree_item_expanded", "1")
 
     def set_item_collapsed(self, model_index):
         self.setExpanded(model_index, False)
         paper_id = model_index.data(SheetTreeModel.IdRole)
-        cfg.models["0_sheet_system_property_model"].set_property(paper_id, "write_tree_item_expanded", "0")
+        # TODO icfg.models["0_sheet_system_property_model"].set_property(paper_id, "write_tree_item_expanded", "0")
 
     def apply_expand(self):
         index = self.indexAt(self.rect().topLeft())
         while index.isValid():
             paper_id = index.data(SheetTreeModel.IdRole)
-            if cfg.models["0_sheet_system_property_model"].get_property(paper_id, "write_tree_item_expanded", "1") == "1":
+            if True:
+            # TODO if cfg.models["0_sheet_system_property_model"].get_property(paper_id, "write_tree_item_expanded", "1") == "1":
                 self.setExpanded(index, True)
             else:
                 self.setExpanded(index, False)

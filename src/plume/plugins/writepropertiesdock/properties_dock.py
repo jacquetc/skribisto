@@ -13,7 +13,7 @@ class WritePropertiesDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
     PropertiesDockPlugin
     '''
     is_builtin_plugin = True
-    ignore = False
+    ignore = True
 
     def __init__(self):
         '''

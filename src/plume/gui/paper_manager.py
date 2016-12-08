@@ -18,69 +18,58 @@ class PaperManager:
 
 class Paper:
 
-    def __init__(self, table_name: str, paper_type: str, paper_id):
+    def __init__(self, paper_type: str, project_id: int, paper_id: int):
         super(Paper, self).__init__()
 
-        self._table_name = table_name
-        self._paper_type = paper_type
+        self.paper_type = paper_type
+        self.project_id = project_id
         self.id = paper_id
-        self._title = _("unnamed")
-        self._content = None
-        self._content_type = ""
-        self._creation_date = ""
-        self._last_modification_date = ""
-        self._properties = {}
-        self.parent_id = None
-        self.children_id = []
-        self._version = -1
 
-        # self._subscribe_to_data()
+        if paper_type == "sheet":
+            self.hub = cfg.data.writeHub()
+        if paper_type == "note":
+            self.hub = cfg.data.noteHub()
 
     @property
     def title(self):
-        return cfg.data.database.get_tree(self._table_name).get_title(self.id)
+        return self.hub.getTitle(self.project_id, self.id)
 
     @title.setter
     def title(self, value: str):
-        cfg.data.database.get_tree(self._table_name).set_title(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".title_changed", self.id)
+        self.hub.getTitle(self.project_id, self.id, value)
 
     @property
     def content(self):
-        value = cfg.data.database.get_tree(self._table_name).get_content(self.id)
-        return value
+        return self.hub.getContent(self.project_id, self.id)
 
     @content.setter
     def content(self, value):
-        cfg.data.database.get_tree(self._table_name).set_content(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".content_changed", self.id)
+        self.hub.getContent(self.project_id, self.id, value)
 
     @property
     def creation_date(self):
-        return cfg.data.database.get_tree(self._table_name).get_creation_date(self.id)
+        return self.hub.getCreationDate(self.project_id, self.id)
 
     @creation_date.setter
     def creation_date(self, value):
-        cfg.data.database.get_tree(self._table_name).set_creation_date(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".creation_date_changed", self.id)
+        self.hub.setCreationDate(self.project_id, self.id, value)
 
     @property
     def last_modification_date(self):
-        return cfg.data.database.get_tree(self._table_name).get_modification_date(self.id)
+        return self.hub.getUpdateDate(self.project_id, self.id)
 
     @last_modification_date.setter
     def last_modification_date(self, value):
-        cfg.data.database.get_tree(self._table_name).set_modification_date(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".last_modification_changed", self.id)
+        self.hub.setUpdateDate(self.project_id, self.id, value)
 
     @property
     def deleted(self):
-        return cfg.data.database.get_tree(self._table_name).get_deleted(self.id)
+        return self.hub.getDeletedState(self.project_id, self.id)
 
     @deleted.setter
     def deleted(self, value: bool):
-        cfg.data.database.get_tree(self._table_name).set_deleted(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed", self.id)
+        self.hub.setDeletedState(self.project_id, self.id, value)
+
 
 
     # @property
@@ -94,12 +83,12 @@ class Paper:
 
     @property
     def version(self):
-        return cfg.data.database.get_tree(self._table_name).get_version(self.id)
+        return self.hub.getVersion(self.project_id, self.id)
 
     @version.setter
     def version(self, value: int):
-        cfg.data.database.get_tree(self._table_name).set_version(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".version_changed", self.id)
+        self.hub.setVersion(self.project_id, self.id, value)
+
 
     # def _subscribe_to_data(self,  is_subscribing=True):
     #
@@ -137,14 +126,13 @@ class Paper:
         cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
 
 
-
 class SheetPaper(Paper):
 
-    def __init__(self, sheet_id):
-        super(SheetPaper, self).__init__(table_name="tbl_sheet", paper_type="sheet", paper_id=sheet_id)
+    def __init__(self, project_id: int, sheet_id: int):
+        super(SheetPaper, self).__init__(paper_type="sheet", project_id=project_id, paper_id=sheet_id)
 
 
 class NotePaper(Paper):
 
-    def __init__(self, note_id):
-        super(NotePaper, self).__init__(table_name="tbl_note", paper_type="note", paper_id=note_id)
+    def __init__(self, project_id: int, note_id: int):
+        super(NotePaper, self).__init__(paper_type="note", project_id=project_id, paper_id=note_id)

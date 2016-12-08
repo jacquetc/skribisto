@@ -22,11 +22,14 @@ class SheetPropertyModel(PropertyModel):
         '''
         Constructor
         '''
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.clear, "database_closed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "database_loaded")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet_property.name_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet_property.value_changed")
-        # TODO : line useful ?
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet_property.sheet_code_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet_property.structure_changed")
+        cfg.data.projectHub().projectClosed.connect(self.clear_from_project)
+        cfg.data.projectHub().allProjectsClosed.connect(self.clear_from_all_projects)
+
+        # cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.clear, "database_closed")
+        # cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "database_loaded")
+        # cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet_property.name_changed")
+        # cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet_property.value_changed")
+        # # TODO : line useful ?
+        # cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet_property.sheet_code_changed")
+        # cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "sheet_property.structure_changed")
 

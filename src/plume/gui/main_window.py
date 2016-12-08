@@ -28,11 +28,15 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.init_ui()
         cfg.window = self
 
-        cfg.data_subscriber.subscribe_update_func_to_domain(0, self._clear_project,  "database_closed")
-        cfg.data_subscriber.subscribe_update_func_to_domain(0, self._activate,  "database_loaded")
-        cfg.data.subscriber.subscribe_update_func_to_domain(0, self.set_project_is_saved, "database_saved")
+        # cfg.data_subscriber.subscribe_update_func_to_domain(0, self._clear_project,  "database_closed")
+        # cfg.data_subscriber.subscribe_update_func_to_domain(0, self._activate,  "database_loaded")
+        # cfg.data.subscriber.subscribe_update_func_to_domain(0, self.set_project_is_saved, "database_saved")
         # cfg.core.subscriber.subscribe_update_func_to_domain(
         #     self.set_project_is_not_saved, "core.project.notsaved")
+
+        cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
+        cfg.data.projectHub().projectLoaded.connect(self._activate)
+    # TODO : add saved and note saved connection
 
     def init_ui(self):
         self.ui = Ui_MainWindow()
@@ -71,16 +75,16 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.add_action_to_window_system(self.ui.actionWrite)
         self._sub_window_action_group.addAction(self.ui.actionWrite)
 
-        # binder window
-        self.note_panel = NotePanel(
-            parent=self, parent_window_system_controller=self)
-        self.attach_sub_window(self.note_panel)
-        self.ui.actionNote.setProperty(
-            "sub_window_object_name", "note_panel")
-        self.add_action_to_window_system(self.ui.actionNote)
-        self._sub_window_action_group.addAction(self.ui.actionNote)
-
-        self.ui.actionWrite.trigger()
+        # # note window
+        # self.note_panel = NotePanel(
+        #     parent=self, parent_window_system_controller=self)
+        # self.attach_sub_window(self.note_panel)
+        # self.ui.actionNote.setProperty(
+        #     "sub_window_object_name", "note_panel")
+        # self.add_action_to_window_system(self.ui.actionNote)
+        # self._sub_window_action_group.addAction(self.ui.actionNote)
+        #
+        # self.ui.actionWrite.trigger()
 
 
 
@@ -118,15 +122,27 @@ class MainWindow(QMainWindow, WindowSystemController):
 
     @pyqtSlot()
     def launch_open_test_project(self):
-        if cfg.data.is_database_open(0):
-            if self.launch_close_dialog() == QMessageBox.Cancel:
-                return
-        cfg.data.load_database(0, '../../resources/plume_test_project.sqlite')
+        """
 
+        """
+        cfg.data.projectHub().loadProject('../../resources/plume_test_project.sqlite')
+        # bug : first one of the two following functions will fail !
+        title = cfg.data.writeHub().getTitle(1,1)
+        print(title)
+        id_list = cfg.data.projectHub().getProjectIdList()
+        print(id_list)
+        last_loaded = cfg.data.projectHub().getLastLoaded()
+        print(last_loaded)
+        id_list = cfg.data.projectHub().getProjectIdList()
+        print(id_list)
+        # print("last : " + str(last_loaded))
+        # print("list : " + repr(id_list))
+
+        # force a default save location other than "resources/"
         from os.path import expanduser
         home = expanduser("~")
-        database = cfg.data.get_database(0)
-        database.path = os.path.join(home, "test_project.sqlite")
+        path = os.path.join(home, "plume_test_project.sqlite")
+        cfg.data.projectHub().setPath(last_loaded, path)
 
         self.setWindowTitle("Plume Creator - TEST")
 
@@ -158,7 +174,8 @@ class MainWindow(QMainWindow, WindowSystemController):
 
     @pyqtSlot()
     def save(self):
-        cfg.data.save_database(0, cfg.data.database.path)
+        for projectId in cfg.data.projectHub().getProjectIdList():
+            cfg.data.projectHub().saveProject(projectId)
 
     @pyqtSlot()
     def launch_open_dialog(self):
@@ -172,22 +189,27 @@ class MainWindow(QMainWindow, WindowSystemController):
 
         if fileName is None:
             return
-        if cfg.core.project.is_open() == True:
-            if self.launch_close_dialog() == QMessageBox.Cancel:
+        # check if not already open
+        project_id_list = cfg.data.projectHub().getProjectIdList()
+        for project_id in project_id_list:
+            path = cfg.data.projectHub().project(project_id).getPath()
+            if os.path.realpath(path) == os.path.realpath(fileName):
+                QMessageBox.warning(self, "Warning", "Project already opened")
                 return
-        cfg.core.project.open(fileName)
+        cfg.data.projectHub().loadProject(fileName)
 
         self.setWindowTitle("Plume Creator - " + fileName)
 
     @pyqtSlot()
     def launch_close_dialog(self):
-        if not cfg.data.is_database_open:
+        project_id_list = cfg.data.projectHub().getProjectIdList()
+        if not project_id_list:
             return
 
         result = QMessageBox.question(
             self,
-            _("Close the current project"),
-            _("The last changes are not yet saved. Do you really want to close the current project ?"),
+            _("Close the current projects"),
+            _("Do you really want to close the projects which are currently opened ?"),
             QMessageBox.StandardButtons(
                 QMessageBox.Cancel |
                 QMessageBox.Discard |
@@ -197,14 +219,16 @@ class MainWindow(QMainWindow, WindowSystemController):
         if result == QMessageBox.Cancel:
             return QMessageBox.Cancel
         elif result == QMessageBox.Discard:
-            cfg.data.close_database(0)
+            cfg.data.projectHub().closeAllProjects()
         elif result == QMessageBox.Save:
-            cfg.data.save_database(0, cfg.data.database.path)
-            cfg.data.close_database(0)
+            for project_id in project_id_list:
+                cfg.data.projectHub().saveProject(project_id)
+            cfg.data.projectHub().closeAllProjects()
 
     @pyqtSlot()
     def launch_exit_dialog(self):
-        if cfg.data.is_database_open(0) == False:
+        id_list = cfg.data.projectHub().getProjectIdList()
+        if not id_list:
             QApplication.quit()
 
         result = self.launch_close_dialog()
@@ -224,7 +248,8 @@ class MainWindow(QMainWindow, WindowSystemController):
     def set_project_is_not_saved(self):
         self.ui.actionSave.setEnabled(True)
 
-    def _clear_project(self):
+    @pyqtSlot()
+    def _clear_from_all_projects(self):
         self.setWindowTitle("Plume Creator")
         self._activate(False)
 

@@ -1,4 +1,3 @@
-
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QGuiApplication

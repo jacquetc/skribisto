@@ -1,4 +1,3 @@
-
 from PyQt5.QtWidgets import QStackedWidget, QMainWindow
 from PyQt5.QtCore import Qt,  pyqtSlot
 from .docks import DockSystem
@@ -33,13 +32,13 @@ class WritePanel(SubWindow, WindowSystemController):
         self.setDockOptions(self.dockOptions() ^ QMainWindow.AnimatedDocks)
 
         # init Sheet Tree Model
-        self.property_model = SheetPropertyModel(self, 0)
-        cfg.models["0_sheet_property_model"] = self.property_model
-        cfg.undo_group.addStack(self.property_model.undo_stack)
-        self.system_property_model = SheetSystemPropertyModel(self, 0)
-        cfg.models["0_sheet_system_property_model"] = self.system_property_model
-        cfg.undo_group.addStack(self.system_property_model.undo_stack)
-        self.tree_model = SheetTreeModel(self, 0)
+        # self.property_model = SheetPropertyModel(self, 0)
+        # cfg.models["0_sheet_property_model"] = self.property_model
+        # cfg.undo_group.addStack(self.property_model.undo_stack)
+        # self.system_property_model = SheetSystemPropertyModel(self, 0)
+        # cfg.models["0_sheet_system_property_model"] = self.system_property_model
+        # cfg.undo_group.addStack(self.system_property_model.undo_stack)
+        self.tree_model = SheetTreeModel(self)
         cfg.models["0_sheet_tree_model"] = self.tree_model
         cfg.undo_group.addStack(self.tree_model.undo_stack)
 
@@ -53,17 +52,20 @@ class WritePanel(SubWindow, WindowSystemController):
         self.setCentralWidget(self.stack_widget)
 
         # subscribe
-        cfg.data_subscriber.subscribe_update_func_to_domain(0, self._clear_project,  "database_closed")
+        cfg.data.projectHub().projectClosed.connect(self._clear_from_project)
+        cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
 
-    def open_sheet(self, sheet_id: int):
+    def open_sheet(self, project_id: int, sheet_id: int):
         """
 
+        :param project_id:
         :param sheet_id:
         """
 
         new_window = WriteSubWindow(self, self)
         paper = SheetPaper(sheet_id)
         new_window.paper = paper
+        new_window.project_id = project_id
         self.stack_widget.addWidget(new_window)
         self.make_widget_current(sheet_id)
         # temp for test:
@@ -78,17 +80,26 @@ class WritePanel(SubWindow, WindowSystemController):
         if value is True:
             self.tree_model.reset_model()
         else:
-            self.tree_model.clear()
+            self.tree_model.clear_from_all_projects()
 
-    def _clear_project(self):
+    @pyqtSlot()
+    def _clear_from_all_projects(self):
         # TODO: make that cleaner
         for i in range(0, self.stack_widget.count()):
             widget = self.stack_widget.widget(i)
             widget.close()
             widget.deleteLater()
-        self.sheet_manager.clear()
         self._activate(False)
 
+    @pyqtSlot(int)
+    def _clear_from_project(self, project_id: int):
+        # TODO: make that cleaner
+        for i in range(0, self.stack_widget.count()):
+            widget = self.stack_widget.widget(i)
+            if widget.project_id == project_id:
+                widget.close()
+                widget.deleteLater()
+        self._activate(False)
 
 from PyQt5.QtWidgets import QWidget
 from .write_tab_ui import Ui_WriteTab

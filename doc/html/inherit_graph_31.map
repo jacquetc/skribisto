@@ -1,0 +1,12 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node2" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1docks_1_1_dock_title_widget.html" title="DockTitleWidget. " alt="" coords="283,71,510,112"/>
+<area shape="rect" id="node3" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1main__window_1_1_side_bar.html" title="plume&#45;creator.src.plume.gui.main\l_window.SideBar" alt="" coords="289,5,504,47"/>
+<area shape="rect" id="node4" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1preferences_1_1_preferences_page_template.html" title="plume&#45;creator.src.plume.gui.preferences.\lPreferencesPageTemplate" alt="" coords="267,136,526,177"/>
+<area shape="rect" id="node8" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1quick__search_1_1_quick_search.html" title="QuickSearch. " alt="" coords="287,201,506,243"/>
+<area shape="rect" id="node9" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1text__navigator_1_1_text_navigator.html" title="TextNavigator. " alt="" coords="292,267,501,308"/>
+<area shape="rect" id="node10" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1write__tab_1_1_write_tab.html" title="WriteTab. " alt="" coords="289,332,504,373"/>
+<area shape="rect" id="node11" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1writingzone_1_1writing__zone_1_1_writing_zone.html" title="plume&#45;creator.src.plume.gui.writingzone.writing\l_zone.WritingZone" alt="" coords="249,397,544,439"/>
+<area shape="rect" id="node5" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1preferences_1_1_miscellanous_preferences.html" title="plume&#45;creator.src.plume.gui.preferences.\lMiscellanousPreferences" alt="" coords="592,71,851,112"/>
+<area shape="rect" id="node6" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1preferences_1_1_plugins_preferences.html" title="plume&#45;creator.src.plume.gui.preferences.\lPluginsPreferences" alt="" coords="592,136,851,177"/>
+<area shape="rect" id="node7" href="$classplume-creator_1_1src_1_1plume_1_1gui_1_1preferences_1_1_themes_preferences.html" title="plume&#45;creator.src.plume.gui.preferences.\lThemesPreferences" alt="" coords="592,201,851,243"/>
+</map>

@@ -7,8 +7,7 @@ from .models.note_property_model import NotePropertyModel
 from .models.note_system_property_model import NoteSystemPropertyModel
 from . import cfg
 from .sub_window import SubWindow
-from .paper_manager import PaperManager, NotePaper
-
+from .paper_manager import NotePaper
 
 class NotePanel(SubWindow):
 
@@ -27,21 +26,21 @@ class NotePanel(SubWindow):
         self.setObjectName("note_panel")
 
 
-        self.system_property_model = NoteSystemPropertyModel(self, 0)
-        cfg.models["0_note_system_property_model"] = self.system_property_model
-        cfg.undo_group.addStack(self.system_property_model.undo_stack)
-        self.property_model = NotePropertyModel(self, 0)
-        cfg.models["0_note_property_model"] = self.property_model
-        cfg.undo_group.addStack(self.property_model.undo_stack)
+        self.system_property_model = NoteSystemPropertyModel(self)
+        # cfg.models["0_note_system_property_model"] = self.system_property_model
+        # cfg.undo_group.addStack(self.system_property_model.undo_stack)
+        # self.property_model = NotePropertyModel(self, 0)
+        # cfg.models["0_note_property_model"] = self.property_model
+        # cfg.undo_group.addStack(self.property_model.undo_stack)
         # init Note Tree Model
-        self.tree_model = NoteTreeModel(self, 0)
+        self.tree_model = NoteTreeModel(self)
         cfg.models["0_note_tree_model"] = self.tree_model
         cfg.undo_group.addStack(self.tree_model.undo_stack)
-        self.list_model = NoteListModel(self, 0)
+        self.list_model = NoteListModel(self)
         cfg.models["0_note_list_model"] = self.list_model
         #cfg.undo_group.addStack(self.list_model.undo_stack)
 
-        self.paper_manager = PaperManager()
+        #self.paper_manager = PaperManager()
 
         self.dock_system = DockSystem(
             self, self, DockSystem.DockTypes.NotePanelDock)
@@ -56,30 +55,62 @@ class NotePanel(SubWindow):
         # subscribe
         cfg.data_subscriber.subscribe_update_func_to_domain(0, self._clear_project,  "database_closed")
 
+        cfg.data.projectHub().projectClosed.connect(self._clear_from_project)
+        cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
+
+    def open_sheet(self, project_id: int, note_id: int):
+        """
+
+        :param project_id:
+        :param note_id:
+        """
+
+        new_window = NoteSubWindow(self, self)
+        new_window.paper = NotePaper()
+        new_window.note_id = note_id
+        new_window.project_id = project_id
+        self.stack_widget.addWidget(new_window)
+        self.make_widget_current(note_id)
+
+    def make_widget_current(self, sheet_id: int):
+        for i in range(0, self.stack_widget.count()):
+            if self.stack_widget.widget(i).paper.id == sheet_id:
+                self.stack_widget.setCurrentIndex(i)
+
     def _activate(self, value=True):
         if value is True:
             self.tree_model.reset_model()
         else:
             self.tree_model.clear()
 
-    def _clear_project(self):
+    @pyqtSlot()
+    def _clear_from_all_projects(self):
         # TODO: make that cleaner
         for i in range(0, self.stack_widget.count()):
             widget = self.stack_widget.widget(i)
             widget.close()
             widget.deleteLater()
-        self.paper_manager.clear()
+        self._activate(False)
+
+    @pyqtSlot(int)
+    def _clear_from_project(self, project_id: int):
+        # TODO: make that cleaner
+        for i in range(0, self.stack_widget.count()):
+            widget = self.stack_widget.widget(i)
+            if widget.project_id == project_id:
+                widget.close()
+                widget.deleteLater()
         self._activate(False)
 
 
 from .write_tab_ui import Ui_WriteTab
 
 
-class NoteSubWindow(QMainWindow):
+class NoteSubWindow(SubWindow):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, parent_window_system_controller=None):
 
-        super(NoteWindow, self).__init__(parent)
+        super(NoteSubWindow, self).__init__(parent=parent)
 
         self.ui = Ui_WriteTab()
         central_widget = QWidget()
@@ -89,19 +120,18 @@ class NoteSubWindow(QMainWindow):
         self.tab_title = "Error"
 
         self.dock_system = DockSystem(
-            self, self, DockSystem.DockTypes.WriteSubWindowDock)
+            self, self, DockSystem.DockTypes.NoteSubWindowDock)
 
+        self.setWindowTitle("NoteTab")
         self.ui.writeTabWritingZone.has_minimap = True
         self.ui.writeTabWritingZone.has_scrollbar = True
         self.ui.writeTabWritingZone.is_resizable = True
 
         self.setCentralWidget(central_widget)
 
-
     @property
     def paper(self):
         return self._paper
-
 
     @paper.setter
     def paper(self, paper_object):
@@ -110,11 +140,9 @@ class NoteSubWindow(QMainWindow):
             self.save_content)
         self._load_from_paper(paper_object)
 
-
     @pyqtSlot()
     def save_content(self):
         self._paper.content = self.ui.writeTabWritingZone.text_edit.toHtml()
-
 
     def _load_from_paper(self, paper_object):
         self.ui.writeTabWritingZone.text_edit.textChanged.disconnect(

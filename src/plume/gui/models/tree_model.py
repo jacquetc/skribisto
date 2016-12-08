@@ -5,7 +5,7 @@ Created on 17 february 2016
 '''
 
 from PyQt5.QtCore import QAbstractItemModel, QVariant, QModelIndex, QPersistentModelIndex
-from PyQt5.QtCore import Qt, QObject, QMimeData, QByteArray, QDataStream, QIODevice
+from PyQt5.QtCore import Qt, QObject, QMimeData, QByteArray, QDataStream, QIODevice, pyqtSlot
 from PyQt5.Qt import QUndoStack
 from .. import cfg
 
@@ -14,33 +14,36 @@ class TreeModel(QAbstractItemModel):
     Tree
     '''
     IdRole = Qt.UserRole
-    TitleRole = Qt.UserRole + 1
-    ContentRole = Qt.UserRole + 2
-    SortOrderRole = Qt.UserRole + 3
-    IndentRole = Qt.UserRole + 4
-    DateCreatedRole = Qt.UserRole + 5
-    DateUpdatedRole = Qt.UserRole + 6
-    DateContentRole = Qt.UserRole + 7
-    DeletedRole = Qt.UserRole + 8
-    VersionRole = Qt.UserRole + 9
-    CharCountRole = Qt.UserRole + 10
-    WordCountRole = Qt.UserRole + 11
+    ProjectIdRole = Qt.UserRole + 1
+    TitleRole = Qt.UserRole + 2
+    ContentRole = Qt.UserRole + 3
+    SortOrderRole = Qt.UserRole + 4
+    IndentRole = Qt.UserRole + 5
+    DateCreatedRole = Qt.UserRole + 6
+    DateUpdatedRole = Qt.UserRole + 7
+    DateContentRole = Qt.UserRole + 8
+    DeletedRole = Qt.UserRole + 9
+    VersionRole = Qt.UserRole + 10
+    CharCountRole = Qt.UserRole + 11
+    WordCountRole = Qt.UserRole + 12
 
-    def __init__(self, table_name: str, id_name: str, paper_type: str, parent: QObject, project_id: int):
+    def __init__(self, id_name: str, paper_type: str, parent: QObject):
         super(TreeModel, self).__init__(parent)
 
 
         # inheriting classes will start at Qt.UserRole + 20
 
-        self._project_id = project_id
         self._root_node = TreeItem()
-        self._table_name = table_name
         self._paper_type = paper_type
         self._id_name = id_name
         self._all_data = []
         self._node_list = []
         self._id_of_last_created_node = None
         self._undo_stack = QUndoStack(self)
+
+        cfg.data.projectHub().projectClosed.connect(self.clear_from_project)
+        cfg.data.projectHub().allProjectsClosed.connect(self.clear_from_all_projects)
+
 
     @property
     def table_name(self):
@@ -49,10 +52,6 @@ class TreeModel(QAbstractItemModel):
     @property
     def paper_type(self):
         return self._paper_type
-
-    @property
-    def tree_db(self):
-        return cfg.data.database(self._project_id).get_tree(self._table_name);
 
     def columnCount(self, parent=None):
         return 1
@@ -100,21 +99,21 @@ class TreeModel(QAbstractItemModel):
         if role == self.TitleRole and col == 0:
             return node.title
         if role == self.SortOrderRole and col == 0:
-            return node.data["l_sort_order"]
+            return node.sort_order
         if role == self.IndentRole and col == 0:
-            return node.data["l_indent"]
+            return node.indent
         if role == self.DateCreatedRole and col == 0:
-            return node.data["dt_created"]
-        if role == self.ContentRole and col == 0:
-            return node.data["m_content"]
+            return node.creation_date
+        # if role == self.ContentRole and col == 0:
+        #     return node.data["m_content"]
         if role == self.DateUpdatedRole and col == 0:
-            return node.data["dt_updated"]
+            return node.update_date
         if role == self.DateContentRole and col == 0:
-            return node.data["dt_content"]
+            return node.content_update_date
         if role == self.DeletedRole and col == 0:
-            return bool(node.data["b_deleted"])
+            return bool(node.deleted)
         if role == self.VersionRole and col == 0:
-            return node.data["l_version"]
+            return node.version
 
         return QVariant()
 
@@ -159,6 +158,7 @@ class TreeModel(QAbstractItemModel):
 
         limit = [role]
 
+
         # # title :
         # if index.isValid() & role == self.TitleRole & index.column() == 0:
         #
@@ -178,7 +178,8 @@ class TreeModel(QAbstractItemModel):
             command = ChangeTitleCommand(node.id, value, self)
             self.undo_stack.push(command)
             self.undo_stack.setActive(True)
-            # cfg.data_subscriber.announce_update(self._project_id, "sheet.title_changed", node.id)
+
+            # self.dataChanged.emit(index, index, limit)
             return True
 
         return False
@@ -192,54 +193,62 @@ class TreeModel(QAbstractItemModel):
 
         else:
             return Qt.ItemIsDropEnabled | default_flags
-
-    def reset_model(self):
-        self.beginResetModel()
-
-        self._all_data = cfg.data.get_database(0).get_tree(self._table_name).get_all()
-        all_headers = cfg.data.get_database(0).get_tree(self._table_name).get_all_headers()
-        header_dict = {}
-        for header in all_headers:
-            header_dict[header] = QVariant()
-
-        del self._root_node
-        self._root_node = TreeItem()
-        self._root_node.sheet_id = -1
-        self._root_node.indent = -1
-        self._root_node.sort_order = -1
-
-        self._root_node.data = header_dict
-
-        if self._all_data is []: # empty /close
-            self.endResetModel()
-            return
-
-        self._node_list = []
-        self._populate_item(self._root_node)
-
-        self.endResetModel()
-
-    def _populate_item(self, parent_item):
-        while self._all_data:
-            indent = self._all_data[0]["l_indent"]
-
-            if parent_item.indent < indent:
-                data_dict = self._all_data.pop(0)
-                item = TreeItem(parent_item)
-                item.data = data_dict
-                item.id = data_dict[self._id_name]
-                self._populate_item(item)
-                self._node_list.append(item)
-                parent_item.append_child(item)
-            else:
-                return
-
-    def clear(self):
+    #
+    # def reset_model(self):
+    #     self.beginResetModel()
+    #     #
+    #     # self._all_data = cfg.data.get_database(0).get_tree(self._table_name).get_all()
+    #     # all_headers = cfg.data.get_database(0).get_tree(self._table_name).get_all_headers()
+    #     # header_dict = {}
+    #     # for header in all_headers:
+    #     #     header_dict[header] = QVariant()
+    #
+    #     del self._root_node
+    #     self._root_node = TreeItem()
+    #     self._root_node.sheet_id = -1
+    #     self._root_node.indent = -1
+    #     self._root_node.sort_order = -1
+    #
+    #     self._root_node.data = header_dict
+    #     #
+    #     # if self._all_data is []: # empty /close
+    #     #     self.endResetModel()
+    #     #     return
+    #
+    #     self._node_list = []
+    #     self._populate_item(self._root_node)
+    #
+    #     self.endResetModel()
+    #
+    # def _populate_item(self, parent_item):
+    #     while self._all_data:
+    #         indent = self._all_data[0]["l_indent"]
+    #
+    #         if parent_item.indent < indent:
+    #             data_dict = self._all_data.pop(0)
+    #             item = TreeItem(parent_item)
+    #             item.data = data_dict
+    #             item.id = data_dict[self._id_name]
+    #             self._populate_item(item)
+    #             self._node_list.append(item)
+    #             parent_item.append_child(item)
+    #         else:
+    #             return
+    #
+    @pyqtSlot()
+    def clear_from_all_projects(self):
         self.beginResetModel()
         self._root_node = TreeItem()
         self.undo_stack.clear()
         self.endResetModel()
 
+    @pyqtSlot(int)
+    def clear_from_project(self, projectId: int):
+        # TODO : finish that
+        self.beginResetModel()
+        self._root_node = TreeItem()
+        self.undo_stack.clear()
+        self.endResetModel()
 
     @property
     def item_list(self):
@@ -376,6 +385,13 @@ class TreeModel(QAbstractItemModel):
     def set_undo_stack_active(self):
         self._undo_stack.setActive(True)
 
+    def _update_index_title(self, project_id: int, paper_id: int, new_title: str):
+        for node in self._node_list:
+            if node.project_id == project_id and node.id == paper_id:
+                node.title = new_title
+                self.dataChanged.emit(node.index, node.index, [])
+
+
 
 class TreeItem(object):
 
@@ -384,7 +400,8 @@ class TreeItem(object):
 
         self.data = {}
         self.index = QModelIndex()
-        self.id = -1
+
+        self.project_id = -1
         self.parent_id = None
         self.children_id = None
         self.properties = None
@@ -393,6 +410,16 @@ class TreeItem(object):
 
         self.parent = parent
         self.children = []
+
+        self.id = -1
+        self._indent = -1
+        self.indent_drift = 0
+        self.sort_order = None
+        self.deleted = False
+        self.creation_date = None
+        self.update_date = None
+        self.content_update_date = None
+        self.version = None
 
     @property
     def parent(self):
@@ -434,43 +461,12 @@ class TreeItem(object):
 
     @property
     def indent(self):
-        return self.data["l_indent"]
+        return self._indent - self.indent_drift
 
     @indent.setter
-    def indent(self, value: int):
-        self.data["l_indent"] = value
+    def indent(self, value:int):
+        self._indent = value + self.indent_drift
 
-    @property
-    def sort_order(self):
-        return self.data["l_sort_order"]
-
-    @sort_order.setter
-    def sort_order(self, value: int):
-        self.data["l_sort_order"] = value
-
-    @property
-    def title(self):
-        return self.data["t_title"]
-
-    @title.setter
-    def title(self, value: str):
-        self.data["t_title"] = value
-
-    @property
-    def delete_state(self):
-        return self.data["b_deleted"]
-
-    @delete_state.setter
-    def delete_state(self, value: bool):
-        self.data["b_deleted"] = value
-
-    @property
-    def content(self):
-        return self.data["m_content"]
-
-    @content.setter
-    def content(self, value):
-        self.data["m_content"] = value
 
 
 from PyQt5.Qt import QUndoCommand
@@ -478,30 +474,39 @@ from ..paper_manager import Paper
 
 
 class ChangeTitleCommand(QUndoCommand):
-    def __init__(self, paper_id: int, new_title: str, model: TreeModel):
+    def __init__(self, project_id: int, paper_id: int, new_title: str, model: TreeModel):
+        """
+
+        :param project_id:
+        :param paper_id:
+        :param new_title:
+        :param model:
+        """
         super(ChangeTitleCommand, self).__init__()
         self._model = model
         self._paper_id = paper_id
-        paper = Paper(table_name=self._model._table_name, paper_type=self._model._paper_type, paper_id=self._paper_id)
+        self._project_id = project_id
+        paper = Paper(paper_type=self._model._paper_type, project_id=project_id, paper_id=self._paper_id)
         self._old = paper.title
         self._new = new_title
         self.setText(_("change title"))
 
     def redo(self):
-        paper = Paper(table_name=self._model._table_name, paper_type=self._model._paper_type, paper_id=self._paper_id)
+        paper = Paper(paper_type=self._model._paper_type, project_id=self._project_id, paper_id=self._paper_id)
         paper.title = self._new
 
     def undo(self):
-        paper = Paper(table_name=self._model._table_name, paper_type=self._model._paper_type, paper_id=self._paper_id)
+        paper = Paper(paper_type=self._model._paper_type, project_id=self._project_id, paper_id=self._paper_id)
         paper.title = self._old
 
 
 class DeleteCommand(QUndoCommand):
-    def __init__(self, paper_id: int, value: bool, model: TreeModel):
+    def __init__(self, project_id: int, paper_id: int, value: bool, model: TreeModel):
         super(DeleteCommand, self).__init__()
         self._model = model
         self._paper_id = paper_id
-        paper = Paper(table_name=self._model._table_name, paper_type=self._model._paper_type, paper_id=self._paper_id)
+        self._project_id = project_id
+        paper = Paper(paper_type=self._model.paper_type, paper_id=self._paper_id)
         self._old = paper.deleted
         self._new = value
         if value is True:
@@ -511,18 +516,19 @@ class DeleteCommand(QUndoCommand):
 
 
     def redo(self):
-        paper = Paper(table_name=self._model._table_name, paper_type=self._model._paper_type, paper_id=self._paper_id)
+        paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self._paper_id)
         paper.deleted = self._new
 
     def undo(self):
-        paper = Paper(table_name=self._model._table_name, paper_type=self._model._paper_type, paper_id=self._paper_id)
+        paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self._paper_id)
         paper.deleted = self._old
 
 
 class AddChildNodeCommand(QUndoCommand):
-    def __init__(self, parent_paper_id: int, model: TreeModel):
+    def __init__(self, project_id: int, parent_paper_id: int, model: TreeModel):
         super(AddChildNodeCommand, self).__init__()
         self._model = model
+        self._project_id = project_id
         self.new_child_id_list = []
         self._parent_paper_id = parent_paper_id
         self.setText(_("add child node"))
@@ -535,19 +541,19 @@ class AddChildNodeCommand(QUndoCommand):
             return self.new_child_id_list[0]
 
     def redo(self):
-        paper = Paper(table_name=self._model.table_name, paper_type=self._model.paper_type
-                      , paper_id=self._parent_paper_id)
+        paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self._parent_paper_id)
         self.new_child_id_list = paper.add_child_paper(self.new_child_id_list)
 
     def undo(self):
-        paper = Paper(table_name=self._model.table_name, paper_type=self._model.paper_type, paper_id=self.last_new_child_id)
+        paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self.last_new_child_id)
         paper.remove_paper()
 
 
 class AddAfterNodeCommand(QUndoCommand):
-    def __init__(self, parent_paper_id: int, model: TreeModel):
+    def __init__(self, project_id: int, parent_paper_id: int, model: TreeModel):
         super(AddAfterNodeCommand, self).__init__()
         self._model = model
+        self._project_id = project_id
         self.new_id_list = []
         self._parent_paper_id = parent_paper_id
         self.setText(_("add child node"))
@@ -557,10 +563,10 @@ class AddAfterNodeCommand(QUndoCommand):
         return self.new_id_list[0]
 
     def redo(self):
-        paper = Paper(table_name=self._model.table_name, paper_type=self._model.paper_type, paper_id=self._parent_paper_id)
+        paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self._parent_paper_id)
         self.new_id_list = paper.add_paper_after(self.new_id_list)
 
     def undo(self):
-        paper = Paper(table_name=self._model.table_name, paper_type=self._model.paper_type, paper_id=self.last_new_id)
+        paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self.last_new_id)
         paper.remove_paper()
 
