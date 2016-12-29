@@ -176,8 +176,9 @@ class WriteWastebinView(QTreeView):
     def recover_sheet(self):
         parent_index = self.currentIndex()
         sheet_id = parent_index.data(SheetTreeModel.IdRole)
+        project_id = parent_index.data(SheetTreeModel.ProjectIdRole)
         model = cfg.models["0_sheet_tree_model"]
 
-        command = DeleteCommand(sheet_id, False, model)
+        command = DeleteCommand(project_id, sheet_id, False, model)
         model.undo_stack.push(command)
         model.set_undo_stack_active()

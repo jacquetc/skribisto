@@ -44,6 +44,12 @@ class TreeModel(QAbstractItemModel):
         cfg.data.projectHub().projectClosed.connect(self.clear_from_project)
         cfg.data.projectHub().allProjectsClosed.connect(self.clear_from_all_projects)
 
+        if paper_type == "sheet":
+            self.hub = cfg.data.sheetHub()
+        if paper_type == "note":
+            self.hub = cfg.data.noteHub()
+
+        self.hub.titleChanged.connect(self._update_index_title)
 
     @property
     def table_name(self):
@@ -96,6 +102,8 @@ class TreeModel(QAbstractItemModel):
 
         if role == self.IdRole and col == 0:
             return node.id
+        if role == self.ProjectIdRole and col == 0:
+            return node.project_id
         if role == self.TitleRole and col == 0:
             return node.title
         if role == self.SortOrderRole and col == 0:
@@ -175,7 +183,7 @@ class TreeModel(QAbstractItemModel):
         if index.isValid() & role == Qt.EditRole & index.column() == 0:
             node = self.node_from_index(index)
 
-            command = ChangeTitleCommand(node.id, value, self)
+            command = ChangeTitleCommand(node.project_id, node.id, value, self)
             self.undo_stack.push(command)
             self.undo_stack.setActive(True)
 
@@ -389,8 +397,13 @@ class TreeModel(QAbstractItemModel):
         for node in self._node_list:
             if node.project_id == project_id and node.id == paper_id:
                 node.title = new_title
-                self.dataChanged.emit(node.index, node.index, [])
+                self.dataChanged.emit(node.index, node.index, [self.TitleRole])
 
+    def _update_index_deleted(self, project_id: int, paper_id: int, new_value: bool):
+        for node in self._node_list:
+            if node.project_id == project_id and node.id == paper_id:
+                node.deleted = new_value
+                self.dataChanged.emit(node.index, node.index, [self.DeletedRole])
 
 
 class TreeItem(object):
@@ -506,7 +519,7 @@ class DeleteCommand(QUndoCommand):
         self._model = model
         self._paper_id = paper_id
         self._project_id = project_id
-        paper = Paper(paper_type=self._model.paper_type, paper_id=self._paper_id)
+        paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self._paper_id)
         self._old = paper.deleted
         self._new = value
         if value is True:

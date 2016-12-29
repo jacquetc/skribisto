@@ -13,7 +13,7 @@ class NotesDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
     NotesDockPlugin, based on SynopsisDockPlugin
     '''
     is_builtin_plugin = True
-    ignore = False
+    ignore = True
     def __init__(self):
         '''
         Constructor

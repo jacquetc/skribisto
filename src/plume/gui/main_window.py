@@ -127,7 +127,7 @@ class MainWindow(QMainWindow, WindowSystemController):
         """
         cfg.data.projectHub().loadProject('../../resources/plume_test_project.sqlite')
         # bug : first one of the two following functions will fail !
-        title = cfg.data.writeHub().getTitle(1,1)
+        title = cfg.data.sheetHub().getTitle(1,1)
         print(title)
         id_list = cfg.data.projectHub().getProjectIdList()
         print(id_list)
@@ -146,8 +146,8 @@ class MainWindow(QMainWindow, WindowSystemController):
 
         self.setWindowTitle("Plume Creator - TEST")
 
-        # self.undo_view = QUndoView(cfg.undo_group, None)
-        # self.undo_view.show()
+        self.undo_view = QUndoView(cfg.undo_group, None)
+        self.undo_view.show()
 
     @pyqtSlot()
     def launch_preferences(self):

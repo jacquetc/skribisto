@@ -53,8 +53,6 @@ class NotePanel(SubWindow):
         self.setCentralWidget(self.stack_widget)
 
         # subscribe
-        cfg.data_subscriber.subscribe_update_func_to_domain(0, self._clear_project,  "database_closed")
-
         cfg.data.projectHub().projectClosed.connect(self._clear_from_project)
         cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
 

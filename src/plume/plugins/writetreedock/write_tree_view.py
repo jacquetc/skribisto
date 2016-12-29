@@ -97,8 +97,9 @@ class WriteTreeView(QTreeView):
             self._one_click_checkpoint = False
             self._two_clicks_checkpoint = False
         elif self._one_click_checkpoint == True:  # second click
+            project_id = index.data(SheetTreeModel.ProjectIdRole)
             sheet_id = index.data(SheetTreeModel.IdRole)
-            cfg.window.write_panel.open_sheet(sheet_id)
+            cfg.window.write_panel.open_sheet(project_id, sheet_id)
 
             self._two_clicks_checkpoint = True
 
@@ -177,9 +178,10 @@ class WriteTreeView(QTreeView):
 
     def delete_sheet(self):
         parent_index = self.currentIndex()
+        project_id = parent_index.data(SheetTreeModel.ProjectIdRole)
         sheet_id = parent_index.data(SheetTreeModel.IdRole)
         model = cfg.models["0_sheet_tree_model"]
 
-        command = DeleteCommand(sheet_id, True, model)
+        command = DeleteCommand(project_id, sheet_id, True, model)
         model.undo_stack.push(command)
         model.set_undo_stack_active()

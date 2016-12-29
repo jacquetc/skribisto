@@ -26,7 +26,7 @@ class Paper:
         self.id = paper_id
 
         if paper_type == "sheet":
-            self.hub = cfg.data.writeHub()
+            self.hub = cfg.data.sheetHub()
         if paper_type == "note":
             self.hub = cfg.data.noteHub()
 
@@ -36,7 +36,7 @@ class Paper:
 
     @title.setter
     def title(self, value: str):
-        self.hub.getTitle(self.project_id, self.id, value)
+        self.hub.setTitle(self.project_id, self.id, value)
 
     @property
     def content(self):
@@ -44,7 +44,7 @@ class Paper:
 
     @content.setter
     def content(self, value):
-        self.hub.getContent(self.project_id, self.id, value)
+        self.hub.setContent(self.project_id, self.id, value)
 
     @property
     def creation_date(self):
@@ -64,11 +64,11 @@ class Paper:
 
     @property
     def deleted(self):
-        return self.hub.getDeletedState(self.project_id, self.id)
+        return self.hub.getDeleted(self.project_id, self.id)
 
     @deleted.setter
     def deleted(self, value: bool):
-        self.hub.setDeletedState(self.project_id, self.id, value)
+        self.hub.setDeleted(self.project_id, self.id, value)
 
 
 

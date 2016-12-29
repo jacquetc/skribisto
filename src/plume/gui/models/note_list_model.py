@@ -5,7 +5,7 @@ Created on 17 february 2016
 '''
 
 from PyQt5.QtCore import QAbstractListModel, QVariant, QModelIndex
-from PyQt5.QtCore import Qt, QObject
+from PyQt5.QtCore import Qt, QObject, pyqtSlot
 from .. import cfg
 
 class NoteListModel(QAbstractListModel):
@@ -13,18 +13,16 @@ class NoteListModel(QAbstractListModel):
     Tree
     '''
     IdRole = Qt.UserRole
-    TitleRole = Qt.UserRole + 1
-    ContentRole = Qt.UserRole + 2
-    SortOrderRole = Qt.UserRole + 3
-    IndentRole = Qt.UserRole + 4
-    DateCreatedRole = Qt.UserRole + 5
-    DateUpdatedRole = Qt.UserRole + 6
-    DateContentRole = Qt.UserRole + 7
-    DeletedRole = Qt.UserRole + 8
-    VersionRole = Qt.UserRole + 9
-    CharCountRole = Qt.UserRole + 10
-    WordCountRole = Qt.UserRole + 11
-
+    ProjectIdRole = Qt.UserRole + 1
+    TitleRole = Qt.UserRole + 2
+    ContentRole = Qt.UserRole + 3
+    SortOrderRole = Qt.UserRole + 4
+    IndentRole = Qt.UserRole + 5
+    DateCreatedRole = Qt.UserRole + 6
+    DateUpdatedRole = Qt.UserRole + 7
+    DateContentRole = Qt.UserRole + 8
+    DeletedRole = Qt.UserRole + 9
+    VersionRole = Qt.UserRole + 10
     SheetCodeRole = Qt.UserRole + 20
 
     def __init__(self, parent: QObject, project_id: int):
@@ -46,6 +44,9 @@ class NoteListModel(QAbstractListModel):
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.title_changed")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.structure_changed")
         cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.properties")
+
+        cfg.data.projectHub().projectClosed.connect(self.clear_from_project)
+        cfg.data.projectHub().allProjectsClosed.connect(self.clear_from_all_projects)
 
     @property
     def tree_db(self):
@@ -342,6 +343,21 @@ class NoteListModel(QAbstractListModel):
         self.beginRemoveRows(parentIndex, row, row)
         self.endRemoveRows()
         return True
+
+    @pyqtSlot()
+    def clear_from_all_projects(self):
+        self.beginResetModel()
+        self._root_node = ListItem()
+        self.undo_stack.clear()
+        self.endResetModel()
+
+    @pyqtSlot(int)
+    def clear_from_project(self, projectId: int):
+        # TODO : finish that
+        self.beginResetModel()
+        self._root_node = ListItem()
+        self.undo_stack.clear()
+        self.endResetModel()
 
 
 class ListItem(object):

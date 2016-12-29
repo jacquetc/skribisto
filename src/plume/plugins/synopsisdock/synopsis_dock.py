@@ -14,7 +14,7 @@ class SynopsisDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
     Be careful, this plugin is the basis for the NotesDockPlugin in plugin/notesdock
     '''
     is_builtin_plugin = True
-    ignore = False
+    ignore = True
     def __init__(self):
         '''
         Constructor
@@ -101,6 +101,8 @@ class GuiSynopsisDock(QObject):
         self._sheet_id = None
         self._note_id = None
 
+        gui_cfg.data.noteHub().contentChanged.connect(self.get_update)
+
     @property
     def paper_id(self):
         """
@@ -127,9 +129,7 @@ class GuiSynopsisDock(QObject):
             pass
         self._sheet_id = sheet_id
         if self.sheet_id is not None:
-            gui_cfg.data.subscriber.unsubscribe_update_func(self.get_update)
-            gui_cfg.data.subscriber.subscribe_update_func_to_domain(0, self.get_update,
-                                                                     "note.content_changed", self._sheet_id)
+            pass
 
     def get_widget(self):
         
@@ -155,7 +155,7 @@ class GuiSynopsisDock(QObject):
     def get_update(self):
         if self.sheet_id is not None:
             # determine the synopsis (note) of this sheet
-            self._note_id = gui_cfg.data.database.note_tree.find_synopsis_from_sheet_code(self.sheet_id)
+            self._note_id = gui_cfg.data.noteHub().getSynopsisFromSheetId(self.sheet_id)
             # apply changes :
             self.ui.writingZone.text_edit.blockSignals(True)
             text = NotePaper(self._note_id).content

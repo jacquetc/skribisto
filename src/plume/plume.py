@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import QApplication, QStyleFactory
 from PyQt5.QtGui import QPalette, QColor
 from PyQt5.QtCore import Qt, QSettings
 # from data.data import Data
-from data import subscriber
 from gui.main_window import MainWindow
 from gui import cfg, plugins,  pics_rc
 import sys, platform, os

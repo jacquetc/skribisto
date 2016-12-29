@@ -26,7 +26,6 @@ class SheetTreeModel(TreeModel):
 
         self.headers = ["name"]
 
-        cfg.data.writeHub().titleChanged.connect(self._update_index_title)
         cfg.data.projectHub().projectLoaded.connect(self.reset_model)
         # TODO : add signal connections
 
@@ -95,11 +94,11 @@ class SheetTreeModel(TreeModel):
         self._node_list = []
         project_id_list = cfg.data.projectHub().getProjectIdList()
         for project_id in project_id_list:
-            write_hub = cfg.data.writeHub()
-            self._id_list = write_hub.getAllIds(project_id)
-            self._title_dict = write_hub.getAllTitles(project_id)
-            self._indent_dict = write_hub.getAllIndents(project_id)
-            self._sort_order_dict = write_hub.getAllSortOrders(project_id)
+            sheet_hub = cfg.data.sheetHub()
+            self._id_list = sheet_hub.getAllIds(project_id)
+            self._title_dict = sheet_hub.getAllTitles(project_id)
+            self._indent_dict = sheet_hub.getAllIndents(project_id)
+            self._sort_order_dict = sheet_hub.getAllSortOrders(project_id)
 
             # create project name items
             if len(project_id_list) > 1:

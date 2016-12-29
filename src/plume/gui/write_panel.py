@@ -63,13 +63,13 @@ class WritePanel(SubWindow, WindowSystemController):
         """
 
         new_window = WriteSubWindow(self, self)
-        paper = SheetPaper(sheet_id)
+        paper = SheetPaper(project_id, sheet_id)
         new_window.paper = paper
         new_window.project_id = project_id
         self.stack_widget.addWidget(new_window)
         self.make_widget_current(sheet_id)
         # temp for test:
-        new_window.dock_system.add_dock("synopsis-dock")
+        # new_window.dock_system.add_dock("synopsis-dock")
 
     def make_widget_current(self, sheet_id: int):
         for i in range(0, self.stack_widget.count()):
