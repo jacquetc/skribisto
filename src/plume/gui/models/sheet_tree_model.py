@@ -121,7 +121,7 @@ class SheetTreeModel(TreeModel):
 
         self.endResetModel()
 
-    def _populate_item(self, parent_item: TreeItem, project_id:int):
+    def _populate_item(self, parent_item: TreeItem, project_id: int):
         while self._id_list:
             indent = self._indent_dict[self._id_list[0]]
 
@@ -208,6 +208,7 @@ parentIndex, parentIndex)
         pass
 
     '''
+
 
 class SheetTreeItem(TreeItem):
 

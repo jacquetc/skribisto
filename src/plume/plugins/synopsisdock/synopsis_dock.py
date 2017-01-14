@@ -14,7 +14,7 @@ class SynopsisDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
     Be careful, this plugin is the basis for the NotesDockPlugin in plugin/notesdock
     '''
     is_builtin_plugin = True
-    ignore = True
+    ignore = False
     def __init__(self):
         '''
         Constructor
@@ -98,10 +98,26 @@ class GuiSynopsisDock(QObject):
         '''
         super(GuiSynopsisDock, self).__init__(parent)
         self.widget = None
+        self._project_id = None
         self._sheet_id = None
         self._note_id = None
 
         gui_cfg.data.noteHub().contentChanged.connect(self.get_update)
+
+    @property
+    def project_id(self):
+        """
+
+        :return:
+        """
+        return self._project_id
+
+    @project_id.setter
+    def project_id(self, project_id):
+        """
+        :param id:
+        """
+        self._project_id = project_id
 
     @property
     def paper_id(self):
@@ -155,18 +171,18 @@ class GuiSynopsisDock(QObject):
     def get_update(self):
         if self.sheet_id is not None:
             # determine the synopsis (note) of this sheet
-            self._note_id = gui_cfg.data.noteHub().getSynopsisFromSheetId(self.sheet_id)
+            self._note_id = gui_cfg.data.noteHub().getSynopsisFromSheetCode(self._project_id, self._sheet_id)
             # apply changes :
             self.ui.writingZone.text_edit.blockSignals(True)
-            text = NotePaper(self._note_id).content
+            text = NotePaper(self._project_id, self._note_id).content
             self.ui.writingZone.set_rich_text(text)
             self.ui.writingZone.text_edit.blockSignals(False)
         
     @pyqtSlot()
     def apply_text_change(self):
-        gui_cfg.data.subscriber.disable_func(self.get_update)
-        NotePaper(self._note_id).content = self.ui.writingZone.text_edit.toHtml()
-        gui_cfg.data.subscriber.enable_func(self.get_update)
+        self.ui.writingZone.text_edit.textChanged.disconnect(self.apply_text_change)
+        NotePaper(self._project_id, self._note_id).content = self.ui.writingZone.text_edit.toHtml()
+        self.ui.writingZone.text_edit.textChanged.connect(self.apply_text_change, type=Qt.UniqueConnection)
 
     @pyqtSlot()
     def apply_settings(self):

@@ -16,20 +16,18 @@ class NoteTreeModel(TreeModel):
     '''
     SheetCodeRole = Qt.UserRole + 20
 
-    def __init__(self, parent, project_id):
-        super(NoteTreeModel, self).__init__("l_note_id", "note", parent, project_id)
+    def __init__(self, parent):
+        super(NoteTreeModel, self).__init__("l_note_id", "note", parent)
 
         '''
         Constructor
         '''
+        self._sheet_code_dict = {}
 
         self.headers = ["name"]
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.clear, "database_closed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "database_loaded")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.title_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.deleted_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.structure_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.properties")
+
+        cfg.data.projectHub().projectLoaded.connect(self.reset_model)
+
 
     def data(self, index, role):
 
@@ -45,7 +43,7 @@ class NoteTreeModel(TreeModel):
             return self.data(index, self.TitleRole)
 
         if role == self.SheetCodeRole and col == 0:
-            return node.data["l_sheet_code"]
+            return node.sheet_code
 
         return TreeModel.data(self, index, role)
 
@@ -76,58 +74,59 @@ class NoteTreeModel(TreeModel):
 
     def reset_model(self):
         self.beginResetModel()
-        #
-        # self._all_data = cfg.data.get_database(0).get_tree(self._table_name).get_all()
-        # all_headers = cfg.data.get_database(0).get_tree(self._table_name).get_all_headers()
-        # header_dict = {}
-        # for header in all_headers:
-        #     header_dict[header] = QVariant()
 
         del self._root_node
-        self._root_node = TreeItem()
+        self._root_node = NoteTreeItem()
         self._root_node.sheet_id = -1
         self._root_node.indent = -1
         self._root_node.sort_order = -1
 
-        note_hub = cfg.data.noteHub()
-        self._id_list = note_hub.getAllTitles()
-        self._title_dict = note_hub.getAllTitles()
-        self._indent_dict = note_hub.getAllIndents()
-        self._sort_order_dict = note_hub.getAllSortOrders()
-        self._sheet_code_dict = note_hub.getAllSheetCodes()
-
-        self._populate_item(self._root_node)
-
-        #
-        # if self._all_data is []: # empty /close
-        #     self.endResetModel()
-        #     return
-
         self._node_list = []
-        self._populate_item(self._root_node)
+        project_id_list = cfg.data.projectHub().getProjectIdList()
+        for project_id in project_id_list:
+            note_hub = cfg.data.noteHub()
+            self._id_list = note_hub.getAllIds(project_id)
+            self._title_dict = note_hub.getAllTitles(project_id)
+            self._indent_dict = note_hub.getAllIndents(project_id)
+            self._sort_order_dict = note_hub.getAllSortOrders(project_id)
+            self._sheet_code_dict = note_hub.getAllSheetCodes(project_id)
+
+            # create project name items
+            if len(project_id_list) > 1:
+                item = NoteTreeItem(self._root_node)
+                item.indent = 0
+                item.indent_drift = 1
+                item.title = "project " + str(project_id)
+                self._node_list.append(item)
+                self._root_node.append_child(item)
+                self._populate_item(item, project_id)
+            else:
+                self._populate_item(self._root_node, project_id)
 
         self.endResetModel()
 
-    def _populate_item(self, parent_item):
+    def _populate_item(self, parent_item: TreeItem, project_id: int):
         while self._id_list:
-            indent = self._indent_dict(self._id_list[0])
+            indent = self._indent_dict[self._id_list[0]]
 
             if parent_item.indent < indent:
                 item = NoteTreeItem(parent_item)
                 _id = self._id_list.pop(0)
-                item.id = self._id_list.pop(0)
+                item.id = _id
+                item.project_id = project_id
+                item.indent_drift = parent_item.indent_drift
                 item.indent = self._indent_dict[_id]
                 item.sort_order = self._sort_order_dict[_id]
                 item.title = self._title_dict[_id]
-                # item.sheet_code = self._sheet_code_dict[_id]
+                item.sheet_code = self._sheet_code_dict[_id]
                 self._node_list.append(item)
-                self._populate_item(item)
                 parent_item.append_child(item)
+                self._populate_item(item, project_id)
             else:
                 return
 
 
 class NoteTreeItem(TreeItem):
     def __init__(self, parent=None):
-        super(TreeItem, self).__init__(parent)
+        super(NoteTreeItem, self).__init__(parent)
         self.sheet_code = 0

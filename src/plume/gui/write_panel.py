@@ -69,11 +69,11 @@ class WritePanel(SubWindow, WindowSystemController):
         self.stack_widget.addWidget(new_window)
         self.make_widget_current(sheet_id)
         # temp for test:
-        # new_window.dock_system.add_dock("synopsis-dock")
+        new_window.dock_system.add_dock("synopsis-dock")
 
     def make_widget_current(self, sheet_id: int):
         for i in range(0, self.stack_widget.count()):
-            if self.stack_widget.widget(i).paper.id == sheet_id:
+            if self.stack_widget.widget(i).paper.paper_id == sheet_id:
                 self.stack_widget.setCurrentIndex(i)
 
     def _activate(self, value=True):
@@ -154,7 +154,8 @@ class WriteSubWindow(SubWindow):
         self.tab_title = paper_object.title
         self.ui.writeTabWritingZone.set_rich_text(
             paper_object.content)
-        self.dock_system.paper_id = paper_object.id
+        self.dock_system.project_id = paper_object.project_id
+        self.dock_system.paper_id = paper_object.paper_id
         self.ui.writeTabWritingZone.text_edit.textChanged.connect(
             self.save_content)
 

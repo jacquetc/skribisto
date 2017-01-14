@@ -23,7 +23,7 @@ class Paper:
 
         self.paper_type = paper_type
         self.project_id = project_id
-        self.id = paper_id
+        self.paper_id = paper_id
 
         if paper_type == "sheet":
             self.hub = cfg.data.sheetHub()
@@ -32,62 +32,62 @@ class Paper:
 
     @property
     def title(self):
-        return self.hub.getTitle(self.project_id, self.id)
+        return self.hub.getTitle(self.project_id, self.paper_id)
 
     @title.setter
     def title(self, value: str):
-        self.hub.setTitle(self.project_id, self.id, value)
+        self.hub.setTitle(self.project_id, self.paper_id, value)
 
     @property
     def content(self):
-        return self.hub.getContent(self.project_id, self.id)
+        return self.hub.getContent(self.project_id, self.paper_id)
 
     @content.setter
     def content(self, value):
-        self.hub.setContent(self.project_id, self.id, value)
+        self.hub.setContent(self.project_id, self.paper_id, value)
 
     @property
     def creation_date(self):
-        return self.hub.getCreationDate(self.project_id, self.id)
+        return self.hub.getCreationDate(self.project_id, self.paper_id)
 
     @creation_date.setter
     def creation_date(self, value):
-        self.hub.setCreationDate(self.project_id, self.id, value)
+        self.hub.setCreationDate(self.project_id, self.paper_id, value)
 
     @property
     def last_modification_date(self):
-        return self.hub.getUpdateDate(self.project_id, self.id)
+        return self.hub.getUpdateDate(self.project_id, self.paper_id)
 
     @last_modification_date.setter
     def last_modification_date(self, value):
-        self.hub.setUpdateDate(self.project_id, self.id, value)
+        self.hub.setUpdateDate(self.project_id, self.paper_id, value)
 
     @property
     def deleted(self):
-        return self.hub.getDeleted(self.project_id, self.id)
+        return self.hub.getDeleted(self.project_id, self.paper_id)
 
     @deleted.setter
     def deleted(self, value: bool):
-        self.hub.setDeleted(self.project_id, self.id, value)
+        self.hub.setDeleted(self.project_id, self.paper_id, value)
 
 
 
     # @property
     # def properties(self):
-    #     return cfg.data.database.get_tree(self._table_name).get_properties(self.id)
+    #     return cfg.data.database.get_tree(self._table_name).get_properties(self.paper_id)
     #
     # @properties.setter
     # def properties(self, value: dict):
-    #     cfg.data.database.get_tree(self._table_name).set_properties(self.id, value)
-    #     cfg.data_subscriber.announce_update(0, self._paper_type + ".properties_changed", self.id)
+    #     cfg.data.database.get_tree(self._table_name).set_properties(self.paper_id, value)
+    #     cfg.data_subscriber.announce_update(0, self._paper_type + ".properties_changed", self.paper_id)
 
     @property
     def version(self):
-        return self.hub.getVersion(self.project_id, self.id)
+        return self.hub.getVersion(self.project_id, self.paper_id)
 
     @version.setter
     def version(self, value: int):
-        self.hub.setVersion(self.project_id, self.id, value)
+        self.hub.setVersion(self.project_id, self.paper_id, value)
 
 
     # def _subscribe_to_data(self,  is_subscribing=True):
@@ -111,18 +111,18 @@ class Paper:
 
 
     def add_paper_after(self, new_child_ids: list =()):
-        new_list = cfg.data.database.get_tree(self._table_name).add_new_papers_by(self.id, 1, new_child_ids)
+        new_list = cfg.data.database.get_tree(self._table_name).add_new_papers_by(self.paper_id, 1, new_child_ids)
         cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
         return new_list
 
     def add_child_paper(self, new_child_ids: list =()):
         db = cfg.data.database
-        new_list = db.get_tree(self._table_name).add_new_child_papers(self.id, 1, new_child_ids)
+        new_list = db.get_tree(self._table_name).add_new_child_papers(self.paper_id, 1, new_child_ids)
         cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
         return new_list
 
     def remove_paper(self):
-        cfg.data.database.get_tree(self._table_name).remove_papers([self.id])
+        cfg.data.database.get_tree(self._table_name).remove_papers([self.paper_id])
         cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
 
 

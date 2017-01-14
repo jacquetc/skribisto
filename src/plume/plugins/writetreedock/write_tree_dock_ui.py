@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eric/plume-creator/src/plume/plugins/writetreedock/write_tree_dock.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator-py/src/plume/plugins/writetreedock/write_tree_dock.ui'
 #
-# Created by: PyQt5 UI code generator 5.4.1
+# Created by: PyQt5 UI code generator 5.5.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -17,7 +17,6 @@ class Ui_WriteTreeDock(object):
         self.topWidget = QtWidgets.QWidget(WriteTreeDock)
         self.topWidget.setObjectName("topWidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.topWidget)
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.filterLineEdit = QtWidgets.QLineEdit(self.topWidget)
         self.filterLineEdit.setObjectName("filterLineEdit")
@@ -30,8 +29,10 @@ class Ui_WriteTreeDock(object):
         self.horizontalLayout.addWidget(self.addPropButton)
         self.mainVerticalLayout.addWidget(self.topWidget)
         self.treeView = QtWidgets.QTreeView(WriteTreeDock)
-        self.treeView.setMouseTracking(False)
+        self.treeView.setMouseTracking(True)
         self.treeView.setAlternatingRowColors(True)
+        self.treeView.setUniformRowHeights(True)
+        self.treeView.setAnimated(True)
         self.treeView.setObjectName("treeView")
         self.mainVerticalLayout.addWidget(self.treeView)
 

@@ -76,15 +76,15 @@ class MainWindow(QMainWindow, WindowSystemController):
         self._sub_window_action_group.addAction(self.ui.actionWrite)
 
         # # note window
-        # self.note_panel = NotePanel(
-        #     parent=self, parent_window_system_controller=self)
-        # self.attach_sub_window(self.note_panel)
-        # self.ui.actionNote.setProperty(
-        #     "sub_window_object_name", "note_panel")
-        # self.add_action_to_window_system(self.ui.actionNote)
-        # self._sub_window_action_group.addAction(self.ui.actionNote)
-        #
-        # self.ui.actionWrite.trigger()
+        self.note_panel = NotePanel(
+            parent=self, parent_window_system_controller=self)
+        self.attach_sub_window(self.note_panel)
+        self.ui.actionNote.setProperty(
+            "sub_window_object_name", "note_panel")
+        self.add_action_to_window_system(self.ui.actionNote)
+        self._sub_window_action_group.addAction(self.ui.actionNote)
+
+        self.ui.actionWrite.trigger()
 
 
 

@@ -7,7 +7,7 @@ from .models.note_property_model import NotePropertyModel
 from .models.note_system_property_model import NoteSystemPropertyModel
 from . import cfg
 from .sub_window import SubWindow
-from .paper_manager import NotePaper
+from .paper_manager import PaperManager, NotePaper
 
 class NotePanel(SubWindow):
 
@@ -25,8 +25,13 @@ class NotePanel(SubWindow):
         self.setWindowTitle(_("Note"))
         self.setObjectName("note_panel")
 
+        self.dock_system = DockSystem(
+            self, self,  DockSystem.DockTypes.NotePanelDock)
 
-        self.system_property_model = NoteSystemPropertyModel(self)
+        self.setDockNestingEnabled(False)
+        self.setDockOptions(self.dockOptions() ^ QMainWindow.AnimatedDocks)
+
+        # self.system_property_model = NoteSystemPropertyModel(self)
         # cfg.models["0_note_system_property_model"] = self.system_property_model
         # cfg.undo_group.addStack(self.system_property_model.undo_stack)
         # self.property_model = NotePropertyModel(self, 0)
@@ -40,10 +45,7 @@ class NotePanel(SubWindow):
         cfg.models["0_note_list_model"] = self.list_model
         #cfg.undo_group.addStack(self.list_model.undo_stack)
 
-        #self.paper_manager = PaperManager()
-
-        self.dock_system = DockSystem(
-            self, self, DockSystem.DockTypes.NotePanelDock)
+        self.note_manager = PaperManager()
 
         # Project tree view dock :
         self.dock_system.add_dock("note-tree-dock", Qt.LeftDockWidgetArea)
@@ -64,22 +66,22 @@ class NotePanel(SubWindow):
         """
 
         new_window = NoteSubWindow(self, self)
-        new_window.paper = NotePaper()
+        new_window.paper = NotePaper(project_id, note_id)
         new_window.note_id = note_id
         new_window.project_id = project_id
         self.stack_widget.addWidget(new_window)
         self.make_widget_current(note_id)
 
-    def make_widget_current(self, sheet_id: int):
+    def make_widget_current(self, note_id: int):
         for i in range(0, self.stack_widget.count()):
-            if self.stack_widget.widget(i).paper.id == sheet_id:
+            if self.stack_widget.widget(i).paper.paper_id == note_id:
                 self.stack_widget.setCurrentIndex(i)
 
     def _activate(self, value=True):
         if value is True:
             self.tree_model.reset_model()
         else:
-            self.tree_model.clear()
+            self.tree_model.clear_from_all_projects()
 
     @pyqtSlot()
     def _clear_from_all_projects(self):
@@ -148,6 +150,7 @@ class NoteSubWindow(SubWindow):
         self.tab_title = paper_object.title
         self.ui.writeTabWritingZone.set_rich_text(
             paper_object.content)
-        self.dock_system.paper_id = paper_object.id
+        self.dock_system.project_id = paper_object.project_id
+        self.dock_system.paper_id = paper_object.paper_id
         self.ui.writeTabWritingZone.text_edit.textChanged.connect(
             self.save_content)

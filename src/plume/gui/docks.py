@@ -26,6 +26,7 @@ class DockSystem(QObject):
 
         super(DockSystem, self).__init__(parent)
         self._paper_id = None
+        self._project_id = None
         self.main_window = main_window
         self.dock_list = []
 
@@ -84,6 +85,7 @@ class DockSystem(QObject):
         '''
         gui_part = self.dock_type_dict[type_str]
         gui_part = gui_part()
+        gui_part.project_id = self.project_id
         gui_part.paper_id = self.paper_id
         widget = gui_part.get_widget()
         dock.current_type = type_str
@@ -112,6 +114,17 @@ class DockSystem(QObject):
         if self._paper_id is not None:
             for dock in self.dock_list:  # update all docks' sheet_id
                 dock.widget().gui_part.paper_id = paper_id
+
+    @property
+    def project_id(self):
+        return self._project_id
+
+    @project_id.setter
+    def project_id(self, project_id):
+        self._project_id = project_id
+        if self._project_id is not None:
+            for dock in self.dock_list:  # update all docks' paper_id
+                dock.widget().gui_part.project_id = project_id
 
     def load_settings(self):
         '''

@@ -25,26 +25,25 @@ class NoteListModel(QAbstractListModel):
     VersionRole = Qt.UserRole + 10
     SheetCodeRole = Qt.UserRole + 20
 
-    def __init__(self, parent: QObject, project_id: int):
+    def __init__(self, parent: QObject):
         super(NoteListModel, self).__init__(parent)
 
 
         # inheriting classes will start at Qt.UserRole + 20
 
-        self._project_id = project_id
         self._root_node = ListItem()
         self._table_name = "tbl_note"
         self._id_name = "l_note_id"
         self._all_data = []
         self._node_list = []
         self._id_of_last_created_node = None
+        self._id_list = []
+        self._title_dict = {}
+        self._indent_dict = {}
+        self._sort_order_dict = {}
+        self._sheet_code_dict = {}
 
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.clear, "database_closed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "database_loaded")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.title_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.structure_changed")
-        cfg.data.subscriber.subscribe_update_func_to_domain(project_id, self.reset_model, "note.properties")
-
+        cfg.data.projectHub().projectLoaded.connect(self.reset_model)
         cfg.data.projectHub().projectClosed.connect(self.clear_from_project)
         cfg.data.projectHub().allProjectsClosed.connect(self.clear_from_all_projects)
 
@@ -90,28 +89,27 @@ class NoteListModel(QAbstractListModel):
 
         if role == self.IdRole and col == 0:
             return node.id
+        if role == self.ProjectIdRole and col == 0:
+            return node.project_id
         if role == self.TitleRole and col == 0:
             return node.title
         if role == self.SortOrderRole and col == 0:
-            return node.data["l_sort_order"]
+            return node.sort_order
         if role == self.IndentRole and col == 0:
-            return node.data["l_indent"]
+            return node.indent
         if role == self.DateCreatedRole and col == 0:
-            return node.data["dt_created"]
-        if role == self.ContentRole and col == 0:
-            return node.data["m_content"]
+            return node.creation_date
         if role == self.DateUpdatedRole and col == 0:
-            return node.data["dt_updated"]
+            return node.update_date
         if role == self.DateContentRole and col == 0:
-            return node.data["dt_content"]
+            return node.content_update_date
         if role == self.DeletedRole and col == 0:
-            return node.data["b_deleted"]
+            return bool(node.deleted)
         if role == self.VersionRole and col == 0:
-            return node.data["l_version"]
-
+            return node.version
 
         if role == self.SheetCodeRole and col == 0:
-            return node.data["l_sheet_code"]
+            return node.sheet_code
 
         return QVariant()
 
@@ -182,11 +180,6 @@ class NoteListModel(QAbstractListModel):
     def reset_model(self):
         self.beginResetModel()
 
-        self._all_data = cfg.data.get_database(0).get_tree(self._table_name).get_all()
-        all_headers = cfg.data.get_database(0).get_tree(self._table_name).get_all_headers()
-        header_dict = {}
-        for header in all_headers:
-            header_dict[header] = QVariant()
 
         del self._root_node
         self._root_node = ListItem()
@@ -194,27 +187,33 @@ class NoteListModel(QAbstractListModel):
         self._root_node.indent = -1
         self._root_node.sort_order = -1
 
-        self._root_node.data = header_dict
-
-        if self._all_data is []: # empty /close
-            self.endResetModel()
-            return
-
         self._node_list = []
-        self._populate_item(self._root_node)
+        project_id_list = cfg.data.projectHub().getProjectIdList()
+        for project_id in project_id_list:
+            note_hub = cfg.data.noteHub()
+            self._id_list = note_hub.getAllIds(project_id)
+            self._title_dict = note_hub.getAllTitles(project_id)
+            self._indent_dict = note_hub.getAllIndents(project_id)
+            self._sort_order_dict = note_hub.getAllSortOrders(project_id)
+            self._sheet_code_dict = note_hub.getAllSheetCodes(project_id)
+
+            self._populate_item(self._root_node, project_id)
 
         self.endResetModel()
 
-    def _populate_item(self, parent_item):
-        while self._all_data:
+    def _populate_item(self, parent_item, project_id: int):
+        while self._id_list:
 
-            data_dict = self._all_data.pop(0)
+            _id = self._id_list.pop(0)
             item = ListItem(parent_item)
-            item.data = data_dict
-            item.id = data_dict[self._id_name]
+            item.id = _id
+            item.project_id = project_id
+            item.indent = self._indent_dict[_id]
+            item.sort_order = self._sort_order_dict[_id]
+            item.title = self._title_dict[_id]
+            item.sheet_code = self._sheet_code_dict[_id]
             self._node_list.append(item)
             parent_item.append_child(item)
-
 
     def clear(self):
         self.beginResetModel()
@@ -348,7 +347,6 @@ class NoteListModel(QAbstractListModel):
     def clear_from_all_projects(self):
         self.beginResetModel()
         self._root_node = ListItem()
-        self.undo_stack.clear()
         self.endResetModel()
 
     @pyqtSlot(int)
@@ -356,7 +354,6 @@ class NoteListModel(QAbstractListModel):
         # TODO : finish that
         self.beginResetModel()
         self._root_node = ListItem()
-        self.undo_stack.clear()
         self.endResetModel()
 
 
@@ -367,7 +364,8 @@ class ListItem(object):
 
         self.data = {}
         self.index = QModelIndex()
-        self.id = -1
+
+        self.project_id = -1
         self.parent_id = None
         self.children_id = None
         self.properties = None
@@ -376,6 +374,16 @@ class ListItem(object):
 
         self.parent = parent
         self.children = []
+
+        self.id = -1
+        self._indent = -1
+        self.sort_order = None
+        self.deleted = False
+        self.creation_date = None
+        self.update_date = None
+        self.content_update_date = None
+        self.version = None
+        self.sheet_code = None
 
     @property
     def parent(self):
@@ -415,42 +423,3 @@ class ListItem(object):
     def __len__(self):
         return len(self.children)
 
-    @property
-    def indent(self):
-        return self.data["l_indent"]
-
-    @indent.setter
-    def indent(self, value: int):
-        self.data["l_indent"] = value
-
-    @property
-    def sort_order(self):
-        return self.data["l_sort_order"]
-
-    @sort_order.setter
-    def sort_order(self, value: int):
-        self.data["l_sort_order"] = value
-
-    @property
-    def title(self):
-        return self.data["t_title"]
-
-    @title.setter
-    def title(self, value: str):
-        self.data["t_title"] = value
-
-    @property
-    def delete_state(self):
-        return self.data["b_deleted"]
-
-    @delete_state.setter
-    def delete_state(self, value: bool):
-        self.data["b_deleted"] = value
-
-    @property
-    def content(self):
-        return self.data["m_content"]
-
-    @content.setter
-    def content(self, value):
-        self.data["m_content"] = value

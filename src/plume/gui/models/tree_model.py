@@ -40,6 +40,10 @@ class TreeModel(QAbstractItemModel):
         self._node_list = []
         self._id_of_last_created_node = None
         self._undo_stack = QUndoStack(self)
+        self._id_list = []
+        self._title_dict = {}
+        self._indent_dict = {}
+        self._sort_order_dict = {}
 
         cfg.data.projectHub().projectClosed.connect(self.clear_from_project)
         cfg.data.projectHub().allProjectsClosed.connect(self.clear_from_all_projects)
@@ -112,8 +116,6 @@ class TreeModel(QAbstractItemModel):
             return node.indent
         if role == self.DateCreatedRole and col == 0:
             return node.creation_date
-        # if role == self.ContentRole and col == 0:
-        #     return node.data["m_content"]
         if role == self.DateUpdatedRole and col == 0:
             return node.update_date
         if role == self.DateContentRole and col == 0:

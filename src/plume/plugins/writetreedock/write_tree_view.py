@@ -185,3 +185,4 @@ class WriteTreeView(QTreeView):
         command = DeleteCommand(project_id, sheet_id, True, model)
         model.undo_stack.push(command)
         model.set_undo_stack_active()
+
