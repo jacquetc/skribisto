@@ -58,7 +58,7 @@ class NotePanel(SubWindow):
         cfg.data.projectHub().projectClosed.connect(self._clear_from_project)
         cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
 
-    def open_sheet(self, project_id: int, note_id: int):
+    def open_note(self, project_id: int, note_id: int):
         """
 
         :param project_id:

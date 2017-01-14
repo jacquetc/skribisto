@@ -6,7 +6,7 @@ Created on 8 mai 2015
 from PyQt5.QtWidgets import QTreeView, QMenu
 from PyQt5.QtCore import Qt
 from gui import cfg
-from gui.models.sheet_tree_model import SheetTreeModel
+from gui.models.note_tree_model import NoteTreeModel
 
 
 class NoteTreeView(QTreeView):
@@ -51,8 +51,9 @@ class NoteTreeView(QTreeView):
             self._one_click_checkpoint = False
             self._two_clicks_checkpoint = False
         elif self._one_click_checkpoint == True:  # second click
-            note_id = index.data(SheetTreeModel.IdRole)
-            cfg.window.note_sub_window.open_note(note_id)
+            project_id = index.data(NoteTreeModel.ProjectIdRole)
+            note_id = index.data(NoteTreeModel.IdRole)
+            cfg.window.note_panel.open_note(project_id, note_id)
 
             self._two_clicks_checkpoint = True
 
