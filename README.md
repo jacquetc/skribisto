@@ -3,28 +3,46 @@ Software for writers
 
 This software is the continuation of Plume Creator from http://sourceforge.net/projects/plume-creator/
 
-The main change is the coding language : python 3.4 / PyQt5 instead of the c++ / Qt5 of the original software.
+The main change is the coding language : python 3.4 / PyQt5 instead of the full c++ / Qt5 of the original software. Database management stays in C++ (see the GitHub repo "plume-creator-data" at https://github.com/jacquetc/plume-creator-data )
 
 To avoid confusion with version numbers, this new Plume will start at version 1.5.0 . To point out the sofware is still under development, all releases will be tagged "alpha" until the 2.0 release.
 
-Of course, the projects from the old Plume will be importable.
+Of course, the projects from the old Plume will be importable (later in the development)
 
 Help in testing or coding is always welcome !
 
 ## For developers 
 
-
+### In linux :
 
 You must set up the workspace before beginning to develop Plume.
+
+import the repositories "plume-creator-data" and "plume-creator" from GitHub. Place them side by side on your computer.
+
 Add to your environnmeent variables :
 
-PLUME_DEVELOP_FROM=/path/to/plume/source/code
-PLUME_DEVELOP_DATA_BUILD_FROM=/path/to/plume-data/libs
-### In linux :
-export PLUME_DEVELOP_FROM=/home/[username]/Devel/workspace_eclipse/plume-creator
-export PLUME_DEVELOP_DATA_BUILD_FROM=/home/[username]/Devel/workspace_eclipse/lib
+PLUME_DEVELOP_FROM=/path/to/plume/source/code/plume-creator
+PLUME_DEVELOP_DATA_BUILD_FROM=/path/to/plume/source/code/lib
+
+The last environnmeent variable MUST finish with "lib"
+
+In "plume-creator-data", to compile and prepare the C++ library for python use, run :
+
+python3 create_python3_module.py
+
+Then, in "plume-creator", in src/plume , run :
+
+python3 plume.py
+
+Voilà !
 
 #### Necessities :
+
+For C++, install thinks like qmake, qt5 ... Well, to make this quicker :
+
+sudo apt install qtcreator
+
+
 Make sure you have pyQt 5.4 (for python3) or more, and it's dev tools (pyrcc5), installed
 
 sudo apt-get install pyqt5-dev-tools
@@ -46,7 +64,7 @@ sudo pip3 install yapsy
 ### In Windows :
 Development of Plume being done on Linux, I can't be sure about this setup.
 
-    1.Create an account on GitHub
+
     
     2.Fetch the last update of Plume (and stay in sync every update) :
     
@@ -70,6 +88,13 @@ Development of Plume being done on Linux, I can't be sure about this setup.
             
     4.Install PyQt5
         1.Download and install : http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.4.2/PyQt5-5.4.2-gpl-Py3.4-Qt5.4.2-x32.exe
-    5.launch Plume :
+        
+    5. Install Qt SDK (minimun is Qt 5.5) from Qt official website
+    6. Compile 'plume-creator-data" with help from Qt Creator
+        1. TODO : script create_python3_module.py not adapted to Windows.
+
+    6.launch Plume :
         1.In the explorer, go to "c:\users\grant\documents\github\plume-creator\src\plume\"
         2.double-click on "plume.py" (or "plume")
+
+        
