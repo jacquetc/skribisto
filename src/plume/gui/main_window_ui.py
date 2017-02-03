@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator/src/plume/gui/main_window.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator-py/src/plume/gui/main_window.ui'
 #
-# Created by: PyQt5 UI code generator 5.5.1
+# Created by: PyQt5 UI code generator 5.7.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -19,7 +19,7 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1197, 25))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1197, 30))
         self.menubar.setObjectName("menubar")
         self.menuProject = QtWidgets.QMenu(self.menubar)
         self.menuProject.setObjectName("menuProject")
@@ -109,6 +109,9 @@ class Ui_MainWindow(object):
         icon14.addPixmap(QtGui.QPixmap(":/pics/16x16/preferences-system.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionPreferences.setIcon(icon14)
         self.actionPreferences.setObjectName("actionPreferences")
+        self.actionWelcome = QtWidgets.QAction(MainWindow)
+        self.actionWelcome.setIcon(icon)
+        self.actionWelcome.setObjectName("actionWelcome")
         self.menuProject.addAction(self.actionNew_project)
         self.menuProject.addAction(self.actionStart_window)
         self.menuProject.addAction(self.actionOpen_test_project)
@@ -145,25 +148,26 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
 
         MainWindow.setWindowTitle(_("Plume Creator"))
-        self.menuProject.setTitle(_("Project"))
-        self.menuView.setTitle(_("View"))
-        self.menuHelp.setTitle(_("Help"))
+        self.menuProject.setTitle(_("&Project"))
+        self.menuView.setTitle(_("&View"))
+        self.menuHelp.setTitle(_("&Help"))
         self.toolBar.setWindowTitle(_("toolBar"))
-        self.actionOpen_test_project.setText(_("Open test project"))
-        self.actionWrite.setText(_("Write"))
-        self.actionNote.setText(_("Note"))
+        self.actionOpen_test_project.setText(_("&Open test project"))
+        self.actionWrite.setText(_("&Write"))
+        self.actionNote.setText(_("&Note"))
         self.actionNote.setToolTip(_("Note"))
-        self.actionExit.setText(_("Exit"))
-        self.actionClose_project.setText(_("Close project"))
-        self.actionImport.setText(_("Import"))
-        self.actionExport.setText(_("Export"))
-        self.actionSave.setText(_("Save"))
+        self.actionExit.setText(_("E&xit"))
+        self.actionClose_project.setText(_("&Close project"))
+        self.actionImport.setText(_("&Import"))
+        self.actionExport.setText(_("&Export"))
+        self.actionSave.setText(_("Sa&ve"))
         self.actionSave_as.setText(_("Save as"))
         self.actionOpen.setText(_("Open"))
-        self.actionNew_project.setText(_("New project"))
-        self.actionStart_window.setText(_("Start window"))
-        self.actionAbout_Plume_Creator.setText(_("About Plume Creator"))
-        self.actionAbout_Qt.setText(_("About Qt"))
-        self.actionPrint.setText(_("Print"))
-        self.actionPreferences.setText(_("Preferences"))
+        self.actionNew_project.setText(_("&New project"))
+        self.actionStart_window.setText(_("&Start window"))
+        self.actionAbout_Plume_Creator.setText(_("&About Plume Creator"))
+        self.actionAbout_Qt.setText(_("About &Qt"))
+        self.actionPrint.setText(_("P&rint"))
+        self.actionPreferences.setText(_("&Preferences"))
+        self.actionWelcome.setText(_("W&elcome"))
 

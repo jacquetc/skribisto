@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,
                              QHBoxLayout,  QFileDialog, QMessageBox,  QApplication, QUndoView)
 from PyQt5.QtCore import Qt,  QDir, QDate
 from .window_system import WindowSystemController
+from .welcome_panel import WelcomePanel
 from .write_panel import WritePanel
 from .note_panel import NotePanel
 from PyQt5.Qt import QToolButton, pyqtSlot, QUndoGroup
@@ -28,15 +29,10 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.init_ui()
         cfg.window = self
 
-        # cfg.data_subscriber.subscribe_update_func_to_domain(0, self._clear_project,  "database_closed")
-        # cfg.data_subscriber.subscribe_update_func_to_domain(0, self._activate,  "database_loaded")
-        # cfg.data.subscriber.subscribe_update_func_to_domain(0, self.set_project_is_saved, "database_saved")
-        # cfg.core.subscriber.subscribe_update_func_to_domain(
-        #     self.set_project_is_not_saved, "core.project.notsaved")
 
         cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
         cfg.data.projectHub().projectLoaded.connect(self._activate)
-    # TODO : add saved and note saved connection
+    # TODO : add saved and not saved connection
 
     def init_ui(self):
         self.ui = Ui_MainWindow()
@@ -66,6 +62,15 @@ class MainWindow(QMainWindow, WindowSystemController):
         # sub_windows :
         self._sub_window_action_group = QActionGroup(self)
 
+        # welcome window
+        self.welcome_panel = WelcomePanel(
+            parent=self, parent_window_system_controller=self)
+        self.attach_sub_window(self.welcome_panel)
+        self.ui.actionWelcome.setProperty(
+            "sub_window_object_name", "welcome_panel")
+        self.add_action_to_window_system(self.ui.actionWelcome)
+        self._sub_window_action_group.addAction(self.ui.actionWelcome)
+
         # write window
         self.write_panel = WritePanel(
             parent=self, parent_window_system_controller=self)
@@ -84,7 +89,8 @@ class MainWindow(QMainWindow, WindowSystemController):
         self.add_action_to_window_system(self.ui.actionNote)
         self._sub_window_action_group.addAction(self.ui.actionNote)
 
-        self.ui.actionWrite.trigger()
+        # open on this panel :
+        self.ui.actionWelcome.trigger()
 
 
 
@@ -377,6 +383,10 @@ class SideBar(QWidget, WindowSystemActionHandler):
                 self.setProperty("sub_window_object_name", self._prop)
 
             def contextMenuEvent(self, event):
+
+                if self._prop == "welcome_panel":
+                    return QToolButton.contextMenuEvent(self, event)
+
                 menu = QMenu(self)
                 attachAction = menu.addAction("Attach")
                 attachAction.setProperty("sub_window_object_name", self._prop)
