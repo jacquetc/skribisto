@@ -108,22 +108,34 @@ class Paper:
     #         else:
     #             cfg.data.subscriber.unsubscribe_update_func_to_domain(0, func)
 
-
-
-    def add_paper_after(self, new_child_ids: list =()):
-        new_list = cfg.data.database.get_tree(self._table_name).add_new_papers_by(self.paper_id, 1, new_child_ids)
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
+    def add_paper_after(self, new_ids: list =()):
+        error = self.hub.addPaperBelow(self.project_id, self.paper_id)
+        if error.isSuccess() and new_ids:
+            error = self.hub.setId(self.project_id, self.hub.getLastAddedId(), new_ids[0])
+        new_list = []
+        if not error.isSuccess():
+            return new_list
+        if new_ids:
+            new_list = new_ids
+        else:
+            new_list.append(self.hub.getLastAddedId())
         return new_list
 
     def add_child_paper(self, new_child_ids: list =()):
-        db = cfg.data.database
-        new_list = db.get_tree(self._table_name).add_new_child_papers(self.paper_id, 1, new_child_ids)
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
+        error = self.hub.addChildPaper(self.project_id, self.paper_id)
+        if error.isSuccess() and new_child_ids:
+            error = self.hub.setId(self.project_id, self.hub.getLastAddedId(), new_child_ids[0])
+        new_list = []
+        if not error.isSuccess():
+            return new_list
+        if new_child_ids:
+            new_list = new_child_ids
+        else:
+            new_list.append(self.hub.getLastAddedId())
         return new_list
 
     def remove_paper(self):
-        cfg.data.database.get_tree(self._table_name).remove_papers([self.paper_id])
-        cfg.data_subscriber.announce_update(0, self._paper_type + ".structure_changed")
+        self.hub.removePaper(self.project_id, self.paper_id)
 
 
 class SheetPaper(Paper):

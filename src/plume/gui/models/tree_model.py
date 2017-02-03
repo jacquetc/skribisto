@@ -4,7 +4,7 @@ Created on 17 february 2016
 @author:  Cyril Jacquet
 '''
 
-from PyQt5.QtCore import QAbstractItemModel, QVariant, QModelIndex, QPersistentModelIndex
+from PyQt5.QtCore import QAbstractItemModel, QVariant, QModelIndex, QPersistentModelIndex, QSettings
 from PyQt5.QtCore import Qt, QObject, QMimeData, QByteArray, QDataStream, QIODevice, pyqtSlot
 from PyQt5.Qt import QUndoStack
 from .. import cfg
@@ -45,6 +45,9 @@ class TreeModel(QAbstractItemModel):
         self._indent_dict = {}
         self._sort_order_dict = {}
 
+        self._settings = QSettings()
+
+
         cfg.data.projectHub().projectClosed.connect(self.clear_from_project)
         cfg.data.projectHub().allProjectsClosed.connect(self.clear_from_all_projects)
 
@@ -53,7 +56,11 @@ class TreeModel(QAbstractItemModel):
         if paper_type == "note":
             self.hub = cfg.data.noteHub()
 
+        self.hub.paperRemoved.connect(self.reset_model)
+        self.hub.paperAdded.connect(self.reset_model)
         self.hub.titleChanged.connect(self._update_index_title)
+        self.hub.idChanged.connect(self._update_index_id)
+        self.hub.deletedChanged.connect(self._update_index_deleted)
 
     @property
     def table_name(self):
@@ -91,6 +98,7 @@ class TreeModel(QAbstractItemModel):
         node = self.node_from_index(parent)
         child_node = node.child_at_row(row)
         index = self.createIndex(row, column, child_node)
+        node.index = index
 
         return index
 
@@ -124,6 +132,11 @@ class TreeModel(QAbstractItemModel):
             return bool(node.deleted)
         if role == self.VersionRole and col == 0:
             return node.version
+
+        # for development :
+        if bool(self._settings.value("settings/misc/dev_mode", False)):
+            if role == Qt.ToolTipRole and col == 0:
+                return str(node.id) + " : " + str(node.sort_order)
 
         return QVariant()
 
@@ -395,6 +408,12 @@ class TreeModel(QAbstractItemModel):
     def set_undo_stack_active(self):
         self._undo_stack.setActive(True)
 
+    def _update_index_id(self, project_id: int, paper_id: int, new_id: str):
+        for node in self._node_list:
+            if node.project_id == project_id and node.id == paper_id:
+                node.id = new_id
+                self.dataChanged.emit(node.index, node.index, [self.IdRole])
+
     def _update_index_title(self, project_id: int, paper_id: int, new_title: str):
         for node in self._node_list:
             if node.project_id == project_id and node.id == paper_id:
@@ -405,7 +424,23 @@ class TreeModel(QAbstractItemModel):
         for node in self._node_list:
             if node.project_id == project_id and node.id == paper_id:
                 node.deleted = new_value
-                self.dataChanged.emit(node.index, node.index, [self.DeletedRole])
+                for child_node in self.all_children_nodes(node):
+                    child_node.deleted = new_value
+
+                index_list = self.match(self.index(0, 0, QModelIndex()), self.IdRole, paper_id
+                                        , 1, (Qt.MatchExactly | Qt.MatchRecursive))
+                if index_list:
+                    index = index_list[0]
+                    if index.isValid():
+                        self.dataChanged.emit(index, index, [self.DeletedRole])
+
+    def all_children_nodes(self, node) -> list:
+
+        children_list = []
+        for child_node in node.children:
+            children_list += self.all_children_nodes(child_node)
+
+        return children_list
 
 
 class TreeItem(object):
@@ -529,7 +564,6 @@ class DeleteCommand(QUndoCommand):
         else:
             self.setText(_("restore node"))
 
-
     def redo(self):
         paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self._paper_id)
         paper.deleted = self._new
@@ -550,7 +584,7 @@ class AddChildNodeCommand(QUndoCommand):
 
     @property
     def last_new_child_id(self):
-        if self.new_child_id_list == []:
+        if not self.new_child_id_list:
             return -1
         else:
             return self.new_child_id_list[0]
@@ -571,7 +605,7 @@ class AddAfterNodeCommand(QUndoCommand):
         self._project_id = project_id
         self.new_id_list = []
         self._parent_paper_id = parent_paper_id
-        self.setText(_("add child node"))
+        self.setText(_("add node below"))
 
     @property
     def last_new_id(self):
@@ -582,6 +616,7 @@ class AddAfterNodeCommand(QUndoCommand):
         self.new_id_list = paper.add_paper_after(self.new_id_list)
 
     def undo(self):
+        print(self.last_new_id)
         paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self.last_new_id)
         paper.remove_paper()
 

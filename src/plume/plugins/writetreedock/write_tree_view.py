@@ -4,7 +4,7 @@ Created on 8 mai 2015
 @author:  Cyril Jacquet
 '''
 from PyQt5.QtWidgets import QTreeView, QMenu
-from PyQt5.QtCore import Qt, QTimer, QModelIndex
+from PyQt5.QtCore import Qt, QTimer, QModelIndex, QCoreApplication, QVariant
 from gui import cfg
 from gui.models.sheet_tree_model import SheetTreeModel
 from gui.property import SheetProperty
@@ -64,19 +64,25 @@ class WriteTreeView(QTreeView):
     def set_item_expanded(self, model_index):
         self.setExpanded(model_index, True)
         paper_id = model_index.data(SheetTreeModel.IdRole)
+        project_id = model_index.data(SheetTreeModel.ProjectIdRole)
+        cfg.data.sheetPropertyHub().setProperty(project_id, paper_id, "write_tree_item_expanded", "1")
         # TODO icfg.models["0_sheet_system_property_model"].set_property(paper_id, "write_tree_item_expanded", "1")
 
     def set_item_collapsed(self, model_index):
         self.setExpanded(model_index, False)
         paper_id = model_index.data(SheetTreeModel.IdRole)
+        project_id = model_index.data(SheetTreeModel.ProjectIdRole)
+        cfg.data.sheetPropertyHub().setProperty(project_id, paper_id, "write_tree_item_expanded", "0")
         # TODO icfg.models["0_sheet_system_property_model"].set_property(paper_id, "write_tree_item_expanded", "0")
 
     def apply_expand(self):
         index = self.indexAt(self.rect().topLeft())
         while index.isValid():
             paper_id = index.data(SheetTreeModel.IdRole)
-            if True:
+            project_id = index.data(SheetTreeModel.ProjectIdRole)
+            # if True:
             # TODO if cfg.models["0_sheet_system_property_model"].get_property(paper_id, "write_tree_item_expanded", "1") == "1":
+            if cfg.data.sheetPropertyHub().getProperty(project_id, paper_id, "write_tree_item_expanded") == "1":
                 self.setExpanded(index, True)
             else:
                 self.setExpanded(index, False)
@@ -125,43 +131,33 @@ class WriteTreeView(QTreeView):
     def add_sheet_after(self):
         parent_index = self.currentIndex()
         sheet_id = parent_index.data(SheetTreeModel.IdRole)
+        project_id = parent_index.data(SheetTreeModel.ProjectIdRole)
         model = cfg.models["0_sheet_tree_model"]
 
-        command = AddAfterNodeCommand(sheet_id, model)
+        command = AddAfterNodeCommand(project_id, sheet_id, model)
         model.undo_stack.push(command)
         new_sheet_id = command.last_new_id
         model.set_undo_stack_active()
 
-        # index = self.model().find_index_from_id(new_sheet_id)
-        # self.edit(index)
-        # index_list = self.model().match(self.rootIndex(), SheetTreeModel.IdRole, new_sheet_id
-        #                            , -1, (Qt.MatchExactly | Qt.MatchRecursive))
-        # if index_list != []:
-        #     index = index_list[0]
-        #     if index.isValid():
-        #         self.setCurrentIndex(index)
-        #         self.edit(index)
+        # select index
+
+        self.select_by_id(new_sheet_id)
 
 
     def add_child_sheet(self):
-        # parent_index = self.currentIndex()
-        # sheet_id = parent_index.data(SheetTreeModel.IdRole)
-        # new_sheet_id = SheetPaper(sheet_id).add_child_paper()
-        # index_list = self.model().match(self.rootIndex(), SheetTreeModel.IdRole, new_sheet_id
-        #                            , 1, (Qt.MatchExactly | Qt.MatchRecursive))
-        # if index_list != []:
-        #     index = index_list[0]
-        #     if index.isValid():
-        #         self.setCurrentIndex(index)
-        #         self.edit(index)
+
         parent_index = self.currentIndex()
         sheet_id = parent_index.data(SheetTreeModel.IdRole)
+        project_id = parent_index.data(SheetTreeModel.ProjectIdRole)
         model = cfg.models["0_sheet_tree_model"]
 
-        command = AddChildNodeCommand(sheet_id, model)
+        command = AddChildNodeCommand(project_id, sheet_id, model)
         model.undo_stack.push(command)
         new_sheet_id = command.last_new_child_id
         model.set_undo_stack_active()
+
+        self.select_by_id(new_sheet_id)
+
 
         #new_sheet_id = SheetPaper(sheet_id).add_sheet_after()
         # index = model.find_index_from_id(new_sheet_id)
@@ -186,3 +182,10 @@ class WriteTreeView(QTreeView):
         model.undo_stack.push(command)
         model.set_undo_stack_active()
 
+    def select_by_id(self, paper_id: int):
+        index_list = self.model().match(self.model().index(0, 0), SheetTreeModel.IdRole, paper_id
+                                        , 1, (Qt.MatchExactly | Qt.MatchRecursive))
+        if index_list:
+            index = index_list[0]
+            if index.isValid():
+                self.setCurrentIndex(index)

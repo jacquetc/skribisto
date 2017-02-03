@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator/src/plume/plugins/writepropertiesdock/properties_dock.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator-py/src/plume/plugins/writepropertiesdock/properties_dock.ui'
 #
-# Created by: PyQt5 UI code generator 5.5.1
+# Created by: PyQt5 UI code generator 5.7.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -17,6 +17,7 @@ class Ui_WritePropertiesDock(object):
         self.topWidget = QtWidgets.QWidget(WritePropertiesDock)
         self.topWidget.setObjectName("topWidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.topWidget)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.filterLineEdit = QtWidgets.QLineEdit(self.topWidget)
         self.filterLineEdit.setObjectName("filterLineEdit")
@@ -28,21 +29,6 @@ class Ui_WritePropertiesDock(object):
         self.addPropButton.setObjectName("addPropButton")
         self.horizontalLayout.addWidget(self.addPropButton)
         self.verticalLayout.addWidget(self.topWidget)
-        self.systemTableView = QtWidgets.QTableView(WritePropertiesDock)
-        self.systemTableView.setProperty("showDropIndicator", False)
-        self.systemTableView.setDragDropOverwriteMode(False)
-        self.systemTableView.setAlternatingRowColors(True)
-        self.systemTableView.setSortingEnabled(True)
-        self.systemTableView.setObjectName("systemTableView")
-        self.systemTableView.horizontalHeader().setCascadingSectionResizes(True)
-        self.systemTableView.horizontalHeader().setDefaultSectionSize(70)
-        self.systemTableView.horizontalHeader().setHighlightSections(False)
-        self.systemTableView.horizontalHeader().setMinimumSectionSize(50)
-        self.systemTableView.horizontalHeader().setStretchLastSection(True)
-        self.systemTableView.verticalHeader().setVisible(False)
-        self.systemTableView.verticalHeader().setDefaultSectionSize(20)
-        self.systemTableView.verticalHeader().setMinimumSectionSize(20)
-        self.verticalLayout.addWidget(self.systemTableView)
         self.tableView = QtWidgets.QTableView(WritePropertiesDock)
         self.tableView.setProperty("showDropIndicator", False)
         self.tableView.setDragDropOverwriteMode(False)
@@ -53,13 +39,10 @@ class Ui_WritePropertiesDock(object):
         self.tableView.horizontalHeader().setDefaultSectionSize(70)
         self.tableView.horizontalHeader().setHighlightSections(False)
         self.tableView.horizontalHeader().setMinimumSectionSize(50)
-        self.tableView.horizontalHeader().setSortIndicatorShown(True)
         self.tableView.horizontalHeader().setStretchLastSection(True)
         self.tableView.verticalHeader().setVisible(False)
         self.tableView.verticalHeader().setDefaultSectionSize(20)
         self.tableView.verticalHeader().setMinimumSectionSize(20)
-        self.tableView.verticalHeader().setSortIndicatorShown(False)
-        self.tableView.verticalHeader().setStretchLastSection(False)
         self.verticalLayout.addWidget(self.tableView)
 
         self.retranslateUi(WritePropertiesDock)

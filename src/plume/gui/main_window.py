@@ -127,14 +127,12 @@ class MainWindow(QMainWindow, WindowSystemController):
         """
         cfg.data.projectHub().loadProject('../../resources/plume_test_project.sqlite')
         # bug : first one of the two following functions will fail !
-        title = cfg.data.sheetHub().getTitle(1,1)
-        print(title)
-        id_list = cfg.data.projectHub().getProjectIdList()
-        print(id_list)
+        # id_list = cfg.data.projectHub().getProjectIdList()
+        # print(id_list)
         last_loaded = cfg.data.projectHub().getLastLoaded()
-        print(last_loaded)
-        id_list = cfg.data.projectHub().getProjectIdList()
-        print(id_list)
+        # print(last_loaded)
+        # id_list = cfg.data.projectHub().getProjectIdList()
+        # print(id_list)
         # print("last : " + str(last_loaded))
         # print("list : " + repr(id_list))
 

@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QObject, pyqtSlot
-from gui import cfg
+from .gui import cfg
 
 class ErrorHandler(QObject):
 
@@ -8,6 +8,12 @@ class ErrorHandler(QObject):
 
         cfg.data.errorHub().errorSent.connect(self.print_error)
 
-    @pyqtSlot('QString', 'QString', 'QString')
-    def print_error(self, code:str, origin:str, message:str):
-        print("ERROR : " + code + "/n" + origin + "/n" + message)
+    # @pyqtSlot('QString', 'QString', 'QString')
+    # def print_error(self, code:str, origin:str, message:str):
+    #     print("ERROR : " + code + "/n" + origin + "/n" + message
+
+    @pyqtSlot()
+    def print_error(self, error):
+        if not error:
+            print("error")
+        # print("ERROR : " + code + "/n" + origin + "/n" + message)

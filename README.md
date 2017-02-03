@@ -19,9 +19,10 @@ You must set up the workspace before beginning to develop Plume.
 Add to your environnmeent variables :
 
 PLUME_DEVELOP_FROM=/path/to/plume/source/code
-
+PLUME_DEVELOP_DATA_BUILD_FROM=/path/to/plume-data/libs
 ### In linux :
 export PLUME_DEVELOP_FROM=/home/[username]/Devel/workspace_eclipse/plume-creator
+export PLUME_DEVELOP_DATA_BUILD_FROM=/home/[username]/Devel/workspace_eclipse/lib
 
 #### Necessities :
 Make sure you have pyQt 5.4 (for python3) or more, and it's dev tools (pyrcc5), installed

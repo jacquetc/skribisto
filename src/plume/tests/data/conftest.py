@@ -4,7 +4,11 @@ from . import cfg
 
 from PyQt5.QtCore import QCoreApplication
 import os
-from ...error_handler import ErrorHandler
+
+_df = os.environ.get('PLUME_DEVELOP_FROM', None)
+if _df and os.path.exists(_df):
+    sys.path.insert(0, _df)
+import src.plume.error_handler
 
 # for development :
 _df = os.environ.get('PLUME_DEVELOP_DATA_BUILD_FROM', None)
@@ -19,7 +23,6 @@ import plmdata
 def my_own_class_run_at_beginning(request):
     print('\nOpening')
     cfg.app = QCoreApplication.instance()
-    ErrorHandler(cfg.app)
 
 
     def my_own_class_run_at_end():

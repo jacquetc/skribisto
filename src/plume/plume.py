@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, QSettings
 from gui.main_window import MainWindow
 from gui import cfg, plugins,  pics_rc
 import sys, platform, os
-import error_handler
+# import error_handler
 
 # for development :
 _df = os.environ.get('PLUME_DEVELOP_DATA_BUILD_FROM', None)
@@ -36,7 +36,7 @@ if __name__ == '__main__':
         QSettings.setDefaultFormat(QSettings.IniFormat)
 
 
-    # app.setStyle(QStyleFactory.create("fusion"))
+    app.setStyle(QStyleFactory.create("fusion"))
     # palette = QPalette()
     # palette.setColor(QPalette.Window, QColor(53,53,53))
     # palette.setColor(QPalette.WindowText, Qt.white)
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     cfg.gui_plugins = plugins.Plugins()
 
     # error handler :
-    error_handler.ErrorHandler(app)
+    # error_handler.ErrorHandler(app)
 
     window = MainWindow()
     arguments = sys.argv

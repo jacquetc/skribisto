@@ -32,9 +32,9 @@ class WritePanel(SubWindow, WindowSystemController):
         self.setDockOptions(self.dockOptions() ^ QMainWindow.AnimatedDocks)
 
         # init Sheet Tree Model
-        # self.property_model = SheetPropertyModel(self, 0)
-        # cfg.models["0_sheet_property_model"] = self.property_model
-        # cfg.undo_group.addStack(self.property_model.undo_stack)
+        self.property_model = SheetPropertyModel(self)
+        cfg.models["0_sheet_property_model"] = self.property_model
+        cfg.undo_group.addStack(self.property_model.undo_stack)
         # self.system_property_model = SheetSystemPropertyModel(self, 0)
         # cfg.models["0_sheet_system_property_model"] = self.system_property_model
         # cfg.undo_group.addStack(self.system_property_model.undo_stack)

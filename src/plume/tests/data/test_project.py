@@ -1,8 +1,39 @@
 from . import cfg
 from PyQt5.QtWidgets import QListWidget
+import plmdata
+
+from src.plume.gui.models import sheet_tree_model, sheet_property_model, note_tree_model
+from src.plume.gui import cfg as cfg_gui
+
+def test_open_database(qtbot):
+    data = plmdata.PLMData(cfg.app)
+    cfg_gui.data = data
+    # data.projectHub().blockSignals(True)
+    assert len(data.projectHub().getProjectIdList()) == 0
+
+    print("aaaaaaa")
+
+    sheet_tree_model.SheetTreeModel(cfg.app)
+    sheet_property_model.SheetPropertyModel(cfg.app)
+    note_tree_model.NoteTreeModel(cfg.app)
+    print("bbbbbb")
+
+    with qtbot.waitSignal(data.projectHub().projectLoaded, timeout=1000) as blocker:
+        error = data.projectHub().loadProject(cfg.test_database_path)
+    print(error.isSuccess())
+    print("cccccc")
+    assert blocker.signal_triggered
+    assert len(data.projectHub().getProjectIdList()) == 1
+
+
+
+
+
+
+
 
 def test_close_database(qtbot, data_object):
-    assert len(data_object.database_manager.database_for_int_dict) == 1
+    assert len(data_object.projectHub().getProjectIdList()) == 1
 
 def test_close_and_load_the_same_database(qtbot, data_object):
 

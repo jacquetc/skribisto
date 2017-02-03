@@ -18,12 +18,17 @@ from . import cfg
 
 class Property:
 
-    def __init__(self, table_name: str, property_type: str, property_id):
+    def __init__(self, property_type: str, project_id: int, property_id: int):
         super(Property, self).__init__()
 
-        self._table_name = table_name
         self._property_type = property_type
         self.id = property_id
+        self.project_id = project_id
+
+        if property_type == "sheet_property":
+            self.hub = cfg.data.sheetPropertyHub()
+        if property_type == "note_property":
+            self.hub = cfg.data.notePropertyHub()
 
         # for deep copy :
         self._name = None
@@ -56,51 +61,53 @@ class Property:
 
     @property
     def name(self):
-        return cfg.data.database.get_table(self._table_name).get_name(self.id)
+        return self.hub.getName(self.project_id, self.id)
 
     @name.setter
     def name(self, value: str):
-        cfg.data.database.get_table(self._table_name).set_name(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._property_type + ".name_changed", self.id)
+        self.hub.setName(self.project_id, self.id, value)
+
 
     @property
     def value(self):
-        val = cfg.data.database.get_table(self._table_name).get_value(self.id)
+        val = self.hub.getPropertyById(self.project_id, self.id)
         return val
 
     @value.setter
     def value(self, val):
-        cfg.data.database.get_table(self._table_name).set_value(self.id, val)
-        cfg.data_subscriber.announce_update(0, self._property_type + ".value_changed", self.id)
+        self.hub.setValue(self.project_id, self.id, val)
 
     @property
     def paper_code(self):
-        val = cfg.data.database.get_table(self._table_name).get_paper_code(self.id)
-        return val
+        return self.hub.getPaperCode(self.project_id, self.id)
 
     @paper_code.setter
     def paper_code(self, val):
-        cfg.data.database.get_table(self._table_name).set_paper_code(self.id, val)
-        cfg.data_subscriber.announce_update(0, self._property_type + ".paper_code_changed", self.id)
-
+        self.hub.setPaperCode(self.project_id, self.id, val)
 
     @property
     def creation_date(self):
-        return cfg.data.database.get_table(self._table_name).get_creation_date(self.id)
+        return self.hub.getCreationDate(self.project_id, self.id)
 
     @creation_date.setter
     def creation_date(self, value):
-        cfg.data.database.get_table(self._table_name).set_creation_date(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._property_type + ".creation_date_changed", self.id)
+        self.hub.setCreationDate(self.project_id, self.id, value)
 
     @property
     def last_modification_date(self):
-        return cfg.data.database.get_table(self._table_name).get_modification_date(self.id)
+        return self.hub.getModificationDate(self.project_id, self.id)
 
     @last_modification_date.setter
     def last_modification_date(self, value):
-        cfg.data.database.get_table(self._table_name).set_modification_date(self.id, value)
-        cfg.data_subscriber.announce_update(0, self._property_type + ".last_modification_changed", self.id)
+        self.hub.setModificationDate(self.project_id, self.id, value)
+
+    @property
+    def system(self):
+        return self.hub.getSystem(self.project_id, self.id)
+
+    @system.setter
+    def system(self, value):
+        self.hub.setSystem(self.project_id, self.id, value)
 
     # @property
     # def properties(self):
@@ -139,32 +146,34 @@ class Property:
     #             cfg.data.subscriber.unsubscribe_update_func_to_domain(0, func)
 
     def add(self, paper_id: int, imposed_property_ids: list = ()):
-        new_list = cfg.data.database.get_table(self._table_name).add_new_properties(1, paper_id, imposed_property_ids)
-        cfg.data_subscriber.announce_update(0, self._property_type + ".structure_changed")
-        return new_list
+        hub = cfg.data.sheetPropertyHub()
+        new_id = hub.getLastAddedId()
+        self.id = new_id
+        if imposed_property_ids:
+            hub.addProperty(self.project_id, paper_id, imposed_property_ids[0])
+        else:
+            hub.addProperty(self.project_id, paper_id)
+
+        return [new_id]
 
     def remove(self, property_ids: list = ()):
-        if property_ids == ():
+        if not property_ids:
             property_ids = [self.id]
-        if cfg.data.database.get_table(self._table_name).remove_properties(property_ids):
-            cfg.data_subscriber.announce_update(0, self._property_type + ".structure_changed")
+        if self.hub.removeProperty(self.project_id, property_ids[0]):
             return True
         else:
             return False
 
 
-
-
 class SheetProperty(Property):
-
-    def __init__(self, property_id: int = -1):
-        super(SheetProperty, self).__init__(table_name="tbl_sheet_property", property_type="sheet_property"
-                                            , property_id=property_id)
+    def __init__(self, project_id: int, property_id: int = -1):
+        super(SheetProperty, self).__init__(property_type="sheet_property"
+                                            , project_id=project_id, property_id=property_id)
 
 
 
 class NoteProperty(Property):
 
-    def __init__(self, property_id: int = -1):
-        super(NoteProperty, self).__init__(table_name="tbl_note_property", property_type="note_property"
-                                            , property_id=property_id)
+    def __init__(self, project_id: int, property_id: int = -1):
+        super(NoteProperty, self).__init__(property_type="note_property"
+                                            , project_id=project_id, property_id=property_id)
