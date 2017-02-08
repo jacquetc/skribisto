@@ -16,13 +16,9 @@ class Ui_SideBar(object):
         self.verticalLayout.setSpacing(2)
         self.verticalLayout.setContentsMargins(2, 2, 2, 2)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.plumeMenuButton = QtWidgets.QToolButton(SideBar)
+
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/pics/plume-creator.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.plumeMenuButton.setIcon(icon)
-        self.plumeMenuButton.setIconSize(QtCore.QSize(48, 48))
-        self.plumeMenuButton.setObjectName("plumeMenuButton")
-        self.verticalLayout.addWidget(self.plumeMenuButton)
         self.actionLayout = QtWidgets.QVBoxLayout()
         self.actionLayout.setSpacing(3)
         self.actionLayout.setObjectName("actionLayout")
@@ -36,5 +32,4 @@ class Ui_SideBar(object):
     def retranslateUi(self, SideBar):
 
         SideBar.setWindowTitle(_("Form"))
-        self.plumeMenuButton.setText(_("Menu"))
 

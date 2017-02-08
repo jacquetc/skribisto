@@ -7,7 +7,7 @@ Created on 25 avr. 2015
 
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QActionGroup,
                              QHBoxLayout,  QFileDialog, QMessageBox,  QApplication, QUndoView)
-from PyQt5.QtCore import Qt,  QDir, QDate
+from PyQt5.QtCore import Qt,  QDir, QDateTime, QSettings, QVariant
 from .window_system import WindowSystemController
 from .welcome_panel import WelcomePanel
 from .write_panel import WritePanel
@@ -26,8 +26,8 @@ class MainWindow(QMainWindow, WindowSystemController):
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
-        self.init_ui()
         cfg.window = self
+        self.init_ui()
 
 
         cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
@@ -150,8 +150,25 @@ class MainWindow(QMainWindow, WindowSystemController):
 
         self.setWindowTitle("Plume Creator - TEST")
 
-        self.undo_view = QUndoView(cfg.undo_group, None)
-        self.undo_view.show()
+
+
+        # add the project to settings
+        settings = QSettings(self)
+        settings.beginGroup("Welcome")
+        array_size = settings.beginReadArray("recent_projects")
+        settings.endArray()
+        settings.beginWriteArray("recent_projects")
+        settings.setArrayIndex(array_size)
+        settings.setValue("title", QVariant(str("TEST")))
+        settings.setValue("path",  QVariant(str(path)))
+        settings.setValue("date",  QVariant(QDateTime(QDateTime.currentDateTime())))
+        settings.endArray()
+        settings.endGroup()
+
+
+    @pyqtSlot()
+    def launch_empty_project(self):
+        cfg.data.projectHub().loadProject('')
 
     @pyqtSlot()
     def launch_preferences(self):
