@@ -8,6 +8,7 @@ class NoteListProxyModel(QSortFilterProxyModel):
         self.setDynamicSortFilter(False)
         self.setFilterKeyColumn(0)
         self._current_sheet_id = -1
+        self._current_project_id = -1
 
     def columnCount(self, parent=None):
         return 1
@@ -19,8 +20,9 @@ class NoteListProxyModel(QSortFilterProxyModel):
 
         if sourceIndex.isValid():
             #check current index itself :
-            key = self.sourceModel().data(sourceIndex, NoteListModel.SheetCodeRole)
-            if self._current_sheet_id == key:
+            sheet_code = self.sourceModel().data(sourceIndex, NoteListModel.SheetCodeRole)
+            project_id = self.sourceModel().data(sourceIndex, NoteListModel.ProjectIdRole)
+            if self._current_sheet_id == sheet_code and self._current_project_id == project_id:
                 return True
             return False
 
@@ -28,12 +30,10 @@ class NoteListProxyModel(QSortFilterProxyModel):
         #parent call for initial behaviour
  #       return QSortFilterProxyModel.filterAcceptsRow(self, sourceRow, sourceParent)
 
-
-
-
-    def filterNoteBySheet(self, sheet_id:int):
+    def filterNoteBySheet(self, project_id:int, sheet_id:int):
 
         self._current_sheet_id = sheet_id
+        self._current_project_id = project_id
         self.invalidateFilter()
 
 

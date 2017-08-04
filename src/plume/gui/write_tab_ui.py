@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eric/plume-creator/src/plume/gui/write_tab.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator-py/src/plume/gui/write_tab.ui'
 #
-# Created by: PyQt5 UI code generator 5.4.1
+# Created by: PyQt5 UI code generator 5.5.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -39,6 +39,6 @@ class Ui_WriteTab(object):
 
         WriteTab.setWindowTitle(_("Form"))
 
-from gui.writingzone.writing_zone import WritingZone
-from .text_navigator import TextNavigator
 from .quick_search import QuickSearch
+from .text_navigator import TextNavigator
+from .writingzone.writing_zone import WritingZone

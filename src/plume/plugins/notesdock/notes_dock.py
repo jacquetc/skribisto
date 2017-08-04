@@ -13,7 +13,7 @@ class NotesDockPlugin(gui_plugins.GuiWriteSubWindowDockPlugin):
     NotesDockPlugin, based on SynopsisDockPlugin
     '''
     is_builtin_plugin = True
-    ignore = True
+    ignore = False
     def __init__(self):
         '''
         Constructor
@@ -49,6 +49,7 @@ class GuiNotesDock(QObject):
         self.filter = None
         self._note_list_model = None
         self._sheet_id = None
+        self._project_id = None
 
         # filter :
         self.filter = note_list_proxy_model.NoteListProxyModel(self)
@@ -79,6 +80,22 @@ class GuiNotesDock(QObject):
         self.sheet_id = paper_id
 
     @property
+    def project_id(self):
+        """
+        Project id
+        :return:
+        """
+        return self._project_id
+
+    @project_id.setter
+    def project_id(self, project_id):
+        """
+        Project id
+        :param id:
+        """
+        self._project_id = project_id
+
+    @property
     def sheet_id(self):
         return self._sheet_id
 
@@ -88,13 +105,13 @@ class GuiNotesDock(QObject):
             pass
         self._sheet_id = sheet_id
         self.get_update()
-        if self.sheet_id is not None:
-            gui_cfg.data.subscriber.unsubscribe_update_func(self.get_update)
-            gui_cfg.data.subscriber.subscribe_update_func_to_domain(0, self.get_update,
-                                                                           "note.content_changed", self._sheet_id)
+        # if self.sheet_id is not None:
+        #     gui_cfg.data.subscriber.unsubscribe_update_func(self.get_update)
+        #     gui_cfg.data.subscriber.subscribe_update_func_to_domain(0, self.get_update,
+        #                                                                    "note.content_changed", self._sheet_id)
     def get_update(self):
-        if self.sheet_id is not None and self.filter is not None:
-            self.filter.filterNoteBySheet(self.sheet_id)
+        if self.sheet_id is not None and self.filter is not None and self._project_id is not None:
+            self.filter.filterNoteBySheet(self._project_id, self.sheet_id)
 
 
     def get_widget(self):
@@ -130,5 +147,5 @@ class GuiNotesDock(QObject):
         # connect(mQQuickWidget->rootObject(), SIGNAL(displayContextMenuSignal(int,int,int)), this, SLOT(displayContextMenu(int,int,int)));
 
 
-        self.filter.filterNoteBySheet(self.sheet_id)
+        self.filter.filterNoteBySheet(self.project_id, self.sheet_id)
         return self.widget

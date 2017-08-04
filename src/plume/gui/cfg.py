@@ -11,3 +11,4 @@ window = None
 models = {}
 undo_group = None
 signal_hub = None
+current_project = None

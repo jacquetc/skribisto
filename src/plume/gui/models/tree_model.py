@@ -609,7 +609,10 @@ class AddAfterNodeCommand(QUndoCommand):
 
     @property
     def last_new_id(self):
-        return self.new_id_list[0]
+        if not self.new_id_list:
+            return -1
+        else:
+            return self.new_id_list[0]
 
     def redo(self):
         paper = Paper(paper_type=self._model.paper_type, project_id=self._project_id, paper_id=self._parent_paper_id)

@@ -43,6 +43,7 @@ class WriteTreeView(QTreeView):
 
     def init(self):
         self.model().modelReset.connect(self.apply_expand)
+        # cfg.data.projectHub().projectLoaded.connect(self.apply_expand)
         self.apply_expand()
 
     def _init_actions(self):
@@ -80,6 +81,9 @@ class WriteTreeView(QTreeView):
         while index.isValid():
             paper_id = index.data(SheetTreeModel.IdRole)
             project_id = index.data(SheetTreeModel.ProjectIdRole)
+            if project_id == -1:
+                index = self.indexBelow(index)
+                continue
             # if True:
             # TODO if cfg.models["0_sheet_system_property_model"].get_property(paper_id, "write_tree_item_expanded", "1") == "1":
             if cfg.data.sheetPropertyHub().getProperty(project_id, paper_id, "write_tree_item_expanded") == "1":
@@ -113,9 +117,14 @@ class WriteTreeView(QTreeView):
             self.setCurrentIndex(index)
             self._one_click_checkpoint = True
 
-    def contextMenuEvent(self, event):
+        project_id = index.data(SheetTreeModel.ProjectIdRole)
+        cfg.current_project = project_id
 
-        self.setCurrentIndex(self.indexAt(event.pos()))
+    def contextMenuEvent(self, event):
+        current_index = self.indexAt(event.pos())
+        self.setCurrentIndex(current_index)
+        project_id = current_index.data(SheetTreeModel.ProjectIdRole)
+        cfg.current_project = project_id
 
         menu = QMenu(self)
         add_child_after_action = menu.addAction(_("Add sheet after"))
@@ -189,3 +198,6 @@ class WriteTreeView(QTreeView):
             index = index_list[0]
             if index.isValid():
                 self.setCurrentIndex(index)
+                project_id = index.data(SheetTreeModel.ProjectIdRole)
+                cfg.current_project = project_id
+

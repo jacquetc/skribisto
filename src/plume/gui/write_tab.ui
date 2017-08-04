@@ -49,7 +49,7 @@
   <customwidget>
    <class>WritingZone</class>
    <extends>QWidget</extends>
-   <header>gui/writingzone/writing_zone.h</header>
+   <header>.writingzone.writing_zone.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

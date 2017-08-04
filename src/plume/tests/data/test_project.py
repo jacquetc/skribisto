@@ -9,31 +9,60 @@ def test_open_database(qtbot):
     data = plmdata.PLMData(cfg.app)
     cfg_gui.data = data
     # data.projectHub().blockSignals(True)
-    assert len(data.projectHub().getProjectIdList()) == 0
-
-    print("aaaaaaa")
+    # assert len(data.projectHub().getProjectIdList()) == 0
 
     sheet_tree_model.SheetTreeModel(cfg.app)
     sheet_property_model.SheetPropertyModel(cfg.app)
     note_tree_model.NoteTreeModel(cfg.app)
-    print("bbbbbb")
 
     with qtbot.waitSignal(data.projectHub().projectLoaded, timeout=1000) as blocker:
         error = data.projectHub().loadProject(cfg.test_database_path)
-    print(error.isSuccess())
-    print("cccccc")
+    assert error.isSuccess() is True
     assert blocker.signal_triggered
     assert len(data.projectHub().getProjectIdList()) == 1
 
 
+def test_open_two_databases(qtbot):
+    data = plmdata.PLMData(cfg.app)
+    cfg_gui.data = data
+    # data.projectHub().blockSignals(True)
+    # assert len(data.projectHub().getProjectIdList()) == 0
 
+    sheet_tree_model.SheetTreeModel(cfg.app)
+    sheet_property_model.SheetPropertyModel(cfg.app)
+    note_tree_model.NoteTreeModel(cfg.app)
 
+    with qtbot.waitSignal(data.projectHub().projectLoaded, timeout=1000) as blocker:
+        error = data.projectHub().loadProject(cfg.test_database_path)
+    assert error.isSuccess() is True
+    assert blocker.signal_triggered
+    assert len(data.projectHub().getProjectIdList()) == 1
 
-
-
+    with qtbot.waitSignal(data.projectHub().projectLoaded, timeout=1000) as blocker:
+        error = data.projectHub().loadProject(cfg.test_database_path)
+    assert error.isSuccess() is True
+    assert blocker.signal_triggered
+    assert len(data.projectHub().getProjectIdList()) == 2
 
 def test_close_database(qtbot, data_object):
+    data = plmdata.PLMData(cfg.app)
+    cfg_gui.data = data
+
+    with qtbot.waitSignal(data.projectHub().projectLoaded, timeout=1000) as blocker:
+        error = data.projectHub().loadProject(cfg.test_database_path)
+    assert blocker.signal_triggered
+    assert error.isSuccess() is True
+
     assert len(data_object.projectHub().getProjectIdList()) == 1
+
+    with qtbot.waitSignal(data.projectHub().projectClosed, timeout=1000) as blocker:
+        error = data.projectHub().closeProject(data.projectHub().getLastLoaded())
+    assert blocker.signal_triggered
+    assert error.isSuccess() is True
+
+    assert len(data_object.projectHub().getProjectIdList()) == 0
+
+
 
 def test_close_and_load_the_same_database(qtbot, data_object):
 
@@ -60,6 +89,7 @@ def test_close_and_load_the_same_database(qtbot, data_object):
 
     assert blocker.signal_triggered
     assert project_id == 1
+
 
 def test_error_when_loading_locked_database(qtbot, data_object):
     # loading project again :

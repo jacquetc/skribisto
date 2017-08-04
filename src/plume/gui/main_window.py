@@ -29,6 +29,8 @@ class MainWindow(QMainWindow, WindowSystemController):
         cfg.window = self
         self.init_ui()
 
+        self.is_test = False
+
 
         cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
         cfg.data.projectHub().projectLoaded.connect(self._activate)
@@ -118,7 +120,7 @@ class MainWindow(QMainWindow, WindowSystemController):
             if arg[0] is "-":  # actions if other arguments
                 pass
             elif os.path.exists(arg):
-                cfg.data.load_database(0, arg)
+                cfg.data.projectHub().loadProject(arg)
                 project_opened_in_arg = True
 
         # TODO open default project
@@ -165,6 +167,10 @@ class MainWindow(QMainWindow, WindowSystemController):
         settings.endArray()
         settings.endGroup()
 
+        # open another project
+        cfg.data.projectHub().loadProject('../../resources/plume_test_project_2.sqlite')
+        id_list = cfg.data.projectHub().getProjectIdList()
+
 
     @pyqtSlot()
     def launch_empty_project(self):
@@ -188,10 +194,14 @@ class MainWindow(QMainWindow, WindowSystemController):
             _("Save as"),
             working_directory,
             _("Databases (*.sqlite *.plume);;All files (*)"),
-            _(".sqlite"))
+            _("Databases (*.sqlite *.plume)"))
         if fileName is None:
             return
-        cfg.data.save_database(0, fileName) # ,  selectedFilter
+        if cfg.current_project is None:
+            return
+        error = cfg.data.projectHub().saveProjectAs(cfg.current_project, "SQLITE", fileName) # ,  selectedFilter
+        if not error.isSuccess():
+            QMessageBox.information(self, "Error", "")
 
     @pyqtSlot()
     def save(self):
@@ -206,14 +216,14 @@ class MainWindow(QMainWindow, WindowSystemController):
             _("Open"),
             working_directory,
             _("Databases (*.sqlite *.plume);;All files (*)"),
-            _(".sqlite"))
+            _("Databases (*.sqlite *.plume)"))
 
         if fileName is None:
             return
         # check if not already open
         project_id_list = cfg.data.projectHub().getProjectIdList()
         for project_id in project_id_list:
-            path = cfg.data.projectHub().project(project_id).getPath()
+            path = cfg.data.projectHub().getPath(project_id)
             if os.path.realpath(path) == os.path.realpath(fileName):
                 QMessageBox.warning(self, "Warning", "Project already opened")
                 return
@@ -227,7 +237,16 @@ class MainWindow(QMainWindow, WindowSystemController):
         if not project_id_list:
             return
 
-        result = QMessageBox.question(
+
+        if self.is_test:
+            cfg.data.projectHub().closeAllProjects()
+            return
+
+
+
+
+        self.close_dialog = QMessageBox()
+        result = self.close_dialog.question(
             self,
             _("Close the current projects"),
             _("Do you really want to close the projects which are currently opened ?"),

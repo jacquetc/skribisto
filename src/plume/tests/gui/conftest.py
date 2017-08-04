@@ -1,3 +1,7 @@
+from src.plume.gui import main_window
+from src.plume.gui import cfg, plugins,  pics_rc
+from src.plume.plume import launch
+from PyQt5 import Qt
 import pytest
 import sys
 from . import cfg
@@ -32,7 +36,30 @@ def my_own_class_run_at_beginning(request):
     request.addfinalizer(my_own_class_run_at_end)
 
 
+@pytest.fixture(scope="function")
+def gui(request, qtbot):
+    print('[setup] GUI')
 
+    # data = plmdata.PLMData(QCoreApplication.instance())
+    # cfg.data = data
+    # cfg.gui_plugins = plugins.Plugins()
+    # window = main_window.MainWindow()
+    window = launch(QCoreApplication.instance())
+    arguments = sys.argv
+    del arguments[0]
+    window.set_application_arguments(arguments)  # load project
+
+    qtbot.addWidget(window)
+    window.is_test = True
+    window.show()
+
+    def end():
+        print('\n[teardown] Gui')
+        # cfg.gui.deleteLater()
+
+    request.addfinalizer(end)
+
+    return window
 
 @pytest.fixture()
 def data_object(request, qtbot):

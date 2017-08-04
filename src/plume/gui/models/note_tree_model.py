@@ -77,7 +77,7 @@ class NoteTreeModel(TreeModel):
 
         del self._root_node
         self._root_node = NoteTreeItem()
-        self._root_node.sheet_id = -1
+        self._root_node.id = -1
         self._root_node.indent = -1
         self._root_node.sort_order = -1
 
@@ -96,6 +96,8 @@ class NoteTreeModel(TreeModel):
                 item = NoteTreeItem(self._root_node)
                 item.indent = 0
                 item.indent_drift = 1
+                item.id = 0
+                item.project_id = project_id
                 item.title = "project " + str(project_id)
                 self._node_list.append(item)
                 self._root_node.append_child(item)
