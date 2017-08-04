@@ -17,6 +17,9 @@
    <iconset>
     <normaloff>pics/plume-creator.png</normaloff>pics/plume-creator.png</iconset>
   </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AnimatedDocks</set>
+  </property>
   <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -24,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>1197</width>
-     <height>30</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuProject">

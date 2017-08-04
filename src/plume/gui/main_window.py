@@ -12,7 +12,7 @@ from .window_system import WindowSystemController
 from .welcome_panel import WelcomePanel
 from .write_panel import WritePanel
 from .note_panel import NotePanel
-from PyQt5.Qt import QToolButton, pyqtSlot, QUndoGroup
+from PyQt5.Qt import QToolButton, pyqtSlot, QUndoGroup, QByteArray
 from . import cfg
 from .main_window_ui import Ui_MainWindow
 from .preferences import Preferences
@@ -34,6 +34,9 @@ class MainWindow(QMainWindow, WindowSystemController):
 
         cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
         cfg.data.projectHub().projectLoaded.connect(self._activate)
+
+        settings = QSettings()
+        self.restoreGeometry(settings.value("geometry", type=QByteArray))
     # TODO : add saved and not saved connection
 
     def init_ui(self):
@@ -265,6 +268,8 @@ class MainWindow(QMainWindow, WindowSystemController):
                 cfg.data.projectHub().saveProject(project_id)
             cfg.data.projectHub().closeAllProjects()
 
+
+
     @pyqtSlot()
     def launch_exit_dialog(self):
         id_list = cfg.data.projectHub().getProjectIdList()
@@ -306,6 +311,8 @@ class MainWindow(QMainWindow, WindowSystemController):
         if result == QMessageBox.Cancel:
             event.ignore()
         else:
+            settings = QSettings()
+            settings.setValue("geometry", self.saveGeometry())
             event.accept()
 
 from PyQt5.QtWidgets import QStackedWidget

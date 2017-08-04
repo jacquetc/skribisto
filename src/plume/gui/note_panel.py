@@ -29,7 +29,7 @@ class NotePanel(SubWindow):
             self, self,  DockSystem.DockTypes.NotePanelDock)
 
         self.setDockNestingEnabled(False)
-        self.setDockOptions(self.dockOptions() ^ QMainWindow.AnimatedDocks)
+        self.setDockOptions((self.dockOptions() | QMainWindow.AnimatedDocks) ^ QMainWindow.AllowTabbedDocks)
 
         # self.system_property_model = NoteSystemPropertyModel(self)
         # cfg.models["0_note_system_property_model"] = self.system_property_model
@@ -67,8 +67,6 @@ class NotePanel(SubWindow):
 
         new_window = NoteSubWindow(self, self)
         new_window.paper = NotePaper(project_id, note_id)
-        new_window.note_id = note_id
-        new_window.project_id = project_id
         self.stack_widget.addWidget(new_window)
         self.make_widget_current(note_id)
 
@@ -119,6 +117,8 @@ class NoteSubWindow(SubWindow):
         self._paper = None
         self.tab_title = "Error"
 
+        self.setDockNestingEnabled(False)
+        self.setDockOptions((self.dockOptions() | QMainWindow.AnimatedDocks) ^ QMainWindow.AllowTabbedDocks)
         self.dock_system = DockSystem(
             self, self, DockSystem.DockTypes.NoteSubWindowDock)
 
@@ -128,6 +128,15 @@ class NoteSubWindow(SubWindow):
         self.ui.writeTabWritingZone.is_resizable = True
 
         self.setCentralWidget(central_widget)
+
+
+    @property
+    def paper_id(self):
+        return self.paper.paper_id
+
+    @property
+    def project_id(self):
+        return self.paper.project_id
 
     @property
     def paper(self):

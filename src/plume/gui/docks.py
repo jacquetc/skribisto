@@ -4,7 +4,7 @@ Created on 7 mai 2015
 @author:  Cyril Jacquet
 '''
 from PyQt5.QtWidgets import QDockWidget, QWidget
-from PyQt5.Qt import pyqtSlot, QObject
+from PyQt5.Qt import pyqtSlot, QObject, QSettings, QSize, QByteArray
 from . import cfg
 from PyQt5.QtCore import Qt
 from enum import Enum
@@ -29,9 +29,11 @@ class DockSystem(QObject):
         self._project_id = None
         self.main_window = main_window
         self.dock_list = []
+        self.dock_type = dock_type
+        self.loading_settings = False
 
         if dock_type is self.DockTypes.WriteSubWindowDock:
-            self._default_dock = "write-properties-dock"
+            self._default_dock = "synopsis-dock"
             write_subwindow_dock_plugin_dict = cfg.gui_plugins.write_subwindow_dock_plugin_dict
             # add there other dicts with built-in docks
             self.dock_type_dict = write_subwindow_dock_plugin_dict
@@ -55,6 +57,8 @@ class DockSystem(QObject):
             self.dock_type_dict = note_panel_dock_plugin_dict
 
 
+
+
     def split_dock(self, dock):
         '''
         function:: split_dock(dock)
@@ -62,7 +66,7 @@ class DockSystem(QObject):
         '''
         area = self.main_window.dockWidgetArea(dock)
         self.add_dock(dock.current_type, area)
-        pass
+
 
     def add_dock(self, type_str, area=Qt.RightDockWidgetArea):
         '''
@@ -104,6 +108,12 @@ class DockSystem(QObject):
         dock.close()
         dock.deleteLater()
 
+    def clear(self):
+        for dock in self.dock_list:
+            self.remove_dock(dock)
+        self.dock_list = []
+
+
     @property
     def paper_id(self):
         return self._paper_id
@@ -131,8 +141,38 @@ class DockSystem(QObject):
         function:: load_settings()
         :param :
         '''
+        self.loading_settings = True
 
-        pass
+        self.clear()
+
+        settings = QSettings(self)
+        settings.beginGroup("Docks")
+        array_size = settings.beginReadArray(str(self.dock_type))
+        # apply number limit
+        # if array_size > 5:
+        #     array_size = self.size_limit
+        # load:
+        size_list = []
+        for i in range(array_size):
+            settings.setArrayIndex(i)
+            _type = settings.value("type")
+            area = settings.value("area", type=Qt.DockWidgetArea)
+            size_list.append(settings.value("size", type=QSize))
+
+            self.add_dock(_type, area)
+
+        settings.endArray()
+        settings.endGroup()
+        for i in range(len(self.dock_list)):
+            self.dock_list[i].resize(size_list[i])
+
+        if not self.dock_list:
+            self.add_dock(self._default_dock)
+
+        self.main_window.restoreState(settings.value("Docks/state/" + str(self.dock_type), 0, type=QByteArray))
+
+        self.loading_settings = False
+
 
     def save_settings(self):
         '''
@@ -140,8 +180,27 @@ class DockSystem(QObject):
         :param :
         '''
 
-        pass
+        settings = QSettings(self)
 
+        settings.beginGroup("Docks/" + str(self.dock_type))
+        settings.remove("")
+        settings.endGroup()
+
+        settings.beginGroup("Docks")
+        settings.beginWriteArray(str(self.dock_type), len(self.dock_list))
+        for i in range(len(self.dock_list)):
+            dock = self.dock_list[i]
+            settings.setArrayIndex(i)
+            settings.setValue("type", dock.current_type)
+            settings.setValue("area", int(self.main_window.dockWidgetArea(dock)))
+            settings.setValue("size", dock.size())
+
+        settings.endArray()
+        settings.endGroup()
+
+        settings.setValue("Docks/state/" + str(self.dock_type), self.main_window.saveState())
+
+from PyQt5.Qt import QTimer
 
 class DockTemplate(QDockWidget):
 
@@ -160,8 +219,7 @@ class DockTemplate(QDockWidget):
         self.setTitleBarWidget(title_widget)
         self.dock_system = dock_system
 
-        self.setFeatures(self.features() | (QDockWidget.DockWidgetFloatable |
-                                            QDockWidget.DockWidgetMovable))
+        self.setFeatures((self.features() | QDockWidget.DockWidgetMovable) & ~QDockWidget.DockWidgetFloatable)
 
 
     @property
@@ -173,6 +231,17 @@ class DockTemplate(QDockWidget):
         if dock_system is not None:
             self._dock_system = dock_system
             self.titleBarWidget().fill_comboBox_with_types()
+
+    def resizeEvent(self, event):
+        if not self._dock_system.loading_settings:
+            QTimer.singleShot(0, self.dock_system.save_settings)
+        QDockWidget.resizeEvent(self, event)
+
+    def closeEvent(self, event):
+        if not self._dock_system.loading_settings:
+            self.dock_system.remove_dock(self)
+            QTimer.singleShot(0, self.dock_system.save_settings)
+        QDockWidget.closeEvent(self, event)
 
 from .dock_title_bar_ui import Ui_DockTitleBar
 
@@ -219,3 +288,6 @@ class DockTitleWidget(QWidget):
             return
         dock_type = self.ui.comboBox.itemData(index, Qt.UserRole)
         self.parent_dock.dock_system.change_type(self.parent_dock,  dock_type)
+
+        if not self.parent_dock.dock_system.loading_settings:
+            self.parent_dock.dock_system.save_settings()

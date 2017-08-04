@@ -10,7 +10,7 @@ This window system is used to attach or detach QWidget using controls like butto
 
 '''
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 
 class WindowSystemController():
@@ -37,15 +37,31 @@ class WindowSystemController():
             pass
 
     def detach_sub_window(self, sub_window):
+
         sub_window.setParent(None, Qt.Tool)
         sub_window.show()
         self.window_dict[sub_window.objectName()] = [sub_window, "detached"]
 
+        #save state :
+        settings = QSettings()
+        settings.setValue("WindowSystem" + sub_window.objectName() + "/attached", False)
+        # resotre geometry
+        byte_array = settings.value("WindowSystem" + sub_window.objectName() + "/geometry", 0, type=QByteArray)
+        sub_window.restoreGeometry(byte_array)
+
     def attach_sub_window(self, sub_window):
+        #save geometry before attaching:
+        settings = QSettings()
+        settings.setValue("WindowSystem" + sub_window.objectName() + "/geometry", sub_window.saveGeometry())
+
         sub_window.setParent(self.window_system_parent_widget)
         self.window_system_parent_widget.attach_sub_window(sub_window)
 
         self.window_dict[sub_window.objectName()] = [sub_window, "attached"]
+
+        #save state :
+        settings = QSettings()
+        settings.setValue("WindowSystem" + sub_window.objectName() + "/attached", True)
 
     def is_window_attached(self, sub_window):
         try:

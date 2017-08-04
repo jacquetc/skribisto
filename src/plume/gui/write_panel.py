@@ -29,7 +29,7 @@ class WritePanel(SubWindow, WindowSystemController):
             self, self,  DockSystem.DockTypes.WritePanelDock)
 
         self.setDockNestingEnabled(False)
-        self.setDockOptions(self.dockOptions() ^ QMainWindow.AnimatedDocks)
+        self.setDockOptions((self.dockOptions() | QMainWindow.AnimatedDocks) ^ QMainWindow.AllowTabbedDocks)
 
         # init Sheet Tree Model
         self.property_model = SheetPropertyModel(self)
@@ -65,11 +65,10 @@ class WritePanel(SubWindow, WindowSystemController):
         new_window = WriteSubWindow(self, self)
         paper = SheetPaper(project_id, sheet_id)
         new_window.paper = paper
-        new_window.project_id = project_id
         self.stack_widget.addWidget(new_window)
         self.make_widget_current(sheet_id)
         # temp for test:
-        new_window.dock_system.add_dock("synopsis-dock")
+        # new_window.dock_system.add_dock("synopsis-dock")
 
     def make_widget_current(self, sheet_id: int):
         for i in range(0, self.stack_widget.count()):
@@ -102,6 +101,7 @@ class WritePanel(SubWindow, WindowSystemController):
         self._activate(False)
 
 from PyQt5.QtWidgets import QWidget
+from PyQt5.Qt import QTimer
 from .write_tab_ui import Ui_WriteTab
 
 
@@ -124,6 +124,8 @@ class WriteSubWindow(SubWindow):
         self._paper = None
         self.tab_title = "Error"
 
+        self.setDockNestingEnabled(False)
+        self.setDockOptions((self.dockOptions() | QMainWindow.AnimatedDocks) ^ QMainWindow.AllowTabbedDocks)
         self.dock_system = DockSystem(
             self, self, DockSystem.DockTypes.WriteSubWindowDock)
 
@@ -133,6 +135,15 @@ class WriteSubWindow(SubWindow):
         self.ui.writeTabWritingZone.is_resizable = True
 
         self.setCentralWidget(central_widget)
+        QTimer.singleShot(0, self.dock_system.load_settings)
+
+    @property
+    def paper_id(self):
+        return self.paper.paper_id
+
+    @property
+    def project_id(self):
+        return self.paper.project_id
 
     @property
     def paper(self):
@@ -158,4 +169,6 @@ class WriteSubWindow(SubWindow):
         self.dock_system.paper_id = paper_object.paper_id
         self.ui.writeTabWritingZone.text_edit.textChanged.connect(
             self.save_content)
+
+
 
