@@ -145,11 +145,11 @@ class GuiPropertyDock:
         if self._sheet_id == sheet_id:
             return
         self._sheet_id = sheet_id
-        self.paperFilterModel.filterByPaperId(sheet_id)
+        self.paperFilterModel.filterByPaperId(self._project_id, sheet_id)
 
     @property
     def project_id(self):
-        """
+        """self._project_id
 
         :return:
         """
@@ -241,13 +241,15 @@ class TableFilter(QSortFilterProxyModel):
     def __init__(self, parent=None):
         super(TableFilter, self).__init__(parent)
         self._current_paper_id = -1
+        self._current_project_id = -1
         self._are_system_properties_visible = False
 
     def filterAcceptsRow(self, row, index):
         code = self.sourceModel().index(row, 0, index).data(PropertyModel.CodeRole)
         is_system = self.sourceModel().index(row, 0, index).data(PropertyModel.SystemRole)
+        project_id = self.sourceModel().index(row, 0, index).data(PropertyModel.ProjectIdRole)
 
-        if code == self._current_paper_id:
+        if code == self._current_paper_id and self._current_project_id == project_id:
             if self._are_system_properties_visible and is_system:
                 return True
             elif not is_system:
@@ -257,9 +259,10 @@ class TableFilter(QSortFilterProxyModel):
         else:
             return False
 
-    def filterByPaperId(self, paper_id: int):
+    def filterByPaperId(self, project_id: int, paper_id: int):
 
         self._current_paper_id = paper_id
+        self._current_project_id = project_id
         self.invalidateFilter()
 
     def setSystemVisible(self, value: bool):

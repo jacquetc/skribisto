@@ -16,12 +16,13 @@ class PropertyModel(QAbstractTableModel):
     '''
 
     IdRole = Qt.UserRole
-    NameRole = Qt.UserRole + 1
-    ValueRole = Qt.UserRole + 2
-    DateCreatedRole = Qt.UserRole + 3
-    DateUpdatedRole = Qt.UserRole + 4
-    SystemRole = Qt.UserRole + 5
-    CodeRole = Qt.UserRole + 6
+    ProjectIdRole = Qt.UserRole + 1
+    NameRole = Qt.UserRole + 2
+    ValueRole = Qt.UserRole + 3
+    DateCreatedRole = Qt.UserRole + 4
+    DateUpdatedRole = Qt.UserRole + 5
+    SystemRole = Qt.UserRole + 6
+    CodeRole = Qt.UserRole + 7
 
     def __init__(self, table_name: str, id_name: str, code_name: str, property_type: str
                  , parent: QObject):
@@ -98,9 +99,9 @@ class PropertyModel(QAbstractTableModel):
 
         node = self.node_from_index(index)
 
-        if role == Qt.DisplayRole and col == 0:
+        if (role == Qt.DisplayRole  or role == Qt.EditRole) and col == 0:
             return node.name
-        if role == Qt.DisplayRole and col == 1:
+        if (role == Qt.DisplayRole  or role == Qt.EditRole) and col == 1:
             return node.value
 
         if role == self.NameRole:
@@ -109,6 +110,8 @@ class PropertyModel(QAbstractTableModel):
             return node.value
         if role == self.IdRole:
             return node.id
+        if role == self.ProjectIdRole:
+            return node.project_id
         if role == self.CodeRole:
             return node.paper_code
         if role == self.DateCreatedRole:
@@ -223,10 +226,18 @@ class PropertyModel(QAbstractTableModel):
     def set_undo_stack_active(self):
         self._undo_stack.setActive(True)
 
-    def set_property(self, paper_id: int, name: str, value: str):
-        self.undo_stack.push(SetPropertyCommand(paper_id, name, value, self))
+    def set_property(self, project_id: int, paper_id: int, name: str, value: str):
+        self.undo_stack.push(SetPropertyCommand(project_id, paper_id, name, value, self))
 
-    def get_property(self, paper_id: int, name: str, default_value: str):
+    def get_property(self, project_id: int, paper_id: int, name: str, default_value: str):
+        """
+        Obsolete
+        :param project_id:
+        :param paper_id:
+        :param name:
+        :param default_value:
+        :return:
+        """
         property_id = self.find_id(paper_id, name)
         if property_id is None:
             property_id = Property(self._table_name, self._property_type, -1).add(paper_id)[0]
@@ -239,7 +250,8 @@ class PropertyModel(QAbstractTableModel):
 
     def find_id(self, paper_id: int, name: str):
         """
-
+        Obsolete
+        :return:
         :param paper_id:
         :param name:
         :return: return None if nothing or id
