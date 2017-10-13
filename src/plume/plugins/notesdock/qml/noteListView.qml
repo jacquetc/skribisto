@@ -44,7 +44,8 @@ Rectangle {
                         elide: Text.ElideLeft
                         width: wrapper.width
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-                        text: model.content
+                        text: ""
+                        // text: model.content
                         //                    color: wrapper.ListView.isCurrentItem ? "red" : "black"
                         MouseArea {
                             anchors.fill: parent
@@ -67,7 +68,8 @@ Rectangle {
                     TextArea{
                         id: contentTextEdit
                         width: wrapper.width
-                        text: model.content
+                        text: ""
+                        // text: model.content
                         visible: false
                     }
 

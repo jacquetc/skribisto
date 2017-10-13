@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eric/plume-creator/src/plume/gui/dock_title_bar.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator-py/src/plume/gui/dock_title_bar.ui'
 #
-# Created by: PyQt5 UI code generator 5.4.1
+# Created by: PyQt5 UI code generator 5.5.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -11,11 +11,16 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_DockTitleBar(object):
     def setupUi(self, DockTitleBar):
         DockTitleBar.setObjectName("DockTitleBar")
-        DockTitleBar.resize(243, 154)
+        DockTitleBar.resize(283, 41)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(DockTitleBar.sizePolicy().hasHeightForWidth())
+        DockTitleBar.setSizePolicy(sizePolicy)
         DockTitleBar.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates))
         self.verticalLayout = QtWidgets.QVBoxLayout(DockTitleBar)
-        self.verticalLayout.setSpacing(2)
         self.verticalLayout.setContentsMargins(2, 2, 2, 2)
+        self.verticalLayout.setSpacing(2)
         self.verticalLayout.setObjectName("verticalLayout")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
@@ -45,6 +50,11 @@ class Ui_DockTitleBar(object):
         self.horizontalLayout.addWidget(self.closeButton)
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.emptyDrawerWidget = QtWidgets.QWidget(DockTitleBar)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.emptyDrawerWidget.sizePolicy().hasHeightForWidth())
+        self.emptyDrawerWidget.setSizePolicy(sizePolicy)
         self.emptyDrawerWidget.setObjectName("emptyDrawerWidget")
         self.verticalLayout.addWidget(self.emptyDrawerWidget)
 

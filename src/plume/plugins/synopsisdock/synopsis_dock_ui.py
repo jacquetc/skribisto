@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eric/plume-creator/src/plume/plugins/synopsisdock/synopsis_dock.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator-py/src/plume/plugins/synopsisdock/synopsis_dock.ui'
 #
-# Created by: PyQt5 UI code generator 5.4.1
+# Created by: PyQt5 UI code generator 5.5.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -13,6 +13,7 @@ class Ui_SynopsisDock(object):
         SynopsisDock.setObjectName("SynopsisDock")
         SynopsisDock.resize(400, 300)
         self.verticalLayout = QtWidgets.QVBoxLayout(SynopsisDock)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
         self.topWidget = QtWidgets.QWidget(SynopsisDock)
         self.topWidget.setObjectName("topWidget")

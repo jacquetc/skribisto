@@ -1,8 +1,7 @@
-
 import sys, platform, os
 sys.path.insert(0, os.path.dirname(__file__))
-import ui_converter
-import qrc_converter
+from ui_converter import UiConverter
+from qrc_converter import QrcConverter
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 from PyQt5.QtGui import QPalette, QColor
 from PyQt5.QtCore import Qt, QSettings
@@ -56,6 +55,9 @@ def launch(app: QApplication):
     # palette.setColor(QPalette.HighlightedText, Qt.black)
     # app.setPalette(palette)
 
+
+    app.setWheelScrollLines(1)
+
     data = plmdata.PLMData(app)
 
     # data = Data()
@@ -75,6 +77,10 @@ def launch(app: QApplication):
 
 
 if __name__ == '__main__':
+    UiConverter()
+    QrcConverter()
+
+
     application = QApplication(sys.argv)
     window = launch(application)
     window.show()

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cyril/Devel/workspace_eric/plume-creator/src/plume/gui/writingzone/writing_zone.ui'
+# Form implementation generated from reading ui file '/home/cyril/Devel/plume/plume-creator-py/src/plume/gui/writingzone/writing_zone.ui'
 #
-# Created by: PyQt5 UI code generator 5.4.1
+# Created by: PyQt5 UI code generator 5.5.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -12,8 +12,10 @@ class Ui_WritingZone(object):
     def setupUi(self, WritingZone):
         WritingZone.setObjectName("WritingZone")
         WritingZone.setEnabled(True)
-        WritingZone.resize(816, 523)
+        WritingZone.resize(1105, 570)
         self.verticalLayout = QtWidgets.QVBoxLayout(WritingZone)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setSpacing(2)
         self.verticalLayout.setObjectName("verticalLayout")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
@@ -46,22 +48,29 @@ class Ui_WritingZone(object):
         self.sizeHorizontalSpacer_left.setObjectName("sizeHorizontalSpacer_left")
         self.horizontalLayout.addWidget(self.sizeHorizontalSpacer_left)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_2.setSpacing(6)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(1, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem)
         self.toolBar = ToolBar(WritingZone)
         self.toolBar.setMinimumSize(QtCore.QSize(20, 0))
         self.toolBar.setObjectName("toolBar")
         self.verticalLayout_2.addWidget(self.toolBar)
-        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem1 = QtWidgets.QSpacerItem(1, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem1)
         self.horizontalLayout.addLayout(self.verticalLayout_2)
         self.richTextEdit = RichTextEdit(WritingZone)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.richTextEdit.sizePolicy().hasHeightForWidth())
+        self.richTextEdit.setSizePolicy(sizePolicy)
+        self.richTextEdit.setMinimumSize(QtCore.QSize(40, 40))
         self.richTextEdit.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.richTextEdit.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.richTextEdit.setObjectName("richTextEdit")
         self.horizontalLayout.addWidget(self.richTextEdit)
-        self.sizeHandle = QtWidgets.QWidget(WritingZone)
+        self.sizeHandle = SizeHandle(WritingZone)
         self.sizeHandle.setMinimumSize(QtCore.QSize(4, 0))
         self.sizeHandle.setCursor(QtGui.QCursor(QtCore.Qt.SizeHorCursor))
         self.sizeHandle.setMouseTracking(True)
@@ -97,6 +106,11 @@ class Ui_WritingZone(object):
         self.sizeHorizontalSpacer_right.setObjectName("sizeHorizontalSpacer_right")
         self.horizontalLayout.addWidget(self.sizeHorizontalSpacer_right)
         self.minimap = Minimap2(WritingZone)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.minimap.sizePolicy().hasHeightForWidth())
+        self.minimap.setSizePolicy(sizePolicy)
         self.minimap.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.minimap.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.minimap.setObjectName("minimap")
@@ -178,6 +192,7 @@ class Ui_WritingZone(object):
         self.actionPrint_directly.setShortcut(_("Ctrl+Shift+P"))
 
 from .minimap import Minimap
-from .tool_bar import ToolBar
 from .minimap_text_browser import Minimap2
 from .rich_text_edit import RichTextEdit
+from .size_handle import SizeHandle
+from .tool_bar import ToolBar

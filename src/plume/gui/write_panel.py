@@ -30,7 +30,9 @@ class WritePanel(SubWindow, WindowSystemController):
 
         self.setDockNestingEnabled(False)
         self.setDockOptions((self.dockOptions() | QMainWindow.AnimatedDocks) ^ QMainWindow.AllowTabbedDocks)
+        self.dock_system.set_allowed_areas(Qt.LeftDockWidgetArea)
 
+        self.setMinimumSize(500, 500)
         # init Sheet Tree Model
         self.property_model = SheetPropertyModel(self)
         cfg.models["0_sheet_property_model"] = self.property_model
@@ -45,7 +47,7 @@ class WritePanel(SubWindow, WindowSystemController):
         self.sheet_manager = PaperManager()
 
         # Project tree view dock :
-        self.dock_system.add_dock("write-tree-dock",  Qt.LeftDockWidgetArea)
+        # self.dock_system.add_dock("write-tree-dock",  Qt.LeftDockWidgetArea)
 
         # set QStackWidget:
         self.stack_widget = QStackedWidget(self)
@@ -55,8 +57,12 @@ class WritePanel(SubWindow, WindowSystemController):
         cfg.data.projectHub().projectClosed.connect(self._clear_from_project)
         cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
 
+        QTimer.singleShot(0, self.dock_system.load_settings)
+
+
     def open_sheet(self, project_id: int, sheet_id: int):
         """
+    _ = UiConverter()
 
         :param project_id:
         :param sheet_id:
@@ -128,11 +134,14 @@ class WriteSubWindow(SubWindow):
         self.setDockOptions((self.dockOptions() | QMainWindow.AnimatedDocks) ^ QMainWindow.AllowTabbedDocks)
         self.dock_system = DockSystem(
             self, self, DockSystem.DockTypes.WriteSubWindowDock)
+        self.dock_system.set_allowed_areas(Qt.RightDockWidgetArea)
 
         self.setWindowTitle("WriteTab")
         self.ui.writeTabWritingZone.has_minimap = True
         self.ui.writeTabWritingZone.has_scrollbar = True
         self.ui.writeTabWritingZone.is_resizable = True
+
+        self.ui.writeTabWritingZone.ui.richTextEdit.setMinimumSize(300,300)
 
         self.setCentralWidget(central_widget)
         QTimer.singleShot(0, self.dock_system.load_settings)

@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout,  QSizePolicy
+from PyQt5.Qt import QTimer
 from .writing_zone_ui import Ui_WritingZone
 
 
@@ -23,12 +24,21 @@ class WritingZone(QWidget):
         self.ui.verticalScrollBar.valueChanged.connect(baseScrollBar.setValue)
         self.ui.richTextEdit.verticalScrollBar().hide()
 
+        # private
+        self._has_minimap = False
+        self._has_scrollbar = False
+        self._has_side_tool_bar = True
+        self._is_resizable = False
+
+        # initial setup
         self.has_minimap = False
         self.has_scrollbar = False
         self.has_side_tool_bar = True
         self.is_resizable = False
 
         self._init_actions()
+
+        self.ui.sizeHandle.size_handle_moved.connect(self.widen_textedit)
 
     def _init_actions(self):
 
@@ -150,3 +160,6 @@ class WritingZone(QWidget):
 
     def add_action(self,  action):
         self._action_set.add_action(action)
+
+    def widen_textedit(self, diff: int):
+        self.ui.richTextEdit.setMaximumWidth(self.ui.richTextEdit.width() + diff * 2)

@@ -158,7 +158,7 @@ class GuiSynopsisDock(QObject):
             self.ui.writingZone.has_minimap = False
             self.ui.writingZone.has_scrollbar = False
             self.ui.writingZone.is_resizable = False
-            self.ui.has_side_tool_bar = False        
+            self.ui.writingZone.has_side_tool_bar = False
 
             if self.sheet_id is not None:
                 self.get_update()

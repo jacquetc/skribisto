@@ -33,7 +33,10 @@ class WriteTreeProxyModel(QSortFilterProxyModel):
 
             row_count = self.sourceModel().rowCount(source_index)
             for i in range(row_count):
-                self.filterAcceptsRow(i, source_index)
+                is_matching = self.filterAcceptsRow(i, source_index)
+                if is_matching:
+                    return True
+
 
             # check current index itself:
 

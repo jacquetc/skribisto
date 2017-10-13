@@ -267,6 +267,7 @@ class ProjectListModel(QAbstractListModel):
 # for access from QML :
     def roleNames(self):
         return {self.TitleRole: QByteArray().append("title"),
+                # self.TitleRole: QByteArray().append("content"),
                 self.PathRole: QByteArray().append("path"),
                 self.LastOpenedDate: QByteArray().append("last_opened_date")
                 }

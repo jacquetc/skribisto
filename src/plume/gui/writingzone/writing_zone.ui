@@ -9,14 +9,29 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>816</width>
-    <height>523</height>
+    <width>1105</width>
+    <height>570</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>2</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
@@ -95,6 +110,9 @@
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="spacing">
+        <number>6</number>
+       </property>
        <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
@@ -102,7 +120,7 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>20</width>
+           <width>1</width>
            <height>40</height>
           </size>
          </property>
@@ -125,7 +143,7 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>20</width>
+           <width>1</width>
            <height>40</height>
           </size>
          </property>
@@ -135,6 +153,18 @@
      </item>
      <item>
       <widget class="RichTextEdit" name="richTextEdit">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>40</width>
+         <height>40</height>
+        </size>
+       </property>
        <property name="verticalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
        </property>
@@ -144,7 +174,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QWidget" name="sizeHandle" native="true">
+      <widget class="SizeHandle" name="sizeHandle" native="true">
        <property name="minimumSize">
         <size>
          <width>4</width>
@@ -238,6 +268,12 @@
      </item>
      <item>
       <widget class="Minimap2" name="minimap">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="verticalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
        </property>
@@ -389,6 +425,12 @@
    <class>ToolBar</class>
    <extends>QWidget</extends>
    <header>.tool_bar.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SizeHandle</class>
+   <extends>QWidget</extends>
+   <header>.size_handle.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

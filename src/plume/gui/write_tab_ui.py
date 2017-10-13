@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_WriteTab(object):
     def setupUi(self, WriteTab):
         WriteTab.setObjectName("WriteTab")
-        WriteTab.resize(400, 300)
+        WriteTab.resize(403, 303)
         self.verticalLayout = QtWidgets.QVBoxLayout(WriteTab)
         self.verticalLayout.setObjectName("verticalLayout")
         self.horizontalLayout = QtWidgets.QHBoxLayout()

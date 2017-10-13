@@ -31,6 +31,7 @@ class DockSystem(QObject):
         self.dock_list = []
         self.dock_type = dock_type
         self.loading_settings = False
+        self._allowed_areas = Qt.AllDockWidgetAreas
 
         if dock_type is self.DockTypes.WriteSubWindowDock:
             self._default_dock = "synopsis-dock"
@@ -76,6 +77,7 @@ class DockSystem(QObject):
         '''
 
         dock = DockTemplate(self, dock_system=self)
+        dock.setAllowedAreas(self._allowed_areas)
         self.change_type(dock, type_str)
         self.dock_list.append(dock)
 
@@ -199,6 +201,11 @@ class DockSystem(QObject):
         settings.endGroup()
 
         settings.setValue("Docks/state/" + str(self.dock_type), self.main_window.saveState())
+
+    def set_allowed_areas(self, allowed_areas):
+        self._allowed_areas = allowed_areas
+        for dock in self.dock_list:
+            dock.setAllowedAreas(allowed_areas)
 
 from PyQt5.Qt import QTimer
 

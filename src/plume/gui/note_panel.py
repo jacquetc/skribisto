@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QTabWidget, QStackedWidget, QMainWindow
-from PyQt5.QtCore import Qt,  pyqtSlot
+from PyQt5.QtCore import Qt,  pyqtSlot, QTimer
 from .docks import DockSystem
 from .models.note_tree_model import NoteTreeModel
 from .models.note_list_model import NoteListModel
@@ -30,6 +30,9 @@ class NotePanel(SubWindow):
 
         self.setDockNestingEnabled(False)
         self.setDockOptions((self.dockOptions() | QMainWindow.AnimatedDocks) ^ QMainWindow.AllowTabbedDocks)
+        self.dock_system.set_allowed_areas(Qt.LeftDockWidgetArea)
+
+        self.setMinimumSize(500, 500)
 
         # self.system_property_model = NoteSystemPropertyModel(self)
         # cfg.models["0_note_system_property_model"] = self.system_property_model
@@ -48,7 +51,7 @@ class NotePanel(SubWindow):
         self.note_manager = PaperManager()
 
         # Project tree view dock :
-        self.dock_system.add_dock("note-tree-dock", Qt.LeftDockWidgetArea)
+        # self.dock_system.add_dock("note-tree-dock", Qt.LeftDockWidgetArea)
 
         # set QStackWidget:
         self.stack_widget = QStackedWidget(self)
@@ -57,6 +60,9 @@ class NotePanel(SubWindow):
         # subscribe
         cfg.data.projectHub().projectClosed.connect(self._clear_from_project)
         cfg.data.projectHub().allProjectsClosed.connect(self._clear_from_all_projects)
+
+        QTimer.singleShot(0, self.dock_system.load_settings)
+
 
     def open_note(self, project_id: int, note_id: int):
         """
@@ -121,6 +127,7 @@ class NoteSubWindow(SubWindow):
         self.setDockOptions((self.dockOptions() | QMainWindow.AnimatedDocks) ^ QMainWindow.AllowTabbedDocks)
         self.dock_system = DockSystem(
             self, self, DockSystem.DockTypes.NoteSubWindowDock)
+        self.dock_system.set_allowed_areas(Qt.RightDockWidgetArea)
 
         self.setWindowTitle("NoteTab")
         self.ui.writeTabWritingZone.has_minimap = True
@@ -128,6 +135,7 @@ class NoteSubWindow(SubWindow):
         self.ui.writeTabWritingZone.is_resizable = True
 
         self.setCentralWidget(central_widget)
+        QTimer.singleShot(0, self.dock_system.load_settings)
 
 
     @property
