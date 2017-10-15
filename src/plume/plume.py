@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPalette, QColor
 from PyQt5.QtCore import Qt, QSettings
 # from data.data import Data
 from gui.main_window import MainWindow
-from gui import cfg, plugins,  pics_rc
+from gui import cfg, plugins,  pics_rc, qml_rc
 # import error_handler
 
 # for development :

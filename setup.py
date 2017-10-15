@@ -127,7 +127,7 @@ setup(
 
     name = "plume-creator",
 
-    version = "0.90",
+    version = "1.61",
 
     description = "Software for writers and novelists",
     options={"build_exe": options},

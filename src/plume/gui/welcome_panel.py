@@ -39,8 +39,9 @@ class WelcomePanel(SubWindow, WindowSystemController):
         mQQuickWidget.setResizeMode(QQuickWidget.SizeRootObjectToView)
         mQQuickWidget.rootContext().setContextProperty("project_list_model", self.project_list_model)
         mQQuickWidget.rootContext().setContextProperty("window", cfg.window)
-        abspath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-        mQQuickWidget.setSource(QUrl(abspath + "/qml/WelcomePage.qml"))
+        # abspath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+        # mQQuickWidget.setSource(QUrl(abspath + "/qml/WelcomePage.qml"))
+        mQQuickWidget.setSource(QUrl("qrc:/qml/WelcomePage.qml"))
         self.setCentralWidget(mQQuickWidget)
 
 
