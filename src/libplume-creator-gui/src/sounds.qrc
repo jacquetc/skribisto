@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>sounds/keyany.wav</file>
+        <file>sounds/keyenter.wav</file>
+    </qresource>
+</RCC>

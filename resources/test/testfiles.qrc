@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>plume_test_project.sqlite</file>
+    </qresource>
+</RCC>

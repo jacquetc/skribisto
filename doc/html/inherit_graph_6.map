@@ -1,7 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node2" href="$classplume-creator_1_1src_1_1plume_1_1data_1_1exceptions_1_1_data_error.html" title="Created on 16 avr. " alt="" coords="123,104,385,145"/>
-<area shape="rect" id="node3" href="$classplume-creator_1_1src_1_1plume_1_1data_1_1exceptions_1_1_data_save_file_already_exists_error.html" title="An error if the file already exists. " alt="" coords="433,5,696,47"/>
-<area shape="rect" id="node4" href="$classplume-creator_1_1src_1_1plume_1_1data_1_1exceptions_1_1_data_save_file_path_access_error.html" title="An error if the file path can&#39;t be accessed anymore. " alt="" coords="433,71,696,112"/>
-<area shape="rect" id="node5" href="$classplume-creator_1_1src_1_1plume_1_1data_1_1exceptions_1_1_data_s_q_lite_error.html" title="An error if the SLite3 database raises an error. " alt="" coords="433,136,696,177"/>
-<area shape="rect" id="node6" href="$classplume-creator_1_1src_1_1plume_1_1data_1_1exceptions_1_1_data_unable_load_file_error.html" title="An error if the file can&#39;t be loaded. " alt="" coords="433,201,696,243"/>
-</map>

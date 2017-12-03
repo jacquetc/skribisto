@@ -1,9 +1,0 @@
-[Core]
-Name = Write Wastebin Dock
-Module = write_wastebin_dock
-
-[Documentation]
-Author = Cyril Jacquet
-Version = 0.1
-Website = http://www.plume-creator.eu
-Description = Dock displaying the main project wastebin

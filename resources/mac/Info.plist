@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIconFile</key>
+	<string>@ICON@</string>
+	<key>CFBundleDisplayName</key>
+	<string>Plume Creator</string>
+	<key>CFBundleName</key>
+	<string>Plume Creator</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@SHORT_VERSION@</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>@TYPEINFO@</string>
+	<key>CFBundleExecutable</key>
+	<string>@EXECUTABLE@</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.PlumeSoft.Plume-Creator</string>
+	<key>CFBundleTypeExtensions</key>
+	<string>plume</string>
+	<key>CFBundleTypeIconFile</key>
+	<string>plume</string>
+	<key>CFBundleTypeName</key>
+	<string>Plume Creator Project</string>
+	<key>CFBundleTypeRole</key>
+	<string>None</string>
+	<key>LSIsAppleDefaultForType</key>
+	<true/>
+	<key>LSMultipleInstancesProhibited</key>
+	<true/>
+
+</dict>
+</plist>
