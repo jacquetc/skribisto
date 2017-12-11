@@ -4,8 +4,8 @@
 # Project created by QtCreator 2011-07-25T11:13:12
 #
 #-------------------------------------------------
-lessThan(QT_VERSION, 5.6.1) {
-        error("Plume Creator requires Qt 5.6.1 or greater")
+lessThan(QT_VERSION, 5.9.3) {
+        error("Plume Creator requires Qt 5.9.3 or greater")
 }
 
 
@@ -44,7 +44,7 @@ TARGET = $$join(TARGET,,,_beta)
 
 SOURCES += main.cpp
 
-QT += core gui widgets
+QT += core gui widgets quick qml
 
 CODECFORTR = UTF-8
 
@@ -67,8 +67,19 @@ RC_FILE = $$top_dir/resources/windows/icon.rc
 }
 
 
+android {
+DEFINES += FORCEQML=1
+ANDROID_EXTRA_LIBS += /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5Sql.so \
+                        /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5QuickWidgets.so \
+                        /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5Xml.so \
+                        /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5QuickControls2.so \
+                        /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5QuickTemplates2.so
+}
+else {
+DEFINES += FORCEQML=0
+}
 
-unix: !macx {
+unix: !macx: !android {
 
 isEmpty(PREFIX) {
 PREFIX = /usr
@@ -145,6 +156,8 @@ else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-data
 INCLUDEPATH += $$PWD/../libplume-creator-data/src/
 DEPENDPATH += $$PWD/../libplume-creator-data/src/
 
+equals(FORCEQML, 0) {
+
 # add gui lib :
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-gui/src/release/ -lplume-creator-gui
@@ -155,3 +168,14 @@ else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-gui
 INCLUDEPATH += $$PWD/../libplume-creator-gui/src/
 DEPENDPATH += $$PWD/../libplume-creator-gui/src/
 
+}
+
+# add qml lib :
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-qml/src/release/ -lplume-creator-qml
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-qml/src/debug/ -lplume-creator-qml
+else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-qml
+
+
+INCLUDEPATH += $$PWD/../libplume-creator-qml/src/
+DEPENDPATH += $$PWD/../libplume-creator-qml/src/

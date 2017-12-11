@@ -89,10 +89,8 @@ QList<PLMPlugin> PLMPluginLoader::listActivated()
 
     while (i != m_pluginsListHash.constEnd()) {
         PLMPlugin plugin = i.value();
-
         //TODO: link to a list of not activated given in settings
-        if (!QSettings().value("Plugins/deactivatedPlugins", 0).toStringList().contains(plugin.object->metaObject()->className()));
-
+        //if (!QSettings().value("Plugins/deactivatedPlugins", 0).toStringList().contains(plugin.object->metaObject()->className()));
         list << plugin;
         ++i;
     }

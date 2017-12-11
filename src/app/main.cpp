@@ -14,15 +14,20 @@ using namespace std;
 #include <QtWidgets/QProxyStyle>
 #include <QtWidgets/QSplashScreen>
 #include <QtWidgets/QStyleFactory>
+#include <QDebug>
 
 #include <QtPlugin>
+#include <QtQml/QQmlApplicationEngine>
 #include <QtWidgets/QInputDialog>
 
+
+
+#ifndef FORCEQML
 #include "common/plmutils.h"
 #include "plmpluginloader.h"
-
 #include "plmguiplugins.h"
 #include "plmmainwindow.h"
+#endif
 
 #include "plmdata.h"
 
@@ -46,10 +51,8 @@ void startCore()
     //Names for the QSettings
     QCoreApplication::setOrganizationName( "plume-creator" );
     QCoreApplication::setOrganizationDomain( "plume-creator.com" );
+    QCoreApplication::setApplicationVersion(QString::number(VERSIONSTR));
     QString appName = "Plume-Creator";
-#ifndef beta_release
-    appName = "Plume-Creator Beta";
-#endif
     QCoreApplication::setApplicationName(appName);
     QSettings::setDefaultFormat(QSettings::IniFormat);
 }
@@ -58,6 +61,7 @@ void startCore()
 
 void selectLang()
 {
+#ifndef FORCEQML
     //TODO: since app, core and gui are separated now, adapt the lang loader
     qRegisterMetaType<QList<PLMTranslation> >("QList<PLMTranslation>");
     // Lang menu :
@@ -166,9 +170,11 @@ void selectLang()
 
     //install translation of plugins:
     PLMPluginLoader::instance()->installPluginTranslations();
+#endif
 }
 
 //-------------------------------------------------------
+#ifndef FORCEQML
 
 void openProjectInArgument(PLMMainWindow *plmMainWindow)
 {
@@ -195,6 +201,7 @@ void openProjectInArgument(PLMMainWindow *plmMainWindow)
         }
     }
 }
+#endif
 
 //-------------------------------------------------------
 
@@ -206,6 +213,7 @@ PLMData *startData()
 
 //-------------------------------------------------------
 
+#ifndef FORCEQML
 PLMMainWindow *startGui(PLMData *data)
 {
     //Q_INIT_RESOURCE(pics);
@@ -238,16 +246,50 @@ PLMMainWindow *startGui(PLMData *data)
     mw->init();
     return mw;
 }
+#endif
 
 //-------------------------------------------------------
 
+bool isQML()
+{
+    QStringList args = qApp->arguments();
+
+    foreach (const QString &arg, args) {
+        if (arg == "--qml") {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//-------------------------------------------------------
+
+QQmlApplicationEngine *startQMLGui(PLMData *data)
+{
+    Q_INIT_RESOURCE(qml);
+    QQmlApplicationEngine *engine = new QQmlApplicationEngine("qrc:/qml/main.qml");
+    return engine;
+}
+
+//----------------------------------------------------
+
+
+
 int main(int argc, char *argv[])
 {
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication app(argc, argv);
-    app.setApplicationVersion(VERSIONSTR);
     startCore();
     PLMData *data = startData();
-    PLMMainWindow *gui = startGui(data);
-    openProjectInArgument(gui);
+//    if (isQML() || FORCEQML == 1) {
+#ifdef FORCEQML
+    QQmlApplicationEngine *engine = startQMLGui(data);
+#endif
+#ifndef FORCEQML
+//        PLMMainWindow *gui = startGui(data);
+    //    openProjectInArgument(gui);
+#endif
+    //data->projectHub()->loadProject();
     return app.exec();
 }

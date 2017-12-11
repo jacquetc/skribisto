@@ -1,5 +1,5 @@
-lessThan(QT_VERSION, 5.6.1) {
-        error("Plume Creator requires Qt 5.6.1 or greater")
+lessThan(QT_VERSION, 5.9.3) {
+        error("Plume Creator requires Qt 5.9.3 or greater")
 }
 
 QT -= gui

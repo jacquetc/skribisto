@@ -1,6 +1,5 @@
-
-lessThan(QT_VERSION, 5.6.1) {
-        error("Plume Creator requires Qt 5.6.1 or greater")
+lessThan(QT_VERSION, 5.9.3) {
+        error("Plume Creator requires Qt 5.9.3 or greater")
 }
 
 TARGET = plume-creator-gui
@@ -9,7 +8,7 @@ DEFINES += PLUME_CREATOR_GUI_LIBRARY
 DESTDIR = $$top_builddir/bin/
 CONFIG += c++14
 
-QT += core gui xml widgets printsupport multimedia qml quick quickwidgets
+QT += core gui xml widgets printsupport multimedia qml quick quickcontrols2
 
 SOURCES += \
     plmmainwindow.cpp \
@@ -42,7 +41,7 @@ RESOURCES += \
     $$top_dir/readme.qrc \
     pics.qrc \
     sounds.qrc \
-    qml.qrc
+    gui_qml.qrc
 
 
 OTHER_FILES  += \
