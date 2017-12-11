@@ -1,7 +1,7 @@
 
-#lessThan(QT_VERSION, 5.9) {
-#        error("Plume Creator requires Qt 5.9 or greater")
-#}
+lessThan(QT_VERSION, 5.09.3) {
+        error("Plume Creator requires Qt 5.9.3 or greater")
+}
 
 TARGET = plume-creator-qml
 TEMPLATE = lib

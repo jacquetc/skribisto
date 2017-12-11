@@ -1,4 +1,4 @@
-lessThan(QT_VERSION, 5.9.3) {
+lessThan($$[QT_VERSION], 5.09.3) {
         error("Plume Creator requires Qt 5.9.3 or greater")
 }
 

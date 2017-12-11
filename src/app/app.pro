@@ -4,28 +4,25 @@
 # Project created by QtCreator 2011-07-25T11:13:12
 #
 #-------------------------------------------------
-lessThan(QT_VERSION, 5.9.3) {
+lessThan(QT_VERSION, 5.09.3) {
         error("Plume Creator requires Qt 5.9.3 or greater")
 }
 
 
 TEMPLATE = app
 
-VERSION = 1.61
-DEFINES += VERSIONSTR=\\\"$${VERSION}\\\"
-
 DESTDIR = $$top_builddir/bin/
+
+VERSION = 1.61
+DEFINES += VERSIONSTR=$${VERSION}
 
 #MOC_DIR = build
 #OBJECTS_DIR = build
 #RCC_DIR = build
 #UI_DIR = build
 
-unix: !macx {
 TARGET = plume-creator
-} else {
-TARGET = Plume-Creator
-}
+
 
 CONFIG(beta_release) {
 TARGET = $$join(TARGET,,,_beta)
@@ -44,7 +41,7 @@ TARGET = $$join(TARGET,,,_beta)
 
 SOURCES += main.cpp
 
-QT += core gui widgets quick qml
+QT += core gui widgets qml
 
 CODECFORTR = UTF-8
 
@@ -57,7 +54,8 @@ CODECFORTR = UTF-8
 #FORMS += src/mainwindow.ui
 
 RESOURCES += \
-../translations/langs.qrc
+../translations/langs.qrc \
+    dummyqml.qrc
 
 
 
@@ -67,16 +65,32 @@ RC_FILE = $$top_dir/resources/windows/icon.rc
 }
 
 
-android {
-DEFINES += FORCEQML=1
-ANDROID_EXTRA_LIBS += /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5Sql.so \
-                        /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5QuickWidgets.so \
-                        /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5Xml.so \
-                        /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5QuickControls2.so \
-                        /home/cyril/Devel/Qt/5.9.3/android_armv7/lib/libQt5QuickTemplates2.so
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    lessThan(QT_VERSION, 5.10.0) {
+            error("Plume Creator for Android requires Qt 5.10.0 or greater")
+    }
+    DEFINES += FORCEQML=1
+
+    ANDROID_EXTRA_LIBS += /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Sql.so \
+                            /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickWidgets.so \
+                            /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Xml.so \
+                            /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickControls2.so \
+                            /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickTemplates2.so
+
+    DISTFILES += \
+        android/AndroidManifest.xml \
+        android/gradle/wrapper/gradle-wrapper.jar \
+        android/gradlew \
+        android/res/values/libs.xml \
+        android/build.gradle \
+        android/gradle/wrapper/gradle-wrapper.properties \
+        android/gradlew.bat
+
+    ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+
 }
 else {
-DEFINES += FORCEQML=0
+    DEFINES += FORCEQML=0
 }
 
 unix: !macx: !android {
@@ -179,3 +193,9 @@ else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-qml
 
 INCLUDEPATH += $$PWD/../libplume-creator-qml/src/
 DEPENDPATH += $$PWD/../libplume-creator-qml/src/
+
+DISTFILES += \
+    DummyImports.qml
+
+
+

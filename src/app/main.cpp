@@ -15,6 +15,7 @@ using namespace std;
 #include <QtWidgets/QSplashScreen>
 #include <QtWidgets/QStyleFactory>
 #include <QDebug>
+#include <QString>
 
 #include <QtPlugin>
 #include <QtQml/QQmlApplicationEngine>
