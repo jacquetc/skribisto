@@ -9,7 +9,7 @@ DEFINES += PLUME_CREATOR_QML_LIBRARY
 DESTDIR = $$top_builddir/bin/
 CONFIG += c++14
 
-QT += qml quick
+QT += qml quick quickcontrols2
 
 SOURCES += \
 
@@ -43,4 +43,15 @@ else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-data
 
 INCLUDEPATH += $$PWD/../../libplume-creator-data/src/
 DEPENDPATH += $$PWD/../../libplume-creator-data/src/
+
+DISTFILES += \
+    WelcomePageForm.ui.qml \
+    WelcomePage.qml \
+    ProjectListItemForm.ui.qml \
+    ProjectListItem.qml \
+    RootPageForm.ui.qml \
+    RootPage.qml \
+    WritePageForm.ui.qml \
+    WritePage.qml \
+    qtquickcontrols2.conf
 

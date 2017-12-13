@@ -1,5 +1,16 @@
 <RCC>
     <qresource prefix="/qml">
         <file>main.qml</file>
+        <file>WelcomePageForm.ui.qml</file>
+        <file>ProjectListItem.qml</file>
+        <file>ProjectListItemForm.ui.qml</file>
+        <file>RootPage.qml</file>
+        <file>RootPageForm.ui.qml</file>
+        <file>WelcomePage.qml</file>
+        <file>WritePage.qml</file>
+        <file>WritePageForm.ui.qml</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>qtquickcontrols2.conf</file>
     </qresource>
 </RCC>

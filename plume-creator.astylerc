@@ -1,8 +1,0 @@
---pad-header
---delete-empty-lines
---add-brackets
---indent=spaces=4
---indent=tab=4
---indent=force-tab=4
--A8
---align-pointer=name

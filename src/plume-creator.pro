@@ -9,7 +9,6 @@ SUBDIRS += \
 libplume-creator-qml.depends = libplume-creator-data
 app.depends = libplume-creator-data
 app.depends = libplume-creator-qml
-plugins.depends = libplume-creator-qml
 
 TRANSLATIONS = translations/plume-creator_fr_FR.ts \
 translations/plume-creator_it_IT.ts \
@@ -32,5 +31,6 @@ app.depends = libplume-creator-gui
 app.depends = plugins
 plugins.depends = libplume-creator-gui
 plugins.depends = libplume-creator-writingzone
+plugins.depends = libplume-creator-qml
 
 }

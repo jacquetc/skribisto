@@ -64,18 +64,34 @@ win32 {
 RC_FILE = $$top_dir/resources/windows/icon.rc
 }
 
-
-contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    lessThan(QT_VERSION, 5.10.0) {
+android {
+  lessThan(QT_VERSION, 5.10.0) {
             error("Plume Creator for Android requires Qt 5.10.0 or greater")
     }
     DEFINES += FORCEQML=1
 
-    ANDROID_EXTRA_LIBS += /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Sql.so \
-                            /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickWidgets.so \
-                            /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Xml.so \
-                            /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickControls2.so \
-                            /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickTemplates2.so
+    # Android ARM
+    contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+
+        ANDROID_EXTRA_LIBS += /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Sql.so \
+                                /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickWidgets.so \
+                                /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Xml.so \
+                                /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickControls2.so \
+                                /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickTemplates2.so
+    }
+
+
+    # Android x86
+    contains(ANDROID_TARGET_ARCH,x86) {
+
+
+        ANDROID_EXTRA_LIBS += /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5Sql.so \
+                                /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5QuickWidgets.so \
+                                /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5Xml.so \
+                                /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5QuickControls2.so \
+                                /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5QuickTemplates2.so
+
+    }
 
     DISTFILES += \
         android/AndroidManifest.xml \
@@ -92,6 +108,7 @@ contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 else {
     DEFINES += FORCEQML=0
 }
+
 
 unix: !macx: !android {
 
@@ -170,8 +187,8 @@ else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-data
 INCLUDEPATH += $$PWD/../libplume-creator-data/src/
 DEPENDPATH += $$PWD/../libplume-creator-data/src/
 
-equals(FORCEQML, 0) {
 
+!android {
 # add gui lib :
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-gui/src/release/ -lplume-creator-gui
@@ -181,7 +198,6 @@ else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-gui
 
 INCLUDEPATH += $$PWD/../libplume-creator-gui/src/
 DEPENDPATH += $$PWD/../libplume-creator-gui/src/
-
 }
 
 # add qml lib :
