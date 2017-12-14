@@ -47,10 +47,7 @@ RESOURCES += \
 OTHER_FILES  += \
     qml/sidePanelBar.qml
 
-unix {
-    target.path = /usr/lib/
-    INSTALLS += target
-}
+
 
 #KF5 :
 #unix {
@@ -81,3 +78,21 @@ else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-writingzone
 
 INCLUDEPATH += $$PWD/../../libplume-creator-writingzone/src/
 DEPENDPATH += $$PWD/../../libplume-creator-writingzone/src/
+
+# install :
+
+unix: !macx: !android {
+
+isEmpty(PREFIX) {
+PREFIX = /usr
+}
+isEmpty(BINDIR) {
+LIBDIR = $$PREFIX/lib
+}
+
+target.files = $$DESTDIR/$$TARGET
+target.path = $$LIBDIR
+
+INSTALLS += target
+}
+

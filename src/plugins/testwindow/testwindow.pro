@@ -33,6 +33,9 @@ RESOURCES += \
     lang_testwindow.qrc
 
 
+DISTFILES += \
+    plmtestwindow.json
+
 CODECFORTR = UTF-8
 
 TRANSLATIONS = translations/testwindow_fr_FR.ts \
@@ -62,5 +65,19 @@ INCLUDEPATH += $$PWD/../../libplume-creator-writingzone/src/
 DEPENDPATH += $$PWD/../../libplume-creator-writingzone/src/
 
 
-DISTFILES += \
-    plmtestwindow.json
+# install :
+
+unix: !macx: !android {
+
+isEmpty(PREFIX) {
+PREFIX = /usr
+}
+isEmpty(BINDIR) {
+LIBDIR = $$PREFIX/lib
+}
+
+target.files = $$DESTDIR/$$TARGET
+target.path = $$LIBDIR
+
+INSTALLS += target
+}

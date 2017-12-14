@@ -49,16 +49,29 @@ HEADERS += \
     minimap.h
 
 
-OTHER_FILES += \
-    version.info.in
-
-unix {
-    target.path = /usr/lib/
-    INSTALLS += target
-}
-
 DISTFILES += \
     ../LICENSE
 
 FORMS += \
     plmwritingzone.ui
+
+OTHER_FILES += \
+    version.info.in
+
+
+# install :
+
+unix: !macx: !android {
+
+isEmpty(PREFIX) {
+PREFIX = /usr
+}
+isEmpty(BINDIR) {
+LIBDIR = $$PREFIX/lib
+}
+
+target.files = $$DESTDIR/$$TARGET
+target.path = $$LIBDIR
+
+INSTALLS += target
+}
