@@ -6,7 +6,7 @@ lessThan(QT_VERSION, 5.09.3) {
 TARGET = plume-creator-qml
 TEMPLATE = lib
 DEFINES += PLUME_CREATOR_QML_LIBRARY
-DESTDIR = $$top_builddir/bin/
+DESTDIR = $$top_builddir/build/
 CONFIG += c++14
 
 QT += qml quick quickcontrols2
@@ -45,7 +45,7 @@ DISTFILES += \
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/release/ -lplume-creator-data
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/debug/ -lplume-creator-data
-else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-data
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-data
 
 INCLUDEPATH += $$PWD/../../libplume-creator-data/src/
 DEPENDPATH += $$PWD/../../libplume-creator-data/src/
@@ -57,13 +57,14 @@ unix: !macx: !android {
 isEmpty(PREFIX) {
 PREFIX = /usr
 }
-isEmpty(BINDIR) {
+isEmpty(LIBDIR) {
 LIBDIR = $$PREFIX/lib
 }
 
-target.files = $$DESTDIR/$$TARGET
-target.path = $$LIBDIR
+plume-creator-qml.files = $$DESTDIR/libplume-creator-qml*
+plume-creator-qml.path = $$LIBDIR
 
-INSTALLS += target
+
+INSTALLS += plume-creator-qml
 }
 

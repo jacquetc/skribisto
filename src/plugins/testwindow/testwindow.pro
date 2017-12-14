@@ -8,7 +8,7 @@ QT       += widgets core gui
 TARGET = $$qtLibraryTarget(testwindow)
 
 
-DESTDIR = $$top_builddir/bin/plugins/
+DESTDIR = $$top_builddir/build/plugins/
 
 
 INCLUDEPATH += $$top_srcdir  \
@@ -51,7 +51,7 @@ FORMS += \
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-gui/src/release/ -lplume-creator-gui
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-gui/src/debug/ -lplume-creator-gui
-else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-gui
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-gui
 
 INCLUDEPATH += $$PWD/../../libplume-creator-gui/src/
 DEPENDPATH += $$PWD/../../libplume-creator-gui/src/
@@ -59,25 +59,9 @@ DEPENDPATH += $$PWD/../../libplume-creator-gui/src/
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-writingzone/src/release/ -lplume-creator-writingzone
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-writingzone/src/debug/ -lplume-creator-writingzone
-else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-writingzone
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-writingzone
 
 INCLUDEPATH += $$PWD/../../libplume-creator-writingzone/src/
 DEPENDPATH += $$PWD/../../libplume-creator-writingzone/src/
 
 
-# install :
-
-unix: !macx: !android {
-
-isEmpty(PREFIX) {
-PREFIX = /usr
-}
-isEmpty(BINDIR) {
-LIBDIR = $$PREFIX/lib
-}
-
-target.files = $$DESTDIR/$$TARGET
-target.path = $$LIBDIR
-
-INSTALLS += target
-}

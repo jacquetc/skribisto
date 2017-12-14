@@ -14,7 +14,7 @@ TARGET = plume-creator-data
 TEMPLATE = lib
 DEFINES += PLUME_CREATOR_DATA_LIBRARY
 
-DESTDIR = $$top_builddir/bin/
+DESTDIR = $$top_builddir/build/
 
 #CONFIG(release, debug|release) {
 #MYDLLDIR = $$IN_PWD
@@ -100,17 +100,17 @@ OTHER_FILES += \
 
 unix: !macx: !android {
 
-isEmpty(PREFIX) {
-PREFIX = /usr
-}
-isEmpty(BINDIR) {
-LIBDIR = $$PREFIX/lib
-}
+    isEmpty(PREFIX) {
+    PREFIX = /usr
+    }
+    isEmpty(LIBDIR) {
+    LIBDIR = $$PREFIX/lib
+    }
 
-target.files = $$DESTDIR/$$TARGET
-target.path = $$LIBDIR
+    plume-creator-data.files = $$DESTDIR/libplume-creator-data*
+    plume-creator-data.path = $$LIBDIR
 
-INSTALLS += target
+    INSTALLS += plume-creator-data
 }
 
 DISTFILES += \

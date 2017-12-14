@@ -11,7 +11,7 @@ lessThan(QT_VERSION, 5.09.3) {
 
 TEMPLATE = app
 
-DESTDIR = $$top_builddir/bin/
+DESTDIR = $$top_builddir/build/
 
 VERSION = 1.61
 DEFINES += VERSIONSTR=$${VERSION}
@@ -124,35 +124,10 @@ DATADIR = $$PREFIX/share
 DEFINES += DATADIR=\\\"$${DATADIR}/plume-creator\\\"
 target.files = $$DESTDIR/$$TARGET
 target.path = $$BINDIR
-icon.files = resources/images/icons/hicolor/*
-icon.path = $$DATADIR/icons/hicolor
-pixmap.files += resources/unix/pixmaps/plume-creator.png \
-              resources/unix/pixmaps/plume-creator-backup.png
-pixmap.path = $$DATADIR/pixmaps
-desktop.files = resources/unix/applications/plume-creator.desktop
-desktop.path = $$DATADIR/applications/
-mime.files = resources/unix/mime/packages/plume-creator.xml
-mime.path = $$DATADIR/mime/packages/
-mimeInk.files += resources/unix/mimeInk/application/x-plume.desktop \
-              resources/unix/mimeInk/application/x-plume-backup.desktop
-mimeInk.path = $$DATADIR/mimeInk/application/
-docs.files += README COPYING License INSTALL
-docs.path = $$DATADIR/plume-creator/
-#useless for now :
-qm.files = src/plume-creator/translations/*.qm
-qm.path = $$DATADIR/plume-creator/translations
-# sounds.files = resources/sounds/*
-# sounds.path = $$DATADIR/plume-creator/sounds
-# symbols.files = resources/symbols/symbols.dat
-# symbols.path = $$DATADIR/plume-creator
-dicts.files = resources/dicts/*
-dicts.path = $$DATADIR/plume-creator/dicts
-themes.files = resources/themes/*
-themes.path = $$DATADIR/plume-creator/themes
 
 
-
-INSTALLS += target icon pixmap desktop mime mimeInk docs qm dicts themes
+#INSTALLS += target icon pixmap desktop mime mimeInk docs qm dicts themes
+INSTALLS += target
 
 }
 
@@ -182,7 +157,7 @@ QMAKE_INFO_PLIST = resources/mac/Info.plist
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-data/src/release/ -lplume-creator-data
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-data/src/debug/ -lplume-creator-data
-else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-data
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-data
 
 INCLUDEPATH += $$PWD/../libplume-creator-data/src/
 DEPENDPATH += $$PWD/../libplume-creator-data/src/
@@ -193,7 +168,7 @@ DEPENDPATH += $$PWD/../libplume-creator-data/src/
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-gui/src/release/ -lplume-creator-gui
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-gui/src/debug/ -lplume-creator-gui
-else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-gui
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-gui
 
 
 INCLUDEPATH += $$PWD/../libplume-creator-gui/src/
@@ -204,7 +179,7 @@ DEPENDPATH += $$PWD/../libplume-creator-gui/src/
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-qml/src/release/ -lplume-creator-qml
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-qml/src/debug/ -lplume-creator-qml
-else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-qml
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-qml
 
 
 INCLUDEPATH += $$PWD/../libplume-creator-qml/src/

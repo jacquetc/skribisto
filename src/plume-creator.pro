@@ -4,7 +4,6 @@ CONFIG += ordered
 SUBDIRS += \
     libplume-creator-data/plume-creator-data.pro \
     libplume-creator-qml/plume-creator-qml.pro \
-    app/app.pro
 
 libplume-creator-qml.depends = libplume-creator-data
 app.depends = libplume-creator-data
@@ -20,8 +19,8 @@ translations/plume-creator_pt_BR.ts
 !android {
 
 SUBDIRS += \
-    libplume-creator-gui/plume-creator-gui.pro \
     libplume-creator-writingzone/plume-creator-writingzone.pro \
+    libplume-creator-gui/plume-creator-gui.pro \
     plugins/plugins.pro
 
 
@@ -34,3 +33,6 @@ plugins.depends = libplume-creator-writingzone
 plugins.depends = libplume-creator-qml
 
 }
+
+SUBDIRS += \
+    app/app.pro

@@ -5,7 +5,7 @@ lessThan(QT_VERSION, 5.09.3) {
 TARGET = plume-creator-gui
 TEMPLATE = lib
 DEFINES += PLUME_CREATOR_GUI_LIBRARY
-DESTDIR = $$top_builddir/bin/
+DESTDIR = $$top_builddir/build/
 CONFIG += c++14
 
 QT += core gui xml widgets printsupport multimedia qml quick quickcontrols2
@@ -67,14 +67,14 @@ OTHER_FILES  += \
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/release/ -lplume-creator-data
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/debug/ -lplume-creator-data
-else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-data
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-data
 
 INCLUDEPATH += $$PWD/../../libplume-creator-data/src/
 DEPENDPATH += $$PWD/../../libplume-creator-data/src/
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-writingzone/src/release/ -lplume-creator-writingzone
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-writingzone/src/debug/ -lplume-creator-writingzone
-else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-writingzone
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-writingzone
 
 INCLUDEPATH += $$PWD/../../libplume-creator-writingzone/src/
 DEPENDPATH += $$PWD/../../libplume-creator-writingzone/src/
@@ -83,16 +83,16 @@ DEPENDPATH += $$PWD/../../libplume-creator-writingzone/src/
 
 unix: !macx: !android {
 
-isEmpty(PREFIX) {
-PREFIX = /usr
-}
-isEmpty(BINDIR) {
-LIBDIR = $$PREFIX/lib
-}
+    isEmpty(PREFIX) {
+    PREFIX = /usr
+    }
+    isEmpty(LIBDIR) {
+    LIBDIR = $$PREFIX/lib
+    }
 
-target.files = $$DESTDIR/$$TARGET
-target.path = $$LIBDIR
+    plume-creator-gui.files = $$DESTDIR/libplume-creator-gui*
+    plume-creator-gui.path = $$LIBDIR
 
-INSTALLS += target
+    INSTALLS += plume-creator-gui
 }
 

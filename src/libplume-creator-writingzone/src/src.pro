@@ -12,7 +12,7 @@ TARGET = plume-creator-writingzone
 TEMPLATE = lib
 DEFINES += PLUME_CREATOR_WRITINGZONE_LIBRARY
 
-DESTDIR = $$top_builddir/bin/
+DESTDIR = $$top_builddir/build/
 
 #CONFIG(release, debug|release) {
 #MYDLLDIR = $$IN_PWD
@@ -66,12 +66,12 @@ unix: !macx: !android {
 isEmpty(PREFIX) {
 PREFIX = /usr
 }
-isEmpty(BINDIR) {
+isEmpty(LIBDIR) {
 LIBDIR = $$PREFIX/lib
 }
 
-target.files = $$DESTDIR/$$TARGET
-target.path = $$LIBDIR
+plume-creator-writingzone.files = $$DESTDIR/libplume-creator-writingzone*
+plume-creator-writingzone.path = $$LIBDIR
 
-INSTALLS += target
+INSTALLS += plume-creator-writingzone
 }
