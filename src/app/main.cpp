@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
 
 #if FORCEQML  == 0
 
-    if (!isQML() && (QString::number(FORCEQML) == 0)) {
+    if (!isQML()) {
         PLMMainWindow *gui = startGui(data);
         openProjectInArgument(gui);
     }
