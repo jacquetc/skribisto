@@ -16,7 +16,7 @@ unix: !macx: !android {
     PREFIX = /usr
     }
     isEmpty(PLUGINDIR) {
-    PLUGINDIR = $$PREFIX/share/plume-creator
+    PLUGINDIR = $$PREFIX/share/plume-creator/plugins
     }
 
     plugins.files = $$top_builddir/build/plugins/*
