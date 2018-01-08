@@ -7,7 +7,7 @@ DynamicLibrary {
     cpp.defines: ["PLUME_CREATOR_QML_LIBRARY"]
     cpp.includePaths: [ '.']
     files: [
-        "qml.qrc",
+        "qml.qrc"
     ]
 
     Depends { name: "Qt"; submodules: ["core", "quick", "qml"]}
@@ -26,5 +26,6 @@ DynamicLibrary {
        files: ["*.qml"]
    }
 
-
+    Depends { name: "Android.ndk" }
+    Android.ndk.appStl: "gnustl_shared"
 }

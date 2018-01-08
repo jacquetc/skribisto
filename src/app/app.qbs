@@ -2,7 +2,8 @@ import qbs
 
 Project {
     minimumQbsVersion: "1.10"
-    property string version: "1.61"
+    property string version: ""
+    property string forceQML: ""
 
     CppApplication {
         name: "plume-creator"
@@ -14,7 +15,10 @@ Project {
         Depends { name: "Qt"; submodules: ["core", "gui", "widgets", "qml", "quick"]}
         Depends { name: "cpp" }
         cpp.optimization: "fast"
-        cpp.defines: ["VERSIONSTR=" + project.version,"FORCEQML"]
+        cpp.defines: { console.error("--> now evaluating the product name");
+            return ["VERSIONSTR=" + project.version,"FORCEQML=" + project.forceQML];
+        }
+
 
 
         Depends { name: "plume-creator-data"}

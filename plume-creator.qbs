@@ -3,20 +3,16 @@ import qbs
 Project {
     id: project
     minimumQbsVersion: "1.10"
-    property string version: "1.61"
+    property string version: "1.62"
+    property string forceQML: "0"
 
     Properties {
         condition: qbs.targetOS.contains("android")
-        cpp.defines:  ["FORCEQML"]
-
-    }
-    Properties {
-        condition: qbs.targetOS.contains("linux")
-
-        cpp.defines: ["FORCEQML"]
+        project.forceQML: "1"
 
 
     }
+
 
 
     SubProject {
@@ -34,6 +30,7 @@ Project {
             name: "App"
 
             version: project.version
+            forceQML: project.forceQML
         }
 
     }
