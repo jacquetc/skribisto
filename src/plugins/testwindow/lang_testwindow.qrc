@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/">
+        <file>translations/testwindow_de_DE.qm</file>
+        <file>translations/testwindow_fr_FR.qm</file>
+        <file>translations/testwindow_it_IT.qm</file>
+        <file>translations/testwindow_pt_BR.qm</file>
+        <file>translations/testwindow_ru_RU.qm</file>
+        <file>translations/testwindow_sp_SP.qm</file>
+    </qresource>
+</RCC>

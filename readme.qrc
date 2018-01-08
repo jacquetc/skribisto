@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>README</file>
+        <file>Credits</file>
+    </qresource>
+</RCC>

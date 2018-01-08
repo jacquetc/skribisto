@@ -77,7 +77,8 @@ build
 .idea
 
 #Qt Creator
-.pro.user
+*.pro.user
+*.qbs.user
 
 #plume
 .~lock.*
