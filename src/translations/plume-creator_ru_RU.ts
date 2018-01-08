@@ -1732,18 +1732,6 @@ Have you checked the one(s) you want to look through ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>toolBar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Write</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>New project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1776,20 +1764,23 @@ Have you checked the one(s) you want to look through ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close the current project</source>
+        <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The last changes are not yet saved. Do you really want to close the current project ?</source>
-        <translation type="unfinished"></translation>
+        <source>Do you want to quit ?</source>
+        <translation type="unfinished">Вы действительно хотите выйти?</translation>
     </message>
     <message>
-        <source>Save project as</source>
-        <translation type="unfinished"></translation>
+        <source>Your changes are already saved.</source>
+        <translation type="unfinished">Все изменения сохранены.</translation>
     </message>
+</context>
+<context>
+    <name>PLMSideMainBar</name>
     <message>
-        <source>Plume project (*.plume)</source>
-        <translation type="unfinished"></translation>
+        <source>Form</source>
+        <translation type="unfinished">Форма</translation>
     </message>
 </context>
 <context>
@@ -1848,14 +1839,73 @@ Have you checked the one(s) you want to look through ?</source>
     <name>PLMWritePanel</name>
     <message>
         <source>MainWindow</source>
-        <translation type="unfinished">Главная</translation>
+        <translation type="obsolete">Главная</translation>
+    </message>
+</context>
+<context>
+    <name>PLMWritingZone</name>
+    <message>
+        <source>Form</source>
+        <translation type="unfinished">Форма</translation>
     </message>
     <message>
-        <source>+</source>
+        <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>-</source>
+        <source>Ctrl+C</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="unfinished">Жирный</translation>
+    </message>
+    <message>
+        <source>Ctrl+B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Strikethrough</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation type="unfinished">Курсив</translation>
+    </message>
+    <message>
+        <source>Ctrl+I</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation type="unfinished">Подчеркнутый</translation>
+    </message>
+    <message>
+        <source>Ctrl+U</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print directly</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+P</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1953,6 +2003,13 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>Form</source>
         <translation type="obsolete">Форма</translation>
+    </message>
+</context>
+<context>
+    <name>ProjectListItemForm.ui</name>
+    <message>
+        <source>Text</source>
+        <translation type="unfinished">Текст</translation>
     </message>
 </context>
 <context>
@@ -2880,6 +2937,25 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>WelcomePageForm.ui</name>
+    <message>
+        <source>Open project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recent projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Radio Button</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>WordGoalProgressBar</name>
     <message>
         <source>Form</source>
@@ -2961,6 +3037,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Form</source>
         <translation type="obsolete">Форма</translation>
+    </message>
+</context>
+<context>
+    <name>sidePanelBar</name>
+    <message>
+        <source>Write</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

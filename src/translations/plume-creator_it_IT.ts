@@ -1778,18 +1778,6 @@ Please open a .plume file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>toolBar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Write</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>New project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1822,20 +1810,23 @@ Please open a .plume file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close the current project</source>
+        <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The last changes are not yet saved. Do you really want to close the current project ?</source>
-        <translation type="unfinished"></translation>
+        <source>Do you want to quit ?</source>
+        <translation type="unfinished">Vuoi terminare ?</translation>
     </message>
     <message>
-        <source>Save project as</source>
-        <translation type="unfinished"></translation>
+        <source>Your changes are already saved.</source>
+        <translation type="unfinished">I tuoi cambiamenti sono già stati salvati.</translation>
     </message>
+</context>
+<context>
+    <name>PLMSideMainBar</name>
     <message>
-        <source>Plume project (*.plume)</source>
-        <translation type="unfinished"></translation>
+        <source>Form</source>
+        <translation type="unfinished">Modulo</translation>
     </message>
 </context>
 <context>
@@ -1891,17 +1882,69 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
-    <name>PLMWritePanel</name>
+    <name>PLMWritingZone</name>
     <message>
-        <source>MainWindow</source>
+        <source>Form</source>
+        <translation type="unfinished">Modulo</translation>
+    </message>
+    <message>
+        <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>+</source>
+        <source>Ctrl+C</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>-</source>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="unfinished">Grassetto</translation>
+    </message>
+    <message>
+        <source>Ctrl+B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Strikethrough</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation type="unfinished">Corsivo</translation>
+    </message>
+    <message>
+        <source>Ctrl+I</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation type="unfinished">Sottolineato</translation>
+    </message>
+    <message>
+        <source>Ctrl+U</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print directly</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+P</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1999,6 +2042,13 @@ Please open a .plume file.</source>
     <message>
         <source>Form</source>
         <translation type="obsolete">Modulo</translation>
+    </message>
+</context>
+<context>
+    <name>ProjectListItemForm.ui</name>
+    <message>
+        <source>Text</source>
+        <translation type="unfinished">Testo</translation>
     </message>
 </context>
 <context>
@@ -2710,6 +2760,25 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
+    <name>WelcomePageForm.ui</name>
+    <message>
+        <source>Open project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recent projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Radio Button</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>WordGoalProgressBar</name>
     <message>
         <source>Form</source>
@@ -2732,6 +2801,13 @@ Please open a .plume file.</source>
     <message>
         <source>Form</source>
         <translation type="obsolete">Modulo</translation>
+    </message>
+</context>
+<context>
+    <name>sidePanelBar</name>
+    <message>
+        <source>Write</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

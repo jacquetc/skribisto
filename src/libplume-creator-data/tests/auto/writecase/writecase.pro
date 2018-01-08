@@ -10,7 +10,7 @@ TEMPLATE = app
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../../src/release/ -lplume-creator-data
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../../src/debug/ -lplume-creator-data
-else:unix: LIBS += -L$$top_builddir/bin/ -lplume-creator-data
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-data
 
 INCLUDEPATH += $$PWD/../../../src/
 DEPENDPATH += $$PWD/../../../src/

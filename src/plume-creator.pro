@@ -10,12 +10,22 @@ libplume-creator-qml.depends = libplume-creator-data
 app.depends = libplume-creator-data
 app.depends = libplume-creator-qml
 
-TRANSLATIONS = translations/plume-creator_fr_FR.ts \
-translations/plume-creator_it_IT.ts \
-translations/plume-creator_de_DE.ts \
-translations/plume-creator_sp_SP.ts \
-translations/plume-creator_ru_RU.ts \
-translations/plume-creator_pt_BR.ts
+#TRANSLATIONS = translations/plume-creator_fr_FR.ts \
+#translations/plume-creator_it_IT.ts \
+#translations/plume-creator_de_DE.ts \
+#translations/plume-creator_sp_SP.ts \
+#translations/plume-creator_ru_RU.ts \
+#translations/plume-creator_pt_BR.ts
+
+# Generate translations
+TRANSLATIONS = $$files(${top_srcdir}/translations/plume-creator_*.ts)
+qtPrepareTool(LRELEASE, lrelease)
+updateqm.input = TRANSLATIONS
+updateqm.output = ${QMAKE_FILE_PATH}/${QMAKE_FILE_BASE}.qm
+updateqm.commands = $$LRELEASE -silent ${QMAKE_FILE_IN} -qm ${QMAKE_FILE_OUT}
+updateqm.CONFIG += no_link target_predeps
+QMAKE_EXTRA_COMPILERS += updateqm
+
 
 !android {
 

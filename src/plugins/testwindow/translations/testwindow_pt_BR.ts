@@ -2,14 +2,37 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="pt_BR">
 <context>
-    <name>TestWindow</name>
+    <name>PLMPanel</name>
     <message>
-        <location filename="../testwindow.cpp" line="32"/>
+        <location filename="../plmpanel.ui" line="14"/>
+        <source>MainWindow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plmpanel.ui" line="21"/>
+        <source>French</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plmpanel.cpp" line="40"/>
+        <source>Advanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plmpanel.cpp" line="41"/>
+        <source>Blabla</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PLMTestWindow</name>
+    <message>
+        <location filename="../plmtestwindow.cpp" line="30"/>
         <source>Test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../testwindow.cpp" line="45"/>
+        <location filename="../plmtestwindow.cpp" line="41"/>
         <source>Test Window</source>
         <translation type="unfinished"></translation>
     </message>

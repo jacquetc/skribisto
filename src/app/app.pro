@@ -152,6 +152,19 @@ QMAKE_INFO_PLIST = resources/mac/Info.plist
 
 }
 
+# for AppImage :
+
+# using shell_path() to correct path depending on platform
+# escaping quotes and backslashes for file paths
+copydata.commands += $(COPY_FILE) \"$$shell_path($$top_dir/resources/unix/applications/plume-creator.desktop)\" \"$$shell_path($$DESTDIR)\"
+copydata2.commands += $(COPY_FILE) \"$$shell_path($$top_dir/resources/images/icons/hicolor/scalable/apps/plume-creator.svg)\" \"$$shell_path($$DESTDIR)\"
+
+first.depends = copydata
+copydata.depends = copydata2
+export(first.depends)
+export(copydata.commands)
+export(copydata2.commands)
+QMAKE_EXTRA_TARGETS += first copydata copydata2
 
 # add data lib :
 
