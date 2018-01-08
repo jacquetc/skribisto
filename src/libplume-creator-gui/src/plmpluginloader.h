@@ -125,6 +125,11 @@ private:
             qDebug() << "loader.instance() AT : " + fileName;
             qDebug() << "loader.instance() : " + loader.errorString();
         }
+        else {
+            this->installPluginTranslations();
+        }
+
+
 
         return qobject_cast<T *>(plugin);
     }

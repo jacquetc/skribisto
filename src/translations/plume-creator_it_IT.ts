@@ -1832,53 +1832,16 @@ Please open a .plume file.</source>
 <context>
     <name>PLMTranslations</name>
     <message>
-        <source>Language Name</source>
-        <comment>write here your language name, ex: write &apos;English - USA&apos; if it&apos;s en-US&apos;</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bin</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Book</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Act</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Chapter</source>
-        <translation type="unfinished">Capitolo</translation>
-    </message>
-    <message>
-        <source>parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>order</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Informations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Gallery</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Capitolo</translation>
     </message>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Testo</translation>
+        <translation type="obsolete">Testo</translation>
     </message>
     <message>
         <source>Notes</source>
-        <translation type="unfinished">Note</translation>
-    </message>
-    <message>
-        <source>Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Note</translation>
     </message>
 </context>
 <context>
@@ -2608,10 +2571,6 @@ Please open a .plume file.</source>
     <message>
         <source>Notes</source>
         <translation type="obsolete">Note</translation>
-    </message>
-    <message>
-        <source>Language Name</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

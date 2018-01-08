@@ -6,7 +6,8 @@
 #include  <QtCore>
 
 #include "plmutils.h"
-//#include "zipper/zipchecker.h"
+
+// #include "zipper/zipchecker.h"
 
 
 /*!
@@ -14,14 +15,18 @@
 
    \param dirName Path of directory to remove.
    \return true on success; false on error.
-*/
-bool PLMUtils::Dir::removeDir(const QString &dirName)
+ */
+bool PLMUtils::Dir::removeDir(const QString& dirName)
 {
     bool result = true;
     QDir dir(dirName);
 
     if (dir.exists(dirName)) {
-        Q_FOREACH (QFileInfo info, dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst)) {
+        Q_FOREACH(QFileInfo info,
+                  dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System |
+                                    QDir::Hidden  |
+                                    QDir::AllDirs | QDir::Files,
+                                    QDir::DirsFirst)) {
             if (info.isDir()) {
                 result = removeDir(info.absoluteFilePath());
             } else {
@@ -39,16 +44,14 @@ bool PLMUtils::Dir::removeDir(const QString &dirName)
     return result;
 }
 
+// ------------------------------------------------------------------
 
 
-
-//------------------------------------------------------------------
-
-
-//int PLMUtils::addProjectToSettingsArray(QString fileName)
-//{
+// int PLMUtils::addProjectToSettingsArray(QString fileName)
+// {
 //    int arrayNumber;
-//    QString projectName, projectDirectory, workingPath, lastModifiedDate, creationDate;
+//    QString projectName, projectDirectory, workingPath, lastModifiedDate,
+// creationDate;
 
 //    QFile file(fileName);
 //    if(!file.exists())
@@ -58,7 +61,8 @@ bool PLMUtils::Dir::removeDir(const QString &dirName)
 //    //  creation date :
 
 //    QString tempFileName = QDir::tempPath() + "/Plume/info";
-//    QString infoFileName = JlCompress::extractFile(fileName, "info", tempFileName );
+//    QString infoFileName = JlCompress::extractFile(fileName, "info",
+// tempFileName );
 //    QFile *infoFile = new QFile(infoFileName);
 
 //    QDomDocument infoDomDoc;
@@ -67,11 +71,11 @@ bool PLMUtils::Dir::removeDir(const QString &dirName)
 
 //    if (!infoDomDoc.setContent(infoFile, true, &errorStr, &errorLine,
 //                               &errorColumn)) {
-//        qDebug() << QString("Info File. Parse error at line %1, column %2:\n%3\n")
+//        qDebug() << QString("Info File. Parse error at line %1, column
+// %2:\n%3\n")
 //                    .arg(errorLine)
 //                    .arg(errorColumn)
 //                    .arg(errorStr);
-
 
 
 //        return 999;
@@ -82,12 +86,12 @@ bool PLMUtils::Dir::removeDir(const QString &dirName)
 //        qDebug() << "The file is not a Plume Creator info file.";
 //        return 999;
 //    }
-//    creationDate = infoRoot.firstChildElement("prj").attribute("creationDate");
+//    creationDate =
+// infoRoot.firstChildElement("prj").attribute("creationDate");
 
 //    infoFile->close();
 
 //    infoFile->remove();
-
 
 
 //    // path :
@@ -97,7 +101,6 @@ bool PLMUtils::Dir::removeDir(const QString &dirName)
 
 //    //name :
 //    projectName = file.fileName().split("/").last().remove(".plume");
-
 
 
 //    QSettings settings;
@@ -110,9 +113,7 @@ bool PLMUtils::Dir::removeDir(const QString &dirName)
 //    settings.setValue("size", size);
 
 
-
 //    settings.endGroup();
-
 
 
 //    size = settings.value("Manager/projects/size", 0).toInt();
@@ -123,23 +124,24 @@ bool PLMUtils::Dir::removeDir(const QString &dirName)
 //    settings.setValue("name", projectName);
 //    settings.setValue("path", projectDirectory);
 //    settings.setValue("workPath", "OBSOLETE");
-//    settings.setValue("lastModified", QDateTime::currentDateTime().toString(Qt::ISODate));
+//    settings.setValue("lastModified",
+// QDateTime::currentDateTime().toString(Qt::ISODate));
 //    settings.setValue("creationDate", creationDate);
 
 //    settings.endArray();
 
 
-
-
-
 //    arrayNumber = size;
 
 //    return arrayNumber;
-//}
+// }
 
-bool PLMUtils::ProjectsArrayInSettings::modifyProjectModifiedDateInSettingsArray(int arrayNumber, QString date)
+bool PLMUtils::ProjectsArrayInSettings::modifyProjectModifiedDateInSettingsArray(
+    int     arrayNumber,
+    QString date)
 {
     QSettings settings;
+
     settings.beginWriteArray("Manager/projects");
     settings.setArrayIndex(arrayNumber);
     settings.setValue("lastModified", date);
@@ -155,14 +157,15 @@ int PLMUtils::ProjectsArrayInSettings::findProjectInSettingArray(QString fileNam
         return 999;
     }
 
-    if (!PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(fileName)) {
+    if (!PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
+            fileName)) {
         return 999;
     }
 
     QSettings settings;
     settings.beginGroup("Manager/projects");
     QStringList groups = settings.childGroups();
-    int size = groups.size();
+    int size           = groups.size();
     settings.setValue("size", size);
     settings.endGroup();
     QString name, path, workPath;
@@ -170,18 +173,18 @@ int PLMUtils::ProjectsArrayInSettings::findProjectInSettingArray(QString fileNam
 
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
-        name = settings.value("name").toString();
-        path = settings.value("path").toString();
+        name     = settings.value("name").toString();
+        path     = settings.value("path").toString();
         workPath = settings.value("workPath").toString();
         QFile arrayFile;
 
-        if (workPath == "OBSOLETE") { //new version
+        if (workPath == "OBSOLETE") { // new version
             arrayFile.setFileName(path + "/" +  name + ".plume");
 
             if (file.fileName() == arrayFile.fileName()) {
                 return i;
             }
-        } else { //old system
+        } else { // old system
             arrayFile.setFileName(workPath + "/" +  name + ".plume");
 
             if (file.fileName() == arrayFile.fileName()) {
@@ -194,13 +197,15 @@ int PLMUtils::ProjectsArrayInSettings::findProjectInSettingArray(QString fileNam
     return 999;
 }
 
-bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(QString fileName)
+bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
+    QString fileName)
 {
     QFile file(fileName);
     QSettings settings;
+
     settings.beginGroup("Manager/projects");
     QStringList groups = settings.childGroups();
-    int size = groups.size();
+    int size           = groups.size();
     settings.setValue("size", size);
     settings.endGroup();
     QString name, path, workPath;
@@ -208,19 +213,20 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(QString 
 
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
-        name = settings.value("name").toString();
-        path = settings.value("path").toString();
+        name     = settings.value("name").toString();
+        path     = settings.value("path").toString();
         workPath = settings.value("workPath").toString();
         QFile arrayFile;
 
-        if (workPath == "OBSOLETE") { //new version
+        if (workPath == "OBSOLETE") { // new version
             arrayFile.setFileName(path + "/" + name + ".plume");
 
-            //            qDebug() << arrayFile.fileName() + "   " + file.fileName();
+            //            qDebug() << arrayFile.fileName() + "   " +
+            // file.fileName();
             if (file.fileName() == arrayFile.fileName()) {
                 return true;
             }
-        } else { //old system
+        } else { // old system
             arrayFile.setFileName(workPath + "/" +  name + ".plume");
 
             if (file.fileName() == arrayFile.fileName()) {
@@ -233,10 +239,8 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(QString 
     return false;
 }
 
-
-
-//int PLMUtils::adaptSettingArrayToProject(QString fileName)
-//{
+// int PLMUtils::adaptSettingArrayToProject(QString fileName)
+// {
 //    int arrayNumber;
 //    if(!PLMUtils::isProjectExistingInSettingArray(fileName)){
 //        arrayNumber = PLMUtils::addProjectToSettingsArray(fileName);
@@ -246,19 +250,18 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(QString 
 //        arrayNumber = PLMUtils::findProjectInSettingArray(fileName);
 
 //    return arrayNumber;
-//}
+// }
 
 
-//void PLMUtils::sortSettingsArray()
-//{
-//    QMultiMap<int, QString> projName, projPath, projWorkPath, projLastModifiedTime, projCreationDate;
-//    QMultiMap<int, QString> newProjName, newProjPath, newProjWorkPath, newProjLastModifiedTime, newProjCreationDate;
-
+// void PLMUtils::sortSettingsArray()
+// {
+//    QMultiMap<int, QString> projName, projPath, projWorkPath,
+// projLastModifiedTime, projCreationDate;
+//    QMultiMap<int, QString> newProjName, newProjPath, newProjWorkPath,
+// newProjLastModifiedTime, newProjCreationDate;
 
 
 //    QSettings settings;
-
-
 
 
 //    settings.beginReadArray("Manager/projects");
@@ -269,14 +272,14 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(QString 
 //        projName.insert(i, settings.value("name").toString());
 //        projPath.insert(i, settings.value("path").toString());
 //        projWorkPath.insert(i, settings.value("workPath").toString());
-//        projLastModifiedTime.insert(i, settings.value("lastModified").toString());
+//        projLastModifiedTime.insert(i,
+// settings.value("lastModified").toString());
 //        projCreationDate.insert(i, settings.value("creationDate").toString());
 
 
 //    }
 
 //    settings.endArray();
-
 
 
 //    // keep only the existing projects
@@ -305,7 +308,8 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(QString 
 //        else if( ( QFile(projPathI + "/"+ projNameI + ".plume").exists() ||
 //                   QFile(projWorkPathI +"/"+  projNameI + ".plume").exists() )
 //                 &&
-//                 ( newProjName.keys(projNameI).size() == 0 && newProjCreationDate.keys(projCreationDateI).size() == 0 )
+//                 ( newProjName.keys(projNameI).size() == 0 &&
+// newProjCreationDate.keys(projCreationDateI).size() == 0 )
 //                 ){ // check if ewist and avoid doubles
 
 
@@ -321,24 +325,12 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(QString 
 //    }
 
 
-
-
-
-
-
-
-
-
-
-
 //    settings.beginGroup("Manager/projects");
 
 //    int size = newProjName.size();
 //    settings.setValue("size", size);
 
 //    settings.endGroup();
-
-
 
 
 //    settings.beginWriteArray("Manager/projects");
@@ -358,7 +350,6 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(QString 
 //    settings.endArray();
 
 
-
 //    settings.beginGroup("Manager/projects");
 //    int grSize = settings.childGroups().size();
 //    settings.endGroup();
@@ -370,16 +361,18 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(QString 
 //    }
 //    settings.endArray();
 
-//}
+// }
 
-//-------------------------------------------------------------
+// -------------------------------------------------------------
 
-QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSettingsArray()
+QHash<QString,
+      QString>PLMUtils::ProjectsArrayInSettings::listAllProjectsInSettingsArray()
 {
     QSettings settings;
+
     settings.beginGroup("Manager/projects");
     QStringList groups = settings.childGroups();
-    int size = groups.size();
+    int size           = groups.size();
     settings.setValue("size", size);
     settings.endGroup();
     QString name, path;
@@ -397,22 +390,21 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
     return hash;
 }
 
-//-------------------------------------------------------------
+// -------------------------------------------------------------
 
 
-
-//bool PLMUtils::isProjectFromOldSystem(QString file)
-//{
+// bool PLMUtils::isProjectFromOldSystem(QString file)
+// {
 //    if(ZipChecker::isZip(file))
 //        return false;
 //    else
 //        return true;// means this version is < 0.3
 
 //    return false;
-//}
+// }
 
-//QString PLMUtils::updateProjectIfOldSystem(QString file)
-//{
+// QString PLMUtils::updateProjectIfOldSystem(QString file)
+// {
 
 //    FileUpdater updater;
 
@@ -423,7 +415,8 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
 //    QFileInfo info(file);
 //    QDir directory = info.dir();
 //    directory.cdUp();
-//    JlCompress::compressDir(directory.absolutePath() + "/" + info.fileName(), info.absolutePath());
+//    JlCompress::compressDir(directory.absolutePath() + "/" + info.fileName(),
+// info.absolutePath());
 
 //    file = directory.absolutePath() + "/" + info.fileName();
 
@@ -440,11 +433,15 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
 
 //        //            qDebug() << settings.value("name").toString();
 //        //            qDebug() << info.fileName().remove(".plume");
-//        //                        qDebug() << settings.value("path").toString();
+//        //                        qDebug() <<
+// settings.value("path").toString();
 //        //                        qDebug() << directory.absolutePath();
 
-//        if(settings.value("name").toString() == info.fileName().remove(".plume")
-//                && QDir::fromNativeSeparators(settings.value("path").toString()) == directory.absolutePath()){
+//        if(settings.value("name").toString() ==
+// info.fileName().remove(".plume")
+//                &&
+// QDir::fromNativeSeparators(settings.value("path").toString()) ==
+// directory.absolutePath()){
 
 //            settings.setValue("workPath",  "OBSOLETE");
 //        }
@@ -452,20 +449,22 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
 //    settings.endArray();
 
 //    directory.setPath(directory.absolutePath());
-//    directory.rename(directory.absolutePath() + "/" + info.fileName().remove(".plume") +"/",
-//                     directory.absolutePath() + "/obsolete_" +  info.fileName().remove(".plume")+"/");
-
+//    directory.rename(directory.absolutePath() + "/" +
+// info.fileName().remove(".plume") +"/",
+//                     directory.absolutePath() + "/obsolete_" +
+//  info.fileName().remove(".plume")+"/");
 
 
 //    return file;
-//}
+// }
 
-//QString PLMUtils::projectRealName(QString fileName)
-//{
+// QString PLMUtils::projectRealName(QString fileName)
+// {
 //    //  creation date :
 //    QString realName;
 //    QString tempFileName = QDir::tempPath() + "/Plume/info";
-//    QString infoFileName = JlCompress::extractFile(fileName, "info", tempFileName );
+//    QString infoFileName = JlCompress::extractFile(fileName, "info",
+// tempFileName );
 //    QFile *infoFile = new QFile(infoFileName);
 
 //    if(!infoFile->exists())
@@ -477,11 +476,11 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
 
 //    if (!infoDomDoc.setContent(infoFile, true, &errorStr, &errorLine,
 //                               &errorColumn)) {
-//        qDebug() << QString("Info File. Parse error at line %1, column %2:\n%3\n")
+//        qDebug() << QString("Info File. Parse error at line %1, column
+// %2:\n%3\n")
 //                    .arg(errorLine)
 //                    .arg(errorColumn)
 //                    .arg(errorStr);
-
 
 
 //        return "ERROR real name";
@@ -501,29 +500,13 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
 //    delete infoFile;
 
 //    return realName;
-//}
+// }
 
 
+// ------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-//------------------------------------------------------------
-
-//QString PLMUtils::parseHtmlText(QString htmlText)
-//{
-
-
-
-
-
-
+// QString PLMUtils::parseHtmlText(QString htmlText)
+// {
 
 
 //    QTextEdit *textEdit = new QTextEdit;
@@ -540,7 +523,6 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
 //    tCursor.movePosition(QTextCursor::Start);
 
 
-
 //    QTextCursor finalCursor = finalEdit->textCursor();
 //    finalCursor.movePosition(QTextCursor::Start);
 
@@ -550,7 +532,12 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
 //    while(tCursor.position() != textSize){
 
 
-//        finalCursor.charFormat().setFontItalic(tCursor.charFormat().fontItalic());
+//
+//
+//
+//
+//
+//    finalCursor.charFormat().setFontItalic(tCursor.charFormat().fontItalic());
 //        if(tCursor.charFormat().fontWeight() > 50)
 //            finalCursor.charFormat().setFontWeight(75);
 
@@ -564,21 +551,18 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
 //    return finalEdit->toHtml();
 
 
+// }
 
-
-
-
-
-//}
-
-//void PLMUtils::applyAttributeRecursively(QDomElement element, QString attribute, QString value)
-//{
+// void PLMUtils::applyAttributeRecursively(QDomElement element, QString
+// attribute, QString value)
+// {
 //    if(element.isNull())
 //        return;
 
 
 //    element.setAttribute(attribute, value);
-//    applyAttributeRecursively(element.firstChild().toElement(), attribute, value);
+//    applyAttributeRecursively(element.firstChild().toElement(), attribute,
+// value);
 
 //    QDomElement parentElement = element.parentNode().toElement();
 //    QDomElement nextElement = element;
@@ -590,9 +574,7 @@ QHash<QString, QString> PLMUtils::ProjectsArrayInSettings::listAllProjectsInSett
 //    }
 
 
-
-
-//}
+// }
 
 
 QModelIndexList PLMUtils::Models::allChildIndexes(QModelIndex index)
@@ -612,7 +594,7 @@ QModelIndexList PLMUtils::Models::allChildIndexes(QModelIndex index)
     }
 
     childList.append(firstChild);
-    allChildIndexes(firstChild);
+        allChildIndexes(firstChild);
     QModelIndex siblingChild = firstChild.sibling(firstChild.row() + 1, 0);
 
     while (siblingChild.isValid()) {
@@ -624,7 +606,9 @@ QModelIndexList PLMUtils::Models::allChildIndexes(QModelIndex index)
     return childList;
 }
 
-//---------------------------------------------------------------------------------------
+//
+//
+// ---------------------------------------------------------------------------------------
 
 QModelIndexList PLMUtils::Models::allParentIndexes(QModelIndex index)
 {
@@ -644,15 +628,16 @@ QModelIndexList PLMUtils::Models::allParentIndexes(QModelIndex index)
     return parentList;
 }
 
-
-//---------------------------------------------------------------------------------------
-
+//
+//
+// ---------------------------------------------------------------------------------------
 
 
 QStringList PLMUtils::Dir::addonsPathsList()
 {
     QStringList list;
     QDir dir;
+
     dir.setPath(QCoreApplication::applicationDirPath());
 
     if (dir.isReadable()) {
@@ -693,7 +678,7 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
-#endif
+#endif // ifdef Q_OS_LINUX
 #ifdef Q_OS_WIN32
     dir.setPath(QCoreApplication::applicationDirPath() + "/share/");
 
@@ -701,13 +686,15 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
-    dir.setPath(QDir::homePath() + "/AppData/Roaming/" + QCoreApplication::organizationName() + "/share/");
+    dir.setPath(
+        QDir::homePath() + "/AppData/Roaming/" +
+        QCoreApplication::organizationName() + "/share/");
 
     if (dir.isReadable()) {
         list.append(dir.path());
     }
 
-#endif
+#endif // ifdef Q_OS_WIN32
 #ifdef Q_OS_MAC
     dir.setPath("/Library/Application Support/plume-creator/");
 
@@ -736,41 +723,47 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
-#endif
+#endif // ifdef Q_OS_MAC
     return list;
 }
 
-//---------------------------------------------------------------------------------------
+//
+//
+// ---------------------------------------------------------------------------------------
 
 
 void PLMUtils::Dir::createPath(QStringList paths)
 {
-    foreach (const QString path, paths) {
+    foreach(const QString path, paths) {
         QDir dir;
+
         dir.setPath(path);
         dir.mkpath(path);
     }
 }
 
-//---------------------------------------------------------------------------------------
+//
+//
+// ---------------------------------------------------------------------------------------
 
 
 void PLMUtils::Dir::createPath(QString path)
 {
     QStringList list;
+
     list.append(path);
     PLMUtils::Dir::createPath(list);
 }
 
-
-//---------------------------------------------------------------------------------------
-
-
+//
+//
+// ---------------------------------------------------------------------------------------
 
 
 int PLMUtils::Misc::id;
 
-QString PLMUtils::Misc::spaceInNumber(const QString numberString, const QString symbol)
+QString PLMUtils::Misc::spaceInNumber(const QString numberString,
+                                      const QString symbol)
 {
     QString originalString = numberString;
     QString finalString;
@@ -790,114 +783,29 @@ QString PLMUtils::Misc::spaceInNumber(const QString numberString, const QString 
     return finalString;
 }
 
-
-//---------------------------------------------------------------------------------------
-
-
-//    find and list translations :
-QStringList PLMUtils::Lang::qmFilesList()
-{
-    QStringList paths = PLMUtils::Dir::addonsPathsList();
-    QStringList qmFiles;
-    QStringList filter;
-    filter << "*.qm";
-
-    foreach (QString path, paths) {
-        path += "/translations/";
-        QDir dir(path);
-
-        if (dir.exists()) {
-            QFileInfoList infosList = dir.entryInfoList(filter);
-
-            foreach (QFileInfo info, infosList) {
-                qmFiles.append(info.canonicalFilePath());
-            }
-        }
-
-//        else{
-//            dir.setPath(":/translations/");
-//            if(dir.exists()){
-//                QFileInfoList infosList = dir.entryInfoList(filter);
-//                foreach (QFileInfo info, infosList)
-//                    qmFiles.append(info.canonicalFilePath());
-//            }
-//        }
-    }
-
-    return qmFiles;
-}
+//
+//
+// ---------------------------------------------------------------------------------------
 
 
+//
+//
+// ---------------------------------------------------------------------------------------
 
 
-//---------------------------------------------------------------------------------------
-
-QList<PLMTranslation>  PLMUtils::Lang::getTranslationsList()
-{
-    QList<PLMTranslation> finalList;
-    QStringList qmList =  PLMUtils::Lang::qmFilesList();
-
-    foreach (const QString &qm, qmList) {
-        PLMTranslation newTr;
-        newTr.file = qm;
-        QString temp = qm;
-        temp = temp.remove(".qm").split("plume-creator_", QString::SkipEmptyParts).takeLast();
-        newTr.code = temp;
-        QTranslator translator;
-        translator.load(qm);
-        QString langName = translator.translate("Translations", "Language Name");
-
-        if (langName.isEmpty()) {
-            newTr.name = temp;
-        } else {
-            newTr.name = langName;
-        }
-
-        finalList.append(newTr);
-    }
-
-    return finalList;
-}
+//
+//
+// ---------------------------------------------------------------------------------------
 
 
+//
+//
+// ---------------------------------------------------------------------------------------
 
 
-//---------------------------------------------------------------------------------------
-
-
-
-QStringList PLMUtils::Lang::listTranslationsForString(const QString &englishString)
-{
-    QStringList list;
-    list.append(englishString);
-    list.append(userTranslator.translate("Translations", englishString.toStdString().c_str() ));
-    list.append(projectTranslator.translate("Translations", englishString.toStdString().c_str() ));
-    return list;
-}
-
-//---------------------------------------------------------------------------------------
-
-
-QString PLMUtils::Lang::projectLang;
-QTranslator PLMUtils::Lang::projectTranslator;
-
-QString PLMUtils::Lang::getProjectLang()
-{
-    return projectLang;
-}
-
-void PLMUtils::Lang::setProjectLang(const QString &value)
-{
-    projectLang = value;
-}
-
-void PLMUtils::Lang::setProjectLangFile(const QString &fileName)
-{
-    projectTranslator.load(fileName);
-}
-
-//---------------------------------------------------------------------------------------
-
+//
+//
+// ---------------------------------------------------------------------------------------
 
 
 QString PLMUtils::Lang::userLang;
@@ -908,12 +816,12 @@ QString PLMUtils::Lang::getUserLang()
     return userLang;
 }
 
-void PLMUtils::Lang::setUserLang(const QString &value)
+void PLMUtils::Lang::setUserLang(const QString& value)
 {
     userLang = value;
 }
 
-void PLMUtils::Lang::setUserLangFile(const QString &fileName)
+void PLMUtils::Lang::setUserLangFile(const QString& fileName)
 {
     userTranslator.load(fileName);
 }

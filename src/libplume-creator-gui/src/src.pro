@@ -23,7 +23,6 @@ HEADERS  += \
     plmmainwindow.h \
     plmmessagehandler.h \
     plmpluginloader.h \
-    common/plmtranslation.h \
     common/plmutils.h \
     plmguiplugins.h \
     plmguiinterface.h \

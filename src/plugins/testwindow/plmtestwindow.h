@@ -10,32 +10,33 @@
 #include "plmsidemainbar.h"
 
 class PLMTestWindow : public QObject,
-    public PLMPanelInterface,
-    public PLMSideMainBarIconInterface
-{
+                      public PLMPanelInterface,
+                      public PLMSideMainBarIconInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
-        IID "com.PlumeSoft.Plume-Creator.PanelInterface/1.0" FILE "plmtestwindow.json")
+        IID "com.PlumeSoft.Plume-Creator.PanelInterface/1.0" FILE
+        "plmtestwindow.json")
     Q_INTERFACES(PLMPanelInterface PLMSideMainBarIconInterface)
 
 public :
 
-    PLMTestWindow(QObject *parent = 0);
+        PLMTestWindow(QObject *parent = 0);
     ~PLMTestWindow();
 
-    QString panelName() const;
+    QString         panelName() const;
 
-    //PanelInterface
-    PLMPanelWindow *panel();
-    QString name() const
+    // PanelInterface
+    PLMPanelWindow* panel();
+    QString         name() const
     {
         return "TestWindow";
     }
 
-    //SideMainBarIconInterface
-    QList<PLMSideBarAction> mainBarActions(QObject *parent);
+    // SideMainBarIconInterface
+    QList<PLMSideBarAction>mainBarActions(QObject *parent);
 
 private:
+
     QString m_name;
 };
 

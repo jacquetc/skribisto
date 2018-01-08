@@ -38,12 +38,12 @@ DISTFILES += \
 
 CODECFORTR = UTF-8
 
-TRANSLATIONS = translations/testwindow_fr_FR.ts \
-translations/testwindow_it_IT.ts \
-translations/testwindow_de_DE.ts \
-translations/testwindow_sp_SP.ts \
-translations/testwindow_ru_RU.ts \
-translations/testwindow_pt_BR.ts
+TRANSLATIONS = translations/plmtestwindow_fr_FR.ts \
+translations/plmtestwindow_it_IT.ts \
+translations/plmtestwindow_de_DE.ts \
+translations/plmtestwindow_sp_SP.ts \
+translations/plmtestwindow_ru_RU.ts \
+translations/plmtestwindow_pt_BR.ts
 
 FORMS += \
     plmpanel.ui

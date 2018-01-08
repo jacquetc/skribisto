@@ -1775,6 +1775,13 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
+    <name>PLMPanel</name>
+    <message>
+        <source>MainWindow</source>
+        <translation type="obsolete">Ventana Principal</translation>
+    </message>
+</context>
+<context>
     <name>PLMSideMainBar</name>
     <message>
         <source>Form</source>
@@ -1784,53 +1791,24 @@ Have you checked the one(s) you want to look through ?</source>
 <context>
     <name>PLMTranslations</name>
     <message>
-        <source>Language Name</source>
-        <comment>write here your language name, ex: write &apos;English - USA&apos; if it&apos;s en-US&apos;</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Bin</source>
-        <translation type="unfinished">Papelera</translation>
-    </message>
-    <message>
-        <source>Book</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Papelera</translation>
     </message>
     <message>
         <source>Act</source>
-        <translation type="unfinished">Acto</translation>
+        <translation type="obsolete">Acto</translation>
     </message>
     <message>
         <source>Chapter</source>
-        <translation type="unfinished">Capítulo</translation>
-    </message>
-    <message>
-        <source>parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>order</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Informations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Gallery</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Capítulo</translation>
     </message>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Texto</translation>
+        <translation type="obsolete">Texto</translation>
     </message>
     <message>
         <source>Notes</source>
-        <translation type="unfinished">Notas</translation>
-    </message>
-    <message>
-        <source>Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Notas</translation>
     </message>
 </context>
 <context>
@@ -2873,10 +2851,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Notes</source>
         <translation type="obsolete">Notas</translation>
-    </message>
-    <message>
-        <source>Language Name</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

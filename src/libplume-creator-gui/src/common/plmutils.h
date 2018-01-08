@@ -26,7 +26,6 @@
 #include <QDir>
 #include <QModelIndex>
 #include <QTranslator>
-#include "plmtranslation.h"
 
 // c = class name; e = enum name; v = enum value
 #define ENUM_TO_STRING(c, e, v) \
@@ -125,17 +124,6 @@ class Lang
 {
 public:
 
-    static QStringList qmFilesList();
-    static QList<PLMTranslation> getTranslationsList();
-
-    static QStringList listTranslationsForString(const QString &englishString);
-
-
-
-
-    static QString getProjectLang();
-    static void setProjectLang(const QString &value);
-    static void setProjectLangFile(const QString &fileName);
 
     static QString getUserLang();
     static void setUserLang(const QString &value);

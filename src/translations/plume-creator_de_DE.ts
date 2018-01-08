@@ -2132,6 +2132,13 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
 </context>
 <context>
+    <name>PLMPanel</name>
+    <message>
+        <source>MainWindow</source>
+        <translation type="obsolete">Hauptfenster</translation>
+    </message>
+</context>
+<context>
     <name>PLMSideMainBar</name>
     <message>
         <source>Form</source>
@@ -2141,53 +2148,16 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
 <context>
     <name>PLMTranslations</name>
     <message>
-        <source>Language Name</source>
-        <comment>write here your language name, ex: write &apos;English - USA&apos; if it&apos;s en-US&apos;</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bin</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Book</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Act</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Chapter</source>
-        <translation type="unfinished">Kapitel</translation>
-    </message>
-    <message>
-        <source>parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>order</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Informations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Gallery</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Kapitel</translation>
     </message>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Text</translation>
+        <translation type="obsolete">Text</translation>
     </message>
     <message>
         <source>Notes</source>
-        <translation type="unfinished">Notizen</translation>
-    </message>
-    <message>
-        <source>Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Notizen</translation>
     </message>
 </context>
 <context>
@@ -3065,10 +3035,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source>Notes</source>
         <translation type="obsolete">Notizen</translation>
-    </message>
-    <message>
-        <source>Language Name</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

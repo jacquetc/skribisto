@@ -3060,6 +3060,13 @@ Veuillez ouvrir un fichier .plume.</translation>
     </message>
 </context>
 <context>
+    <name>PLMPanel</name>
+    <message>
+        <source>MainWindow</source>
+        <translation type="obsolete">Fenêtre principale</translation>
+    </message>
+</context>
+<context>
     <name>PLMSideMainBar</name>
     <message>
         <source>Form</source>
@@ -3067,55 +3074,46 @@ Veuillez ouvrir un fichier .plume.</translation>
     </message>
 </context>
 <context>
+    <name>PLMTestWindow</name>
+    <message>
+        <source>Test</source>
+        <translation type="vanished">Fenêtre de test</translation>
+    </message>
+    <message>
+        <source>Test Window</source>
+        <translation type="obsolete">Fenêtre de test</translation>
+    </message>
+</context>
+<context>
     <name>PLMTranslations</name>
     <message>
         <source>Language Name</source>
         <comment>write here your language name, ex: write &apos;English - USA&apos; if it&apos;s en-US&apos;</comment>
-        <translation type="unfinished">français</translation>
+        <translation type="obsolete">français</translation>
     </message>
     <message>
         <source>Bin</source>
-        <translation type="unfinished">Corbeille</translation>
+        <translation type="obsolete">Corbeille</translation>
     </message>
     <message>
         <source>Book</source>
-        <translation type="unfinished">Livre</translation>
+        <translation type="obsolete">Livre</translation>
     </message>
     <message>
         <source>Act</source>
-        <translation type="unfinished">Acte</translation>
+        <translation type="obsolete">Acte</translation>
     </message>
     <message>
         <source>Chapter</source>
-        <translation type="unfinished">Chapitre</translation>
-    </message>
-    <message>
-        <source>parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>order</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Informations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Gallery</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Chapitre</translation>
     </message>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Texte</translation>
+        <translation type="obsolete">Texte</translation>
     </message>
     <message>
         <source>Notes</source>
-        <translation type="unfinished">Notes</translation>
-    </message>
-    <message>
-        <source>Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Notes</translation>
     </message>
 </context>
 <context>
@@ -4412,7 +4410,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Language Name</source>
-        <translation>français</translation>
+        <translation type="vanished">français</translation>
     </message>
 </context>
 <context>
@@ -4693,7 +4691,7 @@ p, li { white-space: pre-wrap; }
     <name>sidePanelBar</name>
     <message>
         <source>Write</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Écrire</translation>
     </message>
 </context>
 </TS>

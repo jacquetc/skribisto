@@ -1,9 +1,3 @@
-
-#-------------------------------------------------
-#
-# Project created by QtCreator 2011-07-25T11:13:12
-#
-#-------------------------------------------------
 lessThan(QT_VERSION, 5.09.3) {
         error("Plume Creator requires Qt 5.9.3 or greater")
 }

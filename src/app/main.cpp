@@ -64,133 +64,48 @@ void startCore()
 
 void selectLang()
 {
-#if FORCEQML == 0
-
-    // TODO: since app, core and gui are separated now, adapt the lang loader
-    qRegisterMetaType<QList<PLMTranslation> >("QList<PLMTranslation>");
-
     // Lang menu :
     QSettings settings;
+
     qApp->processEvents();
-    QString translatorFileName   = QLatin1String("qt_");
-    QList<PLMTranslation> trList = PLMUtils::Lang::getTranslationsList();
-    QString plumeTranslatorFileName;
+    QString qtTr    = QString("qt");
+    QString plumeTr = QString("plume-creator");
+    QLocale locale;
 
-    if (settings.value("firstStart",
-                       true).toBool() ||
-        (settings.value("MainWindow/lang", "none").toString() == "none")) {
-        QStringList langs;
-        QStringList langCodes;
 
-            foreach(const PLMTranslation &trans, trList) {
-            langs << trans.name;
-            langCodes << trans.code;
-        }
+    QString langCode = settings.value("lang", "none").toString();
 
-        //        QStringList langs;
-        //        langs << "Français" << "English" << "Italiano" << "Deutsch" <<
-        // "Português (Brasil)" << "Español (España)" << "Pусский";
-        //        QStringList langCodes;
-        //        langCodes << "fr_FR" << "en_US" << "it_IT" << "de_DE" <<
-        // "pt_BR"<< "sp_SP" << "ru_RU";
-        bool ok;
-        QString selectedLang;
-        selectedLang = QInputDialog::getItem(
-            0,
-            "Language Selector",
-            "Please select your language : <br> "
-            "Veuillez sélectionner votre langue : ",
-            langs,
-            0,
-            false,
-            &ok);
+    if (langCode == "none") {
+        // apply system locale by default
+        locale = QLocale::system();
+    }
 
-        if (ok && !selectedLang.isEmpty()) {
-            QString langCode = langCodes.at(langs.indexOf(selectedLang));
-            translatorFileName = langCode;
 
-            foreach(const PLMTranslation &trans, trList)
+    QTranslator plumeTranslator;
 
-            if (trans.code == langCode) {
-                plumeTranslatorFileName = trans.file;
-            }
+    if (plumeTranslator.load(locale, plumeTr, "_", ":/translations")) {
+        settings.setValue("lang", locale.name());
+    }
+    else { // if translation not existing :
+        locale = QLocale("en_EN");
+        settings.setValue("lang", locale.name());
+    }
+    qApp->installTranslator(&plumeTranslator);
 
-            QTranslator *translator = new QTranslator(qApp);
+    PLMUtils::Lang::setUserLang(langCode);
 
-            if (translator->load(translatorFileName,
-                                 QLibraryInfo::location(QLibraryInfo::
-                                                        TranslationsPath))) {
-                qApp->installTranslator(translator);
-            }
 
-            QTranslator *plumeTranslator = new QTranslator(qApp);
-            plumeTranslator->load(plumeTranslatorFileName);
-            qApp->installTranslator(plumeTranslator);
-            settings.setValue("lang", langCodes.at(langs.indexOf(selectedLang)));
+    // Qt translation :
+    QTranslator translator;
 
-            // set special translator system lang :
-            PLMUtils::Lang::setUserLang(langCode);
-            PLMUtils::Lang::setUserLangFile(plumeTranslatorFileName);
-        } else { // if cancel dialog
-            QString langCode = QLocale::system().name();
-
-            foreach(const PLMTranslation &trans, trList)
-
-            if ((trans.code == langCode) || (trans.code ==
-                                             QLocale::languageToString(QLocale::
-                                                                       system().
-                                                                       language())))
-            {
-                plumeTranslatorFileName = trans.file;
-            }
-
-            QTranslator *translator = new QTranslator(qApp);
-
-            if (translator->load(translatorFileName,
-                                 QLibraryInfo::location(QLibraryInfo::
-                                                        TranslationsPath))) {
-                qApp->installTranslator(translator);
-            }
-
-            plumeTranslatorFileName += langCode;
-            QTranslator *plumeTranslator = new QTranslator(qApp);
-            plumeTranslator->load(plumeTranslatorFileName);
-            qApp->installTranslator(plumeTranslator);
-            settings.setValue("lang", QLocale::system().name());
-
-            // set special translator system lang :
-            PLMUtils::Lang::setUserLang(langCode);
-            PLMUtils::Lang::setUserLangFile(plumeTranslatorFileName);
-        }
-    } else { // if there is a lang setting
-        QString langCode = settings.value("lang", "none").toString();
-
-        foreach(const PLMTranslation &trans, trList)
-
-        if (trans.code == langCode) {
-            plumeTranslatorFileName = trans.file;
-        }
-
-        QTranslator *translator = new QTranslator(qApp);
-
-        if (translator->load(translatorFileName,
-                             QLibraryInfo::location(QLibraryInfo::
-                                                    TranslationsPath))) {
-            qApp->installTranslator(translator);
-        }
-
-        QTranslator *plumeTranslator = new QTranslator(qApp);
-        plumeTranslator->load(plumeTranslatorFileName);
-        qApp->installTranslator(plumeTranslator);
-
-        // set special translator system lang :
-        PLMUtils::Lang::setUserLang(langCode);
-        PLMUtils::Lang::setUserLangFile(plumeTranslatorFileName);
+    if (translator.load(locale, qtTr, "_",
+                        QLibraryInfo::location(QLibraryInfo::
+                                               TranslationsPath))) {
+        qApp->installTranslator(&translator);
     }
 
     // install translation of plugins:
     PLMPluginLoader::instance()->installPluginTranslations();
-#endif // if FORCEQML
 }
 
 // -------------------------------------------------------
