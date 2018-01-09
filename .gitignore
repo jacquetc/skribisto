@@ -77,6 +77,7 @@ build
 .idea
 
 #Qt Creator
+*.autosave
 *.pro.user
 *.qbs.user
 

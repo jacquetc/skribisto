@@ -117,3 +117,6 @@ unix: !macx: !android {
 
 DISTFILES += \
     ../LICENSE
+
+RESOURCES += \
+    tasks/sql/sql.qrc
