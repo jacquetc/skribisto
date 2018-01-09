@@ -1,4 +1,5 @@
 TEMPLATE = subdirs
 
 SUBDIRS += writecase \
-    openprojectcase
+    openprojectcase \
+    settingscase

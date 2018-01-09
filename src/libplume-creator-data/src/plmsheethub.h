@@ -27,7 +27,13 @@
 class PLMSheetHub : public PLMPaperHub
 {
 public:
+
+
     PLMSheetHub(QObject *parent);
+
+
+
+
 };
 
 #endif // PLMSHEETHUB_H

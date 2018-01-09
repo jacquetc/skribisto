@@ -2,78 +2,87 @@
 
 PLMData::PLMData(QObject *parent) : QObject(parent)
 {
-    m_instance = this;
-    m_signalHub = new PLMSignalHub(this);
-    m_errorHub = new PLMErrorHub(this);
-    m_projectManager = new PLMProjectManager(this);
-    m_projectHub = new PLMProjectHub(this);
-    m_sheetHub = new PLMSheetHub(this);
-    m_sheetPropertyHub = new PLMPropertyHub(this, "tbl_sheet_property", "l_sheet_code");
-    m_noteHub = new PLMNoteHub(this);
-    m_notePropertyHub = new PLMPropertyHub(this, "tbl_sheet_property", "l_note_code");
+    m_instance         = this;
+    m_signalHub        = new PLMSignalHub(this);
+    m_errorHub         = new PLMErrorHub(this);
+    m_projectManager   = new PLMProjectManager(this);
+    m_projectHub       = new PLMProjectHub(this);
+    m_sheetHub         = new PLMSheetHub(this);
+    m_sheetPropertyHub = new PLMPropertyHub(this,
+                                            "tbl_sheet_property",
+                                            "l_sheet_code");
+    m_noteHub          = new PLMNoteHub(this);
+    m_notePropertyHub  = new PLMPropertyHub(this,
+                                            "tbl_sheet_property",
+                                            "l_note_code");
+    m_userFileHub      = new PLMUserFileHub(this);
 }
 
-
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 PLMData::~PLMData()
-{
-}
+{}
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-PLMSignalHub *PLMData::signalHub()
+PLMSignalHub * PLMData::signalHub()
 {
     return m_signalHub;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-PLMErrorHub *PLMData::errorHub()
+PLMErrorHub * PLMData::errorHub()
 {
     return m_errorHub;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 
-PLMProjectHub *PLMData::projectHub()
+PLMProjectHub * PLMData::projectHub()
 {
     return m_projectHub;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 
 PLMData *PLMData::m_instance = 0;
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 
-PLMSheetHub *PLMData::sheetHub()
+PLMSheetHub * PLMData::sheetHub()
 {
     return m_sheetHub;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-PLMPropertyHub *PLMData::sheetPropertyHub()
+PLMPropertyHub * PLMData::sheetPropertyHub()
 {
     return m_sheetPropertyHub;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-PLMNoteHub *PLMData::noteHub()
+PLMNoteHub * PLMData::noteHub()
 {
     return m_noteHub;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-PLMPropertyHub *PLMData::notePropertyHub()
+PLMPropertyHub * PLMData::notePropertyHub()
 {
     return m_notePropertyHub;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+PLMUserFileHub * PLMData::userFileHub()
+{
+    return m_userFileHub;
+}
+
+// -----------------------------------------------------------------------------

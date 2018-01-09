@@ -19,48 +19,87 @@
  *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 #include "plmexporter.h"
+#include "plmerror.h"
 
 PLMExporter::PLMExporter(QObject *parent) : QObject(parent)
 {
-
 }
 
-bool PLMExporter::exportSQLiteDbTo(PLMProject*db, const QString &type, const QString &fileName)
+PLMError PLMExporter::exportSQLiteDbTo(PLMProject *db, const QString &type, const QString &fileName)
 {
-    if(type == "SQLITE"){
+    PLMError error;
 
+    if (type == "SQLITE") {
 // shrink the database
         db->getSqlDb().transaction();
-            QString queryStr("VACUUM");
-
-            QSqlQuery query(db->getSqlDb());
-            query.prepare(queryStr);
-            query.exec();
-
+        QString queryStr("VACUUM");
+        QSqlQuery query(db->getSqlDb());
+        query.prepare(queryStr);
+        query.exec();
         db->getSqlDb().commit();
-
-
-
         QString databaseTempFileName =  db->getTempFileName();
-
         //copy db temp to file
         QFile tempFile(databaseTempFileName);
         QFile file(fileName);
 
-        if(!tempFile.open(QIODevice::ReadOnly)){
+        if (!tempFile.open(QIODevice::ReadOnly)) {
             qWarning() << fileName + " can't be opened";
-            return false;
+            error.setSuccess(false);
+            return error;
         }
-        if(!file.open(QIODevice::WriteOnly | QIODevice::Truncate)){
+
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             qWarning() << fileName + " can't be opened";
-            return false;
+            error.setSuccess(false);
+            return error;
         }
+
         QByteArray array(tempFile.readAll());
         file.write(array);
         file.close();
-
-        return true;
+        return error;
     }
 
-return false;
+    error.setSuccess(false);
+    return error;
+}
+
+PLMError PLMExporter::exportUserSQLiteDbTo(PLMProject *db, const QString &fileName)
+{
+    PLMError error;
+// shrink the database
+    db->getUserSqlDb().transaction();
+    QString queryStr("VACUUM");
+    QSqlQuery query(db->getUserSqlDb());
+    query.prepare(queryStr);
+    query.exec();
+    db->getUserSqlDb().commit();
+    QString databaseTempFileName =  db->getUserDBTempFileName();
+    //copy db temp to file
+    QFile tempFile(databaseTempFileName);
+    QFile file(fileName);
+// add suffix if not done :
+    QFileInfo fileInfo(file);
+
+    if (!fileInfo.fileName().contains(".plume.user")) {
+        QString newFileName = fileInfo.path() + QDir::separator() + fileInfo.baseName() + ".plume.user";
+        file.setFileName(newFileName);
+    }
+
+    if (!tempFile.open(QIODevice::ReadOnly)) {
+        qWarning() << fileName + " can't be opened";
+        error.setSuccess(false);
+        return error;
+    }
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qWarning() << fileName + " can't be opened";
+        error.setSuccess(false);
+        return error;
+    }
+
+    QByteArray array(tempFile.readAll());
+    file.write(array);
+    file.close();
+    return error;
 }

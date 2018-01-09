@@ -54,7 +54,8 @@ SOURCES += \
     plmsheethub.cpp \
     plmnotehub.cpp \
     plmpropertyhub.cpp \
-    tasks/sql/plmupgrader.cpp
+    tasks/sql/plmupgrader.cpp \
+    plmuserfilehub.cpp
 
 HEADERS += \
     tasks/plmtask.h \
@@ -91,7 +92,8 @@ HEADERS += \
     plmsheethub.h \
     plmnotehub.h \
     plmpropertyhub.h \
-    tasks/sql/plmupgrader.h
+    tasks/sql/plmupgrader.h \
+    plmuserfilehub.h
 
 OTHER_FILES += \
     version.info.in

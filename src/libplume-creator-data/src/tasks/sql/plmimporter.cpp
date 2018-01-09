@@ -39,33 +39,30 @@ PLMImporter::PLMImporter(QObject *parent) :
 
 QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString &type, const QString &fileName, int projectId, PLMError &error)
 {
-    if(type == "SQLITE"){
+    if (type == "SQLITE") {
         //create temp file
         QTemporaryFile tempFile;
         tempFile.open();
         tempFile.setAutoRemove(false);
         QString tempFileName = tempFile.fileName();
-
         //copy db file to temp
-
         QFile file(fileName);
-        if(!file.exists()){
+
+        if (!file.exists()) {
             error.setSuccess(false);
             qWarning() << fileName + " doesn't exist";
             return QSqlDatabase();
         }
 
-        if(!file.open(QIODevice::ReadOnly)){
+        if (!file.open(QIODevice::ReadOnly)) {
             error.setSuccess(false);
             qWarning() << fileName + " can't be copied";
             return QSqlDatabase();
         }
+
         QByteArray array(file.readAll());
         tempFile.write(array);
         tempFile.close();
-
-
-
         //open temp file
         QSqlDatabase sqlDb = QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
         sqlDb.setHostName("localhost");
@@ -73,10 +70,9 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString &type, const QString 
         //QSqlDatabase memoryDb = copySQLiteDbToMemory(sqlDb, projectId);
         //        QSqlDatabase db = QSqlDatabase::database("db_to_be_imported", false);
         //        db.removeDatabase("db_to_be_imported");
-
         bool ok = sqlDb.open();
 
-        if(!ok){
+        if (!ok) {
             error.setSuccess(false);
             //emit plmTaskError->errorSent("E_SQLITE", "",m_sqlDb.lastError().text());
             return QSqlDatabase();
@@ -84,13 +80,10 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString &type, const QString 
 
         // upgrade :
         IFOKDO(error, PLMUpgrader::upgradeSQLite(sqlDb));
-        IFKO(error){
+        IFKO(error) {
             return QSqlDatabase();
         }
-
-
         // optimization :
-
         QStringList optimization;
         optimization << QStringLiteral("PRAGMA case_sensitive_like=true")
                      << QStringLiteral("PRAGMA journal_mode=MEMORY")
@@ -98,31 +91,23 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString &type, const QString 
                      << QStringLiteral("PRAGMA locking_mode=EXCLUSIVE")
                      << QStringLiteral("PRAGMA synchronous = OFF")
                      << QStringLiteral("PRAGMA recursive_triggers=true");
-
         sqlDb.transaction();
 
         foreach (const QString &string, optimization) {
-
-
             QSqlQuery query(sqlDb);
             query.prepare(string);
             query.exec();
-
         }
+
         sqlDb.commit();
-
         //clean-up :
-
         sqlDb.transaction();
         PLMSqlQueries sheetQueries(sqlDb, "tbl_sheet", "l_sheet_id");
         IFOKDO(error, sheetQueries.renumberSortOrder());
         PLMSqlQueries noteQueries(sqlDb, "tbl_note", "l_note_id");
         IFOKDO(error, noteQueries.renumberSortOrder());
-
         sqlDb.commit();
-
         return sqlDb;
-
     }
 
     return QSqlDatabase();
@@ -130,18 +115,89 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString &type, const QString 
 
 QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError &error)
 {
+    //TODO : create minimal DB
+    return QSqlDatabase();
+}
+
+QSqlDatabase PLMImporter::createUserSQLiteFileFrom(const QString &type, const QString &fileName, int projectId, PLMError &error)
+{
+    //create temp file
+    QTemporaryFile tempFile;
+    tempFile.open();
+    tempFile.setAutoRemove(false);
+    QString tempFileName = tempFile.fileName();
+    //copy db file to temp
+    QFile file(fileName);
+
+    if (!file.exists()) {
+        error.setSuccess(false);
+        qWarning() << fileName + " doesn't exist";
+        return QSqlDatabase();
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        error.setSuccess(false);
+        qWarning() << fileName + " can't be copied";
+        return QSqlDatabase();
+    }
+
+    QByteArray array(file.readAll());
+    tempFile.write(array);
+    tempFile.close();
+    //open temp file
+    QSqlDatabase sqlDb = QSqlDatabase::addDatabase("QSQLITE", "user_" + QString::number(projectId));
+    sqlDb.setHostName("localhost");
+    sqlDb.setDatabaseName(tempFileName);
+    //QSqlDatabase memoryDb = copySQLiteDbToMemory(sqlDb, projectId);
+    //        QSqlDatabase db = QSqlDatabase::database("db_to_be_imported", false);
+    //        db.removeDatabase("db_to_be_imported");
+    bool ok = sqlDb.open();
+
+    if (!ok) {
+        error.setSuccess(false);
+        //emit plmTaskError->errorSent("E_SQLITE", "",m_sqlDb.lastError().text());
+        return QSqlDatabase();
+    }
+
+    // upgrade :
+    IFOKDO(error, PLMUpgrader::upgradeSQLite(sqlDb));
+    IFKO(error) {
+        return QSqlDatabase();
+    }
+    // optimization :
+    QStringList optimization;
+    optimization << QStringLiteral("PRAGMA case_sensitive_like=true")
+                 << QStringLiteral("PRAGMA journal_mode=MEMORY")
+                 << QStringLiteral("PRAGMA temp_store=MEMORY")
+                 << QStringLiteral("PRAGMA locking_mode=EXCLUSIVE")
+                 << QStringLiteral("PRAGMA synchronous = OFF")
+                 << QStringLiteral("PRAGMA recursive_triggers=true");
+    sqlDb.transaction();
+
+    foreach (const QString &string, optimization) {
+        QSqlQuery query(sqlDb);
+        query.prepare(string);
+        query.exec();
+    }
+
+    sqlDb.commit();
+    return sqlDb;
+}
+
+QSqlDatabase PLMImporter::createEmptyUserSQLiteFile(int projectId, PLMError &error)
+{
+    //TODO : create minimal user DB
     return QSqlDatabase();
 }
 
 
 QSqlDatabase PLMImporter::copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int projectId, PLMError &error)
 {
-    //TODO: not good !!!!
-
+    //TODO: not good, to remove ? !!!!
     QString table("mytable");
-    QSqlDatabase srcDB= sourceSqlDb;
+    QSqlDatabase srcDB = sourceSqlDb;
     srcDB.open();
-    QSqlDatabase destDB=QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
+    QSqlDatabase destDB = QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
     destDB.setHostName("localhost");
     destDB.setDatabaseName(":memory:");
     destDB.open();
@@ -150,28 +206,33 @@ QSqlDatabase PLMImporter::copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int pro
         QSqlQuery destQuery(destDB);
 
         // get table schema
-        if (!srcQuery.exec(QString("SHOW CREATE TABLE %1").arg(table)))
+        if (!srcQuery.exec(QString("SHOW CREATE TABLE %1").arg(table))) {
             return QSqlDatabase();
+        }
 
         QString tableCreateStr;
 
-        while(srcQuery.next())
-            tableCreateStr=srcQuery.value(1).toString();
+        while (srcQuery.next()) {
+            tableCreateStr = srcQuery.value(1).toString();
+        }
 
         // drop destTable if exists
-        if (!destQuery.exec(QString("DROP TABLE IF EXISTS %1").arg(table)))
+        if (!destQuery.exec(QString("DROP TABLE IF EXISTS %1").arg(table))) {
             return QSqlDatabase();
+        }
 
         // create new one
-        if (!destQuery.exec(tableCreateStr))
+        if (!destQuery.exec(tableCreateStr)) {
             return QSqlDatabase();
+        }
 
         // copy all entries
-        if (!srcQuery.exec(QString("SELECT * FROM %1").arg(table)))
+        if (!srcQuery.exec(QString("SELECT * FROM %1").arg(table))) {
             return QSqlDatabase();
+        }
 
         while (srcQuery.next()) {
-            QSqlRecord record=srcQuery.record();
+            QSqlRecord record = srcQuery.record();
             QStringList names;
             QStringList placeholders;
             QList<QVariant > values;
@@ -179,13 +240,13 @@ QSqlDatabase PLMImporter::copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int pro
             for (int i = 0; i < record.count(); ++i) {
                 names << record.fieldName(i);
                 placeholders << ":" + record.fieldName(i);
+                QVariant value = srcQuery.value(i);
 
-                QVariant value=srcQuery.value(i);
-
-                if (value.type() == QVariant::String)
+                if (value.type() == QVariant::String) {
                     values << "\"" + value.toString() + "\"";
-                else
+                } else {
                     values << value;
+                }
             }
 
             // build new query
@@ -193,14 +254,15 @@ QSqlDatabase PLMImporter::copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int pro
             queryStr.append("INSERT INTO " + table);
             queryStr.append(" (" + names.join(", ") + ") ");
             queryStr.append(" VALUES (" + placeholders.join(", ") + ");");
-
             destQuery.prepare(queryStr);
 
-            foreach(QVariant value, values)
+            foreach (QVariant value, values) {
                 destQuery.addBindValue(value);
+            }
 
-            if (!destQuery.exec())
+            if (!destQuery.exec()) {
                 return QSqlDatabase();
+            }
         }
     }
     return destDB;

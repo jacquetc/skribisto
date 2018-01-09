@@ -41,6 +41,8 @@ public:
     int getLastLoaded() const;
     PLMError getError();
 
+
+
 signals:
     void errorSent(const PLMError &error) const;
     void projectLoaded(int projectId);

@@ -36,7 +36,10 @@ class PLMSqlQueries : public QObject
 {
 public:
 
-    explicit PLMSqlQueries(int projectId, const QString &tableName);
+    enum DBType { ProjectDB, UserDB};
+    Q_ENUM(DBType)
+
+    explicit PLMSqlQueries(int projectId, const QString &tableName, PLMSqlQueries::DBType dbType = PLMSqlQueries::ProjectDB );
     explicit PLMSqlQueries(QSqlDatabase sqlDB, const QString &tableName, const QString &idName);
 
     PLMError get(int id, const QString &valueName, QVariant &result) const;

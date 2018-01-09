@@ -1,8 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2016 by Cyril Jacquet                                 *
+ *   Copyright (C) 2018 by Cyril Jacquet                                 *
  *   cyril.jacquet@plume-creator.eu                                        *
  *                                                                         *
- *  Filename: plmsheethub.cpp                                                   *
+ *  Filename: plmuserfilehub.cpp                                                   *
  *  This file is part of Plume Creator.                                    *
  *                                                                         *
  *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,8 +18,15 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#include "plmsheethub.h"
+#include "plmuserfilehub.h"
 
-PLMSheetHub::PLMSheetHub(QObject *parent) : PLMPaperHub(parent, "tbl_sheet")
+PLMUserFileHub::PLMUserFileHub(QObject *parent) : QObject(parent)
 {
+    // connection for 'getxxx' functions to have a way to get errors.
+    connect(this, &PLMUserFileHub::errorSent, this, &PLMUserFileHub::setError, Qt::DirectConnection);
+}
+
+void PLMUserFileHub::setError(const PLMError &error)
+{
+    m_error = error;
 }

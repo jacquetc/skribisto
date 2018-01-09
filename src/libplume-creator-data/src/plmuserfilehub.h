@@ -1,8 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2016 by Cyril Jacquet                                 *
+*   Copyright (C) 2018 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmimporter.h                                                   *
+*  Filename: plmuserfilehub.h
+*                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,44 +19,30 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-
-#ifndef PLMIMPORTER_H
-#define PLMIMPORTER_H
+#ifndef PLMUSERFILEHUB_H
+#define PLMUSERFILEHUB_H
 
 #include <QObject>
-#include <QtSql/QSqlDatabase>
-
+#include <QString>
 #include "plmerror.h"
 
-class PLMImporter : public QObject {
+class PLMUserFileHub : public QObject
+{
     Q_OBJECT
 
 public:
 
-    explicit PLMImporter(QObject *parent = 0);
-
-    QSqlDatabase createSQLiteDbFrom(const QString& type,
-                                    const QString& fileName,
-                                    int            projectId,
-                                    PLMError     & error);
-    QSqlDatabase createEmptySQLiteProject(int       projectId,
-                                          PLMError& error);
-    QSqlDatabase createUserSQLiteFileFrom(const QString& type,
-                                          const QString& fileName,
-                                          int            projectId,
-                                          PLMError     & error);
-    QSqlDatabase createEmptyUserSQLiteFile(int       projectId,
-                                           PLMError& error);
+    explicit PLMUserFileHub(QObject *parent);
 
 signals:
 
+    void errorSent(const PLMError &error) const;
+
 public slots:
-
+private slots:
+    void setError(const PLMError &error);
 private:
-
-    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb,
-                                      int          projectId,
-                                      PLMError   & error);
+    PLMError m_error;
 };
 
-#endif // PLMIMPORTER_H
+#endif // PLMUSERFILEHUB_H

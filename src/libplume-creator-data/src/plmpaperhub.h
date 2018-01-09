@@ -33,6 +33,16 @@ class PLMPaperHub : public QObject
 {
     Q_OBJECT
 public:
+    //settings
+    enum Setting { SplitterState, Minimap, Fit, SpellCheck, StackState, WindowState };
+    Q_ENUM(Setting)
+    enum Stack { Zero, One};
+    Q_ENUM(Stack)
+
+    //opened docs list
+    enum OpenedDocSetting { SheetId , StackNumber, Hovering, Visible, HasFocus, CursorPosition, HoveringGeometry, Date};
+    Q_ENUM(OpenedDocSetting)
+
     explicit PLMPaperHub(QObject *parent, const QString &tableName);
 
     QList<QHash<QString, QVariant> > getAll(int projectId) const;
@@ -45,7 +55,7 @@ public:
     QString getTitle(int projectId, int sheetId) const;
 
     PLMError setIndent(int projectId, int sheetId, int newIndent);
-    int getIndent(int projectId, int sheetId) const;    
+    int getIndent(int projectId, int sheetId) const;
     PLMError setSortOrder(int projectId, int sheetId, int newSortOrder);
     int getSortOrder(int projectId, int sheetId) const;
     PLMError setContent(int projectId, int sheetId, const QString &newContent);
@@ -68,6 +78,21 @@ public:
     PLMError addPaperBelow(int projectId, int targetId);
     PLMError addChildPaper(int projectId, int targetId);
     PLMError removePaper(int projectId, int targetId);
+
+    //settings :
+    PLMError settings_setStackSetting(Stack stack, Setting setting, const QVariant &value);
+    QVariant settings_getStackSetting(Stack stack, Setting setting) const;
+
+    // opened docs settings :
+    PLMError settings_setDocSetting(int projectId, int paperId, OpenedDocSetting setting, const QVariant &value);
+    QVariant settings_getDocSetting(int projectId, int paperId, OpenedDocSetting setting) const;
+
+private:
+    PLMError setSetting(int projectId, const QString &fieldName, const QVariant &value, bool setCurrentDateBool);
+    QVariant getSetting(int projectId, const QString &fieldName) const;
+
+    PLMError setDocSetting(int projectId, int paperId, const QString &fieldName, const QVariant &value, bool setCurrentDateBool);
+    QVariant getDocSetting(int projectId, int paperId, const QString &fieldName) const;
 private slots:
     void setError(const PLMError &error);
 
@@ -84,10 +109,14 @@ signals:
     void contentDateChanged(int projectId, int sheetId, const QDateTime &newDate);
     void paperAdded(int projectId, int paperId);
     void paperRemoved(int projectId, int paperId);
+
+    //settings :
+    void settings_settingChanged(PLMPaperHub::Stack stack, PLMPaperHub::Setting setting, const QVariant &newValue);
+    void settings_docSettingChanged(int projectId, int sheetId, PLMPaperHub::OpenedDocSetting setting, const QVariant &newValue );
 public slots:
 
 protected:
-    QString m_tableName;
+    QString m_tableName, m_paperType;
     PLMError m_error;
     int m_last_added_id;
 };

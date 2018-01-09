@@ -29,45 +29,50 @@
 #include "plmpropertyhub.h"
 #include "plmsheethub.h"
 #include "plmsignalhub.h"
+#include "plmuserfilehub.h"
 #include "plume_creator_data_global.h"
 #include "tasks/plmprojectmanager.h"
 
 #define plmdata PLMData::instance()
 
-class EXPORT PLMData : public QObject
-{
+class EXPORT PLMData : public QObject {
     Q_OBJECT
+
 public:
+
     explicit PLMData(QObject *parent = 0);
     ~PLMData();
 
-    static PLMData *instance()
+    static PLMData* instance()
     {
         return m_instance;
     }
 
-    PLMSignalHub *signalHub();
-    PLMErrorHub *errorHub();
-    PLMSheetHub *sheetHub();
-    PLMPropertyHub *sheetPropertyHub();
-    PLMNoteHub *noteHub();
-    PLMPropertyHub *notePropertyHub();
-    PLMProjectHub *projectHub();
+    PLMSignalHub*   signalHub();
+    PLMErrorHub*    errorHub();
+    PLMSheetHub*    sheetHub();
+    PLMPropertyHub* sheetPropertyHub();
+    PLMNoteHub*     noteHub();
+    PLMPropertyHub* notePropertyHub();
+    PLMProjectHub*  projectHub();
+    PLMUserFileHub* userFileHub();
 
 signals:
 
 public slots:
 
 private:
+
     static PLMData *m_instance;
 
-    PLMErrorHub *m_errorHub;
-    PLMSignalHub *m_signalHub;
+    PLMErrorHub   *m_errorHub;
+    PLMSignalHub  *m_signalHub;
     PLMProjectHub *m_projectHub;
-    PLMSheetHub *m_sheetHub;
-    PLMNoteHub *m_noteHub;
+    PLMSheetHub   *m_sheetHub;
+    PLMNoteHub    *m_noteHub;
     PLMProjectManager *m_projectManager;
-    PLMPropertyHub *m_notePropertyHub, *m_sheetPropertyHub;
+    PLMPropertyHub    *m_notePropertyHub, *m_sheetPropertyHub;
+    PLMUserFileHub    *m_userFileHub;
 };
 
 #endif // PLMDATA_H

@@ -38,9 +38,8 @@ class PLMExporter : public QObject
     Q_OBJECT
 public:
     explicit PLMExporter(QObject *parent = 0);
-    bool exportSQLiteDbTo(PLMProject *db, const QString &type, const QString &fileName);
-
-
+    PLMError exportSQLiteDbTo(PLMProject *db, const QString &type, const QString &fileName);
+    PLMError exportUserSQLiteDbTo(PLMProject *db, const QString &fileName);
 signals:
 
 public slots:

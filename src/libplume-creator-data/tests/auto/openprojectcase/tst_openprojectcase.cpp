@@ -29,9 +29,13 @@ private Q_SLOTS:
 
     void getProjectIdList();
     void getLastLoaded();
+    void saveOneProject();
+    void saveTwoProjects();
 private:
     PLMData *m_data;
     QString m_testProjectPath;
+    QTemporaryFile *m_tempFile1;
+    QTemporaryFile *m_tempFile2;
 
 };
 
@@ -42,10 +46,20 @@ OpenProjectCase::OpenProjectCase()
 void OpenProjectCase::initTestCase()
 {
     m_testProjectPath = ":/testfiles/plume_test_project.sqlite";
+    m_tempFile1 = new QTemporaryFile();
+    // needed to have a fileName :
+    m_tempFile1->open();
+    m_tempFile1->close();
+    m_tempFile2 = new QTemporaryFile();
+    // needed to have a fileName :
+    m_tempFile2->open();
+    m_tempFile2->close();
 }
 
 void OpenProjectCase::cleanupTestCase()
 {
+    m_tempFile1->remove();
+    m_tempFile2->remove();
 }
 
 void OpenProjectCase::init()
@@ -140,8 +154,24 @@ void OpenProjectCase::getLastLoaded()
     QVERIFY(id > 0);
 }
 
+void OpenProjectCase::saveOneProject()
+{
+    openOneProject();
+    QSignalSpy spy1(plmdata->projectHub(), SIGNAL(projectSaved(int)));
+    plmdata->projectHub()->saveProjectAs(1, "SQLITE", m_tempFile1->fileName());
+    QCOMPARE(spy1.count(), 1);
+}
 
-
+void OpenProjectCase::saveTwoProjects()
+{
+    openTwoProjects();
+    QSignalSpy spy1(plmdata->projectHub(), SIGNAL(projectSaved(int)));
+    plmdata->projectHub()->saveProjectAs(1, "SQLITE", m_tempFile1->fileName() );
+    QCOMPARE(spy1.count(), 1);
+    QSignalSpy spy2(plmdata->projectHub(), SIGNAL(projectSaved(int)));
+    plmdata->projectHub()->saveProjectAs(2, "SQLITE", m_tempFile2->fileName());
+    QCOMPARE(spy2.count(), 1);
+}
 
 void OpenProjectCase::testCase1_data()
 {
