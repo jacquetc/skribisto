@@ -1,6 +1,6 @@
 #include "plmpanel.h"
 #include "plmtestwindow.h"
-#include "plmwritingzone.h"
+#include "testwritingzone.h"
 
 PLMTestWindow::PLMTestWindow(QObject *parent) : QObject(parent),
                                                 m_name("testWindow")
@@ -31,7 +31,7 @@ PLMPanelWindow * PLMTestWindow::panel()
     window->setWindowTitle(tr("Test"));
 
     // window->setCentralWidget(new QLabel("Window test"));
-    window->setCentralWidget(new PLMWritingZone());
+    window->setCentralWidget(new TestWritingZone());
     return window;
 }
 

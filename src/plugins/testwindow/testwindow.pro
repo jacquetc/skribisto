@@ -19,12 +19,14 @@ $$top_srcdir/plume-creator
 
 SOURCES += \
     plmpanel.cpp \
-    plmtestwindow.cpp
+    plmtestwindow.cpp \
+    testwritingzone.cpp
 
 
 HEADERS += \
     plmpanel.h \
-    plmtestwindow.h
+    plmtestwindow.h \
+    testwritingzone.h
 
 
 OTHER_FILES +=

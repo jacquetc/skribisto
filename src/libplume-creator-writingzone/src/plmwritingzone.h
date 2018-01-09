@@ -22,56 +22,64 @@
 #define PLMWRITINGZONE_H
 
 #include <QWidget>
+#include <QImage>
 
-namespace Ui
-{
+namespace Ui {
 class PLMWritingZone;
 }
 
-class PLMWritingZone : public QWidget
-{
+class PLMWritingZone : public QWidget {
     Q_OBJECT
+
 public:
+
     explicit PLMWritingZone(QWidget *parent = 0);
     ~PLMWritingZone();
 
-    bool hasMinimap() const;
-    void setHasMinimap(bool value);
+    bool           hasMinimap() const;
+    void           setHasMinimap(bool value);
 
-    bool hasScrollbar() const;
-    void setHasScrollbar(bool hasScrollbar);
+    bool           hasScrollbar() const;
+    void           setHasScrollbar(bool hasScrollbar);
 
-    bool hasSideToolBar() const;
-    void setHasSideToolBar(bool hasSideToolBar);
+    bool           hasSideToolBar() const;
+    void           setHasSideToolBar(bool hasSideToolBar);
 
-    bool isResizable() const;
-    void setIsResizable(bool isResizable);
+    bool           isResizable() const;
+    void           setIsResizable(bool isResizable);
 
-    void setWidth(int width);
+    void           setWidth(int width);
 
-    bool isMarkdown() const;
-    void setIsMarkdown(bool isMarkdown);
+    bool           isMarkdown() const;
+    void           setIsMarkdown(bool isMarkdown);
 
-    QString markdownText() const;
-    void setMarkdownText(const QString &markdownText);
+    QString        markdownText() const;
+    void           setMarkdownText(const QString& markdownText);
 
-    QString htmlText() const;
-    void setHtmlText(const QString &htmlText);
+    QString        htmlText() const;
+    void           setHtmlText(const QString& htmlText);
+
+    virtual QImage image(const QString& imageName) const = 0;
 
 signals:
+
     void scrollBarValueChanged(int value);
     void cursorPositionChanged(int value);
 
 public slots:
+
 private slots:
+
     void widenTextEdit(int diff);
 
 private:
+
     Ui::PLMWritingZone *ui;
 
-    bool m_hasMinimap, m_hasScrollbar, m_hasSideToolBar, m_isResizable, m_isMarkdown;
+    bool m_hasMinimap, m_hasScrollbar, m_hasSideToolBar, m_isResizable,
+         m_isMarkdown;
     QString m_markdownText, m_htmlText;
-    int m_cursorPosition, m_scrollBarValue;
+    int     m_cursorPosition, m_scrollBarValue;
 };
 
 #endif // PLMWRITINGZONE_H
