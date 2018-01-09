@@ -54,17 +54,25 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString &fileName) 
         IFOKDO(error, setPath(fileName));
     }
 
-    QFileInfo info(fileName);
-    QString   userFileName = info.path() + QDir::separator() + info.baseName() + ".plume.user";
-    IFOKDO(error, setUserDBPath(userFileName));
+
     IFOK(error) {
         PLMImporter importer;
 
-        if (fileName == "") {
+        if (fileName == "") { // virgin project
             m_sqlDb     = importer.createEmptySQLiteProject(projectId, error);
             m_userSqlDb = importer.createEmptyUserSQLiteFile(projectId, error);
+
+            IFKO(error){
+                //qWarning << error.getMessage()
+                qCritical() << "New project not created";
+
+                return;
+            }
+
         } else {
             m_sqlDb = importer.createSQLiteDbFrom("SQLITE", fileName, projectId, error);
+            QFileInfo info(fileName);
+            QString   userFileName = info.path() + QDir::separator() + info.baseName() + ".plume.user";
             QFileInfo userFileNameInfo(userFileName);
 
             if (!userFileNameInfo.exists()) {
@@ -217,7 +225,7 @@ QString PLMProject::getPath() const
 PLMError PLMProject::setPath(const QString &value)
 {
     PLMError error;
-    // check for file rights, etc...
+    //TODO: check for file rights, etc...
     IFOK(error) {
         m_path = value;
     }
@@ -226,15 +234,8 @@ PLMError PLMProject::setPath(const QString &value)
 
 QString PLMProject::getUserDBPath() const
 {
-    return m_userFilePath;
+    QFileInfo info(m_path);
+    QString   userFileName = info.path() + QDir::separator() + info.baseName() + ".plume.user";
+    return userFileName;
 }
 
-PLMError PLMProject::setUserDBPath(const QString &value)
-{
-    PLMError error;
-    // check for file rights, etc...
-    IFOK(error) {
-        m_userFilePath = value;
-    }
-    return error;
-}

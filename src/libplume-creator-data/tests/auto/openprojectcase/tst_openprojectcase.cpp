@@ -31,6 +31,7 @@ private Q_SLOTS:
     void getLastLoaded();
     void saveOneProject();
     void saveTwoProjects();
+    void openEmptyProject();
 private:
     PLMData *m_data;
     QString m_testProjectPath;
@@ -171,6 +172,13 @@ void OpenProjectCase::saveTwoProjects()
     QSignalSpy spy2(plmdata->projectHub(), SIGNAL(projectSaved(int)));
     plmdata->projectHub()->saveProjectAs(2, "SQLITE", m_tempFile2->fileName());
     QCOMPARE(spy2.count(), 1);
+}
+
+void OpenProjectCase::openEmptyProject()
+{
+    QSignalSpy spy(plmdata->projectHub(), SIGNAL(projectLoaded(int)));
+    plmdata->projectHub()->loadProject("");
+    QCOMPARE(spy.count(), 1);
 }
 
 void OpenProjectCase::testCase1_data()

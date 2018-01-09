@@ -59,7 +59,6 @@ public:
     PLMError      setPath(const QString &value);
 
     QString       getUserDBPath() const;
-    PLMError      setUserDBPath(const QString &value);
 
     QSqlDatabase  getSqlDb() const;
     QSqlDatabase  getUserSqlDb() const;
@@ -77,7 +76,7 @@ private:
     int m_projectId;
     PLMSheetTree *m_sheetTree;
     PLMNoteTree  *m_noteTree;
-    QString m_type, m_path, m_userFilePath;
+    QString m_type, m_path;
 };
 
 #endif // PLMDATABASE_H

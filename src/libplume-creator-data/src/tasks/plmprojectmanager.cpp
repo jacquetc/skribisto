@@ -73,6 +73,9 @@ PLMError PLMProjectManager::saveProjectAs(int projectId, const QString &type, co
 
     PLMExporter exporter(this);
     IFOKDO(error, exporter.exportSQLiteDbTo(project, type, path));
+    IFOK(error) {
+        project->setPath(path);
+    }
     IFOKDO(error, exporter.exportUserSQLiteDbTo(project, path));
     return error;
 }

@@ -16,6 +16,7 @@ PLMPaperHub::PLMPaperHub(QObject *parent, const QString &tableName)
     qRegisterMetaType<Setting>("Setting");
     qRegisterMetaType<Stack>("Stack");
     qRegisterMetaType<OpenedDocSetting>("OpenedDocSetting");
+
     // connection for 'getxxx' functions to have a way to get errors.
     connect(this, &PLMPaperHub::errorSent, this, &PLMPaperHub::setError, Qt::DirectConnection);
 

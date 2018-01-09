@@ -22,30 +22,24 @@
 #ifndef PLMIMPORTER_H
 #define PLMIMPORTER_H
 
+#include <QFile>
 #include <QObject>
 #include <QtSql/QSqlDatabase>
 
 #include "plmerror.h"
 
-class PLMImporter : public QObject {
+class PLMImporter : public QObject
+{
     Q_OBJECT
 
 public:
 
     explicit PLMImporter(QObject *parent = 0);
 
-    QSqlDatabase createSQLiteDbFrom(const QString& type,
-                                    const QString& fileName,
-                                    int            projectId,
-                                    PLMError     & error);
-    QSqlDatabase createEmptySQLiteProject(int       projectId,
-                                          PLMError& error);
-    QSqlDatabase createUserSQLiteFileFrom(const QString& type,
-                                          const QString& fileName,
-                                          int            projectId,
-                                          PLMError     & error);
-    QSqlDatabase createEmptyUserSQLiteFile(int       projectId,
-                                           PLMError& error);
+    QSqlDatabase createSQLiteDbFrom(const QString &type, const QString &fileName, int projectId, PLMError &error);
+    QSqlDatabase createEmptySQLiteProject(int       projectId, PLMError &error);
+    QSqlDatabase createUserSQLiteFileFrom(const QString &type, const QString &fileName, int projectId, PLMError &error);
+    QSqlDatabase createEmptyUserSQLiteFile(int projectId,  PLMError &error);
 
 signals:
 
@@ -53,9 +47,8 @@ public slots:
 
 private:
 
-    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb,
-                                      int          projectId,
-                                      PLMError   & error);
+//    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int projectId, PLMError &error);
+    PLMError executeSQLFile(const QString &fileName, QSqlDatabase &sqlDB);
 };
 
 #endif // PLMIMPORTER_H
