@@ -33,7 +33,7 @@ public :
     }
 
     // SideMainBarIconInterface
-    QList<PLMSideBarAction>mainBarActions(QObject *parent);
+    QList<PLMSideBarAction>sideMainBarActions(QObject *parent);
 
 private slots:
 

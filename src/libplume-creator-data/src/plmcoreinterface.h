@@ -2,7 +2,7 @@
 *   Copyright (C) 2017 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmguiinterface.h                                                   *
+*  Filename: plmcoreinterface.h                                                   *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,42 +18,26 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMGUIINTERFACE_H
-#define PLMGUIINTERFACE_H
+#ifndef PLMCOREINTERFACE_H
+#define PLMCOREINTERFACE_H
 
-#include "plmbasewindow.h"
-#include "plmsidemainbar.h"
+
 
 #include <QString>
 
-class PLMWindowInterface
+class PLMBaseInterface
 {
 public:
-    virtual ~PLMWindowInterface() {}
+    virtual ~PLMBaseInterface() {}
 
     virtual QString use() const = 0;
     virtual QString name() const = 0;
 
-    virtual PLMBaseWindow *window() = 0;
-    //virtual QList<PLMSideBarAction> mainBarActions(QObject *parent) = 0;
+
 };
 
-#define PLMWindowInterface_iid "com.PlumeSoft.Plume-Creator.WindowInterface/1.0"
+#define PLMBaseInterface_iid "com.PlumeSoft.Plume-Creator.BaseInterface/1.0"
 
-Q_DECLARE_INTERFACE(PLMWindowInterface, PLMWindowInterface_iid)
+Q_DECLARE_INTERFACE(PLMBaseInterface, PLMBaseInterface_iid)
 
-class PLMSideMainBarIconInterface
-{
-public:
-    virtual ~PLMSideMainBarIconInterface() {}
-    virtual QString use() const = 0;
-    virtual QString name() const = 0;
-
-    virtual QList<PLMSideBarAction> sideMainBarActions(QObject *parent) = 0;
-};
-
-#define PLMSideMainBarIconInterface_iid "com.PlumeSoft.Plume-Creator.SideMainBarIconInterface/1.0"
-
-Q_DECLARE_INTERFACE(PLMSideMainBarIconInterface, PLMSideMainBarIconInterface_iid)
-
-#endif // PLMGUIINTERFACE_H
+#endif // PLMCOREINTERFACE_H

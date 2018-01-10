@@ -42,7 +42,7 @@ void PLMSideMainBar::loadPlugins()
     QList<PLMSideMainBarIconInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMSideMainBarIconInterface>();
 
     foreach (PLMSideMainBarIconInterface *plugin, pluginList) {
-        QList<PLMSideBarAction> actionList = plugin->mainBarActions(this);
+        QList<PLMSideBarAction> actionList = plugin->sideMainBarActions(this);
 
         foreach (const PLMSideBarAction &sideBarAction, actionList) {
             QToolButton *button = new QToolButton(this);

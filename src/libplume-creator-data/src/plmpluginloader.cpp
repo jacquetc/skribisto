@@ -4,7 +4,6 @@
 #include <QDebug>
 
 // #include "textconverter/converterinterface.h"
-#include "plmguiinterface.h"
 
 PLMPluginLoader::PLMPluginLoader(QObject *parent) : QObject(parent)
 {
@@ -14,6 +13,10 @@ PLMPluginLoader::PLMPluginLoader(QObject *parent) : QObject(parent)
     foreach(const QString  &path, PLMUtils::Dir::addonsPathsList()) {
         QCoreApplication::addLibraryPath(path + "/plugins");
     }
+    foreach(const QString  &path, QCoreApplication::libraryPaths() ) {
+    qDebug() << path;
+    }
+
 
     // this->reload();
 }
@@ -31,60 +34,60 @@ PLMPluginLoader *PLMPluginLoader::m_instance = 0;
 // ---------------------------------------------------------------------------
 
 
-void PLMPluginLoader::reload()
-{
-    m_pluginsListHash.clear();
+//void PLMPluginLoader::reload()
+//{
+//    m_pluginsListHash.clear();
 
-    //    this->addPluginType<ConverterInterface>();
-    //       QList<ConverterInterface *> converterInterfaces;
-    //    foreach ( const QString  &path, Utils::Dir::addonsPathsList())
-    //
-    //
-    //
-    //
-    //     converterInterfaces.append(this->pluginByDir<ConverterInterface>(path
-    // + "/plugins/convert"));
-    // //    foreach (ConverterInterface *converterInterface,
-    // converterInterfaces)
-    // //        m_pluginsListHash.insert(converterInterface->name(),
-    // converterInterface);
-    QList<PLMSideMainBarIconInterface *> panelInterfaces;
+//    //    this->addPluginType<ConverterInterface>();
+//    //       QList<ConverterInterface *> converterInterfaces;
+//    //    foreach ( const QString  &path, Utils::Dir::addonsPathsList())
+//    //
+//    //
+//    //
+//    //
+//    //     converterInterfaces.append(this->pluginByDir<ConverterInterface>(path
+//    // + "/plugins/convert"));
+//    // //    foreach (ConverterInterface *converterInterface,
+//    // converterInterfaces)
+//    // //        m_pluginsListHash.insert(converterInterface->name(),
+//    // converterInterface);
+//    QList<PLMSideMainBarIconInterface *> panelInterfaces;
 
-    foreach(const QString  &path, PLMUtils::Dir::addonsPathsList()) {
-        panelInterfaces.append(PLMPluginLoader::pluginByDir<
-                                   PLMSideMainBarIconInterface>(path + "/plugins"));
-    }
+//    foreach(const QString  &path, PLMUtils::Dir::addonsPathsList()) {
+//        panelInterfaces.append(PLMPluginLoader::pluginByDir<
+//                                   PLMSideMainBarIconInterface>(path + "/plugins"));
+//    }
 
-    foreach(PLMSideMainBarIconInterface * interface, panelInterfaces) {
-        PLMPlugin plugin(
-            interface->name(), "",  dynamic_cast<QObject *>(interface));
+//    foreach(PLMSideMainBarIconInterface * interface, panelInterfaces) {
+//        PLMPlugin plugin(
+//            interface->name(), "",  dynamic_cast<QObject *>(interface));
 
-        m_pluginsListHash.insert(interface->name(), plugin);
-    }
+//        m_pluginsListHash.insert(interface->name(), plugin);
+//    }
 
-    QList<PLMSideMainBarIconInterface *> sideBarInterfaces;
+//    QList<PLMSideMainBarIconInterface *> sideBarInterfaces;
 
-    foreach(const QString  &path, PLMUtils::Dir::addonsPathsList()) {
-        sideBarInterfaces.append(PLMPluginLoader::pluginByDir<
-                                     PLMSideMainBarIconInterface>(path +
-                                                                  "/plugins"));
-    }
+//    foreach(const QString  &path, PLMUtils::Dir::addonsPathsList()) {
+//        sideBarInterfaces.append(PLMPluginLoader::pluginByDir<
+//                                     PLMSideMainBarIconInterface>(path +
+//                                                                  "/plugins"));
+//    }
 
-    foreach(PLMSideMainBarIconInterface * interface, sideBarInterfaces) {
-        PLMPlugin plugin(
-            interface->name(), "",  dynamic_cast<QObject *>(interface));
+//    foreach(PLMSideMainBarIconInterface * interface, sideBarInterfaces) {
+//        PLMPlugin plugin(
+//            interface->name(), "",  dynamic_cast<QObject *>(interface));
 
-        m_pluginsListHash.insert(interface->name(), plugin);
-    }
+//        m_pluginsListHash.insert(interface->name(), plugin);
+//    }
 
-    foreach(PLMPlugin plugin, m_pluginsListHash.values()) {
-        QObject *object    = plugin.object;
-        QString  className = object->metaObject()->className();
+//    foreach(PLMPlugin plugin, m_pluginsListHash.values()) {
+//        QObject *object    = plugin.object;
+//        QString  className = object->metaObject()->className();
 
-        qDebug() << "className : " + className;
-    }
+//        qDebug() << "className : " + className;
+//    }
 
-}
+//}
 
 // ---------------------------------------------------------------------------
 

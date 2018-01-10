@@ -24,7 +24,6 @@ DynamicLibrary {
     Depends { name: "plume-creator-gui"}
     Depends { name: "plume-creator-writingzone"}
 
-
     Depends { name: "Qt"; submodules: ["core", "sql", "gui", "widgets"]}
     Depends { name: "cpp" }
     cpp.optimization: "fast"

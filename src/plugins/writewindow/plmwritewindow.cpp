@@ -35,7 +35,7 @@ PLMBaseWindow *PLMWriteWindow::window()
 
 // -------------------------------------------------------------------
 
-QList<PLMSideBarAction>PLMWriteWindow::mainBarActions(QObject *parent)
+QList<PLMSideBarAction>PLMWriteWindow::sideMainBarActions(QObject *parent)
 {
     QList<PLMSideBarAction> list;
     QAction *action = new QAction(QIcon(":/pics/48x48/scribus.png"), tr("Write"), parent);

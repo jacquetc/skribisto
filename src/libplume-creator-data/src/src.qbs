@@ -72,6 +72,10 @@ DynamicLibrary {
         "plmutils.cpp",
         "plmuserfilehub.cpp",
         "plmuserfilehub.h",
+        "plmcoreinterface.h",
+        "plmcoreplugins.h",
+        "plmpluginloader.cpp",
+        "plmpluginloader.h",
         "plmpluginhub.cpp",
         "plmpluginhub.h"
 

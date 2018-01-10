@@ -20,8 +20,6 @@ DynamicLibrary {
         "plmmessagehandler.h",
         "plmbasewindow.cpp",
         "plmbasewindow.h",
-        "plmpluginloader.cpp",
-        "plmpluginloader.h",
         "plmsidemainbar.cpp",
         "plmsidemainbar.h",
         "plmsidemainbar.ui",

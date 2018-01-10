@@ -46,6 +46,7 @@ QCoreApplication* createApplication(int& argc, char *argv[])
 
 void startCore()
 {
+    new PLMPluginLoader(qApp);
     // UTF-8 codec
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 
@@ -158,7 +159,7 @@ PLMMainWindow* startGui(PLMData *data)
     // Q_INIT_RESOURCE(langs);
     // Q_INIT_RESOURCE(sounds);
     // splashscreen :
-    QPixmap pixmap(":/pics/plume-creator-splash.png");
+    QPixmap pixmap(":/pics/plume-creator.png");
     QSplashScreen *splash = new QSplashScreen(pixmap);
 
     splash->show();
@@ -171,9 +172,8 @@ PLMMainWindow* startGui(PLMData *data)
     QApplication::setStyle(QStyleFactory::create("fusion"));
 
     QApplication::setWheelScrollLines(1);
-    splash->showMessage("Load plugins");
+    splash->showMessage("Loading plugins");
     qApp->processEvents();
-    new PLMPluginLoader(qApp);
     PLMGuiPlugins::addGuiPlugins();
 
     splash->showMessage("Setting language");

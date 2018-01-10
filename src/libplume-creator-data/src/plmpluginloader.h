@@ -57,7 +57,7 @@ public:
     {
         return m_instance;
     }
-    void reload();
+    //void reload();
 
 
     QList<PLMPlugin> listAll();

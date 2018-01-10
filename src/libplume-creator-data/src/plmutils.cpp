@@ -26,7 +26,6 @@
 #include <QSettings>
 #include  <QtCore>
 
-
 // #include "zipper/zipchecker.h"
 
 
@@ -687,6 +686,11 @@ QStringList PLMUtils::Dir::addonsPathsList()
 
 #ifdef Q_OS_LINUX
     dir.setPath("/usr/share/plume-creator/");
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
+
+    dir.setPath("/usr/lib/plume-creator/");
 
     if (dir.isReadable()) {
         list.append(dir.path());

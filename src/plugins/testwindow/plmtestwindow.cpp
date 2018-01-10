@@ -36,7 +36,7 @@ PLMBaseWindow *PLMTestWindow::window()
 
 // -------------------------------------------------------------------
 
-QList<PLMSideBarAction>PLMTestWindow::mainBarActions(QObject *parent)
+QList<PLMSideBarAction>PLMTestWindow::sideMainBarActions(QObject *parent)
 {
     QList<PLMSideBarAction> list;
     QAction *action = new QAction(QIcon(":/pics/48x48/scribus.png"), tr("Test Window"), parent);
