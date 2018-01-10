@@ -89,7 +89,7 @@ void PLMSideMainBar::showContextMenu(const QPoint &pos)
 }
 
 void PLMSideMainBar::detachWindow(){
-m_currentButton->setEnabled(false);
+    m_currentButton->setEnabled(false);
     emit windowDetachmentCalled(m_currentButton->defaultAction()->property("linkedWindow").toString());
 }
 
@@ -102,7 +102,7 @@ void PLMSideMainBar::attachWindowByName(const QString &windowName){
     QToolButton *button = hash_windowNameAndButton.value(windowName);
     button->setEnabled(true);
     button->defaultAction()->setChecked(true);
-    emit windowAttachmentCalled(m_currentButton->defaultAction()->property("linkedWindow").toString());
+    emit windowAttachmentCalled(button->defaultAction()->property("linkedWindow").toString());
 }
 
 void PLMSideMainBar::raiseWindow(bool checked)

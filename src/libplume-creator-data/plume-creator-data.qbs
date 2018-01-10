@@ -6,7 +6,8 @@ Project {
     references: [
         "src/src.qbs",
         "tests/auto/openprojectcase/openprojectcase.qbs",
-        "tests/auto/writecase/writecase.qbs"
+        "tests/auto/writecase/writecase.qbs",
+        "tests/auto/settingscase/settingscase.qbs"
     ]
     AutotestRunner {
         name: "data-autotest"

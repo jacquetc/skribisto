@@ -67,7 +67,14 @@ DynamicLibrary {
         "plmpaperhub.cpp",
         "plmprojecthub.h",
         "plmsheethub.cpp",
-        "plume_creator_data_global.h"
+        "plume_creator_data_global.h",
+        "plmutils.h",
+        "plmutils.cpp",
+        "plmuserfilehub.cpp",
+        "plmuserfilehub.h",
+        "plmpluginhub.cpp",
+        "plmpluginhub.h"
+
     ]
 
     Depends { name: "Qt"; submodules: ["core", "sql"]}

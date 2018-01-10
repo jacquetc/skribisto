@@ -23,6 +23,16 @@ Project {
         }
 
     }
+
+    SubProject {
+    inheritProperties: true
+        filePath: "src/plugins/plugins.qbs"
+        Properties {
+            name: "Plugins"
+        }
+
+    }
+
     SubProject {
     inheritProperties: true
         filePath: "src/app/app.qbs"

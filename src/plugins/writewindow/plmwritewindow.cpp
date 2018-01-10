@@ -26,7 +26,6 @@ PLMBaseWindow *PLMWriteWindow::window()
 {
     PLMWindow *window = new PLMWindow;
 
-    window->setObjectName(m_name);
     window->setProperty("name", m_name);
     window->setWindowTitle(tr("Write"));
 
