@@ -1,5 +1,5 @@
-#ifndef PLMTESTWINDOW_H
-#define PLMTESTWINDOW_H
+#ifndef PLMWRITEWINDOW_H
+#define PLMWRITEWINDOW_H
 
 #include <QLabel>
 #include <QList>
@@ -9,27 +9,27 @@
 #include "plmsidemainbar.h"
 #include "plmbasewindow.h"
 
-class PLMTestWindow : public QObject,
+class PLMWriteWindow : public QObject,
                       public PLMWindowInterface,
                       public PLMSideMainBarIconInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "com.PlumeSoft.Plume-Creator.WindowInterface/1.0" FILE
-        "plmtestwindow.json")
+        "plmwritewindow.json")
     Q_INTERFACES(PLMWindowInterface PLMSideMainBarIconInterface)
 
 public :
 
-        PLMTestWindow(QObject *parent = 0);
-    ~PLMTestWindow();
+        PLMWriteWindow(QObject *parent = 0);
+    ~PLMWriteWindow();
 
     QString         use() const;
 
-    // PanelInterface
+    // WindowInterface
     PLMBaseWindow* window();
     QString         name() const
     {
-        return "TestWindow";
+        return "WriteWindow";
     }
 
     // SideMainBarIconInterface
@@ -42,4 +42,4 @@ private:
     QString m_name;
 };
 
-#endif // TESTWINDOW_H
+#endif // WRITEWINDOW_H

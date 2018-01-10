@@ -1,8 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2017 by Cyril Jacquet                                 *
+ *   Copyright (C) 2018 by Cyril Jacquet                                 *
  *   cyril.jacquet@plume-creator.eu                                        *
  *                                                                         *
- *  Filename: plmpanelwindow.h                                                   *
+ *  Filename: plmpluginhub.cpp                                                   *
  *  This file is part of Plume Creator.                                    *
  *                                                                         *
  *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,20 +18,15 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef PLMPANELWINDOW_H
-#define PLMPANELWINDOW_H
+#include "plmpluginhub.h"
 
-#include <QMainWindow>
-
-class PLMPanelWindow : public QMainWindow
+PLMPluginHub::PLMPluginHub(QObject *parent) : QObject(parent)
 {
-    Q_OBJECT
-public:
-    explicit PLMPanelWindow(QWidget *parent = nullptr);
 
-signals:
+}
 
-public slots:
-};
+void PLMPluginHub::reloadPlugins()
+{
 
-#endif // PLMPANELWINDOW_H
+}
+

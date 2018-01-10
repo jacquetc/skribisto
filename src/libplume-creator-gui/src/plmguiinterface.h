@@ -21,30 +21,32 @@
 #ifndef PLMGUIINTERFACE_H
 #define PLMGUIINTERFACE_H
 
-#include "plmpanelwindow.h"
+#include "plmbasewindow.h"
 #include "plmsidemainbar.h"
+
 #include <QString>
 
-class PLMPanelInterface
+class PLMWindowInterface
 {
 public:
-    virtual ~PLMPanelInterface() {}
+    virtual ~PLMWindowInterface() {}
 
-    virtual QString panelName() const = 0;
+    virtual QString use() const = 0;
     virtual QString name() const = 0;
 
-    virtual PLMPanelWindow *panel() = 0;
-    virtual QList<PLMSideBarAction> mainBarActions(QObject *parent) = 0;
+    virtual PLMBaseWindow *window() = 0;
+    //virtual QList<PLMSideBarAction> mainBarActions(QObject *parent) = 0;
 };
 
-#define PLMPanelInterface_iid "com.PlumeSoft.Plume-Creator.PanelInterface/1.0"
+#define PLMWindowInterface_iid "com.PlumeSoft.Plume-Creator.WindowInterface/1.0"
 
-Q_DECLARE_INTERFACE(PLMPanelInterface, PLMPanelInterface_iid)
+Q_DECLARE_INTERFACE(PLMWindowInterface, PLMWindowInterface_iid)
 
 class PLMSideMainBarIconInterface
 {
 public:
     virtual ~PLMSideMainBarIconInterface() {}
+    virtual QString use() const = 0;
     virtual QString name() const = 0;
 
     virtual QList<PLMSideBarAction> mainBarActions(QObject *parent) = 0;

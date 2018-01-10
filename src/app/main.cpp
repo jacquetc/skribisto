@@ -23,7 +23,7 @@ using namespace std;
 
 
 #if FORCEQML == 0
-# include "common/plmutils.h"
+# include "plmutils.h"
 # include "plmpluginloader.h"
 # include "plmguiplugins.h"
 # include "plmmainwindow.h"
@@ -169,22 +169,29 @@ PLMMainWindow* startGui(PLMData *data)
     splash->showMessage("Applying style");
     qApp->processEvents();
     QApplication::setStyle(QStyleFactory::create("fusion"));
+
+    QApplication::setWheelScrollLines(1);
     splash->showMessage("Load plugins");
     qApp->processEvents();
     new PLMPluginLoader(qApp);
     PLMGuiPlugins::addGuiPlugins();
+
     splash->showMessage("Setting language");
     qApp->processEvents();
     selectLang();
-    QApplication::setWheelScrollLines(1);
-    PLMMainWindow *mw = new PLMMainWindow(data);
 
+    PLMMainWindow *mw = new PLMMainWindow(data);
     // install enventfilter (for Mac)
     QApplication::instance()->installEventFilter(mw);
     splash->finish(mw);
     mw->show();
     mw->setWindowState(Qt::WindowActive);
-    mw->init();
+     mw->init();
+
+
+
+
+
     return mw;
 }
 

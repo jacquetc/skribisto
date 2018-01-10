@@ -23,45 +23,112 @@
 #include "plmguiinterface.h"
 #include "ui_plmsidemainbar.h"
 
+#include <QMenu>
 #include <QVBoxLayout>
-#include <QToolButton>
 
 PLMSideMainBar::PLMSideMainBar(QWidget *parent) : QWidget(parent),
     ui(new Ui::PLMSideMainBar)
 {
     ui->setupUi(this);
+    actionGroup = new QActionGroup(this);
     this->loadPlugins();
+
+
 }
 
 void PLMSideMainBar::loadPlugins()
 {
     // plugins are already loaded in plmpluginloader
-    QList<PLMPanelInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMPanelInterface>();
+    QList<PLMSideMainBarIconInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMSideMainBarIconInterface>();
 
-    foreach (PLMPanelInterface *plugin, pluginList) {
+    foreach (PLMSideMainBarIconInterface *plugin, pluginList) {
         QList<PLMSideBarAction> actionList = plugin->mainBarActions(this);
 
         foreach (const PLMSideBarAction &sideBarAction, actionList) {
             QToolButton *button = new QToolButton(this);
             button->setDefaultAction(sideBarAction.action());
             button->setIconSize(QSize(48, 48));
+            button->setAutoRaise(true);
             ui->verticalLayout->addWidget(button);
+            actionGroup->addAction(sideBarAction.action());
+            hash_windowNameAndButton.insert(sideBarAction.action()->property("linkedWindow").toString(), button);
+            connect(button->defaultAction(), &QAction::triggered, this, &PLMSideMainBar::raiseWindow);
+
+                button->setContextMenuPolicy(Qt::CustomContextMenu);
+                connect(button, SIGNAL(customContextMenuRequested(const QPoint &)),
+                    this, SLOT(showContextMenu(const QPoint &)));
+
         }
     }
 }
 
-
-
-
-
-QString PLMSideBarAction::panelName() const
+void PLMSideMainBar::setButtonChecked(const QString &windowName)
 {
-    return m_panelName;
+    QToolButton *button = hash_windowNameAndButton.value(windowName);
+    button->defaultAction()->setChecked(true);
 }
 
-void PLMSideBarAction::setPanelName(const QString &panelName)
+void PLMSideMainBar::showContextMenu(const QPoint &pos)
 {
-    m_panelName = panelName;
+    QToolButton *button = dynamic_cast<QToolButton *>(this->sender());
+    if(button->defaultAction()->property("detachable").toBool() == false){
+        return;
+    }
+    m_currentButton = button;
+    QMenu contextMenu(tr("Context menu"), this);
+
+     QAction action1(tr("Attach"), this);
+     connect(&action1, SIGNAL(triggered()), this, SLOT(attachWindow()));
+     contextMenu.addAction(&action1);
+     QAction action2(tr("Detach"), this);
+     connect(&action2, SIGNAL(triggered()), this, SLOT(detachWindow()));
+     contextMenu.addAction(&action2);
+
+     contextMenu.exec(button->mapToGlobal(pos));
+
+}
+
+void PLMSideMainBar::detachWindow(){
+m_currentButton->setEnabled(false);
+    emit windowDetachmentCalled(m_currentButton->defaultAction()->property("linkedWindow").toString());
+}
+
+void PLMSideMainBar::attachWindow(){
+    m_currentButton->setEnabled(true);
+    emit windowAttachmentCalled(m_currentButton->defaultAction()->property("linkedWindow").toString());
+}
+
+void PLMSideMainBar::attachWindowByName(const QString &windowName){
+    QToolButton *button = hash_windowNameAndButton.value(windowName);
+    button->setEnabled(true);
+    button->defaultAction()->setChecked(true);
+    emit windowAttachmentCalled(m_currentButton->defaultAction()->property("linkedWindow").toString());
+}
+
+void PLMSideMainBar::raiseWindow(bool checked)
+{
+    QAction *action = dynamic_cast<QAction *>(this->sender());
+    if(!checked){
+        action->setChecked(true);
+        return;
+    }
+
+    QString windowName = action->property("linkedWindow").toString();
+
+    emit windowRaiseCalled(windowName);
+}
+//-------------------------------------------------------------------------
+//-------------------------------------------------------------------------
+
+
+QString PLMSideBarAction::windowName() const
+{
+    return m_windowName;
+}
+
+void PLMSideBarAction::setWindowName(const QString &windowName)
+{
+    m_windowName = windowName;
 }
 
 QAction *PLMSideBarAction::action() const
@@ -73,3 +140,6 @@ void PLMSideBarAction::setAction(QAction *action)
 {
     m_action = action;
 }
+
+//-------------------------------------------------------------------------
+//-------------------------------------------------------------------------

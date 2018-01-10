@@ -5,7 +5,8 @@ SUBDIRS += \
 #        docks/notesdock \
 #       convert/plumetag \
 #       docks/develdock \
-       testwindow
+       testwindow \
+        writewindow
 
 
 # install :

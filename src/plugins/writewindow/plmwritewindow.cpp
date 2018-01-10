@@ -1,46 +1,45 @@
 #include "plmwindow.h"
-#include "plmtestwindow.h"
-#include "testwritingzone.h"
+#include "plmwritewindow.h"
 
-PLMTestWindow::PLMTestWindow(QObject *parent) : QObject(parent),
-                                                m_name("testWindow")
+
+PLMWriteWindow::PLMWriteWindow(QObject *parent) : QObject(parent),
+                                                m_name("writeWindow")
 {
     this->setProperty("name", m_name);
 }
 
 // -------------------------------------------------------------------
 
-PLMTestWindow::~PLMTestWindow()
+PLMWriteWindow::~PLMWriteWindow()
 {}
 
 // -------------------------------------------------------------------
 
-QString PLMTestWindow::use() const
+QString PLMWriteWindow::use() const
 {
     return m_name;
 }
 
 // -------------------------------------------------------------------
 
-PLMBaseWindow *PLMTestWindow::window()
+PLMBaseWindow *PLMWriteWindow::window()
 {
     PLMWindow *window = new PLMWindow;
 
     window->setObjectName(m_name);
     window->setProperty("name", m_name);
-    window->setWindowTitle(tr("Test"));
+    window->setWindowTitle(tr("Write"));
 
-    window->setCentralWidget(new TestWritingZone());
     return window;
 }
 
 
 // -------------------------------------------------------------------
 
-QList<PLMSideBarAction>PLMTestWindow::mainBarActions(QObject *parent)
+QList<PLMSideBarAction>PLMWriteWindow::mainBarActions(QObject *parent)
 {
     QList<PLMSideBarAction> list;
-    QAction *action = new QAction(QIcon(":/pics/48x48/scribus.png"), tr("Test Window"), parent);
+    QAction *action = new QAction(QIcon(":/pics/48x48/scribus.png"), tr("Write"), parent);
     action->setProperty("linkedWindow", m_name);
     action->setProperty("detachable", true);
     action->setCheckable(true);

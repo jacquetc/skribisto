@@ -5,7 +5,7 @@ CONFIG += plugin
 
 QT       += widgets core gui
 
-TARGET = $$qtLibraryTarget(testwindow)
+TARGET = $$qtLibraryTarget(writewindow)
 
 
 DESTDIR = $$top_builddir/build/plugins/
@@ -18,34 +18,32 @@ $$top_srcdir/plume-creator
 
 
 SOURCES += \
-    plmtestwindow.cpp \
-    testwritingzone.cpp \
+    plmwritewindow.cpp \
     plmwindow.cpp
 
 
 HEADERS += \
-    plmtestwindow.h \
-    testwritingzone.h \
+    plmwritewindow.h \
     plmwindow.h
 
 
 OTHER_FILES +=
 
 RESOURCES += \
-    lang_testwindow.qrc
+    lang_writewindow.qrc
 
 
 DISTFILES += \
-    plmtestwindow.json
+    plmwritewindow.json
 
 CODECFORTR = UTF-8
 
-TRANSLATIONS = translations/plmtestwindow_fr_FR.ts \
-translations/plmtestwindow_it_IT.ts \
-translations/plmtestwindow_de_DE.ts \
-translations/plmtestwindow_sp_SP.ts \
-translations/plmtestwindow_ru_RU.ts \
-translations/plmtestwindow_pt_BR.ts
+TRANSLATIONS = translations/plmwritewindow_fr_FR.ts \
+translations/plmwritewindow_it_IT.ts \
+translations/plmwritewindow_de_DE.ts \
+translations/plmwritewindow_sp_SP.ts \
+translations/plmwritewindow_ru_RU.ts \
+translations/plmwritewindow_pt_BR.ts
 
 FORMS += \
     plmwindow.ui

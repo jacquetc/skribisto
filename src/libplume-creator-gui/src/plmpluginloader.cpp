@@ -1,11 +1,10 @@
 #include "plmpluginloader.h"
-#include "common/plmutils.h"
+#include "plmutils.h"
 #include <QSettings>
 #include <QDebug>
 
 // #include "textconverter/converterinterface.h"
 #include "plmguiinterface.h"
-#include "common/plmutils.h"
 
 PLMPluginLoader::PLMPluginLoader(QObject *parent) : QObject(parent)
 {

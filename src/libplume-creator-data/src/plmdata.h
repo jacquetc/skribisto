@@ -30,10 +30,12 @@
 #include "plmsheethub.h"
 #include "plmsignalhub.h"
 #include "plmuserfilehub.h"
+#include "plmpluginhub.h"
 #include "plume_creator_data_global.h"
 #include "tasks/plmprojectmanager.h"
 
 #define plmdata PLMData::instance()
+#define plmpluginhub PLMData::instance()->pluginHub()
 
 class EXPORT PLMData : public QObject {
     Q_OBJECT
@@ -56,6 +58,7 @@ public:
     PLMPropertyHub* notePropertyHub();
     PLMProjectHub*  projectHub();
     PLMUserFileHub* userFileHub();
+    PLMPluginHub* pluginHub();
 
 signals:
 
@@ -73,6 +76,7 @@ private:
     PLMProjectManager *m_projectManager;
     PLMPropertyHub    *m_notePropertyHub, *m_sheetPropertyHub;
     PLMUserFileHub    *m_userFileHub;
+    PLMPluginHub *m_pluginHub;
 };
 
 #endif // PLMDATA_H

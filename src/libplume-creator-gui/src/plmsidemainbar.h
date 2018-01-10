@@ -23,30 +23,32 @@
 
 #include <QAction>
 #include <QWidget>
+#include <QToolButton>
 
 struct PLMSideBarAction {
 public:
-    explicit PLMSideBarAction(const QString &panelName, QAction *action)
+    explicit PLMSideBarAction(const QString &windowName, QAction *action)
     {
-        this->m_panelName = panelName;
+        this->m_windowName = windowName;
         this->m_action = action;
     }
 
     explicit PLMSideBarAction(const PLMSideBarAction &sideBarAction)
     {
-        this->m_panelName = sideBarAction.panelName();
+        this->m_windowName = sideBarAction.windowName();
         this->m_action = sideBarAction.action();
     }
-    QString panelName() const;
-    void setPanelName(const QString &panelName);
+    QString windowName() const;
+    void setWindowName(const QString &windowName);
 
     QAction *action() const;
     void setAction(QAction *action);
 
 private:
-    QString m_panelName;
+    QString m_windowName;
     QAction *m_action;
 };
+
 
 namespace Ui
 {
@@ -59,13 +61,26 @@ class PLMSideMainBar : public QWidget
 
 public:
     explicit PLMSideMainBar(QWidget *parent = nullptr);
+    void setButtonChecked(const QString &windowName);
 
 signals:
+    void windowRaiseCalled(QString windowName);
+    void windowDetachmentCalled(QString windowName);
+    void windowAttachmentCalled(QString windowName);
 
 public slots:
+    void attachWindowByName(const QString &windowName);
+private slots:
+    void raiseWindow(bool checked);
+    void showContextMenu(const QPoint &pos);
+    void attachWindow();
+    void detachWindow();
 private:
     Ui::PLMSideMainBar *ui;
     void loadPlugins();
+    QActionGroup *actionGroup;
+    QToolButton *m_currentButton;
+    QHash<QString, QToolButton *> hash_windowNameAndButton;
 };
 
 #endif // PLMSIDEMAINBAR_H

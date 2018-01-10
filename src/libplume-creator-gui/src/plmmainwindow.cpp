@@ -17,6 +17,10 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
 {
     ui->setupUi(this);
     this->loadPlugins();
+    connect(ui->sideMainBar, &PLMSideMainBar::windowRaiseCalled, this, &PLMMainWindow::raiseWindow);
+    connect(ui->sideMainBar, &PLMSideMainBar::windowAttachmentCalled, this, &PLMMainWindow::attachWindow);
+    connect(ui->sideMainBar, &PLMSideMainBar::windowDetachmentCalled, this, &PLMMainWindow::detachWindow);
+
 //    connect(PLMMessageHandler::instance(), &PLMMessageHandler::messageSent, this,
 //            &PLMMainWindow::displayMessage);
     //    QQuickWidget *mQQuickWidget = new QQuickWidget(QUrl(QStringLiteral("qrc:///qml/sidePanelBar.qml")), this);
@@ -55,12 +59,46 @@ void PLMMainWindow::init()
 void PLMMainWindow::loadPlugins()
 {
     // plugins are already loaded in plmpluginloader
-    QList<PLMPanelInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMPanelInterface>();
+    QList<PLMWindowInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMWindowInterface>();
 
-    foreach (PLMPanelInterface *plugin, pluginList) {
-        PLMPanelWindow *panel = plugin->panel();
-        ui->stackedWidget->addWidget(panel);
+    foreach (PLMWindowInterface *plugin, pluginList) {
+        PLMBaseWindow *window = plugin->window();
+        connect(window, &PLMBaseWindow::attachmentCalled, ui->sideMainBar, &PLMSideMainBar::attachWindowByName);
+        ui->stackedWidget->addWidget(window);
+        QString windowName = window->property("name").toString();
+        hash_nameAndWindow.insert(windowName, window);
+
     }
+}
+//------------------------------------------
+
+void PLMMainWindow::raiseWindow(const QString &windowName)
+{
+    QMainWindow *window = hash_nameAndWindow.value(windowName);
+    ui->stackedWidget->setCurrentWidget(window);
+
+}
+
+void PLMMainWindow::attachWindow(const QString &windowName)
+{
+    QMainWindow *window = hash_nameAndWindow.value(windowName);
+    ui->stackedWidget->addWidget(window);
+    ui->stackedWidget->setCurrentWidget(window);
+    ui->sideMainBar->setButtonChecked(windowName);
+
+}
+
+void PLMMainWindow::detachWindow(const QString &windowName)
+{
+    QMainWindow *window = hash_nameAndWindow.value(windowName);
+    ui->stackedWidget->removeWidget(window);
+    window->setParent(0);
+    window->show();
+
+    QString key = hash_nameAndWindow.key(dynamic_cast<QMainWindow *>(ui->stackedWidget->currentWidget()));
+    ui->sideMainBar->setButtonChecked(key);
+
+
 }
 /*
    void PLMMainWindow::addPluginPanels()

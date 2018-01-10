@@ -21,6 +21,11 @@ PLMWritingZone::~PLMWritingZone()
 {
 }
 
+void PLMWritingZone::setUse(const QString &use)
+{
+    m_use = use;
+}
+
 bool PLMWritingZone::hasMinimap() const
 {
     return m_hasMinimap;

@@ -22,14 +22,19 @@ public:
 public slots:
     void clearFromAllProjects();
     void activate();
+    void raiseWindow(const QString &windowName);
 
 protected:
     void closeEvent(QCloseEvent *event);
 
+private slots:
+    void attachWindow(const QString &windowName);
+    void detachWindow(const QString &windowName);
 private:
     Ui::PLMMainWindow *ui;
     PLMData *m_data;
     void loadPlugins();
+    QHash<QString, QMainWindow *> hash_nameAndWindow;
 };
 
 #endif // MAINWINDOW_H

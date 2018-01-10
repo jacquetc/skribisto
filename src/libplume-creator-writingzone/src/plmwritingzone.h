@@ -24,11 +24,13 @@
 #include <QWidget>
 #include <QImage>
 
-namespace Ui {
+namespace Ui
+{
 class PLMWritingZone;
 }
 
-class PLMWritingZone : public QWidget {
+class PLMWritingZone : public QWidget
+{
     Q_OBJECT
 
 public:
@@ -36,30 +38,32 @@ public:
     explicit PLMWritingZone(QWidget *parent = 0);
     ~PLMWritingZone();
 
-    bool           hasMinimap() const;
-    void           setHasMinimap(bool value);
+    void setUse(const QString &use);
 
-    bool           hasScrollbar() const;
-    void           setHasScrollbar(bool hasScrollbar);
+    bool hasMinimap() const;
+    void setHasMinimap(bool value);
 
-    bool           hasSideToolBar() const;
-    void           setHasSideToolBar(bool hasSideToolBar);
+    bool hasScrollbar() const;
+    void setHasScrollbar(bool hasScrollbar);
 
-    bool           isResizable() const;
-    void           setIsResizable(bool isResizable);
+    bool hasSideToolBar() const;
+    void setHasSideToolBar(bool hasSideToolBar);
 
-    void           setWidth(int width);
+    bool isResizable() const;
+    void setIsResizable(bool isResizable);
 
-    bool           isMarkdown() const;
-    void           setIsMarkdown(bool isMarkdown);
+    void setWidth(int width);
 
-    QString        markdownText() const;
-    void           setMarkdownText(const QString& markdownText);
+    bool isMarkdown() const;
+    void setIsMarkdown(bool isMarkdown);
 
-    QString        htmlText() const;
-    void           setHtmlText(const QString& htmlText);
+    QString markdownText() const;
+    void setMarkdownText(const QString &markdownText);
 
-    virtual QImage image(const QString& imageName) const = 0;
+    QString htmlText() const;
+    void setHtmlText(const QString &htmlText);
+
+    virtual QImage image(const QString &imageName) const = 0;
 
 signals:
 
@@ -76,10 +80,11 @@ private:
 
     Ui::PLMWritingZone *ui;
 
+    QString m_use;
     bool m_hasMinimap, m_hasScrollbar, m_hasSideToolBar, m_isResizable,
          m_isMarkdown;
     QString m_markdownText, m_htmlText;
-    int     m_cursorPosition, m_scrollBarValue;
+    int m_cursorPosition, m_scrollBarValue;
 };
 
 #endif // PLMWRITINGZONE_H

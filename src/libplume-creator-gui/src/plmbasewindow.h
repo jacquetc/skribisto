@@ -1,8 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2017 by Cyril Jacquet                                 *
+ *   Copyright (C) 2018 by Cyril Jacquet                                 *
  *   cyril.jacquet@plume-creator.eu                                        *
  *                                                                         *
- *  Filename: plmpanelwindow.cpp                                                   *
+ *  Filename: plmbasewindow.h                                                   *
  *  This file is part of Plume Creator.                                    *
  *                                                                         *
  *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,9 +18,25 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#include "plmpanelwindow.h"
+#ifndef PLMBASEWINDOW_H
+#define PLMBASEWINDOW_H
 
-PLMPanelWindow::PLMPanelWindow(QWidget *parent) : QMainWindow(parent)
+#include <QCloseEvent>
+#include <QMainWindow>
+
+class PLMBaseWindow : public QMainWindow
 {
+    Q_OBJECT
+public:
+    explicit PLMBaseWindow(QWidget *parent = nullptr);
 
-}
+protected:
+    void closeEvent(QCloseEvent *event);
+
+signals:
+    void attachmentCalled(const QString &windowName);
+
+public slots:
+};
+
+#endif // PLMBASEWINDOW_H

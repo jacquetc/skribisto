@@ -11,7 +11,7 @@ namespace PLMGuiPlugins
 void addGuiPlugins()
 {
     PLMPluginLoader *loader = PLMPluginLoader::instance();
-    loader->addPluginType<PLMPanelInterface>();
+    loader->addPluginType<PLMWindowInterface>();
     loader->addPluginType<PLMSideMainBarIconInterface>();
     //loader->reload();
 }

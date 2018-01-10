@@ -1,11 +1,11 @@
-#include "plmpanel.h"
-#include "ui_plmpanel.h"
+#include "plmwindow.h"
+#include "ui_plmwindow.h"
 
 //#include "menubar.h"
 
-PLMPanel::PLMPanel(QWidget *parent) :
-    PLMPanelWindow(parent),
-    ui(new Ui::PLMPanel)
+PLMWindow::PLMWindow(QWidget *parent) :
+    PLMBaseWindow(parent),
+    ui(new Ui::PLMWindow)
 {
     ui->setupUi(this);
 
@@ -14,14 +14,14 @@ PLMPanel::PLMPanel(QWidget *parent) :
 
 //-------------------------------------------------------------------
 
-PLMPanel::~PLMPanel()
+PLMWindow::~PLMWindow()
 {
     delete ui;
 }
 
 //-------------------------------------------------------------------
 
-void PLMPanel::setMenuActions()
+void PLMWindow::setMenuActions()
 {
 // Project Menu :
 

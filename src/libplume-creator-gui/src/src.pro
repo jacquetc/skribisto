@@ -14,20 +14,18 @@ SOURCES += \
     plmmainwindow.cpp \
     plmmessagehandler.cpp \
     plmpluginloader.cpp \
-    common/plmutils.cpp \
-    plmpanelwindow.cpp \
-    plmsidemainbar.cpp
+    plmsidemainbar.cpp \
+    plmbasewindow.cpp
 
 
 HEADERS  += \ 
     plmmainwindow.h \
     plmmessagehandler.h \
     plmpluginloader.h \
-    common/plmutils.h \
     plmguiplugins.h \
     plmguiinterface.h \
-    plmpanelwindow.h \
-    plmsidemainbar.h
+    plmsidemainbar.h \
+    plmbasewindow.h
 
 
 FORMS    += \
