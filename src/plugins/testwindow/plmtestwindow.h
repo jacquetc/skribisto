@@ -5,32 +5,36 @@
 #include <QList>
 #include <QObject>
 
+#include "plmcoreinterface.h"
 #include "plmguiinterface.h"
 #include "plmsidemainbar.h"
 #include "plmbasewindow.h"
 
 class PLMTestWindow : public QObject,
+                      public PLMBaseInterface,
                       public PLMWindowInterface,
                       public PLMSideMainBarIconInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "com.PlumeSoft.Plume-Creator.WindowInterface/1.0" FILE
         "plmtestwindow.json")
-    Q_INTERFACES(PLMWindowInterface PLMSideMainBarIconInterface)
+    Q_INTERFACES(PLMBaseInterface PLMWindowInterface PLMSideMainBarIconInterface)
 
 public :
 
         PLMTestWindow(QObject *parent = 0);
     ~PLMTestWindow();
 
-    QString         use() const;
+        // BaseInterface
 
-    // PanelInterface
-    PLMBaseWindow* window();
+    QString         use() const;
     QString         name() const
     {
         return "TestWindow";
     }
+    // PanelInterface
+    PLMBaseWindow* window();
+
 
     // SideMainBarIconInterface
     QList<PLMSideBarAction>sideMainBarActions(QObject *parent);

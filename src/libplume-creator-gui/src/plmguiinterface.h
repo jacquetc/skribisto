@@ -23,6 +23,7 @@
 
 #include "plmbasewindow.h"
 #include "plmsidemainbar.h"
+#include "plmbasewidget.h"
 
 #include <QString>
 
@@ -30,9 +31,6 @@ class PLMWindowInterface
 {
 public:
     virtual ~PLMWindowInterface() {}
-
-    virtual QString use() const = 0;
-    virtual QString name() const = 0;
 
     virtual PLMBaseWindow *window() = 0;
     //virtual QList<PLMSideBarAction> mainBarActions(QObject *parent) = 0;
@@ -46,8 +44,6 @@ class PLMSideMainBarIconInterface
 {
 public:
     virtual ~PLMSideMainBarIconInterface() {}
-    virtual QString use() const = 0;
-    virtual QString name() const = 0;
 
     virtual QList<PLMSideBarAction> sideMainBarActions(QObject *parent) = 0;
 };
@@ -55,5 +51,6 @@ public:
 #define PLMSideMainBarIconInterface_iid "com.PlumeSoft.Plume-Creator.SideMainBarIconInterface/1.0"
 
 Q_DECLARE_INTERFACE(PLMSideMainBarIconInterface, PLMSideMainBarIconInterface_iid)
+
 
 #endif // PLMGUIINTERFACE_H

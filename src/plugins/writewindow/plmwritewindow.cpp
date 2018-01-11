@@ -1,11 +1,23 @@
 #include "plmwindow.h"
 #include "plmwritewindow.h"
+#include "plugininterface.h"
 
+#include <QTimer>
 
 PLMWriteWindow::PLMWriteWindow(QObject *parent) : QObject(parent),
                                                 m_name("writeWindow")
 {
     this->setProperty("name", m_name);
+
+    QTimer::singleShot(0, this, SLOT(init()));
+}
+
+// -------------------------------------------------------------------
+
+void PLMWriteWindow::init()
+{
+    PluginInterface::addPlugins();
+
 }
 
 // -------------------------------------------------------------------

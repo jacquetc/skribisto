@@ -8,9 +8,10 @@ DynamicLibrary {
     cpp.defines: ["PLUME_CREATOR_GUI_LIBRARY"]
     cpp.includePaths: [ '.']
     files: [
-
         "gui_qml.qrc",
         "pics.qrc",
+        "plmbasewidget.cpp",
+        "plmbasewidget.h",
         "plmguiinterface.h",
         "plmguiplugins.h",
         "plmmainwindow.cpp",
@@ -25,10 +26,7 @@ DynamicLibrary {
         "plmsidemainbar.ui",
         "sounds.qrc",
         "qml/noteListView.qml",
-        "qml/sidePanelBar.qml"
-
-
-
+        "qml/sidePanelBar.qml",
     ]
 
     Depends { name: "Qt"; submodules: ["core",  "gui", "widgets" , "printsupport"]}

@@ -9,13 +9,14 @@ DynamicLibrary {
     cpp.includePaths: [ '.']
     //cpp.cxxLanguageVersion: "c++14"
     files: [
-    "plmwritewindow.cpp", 
-    "plmwindow.cpp",
-    "plmwritewindow.h", 
-    "plmwindow.h",
-    "plmwindow.ui",
-    "lang_writewindow.qrc",
-    "plmwritewindow.json"    
+        "plmwritewindow.cpp",
+        "plmwindow.cpp",
+        "plmwritewindow.h",
+        "plmwindow.h",
+        "plmwindow.ui",
+        "lang_writewindow.qrc",
+        "plmwritewindow.json",
+        "plugininterface.h",
     ]
 
     Depends { name: "plume-creator-data"}
