@@ -4,6 +4,7 @@ import qbs
 DynamicLibrary {
     name: "plume-creator-data"
     destinationDirectory: "../../lib"
+    version: project.version
 
     cpp.defines: [
         "PLUME_CREATOR_DATA_LIBRARY"]
@@ -77,8 +78,7 @@ DynamicLibrary {
         "plmpluginloader.cpp",
         "plmpluginloader.h",
         "plmpluginhub.cpp",
-        "plmpluginhub.h"
-
+        "plmpluginhub.h",
     ]
 
     Depends { name: "Qt"; submodules: ["core", "sql"]}

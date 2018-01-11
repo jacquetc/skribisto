@@ -20,6 +20,7 @@ Project {
         filePath: "src/libplume-creator-data/plume-creator-data.qbs"
         Properties {
             name: "Data"
+            version: project.version
         }
 
     }
@@ -29,6 +30,7 @@ Project {
         filePath: "src/plugins/plugins.qbs"
         Properties {
             name: "Plugins"
+            version: project.version
         }
 
     }
@@ -49,6 +51,7 @@ Project {
         filePath: "src/libplume-creator-qml/plume-creator-qml.qbs"
         Properties {
             name: "QML"
+            version: project.version
         }
     }
     SubProject {
@@ -56,6 +59,7 @@ Project {
         filePath: "src/libplume-creator-gui/plume-creator-gui.qbs"
         Properties {
             name: "GUI"
+            version: project.version
         }
     }
     SubProject {
@@ -63,6 +67,7 @@ Project {
         filePath: "src/libplume-creator-writingzone/plume-creator-writingzone.qbs"
         Properties {
             name: "WritingZone"
+            version: project.version
         }
     }
 }

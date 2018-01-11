@@ -3,6 +3,7 @@ import qbs
 DynamicLibrary {
     name: "plume-creator-plugin-testwindow"
     destinationDirectory: "../../lib/plugins"
+    version: project.version
 
     cpp.defines: [
         "PLUME_CREATOR_TESTWINDOW_PLUGIN"]

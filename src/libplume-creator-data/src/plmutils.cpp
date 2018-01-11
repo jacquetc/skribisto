@@ -657,11 +657,11 @@ QStringList PLMUtils::Dir::addonsPathsList()
     QStringList list;
     QDir dir;
 
-    dir.setPath(QCoreApplication::applicationDirPath());
+//    dir.setPath(QCoreApplication::applicationDirPath());
 
-    if (dir.isReadable()) {
-        list.append(dir.path());
-    }
+//    if (dir.isReadable()) {
+//        list.append(dir.path());
+//    }
 
     dir.setPath(QCoreApplication::applicationDirPath());
 

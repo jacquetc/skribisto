@@ -4,6 +4,7 @@ import qbs
 DynamicLibrary {
     name: "plume-creator-writingzone"
     destinationDirectory: "../../lib"
+    version: project.version
 
     cpp.defines: ["PLUME_CREATOR_WRITINGZONE_LIBRARY"]
     cpp.includePaths: [ '.']

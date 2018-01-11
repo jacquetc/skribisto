@@ -101,6 +101,9 @@ public:
 
         foreach (PLMPlugin p, m_pluginsListHash.values()) {
             QObject *object = p.object;
+            if (!object->property("activatedbydefault").toBool()){
+                continue;
+            }
 
             if (T *plugin = qobject_cast<T *>(object)) {
                 list.push_back(plugin);
@@ -122,8 +125,10 @@ private:
         QObject *plugin = loader.instance();
 
         if (!plugin) {
-            qDebug() << "loader.instance() AT : " + fileName;
-            qDebug() << "loader.instance() : " + loader.errorString();
+//            qDebug() << "loader.instance() AT : " + fileName;
+//            qDebug() << "loader.instance() : " + loader.errorString();
+            // to clean up if wrong libs loaded :
+            plugin->deleteLater();
         }
         else {
             this->installPluginTranslations();

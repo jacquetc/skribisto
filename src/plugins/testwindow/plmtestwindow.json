@@ -1,3 +1,9 @@
 {
-    "Keys": [ "testwindow" ]
+    "type" :            "window",
+    "shortname" :            "plmtestwindow",
+    "longname" :        "Plume Test Window",
+    "version" :         "1.0",
+    "mandatory" :    true,
+    "activatedbydefault" :    false,
+    "dependencies" :    []
 }

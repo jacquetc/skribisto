@@ -4,6 +4,7 @@ import qbs
 DynamicLibrary {
     name: "plume-creator-gui"
     destinationDirectory: "../../lib"
+    version: project.version
 
     cpp.defines: ["PLUME_CREATOR_GUI_LIBRARY"]
     cpp.includePaths: [ '.']

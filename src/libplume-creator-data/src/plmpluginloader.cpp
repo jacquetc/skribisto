@@ -11,11 +11,13 @@ PLMPluginLoader::PLMPluginLoader(QObject *parent) : QObject(parent)
     m_instance = this;
 
     foreach(const QString  &path, PLMUtils::Dir::addonsPathsList()) {
-        QCoreApplication::addLibraryPath(path + "/plugins");
+        QCoreApplication::addLibraryPath(path);
     }
-    foreach(const QString  &path, QCoreApplication::libraryPaths() ) {
-    qDebug() << path;
-    }
+    QCoreApplication::removeLibraryPath(qApp->applicationDirPath());
+
+//    foreach(const QString  &path, QCoreApplication::libraryPaths() ) {
+//    qDebug() << path;
+//    }
 
 
     // this->reload();
@@ -127,10 +129,17 @@ QObject * PLMPluginLoader::pluginObjectByName(const QString& fileName)
     QObject *plugin = loader.instance();
 
     if (!plugin) {
-        qDebug() << "loader.instance() FOR : " + fileName;
-        qDebug() << "loader.instance() : " + loader.errorString();
+//        qDebug() << "loader.instance() FOR : " + fileName;
+//        qDebug() << "loader.instance() : " + loader.errorString();
+
     } else {
         plugin->setProperty("fileName", fileName);
+        plugin->setProperty("activatedbydefault", loader.metaData().value("MetaData").toObject().value("activatedbydefault").toBool());
+        plugin->setProperty("version", loader.metaData().value("MetaData").toObject().value("version").toString());
+        plugin->setProperty("mandatory", loader.metaData().value("MetaData").toObject().value("mandatory").toString());
+        plugin->setProperty("shortname", loader.metaData().value("MetaData").toObject().value("shortname").toString());
+        plugin->setProperty("longname", loader.metaData().value("MetaData").toObject().value("longname").toString());
+
     }
 
     return plugin;
@@ -146,7 +155,7 @@ void PLMPluginLoader::installPluginTranslations()
 
     while (i != m_pluginsListHash.constEnd()) {
         QString className       = i.value().object->metaObject()->className();
-        qDebug() << className;
+        //qDebug() << className;
         QTranslator *translator = new QTranslator(qApp);
 
         if (translator->load(QLocale(PLMUtils::Lang::getUserLang()), className.toLower(), "_", ":/translations")) {

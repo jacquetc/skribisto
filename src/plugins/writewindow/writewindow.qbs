@@ -3,6 +3,7 @@ import qbs
 DynamicLibrary {
     name: "plume-creator-plugin-writewindow"
     destinationDirectory: "../../lib/plugins"
+    version: project.version
 
     cpp.defines: [
         "PLUME_CREATOR_WRITEWINDOW_PLUGIN"]

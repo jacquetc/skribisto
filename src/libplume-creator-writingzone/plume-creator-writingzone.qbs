@@ -2,6 +2,7 @@ import qbs
 
 
 Project {
+    property string version: ""
     minimumQbsVersion: "1.10"
     references: [
         "src/src.qbs"
