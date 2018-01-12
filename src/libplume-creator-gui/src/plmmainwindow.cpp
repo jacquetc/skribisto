@@ -9,6 +9,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QByteArray>
+#include <QTimer>
 //#include <QQuickWidget>
 
 PLMMainWindow::PLMMainWindow(PLMData *data) :
@@ -16,7 +17,6 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
     ui(new Ui::PLMMainWindow)
 {
     ui->setupUi(this);
-    this->loadPlugins();
     connect(ui->sideMainBar, &PLMSideMainBar::windowRaiseCalled, this, &PLMMainWindow::raiseWindow);
     connect(ui->sideMainBar, &PLMSideMainBar::windowAttachmentCalled, this, &PLMMainWindow::attachWindow);
     connect(ui->sideMainBar, &PLMSideMainBar::windowDetachmentCalled, this, &PLMMainWindow::detachWindow);
@@ -33,8 +33,18 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
     // restore saved geometry
     QSettings settings;
     this->restoreGeometry(settings.value("geometry", "0").toByteArray());
+
+    QTimer::singleShot(0, this, SLOT(init()));
 }
 
+void PLMMainWindow::init()
+{
+    this->loadPlugins();
+
+    //this->readSettings();
+    //load plugins
+    //TEMP
+}
 PLMMainWindow::~PLMMainWindow()
 {
     delete ui;
@@ -48,12 +58,7 @@ void PLMMainWindow::activate()
 {
 }
 
-void PLMMainWindow::init()
-{
-    //this->readSettings();
-    //load plugins
-    //TEMP
-}
+
 
 //------------------------------------------
 void PLMMainWindow::loadPlugins()
@@ -61,6 +66,7 @@ void PLMMainWindow::loadPlugins()
     // plugins are already loaded in plmpluginloader
     QList<PLMWindowInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMWindowInterface>();
 
+    //setup :
     foreach (PLMWindowInterface *plugin, pluginList) {
         PLMBaseWindow *window = plugin->window();
         connect(window, &PLMBaseWindow::attachmentCalled, ui->sideMainBar, &PLMSideMainBar::attachWindowByName);

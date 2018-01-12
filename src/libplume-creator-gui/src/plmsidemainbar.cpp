@@ -41,25 +41,35 @@ void PLMSideMainBar::loadPlugins()
     // plugins are already loaded in plmpluginloader
     QList<PLMSideMainBarIconInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMSideMainBarIconInterface>();
 
+
+    //ordering
+    QMap<int, QAction *> actionMap;
+
+
     foreach (PLMSideMainBarIconInterface *plugin, pluginList) {
         QList<PLMSideBarAction> actionList = plugin->sideMainBarActions(this);
 
         foreach (const PLMSideBarAction &sideBarAction, actionList) {
-            QToolButton *button = new QToolButton(this);
-            button->setDefaultAction(sideBarAction.action());
-            button->setIconSize(QSize(48, 48));
-            button->setAutoRaise(true);
-            ui->verticalLayout->addWidget(button);
-            actionGroup->addAction(sideBarAction.action());
-            hash_windowNameAndButton.insert(sideBarAction.action()->property("linkedWindow").toString(), button);
-            connect(button->defaultAction(), &QAction::triggered, this, &PLMSideMainBar::raiseWindow);
-
-                button->setContextMenuPolicy(Qt::CustomContextMenu);
-                connect(button, SIGNAL(customContextMenuRequested(const QPoint &)),
-                    this, SLOT(showContextMenu(const QPoint &)));
-
+            actionMap.insert(sideBarAction.action()->property("order").toInt(), sideBarAction.action());
         }
     }
+    foreach (QAction *action, actionMap) {
+        QToolButton *button = new QToolButton(this);
+        button->setDefaultAction(action);
+        button->setIconSize(QSize(48, 48));
+        button->setAutoRaise(true);
+        ui->verticalLayout->addWidget(button);
+        actionGroup->addAction(action);
+        hash_windowNameAndButton.insert(action->property("linkedWindow").toString(), button);
+        connect(action, &QAction::triggered, this, &PLMSideMainBar::raiseWindow);
+
+        button->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(button, SIGNAL(customContextMenuRequested(const QPoint &)),
+                this, SLOT(showContextMenu(const QPoint &)));
+    }
+
+    actionMap.first()->setChecked(true);
+
 }
 
 void PLMSideMainBar::setButtonChecked(const QString &windowName)
@@ -77,14 +87,14 @@ void PLMSideMainBar::showContextMenu(const QPoint &pos)
     m_currentButton = button;
     QMenu contextMenu(tr("Context menu"), this);
 
-     QAction action1(tr("Attach"), this);
-     connect(&action1, SIGNAL(triggered()), this, SLOT(attachWindow()));
-     contextMenu.addAction(&action1);
-     QAction action2(tr("Detach"), this);
-     connect(&action2, SIGNAL(triggered()), this, SLOT(detachWindow()));
-     contextMenu.addAction(&action2);
+    QAction action1(tr("Attach"), this);
+    connect(&action1, SIGNAL(triggered()), this, SLOT(attachWindow()));
+    contextMenu.addAction(&action1);
+    QAction action2(tr("Detach"), this);
+    connect(&action2, SIGNAL(triggered()), this, SLOT(detachWindow()));
+    contextMenu.addAction(&action2);
 
-     contextMenu.exec(button->mapToGlobal(pos));
+    contextMenu.exec(button->mapToGlobal(pos));
 
 }
 

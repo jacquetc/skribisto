@@ -42,6 +42,7 @@ QList<PLMSideBarAction>PLMTestWindow::sideMainBarActions(QObject *parent)
     QAction *action = new QAction(QIcon(":/pics/48x48/scribus.png"), tr("Test Window"), parent);
     action->setProperty("linkedWindow", m_name);
     action->setProperty("detachable", true);
+    action->setProperty("order", 2);
     action->setCheckable(true);
     PLMSideBarAction mAction(m_name, action);
     list.append(mAction);

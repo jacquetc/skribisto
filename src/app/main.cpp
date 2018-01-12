@@ -186,7 +186,6 @@ PLMMainWindow* startGui(PLMData *data)
     splash->finish(mw);
     mw->show();
     mw->setWindowState(Qt::WindowActive);
-     mw->init();
 
 
 

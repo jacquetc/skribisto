@@ -16,7 +16,6 @@ class PLMMainWindow : public QMainWindow
 
 public:
     explicit PLMMainWindow(PLMData *data);
-    void init();
     ~PLMMainWindow();
 
 public slots:
@@ -28,6 +27,7 @@ protected:
     void closeEvent(QCloseEvent *event);
 
 private slots:
+    void init();
     void attachWindow(const QString &windowName);
     void detachWindow(const QString &windowName);
 private:

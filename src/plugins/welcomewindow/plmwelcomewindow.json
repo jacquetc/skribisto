@@ -1,0 +1,9 @@
+{
+    "type" :            "window",
+    "shortname" :            "plmwelcomewindow",
+    "longname" :        "Plume Welcome Window",
+    "version" :         "1.0",
+    "mandatory" :    true,
+    "activatedbydefault" :    true,
+    "dependencies" :    []
+}

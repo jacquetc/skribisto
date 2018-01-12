@@ -1,11 +1,11 @@
 #include "plmwindow.h"
-#include "plmwritewindow.h"
+#include "plmwelcomewindow.h"
 #include "plugininterface.h"
 
 #include <QTimer>
 
-PLMWriteWindow::PLMWriteWindow(QObject *parent) : QObject(parent),
-                                                m_name("writeWindow")
+PLMWelcomeWindow::PLMWelcomeWindow(QObject *parent) : QObject(parent),
+                                                m_name("welcomeWindow")
 {
     this->setProperty("name", m_name);
 
@@ -14,7 +14,7 @@ PLMWriteWindow::PLMWriteWindow(QObject *parent) : QObject(parent),
 
 // -------------------------------------------------------------------
 
-void PLMWriteWindow::init()
+void PLMWelcomeWindow::init()
 {
     PluginInterface::addPlugins();
 
@@ -22,24 +22,24 @@ void PLMWriteWindow::init()
 
 // -------------------------------------------------------------------
 
-PLMWriteWindow::~PLMWriteWindow()
+PLMWelcomeWindow::~PLMWelcomeWindow()
 {}
 
 // -------------------------------------------------------------------
 
-QString PLMWriteWindow::use() const
+QString PLMWelcomeWindow::use() const
 {
     return m_name;
 }
 
 // -------------------------------------------------------------------
 
-PLMBaseWindow *PLMWriteWindow::window()
+PLMBaseWindow *PLMWelcomeWindow::window()
 {
     PLMWindow *window = new PLMWindow;
 
     window->setProperty("name", m_name);
-    window->setWindowTitle(tr("Write"));
+    window->setWindowTitle(tr("Welcome"));
 
     return window;
 }
@@ -47,13 +47,13 @@ PLMBaseWindow *PLMWriteWindow::window()
 
 // -------------------------------------------------------------------
 
-QList<PLMSideBarAction>PLMWriteWindow::sideMainBarActions(QObject *parent)
+QList<PLMSideBarAction>PLMWelcomeWindow::sideMainBarActions(QObject *parent)
 {
     QList<PLMSideBarAction> list;
-    QAction *action = new QAction(QIcon(":/pics/48x48/scribus.png"), tr("Write"), parent);
+    QAction *action = new QAction(QIcon(":/pics/48x48/scribus.png"), tr("Welcome"), parent);
     action->setProperty("linkedWindow", m_name);
     action->setProperty("detachable", true);
-    action->setProperty("order", 20);
+    action->setProperty("order", 10);
     action->setCheckable(true);
     PLMSideBarAction mAction(m_name, action);
     list.append(mAction);
