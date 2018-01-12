@@ -21,11 +21,10 @@ using namespace std;
 #include <QtQml/QQmlApplicationEngine>
 #include <QtWidgets/QInputDialog>
 
+# include "plmpluginloader.h"
 
 #if FORCEQML == 0
 # include "plmutils.h"
-# include "plmpluginloader.h"
-# include "plmguiplugins.h"
 # include "plmmainwindow.h"
 #endif // ifndef FORCEQML
 
@@ -112,7 +111,7 @@ void selectLang()
 // -------------------------------------------------------
 #if FORCEQML == 0
 
-void openProjectInArgument(PLMMainWindow *plmMainWindow)
+void openProjectInArgument(PLMData *data)
 {
     // open directly a project if *.plume path is the first argument :
     QStringList args = qApp->arguments();
@@ -120,7 +119,7 @@ void openProjectInArgument(PLMMainWindow *plmMainWindow)
     if (args.count() > 1) {
         QString argument;
 
-        for (int i = 1; i <= args.count(); ++i) {
+        for (int i = 1; i <= args.count() - 1; ++i) {
             if (QFileInfo(args.at(i)).exists()) {
                 argument = args.at(i);
                 break;
@@ -134,7 +133,7 @@ void openProjectInArgument(PLMMainWindow *plmMainWindow)
 # endif // ifdef Q_OS_WIN32
             argument = QDir::fromNativeSeparators(argument);
 
-            // plmMainWindow->openProject(argument);
+            data->projectHub()->loadProject(argument);
         }
     }
 }
@@ -172,9 +171,6 @@ PLMMainWindow* startGui(PLMData *data)
     QApplication::setStyle(QStyleFactory::create("fusion"));
 
     QApplication::setWheelScrollLines(1);
-    splash->showMessage("Loading plugins");
-    qApp->processEvents();
-    PLMGuiPlugins::addGuiPlugins();
 
     splash->showMessage("Setting language");
     qApp->processEvents();
@@ -243,7 +239,7 @@ int main(int argc, char *argv[])
 
     if (!isQML()) {
         PLMMainWindow *gui = startGui(data);
-        openProjectInArgument(gui);
+        openProjectInArgument(data);
     }
 
 #endif // ifndef FORCEQML

@@ -6,6 +6,7 @@ Project {
     minimumQbsVersion: "1.10"
     references: [
         "testwindow/testwindow.qbs",
+        "testwidget/testwidget.qbs",
         "writewindow/writewindow.qbs",
         "welcomewindow/welcomewindow.qbs"
     ]

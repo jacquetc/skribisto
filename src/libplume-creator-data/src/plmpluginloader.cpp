@@ -129,8 +129,8 @@ QObject * PLMPluginLoader::pluginObjectByName(const QString& fileName)
     QObject *plugin = loader.instance();
 
     if (!plugin) {
-//        qDebug() << "loader.instance() FOR : " + fileName;
-//        qDebug() << "loader.instance() : " + loader.errorString();
+        qDebug() << "loader.instance() FOR : " + fileName;
+        qDebug() << "loader.instance() : " + loader.errorString();
 
     } else {
         plugin->setProperty("fileName", fileName);

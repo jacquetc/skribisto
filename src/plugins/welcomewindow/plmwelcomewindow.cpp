@@ -9,7 +9,7 @@ PLMWelcomeWindow::PLMWelcomeWindow(QObject *parent) : QObject(parent),
 {
     this->setProperty("name", m_name);
 
-    QTimer::singleShot(0, this, SLOT(init()));
+    //QTimer::singleShot(0, this, SLOT(init()));
 }
 
 // -------------------------------------------------------------------
@@ -17,6 +17,7 @@ PLMWelcomeWindow::PLMWelcomeWindow(QObject *parent) : QObject(parent),
 void PLMWelcomeWindow::init()
 {
     PluginInterface::addPlugins();
+
 
 }
 
@@ -50,7 +51,7 @@ PLMBaseWindow *PLMWelcomeWindow::window()
 QList<PLMSideBarAction>PLMWelcomeWindow::sideMainBarActions(QObject *parent)
 {
     QList<PLMSideBarAction> list;
-    QAction *action = new QAction(QIcon(":/pics/48x48/scribus.png"), tr("Welcome"), parent);
+    QAction *action = new QAction(QIcon(":/pics/plume-creator.png"), tr("Welcome"), parent);
     action->setProperty("linkedWindow", m_name);
     action->setProperty("detachable", true);
     action->setProperty("order", 10);

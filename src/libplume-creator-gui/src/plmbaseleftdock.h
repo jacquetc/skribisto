@@ -2,7 +2,7 @@
  *   Copyright (C) 2018 by Cyril Jacquet                                 *
  *   cyril.jacquet@plume-creator.eu                                        *
  *                                                                         *
- *  Filename: plugininterface.h                                                   *
+ *  Filename: plmbaseleftdock.h                                                   *
  *  This file is part of Plume Creator.                                    *
  *                                                                         *
  *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,24 +18,16 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef PLUGININTERFACE_H
-#define PLUGININTERFACE_H
+#ifndef PLMBASELEFTDOCK_H
+#define PLMBASELEFTDOCK_H
 
-#include "plmbasewidget.h"
-#include "plmpluginloader.h"
+#include <QDockWidget>
+#include <QObject>
 
-
-class PLMWriteLeftDockInterface
+class PLMBaseLeftDock : public QDockWidget
 {
 public:
-    virtual ~PLMWriteLeftDockInterface() {}
-
-    virtual PLMBaseWidget *dockBodyWidget(QWidget *parent) = 0;
+    PLMBaseLeftDock();
 };
 
-#define PLMWriteLeftDockInterface_iid "com.PlumeSoft.Plume-Creator.WriteLeftDockInterface/1.0"
-
-Q_DECLARE_INTERFACE(PLMWriteLeftDockInterface, PLMWriteLeftDockInterface_iid)
-
-
-#endif // PLUGININTERFACE_H
+#endif // PLMBASELEFTDOCK_H

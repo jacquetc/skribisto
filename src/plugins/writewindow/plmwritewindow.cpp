@@ -9,14 +9,17 @@ PLMWriteWindow::PLMWriteWindow(QObject *parent) : QObject(parent),
 {
     this->setProperty("name", m_name);
 
-    QTimer::singleShot(0, this, SLOT(init()));
+   // QTimer::singleShot(0, this, SLOT(init()));
 }
 
 // -------------------------------------------------------------------
 
 void PLMWriteWindow::init()
 {
-    PluginInterface::addPlugins();
+
+
+    PLMPluginLoader *loader = PLMPluginLoader::instance();
+    loader->addPluginType<PLMWriteLeftDockInterface>();
 
 }
 

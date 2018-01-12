@@ -10,6 +10,11 @@ PLMTestWindow::PLMTestWindow(QObject *parent) : QObject(parent),
 
 // -------------------------------------------------------------------
 
+void PLMTestWindow::init()
+{
+
+}
+
 PLMTestWindow::~PLMTestWindow()
 {}
 

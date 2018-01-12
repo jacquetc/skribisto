@@ -31,9 +31,9 @@ private slots:
     void attachWindow(const QString &windowName);
     void detachWindow(const QString &windowName);
 private:
+    void loadPlugins();
     Ui::PLMMainWindow *ui;
     PLMData *m_data;
-    void loadPlugins();
     QHash<QString, QMainWindow *> hash_nameAndWindow;
 };
 

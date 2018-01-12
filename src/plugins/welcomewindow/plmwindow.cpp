@@ -1,5 +1,7 @@
 #include "plmwindow.h"
 #include "ui_plmwindow.h"
+#include "plmdata.h"
+#include <QDebug>
 
 //#include "menubar.h"
 
@@ -9,7 +11,9 @@ PLMWindow::PLMWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    this->setMenuActions();
+    this->setDockNestingEnabled(false);
+
+connect(ui->testProjectButton, &QPushButton::clicked, this, &PLMWindow::testProjectButton_clicked);
 }
 
 //-------------------------------------------------------------------
@@ -107,3 +111,9 @@ void PLMWindow::setMenuActions()
 
 //    PLMPanelWindow::focusInEvent(event);
 //}
+
+void PLMWindow::testProjectButton_clicked()
+{
+    PLMError error = plmdata->projectHub()->loadProject(":/testfiles/plume_test_project.sqlite");
+    qDebug() << error.isSuccess();
+}

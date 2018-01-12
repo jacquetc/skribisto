@@ -24,7 +24,11 @@ protected:
 private:
     void setMenuActions();
 
+private slots:
+    void setLabeltText();
+
 private:
+    void loadPlugins();
     Ui::PLMWindow *ui;
 
     QList<QAction *> actionList;

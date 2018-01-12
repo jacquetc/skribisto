@@ -23,6 +23,7 @@ class PLMWelcomeWindow : public QObject,
 public :
 
         PLMWelcomeWindow(QObject *parent = 0);
+        void init();
     ~PLMWelcomeWindow();
 
         //BaseInterface
@@ -40,7 +41,6 @@ public :
 
 private slots:
 
-    void init();
 private:
 
     QString m_name;

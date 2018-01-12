@@ -1,5 +1,7 @@
 #include "plmwindow.h"
 #include "ui_plmwindow.h"
+#include "plmdata.h"
+#include "plugininterface.h"
 
 //#include "menubar.h"
 
@@ -8,8 +10,11 @@ PLMWindow::PLMWindow(QWidget *parent) :
     ui(new Ui::PLMWindow)
 {
     ui->setupUi(this);
+    this->loadPlugins();
 
     this->setMenuActions();
+
+connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &PLMWindow::setLabeltText);
 }
 
 //-------------------------------------------------------------------
@@ -87,7 +92,25 @@ void PLMWindow::setMenuActions()
 //    actionAdd_Dock->setText(QApplication::translate("WritePanel", "Add Dock", 0));
 //    actionHide_Show_Docks->setText(QApplication::translate("WritePanel", "Hide / Show Docks", 0));
 
-// apply current menubar settings :
+    // apply current menubar settings :
+}
+
+void PLMWindow::setLabeltText()
+{
+    ui->label->setText("loaded");
+}
+
+void PLMWindow::loadPlugins()
+{
+    // plugins are already loaded in plmpluginloader
+    QList<PLMWriteLeftDockInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMWriteLeftDockInterface>();
+
+    //setup :
+    foreach (PLMWriteLeftDockInterface *plugin, pluginList) {
+        PLMBaseWidget *widget = plugin->dockBodyWidget(this);
+        ui->verticalLayout->addWidget(widget);
+
+    }
 }
 
 //---------------------------------------------------------------------------------------------------

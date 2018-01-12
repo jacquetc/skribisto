@@ -4,6 +4,7 @@
 #include "ui_plmmainwindow.h"
 #include "plmguiinterface.h"
 #include "plmpluginloader.h"
+#include "plmguiplugins.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -16,6 +17,7 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
     QMainWindow(0), m_data(data),
     ui(new Ui::PLMMainWindow)
 {
+    PLMGuiPlugins::addGuiPlugins();
     ui->setupUi(this);
     connect(ui->sideMainBar, &PLMSideMainBar::windowRaiseCalled, this, &PLMMainWindow::raiseWindow);
     connect(ui->sideMainBar, &PLMSideMainBar::windowAttachmentCalled, this, &PLMMainWindow::attachWindow);
@@ -34,12 +36,15 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
     QSettings settings;
     this->restoreGeometry(settings.value("geometry", "0").toByteArray());
 
+    this->loadPlugins();
+
+    ui->sideMainBar->setButtonChecked("welcomeWindow");
+
     QTimer::singleShot(0, this, SLOT(init()));
 }
 
 void PLMMainWindow::init()
 {
-    this->loadPlugins();
 
     //this->readSettings();
     //load plugins
@@ -68,6 +73,7 @@ void PLMMainWindow::loadPlugins()
 
     //setup :
     foreach (PLMWindowInterface *plugin, pluginList) {
+        plugin->init();
         PLMBaseWindow *window = plugin->window();
         connect(window, &PLMBaseWindow::attachmentCalled, ui->sideMainBar, &PLMSideMainBar::attachWindowByName);
         ui->stackedWidget->addWidget(window);

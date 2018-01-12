@@ -68,14 +68,14 @@ void PLMSideMainBar::loadPlugins()
                 this, SLOT(showContextMenu(const QPoint &)));
     }
 
-    actionMap.first()->setChecked(true);
 
 }
 
 void PLMSideMainBar::setButtonChecked(const QString &windowName)
 {
     QToolButton *button = hash_windowNameAndButton.value(windowName);
-    button->defaultAction()->setChecked(true);
+    if(button)
+        button->defaultAction()->setChecked(true);
 }
 
 void PLMSideMainBar::showContextMenu(const QPoint &pos)

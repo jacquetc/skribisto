@@ -11,6 +11,8 @@ DynamicLibrary {
     files: [
         "gui_qml.qrc",
         "pics.qrc",
+        "plmbaseleftdock.cpp",
+        "plmbaseleftdock.h",
         "plmbasewidget.cpp",
         "plmbasewidget.h",
         "plmguiinterface.h",

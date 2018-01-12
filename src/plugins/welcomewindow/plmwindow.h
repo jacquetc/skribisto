@@ -21,6 +21,9 @@ public:
 protected:
 //    void focusInEvent(QFocusEvent *event);
 
+private slots:
+    void testProjectButton_clicked();
+
 private:
     void setMenuActions();
 

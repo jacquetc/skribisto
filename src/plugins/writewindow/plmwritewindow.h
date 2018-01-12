@@ -23,6 +23,7 @@ class PLMWriteWindow : public QObject,
 public :
 
         PLMWriteWindow(QObject *parent = 0);
+        void init();
     ~PLMWriteWindow();
 
         //BaseInterface
@@ -40,7 +41,6 @@ public :
 
 private slots:
 
-    void init();
 private:
 
     QString m_name;

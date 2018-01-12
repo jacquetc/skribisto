@@ -33,6 +33,7 @@ public:
     virtual ~PLMWindowInterface() {}
 
     virtual PLMBaseWindow *window() = 0;
+    virtual void init() = 0;
     //virtual QList<PLMSideBarAction> mainBarActions(QObject *parent) = 0;
 };
 
