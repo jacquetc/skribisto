@@ -8,5 +8,7 @@ RootPageForm {
         width: 0.66 * window.width
         height: window.height
     }
+
+
 }
 

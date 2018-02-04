@@ -41,9 +41,10 @@
 #define IFOKDO(ERROR, ACTION) \
         IFOK(ERROR) {ERROR = ACTION; }
 
-class PLMError : public QObject
+struct PLMError
 {
-    Q_OBJECT
+    Q_GADGET
+    Q_PROPERTY(bool success MEMBER m_success)
 
 public:
     explicit PLMError();

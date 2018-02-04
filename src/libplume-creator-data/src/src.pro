@@ -9,6 +9,8 @@ CONFIG -= app_bundle
 CONFIG += c++14
 
 VERSION = 1.61
+#CONFIG += staticlib
+CONFIG += create_prl
 
 TARGET = plume-creator-data
 TEMPLATE = lib
@@ -57,7 +59,8 @@ SOURCES += \
     tasks/sql/plmupgrader.cpp \
     plmuserfilehub.cpp \
     plmutils.cpp \
-    plmpluginhub.cpp
+    plmpluginhub.cpp \
+    plmpluginloader.cpp
 
 HEADERS += \
     tasks/plmtask.h \
@@ -97,7 +100,10 @@ HEADERS += \
     tasks/sql/plmupgrader.h \
     plmuserfilehub.h \
     plmutils.h \
-    plmpluginhub.h
+    plmpluginhub.h \
+    plmpluginloader.h \
+    plmcoreinterface.h \
+    plmcoreplugins.h
 
 OTHER_FILES += \
     version.info.in

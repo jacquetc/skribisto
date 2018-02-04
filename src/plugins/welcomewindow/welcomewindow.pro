@@ -5,7 +5,7 @@ CONFIG += plugin
 
 QT       += widgets core gui
 
-TARGET = $$qtLibraryTarget(testwindow)
+TARGET = $$qtLibraryTarget(welcomewindow)
 
 
 DESTDIR = $$top_builddir/build/plugins/
@@ -18,34 +18,23 @@ $$top_srcdir/plume-creator
 
 
 SOURCES += \
-    plmtestwindow.cpp \
-    testwritingzone.cpp \
+    plmwelcomewindow.cpp \
     plmwindow.cpp
 
 
 HEADERS += \
-    plmtestwindow.h \
-    testwritingzone.h \
-    plmwindow.h
+    plmwelcomewindow.h \
+    plmwindow.h \
+    plugininterface.h
 
 
 OTHER_FILES +=
 
-RESOURCES += \
-    lang_testwindow.qrc
-
 
 DISTFILES += \
-    plmtestwindow.json
+    plmwelcomewindow.json
 
 CODECFORTR = UTF-8
-
-TRANSLATIONS = translations/plmtestwindow_fr_FR.ts \
-translations/plmtestwindow_it_IT.ts \
-translations/plmtestwindow_de_DE.ts \
-translations/plmtestwindow_sp_SP.ts \
-translations/plmtestwindow_ru_RU.ts \
-translations/plmtestwindow_pt_BR.ts
 
 FORMS += \
     plmwindow.ui
@@ -66,11 +55,10 @@ else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-writingzone
 INCLUDEPATH += $$PWD/../../libplume-creator-writingzone/src/
 DEPENDPATH += $$PWD/../../libplume-creator-writingzone/src/
 
-
-
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/release/ -lplume-creator-data
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/debug/ -lplume-creator-data
 else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-data
 
 INCLUDEPATH += $$PWD/../../libplume-creator-data/src/
 DEPENDPATH += $$PWD/../../libplume-creator-data/src/
+

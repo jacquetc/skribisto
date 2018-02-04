@@ -13,19 +13,21 @@ QT += core gui xml widgets printsupport multimedia qml quick quickcontrols2
 SOURCES += \
     plmmainwindow.cpp \
     plmmessagehandler.cpp \
-    plmpluginloader.cpp \
     plmsidemainbar.cpp \
-    plmbasewindow.cpp
+    plmbasewindow.cpp \
+    plmbaseleftdock.cpp \
+    plmbasewidget.cpp
 
 
 HEADERS  += \ 
     plmmainwindow.h \
     plmmessagehandler.h \
-    plmpluginloader.h \
     plmguiplugins.h \
     plmguiinterface.h \
     plmsidemainbar.h \
-    plmbasewindow.h
+    plmbasewindow.h \
+    plmbaseleftdock.h \
+    plmbasewidget.h
 
 
 FORMS    += \

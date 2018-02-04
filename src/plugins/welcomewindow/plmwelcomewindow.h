@@ -11,7 +11,7 @@
 #include "plmbasewindow.h"
 
 class PLMWelcomeWindow : public QObject,
-                      public PLMBaseInterface,
+                       public PLMBaseInterface,
                       public PLMWindowInterface,
                       public PLMSideMainBarIconInterface {
     Q_OBJECT

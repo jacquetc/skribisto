@@ -38,7 +38,7 @@
 #define plmpluginhub PLMData::instance()->pluginHub()
 
 class EXPORT PLMData : public QObject {
-    Q_OBJECT
+    Q_OBJECT    
 
 public:
 
@@ -56,7 +56,7 @@ public:
     PLMPropertyHub* sheetPropertyHub();
     PLMNoteHub*     noteHub();
     PLMPropertyHub* notePropertyHub();
-    PLMProjectHub*  projectHub();
+    Q_INVOKABLE PLMProjectHub*  projectHub();
     PLMUserFileHub* userFileHub();
     PLMPluginHub* pluginHub();
 

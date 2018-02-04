@@ -113,6 +113,11 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString &fileName) 
         m_plmPropertyForTableNameHash.insert("tbl_note_system_property",
                                              noteSystemProperty);
     }
+
+
+    IFKO(error){
+        m_projectId = -1;
+    }
 }
 
 PLMProject::~PLMProject()

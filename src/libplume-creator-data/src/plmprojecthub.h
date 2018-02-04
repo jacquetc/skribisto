@@ -30,7 +30,7 @@ class PLMProjectHub : public QObject
     Q_OBJECT
 public:
     explicit PLMProjectHub(QObject *parent);
-    PLMError loadProject(const QString &path);
+    Q_INVOKABLE PLMError loadProject(const QString &path);
     PLMError saveProject(int projectId);
     PLMError saveProjectAs(int projectId, const QString &type, const QString &path);
     PLMError closeProject(int projectId);

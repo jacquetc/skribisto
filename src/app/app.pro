@@ -9,6 +9,7 @@ DESTDIR = $$top_builddir/build/
 
 VERSION = 1.61
 DEFINES += VERSIONSTR=$${VERSION}
+CONFIG += link_prl
 
 #MOC_DIR = build
 #OBJECTS_DIR = build
@@ -170,6 +171,13 @@ INCLUDEPATH += $$PWD/../libplume-creator-data/src/
 DEPENDPATH += $$PWD/../libplume-creator-data/src/
 
 
+#win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../libplume-creator-data/src/release/libplume-creator-data.a
+#else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../libplume-creator-data/src/debug/libplume-creator-data.a
+#else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$top_builddir/build/plume-creator-data.lib
+#else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$top_builddir/build/plume-creator-data.lib
+#else:unix: PRE_TARGETDEPS += $$top_builddir/build/libplume-creator-data.a
+
+
 !android {
 # add gui lib :
 
@@ -194,6 +202,3 @@ DEPENDPATH += $$PWD/../libplume-creator-qml/src/
 
 DISTFILES += \
     DummyImports.qml
-
-
-

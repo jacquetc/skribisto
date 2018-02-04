@@ -20,14 +20,14 @@
  ***************************************************************************/
 #include "plmerror.h"
 
-PLMError::PLMError() : QObject(), m_success(true)
+PLMError::PLMError() :  m_success(true)
 {
 
 }
 
 PLMError::PLMError(const PLMError& error)
-    : QObject()
 {
+    m_success = error.isSuccess();
 
 }
 
@@ -48,6 +48,7 @@ PLMError& PLMError::operator= (const PLMError& iError)
         m_success = iError.isSuccess();
 
     }
+   // m_success = iError.isSuccess();
     return *this;
 }
 void PLMError::setSuccess(bool value)

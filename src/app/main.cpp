@@ -19,6 +19,7 @@ using namespace std;
 
 #include <QtPlugin>
 #include <QtQml/QQmlApplicationEngine>
+#include <QtQml/QQmlContext>
 #include <QtWidgets/QInputDialog>
 
 # include "plmpluginloader.h"
@@ -212,12 +213,17 @@ bool isQML()
 QQmlApplicationEngine* startQMLGui(PLMData *data)
 {
     Q_INIT_RESOURCE(qml);
-    QQmlApplicationEngine *engine = new QQmlApplicationEngine("qrc:/qml/main.qml");
+
+    //qmlRegisterType<PLMError>("eu.plumecreator.qml", 1, 0, "PLMError");
+    qmlRegisterUncreatableType<PLMProjectHub>("eu.plumecreator.qml", 1, 0, "PLMProjectHub", "Can't instantiate PLMProjectHub");
+
+    QQmlApplicationEngine *engine = new QQmlApplicationEngine();
+    engine->rootContext()->setContextProperty("plmData", data);
+    engine->load("qrc:/qml/main.qml");
     return engine;
 }
 
 // ----------------------------------------------------
-
 
 int main(int argc, char *argv[])
 {
@@ -225,6 +231,7 @@ int main(int argc, char *argv[])
     qputenv("QT_STYLE_OVERRIDE", "");
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication::setQuitOnLastWindowClosed(true);
 
     QApplication app(argc, argv);
 

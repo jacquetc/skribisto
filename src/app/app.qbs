@@ -9,7 +9,10 @@ Project {
         name: "plume-creator"
 
         destinationDirectory: "../../lib"
-        files: ['main.cpp']
+        files: ['main.cpp',
+                'DummyImports.qml',
+                'dummyqml.qrc'
+        ]
 
 
         Depends { name: "Qt"; submodules: ["core", "gui", "widgets", "qml", "quick"]}

@@ -3,6 +3,7 @@ import qbs
 DynamicLibrary {
     name: "plume-creator-qml"
     destinationDirectory: "../../lib"
+    version: project.version
 
     cpp.defines: ["PLUME_CREATOR_QML_LIBRARY"]
     cpp.includePaths: [ '.']

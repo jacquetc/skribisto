@@ -65,3 +65,9 @@ INCLUDEPATH += $$PWD/../../libplume-creator-writingzone/src/
 DEPENDPATH += $$PWD/../../libplume-creator-writingzone/src/
 
 
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/release/ -lplume-creator-data
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/debug/ -lplume-creator-data
+else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-data
+
+INCLUDEPATH += $$PWD/../../libplume-creator-data/src/
+DEPENDPATH += $$PWD/../../libplume-creator-data/src/
