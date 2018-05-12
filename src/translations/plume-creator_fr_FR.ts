@@ -410,6 +410,13 @@ You will not be able to recover it afterwards.</source>
     </message>
 </context>
 <context>
+    <name>DockFrameForm.ui</name>
+    <message>
+        <source>Label</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DockedTextTreeWidget</name>
     <message>
         <source>Form</source>
@@ -3000,63 +3007,35 @@ Veuillez ouvrir un fichier .plume.</translation>
     <name>PLMMainWindow</name>
     <message>
         <source>MainWindow</source>
-        <translation>Fenêtre principale</translation>
+        <translation type="vanished">Fenêtre principale</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation>Projet</translation>
-    </message>
-    <message>
-        <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Projet</translation>
     </message>
     <message>
         <source>Menu</source>
         <translation type="obsolete">Menu</translation>
     </message>
     <message>
-        <source>New project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Import</source>
-        <translation type="unfinished">Importer</translation>
-    </message>
-    <message>
-        <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Importer</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Imprimer</translation>
-    </message>
-    <message>
-        <source>Close project</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Imprimer</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished">Quitter</translation>
-    </message>
-    <message>
-        <source>Open project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save project</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Quitter</translation>
     </message>
     <message>
         <source>Do you want to quit ?</source>
-        <translation type="unfinished">Voulez-vous quitter ?</translation>
+        <translation type="obsolete">Voulez-vous quitter ?</translation>
     </message>
     <message>
         <source>Your changes are already saved.</source>
-        <translation type="unfinished">Vos changements ont déjà été sauvegardés.</translation>
+        <translation type="obsolete">Vos changements ont déjà été sauvegardés.</translation>
     </message>
 </context>
 <context>
@@ -3070,7 +3049,7 @@ Veuillez ouvrir un fichier .plume.</translation>
     <name>PLMSideMainBar</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished">Formulaire</translation>
+        <translation type="obsolete">Formulaire</translation>
     </message>
 </context>
 <context>
@@ -3127,67 +3106,31 @@ Veuillez ouvrir un fichier .plume.</translation>
     <name>PLMWritingZone</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished">Formulaire</translation>
+        <translation type="obsolete">Formulaire</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Copier</translation>
-    </message>
-    <message>
-        <source>Ctrl+C</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Copier</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">Coller</translation>
-    </message>
-    <message>
-        <source>Ctrl+V</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Coller</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">Couper</translation>
-    </message>
-    <message>
-        <source>Ctrl+X</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Couper</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished">Gras</translation>
-    </message>
-    <message>
-        <source>Ctrl+B</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Strikethrough</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Gras</translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished">Italique</translation>
-    </message>
-    <message>
-        <source>Ctrl+I</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Italique</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished">Souligné</translation>
-    </message>
-    <message>
-        <source>Ctrl+U</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Print directly</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+P</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Souligné</translation>
     </message>
 </context>
 <context>
@@ -3371,6 +3314,29 @@ Veuillez ouvrir un fichier .plume.</translation>
     <message>
         <source>Not a supported RTF file.</source>
         <translation type="obsolete">Pas un fichier RTF supporté.</translation>
+    </message>
+</context>
+<context>
+    <name>RootPage</name>
+    <message>
+        <source>Welcome</source>
+        <translation type="unfinished">Bienvenue</translation>
+    </message>
+    <message>
+        <source>Write</source>
+        <translation type="unfinished">Écrire</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished">Notes</translation>
+    </message>
+    <message>
+        <source>Gallery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Informations</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4598,10 +4564,6 @@ p, li { white-space: pre-wrap; }
         <source>New project</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Radio Button</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>WordGoalProgressBar</name>
@@ -4688,10 +4650,17 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>WritingZoneForm.ui</name>
+    <message>
+        <source>Text Area</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>sidePanelBar</name>
     <message>
         <source>Write</source>
-        <translation type="unfinished">Écrire</translation>
+        <translation type="obsolete">Écrire</translation>
     </message>
 </context>
 </TS>

@@ -5,10 +5,10 @@ SUBDIRS += \
 #        docks/notesdock \
 #       convert/plumetag \
 #       docks/develdock \
-        welcomewindow \
-        testwidget \
-       testwindow \
-        writewindow
+#        welcomewindow \
+#        testwidget \
+#       testwindow \
+#        writewindow
 
 
 # install :

@@ -13,7 +13,7 @@ VERSION = 1.61
 CONFIG += create_prl
 
 TARGET = plume-creator-data
-TEMPLATE = lib
+TEMPLATE     = lib
 DEFINES += PLUME_CREATOR_DATA_LIBRARY
 
 DESTDIR = $$top_builddir/build/

@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>pics/plume-creator.png</file>
+        <file>pics/plume-creator.svg</file>
+        <file>pics/author.svg</file>
+    </qresource>
+</RCC>

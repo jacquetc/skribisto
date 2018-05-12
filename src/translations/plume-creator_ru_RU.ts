@@ -168,6 +168,13 @@
     </message>
 </context>
 <context>
+    <name>DockFrameForm.ui</name>
+    <message>
+        <source>Label</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DockedTextTreeWidget</name>
     <message>
         <source>Form</source>
@@ -1721,59 +1728,27 @@ Have you checked the one(s) you want to look through ?</source>
     <name>PLMMainWindow</name>
     <message>
         <source>MainWindow</source>
-        <translation type="unfinished">Главная</translation>
+        <translation type="obsolete">Главная</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished">Проект</translation>
-    </message>
-    <message>
-        <source>Recent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New project</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Проект</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished">Импорт</translation>
-    </message>
-    <message>
-        <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Импорт</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Печать</translation>
-    </message>
-    <message>
-        <source>Close project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save project</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Печать</translation>
     </message>
     <message>
         <source>Do you want to quit ?</source>
-        <translation type="unfinished">Вы действительно хотите выйти?</translation>
+        <translation type="obsolete">Вы действительно хотите выйти?</translation>
     </message>
     <message>
         <source>Your changes are already saved.</source>
-        <translation type="unfinished">Все изменения сохранены.</translation>
+        <translation type="obsolete">Все изменения сохранены.</translation>
     </message>
 </context>
 <context>
@@ -1787,7 +1762,7 @@ Have you checked the one(s) you want to look through ?</source>
     <name>PLMSideMainBar</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished">Форма</translation>
+        <translation type="obsolete">Форма</translation>
     </message>
 </context>
 <context>
@@ -1824,67 +1799,19 @@ Have you checked the one(s) you want to look through ?</source>
     <name>PLMWritingZone</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished">Форма</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+C</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+V</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+X</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Форма</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished">Жирный</translation>
-    </message>
-    <message>
-        <source>Ctrl+B</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Strikethrough</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Жирный</translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished">Курсив</translation>
-    </message>
-    <message>
-        <source>Ctrl+I</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Курсив</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished">Подчеркнутый</translation>
-    </message>
-    <message>
-        <source>Ctrl+U</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Print directly</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+P</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Подчеркнутый</translation>
     </message>
 </context>
 <context>
@@ -2032,6 +1959,29 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>ZIP/UNZIP API error %1</source>
         <translation type="vanished">ZIP/UNZIP API error %1</translation>
+    </message>
+</context>
+<context>
+    <name>RootPage</name>
+    <message>
+        <source>Welcome</source>
+        <translation type="unfinished">Здравствуйте</translation>
+    </message>
+    <message>
+        <source>Write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished">Заметки</translation>
+    </message>
+    <message>
+        <source>Gallery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Informations</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2924,10 +2874,6 @@ p, li { white-space: pre-wrap; }
         <source>New project</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Radio Button</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>WordGoalProgressBar</name>
@@ -3014,9 +2960,9 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>sidePanelBar</name>
+    <name>WritingZoneForm.ui</name>
     <message>
-        <source>Write</source>
+        <source>Text Area</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

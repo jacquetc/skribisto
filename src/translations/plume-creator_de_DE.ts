@@ -370,6 +370,13 @@
     </message>
 </context>
 <context>
+    <name>DockFrameForm.ui</name>
+    <message>
+        <source>Label</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DockedTextTreeWidget</name>
     <message>
         <source>Form</source>
@@ -2076,59 +2083,23 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <name>PLMMainWindow</name>
     <message>
         <source>MainWindow</source>
-        <translation type="unfinished">Hauptfenster</translation>
+        <translation type="obsolete">Hauptfenster</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished">Projekt</translation>
-    </message>
-    <message>
-        <source>Recent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Projekt</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Drucken</translation>
-    </message>
-    <message>
-        <source>Close project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save project</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Drucken</translation>
     </message>
     <message>
         <source>Do you want to quit ?</source>
-        <translation type="unfinished">Möchten Sie wirklich beenden?</translation>
+        <translation type="obsolete">Möchten Sie wirklich beenden?</translation>
     </message>
     <message>
         <source>Your changes are already saved.</source>
-        <translation type="unfinished">Ihre Veränderungen wurden bereits gespeichert.</translation>
+        <translation type="obsolete">Ihre Veränderungen wurden bereits gespeichert.</translation>
     </message>
 </context>
 <context>
@@ -2142,7 +2113,7 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <name>PLMSideMainBar</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished">Maske</translation>
+        <translation type="obsolete">Maske</translation>
     </message>
 </context>
 <context>
@@ -2171,67 +2142,19 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <name>PLMWritingZone</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished">Maske</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+C</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+V</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+X</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Maske</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished">Fett</translation>
-    </message>
-    <message>
-        <source>Ctrl+B</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Strikethrough</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Fett</translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished">Kursiv</translation>
-    </message>
-    <message>
-        <source>Ctrl+I</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Kursiv</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished">Unterstrichen</translation>
-    </message>
-    <message>
-        <source>Ctrl+U</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Print directly</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+P</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Unterstrichen</translation>
     </message>
 </context>
 <context>
@@ -2387,6 +2310,29 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source>ZIP/UNZIP API error %1</source>
         <translation type="vanished">ZIP/UNZIP-API-Fehler %1</translation>
+    </message>
+</context>
+<context>
+    <name>RootPage</name>
+    <message>
+        <source>Welcome</source>
+        <translation type="unfinished">Willkommen</translation>
+    </message>
+    <message>
+        <source>Write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished">Notizen</translation>
+    </message>
+    <message>
+        <source>Gallery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Informations</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3200,10 +3146,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>New project</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Radio Button</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>WordGoalProgressBar</name>
@@ -3282,9 +3224,9 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
 </context>
 <context>
-    <name>sidePanelBar</name>
+    <name>WritingZoneForm.ui</name>
     <message>
-        <source>Write</source>
+        <source>Text Area</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

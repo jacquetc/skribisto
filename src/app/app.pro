@@ -2,6 +2,7 @@ lessThan(QT_VERSION, 5.09.3) {
         error("Plume Creator requires Qt 5.9.3 or greater")
 }
 
+QT += qml quick quickcontrols2 svg
 
 TEMPLATE = app
 
@@ -10,22 +11,24 @@ DESTDIR = $$top_builddir/build/
 VERSION = 1.61
 DEFINES += VERSIONSTR=$${VERSION}
 CONFIG += link_prl
-
+CONFIG += c++14
+#CONFIG += static
+#CONFIG += qmlcompiler
 #MOC_DIR = build
 #OBJECTS_DIR = build
 #RCC_DIR = build
 #UI_DIR = build
 
+#unix: QMAKE_LFLAGS_RELEASE += -static-libstdc++ -static-libgcc
+
+
 TARGET = plume-creator
-
-
-CONFIG(beta_release) {
-TARGET = $$join(TARGET,,,_beta)
-}
 
 #LIBS += -Lstaticplugins -lplumetag
 #LIBS += -L$$top_builddir/bin/staticplugins -lplumetag
+DEFINES += QT_DEPRECATED_WARNINGS
 
+include(3rdparty/kirigami/kirigami.pri)
 
 # dossier de zlib.h
 #INCLUDEPATH += ../../externals/zlib
@@ -36,7 +39,7 @@ TARGET = $$join(TARGET,,,_beta)
 
 SOURCES += main.cpp
 
-QT += core gui widgets qml
+#QT += core gui widgets qml
 
 CODECFORTR = UTF-8
 
@@ -46,11 +49,10 @@ CODECFORTR = UTF-8
 #include(../../externals/qtsingleapplication/src/qtsinglecoreapplication.pri)
 #include($$top_dir/externals/qtsingleapplication/qtsingleapp_qtsinglecoreapp.pri)
 
-#FORMS += src/mainwindow.ui
-
 RESOURCES += \
+pics.qrc \
 ../translations/langs.qrc \
-    dummyqml.qrc
+    qml.qrc
 
 
 
@@ -65,39 +67,18 @@ android {
     }
     DEFINES += FORCEQML=1
 
-    # Android ARM
-    contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-
-        ANDROID_EXTRA_LIBS += /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Sql.so \
-                                /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickWidgets.so \
-                                /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Xml.so \
-                                /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickControls2.so \
-                                /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickTemplates2.so
-    }
 
 
-    # Android x86
-    contains(ANDROID_TARGET_ARCH,x86) {
+#    DISTFILES += \
+#        android/AndroidManifest.xml \
+#        android/gradle/wrapper/gradle-wrapper.jar \
+#        android/gradlew \
+#        android/res/values/libs.xml \
+#        android/build.gradle \
+#        android/gradle/wrapper/gradle-wrapper.properties \
+#        android/gradlew.bat
 
-
-        ANDROID_EXTRA_LIBS += /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5Sql.so \
-                                /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5QuickWidgets.so \
-                                /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5Xml.so \
-                                /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5QuickControls2.so \
-                                /home/cyril/Devel/Qt/5.10.0/android_x86/lib/libQt5QuickTemplates2.so
-
-    }
-
-    DISTFILES += \
-        android/AndroidManifest.xml \
-        android/gradle/wrapper/gradle-wrapper.jar \
-        android/gradlew \
-        android/res/values/libs.xml \
-        android/build.gradle \
-        android/gradle/wrapper/gradle-wrapper.properties \
-        android/gradlew.bat
-
-    ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+#    ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
 }
 else {
@@ -178,27 +159,57 @@ DEPENDPATH += $$PWD/../libplume-creator-data/src/
 #else:unix: PRE_TARGETDEPS += $$top_builddir/build/libplume-creator-data.a
 
 
-!android {
-# add gui lib :
-
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-gui/src/release/ -lplume-creator-gui
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-gui/src/debug/ -lplume-creator-gui
-else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-gui
-
-
-INCLUDEPATH += $$PWD/../libplume-creator-gui/src/
-DEPENDPATH += $$PWD/../libplume-creator-gui/src/
-}
-
-# add qml lib :
-
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-qml/src/release/ -lplume-creator-qml
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-qml/src/debug/ -lplume-creator-qml
-else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-qml
-
-
-INCLUDEPATH += $$PWD/../libplume-creator-qml/src/
-DEPENDPATH += $$PWD/../libplume-creator-qml/src/
+android {
 
 DISTFILES += \
-    DummyImports.qml
+    android/AndroidManifest.xml \
+    android/gradle/wrapper/gradle-wrapper.jar \
+    android/gradlew \
+    android/res/values/libs.xml \
+    android/build.gradle \
+    android/gradle/wrapper/gradle-wrapper.properties \
+    android/gradlew.bat
+
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_EXTRA_LIBS = /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Sql.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickWidgets.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Xml.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickControls2.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickTemplates2.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Svg.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickTest.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Quick.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Qml.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Test.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Gui.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Network.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Core.so
+}
+
+
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+}
+
+DISTFILES += \
+    qml/dockFrame.js \
+    qml/settings.js \
+    qml/DockFrameForm.ui.qml \
+    qml/ProjectListItemForm.ui.qml \
+    qml/RootPageForm.ui.qml \
+    qml/WelcomePageForm.ui.qml \
+    qml/WritePageForm.ui.qml \
+    qml/WriteTreeViewForm.ui.qml \
+    qml/WritingZoneForm.ui.qml \
+    qml/qmldir \
+    qml/DockFrame.qml \
+    qml/Globals.qml \
+    qml/main.qml \
+    qml/ProjectListItem.qml \
+    qml/RootPage.qml \
+    qml/WelcomePage.qml \
+    qml/WritePage.qml \
+    qml/WriteTreeView.qml \
+    qml/WritingZone.qml
+
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_EXTRA_LIBS = \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Core.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Network.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Qml.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Quick.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickControls2.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickTemplates2.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickTest.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickWidgets.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Sql.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Widgets.so \
+        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Xml.so
+}

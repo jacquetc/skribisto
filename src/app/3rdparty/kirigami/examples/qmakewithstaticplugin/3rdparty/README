@@ -1,0 +1,6 @@
+Add here, with either a script that does a git checkout
+or as git submodules the two projects:
+
+git://anongit.kde.org/kirigami.git
+git://anongit.kde.org/breeze-icons.git
+

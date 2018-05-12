@@ -1,6 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>qml/sidePanelBar.qml</file>
-        <file>qml/noteListView.qml</file>
-    </qresource>
-</RCC>

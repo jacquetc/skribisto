@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/org/kde/kirigami/">
+        <file alias="icons/application-menu.svg">../3rdparty/breeze-icons/icons/actions/32/application-menu.svg</file>
+        <file alias="icons/document-decrypt.svg">../3rdparty/breeze-icons/icons/actions/32/document-decrypt.svg</file>
+        <file alias="icons/folder-sync.svg">../3rdparty/breeze-icons/icons/actions/32/folder-sync.svg</file>
+        <file alias="icons/go-next.svg">../3rdparty/breeze-icons/icons/actions/22/go-next.svg</file>
+        <file alias="icons/go-previous.svg">../3rdparty/breeze-icons/icons/actions/22/go-previous.svg</file>
+        <file alias="icons/go-up.svg">../3rdparty/breeze-icons/icons/actions/22/go-up.svg</file>
+        <file alias="icons/handle-left.svg">../3rdparty/breeze-icons/icons/actions/22/handle-left.svg</file>
+        <file alias="icons/handle-right.svg">../3rdparty/breeze-icons/icons/actions/22/handle-right.svg</file>
+        <file alias="icons/view-list-icons.svg">../3rdparty/breeze-icons/icons/actions/32/view-list-icons.svg</file>
+        <file alias="icons/applications-graphics.svg">../3rdparty/breeze-icons/icons/categories/32/applications-graphics.svg</file>
+        <file alias="icons/media-record-symbolic.svg">../3rdparty/breeze-icons/icons/actions/symbolic/media-record-symbolic.svg</file>
+    </qresource>
+</RCC>

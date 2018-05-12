@@ -152,6 +152,13 @@
     </message>
 </context>
 <context>
+    <name>DockFrameForm.ui</name>
+    <message>
+        <source>Label</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>EditMenu</name>
     <message>
         <source>Zoom :</source>
@@ -1547,67 +1554,20 @@ not allowed delete a filled book.</source>
 <context>
     <name>PLMMainWindow</name>
     <message>
-        <source>MainWindow</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Project</source>
-        <translation type="unfinished">Projeto</translation>
-    </message>
-    <message>
-        <source>Recent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Projeto</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Imprimir</translation>
-    </message>
-    <message>
-        <source>Close project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save project</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Imprimir</translation>
     </message>
     <message>
         <source>Do you want to quit ?</source>
-        <translation type="unfinished">Você quer sair?</translation>
+        <translation type="obsolete">Você quer sair?</translation>
     </message>
     <message>
         <source>Your changes are already saved.</source>
-        <translation type="unfinished">Suas modificações já estão salvas.</translation>
-    </message>
-</context>
-<context>
-    <name>PLMSideMainBar</name>
-    <message>
-        <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Suas modificações já estão salvas.</translation>
     </message>
 </context>
 <context>
@@ -1628,68 +1588,16 @@ not allowed delete a filled book.</source>
 <context>
     <name>PLMWritingZone</name>
     <message>
-        <source>Form</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+C</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+V</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+X</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Bold</source>
-        <translation type="unfinished">Negrito</translation>
-    </message>
-    <message>
-        <source>Ctrl+B</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Strikethrough</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Negrito</translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished">Itálico</translation>
-    </message>
-    <message>
-        <source>Ctrl+I</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Itálico</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished">Sublinhado</translation>
-    </message>
-    <message>
-        <source>Ctrl+U</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Print directly</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+P</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Sublinhado</translation>
     </message>
 </context>
 <context>
@@ -1786,6 +1694,29 @@ not allowed delete a filled book.</source>
     <message>
         <source>No Title</source>
         <translation type="obsolete">Sem Título</translation>
+    </message>
+</context>
+<context>
+    <name>RootPage</name>
+    <message>
+        <source>Welcome</source>
+        <translation type="unfinished">Bem-vindo</translation>
+    </message>
+    <message>
+        <source>Write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished">Notas</translation>
+    </message>
+    <message>
+        <source>Gallery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Informations</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2405,10 +2336,6 @@ not allowed delete a filled book.</source>
         <source>New project</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Radio Button</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>WordGoalProgressBar</name>
@@ -2472,9 +2399,9 @@ not allowed delete a filled book.</source>
     </message>
 </context>
 <context>
-    <name>sidePanelBar</name>
+    <name>WritingZoneForm.ui</name>
     <message>
-        <source>Write</source>
+        <source>Text Area</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

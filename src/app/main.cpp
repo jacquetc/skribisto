@@ -1,47 +1,26 @@
 ﻿#include "iostream"
 #include <QSettings>
-#include <QtCore/QCoreApplication>
-#include <QtWidgets/QApplication>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QtGui/QGuiApplication>
 
 using namespace std;
 
 // for translator
 #include <QLibraryInfo>
 #include <QLocale>
-#include <QPixmap>
 #include <QTextCodec>
-#include <QTranslator>
-#include <QtWidgets/QProxyStyle>
-#include <QtWidgets/QSplashScreen>
-#include <QtWidgets/QStyleFactory>
 #include <QDebug>
 #include <QString>
 
-#include <QtPlugin>
-#include <QtQml/QQmlApplicationEngine>
-#include <QtQml/QQmlContext>
-#include <QtWidgets/QInputDialog>
+#include <QTranslator>
 
-# include "plmpluginloader.h"
-
-#if FORCEQML == 0
 # include "plmutils.h"
-# include "plmmainwindow.h"
-#endif // ifndef FORCEQML
-
+#include "plmpluginloader.h"
 #include "plmdata.h"
 
-QCoreApplication* createApplication(int& argc, char *argv[])
-{
-    for (int i = 1; i < argc; ++i) {
-        if (!qstrcmp(argv[i], "--no-gui")) {
-            return new QCoreApplication(argc, argv);
-        }
-    }
 
-    return new QApplication(argc, argv);
-}
-
+#include "./3rdparty/kirigami/src/kirigamiplugin.h"
 // -------------------------------------------------------
 
 void startCore()
@@ -62,195 +41,170 @@ void startCore()
 }
 
 // -------------------------------------------------------
+//#if FORCEQML == 0
 
-void selectLang()
-{
-    // Lang menu :
-    QSettings settings;
+//void selectLang()
+//{
+//    // Lang menu :
+//    QSettings settings;
 
-    qApp->processEvents();
-    QString qtTr    = QString("qt");
-    QString plumeTr = QString("plume-creator");
-    QLocale locale;
-
-
-    QString langCode = settings.value("lang", "none").toString();
-
-    if (langCode == "none") {
-        // apply system locale by default
-        locale = QLocale::system();
-    }
+//    qApp->processEvents();
+//    QString qtTr    = QString("qt");
+//    QString plumeTr = QString("plume-creator");
+//    QLocale locale;
 
 
-    QTranslator plumeTranslator;
+//    QString langCode = settings.value("lang", "none").toString();
 
-    if (plumeTranslator.load(locale, plumeTr, "_", ":/translations")) {
-        settings.setValue("lang", locale.name());
-    }
-    else { // if translation not existing :
-        locale = QLocale("en_EN");
-        settings.setValue("lang", locale.name());
-    }
-    qApp->installTranslator(&plumeTranslator);
-
-    PLMUtils::Lang::setUserLang(langCode);
+//    if (langCode == "none") {
+//        // apply system locale by default
+//        locale = QLocale::system();
+//    }
 
 
-    // Qt translation :
-    QTranslator translator;
+//    QTranslator plumeTranslator;
 
-    if (translator.load(locale, qtTr, "_",
-                        QLibraryInfo::location(QLibraryInfo::
-                                               TranslationsPath))) {
-        qApp->installTranslator(&translator);
-    }
+//    if (plumeTranslator.load(locale, plumeTr, "_", ":/translations")) {
+//        settings.setValue("lang", locale.name());
+//    }
+//    else { // if translation not existing :
+//        locale = QLocale("en_EN");
+//        settings.setValue("lang", locale.name());
+//    }
+//    qApp->installTranslator(&plumeTranslator);
 
-    // install translation of plugins:
-    PLMPluginLoader::instance()->installPluginTranslations();
-}
-
-// -------------------------------------------------------
-#if FORCEQML == 0
-
-void openProjectInArgument(PLMData *data)
-{
-    // open directly a project if *.plume path is the first argument :
-    QStringList args = qApp->arguments();
-
-    if (args.count() > 1) {
-        QString argument;
-
-        for (int i = 1; i <= args.count() - 1; ++i) {
-            if (QFileInfo(args.at(i)).exists()) {
-                argument = args.at(i);
-                break;
-            }
-        }
-
-        if (!argument.isEmpty()) {
-# ifdef Q_OS_WIN32
-            QTextCodec *codec = QTextCodec::codecForUtfText(argument);
-            argument = codec->toUnicode(argument);
-# endif // ifdef Q_OS_WIN32
-            argument = QDir::fromNativeSeparators(argument);
-
-            data->projectHub()->loadProject(argument);
-        }
-    }
-}
-
-#endif // if FORCEQML
-
-// -------------------------------------------------------
-
-PLMData* startData()
-{
-    PLMData *data = new PLMData(qApp);
-
-    return data;
-}
-
-// -------------------------------------------------------
-
-#if FORCEQML == 0
-PLMMainWindow* startGui(PLMData *data)
-{
-    // Q_INIT_RESOURCE(pics);
-    // Q_INIT_RESOURCE(langs);
-    // Q_INIT_RESOURCE(sounds);
-    // splashscreen :
-    QPixmap pixmap(":/pics/plume-creator.png");
-    QSplashScreen *splash = new QSplashScreen(pixmap);
-
-    splash->show();
-    qApp->processEvents();
-    qApp->setWindowIcon(QIcon(":/pics/plume-creator.png"));
-
-    // ---------------------------------------style :
-    splash->showMessage("Applying style");
-    qApp->processEvents();
-    QApplication::setStyle(QStyleFactory::create("fusion"));
-
-    QApplication::setWheelScrollLines(1);
-
-    splash->showMessage("Setting language");
-    qApp->processEvents();
-    selectLang();
-
-    PLMMainWindow *mw = new PLMMainWindow(data);
-    // install enventfilter (for Mac)
-    QApplication::instance()->installEventFilter(mw);
-    splash->finish(mw);
-    mw->show();
-    mw->setWindowState(Qt::WindowActive);
+//    PLMUtils::Lang::setUserLang(langCode);
 
 
+//    // Qt translation :
+//    QTranslator translator;
+
+//    if (translator.load(locale, qtTr, "_",
+//                        QLibraryInfo::location(QLibraryInfo::
+//                                               TranslationsPath))) {
+//        qApp->installTranslator(&translator);
+//    }
+
+//    // install translation of plugins:
+//    PLMPluginLoader::instance()->installPluginTranslations();
+//}
+
+//// -------------------------------------------------------
+
+//void openProjectInArgument(PLMData *data)
+//{
+//    // open directly a project if *.plume path is the first argument :
+//    QStringList args = qApp->arguments();
+
+//    if (args.count() > 1) {
+//        QString argument;
+
+//        for (int i = 1; i <= args.count() - 1; ++i) {
+//            if (QFileInfo(args.at(i)).exists()) {
+//                argument = args.at(i);
+//                break;
+//            }
+//        }
+
+//        if (!argument.isEmpty()) {
+//# ifdef Q_OS_WIN32
+//            QTextCodec *codec = QTextCodec::codecForUtfText(argument);
+//            argument = codec->toUnicode(argument);
+//# endif // ifdef Q_OS_WIN32
+//            argument = QDir::fromNativeSeparators(argument);
+
+//            data->projectHub()->loadProject(argument);
+//        }
+//    }
+//}
+
+//#endif // if FORCEQML
+
+//// -------------------------------------------------------
+
+//PLMData* startData()
+//{
+//
+
+//    return data;
+//}
+
+//// -------------------------------------------------------
+
+//#if FORCEQML == 0
+//PLMMainWindow* startGui(PLMData *data)
+//{
+//    // Q_INIT_RESOURCE(pics);
+//    // Q_INIT_RESOURCE(langs);
+//    // Q_INIT_RESOURCE(sounds);
+//    // splashscreen :
+//    QPixmap pixmap(":/pics/plume-creator.png");
+//    QSplashScreen *splash = new QSplashScreen(pixmap);
+
+//    splash->show();
+//    qApp->processEvents();
+//    qApp->setWindowIcon(QIcon(":/pics/plume-creator.png"));
+
+//    // ---------------------------------------style :
+//    splash->showMessage("Applying style");
+//    qApp->processEvents();
+//    QApplication::setStyle(QStyleFactory::create("fusion"));
+
+//    QApplication::setWheelScrollLines(1);
+
+//    splash->showMessage("Setting language");
+//    qApp->processEvents();
+//    selectLang();
+
+//    PLMMainWindow *mw = new PLMMainWindow(data);
+//    // install enventfilter (for Mac)
+//    QApplication::instance()->installEventFilter(mw);
+//    splash->finish(mw);
+//    mw->show();
+//    mw->setWindowState(Qt::WindowActive);
 
 
 
-    return mw;
-}
 
-#endif // if FORCEQML
 
-// -------------------------------------------------------
+//    return mw;
+//}
 
-bool isQML()
-{
-    QStringList args = qApp->arguments();
-
-    foreach(const QString &arg, args) {
-        if (arg == "--qml") {
-            return true;
-        }
-    }
-
-    return false;
-}
+//#endif // if FORCEQML
 
 // -------------------------------------------------------
 
-QQmlApplicationEngine* startQMLGui(PLMData *data)
-{
-    Q_INIT_RESOURCE(qml);
-
-    //qmlRegisterType<PLMError>("eu.plumecreator.qml", 1, 0, "PLMError");
-    qmlRegisterUncreatableType<PLMProjectHub>("eu.plumecreator.qml", 1, 0, "PLMProjectHub", "Can't instantiate PLMProjectHub");
-
-    QQmlApplicationEngine *engine = new QQmlApplicationEngine();
-    engine->rootContext()->setContextProperty("plmData", data);
-    engine->load("qrc:/qml/main.qml");
-    return engine;
-}
-
-// ----------------------------------------------------
 
 int main(int argc, char *argv[])
 {
     // Allows qml styling
     qputenv("QT_STYLE_OVERRIDE", "");
+    //qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
+
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication::setQuitOnLastWindowClosed(true);
 
-    QApplication app(argc, argv);
+    QGuiApplication app(argc, argv);
 
     startCore();
-    PLMData *data = startData();
+PLMData *data = new PLMData(qApp);
 
-    if (isQML() || (QString::number(FORCEQML) == 1)) {
-        QQmlApplicationEngine *engine = startQMLGui(data);
-    }
 
-#if FORCEQML  == 0
+    //qmlRegisterType<PLMError>("eu.plumecreator.qml", 1, 0, "PLMError");
+    qmlRegisterUncreatableType<PLMProjectHub>("eu.plumecreator.qml", 1, 0, "PLMProjectHub", "Can't instantiate PLMProjectHub");
 
-    if (!isQML()) {
-        PLMMainWindow *gui = startGui(data);
-        openProjectInArgument(data);
-    }
+    QQmlApplicationEngine engine;
+    // Kirigami
+    KirigamiPlugin::getInstance().registerTypes();
 
-#endif // ifndef FORCEQML
+    engine.rootContext()->setContextProperty("plmData", data);
+    engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+    if (engine.rootObjects().isEmpty())
+        return -1;
 
-    // data->projectHub()->loadProject();
+
+
+
     return app.exec();
 }

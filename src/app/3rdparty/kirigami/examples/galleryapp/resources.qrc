@@ -1,0 +1,32 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="contents/ui/MainPage.qml">../gallerydata/contents/ui/MainPage.qml</file>
+        <file alias="contents/ui/banner.jpg">../gallerydata/contents/ui/banner.jpg</file>
+        <file alias="contents/ui/gallery/NonScrollableGallery.qml">../gallerydata/contents/ui/gallery/NonScrollableGallery.qml</file>
+        <file alias="contents/ui/gallery/RadioButtonGallery.qml">../gallerydata/contents/ui/gallery/RadioButtonGallery.qml</file>
+        <file alias="contents/ui/gallery/ButtonGallery.qml">../gallerydata/contents/ui/gallery/ButtonGallery.qml</file>
+        <file alias="contents/ui/gallery/ProgressBarGallery.qml">../gallerydata/contents/ui/gallery/ProgressBarGallery.qml</file>
+        <file alias="contents/ui/gallery/CheckBoxGallery.qml">../gallerydata/contents/ui/gallery/CheckBoxGallery.qml</file>
+        <file alias="contents/ui/gallery/SliderGallery.qml">../gallerydata/contents/ui/gallery/SliderGallery.qml</file>
+        <file alias="contents/ui/gallery/MultipleColumnsGallery.qml">../gallerydata/contents/ui/gallery/MultipleColumnsGallery.qml</file>
+        <file alias="contents/ui/gallery/MiscGallery.qml">../gallerydata/contents/ui/gallery/MiscGallery.qml</file>
+        <file alias="contents/ui/gallery/ListViewGallery.qml">../gallerydata/contents/ui/gallery/ListViewGallery.qml</file>
+        <file alias="contents/ui/gallery/ListViewHeaderItemsGallery.qml">../gallerydata/contents/ui/gallery/ListViewHeaderItemsGallery.qml</file>
+        <file alias="contents/ui/gallery/SwitchGallery.qml">../gallerydata/contents/ui/gallery/SwitchGallery.qml</file>
+        <file alias="contents/ui/gallery/TabBarGallery.qml">../gallerydata/contents/ui/gallery/TabBarGallery.qml</file>
+        <file alias="contents/ui/gallery/TextFieldGallery.qml">../gallerydata/contents/ui/gallery/TextFieldGallery.qml</file>
+        <file alias="contents/ui/gallery/ColorsGallery.qml">../gallerydata/contents/ui/gallery/ColorsGallery.qml</file>
+        <file alias="contents/ui/gallery/CardsLayoutGallery.qml">../gallerydata/contents/ui/gallery/CardsLayoutGallery.qml</file>
+        <file alias="contents/ui/gallery/CardsListViewGallery.qml">../gallerydata/contents/ui/gallery/CardsListViewGallery.qml</file>
+        <file alias="contents/ui/gallery/CardsGridViewGallery.qml">../gallerydata/contents/ui/gallery/CardsGridViewGallery.qml</file>
+        <file alias="contents/ui/gallery/InlineMessagesGallery.qml">../gallerydata/contents/ui/gallery/InlineMessagesGallery.qml</file>
+        <file alias="contents/ui/gallery/MetricsGallery.qml">../gallerydata/contents/ui/gallery/MetricsGallery.qml</file>
+        <file alias="contents/ui/gallery/LayersGallery.qml">../gallerydata/contents/ui/gallery/LayersGallery.qml</file>
+        <file alias="contents/ui/gallery/FormLayoutGallery.qml">../gallerydata/contents/ui/gallery/FormLayoutGallery.qml</file>
+        <file alias="contents/ui/ExampleApp.qml">../gallerydata/contents/ui/ExampleApp.qml</file>
+        <file alias="contents/ui/gallery/ColorSetGallery.qml">../gallerydata/contents/ui/gallery/ColorSetGallery.qml</file>
+        <file alias="contents/ui/DesktopExampleApp.qml">../gallerydata/contents/ui/DesktopExampleApp.qml</file>
+        <file alias="metadata.desktop">../gallerydata/metadata.desktop</file>
+        <file alias="qtquickcontrols2.conf">qtquickcontrols2.conf</file>
+    </qresource>
+</RCC>
