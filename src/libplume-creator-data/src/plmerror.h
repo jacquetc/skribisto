@@ -22,6 +22,7 @@
 #define PLMERROR_H
 
 #include <QObject>
+#include "plume_creator_data_global.h"
 
 /**
  * To facilitate the error management
@@ -41,7 +42,7 @@
 #define IFOKDO(ERROR, ACTION) \
         IFOK(ERROR) {ERROR = ACTION; }
 
-struct PLMError
+struct EXPORT PLMError
 {
     Q_GADGET
     Q_PROPERTY(bool success MEMBER m_success)

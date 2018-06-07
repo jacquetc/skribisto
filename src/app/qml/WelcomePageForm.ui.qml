@@ -25,6 +25,12 @@ Item {
                     id: columnLayout
                     anchors.fill: parent
 
+//                    BreadCrumb {
+//                        id: breadCrumb
+//                        Layout.fillWidth: false
+//                        Layout.fillHeight: false
+//                    }
+
                     Text {
                         id: text1
                         text: qsTr("Recent projects")

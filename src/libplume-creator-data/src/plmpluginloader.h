@@ -10,10 +10,10 @@
 #include <QObject>
 #include <QDebug>
 #include <QCoreApplication>
+#include "plume_creator_data_global.h"
 
 
-
-struct PLMPlugin {
+struct EXPORT PLMPlugin {
 
     PLMPlugin() {}
 
@@ -46,7 +46,7 @@ Q_DECLARE_METATYPE(PLMPlugin)
 
 
 
-class PLMPluginLoader : public QObject
+class EXPORT PLMPluginLoader : public QObject
 {
     Q_OBJECT
 public:

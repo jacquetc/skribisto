@@ -27,6 +27,7 @@
 #include <QDir>
 #include <QModelIndex>
 #include <QTranslator>
+#include "plume_creator_data_global.h"
 
 // c = class name; e = enum name; v = enum value
 #define ENUM_TO_STRING(c, e, v) \
@@ -64,7 +65,7 @@ namespace PLMUtils {
 
 
 
-class Dir
+class EXPORT Dir
 {
 public:
 
@@ -77,7 +78,7 @@ public:
 
 //---------------------------------------------------------------------
 
-class Models
+class EXPORT Models
 {
 public:
 
@@ -88,7 +89,7 @@ public:
 
 //---------------------------------------------------------------------
 
-class ProjectsArrayInSettings
+class EXPORT ProjectsArrayInSettings
 {
 public:
     static bool modifyProjectModifiedDateInSettingsArray(int arrayNumber, QString date);
@@ -101,7 +102,7 @@ public:
 
 //---------------------------------------------------------------------
 
-class Misc
+class EXPORT Misc
 {
 public:
 
@@ -121,7 +122,7 @@ private:
 };
 
 
-class Lang
+class EXPORT Lang
 {
 public:
 

@@ -15,14 +15,15 @@ TEMPLATE = app
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../../src/release/ -lplume-creator-data
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../../src/debug/ -lplume-creator-data
-else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-data
+else:unix: LIBS += -L$$OUT_PWD/../../../src/ -lplume-creator-data
 
-INCLUDEPATH += $$PWD/../../../src/
-DEPENDPATH += $$PWD/../../../src/
+INCLUDEPATH += $$PWD/../../../src
+DEPENDPATH += $$PWD/../../../src
+
 
 
 SOURCES += \
  tst_settingscase.cpp
 
 RESOURCES += \
-    $$top_dir/resources/test/testfiles.qrc
+    ../../../../../resources/test/testfiles.qrc

@@ -3,6 +3,7 @@
 
 #include <QFocusEvent>
 #include <QMainWindow>
+#include <QAction>
 #include "plmbasewindow.h"
 
 namespace Ui

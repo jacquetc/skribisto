@@ -24,6 +24,8 @@
 #include "plmerror.h"
 
 #include <QObject>
+#include "plume_creator_data_global.h"
+
 //class PLMErrorHub;
 //struct PLMError;
 
@@ -78,7 +80,7 @@
 ////--------------------------------------------------------------------------
 
 
-class PLMErrorHub : public QObject
+class EXPORT PLMErrorHub : public QObject
 {
     Q_OBJECT
 public:

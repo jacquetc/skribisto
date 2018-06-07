@@ -20,5 +20,7 @@
         <file>qml/WriteTreeViewForm.ui.qml</file>
         <file>qml/WritingZone.qml</file>
         <file>qml/WritingZoneForm.ui.qml</file>
+        <file>qml/BreadCrumb.qml</file>
+        <file>qml/BreadCrumbForm.ui.qml</file>
     </qresource>
 </RCC>

@@ -24,8 +24,10 @@
 #include <QObject>
 #include <QString>
 #include "plmerror.h"
+#include "plume_creator_data_global.h"
 
-class PLMProjectHub : public QObject
+
+class EXPORT PLMProjectHub : public QObject
 {
     Q_OBJECT
 public:

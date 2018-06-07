@@ -31,8 +31,9 @@
 #include "tree/plmsheettree.h"
 #include "tree/plmnotetree.h"
 #include "plmerror.h"
+#include "plume_creator_data_global.h"
 
-class PLMProject : public QObject
+class EXPORT PLMProject : public QObject
 {
     Q_OBJECT
 

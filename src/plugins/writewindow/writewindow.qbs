@@ -34,6 +34,6 @@ DynamicLibrary {
         cpp.includePaths: [product.sourceDirectory]
     }
 
-    Depends { name: "Android.ndk" }
-    Android.ndk.appStl: "gnustl_shared"
+//    Depends { name: "Android.ndk" }
+//    Android.ndk.appStl: "gnustl_shared"
 }

@@ -25,8 +25,9 @@
 #include <QObject>
 #include <QString>
 #include "plmerror.h"
+#include "plume_creator_data_global.h"
 
-class PLMUserFileHub : public QObject
+class EXPORT PLMUserFileHub : public QObject
 {
     Q_OBJECT
 

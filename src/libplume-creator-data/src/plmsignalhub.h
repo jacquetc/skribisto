@@ -22,8 +22,9 @@
 #define PLMSIGNALHUB_H
 
 #include <QObject>
+#include "plume_creator_data_global.h"
 
-class PLMSignalHub : public QObject
+class EXPORT PLMSignalHub : public QObject
 {
     Q_OBJECT
 

@@ -4,7 +4,8 @@ Project {
     id: project
     minimumQbsVersion: "1.10"
     property string version: "1.62"
-    property string forceQML: "0"
+    //change it to "0" to display QWidget GUI (if it exists)
+    property string forceQML: "1"
 
     Properties {
         condition: qbs.targetOS.contains("android")
@@ -46,14 +47,7 @@ Project {
         }
 
     }
-    SubProject {
-    inheritProperties: true
-        filePath: "src/libplume-creator-qml/plume-creator-qml.qbs"
-        Properties {
-            name: "QML"
-            version: project.version
-        }
-    }
+
     SubProject {
     inheritProperties: true
         filePath: "src/libplume-creator-gui/plume-creator-gui.qbs"
@@ -62,6 +56,7 @@ Project {
             version: project.version
         }
     }
+
     SubProject {
     inheritProperties: true
         filePath: "src/libplume-creator-writingzone/plume-creator-writingzone.qbs"
@@ -70,6 +65,7 @@ Project {
             version: project.version
         }
     }
+
 }
 
 

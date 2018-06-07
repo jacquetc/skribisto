@@ -22,8 +22,9 @@
 #define PLMPLUGINHUB_H
 
 #include <QObject>
+#include "plume_creator_data_global.h"
 
-class PLMPluginHub : public QObject
+class EXPORT PLMPluginHub : public QObject
 {
     Q_OBJECT
 public:

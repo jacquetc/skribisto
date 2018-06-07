@@ -11,6 +11,6 @@ CONFIG += ordered
 
 SUBDIRS += \
 plume-creator
-     
+
 plume-creator.file = src/plume-creator.pro
 

@@ -23,8 +23,9 @@
 
 #include <QObject>
 #include "plmpaperhub.h"
+#include "plume_creator_data_global.h"
 
-class PLMSheetHub : public PLMPaperHub
+class EXPORT PLMSheetHub : public PLMPaperHub
 {
 public:
 

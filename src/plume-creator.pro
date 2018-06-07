@@ -6,8 +6,10 @@ SUBDIRS += \
     libplume-creator-data/plume-creator-data.pro \
     app/app.pro \
     plugins/plugins.pro
+    #3rdparty/kirigami/kirigami.pri
 
 app.depends = libplume-creator-data
+#app.depends = 3rdparty
 plugins.depends = app
 
 #TRANSLATIONS = translations/plume-creator_fr_FR.ts \

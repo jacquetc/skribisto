@@ -6,7 +6,9 @@ QT += qml quick quickcontrols2 svg
 
 TEMPLATE = app
 
-DESTDIR = $$top_builddir/build/
+win32:DESTDIR = $$OUT_PWD/release/
+#else:win32:DESTDIR = $$top_builddir/build/debug/
+#else:unix:DESTDIR = $$top_builddir/build/
 
 VERSION = 1.61
 DEFINES += VERSIONSTR=$${VERSION}
@@ -27,8 +29,6 @@ TARGET = plume-creator
 #LIBS += -Lstaticplugins -lplumetag
 #LIBS += -L$$top_builddir/bin/staticplugins -lplumetag
 DEFINES += QT_DEPRECATED_WARNINGS
-
-include(3rdparty/kirigami/kirigami.pri)
 
 # dossier de zlib.h
 #INCLUDEPATH += ../../externals/zlib
@@ -54,12 +54,15 @@ pics.qrc \
 ../translations/langs.qrc \
     qml.qrc
 
+#OTHER_FILES += \
+#    $$top_dir/resources/windows/icon.rc
 
 
 
-win32 {
-RC_FILE = $$top_dir/resources/windows/icon.rc
-}
+
+#win32 {
+#RC_FILE = $$top_dir/resources/windows/icon.rc
+#}
 
 android {
   lessThan(QT_VERSION, 5.10.0) {
@@ -128,6 +131,7 @@ QMAKE_INFO_PLIST = resources/mac/Info.plist
 
 }
 
+unix {
 # for AppImage :
 
 # using shell_path() to correct path depending on platform
@@ -141,15 +145,16 @@ export(first.depends)
 export(copydata.commands)
 export(copydata2.commands)
 QMAKE_EXTRA_TARGETS += first copydata copydata2
+}
 
 # add data lib :
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-data/src/release/ -lplume-creator-data
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-data/src/debug/ -lplume-creator-data
-else:unix: LIBS += -L$$top_builddir/build/ -lplume-creator-data
+else:unix: LIBS += -L$$OUT_PWD/../libplume-creator-data/src/ -lplume-creator-data
 
-INCLUDEPATH += $$PWD/../libplume-creator-data/src/
-DEPENDPATH += $$PWD/../libplume-creator-data/src/
+INCLUDEPATH += $$PWD/../libplume-creator-data/src
+DEPENDPATH += $$PWD/../libplume-creator-data/src
 
 
 #win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../libplume-creator-data/src/release/libplume-creator-data.a

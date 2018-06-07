@@ -8,8 +8,8 @@ DynamicLibrary {
 
     cpp.defines: [
         "PLUME_CREATOR_DATA_LIBRARY"]
-    cpp.includePaths: [ '.']
-    //cpp.cxxLanguageVersion: "c++14"
+    cpp.includePaths: ['.']
+    cpp.cxxLanguageVersion: "c++14"
     files: [
         "plmdata.cpp",
         "plmerror.h",
@@ -37,7 +37,6 @@ DynamicLibrary {
         "tasks/plmprojectsetpath.h",
         "tasks/plmsqlqueries.cpp",
         "tasks/plmsqlqueries.h",
-        "tasks/plmsqlstrings.h.autosave",
         "tasks/plmtask.h",
         "tasks/plmtaskerror.cpp",
         "tasks/plmtaskerror.h",
@@ -90,6 +89,6 @@ DynamicLibrary {
         cpp.includePaths: [product.sourceDirectory]
     }
 
-    Depends { name: "Android.ndk" }
-    Android.ndk.appStl: "gnustl_shared"
+//    Depends { name: "Android.ndk" }
+//    Android.ndk.appStl: "gnustl_shared"
 }

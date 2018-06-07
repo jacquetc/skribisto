@@ -28,8 +28,9 @@
 #include <QVariant>
 
 #include "plmerror.h"
+#include "plume_creator_data_global.h"
 
-class PLMPaperHub : public QObject
+class EXPORT PLMPaperHub : public QObject
 {
     Q_OBJECT
 public:
@@ -87,6 +88,7 @@ public:
     PLMError settings_setDocSetting(int projectId, int paperId, OpenedDocSetting setting, const QVariant &value);
     QVariant settings_getDocSetting(int projectId, int paperId, OpenedDocSetting setting) const;
 
+    QList<int> getParentList(int projectId, int paperId) const;
 private:
     PLMError setSetting(int projectId, const QString &fieldName, const QVariant &value, bool setCurrentDateBool);
     QVariant getSetting(int projectId, const QString &fieldName) const;

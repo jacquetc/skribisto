@@ -9,6 +9,6 @@ CppApplication {
     Depends { name: "plume-creator-data" }
     //cpp.includePaths: [ '../../../src/']
 
-    Depends { name: "Android.ndk" }
-    Android.ndk.appStl: "gnustl_shared"
+//    Depends { name: "Android.ndk" }
+//    Android.ndk.appStl: "gnustl_shared"
 }

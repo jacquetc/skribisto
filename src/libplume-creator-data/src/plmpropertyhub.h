@@ -29,9 +29,10 @@
 #include <QDateTime>
 
 #include "plmerror.h"
+#include "plume_creator_data_global.h"
 
 
-class PLMPropertyHub : public QObject
+class EXPORT PLMPropertyHub : public QObject
 {
     Q_OBJECT
 public:

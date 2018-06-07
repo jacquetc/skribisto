@@ -23,8 +23,10 @@
 
 #include <QObject>
 #include "plmpaperhub.h"
+#include "plume_creator_data_global.h"
 
-class PLMNoteHub : public PLMPaperHub
+
+class EXPORT PLMNoteHub : public PLMPaperHub
 {
 public:
     PLMNoteHub(QObject *parent);

@@ -3,14 +3,11 @@ import QtQuick.Controls 2.2
 import QtQuick.Window 2.2
 import QtQml 2.2
 
-
 ApplicationWindow {
     id: rootWindow
     visible: true
-
-
-    minimumHeight: 300
-    minimumWidth: 200
+    minimumHeight: 600
+    minimumWidth: 800
 
     // style :
     //palette.window: "white"

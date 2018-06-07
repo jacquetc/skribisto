@@ -514,6 +514,43 @@ int PLMPaperHub::getLastAddedId()
 
 //-----------------------------------------------------------------------------
 
+///
+/// \brief PLMPaperHub::getParentList
+/// \param projectId
+/// \param paperId
+/// \return
+/// get a list of the parents' ids
+QList<int> PLMPaperHub::getParentList(int projectId, int paperId) const
+{
+    PLMError error;
+    QList<int> var;
+    QList<int> result;
+    PLMSqlQueries queries(projectId, "tbl_" + m_paperType, PLMSqlQueries::ProjectDB);
+
+    //find paperId indent
+    int paperIdIndent;
+    //error = queries.get(paperId, "l_indent", paperIdIndent);
+
+
+    //IFOKDO(error, queries.getValueByIdsWhere())
+
+
+
+
+
+
+
+    IFOK(error) {
+        result = var;
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+
 PLMError PLMPaperHub::addPaper(const QHash<QString, QVariant> &values, int projectId)
 {
     PLMSqlQueries queries(projectId, m_tableName);

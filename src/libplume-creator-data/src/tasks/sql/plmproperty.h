@@ -27,8 +27,9 @@
 #include <QVariant>
 #include <QString>
 #include <QtSql/QSqlDatabase>
+#include "plume_creator_data_global.h"
 
-class PLMProperty : public QObject
+class EXPORT PLMProperty : public QObject
 {
     Q_OBJECT
 public:

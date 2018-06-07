@@ -37,6 +37,7 @@
 #define plmdata PLMData::instance()
 #define plmpluginhub PLMData::instance()->pluginHub()
 
+
 class EXPORT PLMData : public QObject {
     Q_OBJECT    
 

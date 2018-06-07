@@ -10,6 +10,6 @@ CppApplication {
     Depends { name: "cpp" }
     Depends { name: "plume-creator-data" }
 
-    Depends { name: "Android.ndk" }
-    Android.ndk.appStl: "gnustl_shared"
+//    Depends { name: "Android.ndk" }
+//    Android.ndk.appStl: "gnustl_shared"
 }
