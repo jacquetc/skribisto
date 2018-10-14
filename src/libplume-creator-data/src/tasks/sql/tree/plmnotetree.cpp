@@ -33,7 +33,7 @@ int PLMNoteTree::addNewChildNote(int parentNoteId)
 
 void PLMNoteTree::moveNoteToSynopsis(int parentNoteId)
 {
-
+Q_UNUSED(parentNoteId);
 }
 
 bool PLMNoteTree::getIsSynopsis(int noteId)

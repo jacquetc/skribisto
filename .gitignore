@@ -81,5 +81,9 @@ build
 *.pro.user
 *.qbs.user
 
+# QML
+*.qmlc
+*.jsc
+
 #plume
 .~lock.*

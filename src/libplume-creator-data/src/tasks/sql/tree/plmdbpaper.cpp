@@ -53,7 +53,8 @@ bool PLMDbPaper::exists()
 
 int PLMDbPaper::copy(const QString &prefix)
 {
-
+Q_UNUSED(prefix);
+    return 0;
 }
 
 void PLMDbPaper::commit()

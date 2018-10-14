@@ -31,7 +31,7 @@ PLMPluginLoader::~PLMPluginLoader()
 // -----------------------------------------------------------------------------
 
 
-PLMPluginLoader *PLMPluginLoader::m_instance = 0;
+PLMPluginLoader *PLMPluginLoader::m_instance = nullptr;
 
 // ---------------------------------------------------------------------------
 

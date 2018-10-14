@@ -5,7 +5,7 @@ CONFIG += ordered
 SUBDIRS += \
     libplume-creator-data/plume-creator-data.pro \
     app/app.pro \
-    plugins/plugins.pro
+    #plugins/plugins.pro
     #3rdparty/kirigami/kirigami.pri
 
 app.depends = libplume-creator-data

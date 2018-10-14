@@ -16,6 +16,10 @@ Project {
 
 
 
+
+
+
+
     SubProject {
     inheritProperties: true
         filePath: "src/libplume-creator-data/plume-creator-data.qbs"
@@ -26,15 +30,15 @@ Project {
 
     }
 
-    SubProject {
-    inheritProperties: true
-        filePath: "src/plugins/plugins.qbs"
-        Properties {
-            name: "Plugins"
-            version: project.version
-        }
+//    SubProject {
+//    inheritProperties: true
+//        filePath: "src/plugins/plugins.qbs"
+//        Properties {
+//            name: "Plugins"
+//            version: project.version
+//        }
 
-    }
+//    }
 
     SubProject {
     inheritProperties: true
@@ -48,23 +52,23 @@ Project {
 
     }
 
-    SubProject {
-    inheritProperties: true
-        filePath: "src/libplume-creator-gui/plume-creator-gui.qbs"
-        Properties {
-            name: "GUI"
-            version: project.version
-        }
-    }
+//    SubProject {
+//        inheritProperties: true
+//        filePath: "src/libplume-creator-gui/plume-creator-gui.qbs"
+//        Properties {
+//            name: "GUI"
+//            version: project.version
+//        }
+//    }
 
-    SubProject {
-    inheritProperties: true
-        filePath: "src/libplume-creator-writingzone/plume-creator-writingzone.qbs"
-        Properties {
-            name: "WritingZone"
-            version: project.version
-        }
-    }
+//    SubProject {
+//        inheritProperties: true
+//        filePath: "src/libplume-creator-writingzone/plume-creator-writingzone.qbs"
+//        Properties {
+//            name: "WritingZone"
+//            version: project.version
+//        }
+//    }
 
 }
 

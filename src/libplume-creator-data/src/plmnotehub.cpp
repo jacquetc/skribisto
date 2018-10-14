@@ -29,6 +29,9 @@ PLMNoteHub::PLMNoteHub(QObject *parent) : PLMPaperHub(parent, "tbl_note")
 
 int PLMNoteHub::getSynopsisFromSheetCode(int projectId, int sheetId)
 {
+    Q_UNUSED(projectId);
+    Q_UNUSED(sheetId);
+
     int noteId = 2;
     // create a note /synopsis for if none found
 

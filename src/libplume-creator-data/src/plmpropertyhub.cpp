@@ -596,7 +596,7 @@ bool PLMPropertyHub::propertyExists(int projectId, int paperCode, const QString 
 int PLMPropertyHub::findPropertyId(int projectId, int paperCode, const QString &name)
 {
     PLMError error;
-    int result;
+    int result = 0;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
     QHash<QString,QVariant> where;

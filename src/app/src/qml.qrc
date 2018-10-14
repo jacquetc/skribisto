@@ -1,0 +1,24 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qtquickcontrols2.conf</file>
+        <file>qml/dockFrame.js</file>
+        <file>qml/DockFrame.qml</file>
+        <file>qml/DockFrameForm.ui.qml</file>
+        <file>qml/Globals.qml</file>
+        <file>qml/main.qml</file>
+        <file>qml/ProjectListItem.qml</file>
+        <file>qml/ProjectListItemForm.ui.qml</file>
+        <file>qml/qmldir</file>
+        <file>qml/RootPage.qml</file>
+        <file>qml/RootPageForm.ui.qml</file>
+        <file>qml/settings.js</file>
+        <file>qml/WelcomePage.qml</file>
+        <file>qml/WelcomePageForm.ui.qml</file>
+        <file>qml/WritePage.qml</file>
+        <file>qml/WritePageForm.ui.qml</file>
+        <file>qml/WriteTreeView.qml</file>
+        <file>qml/WriteTreeViewForm.ui.qml</file>
+        <file>qml/WritingZone.qml</file>
+        <file>qml/WritingZoneForm.ui.qml</file>
+    </qresource>
+</RCC>

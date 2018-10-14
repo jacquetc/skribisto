@@ -23,6 +23,7 @@ DynamicLibrary {
         "plmprojecthub.cpp",
         "plmpropertyhub.h",
         "plmsignalhub.h",
+        "sql.qrc",
         "tasks/plmprojectcloseallprojects.h",
         "tasks/plmprojectcloseproject.h",
         "tasks/plmprojectgetlastloaded.h",

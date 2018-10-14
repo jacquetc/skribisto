@@ -1,7 +1,0 @@
-import qbs
-
-
-Project {
-
-
-}

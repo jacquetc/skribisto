@@ -446,14 +446,12 @@ PLMError PLMSqlQueries::renumberSortOrder()
                        + " FROM " + m_tableName
                        + " ORDER BY l_sort_order"
                        ;
-    query.prepare(queryStr);
+    bool prepareOk = query.prepare(queryStr);
+//    qDebug() << "prepareOk" << prepareOk;
+//    qDebug() << query.lastError().text();
     query.exec() ? error.setSuccess(true) : error.setSuccess(false);
-    //            qDebug() << getLastExecutedQuery(query);
-// qDebug() << "a " << m_tableName << error.isSuccess();
-    //    if(!query.isValid()){
-    //        error.setSuccess(false);
-    //        return error;
-    //}
+//    qDebug() << query.lastError().text();
+
     int dest = renumInterval;
     QList<int> list;
 

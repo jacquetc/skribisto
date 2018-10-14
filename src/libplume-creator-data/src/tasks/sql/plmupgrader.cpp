@@ -27,10 +27,24 @@ PLMUpgrader::PLMUpgrader(QObject *parent) : QObject(parent)
 
 PLMError PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 {
-    Q_UNUSED(sqlDb)
+    Q_UNUSED(sqlDb);
 
 PLMError error;
+error.setSuccess(true);
 
+// from 1.5 to 1.6
+
+
+return error;
+}
+
+PLMError PLMUpgrader::upgradeUserSQLite(QSqlDatabase sqlDb)
+{
+    Q_UNUSED(sqlDb);
+
+
+PLMError error;
+error.setSuccess(true);
 // from 1.5 to 1.6
 
 

@@ -1,7 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>qtquickcontrols2.conf</file>
-        <file>qml/BreadCrumb.qml</file>
-        <file>qml/BreadCrumbForm.ui.qml</file>
-    </qresource>
-</RCC>

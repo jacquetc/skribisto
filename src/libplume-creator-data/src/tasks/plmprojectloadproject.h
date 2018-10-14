@@ -21,6 +21,7 @@ public:
 
     void doTask(bool *ok){
         emit taskStarted();
+        Q_UNUSED(ok);
 
 
         emit taskFinished();

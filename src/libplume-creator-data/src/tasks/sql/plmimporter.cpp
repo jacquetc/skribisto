@@ -210,7 +210,7 @@ QSqlDatabase PLMImporter::createUserSQLiteFileFrom(const QString &type, const QS
     }
 
     // upgrade :
-    IFOKDO(error, PLMUpgrader::upgradeSQLite(sqlDb));
+    IFOKDO(error, PLMUpgrader::upgradeUserSQLite(sqlDb));
     IFKO(error) {
         error.setSuccess(false);
         return QSqlDatabase();
