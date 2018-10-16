@@ -34,6 +34,10 @@ PLMPaperHub::PLMPaperHub(QObject *parent, const QString &tableName)
 ///
 QList<QHash<QString, QVariant> >  PLMPaperHub::getAll(int projectId) const
 {
+    Q_UNUSED(projectId)
+
+    QList<QHash<QString, QVariant> > result;
+    return result;
 }
 
 ///
@@ -267,8 +271,7 @@ PLMError PLMPaperHub::setDeleted(int projectId, int sheetId, bool newDeletedStat
 
     if (!result.isEmpty()) {
         QHash<int, QVariant>::const_iterator i = result.constBegin();
-        int lowestSort = 0;
-        lowestSort = i.value().toInt();
+        //int lowestSort = i.value().toInt();
 
         while (i != result.constEnd()) {
             int sort = i.value().toInt();
@@ -522,13 +525,14 @@ int PLMPaperHub::getLastAddedId()
 /// get a list of the parents' ids
 QList<int> PLMPaperHub::getParentList(int projectId, int paperId) const
 {
+    Q_UNUSED(paperId)
     PLMError error;
     QList<int> var;
     QList<int> result;
     PLMSqlQueries queries(projectId, "tbl_" + m_paperType, PLMSqlQueries::ProjectDB);
 
     //find paperId indent
-    int paperIdIndent;
+    //int paperIdIndent;
     //error = queries.get(paperId, "l_indent", paperIdIndent);
 
 

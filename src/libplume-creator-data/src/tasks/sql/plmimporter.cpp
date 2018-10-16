@@ -171,6 +171,8 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError &erro
 
 QSqlDatabase PLMImporter::createUserSQLiteFileFrom(const QString &type, const QString &fileName, int projectId, PLMError &error)
 {
+    Q_UNUSED(type)
+
     //create temp file
     QTemporaryFile tempFile;
     tempFile.open();

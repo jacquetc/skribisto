@@ -1,8 +1,11 @@
-import QtQuick 2.4
+import QtQuick 2.11
 
 WritingZoneForm {
-    property int textAreaWidth: textAreaWidth
-    property bool stretch: false
-    property bool minimapVisibility: false
+    textAreaWidth: 400
+    //property int textAreaLeftPos:
+    stretch: true
+    minimapVisibility: false
+    readonly property int textAreaLeftPos: base.width / 2 - textAreaWidth / 2
+    readonly property int textAreaRightPos: base.width / 2 + textAreaWidth / 2
 
 }

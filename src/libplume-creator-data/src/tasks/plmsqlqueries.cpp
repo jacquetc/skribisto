@@ -45,7 +45,7 @@ PLMSqlQueries::PLMSqlQueries(int projectId, const QString &tableName, PLMSqlQuer
 }
 
 PLMSqlQueries::PLMSqlQueries(QSqlDatabase sqlDB, const QString &tableName, const QString &idName):
-    m_tableName(tableName), m_idName(idName), m_sqlDB(sqlDB)
+    m_sqlDB(sqlDB), m_tableName(tableName), m_idName(idName)
 {
     qRegisterMetaType<DBType>("DBType");
 }
@@ -446,7 +446,7 @@ PLMError PLMSqlQueries::renumberSortOrder()
                        + " FROM " + m_tableName
                        + " ORDER BY l_sort_order"
                        ;
-    bool prepareOk = query.prepare(queryStr);
+    /*bool prepareOk = */query.prepare(queryStr);
 //    qDebug() << "prepareOk" << prepareOk;
 //    qDebug() << query.lastError().text();
     query.exec() ? error.setSuccess(true) : error.setSuccess(false);
