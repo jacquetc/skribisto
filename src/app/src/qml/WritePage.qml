@@ -35,5 +35,6 @@ WritePageForm {
         resizeHandle.anchors.right = resizeHandle.parent.left
     }
 
+
 }
 

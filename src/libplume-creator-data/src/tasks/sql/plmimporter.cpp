@@ -386,7 +386,7 @@ PLMError PLMImporter::executeSQLFile(const QString &fileName, QSqlDatabase &sqlD
         QRegularExpression re_commit("\\bcommit.*", QRegularExpression::CaseInsensitiveOption);
 
         //Check if query file is already wrapped with a transaction
-        bool isStartedWithTransaction = re_transaction.match(qList.at(0)).hasMatch();
+        bool isStartedWithTransaction = qMax(re_transaction.match(qList.at(0)).hasMatch(), re_transaction.match(qList.at(1)).hasMatch());
         if(!isStartedWithTransaction)
           sqlDB.transaction();
 

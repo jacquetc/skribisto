@@ -1,13 +1,4 @@
 #include "plmprojecthub.h"
-#include "tasks/plmprojectloadproject.h"
-#include "tasks/plmprojectsaveprojectas.h"
-#include "tasks/plmprojectsaveproject.h"
-#include "tasks/plmprojectcloseproject.h"
-#include "tasks/plmprojectcloseallprojects.h"
-#include "tasks/plmprojectgetprojectidlist.h"
-#include "tasks/plmprojectgetpath.h"
-#include "tasks/plmprojectsetpath.h"
-#include "tasks/plmprojectgetlastloaded.h"
 #include <QDebug>
 #include <QVariant>
 #include "tasks/plmprojectmanager.h"

@@ -1,3 +1,3 @@
 TEMPLATE = subdirs
 
-SUBDIRS += writetreecase
+#SUBDIRS += writetreecase

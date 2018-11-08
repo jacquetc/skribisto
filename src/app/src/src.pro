@@ -2,8 +2,7 @@ lessThan(QT_VERSION, 5.09.3) {
         error("Plume Creator requires Qt 5.9.3 or greater")
 }
 
-QT += qml quick quickcontrols2 svg
-
+QT += qml quick quickcontrols2 svg sql
 TEMPLATE = app
 
 CONFIG(debug, debug|release) {
@@ -136,30 +135,30 @@ QMAKE_INFO_PLIST = resources/mac/Info.plist
 
 }
 
-unix {
-# for AppImage :
+#unix {
+## for AppImage :
 
-# using shell_path() to correct path depending on platform
-# escaping quotes and backslashes for file paths
-copydata.commands += $(COPY_FILE) \"$$shell_path($$top_dir/resources/unix/applications/plume-creator.desktop)\" \"$$shell_path($$DESTDIR)\"
-copydata2.commands += $(COPY_FILE) \"$$shell_path($$top_dir/resources/images/icons/hicolor/scalable/apps/plume-creator.svg)\" \"$$shell_path($$DESTDIR)\"
+## using shell_path() to correct path depending on platform
+## escaping quotes and backslashes for file paths
+#copydata.commands += $(COPY_FILE) \"$$shell_path($$top_dir/resources/unix/applications/plume-creator.desktop)\" \"$$shell_path($$DESTDIR)\"
+#copydata2.commands += $(COPY_FILE) \"$$shell_path($$top_dir/resources/images/icons/hicolor/scalable/apps/plume-creator.svg)\" \"$$shell_path($$DESTDIR)\"
 
-first.depends = copydata
-copydata.depends = copydata2
-export(first.depends)
-export(copydata.commands)
-export(copydata2.commands)
-QMAKE_EXTRA_TARGETS += first copydata copydata2
-}
+#first.depends = copydata
+#copydata.depends = copydata2
+#export(first.depends)
+#export(copydata.commands)
+#export(copydata2.commands)
+#QMAKE_EXTRA_TARGETS += first copydata copydata2
+#}
 
 # add data lib :
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-data/src/release/ -lplume-creator-data
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libplume-creator-data/src/debug/ -lplume-creator-data
-else:unix: LIBS += -L$$OUT_PWD/../libplume-creator-data/src/ -lplume-creator-data
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/release/ -lplume-creator-data
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/debug/ -lplume-creator-data
+else:unix: LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/ -lplume-creator-data
 
-INCLUDEPATH += $$PWD/../libplume-creator-data/src
-DEPENDPATH += $$PWD/../libplume-creator-data/src
+INCLUDEPATH += $$PWD/../../libplume-creator-data/src
+DEPENDPATH += $$PWD/../../libplume-creator-data/src
 
 
 #win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../libplume-creator-data/src/release/libplume-creator-data.a
@@ -179,11 +178,6 @@ DISTFILES += \
     android/build.gradle \
     android/gradle/wrapper/gradle-wrapper.properties \
     android/gradlew.bat
-
-contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    ANDROID_EXTRA_LIBS = /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Sql.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickWidgets.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Xml.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickControls2.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickTemplates2.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Svg.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5QuickTest.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Quick.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Qml.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Test.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Gui.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Network.so /home/cyril/Devel/Qt/5.10.0/android_armv7/lib/libQt5Core.so
-}
-
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 }

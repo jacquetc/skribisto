@@ -21,7 +21,7 @@ INCLUDEPATH += $$PWD/../../../src
 DEPENDPATH += $$PWD/../../../src
 
 SOURCES += \
- tst_openprojectcase.cpp
+ tst_writetreecase.cpp
 
 RESOURCES += \
     ../../../../../resources/test/testfiles.qrc

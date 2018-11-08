@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
     // Allows qml styling
     qputenv("QT_STYLE_OVERRIDE", "");
 //TODO : add option for UI scale
-    qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
+    //qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
 
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

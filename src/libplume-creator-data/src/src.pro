@@ -47,8 +47,6 @@ SOURCES += \
     tasks/plmprojectmanager.cpp \
     tasks/sql/plmproject.cpp \
     plmerrorhub.cpp \
-    tasks/plmtaskerror.cpp \
-    tasks/plmprojectloadproject.cpp \
     tasks/plmsqlqueries.cpp \
     plmerror.cpp \
     plmsheethub.cpp \
@@ -61,14 +59,10 @@ SOURCES += \
     plmpluginloader.cpp
 
 HEADERS += \
-    tasks/plmtask.h \
     plmdata.h \
     plmsignalhub.h \
     plmpaperhub.h \
     plmprojecthub.h \
-    tasks/plmprojectcloseproject.h \
-    tasks/plmprojectloadproject.h \
-    tasks/plmprojectcloseallprojects.h \
     tasks/sql/plmexporter.h \
     tasks/sql/plmimporter.h \
     tasks/sql/plmproperty.h \
@@ -82,7 +76,6 @@ HEADERS += \
     tasks/sql/plmproject.h \
     tasks/plmprojectgetprojectidlist.h \
     plmerrorhub.h \
-    tasks/plmtaskerror.h \
     tools.h \
     tasks/plmprojectgetpath.h \
     tasks/plmprojectsetpath.h \

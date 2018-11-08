@@ -1,9 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>qtquickcontrols2.conf</file>
-        <file>qml/dockFrame.js</file>
         <file>qml/DockFrame.qml</file>
-        <file>qml/DockFrameForm.ui.qml</file>
         <file>qml/Globals.qml</file>
         <file>qml/main.qml</file>
         <file>qml/ProjectListItem.qml</file>
@@ -20,5 +18,10 @@
         <file>qml/WriteTreeViewForm.ui.qml</file>
         <file>qml/WritingZone.qml</file>
         <file>qml/WritingZoneForm.ui.qml</file>
+        <file>qml/DockHeader.qml</file>
+        <file>qml/DockHeaderForm.ui.qml</file>
+        <file>qml/DockRoller.qml</file>
+        <file>qml/WriteLeftDockForm.ui.qml</file>
+        <file>qml/WriteLeftDock.qml</file>
     </qresource>
 </RCC>

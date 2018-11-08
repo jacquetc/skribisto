@@ -79,7 +79,10 @@ build
 #Qt Creator
 *.autosave
 *.pro.user
+*.pro.user.*
 *.qbs.user
+*.qbs.user.*
+CMakeLists.txt.user
 
 # QML
 *.qmlc

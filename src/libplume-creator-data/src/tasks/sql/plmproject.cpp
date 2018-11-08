@@ -28,7 +28,6 @@
 #include <QSqlDriver>
 #include <QSqlRecord>
 #include <QSqlField>
-#include "../plmtaskerror.h"
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QTimer>
@@ -64,6 +63,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString &fileName) 
 
             IFKO(error){
                 //qWarning << error.getMessage()
+                m_projectId = -1;
                 qCritical() << "New project not created";
 
                 return;
