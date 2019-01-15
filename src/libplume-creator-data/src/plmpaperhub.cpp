@@ -111,6 +111,29 @@ QList<int> PLMPaperHub::getAllIds(int projectId) const
 }
 
 //------------------------------------------------------------
+///
+/// \brief PLMPaperHub::getOverallSize
+/// \return number of papers for all projects
+///
+int PLMPaperHub::getOverallSize()
+{
+    PLMError error;
+    QList<int> result;
+    foreach(int projectId, plmProjectManager->projectIdList()){
+        PLMSqlQueries queries(projectId, m_tableName);
+        error = queries.getIds(result);
+        IFOK(error) {
+            return result.size();
+        }
+        IFKO(error) {
+            emit errorSent(error);
+            return 0;
+        }
+    }
+    return 0;
+}
+
+//------------------------------------------------------------
 
 QHash<int, int> PLMPaperHub::getAllSortOrders(int projectId) const
 {
@@ -713,7 +736,7 @@ PLMError PLMPaperHub::removePaper(int projectId, int targetId)
     queries.beginTransaction();
     PLMError error = queries.remove(targetId);
     IFOKDO(error, queries.renumberSortOrder())
-    IFKO(error) {
+            IFKO(error) {
         queries.rollback();
     }
     IFOK(error) {

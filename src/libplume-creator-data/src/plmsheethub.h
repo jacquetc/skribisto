@@ -27,7 +27,9 @@
 
 class EXPORT PLMSheetHub : public PLMPaperHub
 {
+    Q_OBJECT
 public:
+
 
 
     PLMSheetHub(QObject *parent);

@@ -4,6 +4,18 @@ import QtQuick.Controls 2.4
 
 WriteLeftDockForm {
 
+    property bool folded: state === "leftDockFolded" ? true : false
+    onFoldedChanged:  folded ? fold(): unfold()
+
+    function fold(){
+        state = "leftDockFolded"
+
+    }
+    function unfold(){
+        state = "leftDockUnfolded"
+
+    }
+
     Component{
         id: dockHeaderComp
         RowLayout {
@@ -41,11 +53,8 @@ WriteLeftDockForm {
     transitions: [
         Transition {
 
-            //ParallelAnimation {
+            PropertyAnimation { properties: "implicitWidth"; easing.type: Easing.InOutQuad;duration: 500  }
 
-            PropertyAnimation { properties: "anchors.bottomMargin"; easing.type: Easing.InOutQuad;duration: 500  }
-            //PropertyAnimation { properties: "visible"; easing.type: Easing.InOutQuad;duration: 1000  }
-            //}
 
         }
     ]

@@ -677,6 +677,17 @@ QStringList PLMUtils::Dir::addonsPathsList()
         if (dir.isReadable()) {
             list.append(dir.path());
         }
+    dir.cdUp();
+
+    if (dir.cd("plugins"))
+        if (dir.isReadable()) {
+            list.append(dir.path());
+
+            QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot );
+            foreach(const QString &pluginDir, dirList){
+                list.append(dir.path() + "/" + pluginDir);
+            }
+        }
 
     dir.setPath(":/");
 
@@ -748,6 +759,8 @@ QStringList PLMUtils::Dir::addonsPathsList()
     }
 
 #endif // ifdef Q_OS_MAC
+
+    qDebug() << list;
     return list;
 }
 

@@ -51,6 +51,7 @@ public:
     QHash<int, int> getAllSortOrders(int projectId) const;
     QHash<int, int>  getAllIndents(int projectId) const;
     QList<int>  getAllIds(int projectId) const;
+    int getOverallSize();
     PLMError setId(int projectId, int sheetId, int newId);
     PLMError setTitle(int projectId, int sheetId, const QString &newTitle);
     QString getTitle(int projectId, int sheetId) const;
@@ -59,8 +60,8 @@ public:
     int getIndent(int projectId, int sheetId) const;
     PLMError setSortOrder(int projectId, int sheetId, int newSortOrder);
     int getSortOrder(int projectId, int sheetId) const;
-    PLMError setContent(int projectId, int sheetId, const QString &newContent);
-    QString getContent(int projectId, int sheetId) const;
+    Q_INVOKABLE PLMError setContent(int projectId, int sheetId, const QString &newContent);
+    Q_INVOKABLE QString getContent(int projectId, int sheetId) const;
     PLMError setDeleted(int projectId, int sheetId, bool newDeletedState);
     bool getDeleted(int projectId, int sheetId) const;
     PLMError setCreationDate(int projectId, int sheetId, const QDateTime &newDate);

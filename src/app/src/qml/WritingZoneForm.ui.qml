@@ -1,118 +1,160 @@
-import QtQuick 2.9
-import QtQuick.Controls 2.2
+import QtQuick 2.12
+import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.3
 
 Item {
     id: base
     property alias text: textArea.text
-    property alias text_base: text_base
     property bool stretch: stretch
-    property int textAreaWidth: 300
+    property int textAreaWidth
+    property int maximumTextAreaWidth
     property bool minimapVisibility: minimapVisibility
-    visible: true
+    property alias scrollView: scrollView
+    property alias textArea: textArea
+    property alias flickable: flickable
+    property alias internalScrollBar: internalScrollBar
+    property int scrollBarVerticalPolicy: ScrollBar.AsNeeded
+    property alias leftScrollItem: leftScrollItem
+    property alias leftTouch1: leftTouch1
+    property alias leftScrollTouchArea: leftScrollTouchArea
+    property alias leftScrollMouseArea: leftScrollMouseArea
 
     Pane {
         id: pane
         anchors.fill: parent
 
-        Item {
-            id: text_base
-            anchors.right: parent.right
-            anchors.left: parent.left
-            anchors.bottom: parent.bottom
-            anchors.top: parent.top
-            anchors.rightMargin: 0
-            anchors.leftMargin: 0
-            anchors.topMargin: 0
-            anchors.bottomMargin: 0
-
-            ColumnLayout {
-                id: columnLayout
+        //padding: 0
+        ColumnLayout {
+            id: columnLayout
+            spacing: 1
+            anchors.fill: parent
+            RowLayout {
+                id: rowLayout
                 spacing: 1
-                anchors.fill: parent
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                Item {
+                    id: leftScrollItem
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    MultiPointTouchArea {
+                        id: leftScrollTouchArea
+                        z: 1
+                        anchors.fill: parent
+                        mouseEnabled: false
+                        maximumTouchPoints: 1
+                        touchPoints: [
+                            TouchPoint {
+                                id: leftTouch1
+                            }
+                        ]
+                    }
+                    MouseArea {
+                        id: leftScrollMouseArea
+                        z: 0
+                        anchors.fill: parent
+
+                    }
+                }
                 ScrollView {
                     id: scrollView
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.fillWidth: true
                     Layout.fillHeight: true
+
                     //Layout.preferredWidth: textWidth
                     padding: 2
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                    ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: scrollBarVerticalPolicy
+                    clip: true
 
                     //contentWidth: scrollView.width
-                    TextArea {
-                        id: textArea
-                        textFormat: Text.RichText
-                        focus: true
-                        selectByMouse: true
-                        wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
+                    Flickable {
+                        id: flickable
+                        flickableDirection: Flickable.VerticalFlick
+                        boundsBehavior: Flickable.StopAtBounds
+                        interactive: true
+                        clip: true
+                        ScrollBar.vertical: ScrollBar {
+                            id: internalScrollBar
+                            parent: flickable.parent
+                        }
+                        TextArea.flickable: TextArea {
+                            id: textArea
+                            renderType: Text.NativeRendering
+                            font.preferShaping: false
+                            font.kerning: false
+                            clip: true
+                            textFormat: Text.PlainText
+                            focus: true
+                            selectByMouse: true
+                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
 
-                        background: Rectangle {
-                            border.color: "transparent"
+                            //                        background: Rectangle {
+                            //                            border.color: "transparent"
+                            //                        }
                         }
                     }
                 }
+
+                Item {
+                    id: rightScrollItem
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                }
             }
         }
-
-        //            ScrollBar {
-        //                id: minimap
-        //                visible: false
-        //                Layout.minimumWidth: 50
-        //                Layout.maximumWidth: 100
-        //                Layout.fillWidth: true
-        //                Layout.fillHeight: true
-        //                active: true
-        //                size: scrollView.height / textArea.height
-        //                orientation: Qt.Vertical
-
-        //                background: Rectangle {
-        //                    implicitWidth: 6
-        //                    implicitHeight: 20
-        //                    color: "#81e111"
-        //                }
-        //                contentItem: Rectangle {
-        //                    implicitWidth: 6
-        //                    implicitHeight: 20
-        //                    radius: width / 4
-        //                    visible: true
-        //                    color: minimap.pressed ? "#81e889" : "#c2f4c6"
-        //                }
-        //            }
     }
     states: [
         State {
             name: "noStretch"
             when: stretch == false
 
-            AnchorChanges {
-                target: text_base
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.left: undefined
-                anchors.right: undefined
-            }
+            //            AnchorChanges {
+            //                target: textArea
+            //                anchors.horizontalCenter: parent.horizontalCenter
+            //                anchors.left: undefined
+            //                anchors.right: undefined
+            //            }
+            //            PropertyChanges {
+            //                target: textArea
+            //                implicitWidth: textAreaWidth
+            //            }
             PropertyChanges {
-                target: text_base
-                width: textAreaWidth
+                target: scrollView
+                implicitWidth: textAreaWidth
+                Layout.fillWidth: false
             }
         },
         State {
             name: "stretch"
             when: stretch == true
 
-            AnchorChanges {
-                target: text_base
-                anchors.horizontalCenter: undefined
-                anchors.left: parent.left
-                anchors.right: parent.right
+            //            AnchorChanges {
+            //                target: textArea
+            //                anchors.horizontalCenter: undefined
+            //                anchors.left: parent.left
+            //                anchors.right: parent.right
 
-            }
+            //            }
+            //            PropertyChanges {
+            //                target: textArea
+            //                implicitWidth: 0
+            //            }
             PropertyChanges {
-                target: text_base
-                width: -1
+                target: scrollView
+                implicitWidth: 0
+                Layout.fillWidth: true
             }
-
         }
     ]
 }
+
+
+
+
+
+
+/*##^## Designer {
+    D{i:0;autoSize:true;height:480;width:640}
+}
+ ##^##*/

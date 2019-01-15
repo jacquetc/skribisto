@@ -212,12 +212,12 @@ void WriteCase::getIndent()
 void WriteCase::setDeleted()
 {
     QSignalSpy spy(plmdata->sheetHub(), SIGNAL(deletedChanged(int, int, bool)));
-    plmdata->sheetHub()->setDeleted(m_currentProjectId, 1, true);
+    plmdata->sheetHub()->setDeleted(m_currentProjectId, 2, true);
     QVERIFY(spy.count() > 1);
     // make sure the signal was emitted exactly one time
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
     QVERIFY(arguments.at(2).toBool() == true);
-    bool value = plmdata->sheetHub()->getDeleted(m_currentProjectId, 1);
+    bool value = plmdata->sheetHub()->getDeleted(m_currentProjectId, 2);
     QCOMPARE(value, true);
 }
 
@@ -361,7 +361,7 @@ void WriteCase::addPaper()
     QVERIFY(lastId > 1);
     int sortOrder1 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, 1);
     int sortOrder2 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, lastId);
-    QVERIFY(sortOrder1 + 2000 == sortOrder2);
+    QVERIFY(sortOrder1 + 1000 == sortOrder2);
     error = plmdata->sheetHub()->addPaperBelow(m_currentProjectId, 100);
     lastId = plmdata->sheetHub()->getLastAddedId();
     QVERIFY(error.isSuccess() == true);

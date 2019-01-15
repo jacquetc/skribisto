@@ -17,6 +17,9 @@
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QLabel" name="label">
+      <property name="locale">
+       <locale language="English" country="UnitedStates"/>
+      </property>
       <property name="text">
        <string>French</string>
       </property>

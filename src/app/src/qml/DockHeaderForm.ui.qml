@@ -6,102 +6,107 @@ Item {
     id: base
     width: 400
     height: 400
-    property bool folded: !hSwitch.checked
-    property alias dockTitle: dockTitle
-    property alias vDockTitle: vDockTitle
+    property bool folded: true
+    property alias title: dockTitle.text
 
     Rectangle {
         id: rectangle
         color: "#ffffff"
         anchors.fill: parent
 
-        RowLayout {
-            id: rowLayout
-            spacing: 1
-            anchors.fill: parent
-
-            Switch {
-                id: hSwitch
-                padding: 1
-                scale: 0.5
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            }
-
-            Text {
-                id: dockTitle
-                text: qsTr("Text")
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-
-                font.pixelSize: 12
-            }
+        Text {
+            id: dockTitle
+            text: qsTr("Text")
+            anchors.left: hSwitch.right
+            anchors.leftMargin: -6
+            anchors.right: parent.right
+            anchors.rightMargin: 0
+            anchors.bottom: parent.top
+            anchors.bottomMargin: -15
+            anchors.top: parent.top
+            anchors.topMargin: 0
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            font.pixelSize: 12
         }
 
-        ColumnLayout {
-            id: columnLayout
-            spacing: 1
-            anchors.fill: parent
+        Switch {
+            id: hSwitch
+            width: 61
+            height: 30
+            scale: 0.5
+            anchors.top: parent.top
+            anchors.topMargin: -7
+            anchors.left: parent.left
+            anchors.leftMargin: -13
+            //                implicitHeight: height * scale
+            //                implicitWidth: width * scale
+            padding: 1
+            checked: !folded
+            onCheckedChanged: checked ? folded = false : folded = true
+        }
 
-            Item {
-                id: item1
-                width: hSwitch.width
-                height: hSwitch.height
-            }
-
-            Text {
-                id: vDockTitle
-                text: qsTr("Text")
-                rotation: 270
-                font.pixelSize: 12
-            }
-
+        Text {
+            id: vDockTitle
+            text: dockTitle.text
+            anchors.right: hSwitch.left
+            anchors.rightMargin: 0
+            anchors.bottom: parent.left
+            anchors.bottomMargin: -15
+            anchors.top: parent.left
+            anchors.topMargin: 0
+            anchors.left: parent.bottom
+            anchors.leftMargin: 0
+            antialiasing: true
+            transformOrigin: Item.Center
+            rotation: 270
+            font.pixelSize: 12
         }
     }
     states: [
         State {
+            name: "unfolded"
+            when: folded === false
+
+            PropertyChanges {
+                target: dockTitle
+                visible: false
+            }
+            PropertyChanges {
+                target: vDockTitle
+                visible: true
+            }
+
+            PropertyChanges {
+                target: hSwitch
+                anchors.topMargin: 1
+                anchors.leftMargin: -21
+                rotation: 90
+            }
+        },
+        State {
             name: "folded"
-            when: hSwitch.checked === false
+            when: folded === true
 
             PropertyChanges {
                 target: vDockTitle
                 visible: false
             }
             PropertyChanges {
-                target: base
-                implicitHeight: 30
-                implicitWidth: 0x0
-            }
-
-
-        },
-        State {
-            name: "unfolded"
-            when: hSwitch.checked === true
-
-            PropertyChanges {
                 target: dockTitle
-                visible: false
+                anchors.topMargin: 84
+                visible: true
             }
-
-            PropertyChanges {
-                target: hSwitch
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            }
-            PropertyChanges {
-                target: base
-                implicitHeight: 0x0
-                implicitWidth: 30
-            }
-
         }
     ]
 }
 
+
+
+
+
+
 /*##^## Designer {
-    D{i:4;anchors_height:100;anchors_width:100}D{i:7;anchors_height:100;anchors_width:100}
-D{i:1;anchors_height:200;anchors_width:200}
+    D{i:13;anchors_x:0;anchors_y:84}D{i:12;anchors_x:0;anchors_y:0}D{i:23;anchors_x:0;anchors_y:192}
 }
  ##^##*/

@@ -31,12 +31,12 @@ set(data_SRCS
     tasks/sql/plmproject.cpp
     tasks/sql/plmproperty.cpp
     tasks/sql/plmupgrader.cpp
-    tasks/sql/tree/plmdbpaper.cpp
-    tasks/sql/tree/plmdbtree.cpp
+        tasks/sql/tree/plmdbpaper.cpp
+        tasks/sql/tree/plmdbtree.cpp
     tasks/sql/tree/plmnotetree.cpp
     tasks/sql/tree/plmsheettree.cpp
     tasks/sql/tree/plmtree.cpp
-
+    plmsheetlistmodel.cpp
 
 )
 set(data_HDR
@@ -70,6 +70,7 @@ set(data_HDR
     tasks/sql/tree/plmnotetree.h
     tasks/sql/tree/plmsheettree.h
     tasks/sql/tree/plmtree.h
+    plmsheetlistmodel.h
 
 )
 

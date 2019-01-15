@@ -128,6 +128,16 @@ PLMError PLMProjectHub::getError()
     return m_error;
 }
 
+bool PLMProjectHub::isThereAnyOpenedProject()
+{
+    QList<int> list = plmProjectManager->projectIdList();
+    if (list.isEmpty()) {
+        return false;
+    }
+    return true;
+
+}
+
 void PLMProjectHub::setError(const PLMError &error)
 {
     m_error = error;

@@ -3,7 +3,9 @@ import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.3
 
 Item {
-    id: item1
+    id: base
+    property alias listView: listView
+    property bool selectionMode: false
 
     Pane {
         id: pane
@@ -16,6 +18,7 @@ Item {
 
             ScrollView {
                 id: flickable
+                clip: true
                 Layout.minimumHeight: 50
                 Layout.maximumHeight: 50
                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
@@ -31,11 +34,12 @@ Item {
                     }
 
                     ToolButton {
-                        id: toolButton1
+                        id: toolButton2
                         text: qsTr("Tool Button")
                     }
+
                     ToolButton {
-                        id: toolButton2
+                        id: toolButton1
                         text: qsTr("Tool Button")
                     }
                     ToolButton {
@@ -56,11 +60,24 @@ Item {
                 Layout.fillHeight: true
                 delegate: ItemDelegate {
                     x: 5
-                    width: 80
+                    width: listView.width - 5
                     height: 40
                     Row {
                         id: row1
                         spacing: 10
+                        anchors.fill: parent
+//                        Repeater{
+//                            model: indent
+//                            Item {
+//                                width: 20; height: 20
+//                            }
+//                        }
+                        CheckBox {
+                            //visible: base.selectionMode ? true : false
+
+                            width: 20; height: 20
+                        }
+
                         Image {
                             id: image
                             width: 40
@@ -84,7 +101,6 @@ Item {
                                 }
 
                                 Text {
-                                    id: text1
                                     text: tag
                                     font.pixelSize: 12
                                 }
@@ -92,35 +108,12 @@ Item {
                         }
                     }
                 }
-                model: ListModel {
-                    ListElement {
-                        name: "Grey"
-                        colorCode: "grey"
-                        tag: 'ee'
-                    }
-
-                    ListElement {
-                        name: "Red"
-                        colorCode: "red"
-                        tag: 'ee'
-                    }
-
-                    ListElement {
-                        name: "Blue"
-                        colorCode: "blue"
-                        tag: 'ee'
-                    }
-
-                    ListElement {
-                        name: "Green"
-                        colorCode: "green"
-                        tag: 'ee'
-                    }
-                }
             }
         }
     }
 }
+
+
 
 
 /*##^## Designer {

@@ -3,6 +3,7 @@ lessThan(QT_VERSION, 5.09.3) {
 }
 
 QT += qml quick quickcontrols2 svg sql
+
 TEMPLATE = app
 
 CONFIG(debug, debug|release) {
@@ -42,6 +43,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #LIBS += -L externals/zlib
 #win32: LIBS += -lzdll
 #!win32: LIBS += -lz
+#LIBS += -lkirigami
+
 
 SOURCES += main.cpp
 
@@ -134,7 +137,6 @@ QMAKE_INFO_PLIST = resources/mac/Info.plist
 
 
 }
-
 #unix {
 ## for AppImage :
 
@@ -186,11 +188,15 @@ DISTFILES += \
     qml/dockFrame.js \
     qml/settings.js \
     qml/DockFrameForm.ui.qml \
+    qml/DockHeaderForm.ui.qml \
+    qml/DockHeader.qml \
+    qml/DockRoller.qml \
     qml/ProjectListItemForm.ui.qml \
     qml/RootPageForm.ui.qml \
     qml/WelcomePageForm.ui.qml \
     qml/WritePageForm.ui.qml \
     qml/WriteTreeViewForm.ui.qml \
+    qml/WriteLeftDockForm.ui.qml \
     qml/WritingZoneForm.ui.qml \
     qml/qmldir \
     qml/DockFrame.qml \
@@ -201,6 +207,7 @@ DISTFILES += \
     qml/WelcomePage.qml \
     qml/WritePage.qml \
     qml/WriteTreeView.qml \
+    qml/WriteLeftDock.qml \
     qml/WritingZone.qml
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {

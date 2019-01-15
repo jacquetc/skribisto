@@ -1,2 +1,2 @@
-add_subdirectory(auto/writetreecase)
+#add_subdirectory(auto/writetreecase)
 

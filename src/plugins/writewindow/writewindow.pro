@@ -38,12 +38,12 @@ DISTFILES += \
 
 CODECFORTR = UTF-8
 
-TRANSLATIONS = translations/plmwritewindow_fr_FR.ts \
-translations/plmwritewindow_it_IT.ts \
-translations/plmwritewindow_de_DE.ts \
-translations/plmwritewindow_sp_SP.ts \
-translations/plmwritewindow_ru_RU.ts \
-translations/plmwritewindow_pt_BR.ts
+#TRANSLATIONS = translations/plmwritewindow_fr_FR.ts \
+#translations/plmwritewindow_it_IT.ts \
+#translations/plmwritewindow_de_DE.ts \
+#translations/plmwritewindow_sp_SP.ts \
+#translations/plmwritewindow_ru_RU.ts \
+#translations/plmwritewindow_pt_BR.ts
 
 FORMS += \
     plmwindow.ui

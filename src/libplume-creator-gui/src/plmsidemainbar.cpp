@@ -33,6 +33,8 @@ PLMSideMainBar::PLMSideMainBar(QWidget *parent) : QWidget(parent),
     actionGroup = new QActionGroup(this);
     this->loadPlugins();
 
+    //select
+
 
 }
 
@@ -44,8 +46,6 @@ void PLMSideMainBar::loadPlugins()
 
     //ordering
     QMap<int, QAction *> actionMap;
-
-
     foreach (PLMSideMainBarIconInterface *plugin, pluginList) {
         QList<PLMSideBarAction> actionList = plugin->sideMainBarActions(this);
 

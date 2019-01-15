@@ -20,8 +20,8 @@
         <file>qml/WritingZoneForm.ui.qml</file>
         <file>qml/DockHeader.qml</file>
         <file>qml/DockHeaderForm.ui.qml</file>
-        <file>qml/DockRoller.qml</file>
         <file>qml/WriteLeftDockForm.ui.qml</file>
         <file>qml/WriteLeftDock.qml</file>
+        <file>qml/Minimap.qml</file>
     </qresource>
 </RCC>

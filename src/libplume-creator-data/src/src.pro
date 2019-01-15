@@ -77,11 +77,6 @@ HEADERS += \
     tasks/plmprojectgetprojectidlist.h \
     plmerrorhub.h \
     tools.h \
-    tasks/plmprojectgetpath.h \
-    tasks/plmprojectsetpath.h \
-    tasks/plmprojectsaveprojectas.h \
-    tasks/plmprojectsaveproject.h \
-    tasks/plmprojectgetlastloaded.h \
     plume_creator_data_global.h \
     tasks/plmsqlqueries.h \
     plmerror.h \

@@ -1,109 +1,223 @@
 import QtQuick 2.11
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.3
+import "."
 
-
-//import org.kde.kirigami 2.4 as Kirigami
 Item {
     id: base
-    property alias writingZone: writingZone
-    property alias base: base
     width: 1000
     height: 600
+    property alias compactHeaderPane: compactHeaderPane
+    property alias compactRightDockShowButton: compactRightDockShowButton
+    property alias compactLeftDockShowButton: compactLeftDockShowButton
+    property alias leftDockMenuGroup: leftDockMenuGroup
+    property alias leftDockResizeButton: leftDockResizeButton
+    property alias leftDockMenuButton: leftDockMenuButton
     property alias leftDock: leftDock
-    property alias resizeHandle: resizeHandle
-    property alias resizeHandleMouseArea: resizeHandleMouseArea
+    property alias leftDockShowButton: leftDockShowButton
+    property alias minimap: minimap
+    property alias middleBase: middleBase
+    property alias writingZone: writingZone
+    property alias base: base
+    property int middleBasePreferredWidth
 
-    Pane {
-        id: pane
-        padding: 3
-        anchors.fill: parent
-
-        RowLayout {
-            id: rowLayout
+        ColumnLayout {
+            id: columnLayout
             spacing: 0
             anchors.fill: parent
 
-            WritingZone {
-                id: writingZone
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                Layout.fillHeight: true
+            Pane {
+                id: compactHeaderPane
+                width: 200
+                height: 200
+                padding: 2
+                Layout.fillHeight: false
+                Layout.preferredHeight: 50
                 Layout.fillWidth: true
-            }
-        }
 
-        WriteLeftDock {
-            id: leftDock
-            contentWidth: writingZone.textAreaLeftPos
-            anchors.rightMargin: -writingZone.textAreaLeftPos
-            anchors.right: parent.left
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            anchors.top: parent.top
-
-
-        }
-
-        Item {
-            id: rightDock
-            anchors.leftMargin: writingZone.textAreaRightPos
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.topMargin: 0
-            anchors.right: parent.right
-            anchors.rightMargin: 0
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 0
-
-            ScrollView {
-                id: scrollView1
-                anchors.fill: parent
-                contentWidth: writingZone.width - writingZone.textAreaRightPos
-
-                ColumnLayout {
-                    id: columnLayout1
+                RowLayout {
+                    id: rowLayout1
+                    spacing: 2
                     anchors.fill: parent
+                    RowLayout {
+                        id: rowLayout2
+                        spacing: 2
+                        Layout.alignment:  Qt.AlignLeft | Qt.AlignTop
+                        Button {
+                            id : compactLeftDockShowButton
+                            Layout.preferredHeight: 50
+                            Layout.preferredWidth: 50
+                            flat: true
+                            Layout.alignment:  Qt.AlignLeft | Qt.AlignTop
+
+
+                        }
+                    }
+                    RowLayout {
+                        id: rowLayout3
+                        spacing: 2
+                        Layout.alignment:  Qt.AlignRight | Qt.AlignTop
+                        Button {
+                            id : compactRightDockShowButton
+                            Layout.preferredHeight: 50
+                            Layout.preferredWidth: 50
+                            flat: true
+                            Layout.alignment:  Qt.AlignRight | Qt.AlignTop
+
+
+                        }
+                    }
                 }
             }
-        }
 
-        Rectangle {
-            id: resizeHandle
-            color: "#00000000"
-            z: 1
-            anchors.leftMargin: writingZone.textAreaLeftPos - 3
-            anchors.left: parent.left
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 0
-            anchors.top: parent.top
-            anchors.topMargin: 0
-            anchors.rightMargin: -writingZone.textAreaLeftPos
-            anchors.right: parent.left
+            RowLayout {
+                id: rowLayout
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                spacing: 0
 
-            MouseArea {
-                id: resizeHandleMouseArea
-                anchors.fill: parent
-                hoverEnabled: true
+                Item {
+                    id: leftBase
+                    Layout.minimumWidth: 200
+                    visible: !Globals.compactSize
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: Globals.compactSize ?  -1 : base.width / 6
+                    z: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+
+                        WriteLeftDock {
+                            id: leftDock
+                            Layout.fillHeight: true
+                        }
+                        ColumnLayout {
+                            Layout.alignment:  Qt.AlignLeft | Qt.AlignTop
+                            Layout.maximumWidth: 60
+                            Button {
+                                id : leftDockShowButton
+                                Layout.preferredHeight: 50
+                                Layout.preferredWidth: 50
+                                flat: true
+                                Layout.alignment:  Qt.AlignLeft | Qt.AlignTop
+
+
+                            }
+
+                            Button {
+                                id : leftDockMenuButton
+                                checkable: true
+                                Layout.preferredHeight: 50
+                                Layout.preferredWidth: 50
+                                flat: true
+                                Layout.alignment:  Qt.AlignLeft | Qt.AlignTop
+
+
+                            }
+
+                            ColumnLayout {
+                                id : leftDockMenuGroup
+                                Layout.alignment:  Qt.AlignLeft | Qt.AlignTop
+
+                                Button {
+                                    id : leftDockResizeButton
+                                    Layout.preferredHeight: 50
+                                    Layout.preferredWidth: 50
+                                    flat: true
+                                    Layout.alignment:  Qt.AlignLeft | Qt.AlignTop
+
+
+                                }
+
+
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    id: middleBase
+                    width: 400
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 200
+                    Layout.fillWidth: Globals.compactSize
+                    Layout.preferredWidth: Globals.compactSize ?  -1 : base.width / 3 * 2
+
+                    WritingZone {
+                        id: writingZone
+                        anchors.fill: parent
+                    }
+                }
+
+                Item {
+
+                    id: rightBase
+                    z: 1
+                    Layout.minimumHeight: 300
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    visible: !Globals.compactSize
+                    Layout.minimumWidth: 200
+                    Layout.fillHeight: true
+                    Layout.fillWidth: false
+                    Layout.preferredWidth: Globals.compactSize ?  -1 : base.width / 6
+
+                    RowLayout {
+                        anchors.fill: parent
+
+
+                        Minimap {
+                            Layout.fillHeight: true
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+
+                            id: minimap
+                            //width: minimapFlickable.width
+                            //pageSize: (writingZone.flickable.height) / (writingZone.textArea.contentHeight + 16)
+                            //textScale: minimapFlickable.height / writingZone.flickable.contentHeight
+                            text: writingZone.textArea.text
+                            sourceWidth: writingZone.textArea.width
+                            sourcePointSize: writingZone.textArea.font.pointSize
+                        }
+
+                        //                ScrollBar {
+                        //                    id: minimapScrollBar
+                        //                    visible: true
+                        //                    active: true
+                        //                    background:ScrollView {
+                        //                        TextEdit {
+                        //                            scale: minimapFlickable.height / writingZone.flickable.contentHeight
+                        //                            textFormat: TextEdit.RichText
+                        //                            visible: true
+                        //                            readOnly: true
+                        //                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
+
+                        //                            text: writingZone.textArea.text
+                        //                        }
+                        //}
+
+                        //                    contentItem: Rectangle {
+                        //                        id: content
+                        //                        implicitWidth: 6
+                        //                        implicitHeight: 20
+                        //                        radius: 5
+                        //                        visible: true
+                        //                        border.color: "red"
+                        //                        color: minimapScrollBar.pressed ? "#81e889" : "transparent"
+                        //                    }
+                        //                }
+
+                    }
+                }
             }
-        }
-    }
-    states: [
-        State {
-            name: "hoveringResizeHandle"
-            when: resizeHandleMouseArea.containsMouse | resizeHandleMouseArea.pressed
 
-            PropertyChanges {
-                target: resizeHandle
-                color: "#ffa369"
-            }
         }
 
-    ]
 }
 
 
+
+
 /*##^## Designer {
-    D{i:6;anchors_height:200;anchors_width:200}D{i:9;anchors_height:200;anchors_width:200}
-D{i:8;anchors_height:200;anchors_width:200}
+    D{i:17;anchors_height:100;anchors_width:100}
 }
  ##^##*/

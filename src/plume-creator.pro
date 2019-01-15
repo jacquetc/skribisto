@@ -12,7 +12,7 @@ app.depends = libplume-creator-data
 #app.depends = 3rdparty
 plugins.depends = app
 
-#TRANSLATIONS = translations/plume-creator_fr_FR.ts \
+TRANSLATIONS = translations/plume-creator_fr_FR.ts \
 #translations/plume-creator_it_IT.ts \
 #translations/plume-creator_de_DE.ts \
 #translations/plume-creator_sp_SP.ts \

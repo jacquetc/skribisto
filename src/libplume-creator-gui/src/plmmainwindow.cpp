@@ -11,27 +11,44 @@
 #include <QSettings>
 #include <QByteArray>
 #include <QTimer>
-//#include <QQuickWidget>
+
+// #include <QQuickWidget>
 
 PLMMainWindow::PLMMainWindow(PLMData *data) :
-    QMainWindow(0), m_data(data),
-    ui(new Ui::PLMMainWindow)
+    QMainWindow(nullptr), ui(new Ui::PLMMainWindow), m_data(data)
 {
     PLMGuiPlugins::addGuiPlugins();
     ui->setupUi(this);
-    connect(ui->sideMainBar, &PLMSideMainBar::windowRaiseCalled, this, &PLMMainWindow::raiseWindow);
-    connect(ui->sideMainBar, &PLMSideMainBar::windowAttachmentCalled, this, &PLMMainWindow::attachWindow);
-    connect(ui->sideMainBar, &PLMSideMainBar::windowDetachmentCalled, this, &PLMMainWindow::detachWindow);
+    connect(ui->sideMainBar,
+            &PLMSideMainBar::windowRaiseCalled,
+            this,
+            &PLMMainWindow::raiseWindow);
+    connect(ui->sideMainBar,
+            &PLMSideMainBar::windowAttachmentCalled,
+            this,
+            &PLMMainWindow::attachWindow);
+    connect(ui->sideMainBar,
+            &PLMSideMainBar::windowDetachmentCalled,
+            this,
+            &PLMMainWindow::detachWindow);
 
-//    connect(PLMMessageHandler::instance(), &PLMMessageHandler::messageSent, this,
-//            &PLMMainWindow::displayMessage);
-    //    QQuickWidget *mQQuickWidget = new QQuickWidget(QUrl(QStringLiteral("qrc:///qml/sidePanelBar.qml")), this);
+    //    connect(PLMMessageHandler::instance(),
+    // &PLMMessageHandler::messageSent, this,
+    //            &PLMMainWindow::displayMessage);
+    //    QQuickWidget *mQQuickWidget = new
+    // QQuickWidget(QUrl(QStringLiteral("qrc:///qml/sidePanelBar.qml")), this);
     //    mQQuickWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
     //    ui->centralHorLayout->insertWidget(0,mQQuickWidget);
-//    connect(PLMMessageHandler::instance(), &PLMMessageHandler::messageSent, this,
-//            &PLMMainWindow::displayMessage);
-    connect(plmdata->projectHub(), SIGNAL(allProjectsClosed()), this, SLOT(clearFromAllProjects()));
-    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &PLMMainWindow::activate);
+    //    connect(PLMMessageHandler::instance(),
+    // &PLMMessageHandler::messageSent, this,
+    //            &PLMMainWindow::displayMessage);
+    connect(plmdata->projectHub(), SIGNAL(allProjectsClosed()), this,
+            SLOT(clearFromAllProjects()));
+    connect(plmdata->projectHub(),
+            &PLMProjectHub::projectLoaded,
+            this,
+            &PLMMainWindow::activate);
+
     // restore saved geometry
     QSettings settings;
     this->restoreGeometry(settings.value("geometry", "0").toByteArray());
@@ -45,80 +62,83 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
 
 void PLMMainWindow::init()
 {
-
-    //this->readSettings();
-    //load plugins
-    //TEMP
+    // this->readSettings();
+    // load plugins
+    // TEMP
 }
+
 PLMMainWindow::~PLMMainWindow()
 {
     delete ui;
 }
 
 void PLMMainWindow::clearFromAllProjects()
-{
-}
+{}
 
 void PLMMainWindow::activate()
-{
-}
+{}
 
-
-
-//------------------------------------------
+// ------------------------------------------
 void PLMMainWindow::loadPlugins()
 {
     // plugins are already loaded in plmpluginloader
-    QList<PLMWindowInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMWindowInterface>();
+    QList<PLMWindowInterface *> pluginList =
+        PLMPluginLoader::instance()->pluginsByType<PLMWindowInterface>();
 
-    //setup :
-    foreach (PLMWindowInterface *plugin, pluginList) {
+    // setup :
+    foreach(PLMWindowInterface * plugin, pluginList) {
         plugin->init();
         PLMBaseWindow *window = plugin->window();
-        connect(window, &PLMBaseWindow::attachmentCalled, ui->sideMainBar, &PLMSideMainBar::attachWindowByName);
+        connect(window,
+                &PLMBaseWindow::attachmentCalled,
+                ui->sideMainBar,
+                &PLMSideMainBar::attachWindowByName);
         ui->stackedWidget->addWidget(window);
         QString windowName = window->property("name").toString();
         hash_nameAndWindow.insert(windowName, window);
-
     }
 }
-//------------------------------------------
 
-void PLMMainWindow::raiseWindow(const QString &windowName)
+// ------------------------------------------
+
+void PLMMainWindow::raiseWindow(const QString& windowName)
 {
     QMainWindow *window = hash_nameAndWindow.value(windowName);
-    ui->stackedWidget->setCurrentWidget(window);
 
+    ui->stackedWidget->setCurrentWidget(window);
 }
 
-void PLMMainWindow::attachWindow(const QString &windowName)
+void PLMMainWindow::attachWindow(const QString& windowName)
 {
     QMainWindow *window = hash_nameAndWindow.value(windowName);
+
     ui->stackedWidget->addWidget(window);
     ui->stackedWidget->setCurrentWidget(window);
     ui->sideMainBar->setButtonChecked(windowName);
-
 }
 
-void PLMMainWindow::detachWindow(const QString &windowName)
+void PLMMainWindow::detachWindow(const QString& windowName)
 {
     QMainWindow *window = hash_nameAndWindow.value(windowName);
+
     ui->stackedWidget->removeWidget(window);
     window->setParent(0);
     window->show();
 
-    QString key = hash_nameAndWindow.key(dynamic_cast<QMainWindow *>(ui->stackedWidget->currentWidget()));
+    QString key =
+        hash_nameAndWindow.key(dynamic_cast<QMainWindow *>(ui->stackedWidget->
+                                                           currentWidget()));
     ui->sideMainBar->setButtonChecked(key);
-
-
 }
+
 /*
    void PLMMainWindow::addPluginPanels()
    {
 
     // load plugins :
 
-    QList<PanelInterface *> panels = PluginLoader::instance()->pluginsByType<PanelInterface>();
+    QList<PanelInterface *> panels =
+       PluginLoader::instance()->pluginsByType<PanelInterface>();
 
 
     foreach (PanelInterface *panel, panels){
@@ -132,24 +152,26 @@ void PLMMainWindow::detachWindow(const QString &windowName)
 
    }
  */
-//---------------------------------------------------------------------------
 
-//------------------------------------------
+// ---------------------------------------------------------------------------
 
-//---------------------------------------------------------------------------
+// ------------------------------------------
+
+// ---------------------------------------------------------------------------
 void PLMMainWindow::closeEvent(QCloseEvent *event)
 {
-    //TODO: temp :
-    //writeSettings();
+    // TODO: temp :
+    // writeSettings();
     qApp->closeAllWindows();
     event->accept();
     return;
+
     //    if(!core->isProjectStarted())
-//    {
-//        //writeSettings();
-//        event->accept();
-//        return;
-//    }
+    //    {
+    //        //writeSettings();
+    //        event->accept();
+    //        return;
+    //    }
     QMessageBox msgBox(this);
     msgBox.setText(tr("Do you want to quit ?"));
     msgBox.setInformativeText(tr("Your changes are already saved."));
@@ -159,7 +181,8 @@ void PLMMainWindow::closeEvent(QCloseEvent *event)
 
     switch (ret) {
     case QMessageBox::Ok:
-        //writeSettings();
+
+        // writeSettings();
         //        hub->closeCurrentProject();
         qApp->closeAllWindows();
         event->accept();
@@ -170,12 +193,14 @@ void PLMMainWindow::closeEvent(QCloseEvent *event)
         break;
 
     default:
+
         // should never be reached
         break;
     }
 }
 
-//---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+
 /*
 
 

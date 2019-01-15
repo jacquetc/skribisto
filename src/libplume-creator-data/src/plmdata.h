@@ -53,7 +53,7 @@ public:
 
     PLMSignalHub*   signalHub();
     PLMErrorHub*    errorHub();
-    PLMSheetHub*    sheetHub();
+    Q_INVOKABLE PLMSheetHub*    sheetHub();
     PLMPropertyHub* sheetPropertyHub();
     PLMNoteHub*     noteHub();
     PLMPropertyHub* notePropertyHub();

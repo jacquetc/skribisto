@@ -42,12 +42,13 @@ public:
     PLMError setPath(int projectId, const QString &newPath);
     int getLastLoaded() const;
     PLMError getError();
+    bool isThereAnyOpenedProject();
 
 
 
 signals:
     void errorSent(const PLMError &error) const;
-    void projectLoaded(int projectId);
+    Q_INVOKABLE void projectLoaded(int projectId);
     void projectClosed(int projectId);
     void allProjectsClosed();
     void projectTypeChanged(int projectId, const QString &newType);

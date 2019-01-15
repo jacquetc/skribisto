@@ -4,37 +4,48 @@ cmake_minimum_required(VERSION 3.1.0)
 
 project(app)
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets CONFIG REQUIRED)
+find_package(Qt5 COMPONENTS Core Quick Network Gui CONFIG REQUIRED)
 find_package(Qt5QuickCompiler)
-find_package(KF5Kirigami2)
+#find_package(KF5Kirigami2)
+
+#foreach(plugin ${Qt5Gui_PLUGINS})
+#  get_target_property(_loc ${plugin} LOCATION)
+#  message("Plugin ${plugin} is at location ${_loc}")
+#endforeach()
 
 set(app_SRCS 
 main.cpp
+documenthandler.h
+documenthandler.cpp
+
 )
 
 set(QML qml.qrc
 )
+ADD_CUSTOM_TARGET(qml.qrc SOURCES qml.qrc)
+
 FILE(GLOB QML_SRC "qml/*.qml")
 # Add QML files to project tree without building/compiling them
-ADD_CUSTOM_TARGET(qml SOURCES ${QML_SRC})
+ADD_CUSTOM_TARGET(qml SOURCES ${QML_SRC} )
 
 
 set(QRC pics.qrc
 controls.qrc
+${CMAKE_SOURCE_DIR}/src/translations/langs.qrc
 )
 
 qtquick_compiler_add_resources(RESOURCES ${QML})
 qt5_add_resources(RESOURCES ${QRC})
 
-
 # Tell CMake to create the executable
-add_library(app SHARED ${app_SRCS} ${RESOURCES} ${QRC})
+add_executable(plume-creator ${app_SRCS} ${RESOURCES} ${QRC})
 
-target_link_libraries(app KF5::Kirigami2)
-target_link_libraries(app plume-creator-data)
+#target_link_libraries(plume-creator KF5::Kirigami2)
+target_link_libraries(plume-creator plume-creator-data plume-creator-gui)
 include_directories("${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libplume-creator-gui/src/")
 
-qt5_use_modules(app Core Quick Network Gui Widgets)
+qt5_use_modules(plume-creator Core Quick Network Gui)
 
 
 

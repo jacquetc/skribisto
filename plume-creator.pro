@@ -8,6 +8,7 @@ TEMPLATE = subdirs
 
 CONFIG += ordered
 
+QT += GammaRayProbe
 
 SUBDIRS += \
 plume-creator
