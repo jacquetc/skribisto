@@ -19,15 +19,15 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
 {
     PLMGuiPlugins::addGuiPlugins();
     ui->setupUi(this);
-    connect(ui->sideMainBar,
+    connect(ui->leftSideMainBar,
             &PLMSideMainBar::windowRaiseCalled,
             this,
             &PLMMainWindow::raiseWindow);
-    connect(ui->sideMainBar,
+    connect(ui->leftSideMainBar,
             &PLMSideMainBar::windowAttachmentCalled,
             this,
             &PLMMainWindow::attachWindow);
-    connect(ui->sideMainBar,
+    connect(ui->leftSideMainBar,
             &PLMSideMainBar::windowDetachmentCalled,
             this,
             &PLMMainWindow::detachWindow);
@@ -55,7 +55,7 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
 
     this->loadPlugins();
 
-    ui->sideMainBar->setButtonChecked("welcomeWindow");
+    // ui->sideMainBar->setButtonChecked("welcomeWindow");
 
     QTimer::singleShot(0, this, SLOT(init()));
 }
@@ -91,7 +91,7 @@ void PLMMainWindow::loadPlugins()
         PLMBaseWindow *window = plugin->window();
         connect(window,
                 &PLMBaseWindow::attachmentCalled,
-                ui->sideMainBar,
+                ui->leftSideMainBar,
                 &PLMSideMainBar::attachWindowByName);
         ui->stackedWidget->addWidget(window);
         QString windowName = window->property("name").toString();
@@ -110,25 +110,31 @@ void PLMMainWindow::raiseWindow(const QString& windowName)
 
 void PLMMainWindow::attachWindow(const QString& windowName)
 {
-    QMainWindow *window = hash_nameAndWindow.value(windowName);
+    PLMBaseWindow *window = hash_nameAndWindow.value(windowName);
 
+    if (window->detached()) window->saveSettingsGeometry();
+    window->setDetached(false);
     ui->stackedWidget->addWidget(window);
     ui->stackedWidget->setCurrentWidget(window);
-    ui->sideMainBar->setButtonChecked(windowName);
+    ui->leftSideMainBar->setButtonChecked(windowName);
 }
 
 void PLMMainWindow::detachWindow(const QString& windowName)
 {
-    QMainWindow *window = hash_nameAndWindow.value(windowName);
+    PLMBaseWindow *window = hash_nameAndWindow.value(windowName);
 
     ui->stackedWidget->removeWidget(window);
     window->setParent(0);
+    window->setDetached(true);
+
     window->show();
+    window->applySettingsGeometry();
+
 
     QString key =
-        hash_nameAndWindow.key(dynamic_cast<QMainWindow *>(ui->stackedWidget->
-                                                           currentWidget()));
-    ui->sideMainBar->setButtonChecked(key);
+        hash_nameAndWindow.key(dynamic_cast<PLMBaseWindow *>(ui->stackedWidget->
+                                                             currentWidget()));
+    ui->leftSideMainBar->setButtonChecked(key);
 }
 
 /*

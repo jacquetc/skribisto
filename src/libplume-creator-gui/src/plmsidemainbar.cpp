@@ -1,8 +1,9 @@
-/***************************************************************************
+﻿/***************************************************************************
 *   Copyright (C) 2017 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmsidemainbar.cpp                                                   *
+*  Filename: plmsidemainbar.cpp
+*                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -25,6 +26,8 @@
 
 #include <QMenu>
 #include <QVBoxLayout>
+#include <QSettings>
+#include <QTimer>
 
 PLMSideMainBar::PLMSideMainBar(QWidget *parent) : QWidget(parent),
     ui(new Ui::PLMSideMainBar)
@@ -33,55 +36,88 @@ PLMSideMainBar::PLMSideMainBar(QWidget *parent) : QWidget(parent),
     actionGroup = new QActionGroup(this);
     this->loadPlugins();
 
-    //select
+    QTimer::singleShot(0, this, SLOT(init()));
+}
 
+void PLMSideMainBar::init()
+{
+    this->readSettings();
 
+    // this->readSettings();
+    // load plugins
+    // TEMP
 }
 
 void PLMSideMainBar::loadPlugins()
 {
     // plugins are already loaded in plmpluginloader
-    QList<PLMSideMainBarIconInterface *> pluginList = PLMPluginLoader::instance()->pluginsByType<PLMSideMainBarIconInterface>();
+    QList<PLMSideMainBarIconInterface *> pluginList =
+        PLMPluginLoader::instance()->pluginsByType<PLMSideMainBarIconInterface>();
 
 
-    //ordering
+    // ordering
     QMap<int, QAction *> actionMap;
-    foreach (PLMSideMainBarIconInterface *plugin, pluginList) {
+    foreach(PLMSideMainBarIconInterface * plugin, pluginList) {
         QList<PLMSideBarAction> actionList = plugin->sideMainBarActions(this);
 
-        foreach (const PLMSideBarAction &sideBarAction, actionList) {
-            actionMap.insert(sideBarAction.action()->property("order").toInt(), sideBarAction.action());
+        foreach(const PLMSideBarAction &sideBarAction, actionList) {
+            actionMap.insert(sideBarAction.action()->property("order").toInt(),
+                             sideBarAction.action());
         }
     }
-    foreach (QAction *action, actionMap) {
+    foreach(QAction * action, actionMap) {
         QToolButton *button = new QToolButton(this);
+
         button->setDefaultAction(action);
         button->setIconSize(QSize(48, 48));
         button->setAutoRaise(true);
+        button->setProperty("linkedWindow", action->property("linkedWindow").toString());
         ui->verticalLayout->addWidget(button);
         actionGroup->addAction(action);
-        hash_windowNameAndButton.insert(action->property("linkedWindow").toString(), button);
-        connect(action, &QAction::triggered, this, &PLMSideMainBar::raiseWindow);
+        hash_windowNameAndButton.insert(action->property("linkedWindow").toString(),
+                                        button);
+        connect(action,
+                &QAction::triggered,
+                this,
+                &PLMSideMainBar::raiseWindow,
+                Qt::UniqueConnection);
 
         button->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(button, SIGNAL(customContextMenuRequested(const QPoint &)),
-                this, SLOT(showContextMenu(const QPoint &)));
+        connect(button, SIGNAL(customContextMenuRequested(const QPoint&)),
+                this, SLOT(showContextMenu(const QPoint&)));
+        connect(button,
+                &QToolButton::triggered,
+                this,
+                &PLMSideMainBar::buttonChecked,
+                Qt::UniqueConnection);
     }
-
-
 }
 
-void PLMSideMainBar::setButtonChecked(const QString &windowName)
+void PLMSideMainBar::setButtonChecked(const QString& windowName)
 {
     QToolButton *button = hash_windowNameAndButton.value(windowName);
-    if(button)
+
+    if (button) {
         button->defaultAction()->setChecked(true);
+    }
 }
 
-void PLMSideMainBar::showContextMenu(const QPoint &pos)
+void PLMSideMainBar::buttonChecked() {
+    QSettings settings;
+
+    settings.beginGroup("MainBar");
+
+    settings.setValue("place",        this->objectName());
+    settings.setValue("selectedName", this->sender()->property("linkedWindow"));
+
+    settings.endGroup();
+}
+
+void PLMSideMainBar::showContextMenu(const QPoint& pos)
 {
     QToolButton *button = dynamic_cast<QToolButton *>(this->sender());
-    if(button->defaultAction()->property("detachable").toBool() == false){
+
+    if (button->defaultAction()->property("detachable").toBool() == false) {
         return;
     }
     m_currentButton = button;
@@ -95,30 +131,34 @@ void PLMSideMainBar::showContextMenu(const QPoint &pos)
     contextMenu.addAction(&action2);
 
     contextMenu.exec(button->mapToGlobal(pos));
-
 }
 
-void PLMSideMainBar::detachWindow(){
+void PLMSideMainBar::detachWindow() {
     m_currentButton->setEnabled(false);
-    emit windowDetachmentCalled(m_currentButton->defaultAction()->property("linkedWindow").toString());
+    emit windowDetachmentCalled(m_currentButton->defaultAction()->property(
+                                    "linkedWindow").toString());
 }
 
-void PLMSideMainBar::attachWindow(){
+void PLMSideMainBar::attachWindow() {
     m_currentButton->setEnabled(true);
-    emit windowAttachmentCalled(m_currentButton->defaultAction()->property("linkedWindow").toString());
+    emit windowAttachmentCalled(m_currentButton->defaultAction()->property(
+                                    "linkedWindow").toString());
 }
 
-void PLMSideMainBar::attachWindowByName(const QString &windowName){
+void PLMSideMainBar::attachWindowByName(const QString& windowName) {
     QToolButton *button = hash_windowNameAndButton.value(windowName);
+
     button->setEnabled(true);
     button->defaultAction()->setChecked(true);
-    emit windowAttachmentCalled(button->defaultAction()->property("linkedWindow").toString());
+    emit windowAttachmentCalled(button->defaultAction()->property(
+                                    "linkedWindow").toString());
 }
 
 void PLMSideMainBar::raiseWindow(bool checked)
 {
     QAction *action = dynamic_cast<QAction *>(this->sender());
-    if(!checked){
+
+    if (!checked) {
         action->setChecked(true);
         return;
     }
@@ -127,8 +167,37 @@ void PLMSideMainBar::raiseWindow(bool checked)
 
     emit windowRaiseCalled(windowName);
 }
-//-------------------------------------------------------------------------
-//-------------------------------------------------------------------------
+
+void PLMSideMainBar::readSettings()
+{
+    QSettings settings;
+
+    settings.beginGroup("MainBar");
+
+    // bar visible ?
+    if (settings.value("place", this->objectName()).toByteArray() != this->objectName()) {
+        this->setVisible(false);
+    }
+
+    // checked ?
+    if (settings.value("place", this->objectName()).toByteArray() == this->objectName()) {
+        QString selectedName = settings.value("selectedName", "writeWindow").toString();
+        this->setButtonChecked(selectedName);
+    }
+
+    // raised ?
+    foreach(const QString &windowName, hash_windowNameAndButton.keys()) {
+        if (settings.value(windowName + "-raised", false).toBool() == true) {
+            emit windowDetachmentCalled(windowName);
+        }
+    }
+
+
+    settings.endGroup();
+}
+
+// -------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 
 
 QString PLMSideBarAction::windowName() const
@@ -136,12 +205,12 @@ QString PLMSideBarAction::windowName() const
     return m_windowName;
 }
 
-void PLMSideBarAction::setWindowName(const QString &windowName)
+void PLMSideBarAction::setWindowName(const QString& windowName)
 {
     m_windowName = windowName;
 }
 
-QAction *PLMSideBarAction::action() const
+QAction * PLMSideBarAction::action() const
 {
     return m_action;
 }
@@ -151,5 +220,5 @@ void PLMSideBarAction::setAction(QAction *action)
     m_action = action;
 }
 
-//-------------------------------------------------------------------------
-//-------------------------------------------------------------------------
+// -------------------------------------------------------------------------
+// -------------------------------------------------------------------------

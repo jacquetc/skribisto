@@ -2,6 +2,7 @@
 #define PLMMAINWINDOW_H
 
 #include "plmdata.h"
+#include "plmbasewindow.h"
 #include "global.h"
 #include <QCloseEvent>
 #include <QtWidgets/QMainWindow>
@@ -40,7 +41,7 @@ private:
     void loadPlugins();
     Ui::PLMMainWindow *ui;
     PLMData *m_data;
-    QHash<QString, QMainWindow *>hash_nameAndWindow;
+    QHash<QString, PLMBaseWindow *>hash_nameAndWindow;
 };
 
 #endif // MAINWINDOW_H

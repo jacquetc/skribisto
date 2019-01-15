@@ -19,7 +19,7 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="PLMSideMainBar" name="sideMainBar" native="true"/>
+     <widget class="PLMSideMainBar" name="leftSideMainBar" native="true"/>
     </item>
     <item>
      <widget class="QStackedWidget" name="stackedWidget">

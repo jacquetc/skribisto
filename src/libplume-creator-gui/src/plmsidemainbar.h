@@ -2,7 +2,8 @@
 *   Copyright (C) 2017 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmsidemainbar.h                                                   *
+*  Filename: plmsidemainbar.h
+*                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -28,60 +29,76 @@
 
 struct EXPORT_GUI PLMSideBarAction {
 public:
-    explicit PLMSideBarAction(const QString &windowName, QAction *action)
+
+    explicit PLMSideBarAction(const QString& windowName, QAction *action)
     {
         this->m_windowName = windowName;
-        this->m_action = action;
+        this->m_action     = action;
     }
 
-    explicit PLMSideBarAction(const PLMSideBarAction &sideBarAction)
+    explicit PLMSideBarAction(const PLMSideBarAction& sideBarAction)
     {
         this->m_windowName = sideBarAction.windowName();
-        this->m_action = sideBarAction.action();
+        this->m_action     = sideBarAction.action();
     }
-    QString windowName() const;
-    void setWindowName(const QString &windowName);
 
-    QAction *action() const;
-    void setAction(QAction *action);
+    QString  windowName() const;
+    void     setWindowName(const QString& windowName);
+
+    QAction* action() const;
+    void     setAction(QAction *action);
+
+public slots:
 
 private:
-    QString m_windowName;
+
+    QString  m_windowName;
     QAction *m_action;
 };
 
 
-namespace Ui
-{
+namespace Ui {
 class PLMSideMainBar;
 }
 
-class EXPORT_GUI PLMSideMainBar : public QWidget
-{
+class EXPORT_GUI PLMSideMainBar : public QWidget {
     Q_OBJECT
 
 public:
+
     explicit PLMSideMainBar(QWidget *parent = nullptr);
-    void setButtonChecked(const QString &windowName);
+    void setButtonChecked(const QString& windowName);
 
 signals:
+
     void windowRaiseCalled(QString windowName);
     void windowDetachmentCalled(QString windowName);
     void windowAttachmentCalled(QString windowName);
 
 public slots:
-    void attachWindowByName(const QString &windowName);
+
+    void attachWindowByName(const QString& windowName);
+
+    void readSettings();
+
 private slots:
+
     void raiseWindow(bool checked);
-    void showContextMenu(const QPoint &pos);
+    void showContextMenu(const QPoint& pos);
     void attachWindow();
     void detachWindow();
+
+    void init();
+
+    void buttonChecked();
+
 private:
+
     Ui::PLMSideMainBar *ui;
     void loadPlugins();
     QActionGroup *actionGroup;
     QToolButton *m_currentButton;
-    QHash<QString, QToolButton *> hash_windowNameAndButton;
+    QHash<QString, QToolButton *>hash_windowNameAndButton;
 };
 
 #endif // PLMSIDEMAINBAR_H

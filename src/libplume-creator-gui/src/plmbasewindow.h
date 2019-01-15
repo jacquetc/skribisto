@@ -31,16 +31,31 @@ class EXPORT_GUI PLMBaseWindow : public QMainWindow {
 public:
 
     explicit PLMBaseWindow(QWidget *parent = nullptr);
+    ~PLMBaseWindow();
+
+    bool detached() const;
+    void setDetached(bool detached);
+
+    void applySettingsState();
+    void saveSettingsState();
+
+    void applySettingsGeometry();
+    void saveSettingsGeometry();
 
 protected:
 
     void closeEvent(QCloseEvent *event);
+    void moveEvent(QMoveEvent *event);
 
 signals:
 
     void attachmentCalled(const QString& windowName);
 
 public slots:
+
+private:
+
+    bool m_detached;
 };
 
 #endif // PLMBASEWINDOW_H
