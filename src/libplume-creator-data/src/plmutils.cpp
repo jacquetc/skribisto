@@ -1,23 +1,23 @@
 /***************************************************************************
- *   Copyright (C) 2018 by Cyril Jacquet                                 *
- *   cyril.jacquet@plume-creator.eu                                        *
- *                                                                         *
- *  Filename: plmutils.cpp                                                   *
- *  This file is part of Plume Creator.                                    *
- *                                                                         *
- *  Plume Creator is free software: you can redistribute it and/or modify  *
- *  it under the terms of the GNU General Public License as published by   *
- *  the Free Software Foundation, either version 3 of the License, or      *
- *  (at your option) any later version.                                    *
- *                                                                         *
- *  Plume Creator is distributed in the hope that it will be useful,       *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
- *  GNU General Public License for more details.                           *
- *                                                                         *
- *  You should have received a copy of the GNU General Public License      *
- *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
- ***************************************************************************/
+*   Copyright (C) 2018 by Cyril Jacquet                                 *
+*   cyril.jacquet@plume-creator.eu                                        *
+*                                                                         *
+*  Filename: plmutils.cpp                                                   *
+*  This file is part of Plume Creator.                                    *
+*                                                                         *
+*  Plume Creator is free software: you can redistribute it and/or modify  *
+*  it under the terms of the GNU General Public License as published by   *
+*  the Free Software Foundation, either version 3 of the License, or      *
+*  (at your option) any later version.                                    *
+*                                                                         *
+*  Plume Creator is distributed in the hope that it will be useful,       *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+*  GNU General Public License for more details.                           *
+*                                                                         *
+*  You should have received a copy of the GNU General Public License      *
+*  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
+***************************************************************************/
 #include "plmutils.h"
 #include <QDir>
 #include <QFile>
@@ -41,11 +41,11 @@ bool PLMUtils::Dir::removeDir(const QString& dirName)
     QDir dir(dirName);
 
     if (dir.exists(dirName)) {
-        Q_FOREACH(QFileInfo info,
-                  dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System |
-                                    QDir::Hidden  |
-                                    QDir::AllDirs | QDir::Files,
-                                    QDir::DirsFirst)) {
+        Q_FOREACH (QFileInfo info,
+                   dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System |
+                                     QDir::Hidden  |
+                                     QDir::AllDirs | QDir::Files,
+                                     QDir::DirsFirst)) {
             if (info.isDir()) {
                 result = removeDir(info.absoluteFilePath());
             } else {
@@ -613,7 +613,7 @@ QModelIndexList PLMUtils::Models::allChildIndexes(QModelIndex index)
     }
 
     childList.append(firstChild);
-        allChildIndexes(firstChild);
+    allChildIndexes(firstChild);
     QModelIndex siblingChild = firstChild.sibling(firstChild.row() + 1, 0);
 
     while (siblingChild.isValid()) {
@@ -657,11 +657,11 @@ QStringList PLMUtils::Dir::addonsPathsList()
     QStringList list;
     QDir dir;
 
-//    dir.setPath(QCoreApplication::applicationDirPath());
+    //    dir.setPath(QCoreApplication::applicationDirPath());
 
-//    if (dir.isReadable()) {
-//        list.append(dir.path());
-//    }
+    //    if (dir.isReadable()) {
+    //        list.append(dir.path());
+    //    }
 
     dir.setPath(QCoreApplication::applicationDirPath());
 
@@ -683,8 +683,8 @@ QStringList PLMUtils::Dir::addonsPathsList()
         if (dir.isReadable()) {
             list.append(dir.path());
 
-            QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot );
-            foreach(const QString &pluginDir, dirList){
+            QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+            foreach(const QString &pluginDir, dirList) {
                 list.append(dir.path() + "/" + pluginDir);
             }
         }
@@ -697,6 +697,7 @@ QStringList PLMUtils::Dir::addonsPathsList()
 
 #ifdef Q_OS_LINUX
     dir.setPath("/usr/share/plume-creator/");
+
     if (dir.isReadable()) {
         list.append(dir.path());
     }
@@ -760,7 +761,7 @@ QStringList PLMUtils::Dir::addonsPathsList()
 
 #endif // ifdef Q_OS_MAC
 
-    qDebug() << list;
+    // qDebug() << list;
     return list;
 }
 

@@ -16,7 +16,7 @@ set(testwidget_HDR
 #    )
     
     
-set(wtestwidget_OTHER
+set(testwidget_OTHER
     plmtestwidget.json
     )
 

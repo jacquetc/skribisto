@@ -29,6 +29,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 
 add_subdirectory(src/libplume-creator-data)
+add_subdirectory(src/libplume-creator-core)
 add_subdirectory(src/libplume-creator-writingzone)
 add_subdirectory(src/libplume-creator-gui)
 add_subdirectory(src/plugins)

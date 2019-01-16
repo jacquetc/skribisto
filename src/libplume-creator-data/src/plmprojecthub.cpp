@@ -6,37 +6,67 @@
 PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent)
 {
     // connection for 'getxxx' functions to have a way to get errors.
-    connect(this, &PLMProjectHub::errorSent, this, &PLMProjectHub::setError, Qt::DirectConnection);
+    connect(this,
+            &PLMProjectHub::errorSent,
+            this,
+            &PLMProjectHub::setError,
+            Qt::DirectConnection);
 }
 
-
-PLMError PLMProjectHub::loadProject(const QString &path)
+PLMError PLMProjectHub::loadProject(const QString& path)
 {
-    //qDebug() << "loading project";
-    int projectId = -1;
+    // qDebug() << "loading project";
+    int projectId  = -1;
     PLMError error = plmProjectManager->loadProject(path, projectId);
-    //qDebug() << "projectId : " << QString::number(projectId);
+
+    // qDebug() << "projectId : " << QString::number(projectId);
     IFOK(error) {
+        m_projectsNotYetSavedOnceList.append(projectId);
+        m_projectsNotSavedList.append(projectId);
         emit projectLoaded(projectId);
     }
+
+
     return error;
 }
 
 PLMError PLMProjectHub::saveProject(int projectId)
 {
     PLMError error;
+
     error = plmProjectManager->saveProject(projectId);
     IFOK(error) {
+        m_projectsNotYetSavedOnceList.removeAll(projectId);
+        m_projectsNotSavedList.removeAll(projectId);
         emit projectSaved(projectId);
     }
     return error;
 }
 
-PLMError PLMProjectHub::saveProjectAs(int projectId, const QString &type, const QString &path)
+void PLMProjectHub::setProjectNotSavedAnymore(int projectId)
+{
+    m_projectsNotSavedList.append(projectId);
+    emit projectNotSavedAnymore(projectId);
+}
+
+QList<int>PLMProjectHub::projectsNotYetSavedOnce() {
+    return m_projectsNotYetSavedOnceList;
+}
+
+QList<int>PLMProjectHub::projectsNotSaved() {
+    return m_projectsNotSavedList;
+}
+
+PLMError PLMProjectHub::saveProjectAs(int            projectId,
+                                      const QString& type,
+                                      const QString& path)
 {
     PLMError error;
+
     error = plmProjectManager->saveProjectAs(projectId, type, path);
     IFOK(error) {
+        m_projectsNotYetSavedOnceList.removeAll(projectId);
+        m_projectsNotSavedList.removeAll(projectId);
         emit projectSaved(projectId);
     }
     return error;
@@ -45,6 +75,7 @@ PLMError PLMProjectHub::saveProjectAs(int projectId, const QString &type, const 
 PLMError PLMProjectHub::closeProject(int projectId)
 {
     PLMError error;
+
     error = plmProjectManager->closeProject(projectId);
     IFOK(error) {
         emit projectClosed(projectId);
@@ -55,9 +86,10 @@ PLMError PLMProjectHub::closeProject(int projectId)
 PLMError PLMProjectHub::closeAllProjects()
 {
     PLMError error;
+
     QList<int> idList = plmProjectManager->projectIdList();
 
-    foreach (int id, idList) {
+    foreach(int id, idList) {
         IFOKDO(error, closeProject(id));
         IFKO(error) {
             break;
@@ -70,7 +102,7 @@ PLMError PLMProjectHub::closeAllProjects()
     return error;
 }
 
-QList<int> PLMProjectHub::getProjectIdList()
+QList<int>PLMProjectHub::getProjectIdList()
 {
     return plmProjectManager->projectIdList();
 }
@@ -78,7 +110,7 @@ QList<int> PLMProjectHub::getProjectIdList()
 QString PLMProjectHub::getPath(int projectId) const
 {
     PLMError error;
-    QString result("");
+    QString  result("");
     PLMProject *project = plmProjectManager->project(projectId);
 
     if (!project) {
@@ -95,7 +127,7 @@ QString PLMProjectHub::getPath(int projectId) const
     return result;
 }
 
-PLMError PLMProjectHub::setPath(int projectId, const QString &newPath)
+PLMError PLMProjectHub::setPath(int projectId, const QString& newPath)
 {
     PLMError error;
     PLMProject *project = plmProjectManager->project(projectId);
@@ -114,7 +146,7 @@ PLMError PLMProjectHub::setPath(int projectId, const QString &newPath)
 int PLMProjectHub::getLastLoaded() const
 {
     QList<int> list = plmProjectManager->projectIdList();
-    int lastId = -1;
+    int lastId      = -1;
 
     if (!list.isEmpty()) {
         lastId = list.last();
@@ -131,14 +163,14 @@ PLMError PLMProjectHub::getError()
 bool PLMProjectHub::isThereAnyOpenedProject()
 {
     QList<int> list = plmProjectManager->projectIdList();
+
     if (list.isEmpty()) {
         return false;
     }
     return true;
-
 }
 
-void PLMProjectHub::setError(const PLMError &error)
+void PLMProjectHub::setError(const PLMError& error)
 {
     m_error = error;
 }

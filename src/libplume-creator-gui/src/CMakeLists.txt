@@ -18,7 +18,7 @@ plmbasewindow.cpp
 plmmainwindow.cpp
 plmmessagehandler.cpp
 plmsidemainbar.cpp
-
+plmmodels.cpp
 
 )
 set(gui_HDR
@@ -31,7 +31,7 @@ plmguiplugins.h
 plmmainwindow.h
 plmmessagehandler.h
 plmsidemainbar.h
-
+plmmodels.h
 
 )
 
@@ -62,10 +62,11 @@ qtquick_compiler_add_resources(RESOURCES ${gui_QML})
 
 # Tell CMake to create the executable
 add_library(plume-creator-gui SHARED ${gui_SRCS} ${gui_HDR} ${gui_UI} ${QRC} ${RESOURCES})
-target_link_libraries(plume-creator-gui plume-creator-data plume-creator-writingzone)
+target_link_libraries(plume-creator-gui plume-creator-data plume-creator-core plume-creator-writingzone)
 
 qt5_use_modules(plume-creator-gui Core Quick Network Gui Widgets)
 include_directories(
-        "${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/"
+    "${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/"
+    "${CMAKE_SOURCE_DIR}/src/libplume-creator-core/src/"
         "${CMAKE_SOURCE_DIR}/src/libplume-creator-writingzone/src/"
         )

@@ -39,11 +39,11 @@
 
 
 class EXPORT PLMData : public QObject {
-    Q_OBJECT    
+    Q_OBJECT
 
 public:
 
-    explicit PLMData(QObject *parent = 0);
+    explicit PLMData(QObject *parent = nullptr);
     ~PLMData();
 
     static PLMData* instance()
@@ -51,15 +51,15 @@ public:
         return m_instance;
     }
 
-    PLMSignalHub*   signalHub();
-    PLMErrorHub*    errorHub();
-    Q_INVOKABLE PLMSheetHub*    sheetHub();
-    PLMPropertyHub* sheetPropertyHub();
-    PLMNoteHub*     noteHub();
-    PLMPropertyHub* notePropertyHub();
-    Q_INVOKABLE PLMProjectHub*  projectHub();
-    PLMUserFileHub* userFileHub();
-    PLMPluginHub* pluginHub();
+    PLMSignalHub             * signalHub();
+    PLMErrorHub              * errorHub();
+    Q_INVOKABLE PLMSheetHub  * sheetHub();
+    PLMPropertyHub           * sheetPropertyHub();
+    PLMNoteHub               * noteHub();
+    PLMPropertyHub           * notePropertyHub();
+    Q_INVOKABLE PLMProjectHub* projectHub();
+    PLMUserFileHub           * userFileHub();
+    PLMPluginHub             * pluginHub();
 
 signals:
 
@@ -69,14 +69,14 @@ private:
 
     static PLMData *m_instance;
 
-    PLMErrorHub   *m_errorHub;
-    PLMSignalHub  *m_signalHub;
+    PLMErrorHub *m_errorHub;
+    PLMSignalHub *m_signalHub;
     PLMProjectHub *m_projectHub;
-    PLMSheetHub   *m_sheetHub;
-    PLMNoteHub    *m_noteHub;
+    PLMSheetHub *m_sheetHub;
+    PLMNoteHub *m_noteHub;
     PLMProjectManager *m_projectManager;
-    PLMPropertyHub    *m_notePropertyHub, *m_sheetPropertyHub;
-    PLMUserFileHub    *m_userFileHub;
+    PLMPropertyHub *m_notePropertyHub, *m_sheetPropertyHub;
+    PLMUserFileHub *m_userFileHub;
     PLMPluginHub *m_pluginHub;
 };
 

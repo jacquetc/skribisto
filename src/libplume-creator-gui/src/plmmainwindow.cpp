@@ -5,6 +5,7 @@
 #include "plmguiinterface.h"
 #include "plmpluginloader.h"
 #include "plmguiplugins.h"
+#include "plmmodels.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -17,6 +18,8 @@
 PLMMainWindow::PLMMainWindow(PLMData *data) :
     QMainWindow(nullptr), ui(new Ui::PLMMainWindow), m_data(data)
 {
+    new PLMModels(this);
+
     PLMGuiPlugins::addGuiPlugins();
     ui->setupUi(this);
     connect(ui->leftSideMainBar,
@@ -49,20 +52,17 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
             this,
             &PLMMainWindow::activate);
 
-    // restore saved geometry
-    QSettings settings;
-    this->restoreGeometry(settings.value("geometry", "0").toByteArray());
 
     this->loadPlugins();
 
-    // ui->sideMainBar->setButtonChecked("welcomeWindow");
 
     QTimer::singleShot(0, this, SLOT(init()));
 }
 
 void PLMMainWindow::init()
 {
-    // this->readSettings();
+    this->applySettings();
+
     // load plugins
     // TEMP
 }
@@ -166,21 +166,22 @@ void PLMMainWindow::detachWindow(const QString& windowName)
 // ---------------------------------------------------------------------------
 void PLMMainWindow::closeEvent(QCloseEvent *event)
 {
-    // TODO: temp :
-    // writeSettings();
-    qApp->closeAllWindows();
-    event->accept();
-    return;
-
     //    if(!core->isProjectStarted())
     //    {
     //        //writeSettings();
     //        event->accept();
     //        return;
     //    }
+    if (plmdata->projectHub()->isThereAnyOpenedProject() == false) {
+        this->writeSettings();
+        qApp->closeAllWindows();
+        event->accept();
+    }
+
     QMessageBox msgBox(this);
+
     msgBox.setText(tr("Do you want to quit ?"));
-    msgBox.setInformativeText(tr("Your changes are already saved."));
+    msgBox.setInformativeText(tr(""));
     msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Cancel);
     int ret = msgBox.exec();
@@ -188,10 +189,9 @@ void PLMMainWindow::closeEvent(QCloseEvent *event)
     switch (ret) {
     case QMessageBox::Ok:
 
-        // writeSettings();
+        this->writeSettings();
+
         //        hub->closeCurrentProject();
-        qApp->closeAllWindows();
-        event->accept();
         break;
 
     case QMessageBox::Cancel:
@@ -232,39 +232,38 @@ void PLMMainWindow::closeEvent(QCloseEvent *event)
    return false;
    }
 
-
-   //---------------------------------------------------------------------------
-
-   void PLMMainWindow::writeSettings()
-   {
-   hub->writeSettings();
-
-   QSettings settings;
-   settings.beginGroup( "PLMMainWindow" );
-
-
-   settings.setValue( "geometry", this->saveGeometry());
-
-   settings.setValue( "firstStart", false);
-   settings.endGroup();
-
-   //    qDebug() << "main settings saved";
-   }
-
-   //---------------------------------------------------------------------------
-
-   void PLMMainWindow::readSettings()
-   {
-   QSettings settings;
-   settings.beginGroup( "PLMMainWindow" );
-
-   this->restoreGeometry(settings.value( "geometry", "").toByteArray());
-
-   //    m_firstStart = settings.value("firstStart", true).toBool();
-
-   settings.endGroup();
-
-
-
-   }
  */
+
+// ---------------------------------------------------------------------------
+
+void PLMMainWindow::writeSettings()
+{
+    // hub->writeSettings();
+
+    QSettings settings;
+
+    settings.beginGroup("MainWindow");
+
+
+    settings.setValue("geometry",   this->saveGeometry());
+
+    settings.setValue("firstStart", false);
+    settings.endGroup();
+
+    //    qDebug() << "main settings saved";
+}
+
+// ---------------------------------------------------------------------------
+
+void PLMMainWindow::applySettings()
+{
+    QSettings settings;
+
+    settings.beginGroup("MainWindow");
+
+    this->restoreGeometry(settings.value("geometry", "0").toByteArray());
+
+    //    m_firstStart = settings.value("firstStart", true).toBool();
+
+    settings.endGroup();
+}

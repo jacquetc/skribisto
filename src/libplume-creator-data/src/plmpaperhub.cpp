@@ -10,15 +10,19 @@
 /// \brief PLMPaperHub::PLMPaperHub
 /// \param parent
 //
-PLMPaperHub::PLMPaperHub(QObject *parent, const QString &tableName)
+PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName)
     : QObject(parent), m_tableName(tableName), m_last_added_id(-1)
 {
-    qRegisterMetaType<Setting>("Setting");
-    qRegisterMetaType<Stack>("Stack");
+    qRegisterMetaType<Setting>(         "Setting");
+    qRegisterMetaType<Stack>(           "Stack");
     qRegisterMetaType<OpenedDocSetting>("OpenedDocSetting");
 
     // connection for 'getxxx' functions to have a way to get errors.
-    connect(this, &PLMPaperHub::errorSent, this, &PLMPaperHub::setError, Qt::DirectConnection);
+    connect(this,
+            &PLMPaperHub::errorSent,
+            this,
+            &PLMPaperHub::setError,
+            Qt::DirectConnection);
 
     if (m_tableName.contains("note")) {
         m_paperType = "note";
@@ -31,12 +35,12 @@ PLMPaperHub::PLMPaperHub(QObject *parent, const QString &tableName)
 /// \brief PLMPaperHub::getAll
 /// \param projectId
 /// \return
-///
-QList<QHash<QString, QVariant> >  PLMPaperHub::getAll(int projectId) const
+/// unimplemented
+QList<QHash<QString, QVariant> >PLMPaperHub::getAll(int projectId) const
 {
     Q_UNUSED(projectId)
 
-    QList<QHash<QString, QVariant> > result;
+    QList<QHash<QString, QVariant> >result;
     return result;
 }
 
@@ -45,10 +49,11 @@ QList<QHash<QString, QVariant> >  PLMPaperHub::getAll(int projectId) const
 /// \param projectId
 /// \return
 ///
-QHash<int, QString>  PLMPaperHub::getAllTitles(int projectId) const
+QHash<int, QString>PLMPaperHub::getAllTitles(int projectId) const
 {
     PLMError error;
-    QHash<int, QString> result;
+
+    QHash<int, QString>  result;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
     error = queries.getValueByIds("t_title", out);
@@ -61,18 +66,19 @@ QHash<int, QString>  PLMPaperHub::getAllTitles(int projectId) const
     return result;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 ///
 /// \brief PLMPaperHub::getAllIndents
 /// \param projectId
 /// \return
 ///
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-QHash<int, int> PLMPaperHub::getAllIndents(int projectId) const
+QHash<int, int>PLMPaperHub::getAllIndents(int projectId) const
 {
     PLMError error;
+
     QHash<int, int> result;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -86,7 +92,7 @@ QHash<int, int> PLMPaperHub::getAllIndents(int projectId) const
     return result;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 /**
  * @brief PLMPaperHub::getAllIds
@@ -94,9 +100,10 @@ QHash<int, int> PLMPaperHub::getAllIndents(int projectId) const
  * @return
  * Get sorted ids
  */
-QList<int> PLMPaperHub::getAllIds(int projectId) const
+QList<int>PLMPaperHub::getAllIds(int projectId) const
 {
     PLMError error;
+
     QList<int> result;
     QList<int> out;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -110,7 +117,7 @@ QList<int> PLMPaperHub::getAllIds(int projectId) const
     return result;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 ///
 /// \brief PLMPaperHub::getOverallSize
 /// \return number of papers for all projects
@@ -118,26 +125,30 @@ QList<int> PLMPaperHub::getAllIds(int projectId) const
 int PLMPaperHub::getOverallSize()
 {
     PLMError error;
+
     QList<int> result;
-    foreach(int projectId, plmProjectManager->projectIdList()){
+    foreach(int projectId, plmProjectManager->projectIdList()) {
         PLMSqlQueries queries(projectId, m_tableName);
+
         error = queries.getIds(result);
         IFOK(error) {
             return result.size();
         }
         IFKO(error) {
             emit errorSent(error);
+
             return 0;
         }
     }
     return 0;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-QHash<int, int> PLMPaperHub::getAllSortOrders(int projectId) const
+QHash<int, int>PLMPaperHub::getAllSortOrders(int projectId) const
 {
     PLMError error;
+
     QHash<int, int> result;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -151,18 +162,20 @@ QHash<int, int> PLMPaperHub::getAllSortOrders(int projectId) const
     return result;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 ///
 /// \brief PLMPaperHub::setId
 /// \param projectId
 /// \param sheetId
 /// \param newId
 /// \return
-/// Change de id. No date updated. Be careful since ids must be unique (sql constraint)
+/// Change de id. No date updated. Be careful since ids must be unique (sql
+// constraint)
 PLMError PLMPaperHub::setId(int projectId, int sheetId, int newId)
 {
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
+
     queries.beginTransaction();
     error = queries.setId(sheetId, newId);
     IFKO(error) {
@@ -180,18 +193,19 @@ PLMError PLMPaperHub::setId(int projectId, int sheetId, int newId)
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-PLMError PLMPaperHub::setTitle(int projectId, int sheetId, const QString &newTitle)
+PLMError PLMPaperHub::setTitle(int projectId, int sheetId, const QString& newTitle)
 {
     PLMError error = set(projectId, sheetId, "t_title", newTitle);
+
     IFOK(error) {
         emit titleChanged(projectId, sheetId, newTitle);
     }
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 QString PLMPaperHub::getTitle(int projectId, int sheetId) const
 {
@@ -201,64 +215,68 @@ QString PLMPaperHub::getTitle(int projectId, int sheetId) const
 PLMError PLMPaperHub::setIndent(int projectId, int sheetId, int newIndent)
 {
     PLMError error = set(projectId, sheetId, "l_indent", newIndent);
+
     IFOK(error) {
         emit indentChanged(projectId, sheetId, newIndent);
     }
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 int PLMPaperHub::getIndent(int projectId, int sheetId) const
 {
     return get(projectId, sheetId, "l_indent").toInt();
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 PLMError PLMPaperHub::setSortOrder(int projectId, int sheetId, int newSortOrder)
 {
     PLMError error = set(projectId, sheetId, "l_sort_order", newSortOrder);
+
     IFOK(error) {
         emit sortOrderChanged(projectId, sheetId, newSortOrder);
     }
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 int PLMPaperHub::getSortOrder(int projectId, int sheetId) const
 {
     return get(projectId, sheetId, "l_sort_order").toInt();
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-PLMError PLMPaperHub::setContent(int projectId, int sheetId, const QString &newContent)
+PLMError PLMPaperHub::setContent(int projectId, int sheetId, const QString& newContent)
 {
     PLMError error = set(projectId, sheetId, "m_content", newContent);
+
     IFOK(error) {
         emit contentChanged(projectId, sheetId, newContent);
     }
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 QString PLMPaperHub::getContent(int projectId, int sheetId) const
 {
     return get(projectId, sheetId, "m_content").toString();
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 PLMError PLMPaperHub::setDeleted(int projectId, int sheetId, bool newDeletedState)
 {
     int target_sort_order = getSortOrder(projectId, sheetId);
-    int target_indent = getIndent(projectId, sheetId);
+    int target_indent     = getIndent(projectId, sheetId);
+
     QHash<int, QVariant> result;
     QHash<QString, QVariant> where;
-    where.insert("l_indent >", target_indent);
+    where.insert("l_indent >",     target_indent);
     where.insert("l_sort_order >", target_sort_order);
 
     if (newDeletedState) {
@@ -269,9 +287,10 @@ PLMError PLMPaperHub::setDeleted(int projectId, int sheetId, bool newDeletedStat
     PLMError error = queries.getValueByIdsWhere("l_sort_order", result, where, true);
     QHash<int, QVariant> result_same_indent;
     where.clear();
-    where.insert("l_indent =", target_indent);
+    where.insert("l_indent =",     target_indent);
     where.insert("l_sort_order >", target_sort_order);
-    IFOKDO(error, queries.getValueByIdsWhere("l_sort_order", result_same_indent, where, true));
+    IFOKDO(error,
+           queries.getValueByIdsWhere("l_sort_order", result_same_indent, where, true));
     int lowestSortSameLevel = 0;
 
     if (!result_same_indent.isEmpty()) {
@@ -294,7 +313,8 @@ PLMError PLMPaperHub::setDeleted(int projectId, int sheetId, bool newDeletedStat
 
     if (!result.isEmpty()) {
         QHash<int, QVariant>::const_iterator i = result.constBegin();
-        //int lowestSort = i.value().toInt();
+
+        // int lowestSort = i.value().toInt();
 
         while (i != result.constEnd()) {
             int sort = i.value().toInt();
@@ -307,13 +327,13 @@ PLMError PLMPaperHub::setDeleted(int projectId, int sheetId, bool newDeletedStat
         }
 
         // children deletion (or recovery)
-        for (int &_id : chilrenIdList) {
+        for (int& _id : chilrenIdList) {
             IFOKDO(error, set(projectId, _id, "b_deleted", newDeletedState));
             emit deletedChanged(projectId, _id, newDeletedState);
         }
     }
 
-    //TODO:  deletion
+    // TODO:  deletion
     IFOKDO(error, set(projectId, sheetId, "b_deleted", newDeletedState));
     IFOK(error) {
         emit deletedChanged(projectId, sheetId, newDeletedState);
@@ -321,92 +341,97 @@ PLMError PLMPaperHub::setDeleted(int projectId, int sheetId, bool newDeletedStat
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 bool PLMPaperHub::getDeleted(int projectId, int sheetId) const
 {
-    //TODO: do recursive deletion
+    // TODO: do recursive deletion
     return get(projectId, sheetId, "b_deleted").toBool();
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-PLMError PLMPaperHub::setCreationDate(int projectId, int sheetId, const QDateTime &newDate)
+PLMError PLMPaperHub::setCreationDate(int projectId, int sheetId,
+                                      const QDateTime& newDate)
 {
     PLMError error = set(projectId, sheetId, "dt_created", newDate);
+
     IFOK(error) {
         emit creationDateChanged(projectId, sheetId, newDate);
     }
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 QDateTime PLMPaperHub::getCreationDate(int projectId, int sheetId) const
 {
     return get(projectId, sheetId, "dt_created").toDateTime();
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-PLMError PLMPaperHub::setUpdateDate(int projectId, int sheetId, const QDateTime &newDate)
+PLMError PLMPaperHub::setUpdateDate(int projectId, int sheetId, const QDateTime& newDate)
 {
     PLMError error = set(projectId, sheetId, "dt_updated", newDate);
+
     IFOK(error) {
         emit updateDateChanged(projectId, sheetId, newDate);
     }
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 QDateTime PLMPaperHub::getUpdateDate(int projectId, int sheetId) const
 {
     return get(projectId, sheetId, "dt_updated").toDateTime();
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-PLMError PLMPaperHub::setContentDate(int projectId, int sheetId, const QDateTime &newDate)
+PLMError PLMPaperHub::setContentDate(int projectId, int sheetId, const QDateTime& newDate)
 {
     PLMError error = set(projectId, sheetId, "dt_content", newDate);
+
     IFOK(error) {
         emit contentDateChanged(projectId, sheetId, newDate);
     }
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 QDateTime PLMPaperHub::getContentDate(int projectId, int sheetId) const
 {
     return get(projectId, sheetId, "dt_content").toDateTime();
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 PLMError PLMPaperHub::getError()
 {
     return m_error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-void PLMPaperHub::setError(const PLMError &error)
+void PLMPaperHub::setError(const PLMError& error)
 {
     m_error = error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-PLMError PLMPaperHub::set(int projectId,
-                          int sheetId,
-                          const QString &fieldName,
-                          const QVariant &value,
-                          bool setCurrentDateBool)
+PLMError PLMPaperHub::set(int             projectId,
+                          int             sheetId,
+                          const QString & fieldName,
+                          const QVariant& value,
+                          bool            setCurrentDateBool)
 {
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
+
     queries.beginTransaction();
     error = queries.set(sheetId, fieldName, value);
 
@@ -426,12 +451,18 @@ PLMError PLMPaperHub::set(int projectId,
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-PLMError PLMPaperHub::setSetting(int projectId, const QString &fieldName, const QVariant &value, bool setCurrentDateBool)
+PLMError PLMPaperHub::setSetting(int             projectId,
+                                 const QString & fieldName,
+                                 const QVariant& value,
+                                 bool            setCurrentDateBool)
 {
     PLMError error;
-    PLMSqlQueries queries(projectId, "tbl_" + m_paperType + "_setting", PLMSqlQueries::UserDB);
+    PLMSqlQueries queries(projectId,
+                          "tbl_" + m_paperType + "_setting",
+                          PLMSqlQueries::UserDB);
+
     queries.beginTransaction();
     error = queries.set(1, fieldName, value);
 
@@ -451,12 +482,19 @@ PLMError PLMPaperHub::setSetting(int projectId, const QString &fieldName, const 
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
-PLMError PLMPaperHub::setDocSetting(int projectId, int paperId, const QString &fieldName, const QVariant &value, bool setCurrentDateBool)
+PLMError PLMPaperHub::setDocSetting(int             projectId,
+                                    int             paperId,
+                                    const QString & fieldName,
+                                    const QVariant& value,
+                                    bool            setCurrentDateBool)
 {
     PLMError error;
-    PLMSqlQueries queries(projectId, "tbl_" + m_paperType + "_doc_list", PLMSqlQueries::UserDB);
+    PLMSqlQueries queries(projectId,
+                          "tbl_" + m_paperType + "_doc_list",
+                          PLMSqlQueries::UserDB);
+
     queries.beginTransaction();
     error = queries.set(paperId, fieldName, value);
 
@@ -476,15 +514,16 @@ PLMError PLMPaperHub::setDocSetting(int projectId, int paperId, const QString &f
     return error;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 
-QVariant PLMPaperHub::get(int projectId, int sheetId, const QString &fieldName) const
+QVariant PLMPaperHub::get(int projectId, int sheetId, const QString& fieldName) const
 {
     PLMError error;
     QVariant var;
     QVariant result;
     PLMSqlQueries queries(projectId, m_tableName);
+
     error = queries.get(sheetId, fieldName, var);
     IFOK(error) {
         result = var;
@@ -495,15 +534,18 @@ QVariant PLMPaperHub::get(int projectId, int sheetId, const QString &fieldName) 
     return result;
 }
 
-//------------------------------------------------------------
+// ------------------------------------------------------------
 
 
-QVariant PLMPaperHub::getSetting(int projectId, const QString &fieldName) const
+QVariant PLMPaperHub::getSetting(int projectId, const QString& fieldName) const
 {
     PLMError error;
     QVariant var;
     QVariant result;
-    PLMSqlQueries queries(projectId, "tbl_" + m_paperType + "_setting", PLMSqlQueries::UserDB);
+    PLMSqlQueries queries(projectId,
+                          "tbl_" + m_paperType + "_setting",
+                          PLMSqlQueries::UserDB);
+
     error = queries.get(1, fieldName, var);
     IFOK(error) {
         result = var;
@@ -513,15 +555,20 @@ QVariant PLMPaperHub::getSetting(int projectId, const QString &fieldName) const
     }
     return result;
 }
-//------------------------------------------------------------
+
+// ------------------------------------------------------------
 
 
-QVariant PLMPaperHub::getDocSetting(int projectId, int paperId, const QString &fieldName) const
+QVariant PLMPaperHub::getDocSetting(int projectId, int paperId,
+                                    const QString& fieldName) const
 {
     PLMError error;
     QVariant var;
     QVariant result;
-    PLMSqlQueries queries(projectId, "tbl_" + m_paperType + "_doc_list", PLMSqlQueries::UserDB);
+    PLMSqlQueries queries(projectId,
+                          "tbl_" + m_paperType + "_doc_list",
+                          PLMSqlQueries::UserDB);
+
     error = queries.get(paperId, fieldName, var);
     IFOK(error) {
         result = var;
@@ -531,14 +578,15 @@ QVariant PLMPaperHub::getDocSetting(int projectId, int paperId, const QString &f
     }
     return result;
 }
-//-----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
 
 int PLMPaperHub::getLastAddedId()
 {
     return m_last_added_id;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 ///
 /// \brief PLMPaperHub::getParentList
@@ -546,7 +594,7 @@ int PLMPaperHub::getLastAddedId()
 /// \param paperId
 /// \return
 /// get a list of the parents' ids
-QList<int> PLMPaperHub::getParentList(int projectId, int paperId) const
+QList<int>PLMPaperHub::getParentList(int projectId, int paperId) const
 {
     Q_UNUSED(paperId)
     PLMError error;
@@ -554,17 +602,12 @@ QList<int> PLMPaperHub::getParentList(int projectId, int paperId) const
     QList<int> result;
     PLMSqlQueries queries(projectId, "tbl_" + m_paperType, PLMSqlQueries::ProjectDB);
 
-    //find paperId indent
-    //int paperIdIndent;
-    //error = queries.get(paperId, "l_indent", paperIdIndent);
+    // find paperId indent
+    // int paperIdIndent;
+    // error = queries.get(paperId, "l_indent", paperIdIndent);
 
 
-    //IFOKDO(error, queries.getValueByIdsWhere())
-
-
-
-
-
+    // IFOKDO(error, queries.getValueByIdsWhere())
 
 
     IFOK(error) {
@@ -576,13 +619,252 @@ QList<int> PLMPaperHub::getParentList(int projectId, int paperId) const
     return result;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-PLMError PLMPaperHub::addPaper(const QHash<QString, QVariant> &values, int projectId)
+int PLMPaperHub::getRowAmongChildren(int projectId, int paperId) const
+{
+    int childIndent = getIndent(projectId, paperId);
+
+    // if child is top level
+    if (childIndent == 0)
+    {
+        return -1;
+    }
+
+
+    PLMError error;
+    PLMSqlQueries queries(projectId, m_tableName, PLMSqlQueries::ProjectDB);
+    QList<int>    sortedIds;
+    error = queries.getSortedIds(sortedIds);
+
+
+    IFKO(error) {
+        emit errorSent(error);
+
+        return -2;
+    }
+
+    // if no item
+    if (sortedIds.count() == 0)
+    {
+        return -1;
+    }
+
+    int childIndex = sortedIds.indexOf(paperId);
+
+    // find first child
+    int indent              = -2;
+    int possibleParentId    = -2;
+    int possibleParentIndex = childIndex;
+    int firstChildIndex     = childIndex;
+
+    while (indent != childIndent - 1) {
+        firstChildIndex      = possibleParentIndex;
+        possibleParentIndex -= 1;
+        possibleParentId     = sortedIds.at(possibleParentIndex);
+        indent               = getIndent(projectId, possibleParentId);
+    }
+
+    // find last child
+    indent = -2;
+    int possibleLastChildId = -2;
+    int lastChildIndex      = childIndex;
+
+    while (indent >= childIndent) {
+        // if last of list
+        if (sortedIds.count() - 1 == lastChildIndex) break;
+
+        // else
+        lastChildIndex     += 1;
+        possibleLastChildId = sortedIds.at(lastChildIndex);
+        indent              = getIndent(projectId, possibleLastChildId);
+    }
+
+    while (indent == childIndent) {
+        lastChildIndex     -= 1;
+        possibleLastChildId = sortedIds.at(lastChildIndex);
+        indent              = getIndent(projectId, possibleLastChildId);
+    }
+
+
+    // find number of children:
+    int childrenCount = lastChildIndex - firstChildIndex + 1;
+    Q_UNUSED(childrenCount)
+
+    int row = childIndex - firstChildIndex;
+
+    return row;
+}
+
+// -----------------------------------------------------------------------------
+
+int PLMPaperHub::getChildIdFromParentAndRow(int projectId, int parentId, int row) const
+{
+    int parentIndent     = getIndent(projectId, parentId);
+    int firstChildIndent = parentIndent + 1;
+
+
+    PLMError error;
+    PLMSqlQueries queries(projectId, m_tableName, PLMSqlQueries::ProjectDB);
+
+    QList<int> sortedIds;
+    error = queries.getSortedIds(sortedIds);
+
+
+    IFKO(error) {
+        emit errorSent(error);
+
+        return -2;
+    }
+
+    int parentIndex = sortedIds.indexOf(parentId);
+    QList<int> listOfDirectChildren;
+    int indent = firstChildIndent;
+    int index  = parentIndex;
+
+    while (indent >= firstChildIndent) {
+        index += 1;
+
+        int id = sortedIds.at(index);
+        indent = getIndent(projectId, id);
+
+        if (indent == firstChildIndent) {
+            listOfDirectChildren.append(id);
+        }
+    }
+
+
+    return listOfDirectChildren.at(row);
+}
+
+// -----------------------------------------------------------------------------
+
+int PLMPaperHub::getChildRowCount(int projectId, int parentId) const
+{
+    if (parentId == -1) {
+        PLMError error;
+        PLMSqlQueries queries(projectId, m_tableName, PLMSqlQueries::ProjectDB);
+
+        QList<int> sortedIds;
+        error = queries.getSortedIds(sortedIds);
+
+
+        IFKO(error) {
+            emit errorSent(error);
+
+            return -2;
+        }
+
+        QList<int> listOfDirectChildren;
+        int indent = 0;
+        int index  = 0;
+
+        while (indent >= 0) {
+            index += 1;
+
+            if (index >= sortedIds.count()) break;
+
+            int id = sortedIds.at(index);
+            indent = getIndent(projectId, id);
+
+            if (indent == 0) {
+                listOfDirectChildren.append(id);
+            }
+        }
+
+        return listOfDirectChildren.count();
+    }
+
+
+    int parentIndent     = getIndent(projectId, parentId);
+    int firstChildIndent = parentIndent + 1;
+
+
+    PLMError error;
+    PLMSqlQueries queries(projectId, m_tableName, PLMSqlQueries::ProjectDB);
+
+    QList<int> sortedIds;
+    error = queries.getSortedIds(sortedIds);
+
+
+    IFKO(error) {
+        emit errorSent(error);
+
+        return -2;
+    }
+
+    int parentIndex = sortedIds.indexOf(parentId);
+    QList<int> listOfDirectChildren;
+    int indent = firstChildIndent;
+    int index  = parentIndex;
+
+    while (indent >= firstChildIndent) {
+        index += 1;
+
+        int id = sortedIds.at(index);
+        indent = getIndent(projectId, id);
+
+        if (indent == firstChildIndent) {
+            listOfDirectChildren.append(id);
+        }
+    }
+
+
+    return listOfDirectChildren.count();
+}
+
+// -----------------------------------------------------------------------------
+
+int PLMPaperHub::getDirectParentId(int projectId, int paperId) const
+{
+    int childIndent = getIndent(projectId, paperId);
+
+    // if child is top level
+    if (childIndent == 0)
+    {
+        return -1;
+    }
+
+
+    PLMError error;
+    PLMSqlQueries queries(projectId, m_tableName, PLMSqlQueries::ProjectDB);
+    QList<int>    sortedIds;
+    error = queries.getSortedIds(sortedIds);
+
+
+    IFKO(error) {
+        emit errorSent(error);
+
+        return -2;
+    }
+
+    // if no item
+    if (sortedIds.count() == 0)
+    {
+        return -1;
+    }
+
+    int childIndex = sortedIds.indexOf(paperId);
+
+    int indent              = -1;
+    int possibleParentId    = -1;
+    int possibleParentIndex = childIndex;
+
+    while (indent != childIndent - 1) {
+        possibleParentId = sortedIds.at(possibleParentIndex - 1);
+        indent           = getIndent(projectId, possibleParentId);
+    }
+    return possibleParentId;
+}
+
+// -----------------------------------------------------------------------------
+
+PLMError PLMPaperHub::addPaper(const QHash<QString, QVariant>& values, int projectId)
 {
     PLMSqlQueries queries(projectId, m_tableName);
+
     queries.beginTransaction();
-    int newId = -1;
+    int newId      = -1;
     PLMError error = queries.add(values, newId);
     IFOKDO(error, queries.renumberSortOrder());
     IFKO(error) {
@@ -601,25 +883,26 @@ PLMError PLMPaperHub::addPaper(const QHash<QString, QVariant> &values, int proje
     return error;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 PLMError PLMPaperHub::addPaperBelow(int projectId, int targetId)
 {
     int target_sort_order = getSortOrder(projectId, targetId);
-    int target_indent = getIndent(projectId, targetId);
-    //find next node with the same indentation
+    int target_indent     = getIndent(projectId, targetId);
+
+    // find next node with the same indentation
     QHash<int, QVariant> result;
     QHash<QString, QVariant> where;
-    where.insert("l_indent <=", target_indent);
+    where.insert("l_indent <=",    target_indent);
     where.insert("l_sort_order >", target_sort_order);
     PLMSqlQueries queries(projectId, m_tableName);
-    PLMError error = queries.getValueByIdsWhere("l_sort_order", result, where, true);
+    PLMError error     = queries.getValueByIdsWhere("l_sort_order", result, where, true);
     int finalSortOrder = 0;
 
     // if node after
     if (!result.isEmpty()) {
         QHash<int, QVariant>::const_iterator i = result.constBegin();
-        int lowestSort = 0;
+        int lowestSort                         = 0;
         lowestSort = i.value().toInt();
 
         while (i != result.constEnd()) {
@@ -639,6 +922,7 @@ PLMError PLMPaperHub::addPaperBelow(int projectId, int targetId)
             finalSortOrder = 0;
         }
     }
+
     // if no node after (bottom of tree)
     else {
         QList<int> idList;
@@ -651,37 +935,39 @@ PLMError PLMPaperHub::addPaperBelow(int projectId, int targetId)
 
         int lastId = idList.last();
         QHash<int, QVariant> result2;
-        IFOKDO(error, queries.getValueByIds("l_sort_order", result2, "id", QVariant(lastId)));
+        IFOKDO(error,
+               queries.getValueByIds("l_sort_order", result2, "id", QVariant(lastId)));
         finalSortOrder = result2.begin().value().toInt() + 1;
     }
 
     // finally add paper
     QHash<QString, QVariant> values;
     values.insert("l_sort_order", finalSortOrder);
-    values.insert("l_indent", target_indent);
+    values.insert("l_indent",     target_indent);
     IFOKDO(error, addPaper(values, projectId));
     return error;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
 {
     int target_sort_order = getSortOrder(projectId, targetId);
-    int target_indent = getIndent(projectId, targetId);
-    //find next node with the same indentation
+    int target_indent     = getIndent(projectId, targetId);
+
+    // find next node with the same indentation
     QHash<int, QVariant> result;
     QHash<QString, QVariant> where;
-    where.insert("l_indent <=", target_indent);
+    where.insert("l_indent <=",    target_indent);
     where.insert("l_sort_order >", target_sort_order);
     PLMSqlQueries queries(projectId, m_tableName);
-    PLMError error = queries.getValueByIdsWhere("l_sort_order", result, where, true);
+    PLMError error     = queries.getValueByIdsWhere("l_sort_order", result, where, true);
     int finalSortOrder = 0;
 
     // if node after
     if (!result.isEmpty()) {
         QHash<int, QVariant>::const_iterator i = result.constBegin();
-        int lowestSort = 0;
+        int lowestSort                         = 0;
         lowestSort = i.value().toInt();
 
         while (i != result.constEnd()) {
@@ -695,6 +981,7 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
         }
 
         finalSortOrder = lowestSort - 1;
+
         // if tree is emptyueries.renumberSortOrder())
         IFKO(error) {
             queries.rollback();
@@ -704,6 +991,7 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
             finalSortOrder = 0;
         }
     }
+
     // if no node after (bottom of tree)
     else {
         QList<int> idList;
@@ -716,27 +1004,29 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
 
         int lastId = idList.last();
         QHash<int, QVariant> result2;
-        IFOKDO(error, queries.getValueByIds("l_sort_order", result2, "id", QVariant(lastId)));
+        IFOKDO(error,
+               queries.getValueByIds("l_sort_order", result2, "id", QVariant(lastId)));
         finalSortOrder = result2.begin().value().toInt() + 1;
     }
 
     // finally add paper
     QHash<QString, QVariant> values;
     values.insert("l_sort_order", finalSortOrder);
-    values.insert("l_indent", target_indent + 1);
+    values.insert("l_indent",     target_indent + 1);
     IFOKDO(error, addPaper(values, projectId));
     return error;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 PLMError PLMPaperHub::removePaper(int projectId, int targetId)
 {
     PLMSqlQueries queries(projectId, m_tableName);
+
     queries.beginTransaction();
     PLMError error = queries.remove(targetId);
     IFOKDO(error, queries.renumberSortOrder())
-            IFKO(error) {
+    IFKO(error) {
         queries.rollback();
     }
     IFOK(error) {
@@ -751,26 +1041,28 @@ PLMError PLMPaperHub::removePaper(int projectId, int targetId)
     return error;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-PLMError PLMPaperHub::settings_setStackSetting(PLMPaperHub::Stack stack, PLMPaperHub::Setting setting, const QVariant &value)
+PLMError PLMPaperHub::settings_setStackSetting(PLMPaperHub::Stack   stack,
+                                               PLMPaperHub::Setting setting,
+                                               const QVariant     & value)
 {
     PLMError error;
 
-    foreach (int projectId, plmProjectManager->projectIdList()) {
-        if (setting == PLMPaperHub::SplitterState ) {
+    foreach(int projectId, plmProjectManager->projectIdList()) {
+        if (setting == PLMPaperHub::SplitterState) {
             error = setSetting(projectId, "m_splitter_state", value, true);
         }
 
-        if (setting == PLMPaperHub::WindowState ) {
+        if (setting == PLMPaperHub::WindowState) {
             error = setSetting(projectId, "m_window_state", value, true);
         }
 
-        if (setting == PLMPaperHub::Date ) {
+        if (setting == PLMPaperHub::Date) {
             error = setSetting(projectId, "dt_updated", value, true);
         }
 
-        if (setting == PLMPaperHub::Minimap ) {
+        if (setting == PLMPaperHub::Minimap) {
             if (stack == PLMPaperHub::Zero) {
                 error = setSetting(projectId, "b_stack_0_map", value, true);
             }
@@ -780,7 +1072,7 @@ PLMError PLMPaperHub::settings_setStackSetting(PLMPaperHub::Stack stack, PLMPape
             }
         }
 
-        if (setting == PLMPaperHub::Fit ) {
+        if (setting == PLMPaperHub::Fit) {
             if (stack == PLMPaperHub::Zero) {
                 error = setSetting(projectId, "b_stack_0_fit", value, true);
             }
@@ -790,7 +1082,7 @@ PLMError PLMPaperHub::settings_setStackSetting(PLMPaperHub::Stack stack, PLMPape
             }
         }
 
-        if (setting == PLMPaperHub::SpellCheck ) {
+        if (setting == PLMPaperHub::SpellCheck) {
             if (stack == PLMPaperHub::Zero) {
                 error = setSetting(projectId, "b_stack_0_spellcheck", value, true);
             }
@@ -800,7 +1092,7 @@ PLMError PLMPaperHub::settings_setStackSetting(PLMPaperHub::Stack stack, PLMPape
             }
         }
 
-        if (setting == PLMPaperHub::StackState ) {
+        if (setting == PLMPaperHub::StackState) {
             if (stack == PLMPaperHub::Zero) {
                 error = setSetting(projectId, "b_stack_0_state", value, true);
             }
@@ -817,26 +1109,27 @@ PLMError PLMPaperHub::settings_setStackSetting(PLMPaperHub::Stack stack, PLMPape
     return error;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-QVariant PLMPaperHub::settings_getStackSetting(PLMPaperHub::Stack stack, PLMPaperHub::Setting setting) const
+QVariant PLMPaperHub::settings_getStackSetting(PLMPaperHub::Stack   stack,
+                                               PLMPaperHub::Setting setting) const
 {
     int projectId = plmProjectManager->projectIdList().first();
     QVariant value;
 
-    if (setting == PLMPaperHub::SplitterState ) {
+    if (setting == PLMPaperHub::SplitterState) {
         value = getSetting(projectId, "m_splitter_state");
     }
 
-    if (setting == PLMPaperHub::WindowState ) {
+    if (setting == PLMPaperHub::WindowState) {
         value = getSetting(projectId, "m_window_state");
     }
 
-    if (setting == PLMPaperHub::Date ) {
+    if (setting == PLMPaperHub::Date) {
         value = getSetting(projectId, "dt_updated");
     }
 
-    if (setting == PLMPaperHub::Minimap ) {
+    if (setting == PLMPaperHub::Minimap) {
         if (stack == PLMPaperHub::Zero) {
             value = getSetting(projectId, "b_stack_0_map");
         }
@@ -846,7 +1139,7 @@ QVariant PLMPaperHub::settings_getStackSetting(PLMPaperHub::Stack stack, PLMPape
         }
     }
 
-    if (setting == PLMPaperHub::Fit ) {
+    if (setting == PLMPaperHub::Fit) {
         if (stack == PLMPaperHub::Zero) {
             value = getSetting(projectId, "b_stack_0_fit");
         }
@@ -856,7 +1149,7 @@ QVariant PLMPaperHub::settings_getStackSetting(PLMPaperHub::Stack stack, PLMPape
         }
     }
 
-    if (setting == PLMPaperHub::SpellCheck ) {
+    if (setting == PLMPaperHub::SpellCheck) {
         if (stack == PLMPaperHub::Zero) {
             value = getSetting(projectId, "b_stack_0_spellcheck");
         }
@@ -866,7 +1159,7 @@ QVariant PLMPaperHub::settings_getStackSetting(PLMPaperHub::Stack stack, PLMPape
         }
     }
 
-    if (setting == PLMPaperHub::StackState ) {
+    if (setting == PLMPaperHub::StackState) {
         if (stack == PLMPaperHub::Zero) {
             value = getSetting(projectId, "b_stack_0_state");
         }
@@ -879,38 +1172,40 @@ QVariant PLMPaperHub::settings_getStackSetting(PLMPaperHub::Stack stack, PLMPape
     return value;
 }
 
+// -----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-
-PLMError PLMPaperHub::settings_setDocSetting(int projectId, int paperId, PLMPaperHub::OpenedDocSetting setting, const QVariant &value)
+PLMError PLMPaperHub::settings_setDocSetting(int                           projectId,
+                                             int                           paperId,
+                                             PLMPaperHub::OpenedDocSetting setting,
+                                             const QVariant              & value)
 {
     PLMError error;
 
-    if (setting == PLMPaperHub::StackNumber ) {
+    if (setting == PLMPaperHub::StackNumber) {
         error = setDocSetting(projectId, paperId, "l_statck", value, true);
     }
 
-    if (setting == PLMPaperHub::Hovering ) {
+    if (setting == PLMPaperHub::Hovering) {
         error = setDocSetting(projectId, paperId, "b_hovering", value, true);
     }
 
-    if (setting == PLMPaperHub::Visible ) {
+    if (setting == PLMPaperHub::Visible) {
         error = setDocSetting(projectId, paperId, "b_visible", value, true);
     }
 
-    if (setting == PLMPaperHub::HasFocus ) {
+    if (setting == PLMPaperHub::HasFocus) {
         error = setDocSetting(projectId, paperId, "b_has_focus", value, true);
     }
 
-    if (setting == PLMPaperHub::CursorPosition ) {
+    if (setting == PLMPaperHub::CursorPosition) {
         error = setDocSetting(projectId, paperId, "l_cursor_pos", value, true);
     }
 
-    if (setting == PLMPaperHub::HoveringGeometry ) {
+    if (setting == PLMPaperHub::HoveringGeometry) {
         error = setDocSetting(projectId, paperId, "m_geometry", value, true);
     }
 
-    if (setting == PLMPaperHub::Date ) {
+    if (setting == PLMPaperHub::Date) {
         error = setDocSetting(projectId, paperId, "dt_updated", value, true);
     }
 
@@ -920,38 +1215,39 @@ PLMError PLMPaperHub::settings_setDocSetting(int projectId, int paperId, PLMPape
     return error;
 }
 
+// -----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-
-QVariant PLMPaperHub::settings_getDocSetting(int projectId, int paperId, PLMPaperHub::OpenedDocSetting setting) const
+QVariant PLMPaperHub::settings_getDocSetting(int                           projectId,
+                                             int                           paperId,
+                                             PLMPaperHub::OpenedDocSetting setting) const
 {
     QVariant value;
 
-    if (setting == PLMPaperHub::StackNumber ) {
+    if (setting == PLMPaperHub::StackNumber) {
         value = getDocSetting(projectId, paperId, "l_statck");
     }
 
-    if (setting == PLMPaperHub::Hovering ) {
+    if (setting == PLMPaperHub::Hovering) {
         value = getDocSetting(projectId, paperId, "b_hovering");
     }
 
-    if (setting == PLMPaperHub::Visible ) {
+    if (setting == PLMPaperHub::Visible) {
         value = getDocSetting(projectId, paperId, "b_visible");
     }
 
-    if (setting == PLMPaperHub::HasFocus ) {
+    if (setting == PLMPaperHub::HasFocus) {
         value = getDocSetting(projectId, paperId, "b_has_focus");
     }
 
-    if (setting == PLMPaperHub::CursorPosition ) {
+    if (setting == PLMPaperHub::CursorPosition) {
         value = getDocSetting(projectId, paperId, "l_cursor_pos");
     }
 
-    if (setting == PLMPaperHub::HoveringGeometry ) {
+    if (setting == PLMPaperHub::HoveringGeometry) {
         value = getDocSetting(projectId, paperId, "m_geometry");
     }
 
-    if (setting == PLMPaperHub::Date ) {
+    if (setting == PLMPaperHub::Date) {
         value = getDocSetting(projectId, paperId, "dt_updated");
     }
 

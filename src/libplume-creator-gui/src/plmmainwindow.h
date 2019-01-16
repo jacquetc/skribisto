@@ -36,6 +36,9 @@ private slots:
     void attachWindow(const QString& windowName);
     void detachWindow(const QString& windowName);
 
+    void writeSettings();
+    void applySettings();
+
 private:
 
     void loadPlugins();

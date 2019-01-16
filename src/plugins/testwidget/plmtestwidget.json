@@ -1,9 +1,9 @@
 {
     "type" :            "widget",
     "shortname" :            "plmtestwidget",
-    "longname" :        "Plume Test Wiget",
+    "longname" :        "Plume Test Widget",
     "version" :         "1.0",
     "mandatory" :    true,
     "activatedbydefault" :    true,
-    "dependencies" :    []
+    "dependencies" :    ["writeWindow"]
 }
