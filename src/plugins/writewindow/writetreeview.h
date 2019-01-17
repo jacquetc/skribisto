@@ -31,10 +31,19 @@ public:
 
 private slots:
 
-    void              setExpandStateToItems(const QModelIndex & topLeft,
-                                            const QModelIndex & bottomRight,
-                                            const QVector<int>& roles = QVector<int>());
+    void              setExpandStateToItems();
     QList<QModelIndex>allIndexesFromModel();
+    QItemSelection    selectChildren(const QModelIndex& parent,
+                                     bool               recursively) const;
+    void              itemCollapsedSlot(QModelIndex index);
+    void              itemExpandedSlot(QModelIndex index);
+    void              itemClicked(QModelIndex index);
+
+private:
+
+    // clicks :
+    int m_clicksCount;
+    QModelIndex m_oldIndex;
 };
 
 #endif // WRITETREEVIEW_H

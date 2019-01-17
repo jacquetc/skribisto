@@ -165,16 +165,16 @@ QVariant PLMSheetItem::data(int role)
             m_data.insert(role, plmdata->sheetHub()->getContentDate(projectId, paperId));
             break;
 
-        case Roles::charCountRole:
+        case Roles::CharCountRole:
             m_data.insert(role,
                           plmdata->sheetPropertyHub()->getProperty(projectId, paperId,
-                                                                   "charCount"));
+                                                                   "char_count"));
             break;
 
-        case Roles::wordCountRole:
+        case Roles::WordCountRole:
             m_data.insert(role,
                           plmdata->sheetPropertyHub()->getProperty(projectId, paperId,
-                                                                   "wordCount"));
+                                                                   "word_count"));
             break;
         }
         invalidatedRoles.removeAll(role);

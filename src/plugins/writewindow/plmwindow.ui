@@ -37,7 +37,11 @@
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
-      <widget class="WriteTreeView" name="treeView"/>
+      <widget class="WriteTreeView" name="treeView">
+       <property name="editTriggers">
+        <set>QAbstractItemView::EditKeyPressed</set>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>

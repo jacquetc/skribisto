@@ -45,5 +45,6 @@ target_link_libraries(plume-creator-core plume-creator-data)
 
 qt5_use_modules(plume-creator-core Core)
 include_directories(
-        "${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/"
+    "${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/"
+    "${CMAKE_SOURCE_DIR}/src/libplume-creator-gui/src/"
         )

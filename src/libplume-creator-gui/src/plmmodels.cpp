@@ -22,8 +22,9 @@
 
 PLMModels::PLMModels(QObject *parent) : QObject(parent)
 {
-    m_instance   = this;
-    m_sheetModel = new PLMSheetModel(this);
+    m_instance        = this;
+    m_sheetModel      = new PLMSheetModel(this);
+    m_sheetProxyModel = new PLMSheetProxyModel(this);
 }
 
 PLMModels::~PLMModels()
@@ -34,4 +35,9 @@ PLMModels *PLMModels::m_instance = nullptr;
 PLMSheetModel * PLMModels::sheetModel()
 {
     return m_sheetModel;
+}
+
+PLMSheetProxyModel * PLMModels::sheetProxyModel()
+{
+    return m_sheetProxyModel;
 }

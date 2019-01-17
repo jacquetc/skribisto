@@ -186,8 +186,95 @@ QVariant PLMSheetModel::data(const QModelIndex& index, int role) const
 
 bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
+    Q_ASSERT(checkIndex(index,
+                        QAbstractItemModel::CheckIndexOption::IndexIsValid |
+                        QAbstractItemModel::CheckIndexOption::DoNotUseParent));
+
+
     if (data(index, role) != value) {
-        // FIXME: Implement me!
+        PLMSheetItem *item = static_cast<PLMSheetItem *>(index.internalPointer());
+        int projectId      = item->projectId();
+        int paperId        = item->paperId();
+        PLMError error;
+
+
+        switch (role) {
+        case PLMSheetItem::Roles::ProjectNameRole:
+            error = plmdata->projectHub()->setProjectName(projectId, value.toString());
+            break;
+
+        case PLMSheetItem::Roles::ProjectIdRole:
+
+            // useless
+            break;
+
+        case PLMSheetItem::Roles::PaperIdRole:
+
+            // useless
+            break;
+
+        case PLMSheetItem::Roles::NameRole:
+            error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
+            item->invalidateData(role);
+            break;
+
+        case PLMSheetItem::Roles::TagRole:
+            error = plmdata->sheetPropertyHub()->setProperty(projectId, paperId,
+                                                             "tag", value.toString());
+            break;
+
+        case PLMSheetItem::Roles::IndentRole:
+            error = plmdata->sheetHub()->setIndent(projectId, paperId, value.toInt());
+            break;
+
+        case PLMSheetItem::Roles::SortOrderRole:
+            error = plmdata->sheetHub()->setSortOrder(projectId, paperId, value.toInt());
+            break;
+
+        case PLMSheetItem::Roles::DeletedRole:
+            error = plmdata->sheetHub()->setDeleted(projectId, paperId, value.toBool());
+            break;
+
+        case PLMSheetItem::Roles::CreationDateRole:
+            error = plmdata->sheetHub()->setCreationDate(projectId,
+                                                         paperId,
+                                                         value.toDateTime());
+            break;
+
+        case PLMSheetItem::Roles::UpdateDateRole:
+            error = plmdata->sheetHub()->setUpdateDate(projectId,
+                                                       paperId,
+                                                       value.toDateTime());
+            break;
+
+        case PLMSheetItem::Roles::ContentDateRole:
+            error = plmdata->sheetHub()->setContentDate(projectId,
+                                                        paperId,
+                                                        value.toDateTime());
+            break;
+
+        case PLMSheetItem::Roles::CharCountRole:
+            error = plmdata->sheetPropertyHub()->setProperty(projectId,
+                                                             paperId,
+                                                             "char_count",
+                                                             QString::number(
+                                                                 value.toInt()));
+            break;
+
+        case PLMSheetItem::Roles::WordCountRole:
+
+            error = plmdata->sheetPropertyHub()->setProperty(projectId,
+                                                             paperId,
+                                                             "word_count",
+                                                             QString::number(
+                                                                 value.toInt()));
+            break;
+        }
+
+        if (!error) {
+            return false;
+        }
+
         emit dataChanged(index, index, QVector<int>() << role);
         return true;
     }

@@ -45,8 +45,8 @@ public:
         ContentDateRole  = Qt::UserRole + 10,
 
         // specific to sheets:
-        charCountRole = Qt::UserRole + 11,
-        wordCountRole = Qt::UserRole + 12
+        CharCountRole = Qt::UserRole + 11,
+        WordCountRole = Qt::UserRole + 12
     };
     Q_ENUMS(Roles)
 

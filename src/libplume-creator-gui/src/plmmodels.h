@@ -22,6 +22,7 @@
 #define PLMMODELS_H
 
 #include "plmsheetmodel.h"
+#include "plmsheetproxymodel.h"
 
 #include <QObject>
 
@@ -39,7 +40,8 @@ public:
         return m_instance;
     }
 
-    PLMSheetModel* sheetModel();
+    PLMSheetModel     * sheetModel();
+    PLMSheetProxyModel* sheetProxyModel();
 
 signals:
 
@@ -50,6 +52,7 @@ private:
     static PLMModels *m_instance;
 
     PLMSheetModel *m_sheetModel;
+    PLMSheetProxyModel *m_sheetProxyModel;
 };
 
 #endif // PLMMODELS_H
