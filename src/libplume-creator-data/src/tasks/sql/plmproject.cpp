@@ -32,7 +32,7 @@
 #include <QFileInfo>
 #include <QTimer>
 
-PLMProject::PLMProject(QObject *parent, int projectId, const QString &fileName) :
+PLMProject::PLMProject(QObject *parent, int projectId, const QString& fileName) :
     QObject(parent)
 {
     qRegisterMetaType<PLMProject::DBType>("PLMProject::DBType");
@@ -61,61 +61,62 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString &fileName) 
             m_sqlDb     = importer.createEmptySQLiteProject(projectId, error);
             m_userSqlDb = importer.createEmptyUserSQLiteFile(projectId, error);
 
-            IFKO(error){
-                //qWarning << error.getMessage()
+            IFKO(error) {
+                // qWarning << error.getMessage()
                 m_projectId = -1;
                 qCritical() << "New project not created";
 
                 return;
             }
-
         } else {
             m_sqlDb = importer.createSQLiteDbFrom("SQLITE", fileName, projectId, error);
             QFileInfo info(fileName);
-            QString   userFileName = info.path() + QDir::separator() + info.baseName() + ".plume.user";
+            QString   userFileName = info.path() + QDir::separator() + info.baseName() +
+                                     ".plume.user";
             QFileInfo userFileNameInfo(userFileName);
 
             if (!userFileNameInfo.exists()) {
                 m_userSqlDb = importer.createEmptyUserSQLiteFile(projectId, error);
             } else {
                 m_userSqlDb = importer.createUserSQLiteFileFrom("SQLITE",  userFileName,
-                              projectId,
-                              error);
+                                                                projectId,
+                                                                error);
             }
         }
     }
     setType("SQLITE");
     IFOK(error) {
+        // sheet and notes sql tree :
         m_sheetTree = new PLMSheetTree(this, "tbl_sheet", "l_sheet_id", m_sqlDb);
         m_plmTreeForTableNameHash.insert("tbl_sheet", m_sheetTree);
         m_noteTree = new PLMNoteTree(this, "tbl_note", "l_note_id", m_sqlDb);
-        m_plmTreeForTableNameHash.insert("tbl_note", m_noteTree);
+        m_plmTreeForTableNameHash.insert("tbl_note",  m_noteTree);
         PLMProperty *sheetProperty = new PLMProperty(this,
-                "tbl_sheet_property",
-                "l_sheet_code",
-                m_sqlDb);
+                                                     "tbl_sheet_property",
+                                                     "l_sheet_code",
+                                                     m_sqlDb);
         m_plmPropertyForTableNameHash.insert("tbl_sheet_property", sheetProperty);
         PLMProperty *noteProperty = new PLMProperty(this,
-                "tbl_note_property",
-                "l_note_code",
-                m_sqlDb);
+                                                    "tbl_note_property",
+                                                    "l_note_code",
+                                                    m_sqlDb);
         m_plmPropertyForTableNameHash.insert("tbl_note_property", noteProperty);
         PLMProperty *sheetSystemProperty = new PLMProperty(this,
-                "tbl_sheet_property",
-                "l_sheet_code",
-                m_sqlDb);
+                                                           "tbl_sheet_property",
+                                                           "l_sheet_code",
+                                                           m_sqlDb);
         m_plmPropertyForTableNameHash.insert("tbl_sheet_system_property",
                                              sheetSystemProperty);
         PLMProperty *noteSystemProperty = new PLMProperty(this,
-                "tbl_note_property",
-                "l_note_code",
-                m_sqlDb);
+                                                          "tbl_note_property",
+                                                          "l_note_code",
+                                                          m_sqlDb);
         m_plmPropertyForTableNameHash.insert("tbl_note_system_property",
                                              noteSystemProperty);
     }
 
 
-    IFKO(error){
+    IFKO(error) {
         m_projectId = -1;
     }
 }
@@ -125,7 +126,8 @@ PLMProject::~PLMProject()
     // close DB :
     m_sqlDb.close();
     m_userSqlDb.close();
-    //remove temporary files :
+
+    // remove temporary files :
     QFile tempFile(this->getTempFileName());
 
     if (tempFile.exists() && tempFile.isWritable()) {
@@ -149,7 +151,8 @@ QSqlDatabase PLMProject::getUserSqlDb() const
     return m_userSqlDb;
 }
 
-QString PLMProject::getIdNameFromTable(const QString &tableName, PLMProject::DBType dbType)
+QString PLMProject::getIdNameFromTable(const QString    & tableName,
+                                       PLMProject::DBType dbType)
 {
     QSqlDatabase sqlDb;
 
@@ -187,22 +190,22 @@ QString PLMProject::getUserDBTempFileName() const
     return m_userSqlDb.databaseName();
 }
 
-PLMProperty *PLMProject::getProperty(const QString &tableName)
+PLMProperty * PLMProject::getProperty(const QString& tableName)
 {
     return m_plmPropertyForTableNameHash.value(tableName);
 }
 
-PLMTree *PLMProject::getTree(const QString &tableName)
+PLMTree * PLMProject::getTree(const QString& tableName)
 {
     return m_plmTreeForTableNameHash.value(tableName);
 }
 
-PLMSheetTree *PLMProject::sheetTree()
+PLMSheetTree * PLMProject::sheetTree()
 {
     return m_sheetTree;
 }
 
-PLMNoteTree *PLMProject::noteTree()
+PLMNoteTree * PLMProject::noteTree()
 {
     return m_noteTree;
 }
@@ -212,7 +215,7 @@ QString PLMProject::getType() const
     return m_type;
 }
 
-void PLMProject::setType(const QString &value)
+void PLMProject::setType(const QString& value)
 {
     m_type = value;
 }
@@ -227,10 +230,11 @@ QString PLMProject::getPath() const
     return m_path;
 }
 
-PLMError PLMProject::setPath(const QString &value)
+PLMError PLMProject::setPath(const QString& value)
 {
     PLMError error;
-    //TODO: check for file rights, etc...
+
+    // TODO: check for file rights, etc...
     IFOK(error) {
         m_path = value;
     }
@@ -240,7 +244,8 @@ PLMError PLMProject::setPath(const QString &value)
 QString PLMProject::getUserDBPath() const
 {
     QFileInfo info(m_path);
-    QString   userFileName = info.path() + QDir::separator() + info.baseName() + ".plume.user";
+    QString   userFileName = info.path() + QDir::separator() + info.baseName() +
+                             ".plume.user";
+
     return userFileName;
 }
-

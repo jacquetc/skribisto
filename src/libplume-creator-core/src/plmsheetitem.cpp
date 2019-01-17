@@ -55,6 +55,9 @@ void PLMSheetItem::invalidateAllData()
     QHash<QString, QVariant> newData = plmdata->sheetHub()->getSheetData(
         this->projectId(),
         this->paperId());
+    QString newProjectName = plmdata->projectHub()->getProjectName(this->projectId());
+    m_data.insert(Roles::ProjectNameRole, newProjectName);
+
 
     QHash<QString, QVariant>::const_iterator i = newData.constBegin();
 
@@ -66,6 +69,7 @@ void PLMSheetItem::invalidateAllData()
         if (i.key() == "l_dna") {
             // unused
         }
+
 
         if (i.key() == "l_sort_order") {
             m_data.insert(Roles::SortOrderRole, i.value().toInt());
@@ -113,10 +117,18 @@ QVariant PLMSheetItem::data(int role)
         int paperId   = this->paperId();
 
         switch (role) {
+        case Roles::ProjectNameRole:
+            m_data.insert(role, plmdata->projectHub()->getProjectName(projectId));
+            break;
+
         case Roles::ProjectIdRole:
+
+            // useless
             break;
 
         case Roles::PaperIdRole:
+
+            // useless
             break;
 
         case Roles::NameRole:
@@ -346,9 +358,9 @@ bool PLMSheetItem::isRootItem() const
     return m_isRootItem;
 }
 
-void PLMSheetItem::setIsRootItem(bool isRootItem)
+void PLMSheetItem::setIsRootItem()
 {
-    m_isRootItem = isRootItem;
+    m_isRootItem = true;
 }
 
 bool PLMSheetItem::isProjectItem() const
@@ -356,22 +368,21 @@ bool PLMSheetItem::isProjectItem() const
     return m_isProjectItem;
 }
 
-void PLMSheetItem::setIsProjectItem(int projectId, bool isProjectItem)
+void PLMSheetItem::setIsProjectItem(int projectId)
 {
-    m_isProjectItem = isProjectItem;
+    m_isProjectItem = true;
 
-    if (m_isProjectItem) {
-        m_data.clear();
-        invalidatedRoles.clear();
+    m_data.clear();
+    invalidatedRoles.clear();
 
-        m_data.insert(Roles::ProjectIdRole, projectId);
-        m_data.insert(Roles::PaperIdRole,          -1);
-        m_data.insert(Roles::IndentRole,           -1);
-        m_data.insert(Roles::SortOrderRole,     -1000);
+    m_data.insert(Roles::ProjectIdRole, projectId);
+    m_data.insert(Roles::PaperIdRole,          -1);
+    m_data.insert(Roles::IndentRole,           -1);
+    m_data.insert(Roles::SortOrderRole,     -1000);
 
-        // TODO: add infoHub->getProjectName(projectId)
-        // m_data.insert(Roles::NameRole, /*plmdata->infoHub()->*/ );
-    }
+    // TODO: add infoHub->getProjectName(projectId)
+    // m_data.insert(Roles::NameRole, /*plmdata->infoHub()->*/ );
+    this->invalidateData(Roles::ProjectNameRole);
 }
 
 int PLMSheetItem::projectId()

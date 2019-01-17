@@ -32,6 +32,7 @@ public:
 
     enum Roles {
         // papers :
+        ProjectNameRole  = Qt::UserRole,
         ProjectIdRole    = Qt::UserRole + 1,
         PaperIdRole      = Qt::UserRole + 2,
         NameRole         = Qt::UserRole + 3,
@@ -73,14 +74,13 @@ public:
     int           row(const QList<PLMSheetItem *>& itemList);
 
     bool          isProjectItem() const;
-    void          setIsProjectItem(int  projectId,
-                                   bool isProjectItem);
+    void          setIsProjectItem(int projectId);
 
     int           childrenCount(const QList<PLMSheetItem *>& itemList);
     PLMSheetItem* child(const QList<PLMSheetItem *>& itemList,
                         int                          row);
     bool          isRootItem() const;
-    void          setIsRootItem(bool isRootItem);
+    void          setIsRootItem();
 
 signals:
 

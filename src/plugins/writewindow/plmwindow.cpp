@@ -2,8 +2,6 @@
 #include "ui_plmwindow.h"
 #include "plmdata.h"
 #include "plugininterface.h"
-#include "plmmodels.h"
-#include "plmsheetmodel.h"
 
 // #include "menubar.h"
 
@@ -20,9 +18,6 @@ PLMWindow::PLMWindow(QWidget *parent) :
             &PLMProjectHub::projectLoaded,
             this,
             &PLMWindow::setLabeltText);
-
-
-    ui->treeView->setModel(plmmodels->sheetModel());
 }
 
 // -------------------------------------------------------------------

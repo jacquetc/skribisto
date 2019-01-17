@@ -28,7 +28,7 @@ PLMSheetModel::PLMSheetModel(QObject *parent)
     : QAbstractItemModel(parent), m_headerData(QVariant())
 {
     m_rootItem = new PLMSheetItem();
-    m_rootItem->setIsRootItem(true);
+    m_rootItem->setIsRootItem();
 
     connect(plmdata->projectHub(),
             &PLMProjectHub::projectLoaded,
@@ -134,9 +134,16 @@ QVariant PLMSheetModel::data(const QModelIndex& index, int role) const
     PLMSheetItem *item = static_cast<PLMSheetItem *>(index.internalPointer());
 
 
-    // temp: to be removed ?
-    if (role == Qt::DisplayRole) {
+    if ((role == Qt::DisplayRole) && item->isProjectItem()) {
+        return item->data(PLMSheetItem::Roles::ProjectNameRole);
+    }
+    else if (role == Qt::DisplayRole) {
         return item->data(PLMSheetItem::Roles::NameRole);
+    }
+
+
+    if (role == PLMSheetItem::Roles::ProjectNameRole) {
+        return item->data(role);
     }
 
     if (role == PLMSheetItem::Roles::NameRole) {
@@ -230,6 +237,7 @@ bool PLMSheetModel::removeColumns(int column, int count, const QModelIndex& pare
 
 QHash<int, QByteArray>PLMSheetModel::roleNames() const {
     QHash<int, QByteArray> roles;
+    roles[PLMSheetItem::Roles::ProjectNameRole]  = "projectName";
     roles[PLMSheetItem::Roles::PaperIdRole]      = "paperId";
     roles[PLMSheetItem::Roles::ProjectIdRole]    = "projectId";
     roles[PLMSheetItem::Roles::NameRole]         = "name";
@@ -250,7 +258,7 @@ void PLMSheetModel::populate()
     foreach(int projectId, plmdata->projectHub()->getProjectIdList()) {
         if (plmdata->projectHub()->getProjectIdList().count() > 1) {
             PLMSheetItem *projectItem = new PLMSheetItem();
-            projectItem->setIsProjectItem(projectId, true);
+            projectItem->setIsProjectItem(projectId);
             m_allSheetItems.append(projectItem);
         }
 

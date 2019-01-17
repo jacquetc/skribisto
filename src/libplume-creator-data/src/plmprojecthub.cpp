@@ -2,8 +2,10 @@
 #include <QDebug>
 #include <QVariant>
 #include "tasks/plmprojectmanager.h"
+#include "tasks/plmsqlqueries.h"
 
-PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent)
+PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent),
+    m_tableName("tbl_project")
 {
     // connection for 'getxxx' functions to have a way to get errors.
     connect(this,
@@ -173,4 +175,60 @@ bool PLMProjectHub::isThereAnyOpenedProject()
 void PLMProjectHub::setError(const PLMError& error)
 {
     m_error = error;
+}
+
+QString PLMProjectHub::getProjectName(int projectId) const {
+    return get(projectId, "t_project_name").toString();
+}
+
+PLMError PLMProjectHub::setProjectName(int projectId, const QString& projectName) {
+    PLMError error = this->set(projectId, "t_project_name", projectName, true);
+
+    return error;
+}
+
+PLMError PLMProjectHub::set(int             projectId,
+                            const QString & fieldName,
+                            const QVariant& value,
+                            bool            setCurrentDateBool)
+{
+    PLMError error;
+    PLMSqlQueries queries(projectId, m_tableName);
+    int id = 1;
+
+    queries.beginTransaction();
+    error = queries.set(id, fieldName, value);
+
+    if (setCurrentDateBool) {
+        IFOKDO(error, queries.setCurrentDate(id, "dt_updated"));
+    }
+
+    IFKO(error) {
+        queries.rollback();
+    }
+    IFOK(error) {
+        queries.commit();
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return error;
+}
+
+QVariant PLMProjectHub::get(int projectId, const QString& fieldName) const
+{
+    PLMError error;
+    QVariant var;
+    QVariant result;
+    int id = 1;
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    error = queries.get(id, fieldName, var);
+    IFOK(error) {
+        result = var;
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return result;
 }

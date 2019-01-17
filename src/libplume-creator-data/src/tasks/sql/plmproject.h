@@ -33,37 +33,38 @@
 #include "plmerror.h"
 #include "plume_creator_data_global.h"
 
-class EXPORT PLMProject : public QObject
-{
+class EXPORT PLMProject : public QObject {
     Q_OBJECT
 
 public:
-    enum DBType { ProjectDB, UserDB};
+
+    enum DBType { ProjectDB, UserDB };
     Q_ENUM(DBType)
 
     explicit PLMProject(QObject       *parent,
                         int            projectId,
-                        const QString &fileName);
+                        const QString& fileName);
     ~PLMProject();
-    PLMProperty  *getProperty(const QString &tableName);
-    PLMTree      *getTree(const QString &tableName);
-    PLMSheetTree *sheetTree();
-    PLMNoteTree  *noteTree();
+    PLMProperty * getProperty(const QString& tableName);
+    PLMTree     * getTree(const QString& tableName);
+    PLMSheetTree* sheetTree();
+    PLMNoteTree * noteTree();
     QString       getType() const;
-    void          setType(const QString &value);
+    void          setType(const QString& value);
     int           id() const;
 
     QString       getTempFileName() const;
     QString       getUserDBTempFileName() const;
 
     QString       getPath() const;
-    PLMError      setPath(const QString &value);
+    PLMError      setPath(const QString& value);
 
     QString       getUserDBPath() const;
 
     QSqlDatabase  getSqlDb() const;
     QSqlDatabase  getUserSqlDb() const;
-    QString       getIdNameFromTable(const QString &tableName, PLMProject::DBType dbType = PLMProject::ProjectDB);
+    QString       getIdNameFromTable(const QString    & tableName,
+                                     PLMProject::DBType dbType = PLMProject::ProjectDB);
 
 signals:
 
@@ -71,12 +72,12 @@ public slots:
 
 private:
 
-    QHash<QString, PLMProperty *> m_plmPropertyForTableNameHash;
-    QHash<QString, PLMTree *> m_plmTreeForTableNameHash;
+    QHash<QString, PLMProperty *>m_plmPropertyForTableNameHash;
+    QHash<QString, PLMTree *>m_plmTreeForTableNameHash;
     QSqlDatabase m_sqlDb, m_userSqlDb;
     int m_projectId;
     PLMSheetTree *m_sheetTree;
-    PLMNoteTree  *m_noteTree;
+    PLMNoteTree *m_noteTree;
     QString m_type, m_path;
 };
 

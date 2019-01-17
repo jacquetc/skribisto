@@ -19,7 +19,7 @@ CREATE TABLE tbl_note (l_note_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQ
 CREATE TABLE tbl_note_property (l_property_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, l_note_code INTEGER REFERENCES tbl_sheet ON DELETE CASCADE, t_name TEXT, t_value TEXT, dt_created DATETIME, dt_updated DATETIME, b_system BOOLEAN DEFAULT (0) NOT NULL);
 
 -- Table: tbl_project
-CREATE TABLE tbl_project (t_title TEXT, l_plume_maj_version INTEGER, l_plume_min_version INTEGER, l_db_maj_version INTEGER, l_db_min_version INTEGER, dt_created DATETIME, dt_updated DATETIME, t_author TEXT);
+CREATE TABLE tbl_project (l_project_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, t_project_name TEXT, l_plume_maj_version INTEGER, l_plume_min_version INTEGER, l_db_maj_version INTEGER, l_db_min_version INTEGER, dt_created DATETIME, dt_updated DATETIME, t_author TEXT);
 
 -- Table: tbl_sheet
 CREATE TABLE tbl_sheet (l_sheet_id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT UNIQUE ON CONFLICT ROLLBACK NOT NULL ON CONFLICT ROLLBACK, l_sort_order INTEGER NOT NULL ON CONFLICT ROLLBACK DEFAULT (9999999999), l_indent INTEGER NOT NULL ON CONFLICT ROLLBACK DEFAULT (0), l_version INTEGER, l_dna INTEGER, t_title TEXT, m_content BLOB, l_char_count INTEGER, l_word_count INTEGER, dt_created DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP), dt_updated DATETIME NOT NULL ON CONFLICT ROLLBACK DEFAULT (CURRENT_TIMESTAMP), dt_content DATETIME NOT NULL ON CONFLICT ROLLBACK DEFAULT (CURRENT_TIMESTAMP), b_deleted BOOLEAN NOT NULL ON CONFLICT ROLLBACK DEFAULT (0));

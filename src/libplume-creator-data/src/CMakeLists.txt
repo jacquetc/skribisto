@@ -37,7 +37,6 @@ set(data_SRCS
     tasks/sql/tree/plmsheettree.cpp
     tasks/sql/tree/plmtree.cpp
     plmsheetlistmodel.cpp
-
 )
 set(data_HDR
     plmcoreinterface.h
@@ -71,7 +70,6 @@ set(data_HDR
     tasks/sql/tree/plmsheettree.h
     tasks/sql/tree/plmtree.h
     plmsheetlistmodel.h
-
 )
 
 set(QRC

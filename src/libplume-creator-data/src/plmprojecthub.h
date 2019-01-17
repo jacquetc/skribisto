@@ -54,6 +54,17 @@ public:
 
     void                 setProjectNotSavedAnymore(int projectId);
 
+    QString              getProjectName(int projectId) const;
+    PLMError             setProjectName(int            projectId,
+                                        const QString& projectName);
+
+    PLMError             set(int             projectId,
+                             const QString & fieldName,
+                             const QVariant& value,
+                             bool            setCurrentDateBool = true);
+    QVariant get(int            projectId,
+                 const QString& fieldName) const;
+
 signals:
 
     void             errorSent(const PLMError& error) const;
@@ -64,6 +75,8 @@ signals:
                                         const QString& newType);
     void             projectPathChanged(int            projectId,
                                         const QString& newPath);
+    void             projectNameChanged(int            projectId,
+                                        const QString& newProjectName);
     void             projectSaved(int projectId);
     void             projectNotSavedAnymore(int projectId);
 
@@ -77,6 +90,7 @@ private:
 
     PLMError m_error;
     QList<int>m_projectsNotYetSavedOnceList, m_projectsNotSavedList;
+    QString m_tableName;
 };
 
 #endif // PLMPROJECTHUB_H
