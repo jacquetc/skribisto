@@ -27,7 +27,7 @@
 
 #include <QDebug>
 
-WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent)
+WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent), m_parentDockName("")
 {
     this->setEditTriggers(QTreeView::EditKeyPressed);
 
@@ -37,7 +37,7 @@ WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent)
 
     PLMBaseDock *parentDock = QObjectUtils::findParentOfACertainType<PLMBaseDock>(this);
 
-    if (parentDock) qDebug() << "parentDock :" << parentDock->objectName();
+    if (parentDock) m_parentDockName =  parentDock->objectName();
 
 
     connect(this, &QTreeView::clicked, this, &WriteTreeView::itemClicked);
@@ -53,6 +53,7 @@ void WriteTreeView::setExpandStateToItems()
     disconnect(this, &WriteTreeView::expanded,  this, &WriteTreeView::itemExpandedSlot);
     disconnect(this, &WriteTreeView::collapsed, this, &WriteTreeView::itemCollapsedSlot);
 
+
     for (const QModelIndex& index : this->allIndexesFromModel()) {
         if (!index.isValid()) {
             continue;
@@ -63,7 +64,7 @@ void WriteTreeView::setExpandStateToItems()
             this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
         QString result = plmdata->sheetPropertyHub()->getProperty(projectId,
                                                                   indexId,
-                                                                  "expanded_in_" + this->objectName(),
+                                                                  "expanded_in_" + m_parentDockName,
                                                                   "1");
 
         bool expanded;
@@ -129,7 +130,7 @@ void WriteTreeView::itemCollapsedSlot(QModelIndex index)
         this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
     PLMError error = plmdata->sheetPropertyHub()->setProperty(projectId,
                                                               indexId,
-                                                              "expanded_in_" + this->objectName(),
+                                                              "expanded_in_" + m_parentDockName,
                                                               "0");
 
     Q_UNUSED(error)
@@ -143,7 +144,7 @@ void WriteTreeView::itemExpandedSlot(QModelIndex index)
         this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
     PLMError error = plmdata->sheetPropertyHub()->setProperty(projectId,
                                                               indexId,
-                                                              "expanded_in_" + this->objectName(),
+                                                              "expanded_in_" + m_parentDockName,
                                                               "1");
 
     Q_UNUSED(error)

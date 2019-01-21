@@ -330,3 +330,12 @@ void PLMMainWindow::applySettings()
 
     settings.endGroup();
 }
+
+void PLMMainWindow::on_actionSave_project_triggered()
+{
+    PLMError error = plmdata->projectHub()->saveProjectAs(1,
+                                                          "SQLITE",
+                                                          "/home/cyril/Devel/plume/test1.plume");
+
+    Q_ASSERT(error.isSuccess());
+}

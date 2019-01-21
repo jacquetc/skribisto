@@ -31,7 +31,9 @@ private:
 
 private slots:
 
-    void setLabeltText();
+private:
+
+    void setupStatusBar();
 
 private:
 

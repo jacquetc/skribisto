@@ -5,6 +5,7 @@
 
 #include <QSettings>
 #include <QTimer>
+#include <QToolButton>
 
 // #include "menubar.h"
 
@@ -14,16 +15,13 @@ PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
 {
     ui->setupUi(this);
 
+    this->setupStatusBar();
+
     this->setRightDockDefaultCount(0);
     this->setBottomDockDefaultCount(0);
     this->setLeftDockDefaultCount(2);
 
     this->setMenuActions();
-
-    connect(plmdata->projectHub(),
-            &PLMProjectHub::projectLoaded,
-            this,
-            &PLMWindow::setLabeltText);
 }
 
 // -------------------------------------------------------------------
@@ -116,9 +114,28 @@ void PLMWindow::setMenuActions()
     // apply current menubar settings :
 }
 
-void PLMWindow::setLabeltText()
+void PLMWindow::setupStatusBar()
 {
-    ui->label->setText("loaded");
+    QAction *showLeftDockAct =
+        new QAction(QIcon(":/pics/plume-creator.svg"), tr("Show Left Sidebar"), this);
+
+    showLeftDockAct->setCheckable(true);
+    connect(showLeftDockAct, &QAction::toggled, [showLeftDockAct](bool value) {
+        if (value) {
+            showLeftDockAct->setText(tr("Hide Left Sidebar"));
+            showLeftDockAct->setToolTip(tr("Hide Left Sidebar"));
+        }
+        else { showLeftDockAct->setText(tr("Show Left Sidebar"));
+               showLeftDockAct->setToolTip(tr("Show Left Sidebar")); }
+    });
+
+    connect(showLeftDockAct, &QAction::toggled, this,
+            &PLMWindow::setLeftSidebarVisible);
+
+    QToolButton *showLeftDock = new QToolButton();
+    showLeftDock->setAutoRaise(true);
+    showLeftDock->setDefaultAction(showLeftDockAct);
+    ui->statusBar->addWidget(showLeftDock);
 }
 
 // ---------------------------------------------------------------------------------------------------

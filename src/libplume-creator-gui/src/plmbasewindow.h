@@ -74,6 +74,10 @@ protected:
 
 protected slots:
 
+    void setLeftSidebarVisible(bool value);
+    void setBottomSidebarVisible(bool value);
+    void setRightSidebarVisible(bool value);
+
 signals:
 
     void attachmentCalled(const QString& windowName);

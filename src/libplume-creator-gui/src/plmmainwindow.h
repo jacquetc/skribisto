@@ -39,6 +39,8 @@ private slots:
     void writeSettings();
     void applySettings();
 
+    void on_actionSave_project_triggered();
+
 private:
 
     void loadPlugins();

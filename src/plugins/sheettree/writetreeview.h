@@ -42,6 +42,8 @@ private slots:
 
 private:
 
+    QString m_parentDockName;
+
     // clicks :
     int m_clicksCount;
     QModelIndex m_oldIndex;

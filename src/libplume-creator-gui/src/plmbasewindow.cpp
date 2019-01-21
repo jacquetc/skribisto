@@ -36,6 +36,7 @@ PLMBaseWindow::PLMBaseWindow(QWidget *parent, const QString& name) : QMainWindow
     this->loadPlugins();
     this->applyStyleSheet();
 
+
     this->setAttribute(Qt::WA_DeleteOnClose);
     QTimer::singleShot(0, this, SLOT(applyDockSettings()));
 }
@@ -377,4 +378,31 @@ void PLMBaseWindow::applyStyleSheet()
     QString content = file.readAll();
     file.close();
     this->setStyleSheet(content);
+}
+
+// ------------------------------------------------------------
+
+void PLMBaseWindow::setLeftSidebarVisible(bool value)
+{
+    for (PLMBaseDock *dock : this->leftDocks()) {
+        dock->setVisible(value);
+    }
+}
+
+// ------------------------------------------------------------
+
+void PLMBaseWindow::setBottomSidebarVisible(bool value)
+{
+    for (PLMBaseDock *dock : this->bottomDocks()) {
+        dock->setVisible(value);
+    }
+}
+
+// ------------------------------------------------------------
+
+void PLMBaseWindow::setRightSidebarVisible(bool value)
+{
+    for (PLMBaseDock *dock : this->rightDocks()) {
+        dock->setVisible(value);
+    }
 }
