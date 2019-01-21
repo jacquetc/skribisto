@@ -1,16 +1,22 @@
 #include "plmwindow.h"
 #include "ui_plmwindow.h"
 #include "plmdata.h"
-#include "plugininterface.h"
+#include "plmbasedock.h"
+
+#include <QSettings>
+#include <QTimer>
 
 // #include "menubar.h"
 
-PLMWindow::PLMWindow(QWidget *parent) :
-    PLMBaseWindow(parent),
+PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
+    PLMBaseWindow(parent, name),
     ui(new Ui::PLMWindow)
 {
     ui->setupUi(this);
-    this->loadPlugins();
+
+    this->setRightDockDefaultCount(0);
+    this->setBottomDockDefaultCount(0);
+    this->setLeftDockDefaultCount(2);
 
     this->setMenuActions();
 
@@ -113,20 +119,6 @@ void PLMWindow::setMenuActions()
 void PLMWindow::setLabeltText()
 {
     ui->label->setText("loaded");
-}
-
-void PLMWindow::loadPlugins()
-{
-    // plugins are already loaded in plmpluginloader
-    QList<PLMWriteLeftDockInterface *> pluginList =
-        PLMPluginLoader::instance()->pluginsByType<PLMWriteLeftDockInterface>();
-
-    // setup :
-    foreach(PLMWriteLeftDockInterface * plugin, pluginList) {
-        PLMBaseWidget *widget = plugin->dockBodyWidget(this);
-
-        ui->verticalLayout->addWidget(widget);
-    }
 }
 
 // ---------------------------------------------------------------------------------------------------

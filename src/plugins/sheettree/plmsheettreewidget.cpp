@@ -1,50 +1,36 @@
-#include "plmtestwidget.h"
+#include "plmsheettreewidget.h"
 #include "plmwidget.h"
 #include "plmdata.h"
 #include <QToolButton>
 #include <QVBoxLayout>
 
-PLMTestWidget::PLMTestWidget(QObject *parent) : QObject(parent),
-    m_name("TestWidget")
+PLMSheetTreeWidget::PLMSheetTreeWidget(QObject *parent) : QObject(parent),
+    m_name("SheetTree")
 {
     this->setProperty("name", m_name);
 }
 
 // -------------------------------------------------------------------
 
-PLMTestWidget::~PLMTestWidget()
+PLMSheetTreeWidget::~PLMSheetTreeWidget()
 {}
 
 // -------------------------------------------------------------------
 
-QString PLMTestWidget::use() const
+QString PLMSheetTreeWidget::use() const
 {
     return m_name;
-}
-
-void PLMTestWidget::setText()
-{
-    m_label->setText("loadedd");
 }
 
 // -------------------------------------------------------------------
 
 
-void PLMTestWidget::instanciate(QWidget *parent)
+void PLMSheetTreeWidget::instanciate(QWidget *parent)
 {
     // dockBody
 
     m_dockBody = new PLMWidget(parent);
-    QVBoxLayout *layout = new QVBoxLayout();
 
-    m_dockBody->setLayout(layout);
-
-    m_label = new QLabel();
-    m_label->setText("label !");
-    layout->addWidget(m_label);
-    QLabel *lab = new QLabel();
-    lab->setText("lab");
-    layout->addWidget(lab);
 
     // dockHeader
 
@@ -54,23 +40,18 @@ void PLMTestWidget::instanciate(QWidget *parent)
 
     m_dockHeader->setLayout(hlayout);
     QLabel *label = new QLabel();
-    label->setText("label :-)");
+    label->setText("sheets");
     hlayout->addWidget(label);
     QToolButton *button = new QToolButton();
-    button->setText("action");
+    button->setText("filtre");
     hlayout->addWidget(button);
 
     // connections
-
-    connect(plmdata->projectHub(),
-            &PLMProjectHub::projectLoaded,
-            this,
-            &PLMTestWidget::setText);
 }
 
 // -------------------------------------------------------------------
 
-PLMBaseDockWidget * PLMTestWidget::dockBodyWidget(QWidget *parent)
+PLMBaseDockWidget * PLMSheetTreeWidget::dockBodyWidget(QWidget *parent)
 {
     if (!m_dockBody) this->instanciate(parent);
 
@@ -79,7 +60,7 @@ PLMBaseDockWidget * PLMTestWidget::dockBodyWidget(QWidget *parent)
 }
 
 // -------------------------------------------------------------------
-QWidget * PLMTestWidget::dockHeaderWidget(QWidget *parent)
+QWidget * PLMSheetTreeWidget::dockHeaderWidget(QWidget *parent)
 {
     if (!m_dockHeader) this->instanciate(parent);
 
@@ -87,7 +68,7 @@ QWidget * PLMTestWidget::dockHeaderWidget(QWidget *parent)
     return m_dockHeader.data();
 }
 
-PLMDockWidgetInterface * PLMTestWidget::clone() const
+PLMDockWidgetInterface * PLMSheetTreeWidget::clone() const
 {
-    return new PLMTestWidget(nullptr);
+    return new PLMSheetTreeWidget(nullptr);
 }

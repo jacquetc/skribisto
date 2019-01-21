@@ -5,20 +5,18 @@
 #include <QTimer>
 
 PLMWelcomeWindow::PLMWelcomeWindow(QObject *parent) : QObject(parent),
-                                                m_name("welcomeWindow")
+    m_name("WelcomeWindow")
 {
     this->setProperty("name", m_name);
 
-    //QTimer::singleShot(0, this, SLOT(init()));
+    // QTimer::singleShot(0, this, SLOT(init()));
 }
 
 // -------------------------------------------------------------------
 
 void PLMWelcomeWindow::init()
 {
-    PluginInterface::addPlugins();
-
-
+    //    PluginInterface::addPlugins();
 }
 
 // -------------------------------------------------------------------
@@ -35,26 +33,26 @@ QString PLMWelcomeWindow::use() const
 
 // -------------------------------------------------------------------
 
-PLMBaseWindow *PLMWelcomeWindow::window()
+PLMBaseWindow * PLMWelcomeWindow::window()
 {
-    PLMWindow *window = new PLMWindow;
+    PLMWindow *window = new PLMWindow(nullptr, m_name);
 
-    window->setProperty("name", m_name);
+    // window->setProperty("name", m_name);
     window->setWindowTitle(tr("Welcome"));
 
     return window;
 }
-
 
 // -------------------------------------------------------------------
 
 QList<PLMSideBarAction>PLMWelcomeWindow::sideMainBarActions(QObject *parent)
 {
     QList<PLMSideBarAction> list;
-    QAction *action = new QAction(QIcon(":/pics/plume-creator.png"), tr("Welcome"), parent);
+    QAction *action =
+        new QAction(QIcon(":/pics/plume-creator.png"), tr("Welcome"), parent);
     action->setProperty("linkedWindow", m_name);
-    action->setProperty("detachable", true);
-    action->setProperty("order", 10);
+    action->setProperty("detachable",   false);
+    action->setProperty("order",        10);
     action->setCheckable(true);
     PLMSideBarAction mAction(m_name, action);
     list.append(mAction);

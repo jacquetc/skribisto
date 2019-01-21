@@ -24,38 +24,85 @@
 #include <QCloseEvent>
 #include <QMainWindow>
 #include "global.h"
+#include "plmbasedock.h"
+#include "plmdockwidgetinterface.h"
 
 class EXPORT_GUI PLMBaseWindow : public QMainWindow {
     Q_OBJECT
 
 public:
 
-    explicit PLMBaseWindow(QWidget *parent = nullptr);
+    explicit PLMBaseWindow(QWidget       *parent,
+                           const QString& name);
+
     ~PLMBaseWindow();
 
-    bool detached() const;
-    void setDetached(bool detached);
+    bool    detached() const;
+    void    setDetached(bool detached);
 
-    void applySettingsState();
-    void saveSettingsState();
 
-    void applySettingsGeometry();
-    void saveSettingsGeometry();
+    void    setForceTrueClosing(bool forceTrueClosing);
+
+
+    QString name() const;
+
+public slots:
+
+    virtual PLMBaseDock* addRightDock();
+    virtual PLMBaseDock* addBottomDock();
+    virtual PLMBaseDock* addLeftDock();
+
+    void                 applyStyleSheet();
 
 protected:
 
-    void closeEvent(QCloseEvent *event);
-    void moveEvent(QMoveEvent *event);
+    QList<PLMBaseDock *>rightDocks() const;
+    QList<PLMBaseDock *>bottomDocks() const;
+    QList<PLMBaseDock *>leftDocks() const;
+
+    void                closeEvent(QCloseEvent *event);
+    void                moveEvent(QMoveEvent *event);
+
+    int                 rightDockDefaultCount() const;
+    void                setRightDockDefaultCount(int rightDockDefaultCount);
+
+    int                 bottomDockDefaultCount() const;
+    void                setBottomDockDefaultCount(int bottomDockDefaultCount);
+
+    int                 leftDockDefaultCount() const;
+    void                setLeftDockDefaultCount(int leftDockDefaultCount);
+
+protected slots:
 
 signals:
 
     void attachmentCalled(const QString& windowName);
 
-public slots:
+private slots:
+
+    void saveDockSettings();
+    void saveSettingsGeometry();
+    void applyDockSettings();
 
 private:
 
-    bool m_detached;
+    void applySettingsState();
+    void saveSettingsState();
+
+    void applySettingsGeometry();
+    void loadPlugins();
+
+private:
+
+    QString m_name;
+
+    bool m_detached, m_forceTrueClosing;
+
+    int m_rightDockDefaultCount, m_bottomDockDefaultCount, m_leftDockDefaultCount;
+    QList<PLMBaseDock *>m_leftDocks;
+    QList<PLMBaseDock *>m_bottomDocks;
+    QList<PLMBaseDock *>m_rightDocks;
+    QList<PLMDockWidgetInterface *>m_DockPluginList;
 };
 
 #endif // PLMBASEWINDOW_H

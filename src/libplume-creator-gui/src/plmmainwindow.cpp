@@ -20,8 +20,12 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
 {
     new PLMModels(this);
 
+    this->applyStyleSheet();
+
+
     PLMGuiPlugins::addGuiPlugins();
     ui->setupUi(this);
+    this->show();
     connect(ui->leftSideMainBar,
             &PLMSideMainBar::windowRaiseCalled,
             this,
@@ -52,9 +56,7 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
             this,
             &PLMMainWindow::activate);
 
-
     this->loadPlugins();
-
 
     QTimer::singleShot(0, this, SLOT(init()));
 }
@@ -62,6 +64,7 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
 void PLMMainWindow::init()
 {
     this->applySettings();
+    this->applyRaiseWindowSetting();
 
     // load plugins
     // TEMP
@@ -70,6 +73,19 @@ void PLMMainWindow::init()
 PLMMainWindow::~PLMMainWindow()
 {
     delete ui;
+}
+
+void PLMMainWindow::applyStyleSheet()
+{
+    QFile file(":/stylesheets/light.css");
+
+    Q_ASSERT(file.exists());
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+
+    QString content = file.readAll();
+    file.close();
+    this->setStyleSheet(content);
 }
 
 void PLMMainWindow::clearFromAllProjects()
@@ -87,6 +103,8 @@ void PLMMainWindow::loadPlugins()
 
     // setup :
     foreach(PLMWindowInterface * plugin, pluginList) {
+        if (!plugin->pluginEnabled()) continue;
+
         plugin->init();
         PLMBaseWindow *window = plugin->window();
         connect(window,
@@ -94,29 +112,59 @@ void PLMMainWindow::loadPlugins()
                 ui->leftSideMainBar,
                 &PLMSideMainBar::attachWindowByName);
         ui->stackedWidget->addWidget(window);
-        QString windowName = window->property("name").toString();
+        QString windowName = window->name();
         hash_nameAndWindow.insert(windowName, window);
     }
 }
 
 // ------------------------------------------
 
+void PLMMainWindow::applyRaiseWindowSetting()
+{
+    QSettings settings;
+
+    settings.beginGroup("Windows");
+
+    for (PLMBaseWindow *window : hash_nameAndWindow.values()) {
+        if (settings.value(window->name() + "-raised",
+                           false).toBool() == true) this->raiseWindow(window->name());
+    }
+    settings.endGroup();
+}
+
+// ------------------------------------------
+
 void PLMMainWindow::raiseWindow(const QString& windowName)
 {
-    QMainWindow *window = hash_nameAndWindow.value(windowName);
+    PLMBaseWindow *window = hash_nameAndWindow.value(windowName);
 
-    ui->stackedWidget->setCurrentWidget(window);
+    if (window->detached()) {
+        window->activateWindow();
+        window->raise();
+    }
+    else {
+        ui->stackedWidget->setCurrentWidget(window);
+    }
+
+    QSettings settings;
+    settings.beginGroup("Windows");
+    settings.setValue(windowName + "-raised", true);
+    settings.endGroup();
 }
 
 void PLMMainWindow::attachWindow(const QString& windowName)
 {
     PLMBaseWindow *window = hash_nameAndWindow.value(windowName);
 
-    if (window->detached()) window->saveSettingsGeometry();
     window->setDetached(false);
     ui->stackedWidget->addWidget(window);
     ui->stackedWidget->setCurrentWidget(window);
     ui->leftSideMainBar->setButtonChecked(windowName);
+
+    QSettings settings;
+    settings.beginGroup("Windows");
+    settings.setValue(windowName + "-detached", false);
+    settings.endGroup();
 }
 
 void PLMMainWindow::detachWindow(const QString& windowName)
@@ -124,17 +172,23 @@ void PLMMainWindow::detachWindow(const QString& windowName)
     PLMBaseWindow *window = hash_nameAndWindow.value(windowName);
 
     ui->stackedWidget->removeWidget(window);
-    window->setParent(0);
+    window->setParent(nullptr);
     window->setDetached(true);
-
     window->show();
-    window->applySettingsGeometry();
 
+    // window->applySettingsState();
+
+    //
 
     QString key =
         hash_nameAndWindow.key(dynamic_cast<PLMBaseWindow *>(ui->stackedWidget->
                                                              currentWidget()));
     ui->leftSideMainBar->setButtonChecked(key);
+
+    QSettings settings;
+    settings.beginGroup("Windows");
+    settings.setValue(windowName + "-detached", true);
+    settings.endGroup();
 }
 
 /*
@@ -174,7 +228,10 @@ void PLMMainWindow::closeEvent(QCloseEvent *event)
     //    }
     if (plmdata->projectHub()->isThereAnyOpenedProject() == false) {
         this->writeSettings();
-        qApp->closeAllWindows();
+        foreach(PLMBaseWindow * window, hash_nameAndWindow.values()) {
+            window->setForceTrueClosing(true);
+            window->close();
+        }
         event->accept();
     }
 
@@ -190,6 +247,12 @@ void PLMMainWindow::closeEvent(QCloseEvent *event)
     case QMessageBox::Ok:
 
         this->writeSettings();
+        foreach(QPointer<PLMBaseWindow>window, hash_nameAndWindow.values()) {
+            window->setForceTrueClosing(true);
+            window->close();
+        }
+
+        event->accept();
 
         //        hub->closeCurrentProject();
         break;

@@ -70,6 +70,7 @@ set(data_HDR
     tasks/sql/tree/plmsheettree.h
     tasks/sql/tree/plmtree.h
     plmsheetlistmodel.h
+    plminterfacesettings.h
 )
 
 set(QRC

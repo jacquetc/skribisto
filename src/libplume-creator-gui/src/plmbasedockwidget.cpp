@@ -19,10 +19,10 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#include "plmbasewidget.h"
+#include "plmbasedockwidget.h"
 
-PLMBaseWidget::PLMBaseWidget(QWidget *parent) : QWidget(parent)
+PLMBaseDockWidget::PLMBaseDockWidget(QWidget *parent) : QWidget(parent)
 {}
 
-void PLMBaseWidget::applySettings()
+void PLMBaseDockWidget::applySettings()
 {}

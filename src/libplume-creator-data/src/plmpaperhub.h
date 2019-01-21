@@ -136,17 +136,17 @@ public:
                                     int              paperId,
                                     OpenedDocSetting setting) const;
 
-    QList<int>getParentList(int projectId,
-                            int paperId) const;
-    int       getRowAmongChildren(int projectId,
-                                  int paperId) const;
-    int       getDirectParentId(int projectId,
-                                int paperId) const;
-    int       getChildIdFromParentAndRow(int projectId,
-                                         int parentId,
-                                         int row) const;
-    int       getChildRowCount(int projectId,
-                               int parentId) const;
+    //    QList<int>getParentList(int projectId,
+    //                            int paperId) const;
+    //    int       getRowAmongChildren(int projectId,
+    //                                  int paperId) const;
+    //    int       getDirectParentId(int projectId,
+    //                                int paperId) const;
+    //    int       getChildIdFromParentAndRow(int projectId,
+    //                                         int parentId,
+    //                                         int row) const;
+    //    int       getChildRowCount(int projectId,
+    //                               int parentId) const;
 
 private:
 
@@ -173,9 +173,9 @@ private slots:
 signals:
 
     void errorSent(const PLMError& error) const;
-    void idChanged(int projectId,
-                   int paperId,
-                   int newId);
+    void paperIdChanged(int projectId,
+                        int paperId,
+                        int newId);
     void titleChanged(int            projectId,
                       int            sheetId,
                       const QString& newTitle);

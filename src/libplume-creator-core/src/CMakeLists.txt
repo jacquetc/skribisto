@@ -21,6 +21,7 @@ plmdocumentslistproxymodel.cpp
 plmpropertiesmodel.cpp
 plmpropertiesproxymodel.cpp
 plmsheetitem.cpp
+plmmodels.cpp
 )
 set(core_HDR
 
@@ -34,7 +35,7 @@ plmdocumentslistproxymodel.h
 plmpropertiesmodel.h
 plmpropertiesproxymodel.h
 plmsheetitem.h
-
+plmmodels.h
 )
 
 

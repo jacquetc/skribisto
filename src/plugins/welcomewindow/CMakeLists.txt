@@ -50,4 +50,5 @@ qt5_use_modules(welcomewindow Core Quick Gui Widgets)
 include_directories(
         "${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/"
         "${CMAKE_SOURCE_DIR}/src/libplume-creator-gui/src/"
+        "${CMAKE_SOURCE_DIR}/src/libplume-creator-core/src/"
         )

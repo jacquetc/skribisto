@@ -5,8 +5,8 @@
 
 // #include "menubar.h"
 
-PLMWindow::PLMWindow(QWidget *parent) :
-    PLMBaseWindow(parent),
+PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
+    PLMBaseWindow(parent, name),
     ui(new Ui::PLMWindow)
 {
     ui->setupUi(this);
@@ -134,4 +134,9 @@ void PLMWindow::testProjectButton_clicked()
         "/home/cyril/Devel/plume/plume-creator/resources/test/plume_test_project.sqlite");
 
     qDebug() << error.isSuccess();
+}
+
+void PLMWindow::on_pushButton_clicked()
+{
+    plmdata->sheetHub()->setTitle(1, 1, "this is a test");
 }

@@ -1,25 +1,28 @@
  
 cmake_minimum_required(VERSION 3.1.0)
 
-project(testwidget)
+project(sheettreewidget)
 
 find_package(Qt5 COMPONENTS Core Quick Gui Widgets CONFIG REQUIRED)
 find_package(Qt5QuickCompiler)
 
-set(testwidget_SRCS
-    plmtestwidget.cpp
+set(sheettree_SRCS
+    plmsheettreewidget.cpp
  plmwidget.cpp
+ writetreeview.cpp
  )
-set(testwidget_HDR
-    plmtestwidget.h
+set(sheettree_HDR
+    plmsheettreewidget.h
  plmwidget.h
+ writetreeview.h
  )
-#set(testwidget_UI
-#    )
+set(sheettree_UI
+    plmwidget.ui
+    )
     
     
-set(testwidget_OTHER
-    plmtestwidget.json
+set(sheettree_OTHER
+    plmsheettreewidget.json
     )
 
 
@@ -41,11 +44,11 @@ set(testwidget_OTHER
 #qtquick_compiler_add_resources(RESOURCES ${QML})
 
 # Tell CMake to create the executable
-add_library(testwidget SHARED ${testwidget_SRCS} ${testwidget_HDR} ${testwidget_UI} ${testwidget_OTHER})
+add_library(sheettreewidget SHARED ${sheettree_SRCS} ${sheettree_HDR} ${sheettree_UI} ${sheettree_OTHER})
 #${RESOURCES}
-target_link_libraries(testwidget plume-creator-data plume-creator-core)
+target_link_libraries(sheettreewidget plume-creator-data plume-creator-core)
 
-qt5_use_modules(testwidget Core Quick Gui Widgets)
+qt5_use_modules(sheettreewidget Core Quick Gui Widgets)
 include_directories(
         "${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/"
         "${CMAKE_SOURCE_DIR}/src/libplume-creator-gui/src/"

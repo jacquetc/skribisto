@@ -2,7 +2,8 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: writetreeview.h                                                   *
+*  Filename: PLMDockWidgetInterface.h
+*                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,32 +19,45 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef WRITETREEVIEW_H
-#define WRITETREEVIEW_H
+#ifndef PLMDOCKWIDGETINTERFACE_H
+#define PLMDOCKWIDGETINTERFACE_H
 
-#include <QObject>
-#include <QTreeView>
+#include <QPointer>
+#include <QWidget>
+#include <QString>
 
-class WriteTreeView : public QTreeView {
+#include "plmcoreinterface.h"
+
+// #include "plminterfacesettings.h"
+#include "plmbasedockwidget.h"
+
+
+class PLMDockWidgetInterface : public PLMBaseInterface /*: public
+                                                          PLMInterfaceSettings
+                                                        */
+{
 public:
 
-    WriteTreeView(QWidget *parent = nullptr);
+    virtual ~PLMDockWidgetInterface() {}
 
-private slots:
 
-    void              setExpandStateToItems();
-    QList<QModelIndex>allIndexesFromModel();
-    QItemSelection    selectChildren(const QModelIndex& parent,
-                                     bool               recursively) const;
-    void              itemCollapsedSlot(QModelIndex index);
-    void              itemExpandedSlot(QModelIndex index);
-    void              itemClicked(QModelIndex index);
+    virtual QWidget               * dockHeaderWidget(QWidget *parent) = 0;
+    virtual PLMBaseDockWidget     * dockBodyWidget(QWidget *parent)   = 0;
+    virtual Qt::Edge                getEdges()                  = 0;
+    virtual QString                 getParentWindowName() const = 0;
+    virtual PLMDockWidgetInterface* clone() const               = 0;
 
-private:
+protected:
 
-    // clicks :
-    int m_clicksCount;
-    QModelIndex m_oldIndex;
+    QPointer<QWidget>m_dockHeader;
+    QPointer<PLMBaseDockWidget>m_dockBody;
+    virtual void instanciate(QWidget *parent) = 0;
 };
 
-#endif // WRITETREEVIEW_H
+#define PLMDockWidgetInterface_iid \
+    "com.PlumeSoft.Plume-Creator.DockWidgetInterface/1.0"
+
+Q_DECLARE_INTERFACE(PLMDockWidgetInterface, PLMDockWidgetInterface_iid)
+
+
+#endif // PLMDOCKWIDGETINTERFACE_H

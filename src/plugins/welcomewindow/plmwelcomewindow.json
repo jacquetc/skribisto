@@ -1,6 +1,6 @@
 {
     "type" :            "window",
-    "shortname" :            "plmwelcomewindow",
+    "shortname" :            "WelcomeWindow",
     "longname" :        "Plume Welcome Window",
     "version" :         "1.0",
     "mandatory" :    true,

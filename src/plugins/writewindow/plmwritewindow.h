@@ -5,36 +5,39 @@
 #include <QList>
 #include <QObject>
 
-#include "plmcoreinterface.h"
 #include "plmguiinterface.h"
 #include "plmsidemainbar.h"
 #include "plmbasewindow.h"
 
 class PLMWriteWindow : public QObject,
-                      public PLMBaseInterface,
-                      public PLMWindowInterface,
-                      public PLMSideMainBarIconInterface {
+                       public PLMWindowInterface,
+                       public PLMSideMainBarIconInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "com.PlumeSoft.Plume-Creator.WindowInterface/1.0" FILE
         "plmwritewindow.json")
-    Q_INTERFACES(PLMBaseInterface PLMWindowInterface PLMSideMainBarIconInterface)
+    Q_INTERFACES(PLMWindowInterface PLMSideMainBarIconInterface)
 
-public :
+public:
 
-        PLMWriteWindow(QObject *parent = 0);
-        void init();
+    PLMWriteWindow(QObject *parent = nullptr);
+    void init();
     ~PLMWriteWindow();
 
-        //BaseInterface
-    QString         use() const;
-    QString         name() const
+    // BaseInterface
+    QString use() const;
+    QString name() const
     {
         return "WriteWindow";
     }
 
+    QString displayedName() const
+    {
+        return tr("Write Window");
+    }
+
     // WindowInterface
-    PLMBaseWindow* window();
+    PLMBaseWindow        * window();
 
     // SideMainBarIconInterface
     QList<PLMSideBarAction>sideMainBarActions(QObject *parent);

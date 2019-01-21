@@ -5,22 +5,20 @@
 #include <QTimer>
 
 PLMWriteWindow::PLMWriteWindow(QObject *parent) : QObject(parent),
-                                                m_name("writeWindow")
+    m_name("WriteWindow")
 {
     this->setProperty("name", m_name);
 
-   // QTimer::singleShot(0, this, SLOT(init()));
+    // QTimer::singleShot(0, this, SLOT(init()));
 }
 
 // -------------------------------------------------------------------
 
 void PLMWriteWindow::init()
 {
+    //    PLMPluginLoader *loader = PLMPluginLoader::instance();
 
-
-    PLMPluginLoader *loader = PLMPluginLoader::instance();
-    loader->addPluginType<PLMWriteLeftDockInterface>();
-
+    //    loader->addPluginType<PLMWriteLeftDockInterface>();
 }
 
 // -------------------------------------------------------------------
@@ -37,16 +35,16 @@ QString PLMWriteWindow::use() const
 
 // -------------------------------------------------------------------
 
-PLMBaseWindow *PLMWriteWindow::window()
+PLMBaseWindow * PLMWriteWindow::window()
 {
-    PLMWindow *window = new PLMWindow;
+    PLMWindow *window = new PLMWindow(nullptr, m_name);
 
-    window->setProperty("name", m_name);
+
+    //  window->setProperty("name", m_name);
     window->setWindowTitle(tr("Write"));
 
     return window;
 }
-
 
 // -------------------------------------------------------------------
 
@@ -55,8 +53,8 @@ QList<PLMSideBarAction>PLMWriteWindow::sideMainBarActions(QObject *parent)
     QList<PLMSideBarAction> list;
     QAction *action = new QAction(QIcon(":/pics/48x48/scribus.png"), tr("Write"), parent);
     action->setProperty("linkedWindow", m_name);
-    action->setProperty("detachable", true);
-    action->setProperty("order", 20);
+    action->setProperty("detachable",   true);
+    action->setProperty("order",        20);
     action->setCheckable(true);
     PLMSideBarAction mAction(m_name, action);
     list.append(mAction);

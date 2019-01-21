@@ -48,7 +48,7 @@ public:
         CharCountRole = Qt::UserRole + 11,
         WordCountRole = Qt::UserRole + 12
     };
-    Q_ENUMS(Roles)
+    Q_ENUM(Roles)
 
     explicit PLMSheetItem();
     explicit PLMSheetItem(int projectId,

@@ -2,7 +2,8 @@
 *   Copyright (C) 2017 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmcoreinterface.h                                                   *
+*  Filename: plmcoreinterface.h
+*                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -22,21 +23,17 @@
 #define PLMCOREINTERFACE_H
 
 
-
 #include <QString>
+#include "plminterfacesettings.h"
 
-class PLMBaseInterface
-{
+class PLMBaseInterface : public PLMInterfaceSettings {
 public:
+
     virtual ~PLMBaseInterface() {}
-
-    virtual QString use() const = 0;
-    virtual QString name() const = 0;
-
-
 };
 
 #define PLMBaseInterface_iid "com.PlumeSoft.Plume-Creator.BaseInterface/1.0"
+
 
 Q_DECLARE_INTERFACE(PLMBaseInterface, PLMBaseInterface_iid)
 

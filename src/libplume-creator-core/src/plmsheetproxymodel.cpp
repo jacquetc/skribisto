@@ -22,6 +22,8 @@
 #include "plmsheetproxymodel.h"
 #include "plmmodels.h"
 
+#include <QTimer>
+
 PLMSheetProxyModel::PLMSheetProxyModel(QObject *parent) : QSortFilterProxyModel(parent)
 {
     this->setSourceModel(plmmodels->sheetModel());
@@ -40,11 +42,14 @@ Qt::ItemFlags PLMSheetProxyModel::flags(const QModelIndex& index) const
 
 QVariant PLMSheetProxyModel::data(const QModelIndex& index, int role) const
 {
-    int col = index.column();
+    if (!index.isValid()) return QVariant();
+
+    QModelIndex sourceIndex = this->mapToSource(index);
+    int col                 = index.column();
 
     if ((role == Qt::EditRole) && (col == 0)) {
-        return QSortFilterProxyModel::data(index,
-                                           PLMSheetItem::Roles::NameRole);
+        return this->sourceModel()->data(sourceIndex,
+                                         PLMSheetItem::Roles::NameRole).toString();
     }
 
     return QSortFilterProxyModel::data(index, role);
@@ -55,18 +60,20 @@ QVariant PLMSheetProxyModel::data(const QModelIndex& index, int role) const
 bool PLMSheetProxyModel::setData(const QModelIndex& index, const QVariant& value,
                                  int role)
 {
-    PLMSheetItem *item =
-        static_cast<PLMSheetItem *>(this->mapToSource(index).internalPointer());
+    QModelIndex sourceIndex = this->mapToSource(index);
 
-    if ((role == Qt::EditRole) && (index.column() == 0)) {
+    PLMSheetItem *item =
+        static_cast<PLMSheetItem *>(sourceIndex.internalPointer());
+
+    if ((role == Qt::EditRole) && (sourceIndex.column() == 0)) {
         if (item->isProjectItem()) {
-            return QSortFilterProxyModel::setData(index,
-                                                  value,
-                                                  PLMSheetItem::Roles::ProjectNameRole);
+            return this->sourceModel()->setData(sourceIndex,
+                                                value,
+                                                PLMSheetItem::Roles::ProjectNameRole);
         } else {
-            return QSortFilterProxyModel::setData(index,
-                                                  value,
-                                                  PLMSheetItem::Roles::NameRole);
+            return this->sourceModel()->setData(sourceIndex,
+                                                value,
+                                                PLMSheetItem::Roles::NameRole);
         }
     }
     return QSortFilterProxyModel::setData(index, value, role);

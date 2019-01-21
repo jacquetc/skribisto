@@ -22,7 +22,8 @@
 #include "writetreeview.h"
 #include "plmdata.h"
 #include "plmmodels.h"
-#include "plmsheetmodel.h"
+#include "tools.h"
+#include "plmbasedock.h"
 
 #include <QDebug>
 
@@ -32,10 +33,16 @@ WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent)
 
 
     this->setModel(plmmodels->sheetProxyModel());
+    m_model = plmmodels->sheetProxyModel();
+
+    PLMBaseDock *parentDock = QObjectUtils::findParentOfACertainType<PLMBaseDock>(this);
+
+    if (parentDock) qDebug() << "parentDock :" << parentDock->objectName();
+
 
     connect(this, &QTreeView::clicked, this, &WriteTreeView::itemClicked);
 
-    connect(plmmodels->sheetModel(),
+    connect(m_model,
             &PLMSheetModel::modelReset,
             this,
             &WriteTreeView::setExpandStateToItems);
@@ -47,8 +54,11 @@ void WriteTreeView::setExpandStateToItems()
     disconnect(this, &WriteTreeView::collapsed, this, &WriteTreeView::itemCollapsedSlot);
 
     for (const QModelIndex& index : this->allIndexesFromModel()) {
+        if (!index.isValid()) {
+            continue;
+        }
         int indexId =
-            this->model()->data(index, PLMSheetItem::Roles::PaperIdRole).toInt();
+            m_model->data(index, PLMSheetItem::Roles::PaperIdRole).toInt();
         int projectId =
             this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
         QString result = plmdata->sheetPropertyHub()->getProperty(projectId,
@@ -87,15 +97,13 @@ QModelIndexList WriteTreeView::allIndexesFromModel()
 QItemSelection WriteTreeView::selectChildren(const QModelIndex& parent,
                                              bool               recursively) const
 {
-    PLMSheetModel *model = plmmodels->sheetModel();
-
-    if (!model->hasChildren(parent)) {
+    if (!m_model->hasChildren(parent)) {
         return QItemSelection();
     }
 
-    QModelIndex topLeft     = model->index(0, 0, parent);
-    QModelIndex bottomRight = model->index(model->rowCount(parent) - 1,
-                                           model->columnCount(parent) - 1, parent);
+    QModelIndex topLeft     = m_model->index(0, 0, parent);
+    QModelIndex bottomRight = m_model->index(m_model->rowCount(parent) - 1,
+                                             m_model->columnCount(parent) - 1, parent);
 
     QItemSelection selection(topLeft, bottomRight);
 
@@ -103,7 +111,7 @@ QItemSelection WriteTreeView::selectChildren(const QModelIndex& parent,
         QItemSelection subselection;
 
         for (const QModelIndex& index : selection.indexes()) {
-            if (model->hasChildren(index)) {
+            if (m_model->hasChildren(index)) {
                 subselection = this->selectChildren(index, true);
             }
 
@@ -160,8 +168,9 @@ void WriteTreeView::itemClicked(QModelIndex index)
     }
     else if (m_clicksCount == 1) { // first click
         PLMSheetItem *item =
-            static_cast<PLMSheetItem *>(index.
+            static_cast<PLMSheetItem *>(m_model->mapToSource(index).
                                         internalPointer());
+        qDebug() << "";
 
         //        int paperId = item->paperId();
         //        int projectId = item->projectId();

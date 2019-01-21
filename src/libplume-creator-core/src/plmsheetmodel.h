@@ -83,12 +83,23 @@ private slots:
 
     void populate();
     void clear();
+    void exploitSignalFromPLMData(int                 projectId,
+                                  int                 paperId,
+                                  PLMSheetItem::Roles role);
+
+private:
+
+    PLMSheetItem* findPaperItem(int projectId,
+                                int paperId);
+    void          connectToPLMDataSignals();
+    void          disconnectFromPLMDataSignals();
 
 private:
 
     PLMSheetItem *m_rootItem;
     QVariant m_headerData;
     QList<PLMSheetItem *>m_allSheetItems;
+    QList<QMetaObject::Connection>m_dataConnectionsList;
 };
 
 

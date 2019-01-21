@@ -10,30 +10,30 @@
 
 // #include "plugininterface.h"
 
-class PLMTestWidget : public QObject,
-                      public PLMDockWidgetInterface {
+class PLMSheetTreeWidget : public QObject,
+                           public PLMDockWidgetInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "com.PlumeSoft.Plume-Creator.DockWidgetInterface/1.0" FILE
-        "plmtestwidget.json")
+        "plmsheettreewidget.json")
     Q_INTERFACES(PLMDockWidgetInterface)
 
 public:
 
-    PLMTestWidget(QObject *parent = nullptr);
-    ~PLMTestWidget();
+    PLMSheetTreeWidget(QObject *parent = nullptr);
+    ~PLMSheetTreeWidget();
 
     // BaseInterface
 
     QString use() const;
     QString name() const
     {
-        return "TestWidget";
+        return "SheetTree";
     }
 
     QString displayedName() const
     {
-        return tr("Test Widget");
+        return tr("Sheets");
     }
 
     PLMBaseDockWidget* dockBodyWidget(QWidget *parent);
@@ -51,8 +51,6 @@ public:
     PLMDockWidgetInterface* clone() const;
 
 private slots:
-
-    void setText();
 
 private:
 

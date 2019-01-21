@@ -11,7 +11,6 @@ namespace Ui {
 class PLMMainWindow;
 }
 
-
 class EXPORT_GUI PLMMainWindow : public QMainWindow {
     Q_OBJECT
 
@@ -19,6 +18,7 @@ public:
 
     explicit PLMMainWindow(PLMData *data);
     ~PLMMainWindow();
+    void applyStyleSheet();
 
 public slots:
 
@@ -45,6 +45,7 @@ private:
     Ui::PLMMainWindow *ui;
     PLMData *m_data;
     QHash<QString, PLMBaseWindow *>hash_nameAndWindow;
+    void applyRaiseWindowSetting();
 };
 
 #endif // MAINWINDOW_H

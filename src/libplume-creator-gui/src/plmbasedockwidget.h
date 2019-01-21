@@ -18,18 +18,21 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMBASEWIDGET_H
-#define PLMBASEWIDGET_H
+#ifndef PLMBASEDOCKWIDGET_H
+#define PLMBASEDOCKWIDGET_H
 
 #include <QWidget>
+#include <QString>
 #include "global.h"
 
-class EXPORT_GUI PLMBaseWidget : public QWidget {
+class EXPORT_GUI PLMBaseDockWidget : public QWidget {
     Q_OBJECT
 
 public:
 
-    explicit PLMBaseWidget(QWidget *parent = nullptr);
+    explicit PLMBaseDockWidget(QWidget *parent = nullptr);
+    virtual QString name()          = 0;
+    virtual QString displayedName() = 0;
 
 public slots:
 
@@ -40,4 +43,4 @@ signals:
 public slots:
 };
 
-#endif // PLMBASEWIDGET_H
+#endif // PLMBASEDOCKWIDGET_H

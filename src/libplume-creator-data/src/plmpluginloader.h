@@ -11,97 +11,99 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include "plume_creator_data_global.h"
-
+#include <string>
+#include <cstdlib>
+#include <cxxabi.h>
 
 struct EXPORT PLMPlugin {
-
     PLMPlugin() {}
 
-    PLMPlugin(const QString &pluginName, const QString &file, QObject *pluginObject)
+    PLMPlugin(const QString& pluginName, const QString& file, QObject *pluginObject)
     {
-        name = pluginName;
-        fileName = file;
-        object = pluginObject;
+        name      = pluginName;
+        fileName  = file;
+        object    = pluginObject;
         className = pluginObject->metaObject()->className();
     }
 
-    PLMPlugin(const PLMPlugin &other)
+    PLMPlugin(const PLMPlugin& other)
     {
-        name = other.name;
-        fileName = other.fileName;
-        object = other.object;
+        name      = other.name;
+        fileName  = other.fileName;
+        object    = other.object;
         className = other.object->metaObject()->className();
     }
 
-    ~PLMPlugin() { }
+    ~PLMPlugin() {}
 
 
-    QString name, fileName, className;
+    QString  name, fileName, className;
     QObject *object;
-
 };
 Q_DECLARE_METATYPE(PLMPlugin)
 
 
-
-
-
-class EXPORT PLMPluginLoader : public QObject
-{
+class EXPORT PLMPluginLoader : public QObject {
     Q_OBJECT
+
 public:
+
     explicit PLMPluginLoader(QObject *parent = 0);
     ~PLMPluginLoader();
 
-    static PLMPluginLoader *instance()
+    static PLMPluginLoader* instance()
     {
         return m_instance;
     }
-    //void reload();
+
+    // void reload();
 
 
-    QList<PLMPlugin> listAll();
-    QList<PLMPlugin> listActivated();
+    QList<PLMPlugin>         listAll();
+    QList<PLMPlugin>         listActivated();
 
 
-
-
-
-
-
-
-    template<typename T> void addPluginType()
+    template<typename T>void addPluginType()
     {
-        foreach (QObject *obj, QPluginLoader::staticInstances()) {
+        foreach(QObject * obj, QPluginLoader::staticInstances()) {
             T *instance = qobject_cast<T *>(obj);
 
             if (instance) {
-                PLMPlugin plugin(obj->property("name").toString(), obj->property("fileName").toString(), obj);
-                m_pluginsListHash.insert(plugin.name, plugin);
+                PLMPlugin plugin(obj->property("name").toString(), obj->property(
+                                     "fileName").toString(), obj);
+
+                if (!m_pluginsListHash.contains(plugin.name)) {
+                    m_pluginsListHash.insert(plugin.name, plugin);
+                }
             }
         }
 
-        foreach (const QString &path, QCoreApplication::libraryPaths()) {
+        foreach(const QString &path, QCoreApplication::libraryPaths()) {
             QList<QObject *> objects = this->pluginObjectsByDir<T>(path);
 
-            foreach (QObject *obj, objects) {
+            foreach(QObject * obj, objects) {
                 T *instance = qobject_cast<T *>(obj);
 
                 if (instance) {
-                    PLMPlugin plugin(obj->property("name").toString(), obj->property("fileName").toString(), obj);
-                    m_pluginsListHash.insert(plugin.name, plugin);
+                    PLMPlugin plugin(obj->property("name").toString(), obj->property(
+                                         "fileName").toString(), obj);
+
+                    if (!m_pluginsListHash.contains(plugin.name)) {
+                        m_pluginsListHash.insert(plugin.name, plugin);
+                    }
                 }
             }
         }
     }
 
-    template<typename T> QList<T *> pluginsByType()
+    template<typename T>QList<T *>pluginsByType()
     {
         QList<T *> list;
 
-        foreach (PLMPlugin p, m_pluginsListHash.values()) {
+        foreach(PLMPlugin p, m_pluginsListHash.values()) {
             QObject *object = p.object;
-            if (!object->property("activatedbydefault").toBool()){
+
+            if (!object->property("activatedbydefault").toBool()) {
                 continue;
             }
 
@@ -113,20 +115,19 @@ public:
         return list;
     }
 
-
-
     void installPluginTranslations();
 
 private:
 
-    template<typename T> T *pluginByName(const QString &fileName)
+    template<typename T>T* pluginByName(const QString& fileName)
     {
         QPluginLoader loader(fileName);
         QObject *plugin = loader.instance();
 
         if (!plugin) {
-//            qDebug() << "loader.instance() AT : " + fileName;
-//            qDebug() << "loader.instance() : " + loader.errorString();
+            qDebug() << "loader.instance() AT : " + fileName;
+            qDebug() << "loader.instance() : " + loader.errorString();
+
             // to clean up if wrong libs loaded :
             plugin->deleteLater();
         }
@@ -135,19 +136,17 @@ private:
         }
 
 
-
         return qobject_cast<T *>(plugin);
     }
 
-
-
-    template<typename T> QList<T *> pluginByDir(const QString &dir)
+    template<typename T>QList<T *>pluginByDir(const QString& dir)
     {
         QList<T *> ls;
         QDir plugDir = QDir(dir);
 
-        foreach (const QString &file, plugDir.entryList(QDir::Files)) {
-            if (T *plugin = PLMPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file))) {
+        foreach(const QString &file, plugDir.entryList(QDir::Files)) {
+            if (T *plugin =
+                    PLMPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file))) {
                 ls.push_back(plugin);
             }
         }
@@ -155,18 +154,20 @@ private:
         return ls;
     }
 
-    QObject *pluginObjectByName(const QString &fileName);
+    QObject                           * pluginObjectByName(const QString& fileName);
 
-    template<typename T> QList<QObject *> pluginObjectsByDir(const QString &dir)
+    template<typename T>QList<QObject *>pluginObjectsByDir(const QString& dir)
     {
         QList<QObject *> ls;
         QDir plugDir = QDir(dir);
         QStringList filter;
         filter << "*.so" << ".dll";
-        QDir::Filters filterFlags(QDir::Files & ~QDir::Executable);
+        QDir::Filters filterFlags(QDir::Files& ~QDir::Executable);
 
-        foreach (const QString &file, plugDir.entryList(filter, filterFlags, QDir::NoSort )) {
-            if (T *plugin = PLMPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file)))
+        foreach(const QString &file,
+                plugDir.entryList(filter, filterFlags, QDir::NoSort)) {
+            if (T *plugin =
+                    PLMPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file)))
                 if (plugin) {
                     ls.push_back(pluginObjectByName(plugDir.absoluteFilePath(file)));
                 }
@@ -178,9 +179,8 @@ private:
 private:
 
     static PLMPluginLoader *m_instance;
-    QHash<QString, PLMPlugin> m_pluginsListHash;
+    QHash<QString, PLMPlugin>m_pluginsListHash;
     QStringList m_pluginTypesList;
-
 };
 
 

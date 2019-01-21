@@ -12,37 +12,41 @@ find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets CONFIG REQUIRED)
 find_package(Qt5QuickCompiler)
 
 set(gui_SRCS
-plmbaseleftdock.cpp
-plmbasewidget.cpp
+plmbasedock.cpp
 plmbasewindow.cpp
 plmmainwindow.cpp
 plmmessagehandler.cpp
 plmsidemainbar.cpp
-plmmodels.cpp
-
+plmbasedockwidget.cpp
+plmstyle.cpp
 )
 set(gui_HDR
 global.h
-plmbaseleftdock.h
-plmbasewidget.h
+plmbasedock.h
 plmbasewindow.h
-plmguiinterface.h
 plmguiplugins.h
 plmmainwindow.h
 plmmessagehandler.h
 plmsidemainbar.h
-plmmodels.h
+plmbasedockwidget.h
+plmguiinterface.h
+plmdockwidgetinterface.h
+plmstyle.h
 
 )
 
 set(gui_UI
     plmmainwindow.ui
     plmsidemainbar.ui
-    )
+    plmbasedockheader.ui
+    plmbasedockbody.ui
+
+)
 
 set(QRC
     sounds.qrc
     gui_pics.qrc
+    stylesheets.qrc
 )
 set(gui_QML
     gui_qml.qrc
@@ -57,7 +61,7 @@ ADD_CUSTOM_TARGET(gui_qml SOURCES ${QML_SRC} )
 
 
 qt5_add_resources(RESOURCES ${QRC})
-qtquick_compiler_add_resources(RESOURCES ${gui_QML})
+#qtquick_compiler_add_resources(RESOURCES ${gui_QML})
 
 
 # Tell CMake to create the executable

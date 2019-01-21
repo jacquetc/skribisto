@@ -9,13 +9,11 @@ find_package(Qt5QuickCompiler)
 set(writewindow_SRCS
     plmwritewindow.cpp
     plmwindow.cpp
-writetreeview.cpp
 )
 set(writewindow_HDR
     plmwritewindow.h
     plmwindow.h
     plugininterface.h
-writetreeview.h
 )
 
 set(writewindow_UI

@@ -1,6 +1,6 @@
 {
     "type" :            "window",
-    "shortname" :            "plmwritewindow",
+    "shortname" :            "WriteWindow",
     "longname" :        "Plume Write Window",
     "version" :         "1.0",
     "mandatory" :    true,

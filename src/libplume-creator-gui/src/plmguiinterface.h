@@ -2,7 +2,8 @@
 *   Copyright (C) 2017 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmguiinterface.h                                                   *
+*  Filename: plmguiinterface.h
+*                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -23,33 +24,36 @@
 
 #include "plmbasewindow.h"
 #include "plmsidemainbar.h"
-#include "plmbasewidget.h"
+#include "plmbasedockwidget.h"
+#include "plmcoreinterface.h"
 
 #include <QString>
 
-class PLMWindowInterface
-{
+class PLMWindowInterface : public PLMBaseInterface {
 public:
+
     virtual ~PLMWindowInterface() {}
 
-    virtual PLMBaseWindow *window() = 0;
-    virtual void init() = 0;
-    //virtual QList<PLMSideBarAction> mainBarActions(QObject *parent) = 0;
+    virtual PLMBaseWindow* window() = 0;
+    virtual void           init()   = 0;
+
+    // virtual QList<PLMSideBarAction> mainBarActions(QObject *parent) = 0;
 };
 
 #define PLMWindowInterface_iid "com.PlumeSoft.Plume-Creator.WindowInterface/1.0"
 
 Q_DECLARE_INTERFACE(PLMWindowInterface, PLMWindowInterface_iid)
 
-class PLMSideMainBarIconInterface
-{
+class PLMSideMainBarIconInterface : public PLMBaseInterface {
 public:
+
     virtual ~PLMSideMainBarIconInterface() {}
 
-    virtual QList<PLMSideBarAction> sideMainBarActions(QObject *parent) = 0;
+    virtual QList<PLMSideBarAction>sideMainBarActions(QObject *parent) = 0;
 };
 
-#define PLMSideMainBarIconInterface_iid "com.PlumeSoft.Plume-Creator.SideMainBarIconInterface/1.0"
+#define PLMSideMainBarIconInterface_iid \
+    "com.PlumeSoft.Plume-Creator.SideMainBarIconInterface/1.0"
 
 Q_DECLARE_INTERFACE(PLMSideMainBarIconInterface, PLMSideMainBarIconInterface_iid)
 

@@ -1,7 +1,7 @@
 {
     "type" :            "widget",
-    "shortname" :            "TestWidget",
-    "longname" :        "Plume Test Widget",
+    "shortname" :            "Sheet Tree",
+    "longname" :        "Plume Sheet Tree",
     "version" :         "1.0",
     "mandatory" :    true,
     "activatedbydefault" :    true,

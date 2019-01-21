@@ -6,32 +6,38 @@
 #include <QAction>
 #include "plmbasewindow.h"
 
-namespace Ui
-{
+namespace Ui {
 class PLMWindow;
 }
 
-class PLMWindow : public PLMBaseWindow
-{
+class PLMWindow : public PLMBaseWindow {
     Q_OBJECT
 
 public:
-    explicit PLMWindow(QWidget *parent = 0);
+
+    explicit PLMWindow(QWidget       *parent,
+                       const QString& name);
     ~PLMWindow();
 
 protected:
-//    void focusInEvent(QFocusEvent *event);
+
+    //    void focusInEvent(QFocusEvent *event);
 
 private slots:
+
     void testProjectButton_clicked();
 
+    void on_pushButton_clicked();
+
 private:
+
     void setMenuActions();
 
 private:
+
     Ui::PLMWindow *ui;
 
-    QList<QAction *> actionList;
+    QList<QAction *>actionList;
 };
 
 #endif // PLMWINDOW_H

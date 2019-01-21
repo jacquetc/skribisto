@@ -58,6 +58,8 @@ void PLMSideMainBar::loadPlugins()
     // ordering
     QMap<int, QAction *> actionMap;
     foreach(PLMSideMainBarIconInterface * plugin, pluginList) {
+        if (!plugin->pluginEnabled()) continue;
+
         QList<PLMSideBarAction> actionList = plugin->sideMainBarActions(this);
 
         foreach(const PLMSideBarAction &sideBarAction, actionList) {
@@ -105,7 +107,7 @@ void PLMSideMainBar::setButtonChecked(const QString& windowName)
 void PLMSideMainBar::buttonChecked() {
     QSettings settings;
 
-    settings.beginGroup("MainBar");
+    settings.beginGroup("Windows");
 
     settings.setValue("place",        this->objectName());
     settings.setValue("selectedName", this->sender()->property("linkedWindow"));
@@ -172,7 +174,7 @@ void PLMSideMainBar::readSettings()
 {
     QSettings settings;
 
-    settings.beginGroup("MainBar");
+    settings.beginGroup("Windows");
 
     // bar visible ?
     if (settings.value("place", this->objectName()).toByteArray() != this->objectName()) {
@@ -188,10 +190,17 @@ void PLMSideMainBar::readSettings()
     // raised ?
     foreach(const QString &windowName, hash_windowNameAndButton.keys()) {
         if (settings.value(windowName + "-raised", false).toBool() == true) {
-            emit windowDetachmentCalled(windowName);
+            emit windowRaiseCalled(windowName);
         }
     }
 
+    // detached ?
+    foreach(const QString &windowName, hash_windowNameAndButton.keys()) {
+        if (settings.value(windowName + "-detached", false).toBool() == true) {
+            hash_windowNameAndButton.value(windowName)->setEnabled(false);
+            emit windowDetachmentCalled(windowName);
+        }
+    }
 
     settings.endGroup();
 }

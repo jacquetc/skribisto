@@ -42,7 +42,7 @@ void startCore()
 
     // Names for the QSettings
     QCoreApplication::setOrganizationName("plume-creator");
-    QCoreApplication::setOrganizationDomain("plume-creator.com");
+    QCoreApplication::setOrganizationDomain("plume-creator.eu");
 
 
     QCoreApplication::setApplicationVersion(QString::number(VERSIONSTR));
@@ -95,7 +95,7 @@ PLMMainWindow* startGui(PLMData *data)
 {
     // Q_INIT_RESOURCE(pics);
     // Q_INIT_RESOURCE(langs);
-    // Q_INIT_RESOURCE(sounds);
+
     // splashscreen :
     QPixmap pixmap(":/pics/plume-creator.png");
     QSplashScreen *splash = new QSplashScreen(pixmap);
@@ -216,18 +216,18 @@ int main(int argc, char *argv[])
                                                   "PLMProjectHub",
                                                   "Can't instantiate PLMProjectHub");
         qmlRegisterUncreatableType<PLMSheetHub>("eu.plumecreator.sheethub",
-                                                  1,
-                                                  0,
-                                                  "PLMSheetHub",
-                                                  "Can't instantiate PLMSheetHub");
+                                                1,
+                                                0,
+                                                "PLMSheetHub",
+                                                "Can't instantiate PLMSheetHub");
         qmlRegisterType<PLMSheetListModel>("eu.plumecreator.sheetlistmodel",
                                            1,
                                            0,
                                            "PLMSheetListModel");
         qmlRegisterType<DocumentHandler>("eu.plumecreator.documenthandler",
-                                           1,
-                                           0,
-                                           "DocumentHandler");
+                                         1,
+                                         0,
+                                         "DocumentHandler");
 
         QQmlApplicationEngine *engine = new QQmlApplicationEngine(qApp);
 

@@ -112,9 +112,19 @@ void PLMSheetItem::invalidateAllData()
 
 QVariant PLMSheetItem::data(int role)
 {
+    QMetaEnum metaEnum = QMetaEnum::fromType<PLMSheetItem::Roles>();
+
+    //    if (role != IndentRole)
+    //        qDebug() << "item data : " << "pr :" <<
+    //        m_data.value(Roles::ProjectIdRole).toInt() <<
+    //            "id :" <<
+    //            m_data.value(Roles::PaperIdRole).toInt() << "role : " <<
+    //            metaEnum.valueToKey(role);
+
     if (invalidatedRoles.contains(role)) {
         int projectId = this->projectId();
         int paperId   = this->paperId();
+
 
         switch (role) {
         case Roles::ProjectNameRole:

@@ -4,20 +4,20 @@
 
 #include "plmpluginloader.h"
 #include "plmguiinterface.h"
+#include "plmdockwidgetinterface.h"
 
-namespace PLMGuiPlugins
-{
-
+namespace PLMGuiPlugins {
 void addGuiPlugins()
 {
     PLMPluginLoader *loader = PLMPluginLoader::instance();
+
     loader->addPluginType<PLMWindowInterface>();
     loader->addPluginType<PLMSideMainBarIconInterface>();
-    //loader->reload();
-}
+    loader->addPluginType<PLMDockWidgetInterface>();
 
+    // loader->reload();
 }
-
+}
 
 
 #endif // PLMGUIPLUGINS_H
