@@ -16,9 +16,9 @@ set(writewindow_HDR
     plugininterface.h
 )
 
-set(writewindow_UI
-    plmwindow.ui
-    )
+#set(writewindow_UI
+#    plmwindow.ui
+#    )
 set(writewindow_OTHER
     plmwritewindow.json
     )

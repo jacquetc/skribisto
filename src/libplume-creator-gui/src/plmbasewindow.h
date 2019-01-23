@@ -48,11 +48,11 @@ public:
 
 public slots:
 
-    virtual PLMBaseDock* addRightDock();
-    virtual PLMBaseDock* addBottomDock();
-    virtual PLMBaseDock* addLeftDock();
+    PLMBaseDock* addRightDock();
+    PLMBaseDock* addBottomDock();
+    PLMBaseDock* addLeftDock();
 
-    void                 applyStyleSheet();
+    void         applyStyleSheet();
 
 protected:
 
@@ -81,12 +81,22 @@ protected slots:
 signals:
 
     void attachmentCalled(const QString& windowName);
+    void noLeftDock();
+    void noBottomDock();
+    void noRightDock();
+    void leftDockAdded();
+    void bottomDockAdded();
+    void rightDockAdded();
 
 private slots:
 
     void saveDockSettings();
     void saveSettingsGeometry();
     void applyDockSettings();
+
+    void closeRightDock(const QString& objectName);
+    void closeBottomDock(const QString& objectName);
+    void closeLeftDock(const QString& objectName);
 
 private:
 

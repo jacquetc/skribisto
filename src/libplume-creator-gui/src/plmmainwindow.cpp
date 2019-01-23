@@ -6,6 +6,7 @@
 #include "plmpluginloader.h"
 #include "plmguiplugins.h"
 #include "plmmodels.h"
+#include "plmwritingwindowmanager.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -149,6 +150,11 @@ void PLMMainWindow::raiseWindow(const QString& windowName)
     QSettings settings;
     settings.beginGroup("Windows");
     settings.setValue(windowName + "-raised", true);
+
+    for (PLMBaseWindow *window : hash_nameAndWindow.values()) {
+        if (windowName != window->name()) settings.setValue(window->name() + "-raised",
+                                                            false);
+    }
     settings.endGroup();
 }
 

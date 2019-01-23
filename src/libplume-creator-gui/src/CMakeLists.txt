@@ -19,6 +19,8 @@ plmmessagehandler.cpp
 plmsidemainbar.cpp
 plmbasedockwidget.cpp
 plmstyle.cpp
+plmwritingwindow.cpp
+plmwritingwindowmanager.cpp
 )
 set(gui_HDR
 global.h
@@ -32,6 +34,8 @@ plmbasedockwidget.h
 plmguiinterface.h
 plmdockwidgetinterface.h
 plmstyle.h
+plmwritingwindow.h
+plmwritingwindowmanager.h
 
 )
 
@@ -40,6 +44,7 @@ set(gui_UI
     plmsidemainbar.ui
     plmbasedockheader.ui
     plmbasedockbody.ui
+    plmwritingwindow.ui
 
 )
 

@@ -102,6 +102,7 @@ protected:
 signals:
 
     void addDockCalled();
+    void closeDockCalled(const QString& objectName);
     void currentWidgetChanged(const QString& name);
 
 private slots:

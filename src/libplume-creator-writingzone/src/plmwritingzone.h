@@ -25,46 +25,52 @@
 #include <QImage>
 #include "global_writingzone.h"
 
-namespace Ui
-{
+namespace Ui {
 class PLMWritingZone;
 }
 
-class EXPORT_WRITINGZONE PLMWritingZone : public QWidget
-{
+class EXPORT_WRITINGZONE PLMWritingZone : public QWidget {
     Q_OBJECT
 
 public:
 
-    explicit PLMWritingZone(QWidget *parent = 0);
+    Q_PROPERTY(bool hasMinimap READ hasMinimap WRITE setHasMinimap DESIGNABLE true
+               FINAL)
+    Q_PROPERTY(bool isResizable READ isResizable WRITE setIsResizable DESIGNABLE true)
+    Q_PROPERTY(
+        bool hasSideToolBar READ hasSideToolBar WRITE setHasSideToolBar DESIGNABLE true)
+    Q_PROPERTY(
+        bool hasScrollbar READ hasScrollbar WRITE setHasSideToolBar DESIGNABLE true)
+
+    explicit PLMWritingZone(QWidget *parent = nullptr);
     ~PLMWritingZone();
 
-    void setUse(const QString &use);
+    void    setUse(const QString& use);
 
-    bool hasMinimap() const;
-    void setHasMinimap(bool value);
+    bool    hasMinimap() const;
+    void    setHasMinimap(bool value);
 
-    bool hasScrollbar() const;
-    void setHasScrollbar(bool hasScrollbar);
+    bool    hasScrollbar() const;
+    void    setHasScrollbar(bool hasScrollbar);
 
-    bool hasSideToolBar() const;
-    void setHasSideToolBar(bool hasSideToolBar);
+    bool    hasSideToolBar() const;
+    void    setHasSideToolBar(bool hasSideToolBar);
 
-    bool isResizable() const;
-    void setIsResizable(bool isResizable);
+    bool    isResizable() const;
+    void    setIsResizable(bool isResizable);
 
-    void setWidth(int width);
+    void    setFixedWidth(int width);
 
-    bool isMarkdown() const;
-    void setIsMarkdown(bool isMarkdown);
+    bool    isMarkdown() const;
+    void    setIsMarkdown(bool isMarkdown);
 
     QString markdownText() const;
-    void setMarkdownText(const QString &markdownText);
+    void    setMarkdownText(const QString& markdownText);
 
     QString htmlText() const;
-    void setHtmlText(const QString &htmlText);
+    void    setHtmlText(const QString& htmlText);
 
-    virtual QImage image(const QString &imageName) const = 0;
+    // virtual QImage image(const QString& imageName) const = 0;
 
 signals:
 
@@ -86,6 +92,7 @@ private:
          m_isMarkdown;
     QString m_markdownText, m_htmlText;
     int m_cursorPosition, m_scrollBarValue;
+    int m_fixedWidth;
 };
 
 #endif // PLMWRITINGZONE_H

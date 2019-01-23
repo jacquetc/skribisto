@@ -33,7 +33,10 @@ plmwritingzone.h
 richtextedit.h
 sizehandle.h
 toolbar.h
+)
 
+set(writingzone_UI
+    plmwritingzone.ui
 
 
 )
@@ -56,7 +59,7 @@ qt5_add_resources(RESOURCES ${QRC})
 
 
 # Tell CMake to create the executable
-add_library(plume-creator-writingzone SHARED ${writingzone_SRCS} ${writingzone_HDR} ${RESOURCES})
+add_library(plume-creator-writingzone SHARED ${writingzone_SRCS} ${writingzone_HDR} ${writingzone_UI} ${RESOURCES})
 
 qt5_use_modules(plume-creator-writingzone Core Quick Gui Widgets)
 

@@ -164,6 +164,33 @@ void PLMBaseWindow::applyDockSettings()
     this->applySettingsState();
 }
 
+void PLMBaseWindow::closeRightDock(const QString& objectName)
+{
+    for (PLMBaseDock *dock : this->rightDocks()) {
+        if (dock->objectName() == objectName) m_rightDocks.removeAll(dock);
+    }
+
+    if (this->rightDocks().isEmpty()) emit noRightDock();
+}
+
+void PLMBaseWindow::closeBottomDock(const QString& objectName)
+{
+    for (PLMBaseDock *dock : this->bottomDocks()) {
+        if (dock->objectName() == objectName) m_bottomDocks.removeAll(dock);
+    }
+
+    if (this->bottomDocks().isEmpty()) emit noBottomDock();
+}
+
+void PLMBaseWindow::closeLeftDock(const QString& objectName)
+{
+    for (PLMBaseDock *dock : this->leftDocks()) {
+        if (dock->objectName() == objectName) m_leftDocks.removeAll(dock);
+    }
+
+    if (this->leftDocks().isEmpty()) emit noLeftDock();
+}
+
 void PLMBaseWindow::saveDockSettings()
 {
     QSettings settings;
@@ -221,7 +248,8 @@ PLMBaseDock * PLMBaseWindow::addRightDock()
     PLMBaseDock *dock = new PLMBaseDock(this, Qt::RightEdge, "SheetTree");
 
     dock->setAllowedAreas(Qt::RightDockWidgetArea);
-    connect(dock, &PLMBaseDock::addDockCalled, this, &PLMBaseWindow::addRightDock);
+    connect(dock, &PLMBaseDock::addDockCalled,   this, &PLMBaseWindow::addRightDock);
+    connect(dock, &PLMBaseDock::closeDockCalled, this, &PLMBaseWindow::closeRightDock);
 
 
     if (m_rightDocks.isEmpty()) {
@@ -234,6 +262,7 @@ PLMBaseDock * PLMBaseWindow::addRightDock()
                         QString::number(m_leftDocks.indexOf(dock)));
 
     m_rightDocks.append(dock);
+    emit rightDockAdded();
 
     return dock;
 }
@@ -243,7 +272,8 @@ PLMBaseDock * PLMBaseWindow::addBottomDock()
     PLMBaseDock *dock = new PLMBaseDock(this, Qt::BottomEdge, "SheetTree");
 
     dock->setAllowedAreas(Qt::BottomDockWidgetArea);
-    connect(dock, &PLMBaseDock::addDockCalled, this, &PLMBaseWindow::addBottomDock);
+    connect(dock, &PLMBaseDock::addDockCalled,   this, &PLMBaseWindow::addBottomDock);
+    connect(dock, &PLMBaseDock::closeDockCalled, this, &PLMBaseWindow::closeBottomDock);
 
     if (m_bottomDocks.isEmpty()) {
         this->addDockWidget(Qt::BottomDockWidgetArea, dock);
@@ -255,6 +285,8 @@ PLMBaseDock * PLMBaseWindow::addBottomDock()
                         QString::number(m_leftDocks.indexOf(dock)));
 
     m_bottomDocks.append(dock);
+    emit bottomDockAdded();
+    dock->show();
     return dock;
 }
 
@@ -263,7 +295,8 @@ PLMBaseDock * PLMBaseWindow::addLeftDock()
     PLMBaseDock *dock = new PLMBaseDock(this, Qt::LeftEdge, "SheetTree");
 
     dock->setAllowedAreas(Qt::LeftDockWidgetArea);
-    connect(dock, &PLMBaseDock::addDockCalled, this, &PLMBaseWindow::addLeftDock);
+    connect(dock, &PLMBaseDock::addDockCalled,   this, &PLMBaseWindow::addLeftDock);
+    connect(dock, &PLMBaseDock::closeDockCalled, this, &PLMBaseWindow::closeLeftDock);
 
     if (m_leftDocks.isEmpty()) {
         this->addDockWidget(Qt::LeftDockWidgetArea, dock);
@@ -294,8 +327,8 @@ PLMBaseDock * PLMBaseWindow::addLeftDock()
             dock->addWidgetContainer(plugin->name(), plugin->clone());
         }
     }
-
-
+    dock->show();
+    emit leftDockAdded();
     return dock;
 }
 

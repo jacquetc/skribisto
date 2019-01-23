@@ -152,6 +152,25 @@
       </layout>
      </item>
      <item>
+      <widget class="SizeHandle" name="sizeHandle" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>4</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="cursor">
+        <cursorShape>SizeHorCursor</cursorShape>
+       </property>
+       <property name="mouseTracking">
+        <bool>true</bool>
+       </property>
+       <property name="locale">
+        <locale language="English" country="UnitedStates"/>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="RichTextEdit" name="richTextEdit">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -170,25 +189,6 @@
        </property>
        <property name="horizontalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="SizeHandle" name="sizeHandle" native="true">
-       <property name="minimumSize">
-        <size>
-         <width>4</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="cursor">
-        <cursorShape>SizeHorCursor</cursorShape>
-       </property>
-       <property name="mouseTracking">
-        <bool>true</bool>
-       </property>
-       <property name="locale">
-        <locale language="English" country="UnitedStates"/>
        </property>
       </widget>
      </item>

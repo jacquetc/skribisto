@@ -1,20 +1,17 @@
 #include "plmwindow.h"
-#include "ui_plmwindow.h"
 #include "plmdata.h"
 #include "plmbasedock.h"
 
 #include <QSettings>
+#include <QStatusBar>
 #include <QTimer>
 #include <QToolButton>
 
-// #include "menubar.h"
+ #include "plmwritingwindowmanager.h"
 
 PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
-    PLMBaseWindow(parent, name),
-    ui(new Ui::PLMWindow)
+    PLMBaseWindow(parent, name)
 {
-    ui->setupUi(this);
-
     this->setupStatusBar();
 
     this->setRightDockDefaultCount(0);
@@ -22,14 +19,21 @@ PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
     this->setLeftDockDefaultCount(2);
 
     this->setMenuActions();
+
+    QWidget *widget    = new QWidget(this);
+    QBoxLayout *layout = new QBoxLayout(QBoxLayout::Direction::TopToBottom, widget);
+    this->setCentralWidget(widget);
+    widget->setLayout(layout);
+
+    PLMWritingWindowManager *writeWindowManager =
+        new PLMWritingWindowManager(this, layout);
+    writeWindowManager->setObjectName("writeWindowManager");
 }
 
 // -------------------------------------------------------------------
 
 PLMWindow::~PLMWindow()
-{
-    delete ui;
-}
+{}
 
 // -------------------------------------------------------------------
 
@@ -116,6 +120,8 @@ void PLMWindow::setMenuActions()
 
 void PLMWindow::setupStatusBar()
 {
+    QStatusBar *statusBar = this->statusBar();
+
     QAction *showLeftDockAct =
         new QAction(QIcon(":/pics/plume-creator.svg"), tr("Show Left Sidebar"), this);
 
@@ -130,12 +136,130 @@ void PLMWindow::setupStatusBar()
     });
 
     connect(showLeftDockAct, &QAction::toggled, this,
-            &PLMWindow::setLeftSidebarVisible);
+            &PLMWindow::setLeftSidebarVisible, Qt::UniqueConnection);
 
-    QToolButton *showLeftDock = new QToolButton();
-    showLeftDock->setAutoRaise(true);
-    showLeftDock->setDefaultAction(showLeftDockAct);
-    ui->statusBar->addWidget(showLeftDock);
+
+    // save settings :
+    connect(showLeftDockAct, &QAction::destroyed, [ = ]() {
+        QSettings settings;
+        settings.setValue("Docks/" + this->name() + "_leftSidebarVisible",
+                          showLeftDockAct->isChecked());
+    });
+
+    // load settings :
+
+    QSettings settings;
+    bool value =
+        settings.value("Docks/" + this->name() + "_leftSidebarVisible", true).toBool();
+    showLeftDockAct->setChecked(value);
+
+
+    QToolButton *showLeftDockButton = new QToolButton();
+    showLeftDockButton->setAutoRaise(true);
+    showLeftDockButton->setDefaultAction(showLeftDockAct);
+    showLeftDockButton->hide();
+
+    connect(this, &PLMBaseWindow::leftDockAdded, showLeftDockButton, &QToolButton::show);
+    connect(this, &PLMBaseWindow::noLeftDock,    showLeftDockButton, &QToolButton::hide);
+
+    statusBar->addWidget(showLeftDockButton);
+
+    // addLeftDock :
+
+    QAction *addLeftDockAct =
+        new QAction(QIcon(":/pics/plume-creator.svg"), tr("Add Left Dock"), this);
+
+
+    QToolButton *addLeftDockButton = new QToolButton();
+    addLeftDockButton->setAutoRaise(true);
+    addLeftDockButton->setDefaultAction(addLeftDockAct);
+    addLeftDockButton->show();
+    statusBar->addWidget(addLeftDockButton);
+
+    connect(addLeftDockAct,
+            &QAction::triggered,
+            this,
+            &PLMBaseWindow::addLeftDock);
+
+    connect(this,
+            &PLMBaseWindow::leftDockAdded,
+            addLeftDockButton,
+            &QToolButton::hide);
+    connect(this,
+            &PLMBaseWindow::noLeftDock,
+            addLeftDockButton,
+            &QToolButton::show);
+
+    // stretcher :
+    statusBar->addWidget(new QWidget(), 1);
+
+    QAction *showRightDockAct =
+        new QAction(QIcon(":/pics/plume-creator.svg"), tr("Show Right Sidebar"), this);
+
+    showRightDockAct->setCheckable(true);
+    connect(showRightDockAct, &QAction::toggled, [showRightDockAct](bool value) {
+        if (value) {
+            showRightDockAct->setText(tr("Hide Right Sidebar"));
+            showRightDockAct->setToolTip(tr("Hide Right Sidebar"));
+        }
+        else { showRightDockAct->setText(tr("Show Right Sidebar"));
+               showRightDockAct->setToolTip(tr("Show Right Sidebar")); }
+    });
+
+    connect(showRightDockAct, &QAction::toggled, this,
+            &PLMWindow::setRightSidebarVisible);
+
+    // save settings :
+    connect(showRightDockAct, &QAction::destroyed, [ = ]() {
+        QSettings settings;
+        settings.setValue("Docks/" + this->name() + "_rightSidebarVisible",
+                          showRightDockAct->isChecked());
+    });
+
+    // load settings :
+
+    bool rightValue =
+        settings.value("Docks/" + this->name() + "_rightSidebarVisible", true).toBool();
+    showRightDockAct->setChecked(rightValue);
+
+
+    QToolButton *showRightDockButton = new QToolButton();
+    showRightDockButton->setAutoRaise(true);
+    showRightDockButton->setDefaultAction(showRightDockAct);
+    showRightDockButton->hide();
+
+    connect(this, &PLMBaseWindow::rightDockAdded, showRightDockButton,
+            &QToolButton::show);
+    connect(this, &PLMBaseWindow::noRightDock,    showRightDockButton,
+            &QToolButton::hide);
+
+    statusBar->addWidget(showRightDockButton);
+
+    // addRightDock :
+
+    QAction *addRightDockAct =
+        new QAction(QIcon(":/pics/plume-creator.svg"), tr("Add Right Dock"), this);
+
+
+    QToolButton *addRightDockButton = new QToolButton();
+    addRightDockButton->setAutoRaise(true);
+    addRightDockButton->setDefaultAction(addRightDockAct);
+    addRightDockButton->show();
+    statusBar->addWidget(addRightDockButton);
+
+    connect(addRightDockAct,
+            &QAction::triggered,
+            this,
+            &PLMBaseWindow::addRightDock);
+
+    connect(this,
+            &PLMBaseWindow::rightDockAdded,
+            addRightDockButton,
+            &QToolButton::hide);
+    connect(this,
+            &PLMBaseWindow::noRightDock,
+            addRightDockButton,
+            &QToolButton::show);
 }
 
 // ---------------------------------------------------------------------------------------------------

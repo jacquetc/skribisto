@@ -44,6 +44,10 @@ PLMBaseDock::PLMBaseDock(QWidget *parent, Qt::Edge edge,
     bodyUi->setupUi(body);
     body->show();
 
+    connect(headerUi->closeButton, &QToolButton::clicked, [ = ]() {
+        emit closeDockCalled(this->objectName());
+    });
+
     connect(headerUi->closeButton, &QToolButton::clicked, this, &PLMBaseDock::close);
     connect(headerUi->addDockButton,
             &QToolButton::clicked,

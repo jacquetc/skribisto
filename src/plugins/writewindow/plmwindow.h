@@ -6,9 +6,6 @@
 #include <QAction>
 #include "plmbasewindow.h"
 
-namespace Ui {
-class PLMWindow;
-}
 
 class PLMWindow : public PLMBaseWindow {
     Q_OBJECT
@@ -36,8 +33,6 @@ private:
     void setupStatusBar();
 
 private:
-
-    Ui::PLMWindow *ui;
 
     QList<QAction *>actionList;
 };
