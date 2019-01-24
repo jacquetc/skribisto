@@ -28,6 +28,7 @@
 #include <QPointer>
 
 #include <QBoxLayout>
+#include <QSplitter>
 
 class WindowContainer {
     Q_GADGET
@@ -37,35 +38,35 @@ public:
     WindowContainer();
     WindowContainer(const WindowContainer& otherContainer);
     ~WindowContainer();
-    bool                        operator!() const;
+    bool                       operator!() const;
     operator bool() const;
-    WindowContainer           & operator=(const WindowContainer& otherContainer);
-    bool                        operator==(const WindowContainer& otherContainer) const;
+    WindowContainer          & operator=(const WindowContainer& otherContainer);
+    bool                       operator==(const WindowContainer& otherContainer) const;
 
-    QPointer<PLMWritingWindow>  window() const;
-    void                        setWindow(const QPointer<PLMWritingWindow>& window);
+    QPointer<PLMWritingWindow> window() const;
+    void                       setWindow(const QPointer<PLMWritingWindow>& window);
 
-    int                         parentId() const;
-    void                        setParentId(int value);
+    int                        parentId() const;
+    void                       setParentId(int value);
 
-    int                         id() const;
-    void                        setId(int value);
+    int                        id() const;
+    void                       setId(int value);
 
-    QString                     name() const;
-    bool                        setName(const QString& name);
+    QString                    name() const;
+    bool                       setName(const QString& name);
 
-    Qt::Orientation             orientation() const;
-    void                        setOrientation(const Qt::Orientation& orientation);
+    Qt::Orientation            orientation() const;
+    void                       setOrientation(const Qt::Orientation& orientation);
 
-    void                        setOrientation(const QString& orientation);
-    QList<QPointer<QBoxLayout> >layoutList() const;
-    void                        addLayout(const QPointer<QBoxLayout>& layout);
+    void                       setOrientation(const QString& orientation);
+    QList<QPointer<QSplitter> >splitterList() const;
+    void                       addSplitter(const QPointer<QSplitter>& layout);
 
-    void                        setLayoutList(
-        const QList<QPointer<QBoxLayout> >& layoutList);
+    void                       setSplitterList(
+        const QList<QPointer<QSplitter> >& layoutList);
 
-    QSize                       windowSize() const;
-    void                        setWindowSize(const QSize& size);
+    QSize                      windowSize() const;
+    void                       setWindowSize(const QSize& size);
 
 private:
 
@@ -74,6 +75,7 @@ private:
     int m_id;
     Qt::Orientation m_orientation;
     QList<QPointer<QBoxLayout> >m_layoutList;
+    QList<QPointer<QSplitter> >m_splitterList;
 };
 Q_DECLARE_METATYPE(WindowContainer)
 
@@ -82,8 +84,7 @@ class PLMWritingWindowManager : public QObject {
 
 public:
 
-    explicit PLMWritingWindowManager(QObject       *parent,
-                                     QBoxLayout    *baseLayout,
+    explicit PLMWritingWindowManager(QWidget       *parent,
                                      const QString& objectName);
 
 signals:
@@ -103,7 +104,6 @@ private slots:
 
 private:
 
-    QPointer<QBoxLayout>m_baseBoxLayout;
     QList<WindowContainer>m_windowContainerList;
 };
 

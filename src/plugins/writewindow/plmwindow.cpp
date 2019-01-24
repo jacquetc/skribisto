@@ -20,13 +20,15 @@ PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
 
     this->setMenuActions();
 
-    QWidget *widget    = new QWidget(this);
-    QBoxLayout *layout = new QBoxLayout(QBoxLayout::Direction::TopToBottom, widget);
-    this->setCentralWidget(widget);
-    widget->setLayout(layout);
+    QWidget *widget = new QWidget(this);
 
-    PLMWritingWindowManager *writeWindowManager =
-        new PLMWritingWindowManager(this, layout, "writeWindowManager");
+    // layout needed for splitters of PLMWritingWindowManager:
+    QBoxLayout *layout = new QBoxLayout(QBoxLayout::Direction::TopToBottom, widget);
+    Q_UNUSED(layout)
+    this->setCentralWidget(widget);
+
+
+    new PLMWritingWindowManager(widget, "writeWindowManager");
 }
 
 // -------------------------------------------------------------------

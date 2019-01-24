@@ -25,10 +25,9 @@
 #include <QDebug>
 #include <QSettings>
 
-PLMWritingWindowManager::PLMWritingWindowManager(QObject       *parent,
-                                                 QBoxLayout    *baseLayout,
+PLMWritingWindowManager::PLMWritingWindowManager(QWidget       *parent,
                                                  const QString& objectName) : QObject(
-        parent), m_baseBoxLayout(baseLayout)
+        parent)
 {
     qRegisterMetaType<QList<WindowContainer> >("QList<WindowContainer>");
 
@@ -38,7 +37,10 @@ PLMWritingWindowManager::PLMWritingWindowManager(QObject       *parent,
     WindowContainer container;
     container.setId(0);
     container.setParentId(-1);
-    container.addLayout(m_baseBoxLayout);
+    QPointer<QSplitter> splitter = new QSplitter(Qt::Orientation::Vertical, parent);
+    splitter->setChildrenCollapsible(false);
+    container.addSplitter(splitter);
+    parent->layout()->addWidget(splitter);
     container.setOrientation(Qt::Vertical);
     m_windowContainerList << container;
 
@@ -73,14 +75,14 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
     container.setParentId(parentZone);
 
     QPointer<PLMWritingWindow> parentWindow = nullptr;
-    QPointer<QBoxLayout> parentLayout       = nullptr;
-    WindowContainer parentContainer;
+    QPointer<QSplitter> parentSplitter      = nullptr;
+    WindowContainer     parentContainer;
     int i = 0;
 
 
     for (const WindowContainer& item : m_windowContainerList) {
         if (item.id() == parentZone) {
-            parentLayout    = item.layoutList().last();
+            parentSplitter  = item.splitterList().last();
             parentWindow    = item.window();
             parentContainer = WindowContainer(item);
             break;
@@ -88,11 +90,13 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
         ++i;
     }
 
-    container.addLayout(parentLayout);
+    container.addSplitter(parentSplitter);
 
-    QBoxLayout *layout = new QBoxLayout(boxOrientation, nullptr);
-    container.addLayout(layout);
-    parentContainer.addLayout(layout);
+    QSplitter *splitter = new QSplitter(orientation, nullptr);
+    splitter->setChildrenCollapsible(false);
+
+    container.addSplitter(splitter);
+    parentContainer.addSplitter(splitter);
 
 
     m_windowContainerList.replace(i, parentContainer);
@@ -103,15 +107,14 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
     container.setWindow(window);
 
     if (parentZone != 0) {
-        int index = parentLayout->indexOf(parentWindow);
-        parentLayout->removeWidget(parentWindow);
-        layout->addWidget(parentWindow);
-        parentLayout->insertLayout(index, layout);
+        int index = parentSplitter->indexOf(parentWindow);
+        splitter->addWidget(parentWindow);
+        parentSplitter->insertWidget(index, splitter);
     }
     else {
-        parentLayout->addLayout(layout);
+        parentSplitter->addWidget(splitter);
     }
-    layout->addWidget(window);
+    splitter->addWidget(window);
 
     m_windowContainerList << container;
 
@@ -365,14 +368,14 @@ WindowContainer::WindowContainer(const WindowContainer& otherContainer) {
     this->setId(otherContainer.id());
     this->setOrientation(otherContainer.orientation());
     this->setParentId(otherContainer.parentId());
-    this->setLayoutList(otherContainer.layoutList());
+    this->setSplitterList(otherContainer.splitterList());
 }
 
 WindowContainer::~WindowContainer()
 {}
 
 bool WindowContainer::operator!() const {
-    return this->m_window.isNull() || this->layoutList().isEmpty();
+    return this->m_window.isNull() || this->splitterList().isEmpty();
 }
 
 WindowContainer& WindowContainer::operator=(const WindowContainer& otherContainer) {
@@ -380,7 +383,7 @@ WindowContainer& WindowContainer::operator=(const WindowContainer& otherContaine
     this->setId(otherContainer.id());
     this->setOrientation(otherContainer.orientation());
     this->setParentId(otherContainer.parentId());
-    this->setLayoutList(otherContainer.layoutList());
+    this->setSplitterList(otherContainer.splitterList());
     return *this;
 }
 
@@ -392,7 +395,7 @@ bool WindowContainer::operator==(const WindowContainer& otherContainer) const
 
     if (this->parentId() != otherContainer.parentId()) return false;
 
-    if (this->layoutList() != otherContainer.layoutList()) return false;
+    if (this->splitterList() != otherContainer.splitterList()) return false;
 
     if (this->orientation() != otherContainer.orientation()) return false;
 
@@ -400,7 +403,7 @@ bool WindowContainer::operator==(const WindowContainer& otherContainer) const
 }
 
 WindowContainer::operator bool() const {
-    return !this->m_window.isNull() && !this->layoutList().isEmpty();
+    return !this->m_window.isNull() && !this->splitterList().isEmpty();
 }
 
 QPointer<PLMWritingWindow>WindowContainer::window() const
@@ -493,19 +496,19 @@ void WindowContainer::setOrientation(const QString& orientation)
     if (orientation == "H") m_orientation = Qt::Horizontal;
 }
 
-QList<QPointer<QBoxLayout> >WindowContainer::layoutList() const
+QList<QPointer<QSplitter> >WindowContainer::splitterList() const
 {
-    return m_layoutList;
+    return m_splitterList;
 }
 
-void WindowContainer::addLayout(const QPointer<QBoxLayout>& layout)
+void WindowContainer::addSplitter(const QPointer<QSplitter>& splitter)
 {
-    m_layoutList.append(layout);
+    m_splitterList.append(splitter);
 }
 
-void WindowContainer::setLayoutList(const QList<QPointer<QBoxLayout> >& layoutList)
+void WindowContainer::setSplitterList(const QList<QPointer<QSplitter> >& splitterList)
 {
-    m_layoutList = layoutList;
+    m_splitterList = splitterList;
 }
 
 QSize WindowContainer::windowSize() const
