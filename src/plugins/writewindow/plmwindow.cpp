@@ -26,8 +26,7 @@ PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
     widget->setLayout(layout);
 
     PLMWritingWindowManager *writeWindowManager =
-        new PLMWritingWindowManager(this, layout);
-    writeWindowManager->setObjectName("writeWindowManager");
+        new PLMWritingWindowManager(this, layout, "writeWindowManager");
 }
 
 // -------------------------------------------------------------------

@@ -13,6 +13,8 @@
 #include <QSettings>
 #include <QByteArray>
 #include <QTimer>
+#include <QApplication>
+#include <QDesktopWidget>
 
 // #include <QQuickWidget>
 
@@ -58,15 +60,13 @@ PLMMainWindow::PLMMainWindow(PLMData *data) :
             &PLMMainWindow::activate);
 
     this->loadPlugins();
-
+    this->applySettings();
+    this->applyRaiseWindowSetting();
     QTimer::singleShot(0, this, SLOT(init()));
 }
 
 void PLMMainWindow::init()
 {
-    this->applySettings();
-    this->applyRaiseWindowSetting();
-
     // load plugins
     // TEMP
 }
@@ -314,9 +314,10 @@ void PLMMainWindow::writeSettings()
     settings.beginGroup("MainWindow");
 
 
-    settings.setValue("geometry",   this->saveGeometry());
+    settings.setValue("geometry",    this->saveGeometry());
+    settings.setValue("isMaximised", this->isMaximized());
 
-    settings.setValue("firstStart", false);
+    settings.setValue("firstStart",  false);
     settings.endGroup();
 
     //    qDebug() << "main settings saved";
@@ -330,7 +331,16 @@ void PLMMainWindow::applySettings()
 
     settings.beginGroup("MainWindow");
 
-    this->restoreGeometry(settings.value("geometry", "0").toByteArray());
+
+    if (settings.value("isMaximised", false).toBool())
+    {
+        // qDebug() << QApplication::desktop()->availableGeometry(this);
+        this->setGeometry(QApplication::desktop()->availableGeometry(this));
+        this->showMaximized();
+    } else {
+        this->restoreGeometry(settings.value("geometry", "0").toByteArray());
+    }
+
 
     //    m_firstStart = settings.value("firstStart", true).toBool();
 

@@ -23,12 +23,17 @@
 
 #include <QVariant>
 #include <QDebug>
+#include <QSettings>
 
-PLMWritingWindowManager::PLMWritingWindowManager(QObject    *parent,
-                                                 QBoxLayout *baseLayout) : QObject(
+PLMWritingWindowManager::PLMWritingWindowManager(QObject       *parent,
+                                                 QBoxLayout    *baseLayout,
+                                                 const QString& objectName) : QObject(
         parent), m_baseBoxLayout(baseLayout)
 {
     qRegisterMetaType<QList<WindowContainer> >("QList<WindowContainer>");
+
+    this->setObjectName(objectName);
+
 
     WindowContainer container;
     container.setId(0);
@@ -37,14 +42,15 @@ PLMWritingWindowManager::PLMWritingWindowManager(QObject    *parent,
     container.setOrientation(Qt::Vertical);
     m_windowContainerList << container;
 
+    //    addWritingWindow(Qt::Vertical,   0);
+    //    addWritingWindow(Qt::Vertical,   1);
+    //    addWritingWindow(Qt::Horizontal, 2);
 
-    this->addWritingWindow(Qt::Vertical, 0);
-    this->addWritingWindow(Qt::Vertical, 1);
-    this->addWritingWindow(Qt::Horizontal, 2);
+    this->applySettings();
 }
 
 PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation orientation,
-                                                             int             parentZone)
+                                                             int parentZone, int forcedId)
 {
     QBoxLayout::Direction boxOrientation =
         QBoxLayout::Direction::TopToBottom;
@@ -58,7 +64,11 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
 
 
     WindowContainer container;
-    container.setId(m_windowContainerList.count());
+
+    if (forcedId == -2) container.setId(m_windowContainerList.count());
+    else {
+        container.setId(forcedId);
+    }
     container.setOrientation(orientation);
     container.setParentId(parentZone);
 
@@ -68,17 +78,16 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
     int i = 0;
 
 
-    {
-        for (const WindowContainer& item : m_windowContainerList) {
-            if (item.id() == parentZone) {
-                parentLayout    = item.layoutList().last();
-                parentWindow    = item.window();
-                parentContainer = WindowContainer(item);
-                break;
-            }
-            ++i;
+    for (const WindowContainer& item : m_windowContainerList) {
+        if (item.id() == parentZone) {
+            parentLayout    = item.layoutList().last();
+            parentWindow    = item.window();
+            parentContainer = WindowContainer(item);
+            break;
         }
+        ++i;
     }
+
     container.addLayout(parentLayout);
 
     QBoxLayout *layout = new QBoxLayout(boxOrientation, nullptr);
@@ -110,11 +119,15 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
             &PLMWritingWindowManager::closeWritingWindow);
 
     connect(window,
-            &PLMWritingWindow::splitCalled,
-            this,
-            &PLMWritingWindowManager::addWritingWindow);
+            &PLMWritingWindow::splitCalled, [this](Qt::Orientation orientation,
+                                                   int parentZone) {
+        this->addWritingWindow(orientation, parentZone);
+    }
+            );
 
     qDebug() << "added :" << container.name();
+    this->writeSettings();
+
     return window;
 
     //    if (m_windowContainerList.isEmpty() || (parentZone == 0)) {
@@ -201,6 +214,84 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
     //    return window;
 }
 
+// ------------------------------------------------------------
+
+void PLMWritingWindowManager::writeSettings()
+{
+    QSettings settings;
+
+    // windows :
+    QStringList windowNames;
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        if (item.id() != 0) windowNames << item.name();
+    }
+
+    settings.setValue("WritingWindowManager/" + this->objectName() + "-windows",
+                      windowNames);
+
+    // windows sizes :
+    QStringList sizeList;
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        if (item.id() !=
+            0) sizeList << QString::number(item.windowSize().width()) + "x" +
+                QString::number(
+                item.windowSize().height());
+    }
+
+
+    settings.setValue("WritingWindowManager/" + this->objectName() + "-sizes",
+                      sizeList);
+}
+
+// ------------------------------------------------------------
+
+void PLMWritingWindowManager::applySettings()
+{
+    QSettings settings;
+
+    // windows :
+    QStringList windowNames;
+
+    windowNames = settings.value(
+        "WritingWindowManager/" + this->objectName() + "-windows",
+        "").toStringList();
+
+    windowNames.removeAll("");
+
+    // windows sizes :
+    QStringList sizeList;
+    sizeList = settings.value(
+        "WritingWindowManager/" + this->objectName() + "-sizes",
+        "").toStringList();
+    int index = 0;
+
+    while (index < windowNames.count() && index <  sizeList.count())
+    {
+        // windows :
+
+        WindowContainer falseContainer;
+        falseContainer.setName(windowNames.at(index));
+
+        if (falseContainer.id() != 0) this->addWritingWindow(falseContainer.orientation(),
+                                                             falseContainer.parentId(),
+                                                             falseContainer.id());
+
+        // windows sizes :
+
+        QString sizeString = sizeList.at(index);
+        QStringList parts  = sizeString.split("x");
+        QSize size(parts.at(0).toInt(), parts.at(1).toInt());
+
+        WindowContainer container(m_windowContainerList.at(index + 1));
+        container.setWindowSize(size);
+        ++index;
+    }
+}
+
+// ------------------------------------------------------------
+
 void PLMWritingWindowManager::closeWritingWindow(int id)
 {
     WindowContainer container;
@@ -242,6 +333,7 @@ void PLMWritingWindowManager::closeWritingWindow(int id)
     //    }
     container.window()->close();
 
+    this->writeSettings();
 
     //    container.layout()->removeWidget(container.window());
 
@@ -366,7 +458,7 @@ bool WindowContainer::setName(const QString& name)
         stringList = name.split("H");
     }
 
-    if (stringList.count() != 3) return false;
+    if (stringList.count() != 2) return false;
 
     bool ok  = true;
     int  pre = stringList.first().toInt(&ok);
@@ -414,4 +506,25 @@ void WindowContainer::addLayout(const QPointer<QBoxLayout>& layout)
 void WindowContainer::setLayoutList(const QList<QPointer<QBoxLayout> >& layoutList)
 {
     m_layoutList = layoutList;
+}
+
+QSize WindowContainer::windowSize() const
+{
+    if (!m_window.isNull()) return m_window->size();
+
+    return QSize();
+}
+
+void WindowContainer::setWindowSize(const QSize& size)
+{
+    if (!m_window.isNull()) {
+        // m_window->resize(size);
+        //        QSizePolicy policy;
+        //        policy.setVerticalPolicy();
+
+        //        m_window->setFixedSize(size);
+        //        m_window->setMinimumSize(QSize(100, 100));
+        //        m_window->setMaximumSize(QSize(QWIDGETSIZE_MAX,
+        // QWIDGETSIZE_MAX));
+    }
 }

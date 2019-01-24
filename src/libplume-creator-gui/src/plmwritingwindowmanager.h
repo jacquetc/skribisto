@@ -64,6 +64,9 @@ public:
     void                        setLayoutList(
         const QList<QPointer<QBoxLayout> >& layoutList);
 
+    QSize                       windowSize() const;
+    void                        setWindowSize(const QSize& size);
+
 private:
 
     QPointer<PLMWritingWindow>m_window;
@@ -79,15 +82,20 @@ class PLMWritingWindowManager : public QObject {
 
 public:
 
-    explicit PLMWritingWindowManager(QObject    *parent,
-                                     QBoxLayout *baseLayout);
+    explicit PLMWritingWindowManager(QObject       *parent,
+                                     QBoxLayout    *baseLayout,
+                                     const QString& objectName);
 
 signals:
 
 public slots:
 
     PLMWritingWindow* addWritingWindow(Qt::Orientation orientation,
-                                       int             parentZone);
+                                       int             parentZone,
+                                       int             forcedId = -2);
+
+    void applySettings();
+    void writeSettings();
 
 private slots:
 
