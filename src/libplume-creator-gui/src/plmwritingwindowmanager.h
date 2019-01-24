@@ -65,8 +65,8 @@ public:
     void                       setSplitterList(
         const QList<QPointer<QSplitter> >& layoutList);
 
-    QSize                      windowSize() const;
-    void                       setWindowSize(const QSize& size);
+    QList<int>                 splitterSizes() const;
+    void                       setSplitterSizes(QList<int>sizes);
 
 private:
 
@@ -86,6 +86,7 @@ public:
 
     explicit PLMWritingWindowManager(QWidget       *parent,
                                      const QString& objectName);
+    ~PLMWritingWindowManager();
 
 signals:
 

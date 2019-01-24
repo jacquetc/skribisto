@@ -51,6 +51,11 @@ PLMWritingWindowManager::PLMWritingWindowManager(QWidget       *parent,
     this->applySettings();
 }
 
+PLMWritingWindowManager::~PLMWritingWindowManager()
+{
+    this->writeSettings();
+}
+
 PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation orientation,
                                                              int parentZone, int forcedId)
 {
@@ -238,9 +243,16 @@ void PLMWritingWindowManager::writeSettings()
 
     for (const WindowContainer& item : m_windowContainerList) {
         if (item.id() !=
-            0) sizeList << QString::number(item.windowSize().width()) + "x" +
-                QString::number(
-                item.windowSize().height());
+            0) {
+            QList<int> sizes = item.splitterSizes();
+            QString    sizeString;
+
+            for (const int& size : sizes) {
+                sizeString.append(QString::number(size) + "|");
+            }
+            sizeString.chop(1);
+            sizeList << sizeString;
+        }
     }
 
 
@@ -284,11 +296,21 @@ void PLMWritingWindowManager::applySettings()
         // windows sizes :
 
         QString sizeString = sizeList.at(index);
-        QStringList parts  = sizeString.split("x");
-        QSize size(parts.at(0).toInt(), parts.at(1).toInt());
+        QStringList parts  =
+            sizeString.split("|", QString::SplitBehavior::SkipEmptyParts);
+
+        QList<int> sizeList;
+
+        for (const QString& part : parts) {
+            bool ok;
+            int  size = part.toInt(&ok);
+
+            if (ok) sizeList << size;
+        }
+
 
         WindowContainer container(m_windowContainerList.at(index + 1));
-        container.setWindowSize(size);
+        container.setSplitterSizes(sizeList);
         ++index;
     }
 }
@@ -511,23 +533,16 @@ void WindowContainer::setSplitterList(const QList<QPointer<QSplitter> >& splitte
     m_splitterList = splitterList;
 }
 
-QSize WindowContainer::windowSize() const
+QList<int>WindowContainer::splitterSizes() const
 {
-    if (!m_window.isNull()) return m_window->size();
+    if (!m_splitterList.isEmpty()) return m_splitterList.first()->sizes();
 
-    return QSize();
+    return QList<int>();
 }
 
-void WindowContainer::setWindowSize(const QSize& size)
+void WindowContainer::setSplitterSizes(QList<int>sizes)
 {
-    if (!m_window.isNull()) {
-        // m_window->resize(size);
-        //        QSizePolicy policy;
-        //        policy.setVerticalPolicy();
-
-        //        m_window->setFixedSize(size);
-        //        m_window->setMinimumSize(QSize(100, 100));
-        //        m_window->setMaximumSize(QSize(QWIDGETSIZE_MAX,
-        // QWIDGETSIZE_MAX));
+    if (!m_splitterList.isEmpty()) {
+        m_splitterList.first()->setSizes(sizes);
     }
 }
