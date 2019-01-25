@@ -40,7 +40,11 @@ PLMWritingZone::PLMWritingZone(QWidget *parent) : QWidget(parent),
     this->setHasScrollbar(false);
     this->setHasSideToolBar(false);
     this->setIsResizable(false);
-    connect(ui->sizeHandle, &SizeHandle::moved, this, &PLMWritingZone::widenTextEdit);
+    connect(ui->sizeHandle, &SizeHandle::moved, this,
+            &PLMWritingZone::widenTextEdit);
+
+
+    connect(ui->richTextEdit, &RichTextEdit::focused, this, &PLMWritingZone::focused);
 }
 
 // -----------------------------------------------------------------------------
@@ -95,13 +99,13 @@ void PLMWritingZone::setIsResizable(bool isResizable)
 
     if (isResizable) {
         policy.setHorizontalPolicy(QSizePolicy::Maximum);
-        ui->richTextEdit->setMinimumSize(QSize(100, 100));
+        ui->richTextEdit->setMinimumSize(QSize(300, 300));
         ui->richTextEdit->setMaximumWidth(m_fixedWidth);
 
         // ui->horizontalLayout->sets
     } else {
         policy.setHorizontalPolicy(QSizePolicy::Ignored);
-        ui->richTextEdit->setMinimumSize(QSize(100, 100));
+        ui->richTextEdit->setMinimumSize(QSize(300, 300));
         ui->richTextEdit->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
     }
     ui->richTextEdit->setSizePolicy(policy);
@@ -137,6 +141,18 @@ void PLMWritingZone::setMarkdownText(const QString& markdownText)
 QString PLMWritingZone::htmlText() const
 {
     return m_htmlText;
+}
+
+QTextDocument * PLMWritingZone::textDocument()
+{
+    return m_textDocument;
+}
+
+void PLMWritingZone::setTextDocument(QTextDocument *textDocument)
+{
+    m_textDocument = textDocument;
+
+    ui->richTextEdit->setDocument(textDocument);
 }
 
 void PLMWritingZone::setHtmlText(const QString& htmlText)

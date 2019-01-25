@@ -19,15 +19,16 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#include "plmwritingwindowmanager.h"
+#include "plmbasesubwindowmanager.h"
 
 #include <QVariant>
 #include <QDebug>
 #include <QSettings>
+#include <QTimer>
 
-PLMWritingWindowManager::PLMWritingWindowManager(QWidget       *parent,
+PLMBaseSubWindowManager::PLMBaseSubWindowManager(QWidget       *parent,
                                                  const QString& objectName) : QObject(
-        parent)
+        parent), m_lastNumber(0)
 {
     qRegisterMetaType<QList<WindowContainer> >("QList<WindowContainer>");
 
@@ -37,6 +38,7 @@ PLMWritingWindowManager::PLMWritingWindowManager(QWidget       *parent,
     WindowContainer container;
     container.setId(0);
     container.setParentId(-1);
+    container.setSubWindowType("");
     QPointer<QSplitter> splitter = new QSplitter(Qt::Orientation::Vertical, parent);
     splitter->setChildrenCollapsible(false);
     container.addSplitter(splitter);
@@ -44,20 +46,73 @@ PLMWritingWindowManager::PLMWritingWindowManager(QWidget       *parent,
     container.setOrientation(Qt::Vertical);
     m_windowContainerList << container;
 
-    //    addWritingWindow(Qt::Vertical,   0);
-    //    addWritingWindow(Qt::Vertical,   1);
-    //    addWritingWindow(Qt::Horizontal, 2);
-
-    this->applySettings();
+    QTimer::singleShot(0, this, SLOT(applySettings()));
 }
 
-PLMWritingWindowManager::~PLMWritingWindowManager()
+PLMBaseSubWindowManager::~PLMBaseSubWindowManager()
 {
     this->writeSettings();
 }
 
-PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation orientation,
-                                                             int parentZone, int forcedId)
+bool PLMBaseSubWindowManager::haveOneWindow(const QString& subWindowType)
+{
+    if (m_windowContainerList.count() <= 1) return false;
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        if (item.subWindowType() == subWindowType) {
+            return true;
+        }
+    }
+    return false;
+}
+
+///
+/// \brief PLMBaseSubWindowManager::getWindowByType
+/// \param subWindowType
+/// \return
+/// get the one with focus else get the first. Else create one subwindow
+PLMBaseSubWindow * PLMBaseSubWindowManager::getWindowByType(const QString& subWindowType)
+{
+    QList<PLMBaseSubWindow *> list;
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        if (item.subWindowType() == subWindowType) {
+            if (item.isLastActive()) return item.window();
+        }
+    }
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        if (item.subWindowType() == subWindowType) list << item.window();
+    }
+
+    if (!list.isEmpty()) return list.last();
+
+    return this->addSubWindow(subWindowType, Qt::Horizontal, 0);
+}
+
+void PLMBaseSubWindowManager::setLastActiveWindowByType(int id)
+{
+    QString subWindowType = subWindowTypeById(id);
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        if (item.subWindowType() == subWindowType) {
+            WindowContainer clone(item);
+
+            if (item.id() == id) {
+                clone.setIsLastActive(true);
+            }
+            else {
+                clone.setIsLastActive(false);
+            }
+            m_windowContainerList.replace(m_windowContainerList.indexOf(item), clone);
+        }
+    }
+}
+
+PLMBaseSubWindow * PLMBaseSubWindowManager::addSubWindow(const QString & subWindowType,
+                                                         Qt::Orientation orientation,
+                                                         int             parentZone,
+                                                         int             forcedId)
 {
     QBoxLayout::Direction boxOrientation =
         QBoxLayout::Direction::TopToBottom;
@@ -72,14 +127,19 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
 
     WindowContainer container;
 
-    if (forcedId == -2) container.setId(m_windowContainerList.count());
+    if (forcedId == -2) {
+        container.setId(m_lastNumber + 1);
+    }
     else {
         container.setId(forcedId);
     }
+
+    if (container.id() > m_lastNumber) m_lastNumber = container.id();
+
     container.setOrientation(orientation);
     container.setParentId(parentZone);
 
-    QPointer<PLMWritingWindow> parentWindow = nullptr;
+    QPointer<PLMBaseSubWindow> parentWindow = nullptr;
     QPointer<QSplitter> parentSplitter      = nullptr;
     WindowContainer     parentContainer;
     int i = 0;
@@ -107,9 +167,10 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
     m_windowContainerList.replace(i, parentContainer);
 
 
-    PLMWritingWindow *window = new PLMWritingWindow(container.id());
+    PLMBaseSubWindow *window = this->subWindowByName(subWindowType, container.id());
     window->setObjectName(container.name());
     container.setWindow(window);
+    container.setSubWindowType(subWindowType);
 
     if (parentZone != 0) {
         int index = parentSplitter->indexOf(parentWindow);
@@ -123,17 +184,35 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
 
     m_windowContainerList << container;
 
-    connect(window, &PLMWritingWindow::writingWindowClosed, this,
-            &PLMWritingWindowManager::closeWritingWindow);
+    connect(window, &PLMBaseSubWindow::subWindowClosed, this,
+            &PLMBaseSubWindowManager::closeSubWindow);
 
     connect(window,
-            &PLMWritingWindow::splitCalled, [this](Qt::Orientation orientation,
+            &PLMBaseSubWindow::splitCalled, [this](Qt::Orientation orientation,
                                                    int parentZone) {
-        this->addWritingWindow(orientation, parentZone);
+        this->addSubWindow(subWindowTypeById(parentZone), orientation, parentZone);
     }
             );
 
+    connect(window,
+            &PLMBaseSubWindow::subWindowFocusActived,
+            this,
+            &PLMBaseSubWindowManager::setLastActiveWindowByType);
+
     qDebug() << "added :" << container.name();
+    QStringList names;
+    QStringList splitterCount;
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        names << item.name();
+        splitterCount << QString::number(item.splitterList().count());
+    }
+    qDebug() << "names" << names;
+    qDebug() << "splitterCount" << splitterCount;
+
+    // reorder
+
+
     this->writeSettings();
 
     return window;
@@ -148,19 +227,19 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
     //        //        QBoxLayout *layout = new
     //        // QBoxLayout(QBoxLayout::Direction::TopToBottom,
     //        //                                            nullptr);
-    //        PLMWritingWindow *window = new PLMWritingWindow(container.id());
+    //        PLMBaseSubWindow *window = new PLMWritingWindow(container.id());
     //        window->setObjectName(container.name());
     //        container.setWindow(window);
     //        m_windowContainerList << container;
     //        m_baseBoxLayout->addWidget(window);
 
     //        connect(window, &PLMWritingWindow::writingWindowClosed, this,
-    //                &PLMWritingWindowManager::closeWritingWindow);
+    //                &PLMBaseSubWindowManager::closeWritingWindow);
 
     //        connect(window,
     //                &PLMWritingWindow::splitCalled,
     //                this,
-    //                &PLMWritingWindowManager::addWritingWindow);
+    //                &PLMBaseSubWindowManager::addWritingWindow);
 
     //        qDebug() << "added :" << container.name();
     //        return window;
@@ -179,7 +258,7 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
     //    container.setLayout(layout);
 
     //    // determine parent layout and parent window
-    //    QPointer<PLMWritingWindow> parentWindow;
+    //    QPointer<PLMBaseSubWindow> parentWindow;
     //    QBoxLayout *parentLayout = nullptr;
 
     //    for (const WindowContainer& item : m_windowContainerList) {
@@ -200,7 +279,7 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
     //    parentLayout->addLayout(container.layout());
 
 
-    //    PLMWritingWindow *window = new PLMWritingWindow(container.id());
+    //    PLMBaseSubWindow *window = new PLMWritingWindow(container.id());
     //    window->setObjectName(container.name());
     //    container.setWindow(window);
     //    parentLayout->removeWidget(parentWindow);
@@ -210,12 +289,12 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
     //    m_windowContainerList << container;
 
     //    connect(window, &PLMWritingWindow::writingWindowClosed, this,
-    //            &PLMWritingWindowManager::closeWritingWindow);
+    //            &PLMBaseSubWindowManager::closeWritingWindow);
 
     //    connect(window,
     //            &PLMWritingWindow::splitCalled,
     //            this,
-    //            &PLMWritingWindowManager::addWritingWindow);
+    //            &PLMBaseSubWindowManager::addWritingWindow);
 
     //    qDebug() << "added :" << container.name();
 
@@ -224,7 +303,7 @@ PLMWritingWindow * PLMWritingWindowManager::addWritingWindow(Qt::Orientation ori
 
 // ------------------------------------------------------------
 
-void PLMWritingWindowManager::writeSettings()
+void PLMBaseSubWindowManager::writeSettings()
 {
     QSettings settings;
 
@@ -235,7 +314,7 @@ void PLMWritingWindowManager::writeSettings()
         if (item.id() != 0) windowNames << item.name();
     }
 
-    settings.setValue("WritingWindowManager/" + this->objectName() + "-windows",
+    settings.setValue("WindowManager/" + this->objectName() + "-windows",
                       windowNames);
 
     // windows sizes :
@@ -256,13 +335,25 @@ void PLMWritingWindowManager::writeSettings()
     }
 
 
-    settings.setValue("WritingWindowManager/" + this->objectName() + "-sizes",
+    settings.setValue("WindowManager/" + this->objectName() + "-sizes",
                       sizeList);
+
+    // windows types :
+
+    QStringList typeList;
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        if (item.id() !=
+            0) typeList << item.subWindowType();
+    }
+
+    settings.setValue("WindowManager/" + this->objectName() + "-types",
+                      typeList);
 }
 
 // ------------------------------------------------------------
 
-void PLMWritingWindowManager::applySettings()
+void PLMBaseSubWindowManager::applySettings()
 {
     QSettings settings;
 
@@ -270,28 +361,42 @@ void PLMWritingWindowManager::applySettings()
     QStringList windowNames;
 
     windowNames = settings.value(
-        "WritingWindowManager/" + this->objectName() + "-windows",
-        "").toStringList();
+        "WindowManager/" + this->objectName() + "-windows",
+        QStringList()).toStringList();
 
     windowNames.removeAll("");
 
     // windows sizes :
     QStringList sizeList;
     sizeList = settings.value(
-        "WritingWindowManager/" + this->objectName() + "-sizes",
-        "").toStringList();
+        "WindowManager/" + this->objectName() + "-sizes",
+        QStringList()).toStringList();
+
+    // windows types :
+    QStringList typeList;
+    typeList = settings.value(
+        "WindowManager/" + this->objectName() + "-types",
+        QStringList()).toStringList();
+
+
     int index = 0;
 
-    while (index < windowNames.count() && index <  sizeList.count())
+    while (index < windowNames.count() && index <  sizeList.count() &&
+           index <  typeList.count())
     {
+        // windows types :
+        QString typeString = typeList.at(index);
+
+
         // windows :
 
         WindowContainer falseContainer;
         falseContainer.setName(windowNames.at(index));
 
-        if (falseContainer.id() != 0) this->addWritingWindow(falseContainer.orientation(),
-                                                             falseContainer.parentId(),
-                                                             falseContainer.id());
+        if (falseContainer.id() != 0) this->addSubWindow(typeString,
+                                                         falseContainer.orientation(),
+                                                         falseContainer.parentId(),
+                                                         falseContainer.id());
 
         // windows sizes :
 
@@ -311,13 +416,15 @@ void PLMWritingWindowManager::applySettings()
 
         WindowContainer container(m_windowContainerList.at(index + 1));
         container.setSplitterSizes(sizeList);
+
+
         ++index;
     }
 }
 
 // ------------------------------------------------------------
 
-void PLMWritingWindowManager::closeWritingWindow(int id)
+void PLMBaseSubWindowManager::closeSubWindow(int id)
 {
     WindowContainer container;
 
@@ -331,11 +438,10 @@ void PLMWritingWindowManager::closeWritingWindow(int id)
 
     //    QPointer<QBoxLayout> layout       = container.layout();
     //    QPointer<QBoxLayout> parentLayout = container.parentLayout();
-    //    QPointer<PLMWritingWindow> window = container.window();
+    //    QPointer<PLMBaseSubWindow> window = container.window();
     //    int parentId                      = container.parentId();
     //    Qt::Orientation orientation       = container.orientation();
 
-    m_windowContainerList.removeAll(container);
 
     WindowContainer itemClone;
 
@@ -350,15 +456,83 @@ void PLMWritingWindowManager::closeWritingWindow(int id)
                                           itemClone);
         }
     }
+    QStringList names;
 
 
     //    // if (!container.parentLayout().isNull()) {
     //    if (itemClone) {
     //        // container.parentLayout()->addLayout(itemClone.layout());
     //    }
-    container.window()->close();
+
+    //    QList<QPointer<QSplitter> > list = container.splitterList();
+    //    if(list.count() >= 1){
+
+    //    } else {
+    //        list.at(list.count() - 2); // second last
+    //    }
+
+
+    // clean all splitters
+
+
+    QList<QPointer<QSplitter> > list = container.splitterList();
+
+    if (list.count() > 1) {
+        QPointer<QSplitter> parentSplitter      = list.last();
+        QPointer<QSplitter> grandParentSplitter = list.at(list.count() - 2);
+
+        int index = parentSplitter->indexOf(container.window());
+
+        if (m_windowContainerList.count() == 2) { // one window only
+            delete container.window();
+        }
+        else if (index == 0) {                    // means he has children
+                                                  // splitters
+            QWidget *sibling = parentSplitter->widget(1);
+            grandParentSplitter->addWidget(sibling);
+            parentSplitter->close();
+            delete parentSplitter;
+        } else { // means is end of line
+            QWidget *sibling = parentSplitter->widget(0);
+            grandParentSplitter->addWidget(sibling);
+            parentSplitter->close();
+            delete parentSplitter;
+        }
+
+        // grandParentSplitter
+    }
+
+
+    int index = 0;
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        WindowContainer clone(item);
+        QList<QPointer<QSplitter> > list = clone.splitterList();
+
+        // qDebug() << "null w :" << item.window().isNull();
+        clone.cleanSplitters();
+
+        // item.setSplitterList(splitterList);
+        m_windowContainerList.replace(index, clone);
+        ++index;
+    }
+
+    m_windowContainerList.removeAll(container);
+
 
     this->writeSettings();
+
+
+    qDebug() << "removed :" << container.name();
+    QStringList _names;
+    QStringList splitterCount;
+
+    for (const WindowContainer& item : m_windowContainerList) {
+        _names << item.name();
+        splitterCount << QString::number(item.splitterList().count());
+    }
+    qDebug() << "names" << _names;
+    qDebug() << "splitterCount" << splitterCount;
 
     //    container.layout()->removeWidget(container.window());
 
@@ -376,6 +550,18 @@ void PLMWritingWindowManager::closeWritingWindow(int id)
     //    qDebug() << "removed :" << container.name();
 }
 
+QString PLMBaseSubWindowManager::subWindowTypeById(int id) const
+{
+    for (const WindowContainer& item : m_windowContainerList) {
+        if (item.id() == id) {
+            if (item.subWindowType() == "") return this->defaultSubWindowType();
+            else return item.subWindowType();
+        }
+    }
+
+    return QString();
+}
+
 // 1V0-2V1-3V1-4H2
 
 // ---------------------------------------------------------
@@ -391,6 +577,8 @@ WindowContainer::WindowContainer(const WindowContainer& otherContainer) {
     this->setOrientation(otherContainer.orientation());
     this->setParentId(otherContainer.parentId());
     this->setSplitterList(otherContainer.splitterList());
+    this->setSubWindowType(otherContainer.subWindowType());
+    this->setIsLastActive(otherContainer.isLastActive());
 }
 
 WindowContainer::~WindowContainer()
@@ -406,6 +594,8 @@ WindowContainer& WindowContainer::operator=(const WindowContainer& otherContaine
     this->setOrientation(otherContainer.orientation());
     this->setParentId(otherContainer.parentId());
     this->setSplitterList(otherContainer.splitterList());
+    this->setSubWindowType(otherContainer.subWindowType());
+    this->setIsLastActive(otherContainer.isLastActive());
     return *this;
 }
 
@@ -421,6 +611,10 @@ bool WindowContainer::operator==(const WindowContainer& otherContainer) const
 
     if (this->orientation() != otherContainer.orientation()) return false;
 
+    if (this->subWindowType() != otherContainer.subWindowType()) return false;
+
+    if (this->isLastActive() != otherContainer.isLastActive()) return false;
+
     return true;
 }
 
@@ -428,12 +622,12 @@ WindowContainer::operator bool() const {
     return !this->m_window.isNull() && !this->splitterList().isEmpty();
 }
 
-QPointer<PLMWritingWindow>WindowContainer::window() const
+QPointer<PLMBaseSubWindow>WindowContainer::window() const
 {
     return m_window;
 }
 
-void WindowContainer::setWindow(const QPointer<PLMWritingWindow>& window)
+void WindowContainer::setWindow(const QPointer<PLMBaseSubWindow>& window)
 {
     m_window = window;
 }
@@ -528,6 +722,13 @@ void WindowContainer::addSplitter(const QPointer<QSplitter>& splitter)
     m_splitterList.append(splitter);
 }
 
+void WindowContainer::cleanSplitters()
+{
+    for (const QPointer<QSplitter>& splitter : m_splitterList) {
+        if (splitter.isNull()) m_splitterList.removeAll(splitter);
+    }
+}
+
 void WindowContainer::setSplitterList(const QList<QPointer<QSplitter> >& splitterList)
 {
     m_splitterList = splitterList;
@@ -545,4 +746,24 @@ void WindowContainer::setSplitterSizes(QList<int>sizes)
     if (!m_splitterList.isEmpty()) {
         m_splitterList.first()->setSizes(sizes);
     }
+}
+
+QString WindowContainer::subWindowType() const
+{
+    return m_subWindowType;
+}
+
+void WindowContainer::setSubWindowType(const QString& subWindowType)
+{
+    m_subWindowType = subWindowType;
+}
+
+bool WindowContainer::isLastActive() const
+{
+    return m_isLastActive;
+}
+
+void WindowContainer::setIsLastActive(bool isLastActive)
+{
+    m_isLastActive = isLastActive;
 }

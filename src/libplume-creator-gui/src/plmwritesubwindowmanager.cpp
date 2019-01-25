@@ -2,7 +2,8 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: writingwindow.h                                                   *
+*  Filename: plmwritesubwindowmanager.cpp
+*                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,39 +19,22 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef WRITINGWINDOW_H
-#define WRITINGWINDOW_H
+#include "plmwritesubwindowmanager.h"
+#include "plmwritingwindow.h"
 
-#include "plmwritingzone.h"
-#include "plmbasesubwindow.h"
+PLMWriteSubWindowManager::PLMWriteSubWindowManager(QWidget *parent) :
+    PLMBaseSubWindowManager(parent, "writeWindowManager")
+{}
 
-namespace Ui {
-class PLMWritingWindow;
+PLMBaseSubWindow * PLMWriteSubWindowManager::subWindowByName(const QString& subWindowType,
+                                                             int            id)
+{
+    if (subWindowType == "writeWindow") return new PLMWritingWindow(id);
+
+    return new PLMBaseSubWindow();
 }
 
-class PLMWritingWindow : public PLMBaseSubWindow {
-    Q_OBJECT
-
-public:
-
-    explicit PLMWritingWindow(int id);
-    ~PLMWritingWindow();
-    void addDocument(int projectId,
-                     int paperId);
-
-signals:
-
-public slots:
-
-private slots:
-
-private:
-
-    void setupActions();
-
-private:
-
-    Ui::PLMWritingWindow *ui;
-};
-
-#endif // WRITINGWINDOW_H
+QString PLMWriteSubWindowManager::defaultSubWindowType() const
+{
+    return "writeWindow";
+}

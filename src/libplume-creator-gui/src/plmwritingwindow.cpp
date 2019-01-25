@@ -21,14 +21,21 @@
 ***************************************************************************/
 #include "plmwritingwindow.h"
 #include "ui_plmwritingwindow.h"
+#include "plmdata.h"
+#include <QTextDocument>
 
-PLMWritingWindow::PLMWritingWindow(int id) : QMainWindow(), ui(new Ui::PLMWritingWindow),
-    m_id(id)
+PLMWritingWindow::PLMWritingWindow(int id) : PLMBaseSubWindow(), ui(
+        new Ui::PLMWritingWindow)
 {
+    this->setId(id);
     ui->setupUi(this);
 
     ui->writingZone->setHasMinimap(false);
     ui->writingZone->setIsResizable(true);
+
+    connect(ui->writingZone, &PLMWritingZone::focused, [this]() {
+        emit subWindowFocusActived(this->id());
+    });
 
     this->setupActions();
 }
@@ -36,6 +43,14 @@ PLMWritingWindow::PLMWritingWindow(int id) : QMainWindow(), ui(new Ui::PLMWritin
 PLMWritingWindow::~PLMWritingWindow()
 {
     delete ui;
+}
+
+void PLMWritingWindow::addDocument(int projectId, int paperId)
+{
+    QTextDocument *document =
+        new QTextDocument(plmdata->sheetHub()->getContent(projectId, paperId), this);
+
+    ui->writingZone->setTextDocument(document);
 }
 
 void PLMWritingWindow::setupActions()
@@ -46,7 +61,7 @@ void PLMWritingWindow::setupActions()
     connect(ui->actionClose,
             &QAction::triggered,
             [ = ]() {
-        emit writingWindowClosed(this->id());
+        emit subWindowClosed(this->id());
     });
 
     ui->splitButton->addAction(ui->actionSplitVertically);
@@ -63,14 +78,4 @@ void PLMWritingWindow::setupActions()
             [ = ]() {
         emit splitCalled(Qt::Horizontal, this->id());
     });
-}
-
-int PLMWritingWindow::id() const
-{
-    return m_id;
-}
-
-void PLMWritingWindow::setId(int id)
-{
-    m_id = id;
 }

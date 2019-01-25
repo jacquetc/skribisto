@@ -23,6 +23,7 @@
 
 #include <QWidget>
 #include <QImage>
+#include <QTextDocument>
 #include "global_writingzone.h"
 
 namespace Ui {
@@ -45,30 +46,33 @@ public:
     explicit PLMWritingZone(QWidget *parent = nullptr);
     ~PLMWritingZone();
 
-    void    setUse(const QString& use);
+    void           setUse(const QString& use);
 
-    bool    hasMinimap() const;
-    void    setHasMinimap(bool value);
+    bool           hasMinimap() const;
+    void           setHasMinimap(bool value);
 
-    bool    hasScrollbar() const;
-    void    setHasScrollbar(bool hasScrollbar);
+    bool           hasScrollbar() const;
+    void           setHasScrollbar(bool hasScrollbar);
 
-    bool    hasSideToolBar() const;
-    void    setHasSideToolBar(bool hasSideToolBar);
+    bool           hasSideToolBar() const;
+    void           setHasSideToolBar(bool hasSideToolBar);
 
-    bool    isResizable() const;
-    void    setIsResizable(bool isResizable);
+    bool           isResizable() const;
+    void           setIsResizable(bool isResizable);
 
-    void    setFixedWidth(int width);
+    void           setFixedWidth(int width);
 
-    bool    isMarkdown() const;
-    void    setIsMarkdown(bool isMarkdown);
+    bool           isMarkdown() const;
+    void           setIsMarkdown(bool isMarkdown);
 
-    QString markdownText() const;
-    void    setMarkdownText(const QString& markdownText);
+    QString        markdownText() const;
+    void           setMarkdownText(const QString& markdownText);
 
-    QString htmlText() const;
-    void    setHtmlText(const QString& htmlText);
+    QString        htmlText() const;
+    void           setHtmlText(const QString& htmlText);
+
+    QTextDocument* textDocument();
+    void           setTextDocument(QTextDocument *textDocument);
 
     // virtual QImage image(const QString& imageName) const = 0;
 
@@ -76,6 +80,7 @@ signals:
 
     void scrollBarValueChanged(int value);
     void cursorPositionChanged(int value);
+    void focused();
 
 public slots:
 
@@ -91,6 +96,7 @@ private:
     bool m_hasMinimap, m_hasScrollbar, m_hasSideToolBar, m_isResizable,
          m_isMarkdown;
     QString m_markdownText, m_htmlText;
+    QTextDocument *m_textDocument;
     int m_cursorPosition, m_scrollBarValue;
     int m_fixedWidth;
 };

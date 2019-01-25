@@ -31,6 +31,7 @@ WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent), m_parentDockN
 {
     this->setEditTriggers(QTreeView::EditKeyPressed);
 
+    this->setHeaderHidden(true);
 
     this->setModel(plmmodels->sheetProxyModel());
     m_model = plmmodels->sheetProxyModel();
@@ -171,7 +172,14 @@ void WriteTreeView::itemClicked(QModelIndex index)
         PLMSheetItem *item =
             static_cast<PLMSheetItem *>(m_model->mapToSource(index).
                                         internalPointer());
-        qDebug() << "";
+        PLMCommand command;
+        command.origin    = this->objectName();
+        command.cmd       = "open_sheet";
+        command.projectId = item->projectId();
+        command.paperId   = item->paperId();
+
+
+        emit plmpluginhub->commandSent(command);
 
         //        int paperId = item->paperId();
         //        int projectId = item->projectId();

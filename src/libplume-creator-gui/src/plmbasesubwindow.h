@@ -2,7 +2,8 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: writingwindow.h                                                   *
+*  Filename: plmbasesubwindow.h
+*                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,39 +19,46 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef WRITINGWINDOW_H
-#define WRITINGWINDOW_H
+#ifndef PLMBASESUBWINDOW_H
+#define PLMBASESUBWINDOW_H
+#include <QMainWindow>
+#include <QDebug>
 
-#include "plmwritingzone.h"
-#include "plmbasesubwindow.h"
-
-namespace Ui {
-class PLMWritingWindow;
-}
-
-class PLMWritingWindow : public PLMBaseSubWindow {
+class PLMBaseSubWindow : public QMainWindow {
     Q_OBJECT
 
 public:
 
-    explicit PLMWritingWindow(int id);
-    ~PLMWritingWindow();
-    void addDocument(int projectId,
-                     int paperId);
+    PLMBaseSubWindow(QWidget *parent = nullptr) : QMainWindow(parent), m_id(-1) {}
+
+protected:
+
+    int id() const
+    {
+        return m_id;
+    }
+
+    void setId(int id)
+    {
+        m_id = id;
+    }
+
+    void mousePressEvent(QMouseEvent *event) {
+        qDebug() << "pressed";
+        emit subWindowFocusActived(m_id);
+    }
 
 signals:
 
-public slots:
+    void subWindowClosed(int id);
+    void splitCalled(Qt::Orientation orientation,
+                     int             id);
 
-private slots:
-
-private:
-
-    void setupActions();
+    void subWindowFocusActived(int id);
 
 private:
 
-    Ui::PLMWritingWindow *ui;
+    int m_id;
 };
 
-#endif // WRITINGWINDOW_H
+#endif // PLMBASESUBWINDOW_H

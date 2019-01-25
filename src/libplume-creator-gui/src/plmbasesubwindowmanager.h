@@ -19,10 +19,10 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMWRITINGWINDOWMANAGER_H
-#define PLMWRITINGWINDOWMANAGER_H
+#ifndef PLMSUBWINDOWMANAGER_H
+#define PLMSUBWINDOWMANAGER_H
 
-#include "plmwritingwindow.h"
+#include "plmbasesubwindow.h"
 
 #include <QObject>
 #include <QPointer>
@@ -43,8 +43,8 @@ public:
     WindowContainer          & operator=(const WindowContainer& otherContainer);
     bool                       operator==(const WindowContainer& otherContainer) const;
 
-    QPointer<PLMWritingWindow> window() const;
-    void                       setWindow(const QPointer<PLMWritingWindow>& window);
+    QPointer<PLMBaseSubWindow> window() const;
+    void                       setWindow(const QPointer<PLMBaseSubWindow>& window);
 
     int                        parentId() const;
     void                       setParentId(int value);
@@ -60,52 +60,74 @@ public:
 
     void                       setOrientation(const QString& orientation);
     QList<QPointer<QSplitter> >splitterList() const;
-    void                       addSplitter(const QPointer<QSplitter>& layout);
-
+    void                       addSplitter(const QPointer<QSplitter>& splitter);
+    void                       cleanSplitters();
     void                       setSplitterList(
-        const QList<QPointer<QSplitter> >& layoutList);
+        const QList<QPointer<QSplitter> >& splitterList);
 
     QList<int>                 splitterSizes() const;
     void                       setSplitterSizes(QList<int>sizes);
 
+    QString                    subWindowType() const;
+    void                       setSubWindowType(const QString& subWindowType);
+
+    bool                       isLastActive() const;
+    void                       setIsLastActive(bool isLastActive);
+
 private:
 
-    QPointer<PLMWritingWindow>m_window;
+    QPointer<PLMBaseSubWindow>m_window;
     int m_parentId;
     int m_id;
     Qt::Orientation m_orientation;
     QList<QPointer<QBoxLayout> >m_layoutList;
     QList<QPointer<QSplitter> >m_splitterList;
+    QString m_subWindowType;
+    bool m_isLastActive;
 };
 Q_DECLARE_METATYPE(WindowContainer)
 
-class PLMWritingWindowManager : public QObject {
+class PLMBaseSubWindowManager : public QObject {
     Q_OBJECT
 
 public:
 
-    explicit PLMWritingWindowManager(QWidget       *parent,
+    explicit PLMBaseSubWindowManager(QWidget       *parent,
                                      const QString& objectName);
-    ~PLMWritingWindowManager();
+    ~PLMBaseSubWindowManager();
+
+    bool              haveOneWindow(const QString& subWindowType);
+    PLMBaseSubWindow* getWindowByType(const QString& subWindowType);
 
 signals:
 
 public slots:
 
-    PLMWritingWindow* addWritingWindow(Qt::Orientation orientation,
-                                       int             parentZone,
-                                       int             forcedId = -2);
+    PLMBaseSubWindow* addSubWindow(const QString & subWindowType,
+                                   Qt::Orientation orientation,
+                                   int             parentZone,
+                                   int             forcedId = -2);
 
     void applySettings();
     void writeSettings();
 
+protected:
+
+    virtual PLMBaseSubWindow* subWindowByName(const QString& subWindowType,
+                                              int            id) = 0;
+    virtual QString           defaultSubWindowType() const = 0;
+
 private slots:
 
-    void closeWritingWindow(int id);
+    void closeSubWindow(int id);
+    void setLastActiveWindowByType(int id);
 
 private:
 
+    QString subWindowTypeById(int id) const;
+
     QList<WindowContainer>m_windowContainerList;
+    int m_lastNumber;
 };
 
-#endif // PLMWRITINGWINDOWMANAGER_H
+#endif // PLMSUBWINDOWMANAGER_H

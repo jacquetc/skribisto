@@ -6,7 +6,6 @@
 #include "plmpluginloader.h"
 #include "plmguiplugins.h"
 #include "plmmodels.h"
-#include "plmwritingwindowmanager.h"
 
 #include <QFileDialog>
 #include <QMessageBox>

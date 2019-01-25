@@ -6,8 +6,8 @@
 #include <QStatusBar>
 #include <QTimer>
 #include <QToolButton>
+#include <plmwritingwindow.h>
 
- #include "plmwritingwindowmanager.h"
 
 PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
     PLMBaseWindow(parent, name)
@@ -28,13 +28,39 @@ PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
     this->setCentralWidget(widget);
 
 
-    new PLMWritingWindowManager(widget, "writeWindowManager");
+    m_windowManager = new PLMWriteSubWindowManager(widget);
+
+    connect(plmpluginhub, &PLMPluginHub::commandSent, [this](const PLMCommand& command) {
+        if (command.cmd ==
+            "open_sheet") this->openSheet(command.projectId, command.paperId);
+    });
 }
 
 // -------------------------------------------------------------------
 
 PLMWindow::~PLMWindow()
 {}
+
+// -------------------------------------------------------------------
+
+void PLMWindow::openSheet(int projectId, int sheetId)
+{
+    if (!m_windowManager->haveOneWindow("writeWindow")) {
+        // create new window
+        PLMBaseSubWindow *subWindow = m_windowManager->addSubWindow("writeWindow",
+                                                                    Qt::Horizontal,
+                                                                    0);
+        PLMWritingWindow *window = static_cast<PLMWritingWindow *>(subWindow);
+        Q_ASSERT(window);
+
+        // do things
+    }
+
+    PLMBaseSubWindow *subWindow = m_windowManager->getWindowByType("writeWindow");
+
+    PLMWritingWindow *window = static_cast<PLMWritingWindow *>(subWindow);
+    window->addDocument(projectId, sheetId);
+}
 
 // -------------------------------------------------------------------
 

@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QAction>
 #include "plmbasewindow.h"
+#include "plmwritesubwindowmanager.h"
 
 
 class PLMWindow : public PLMBaseWindow {
@@ -17,6 +18,11 @@ public:
     ~PLMWindow();
 
 public slots:
+
+    void openSheet(int projectId,
+                   int sheetId);
+    void closeSheet(int projectId,
+                    int sheetId);
 
 protected:
 
@@ -35,6 +41,7 @@ private:
 private:
 
     QList<QAction *>actionList;
+    PLMWriteSubWindowManager *m_windowManager;
 };
 
 #endif // PLMWINDOW_H
