@@ -2,7 +2,7 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmwritesubwindowmanager.h
+*  Filename: plmbasesubwindow.cpp
 *                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
@@ -19,23 +19,12 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMWRITESUBWINDOWMANAGER_H
-#define PLMWRITESUBWINDOWMANAGER_H
+#include "plmbasesubwindow.h"
 
-#include "plmbasesubwindowmanager.h"
-#include <QObject>
 
-class PLMWriteSubWindowManager : public PLMBaseSubWindowManager {
-public:
+PLMBaseSubWindow::PLMBaseSubWindow(QWidget *parent) : QMainWindow(parent), m_id(-1) {}
 
-    PLMWriteSubWindowManager(QBoxLayout *parentLayout);
-
-protected:
-
-    PLMBaseSubWindow* subWindowByName(const QString& subWindowType,
-                                      int            id);
-
-    QString           tableName() const;
-};
-
-#endif // PLMWRITESUBWINDOWMANAGER_H
+void PLMBaseSubWindow::mousePressEvent(QMouseEvent *event) {
+    qDebug() << "pressed";
+    emit subWindowFocusActived(m_id);
+}

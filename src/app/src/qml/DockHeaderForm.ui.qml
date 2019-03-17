@@ -48,9 +48,11 @@ Item {
 
         Text {
             id: vDockTitle
+            x: 5
+            y: 178
             text: dockTitle.text
             anchors.right: hSwitch.left
-            anchors.rightMargin: 0
+            anchors.rightMargin: -43
             anchors.bottom: parent.left
             anchors.bottomMargin: -15
             anchors.top: parent.left
@@ -74,6 +76,9 @@ Item {
             }
             PropertyChanges {
                 target: vDockTitle
+                x: -2
+                y: 157
+                anchors.rightMargin: -44
                 visible: true
             }
 
@@ -103,10 +108,3 @@ Item {
 
 
 
-
-
-
-/*##^## Designer {
-    D{i:13;anchors_x:0;anchors_y:84}D{i:12;anchors_x:0;anchors_y:0}D{i:23;anchors_x:0;anchors_y:192}
-}
- ##^##*/

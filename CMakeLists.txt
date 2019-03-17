@@ -26,6 +26,7 @@ set(BREEZEICONS_DIR ${CMAKE_SOURCE_DIR}/3rdparty/breeze-icons/)
 
 set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_EXTENSIONS OFF)
+#set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fsanitize=address,undefined -O0")
 
 
 add_subdirectory(src/libplume-creator-data)

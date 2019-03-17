@@ -22,7 +22,7 @@ set(data_SRCS
     plmprojecthub.cpp
     plmpropertyhub.cpp
     plmsheethub.cpp
-    plmuserfilehub.cpp
+    plmuserhub.cpp
     plmutils.cpp
     tasks/plmprojectmanager.cpp
     tasks/plmsqlqueries.cpp
@@ -36,7 +36,6 @@ set(data_SRCS
     tasks/sql/tree/plmnotetree.cpp
     tasks/sql/tree/plmsheettree.cpp
     tasks/sql/tree/plmtree.cpp
-    plmsheetlistmodel.cpp
 )
 set(data_HDR
     plmcoreinterface.h
@@ -52,7 +51,7 @@ set(data_HDR
     plmpropertyhub.h
     plmsheethub.h
     plmsignalhub.h
-    plmuserfilehub.h
+    plmuserhub.h
     plmutils.h
     plume_creator_data_global.h
     tools.h
@@ -69,7 +68,6 @@ set(data_HDR
     tasks/sql/tree/plmnotetree.h
     tasks/sql/tree/plmsheettree.h
     tasks/sql/tree/plmtree.h
-    plmsheetlistmodel.h
     plminterfacesettings.h
 )
 

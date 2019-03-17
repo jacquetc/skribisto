@@ -29,7 +29,7 @@
 #include "plmpropertyhub.h"
 #include "plmsheethub.h"
 #include "plmsignalhub.h"
-#include "plmuserfilehub.h"
+#include "plmuserhub.h"
 #include "plmpluginhub.h"
 #include "plume_creator_data_global.h"
 #include "tasks/plmprojectmanager.h"
@@ -58,7 +58,7 @@ public:
     PLMNoteHub               * noteHub();
     PLMPropertyHub           * notePropertyHub();
     Q_INVOKABLE PLMProjectHub* projectHub();
-    PLMUserFileHub           * userFileHub();
+    PLMUserHub               * userHub();
     PLMPluginHub             * pluginHub();
 
 signals:
@@ -76,7 +76,7 @@ private:
     PLMNoteHub *m_noteHub;
     PLMProjectManager *m_projectManager;
     PLMPropertyHub *m_notePropertyHub, *m_sheetPropertyHub;
-    PLMUserFileHub *m_userFileHub;
+    PLMUserHub *m_userHub;
     PLMPluginHub *m_pluginHub;
 };
 

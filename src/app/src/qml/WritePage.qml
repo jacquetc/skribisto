@@ -1,4 +1,5 @@
 import QtQuick 2.11
+import QtQml 2.12
 import QtQuick.Controls 2.4
 import eu.plumecreator.sheethub 1.0
 import "."
@@ -33,6 +34,12 @@ WritePageForm {
         when: !Globals.compactSize && middleBase.width >= textAreaFixedWidth
         value: textAreaFixedWidth
     }
+    Binding on minimap.text {
+        value: writingZone.textArea.text
+        delayed: true
+
+    }
+
 
 
     //Scrolling minimap

@@ -21,6 +21,7 @@ plmbasedockwidget.cpp
 plmstyle.cpp
 plmwritingwindow.cpp
 plmbasesubwindowmanager.cpp
+plmbasesubwindow.cpp
 plmwritesubwindowmanager.cpp
 )
 set(gui_HDR

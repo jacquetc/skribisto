@@ -13,6 +13,7 @@ find_package(Qt5 COMPONENTS Core CONFIG REQUIRED)
 set(core_SRCS
     plmsheetmodel.cpp
     plmsheetproxymodel.cpp
+    plmsheetlistmodel.cpp
     plmnotemodel.cpp
     plmnoteproxymodel.cpp
 plmprojectlistmodel.cpp
@@ -27,6 +28,7 @@ set(core_HDR
 
     plmsheetmodel.h
     plmsheetproxymodel.h
+    plmsheetmodel.h
     plmnotemodel.h
     plmnoteproxymodel.h
 plmprojectlistmodel.h

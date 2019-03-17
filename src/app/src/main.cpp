@@ -20,10 +20,9 @@ using namespace std;
 #include "plmpluginloader.h"
 #include "plmdata.h"
 
-#include "plmsheetlistmodel.h"
-#include "documenthandler.h"
 
 #if FORCEQML == 0
+# include "documenthandler.h"
 
 # include <QtWidgets/QProxyStyle>
 # include <QtWidgets/QSplashScreen>
@@ -31,6 +30,10 @@ using namespace std;
 
 # include "plmutils.h"
 # include "plmmainwindow.h"
+# include "plmsheetlistmodel.h"
+
+# include <QQmlDebuggingEnabler>
+
 #endif // if FORCEQML
 // -------------------------------------------------------
 void startCore()
@@ -139,6 +142,8 @@ bool hasQMLArg() {
 
 int main(int argc, char *argv[])
 {
+    QQmlDebuggingEnabler enabler;
+
     // Allows qml styling
     qputenv("QT_STYLE_OVERRIDE",           "");
 
@@ -220,6 +225,8 @@ int main(int argc, char *argv[])
                                                 0,
                                                 "PLMSheetHub",
                                                 "Can't instantiate PLMSheetHub");
+
+
         qmlRegisterType<PLMSheetListModel>("eu.plumecreator.sheetlistmodel",
                                            1,
                                            0,

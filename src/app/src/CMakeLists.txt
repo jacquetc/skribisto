@@ -44,6 +44,7 @@ add_executable(plume-creator ${app_SRCS} ${RESOURCES} ${QRC})
 target_link_libraries(plume-creator plume-creator-data plume-creator-gui)
 include_directories("${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libplume-creator-gui/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libplume-creator-core/src/")
 
 qt5_use_modules(plume-creator Core Quick Network Gui)
 

@@ -29,7 +29,7 @@ class PLMBaseSubWindow : public QMainWindow {
 
 public:
 
-    PLMBaseSubWindow(QWidget *parent = nullptr) : QMainWindow(parent), m_id(-1) {}
+    PLMBaseSubWindow(QWidget *parent = nullptr);
 
 protected:
 
@@ -43,10 +43,7 @@ protected:
         m_id = id;
     }
 
-    void mousePressEvent(QMouseEvent *event) {
-        qDebug() << "pressed";
-        emit subWindowFocusActived(m_id);
-    }
+    void mousePressEvent(QMouseEvent *event);
 
 signals:
 

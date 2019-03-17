@@ -16,8 +16,8 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
     m_notePropertyHub = new PLMPropertyHub(this,
                                            "tbl_sheet_property",
                                            "l_note_code");
-    m_userFileHub = new PLMUserFileHub(this);
-    m_pluginHub   = new PLMPluginHub(this);
+    m_userHub   = new PLMUserHub(this);
+    m_pluginHub = new PLMPluginHub(this);
 }
 
 // -----------------------------------------------------------------------------
@@ -82,9 +82,9 @@ PLMPropertyHub * PLMData::notePropertyHub()
 }
 
 // -----------------------------------------------------------------------------
-PLMUserFileHub * PLMData::userFileHub()
+PLMUserHub * PLMData::userHub()
 {
-    return m_userFileHub;
+    return m_userHub;
 }
 
 // -----------------------------------------------------------------------------

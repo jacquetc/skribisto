@@ -58,8 +58,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString& fileName) 
         PLMImporter importer;
 
         if (fileName == "") { // virgin project
-            m_sqlDb     = importer.createEmptySQLiteProject(projectId, error);
-            m_userSqlDb = importer.createEmptyUserSQLiteFile(projectId, error);
+            m_sqlDb = importer.createEmptySQLiteProject(projectId, error);
 
             IFKO(error) {
                 // qWarning << error.getMessage()
@@ -70,18 +69,6 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString& fileName) 
             }
         } else {
             m_sqlDb = importer.createSQLiteDbFrom("SQLITE", fileName, projectId, error);
-            QFileInfo info(fileName);
-            QString   userFileName = info.path() + QDir::separator() + info.baseName() +
-                                     ".plume.user";
-            QFileInfo userFileNameInfo(userFileName);
-
-            if (!userFileNameInfo.exists()) {
-                m_userSqlDb = importer.createEmptyUserSQLiteFile(projectId, error);
-            } else {
-                m_userSqlDb = importer.createUserSQLiteFileFrom("SQLITE",  userFileName,
-                                                                projectId,
-                                                                error);
-            }
         }
     }
     setType("SQLITE");
@@ -125,19 +112,12 @@ PLMProject::~PLMProject()
 {
     // close DB :
     m_sqlDb.close();
-    m_userSqlDb.close();
 
     // remove temporary files :
     QFile tempFile(this->getTempFileName());
 
     if (tempFile.exists() && tempFile.isWritable()) {
         tempFile.remove();
-    }
-
-    QFile userTempFile(this->getUserDBTempFileName());
-
-    if (userTempFile.exists() && userTempFile.isWritable()) {
-        userTempFile.remove();
     }
 }
 
@@ -146,21 +126,12 @@ QSqlDatabase PLMProject::getSqlDb() const
     return m_sqlDb;
 }
 
-QSqlDatabase PLMProject::getUserSqlDb() const
-{
-    return m_userSqlDb;
-}
-
-QString PLMProject::getIdNameFromTable(const QString    & tableName,
-                                       PLMProject::DBType dbType)
+QString PLMProject::getIdNameFromTable(const QString& tableName)
 {
     QSqlDatabase sqlDb;
 
-    if (dbType == PLMProject::ProjectDB) {
-        sqlDb = m_sqlDb;
-    } else if (dbType == PLMProject::UserDB) {
-        sqlDb = m_userSqlDb;
-    }
+    sqlDb = m_sqlDb;
+
 
     if (!sqlDb.isOpen()) {
         sqlDb.open();
@@ -183,11 +154,6 @@ QString PLMProject::getIdNameFromTable(const QString    & tableName,
 QString PLMProject::getTempFileName() const
 {
     return m_sqlDb.databaseName();
-}
-
-QString PLMProject::getUserDBTempFileName() const
-{
-    return m_userSqlDb.databaseName();
 }
 
 PLMProperty * PLMProject::getProperty(const QString& tableName)
@@ -239,13 +205,4 @@ PLMError PLMProject::setPath(const QString& value)
         m_path = value;
     }
     return error;
-}
-
-QString PLMProject::getUserDBPath() const
-{
-    QFileInfo info(m_path);
-    QString   userFileName = info.path() + QDir::separator() + info.baseName() +
-                             ".plume.user";
-
-    return userFileName;
 }

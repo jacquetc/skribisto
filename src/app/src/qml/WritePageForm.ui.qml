@@ -174,7 +174,6 @@ Item {
                             //width: minimapFlickable.width
                             //pageSize: (writingZone.flickable.height) / (writingZone.textArea.contentHeight + 16)
                             //textScale: minimapFlickable.height / writingZone.flickable.contentHeight
-                            text: writingZone.textArea.text
                             sourceWidth: writingZone.textArea.width
                             sourcePointSize: writingZone.textArea.font.pointSize
                         }

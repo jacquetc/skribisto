@@ -460,8 +460,7 @@ PLMError PLMPaperHub::setSetting(int             projectId,
 {
     PLMError error;
     PLMSqlQueries queries(projectId,
-                          "tbl_" + m_paperType + "_setting",
-                          PLMSqlQueries::UserDB);
+                          "tbl_user_" + m_paperType + "_setting");
 
     queries.beginTransaction();
     error = queries.set(1, fieldName, value);
@@ -492,8 +491,7 @@ PLMError PLMPaperHub::setDocSetting(int             projectId,
 {
     PLMError error;
     PLMSqlQueries queries(projectId,
-                          "tbl_" + m_paperType + "_doc_list",
-                          PLMSqlQueries::UserDB);
+                          "tbl_user_" + m_paperType + "_doc_list");
 
     queries.beginTransaction();
     error = queries.set(paperId, fieldName, value);
@@ -543,8 +541,7 @@ QVariant PLMPaperHub::getSetting(int projectId, const QString& fieldName) const
     QVariant var;
     QVariant result;
     PLMSqlQueries queries(projectId,
-                          "tbl_" + m_paperType + "_setting",
-                          PLMSqlQueries::UserDB);
+                          "tbl_user_" + m_paperType + "_setting");
 
     error = queries.get(1, fieldName, var);
     IFOK(error) {
@@ -566,8 +563,7 @@ QVariant PLMPaperHub::getDocSetting(int projectId, int paperId,
     QVariant var;
     QVariant result;
     PLMSqlQueries queries(projectId,
-                          "tbl_" + m_paperType + "_doc_list",
-                          PLMSqlQueries::UserDB);
+                          "tbl_user_" + m_paperType + "_doc_list");
 
     error = queries.get(paperId, fieldName, var);
     IFOK(error) {

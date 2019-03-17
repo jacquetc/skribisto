@@ -20,11 +20,102 @@
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmpluginhub.h"
+#include "tasks/plmsqlqueries.h"
 
 PLMPluginHub::PLMPluginHub(QObject *parent) : QObject(parent)
 {
     qRegisterMetaType<PLMCommand>("PLMCommand");
 }
 
-void PLMPluginHub::reloadPlugins()
+void     PLMPluginHub::reloadPlugins()
 {}
+
+PLMError PLMPluginHub::set(int projectId, int id,
+                           const QString& tableName,
+                           const QString& fieldName,
+                           const QVariant& value)
+{
+    PLMError error;
+    PLMSqlQueries queries(projectId, tableName);
+
+    queries.beginTransaction();
+    error = queries.set(id, fieldName, value);
+
+    IFKO(error) {
+        queries.rollback();
+    }
+    IFOK(error) {
+        queries.commit();
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return error;
+}
+
+QVariant PLMPluginHub::get(int            projectId,
+                           int            id,
+                           const QString& tableName,
+                           const QString& fieldName) const
+{
+    PLMError error;
+    QVariant var;
+    QVariant result;
+    PLMSqlQueries queries(projectId, tableName);
+
+    error = queries.get(id, fieldName, var);
+    IFOK(error) {
+        result = var;
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return result;
+}
+
+QList<int>PLMPluginHub::getIds(int            projectId,
+                               const QString& tableName) const
+{
+    PLMError error;
+
+    QList<int> list;
+    QList<int> result;
+    PLMSqlQueries queries(projectId, tableName);
+
+    error = queries.getIds(list);
+    IFOK(error) {
+        result = list;
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return result;
+}
+
+PLMError PLMPluginHub::ensureTableExists(int            projectId,
+                                         const QString& tableName,
+                                         const QString& sqlString)
+{
+    PLMError error;
+
+    // TODO: check if table exist:
+
+
+    // if table doesn't exist :
+
+
+    PLMSqlQueries queries(projectId, tableName);
+
+    error = queries.injectDirectSql(sqlString);
+
+    IFKO(error) {
+        queries.rollback();
+    }
+    IFOK(error) {
+        queries.commit();
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return error;
+}

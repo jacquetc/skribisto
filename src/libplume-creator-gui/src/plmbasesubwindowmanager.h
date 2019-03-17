@@ -29,93 +29,110 @@
 
 #include <QBoxLayout>
 #include <QSplitter>
+#include <QMetaEnum>
 
-class WindowContainer {
+class Widget {
     Q_GADGET
 
 public:
 
-    WindowContainer();
-    WindowContainer(const WindowContainer& otherContainer);
-    ~WindowContainer();
-    bool                       operator!() const;
-    operator bool() const;
-    WindowContainer          & operator=(const WindowContainer& otherContainer);
-    bool                       operator==(const WindowContainer& otherContainer) const;
+    enum SubWindowType { Splitter, SubWindow };
+    Q_ENUM(SubWindowType)
 
-    QPointer<PLMBaseSubWindow> window() const;
-    void                       setWindow(const QPointer<PLMBaseSubWindow>& window);
+    Widget();
+    Widget(const QString       & tableName,
+           int                   id,
+           Widget::SubWindowType type);
+    Widget(const Widget& otherWidget);
+    ~Widget();
+    bool                      operator!() const;
+    Widget                  & operator=(const Widget& otherWidget);
+    bool                      operator==(const Widget& otherWidget) const;
 
-    int                        parentId() const;
-    void                       setParentId(int value);
+    int                       parentId() const;
+    void                      setParentId(int value);
 
-    int                        id() const;
-    void                       setId(int value);
+    int                       id() const;
+    void                      setId(int value);
 
-    QString                    name() const;
-    bool                       setName(const QString& name);
+    QString                   name() const;
+    bool                      setName(const QString& name);
 
-    Qt::Orientation            orientation() const;
-    void                       setOrientation(const Qt::Orientation& orientation);
 
-    void                       setOrientation(const QString& orientation);
-    QList<QPointer<QSplitter> >splitterList() const;
-    void                       addSplitter(const QPointer<QSplitter>& splitter);
-    void                       cleanSplitters();
-    void                       setSplitterList(
-        const QList<QPointer<QSplitter> >& splitterList);
+    void                      addChildWidget(int id);
+    bool                      childWidgetIsSubWindow(int index) const;
+    bool                      childWidgetIsSplitter(int index) const;
+    int                       getChildWidgetId(int index) const;
+    QList<int>                getChildWidgetList() const;
+    int                       getChildCount() const;
 
-    QList<int>                 splitterSizes() const;
-    void                       setSplitterSizes(QList<int>sizes);
+    void                      setSplitterSizes(const QList<int>sizes);
+    QList<int>                splitterSizes() const;
+    QString                   tableName() const;
 
-    QString                    subWindowType() const;
-    void                       setSubWindowType(const QString& subWindowType);
+    void                      setSubWindowType(const SubWindowType& type);
+    SubWindowType             subWindowType() const;
 
-    bool                       isLastActive() const;
-    void                       setIsLastActive(bool isLastActive);
+    QPointer<PLMBaseSubWindow>getWindow() const;
+    void                      setWindow(const QPointer<PLMBaseSubWindow>& window);
+
+    QPointer<QSplitter>       getSplitter() const;
+    void                      setSplitter(const QPointer<QSplitter>& splitter);
+
+    void                      loadValues();
+
+    void                      setOrientation(const Qt::Orientation& orientation);
+
+    Qt::Orientation           getOrientation() const;
 
 private:
 
-    QPointer<PLMBaseSubWindow>m_window;
     int m_parentId;
     int m_id;
     Qt::Orientation m_orientation;
-    QList<QPointer<QBoxLayout> >m_layoutList;
-    QList<QPointer<QSplitter> >m_splitterList;
-    QString m_subWindowType;
+    QPointer<PLMBaseSubWindow>m_window;
+    QPointer<QSplitter>m_splitter;
+    SubWindowType m_subWindowType;
+    QList<int>m_childWidgetList;
     bool m_isLastActive;
+    QString m_tableName;
+    QList<int>m_splitterSizes;
 };
-Q_DECLARE_METATYPE(WindowContainer)
+Q_DECLARE_METATYPE(Widget)
 
 class PLMBaseSubWindowManager : public QObject {
     Q_OBJECT
 
 public:
 
-    explicit PLMBaseSubWindowManager(QWidget       *parent,
+    explicit PLMBaseSubWindowManager(QBoxLayout    *parentLayout,
                                      const QString& objectName);
     ~PLMBaseSubWindowManager();
 
-    bool              haveOneWindow(const QString& subWindowType);
     PLMBaseSubWindow* getWindowByType(const QString& subWindowType);
 
 signals:
 
 public slots:
 
-    PLMBaseSubWindow* addSubWindow(const QString & subWindowType,
-                                   Qt::Orientation orientation,
-                                   int             parentZone,
-                                   int             forcedId = -2);
+    int               addSubWindow(Qt::Orientation orientation,
+                                   int             callerSubWindowId);
+    PLMBaseSubWindow* getSubWindowById(int id);
 
-    void applySettings();
-    void writeSettings();
+    void              applySettings();
+    void              writeSettings();
+
+    void              applyUserSettings();
+    void              clear();
+
+    void              writeUserSettingsOnOtherProjects();
 
 protected:
 
     virtual PLMBaseSubWindow* subWindowByName(const QString& subWindowType,
                                               int            id) = 0;
-    virtual QString           defaultSubWindowType() const = 0;
+
+    virtual QString           tableName() const = 0;
 
 private slots:
 
@@ -124,10 +141,18 @@ private slots:
 
 private:
 
-    QString subWindowTypeById(int id) const;
+    bool                  haveOneSubWindow();
+    PLMBaseSubWindow    * getfirstSubWindow();
+    int                   addSplitter(int             parentId,
+                                      Qt::Orientation orientation);
+    int                   addSubWindow(int parentId);
 
-    QList<WindowContainer>m_windowContainerList;
-    int m_lastNumber;
+    Widget::SubWindowType getSubWindowTypeById(int id) const;
+    Widget                getWidgetById(int id);
+    int                   getFreeNumber();
+
+    QList<Widget>m_widgetList;
+    QBoxLayout *m_parentLayout;
 };
 
 #endif // PLMSUBWINDOWMANAGER_H

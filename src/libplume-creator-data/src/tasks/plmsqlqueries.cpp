@@ -26,9 +26,8 @@
 #include <QSqlRecord>
 #include <QSqlField>
 
-PLMSqlQueries::PLMSqlQueries(int                   projectId,
-                             const QString       & tableName,
-                             PLMSqlQueries::DBType dbType) : m_projectId(projectId),
+PLMSqlQueries::PLMSqlQueries(int            projectId,
+                             const QString& tableName) : m_projectId(projectId),
     m_tableName(tableName)
 {
     qRegisterMetaType<DBType>("DBType");
@@ -38,13 +37,8 @@ PLMSqlQueries::PLMSqlQueries(int                   projectId,
         return;
     }
 
-    if (dbType == PLMSqlQueries::ProjectDB) {
-        m_sqlDB  = project->getSqlDb();
-        m_idName = project->getIdNameFromTable(m_tableName, PLMProject::ProjectDB);
-    } else if (dbType == PLMSqlQueries::UserDB) {
-        m_sqlDB  = project->getUserSqlDb();
-        m_idName = project->getIdNameFromTable(m_tableName, PLMProject::UserDB);
-    }
+    m_sqlDB  = project->getSqlDb();
+    m_idName = project->getIdNameFromTable(m_tableName);
 }
 
 PLMSqlQueries::PLMSqlQueries(QSqlDatabase   sqlDB,
@@ -187,6 +181,22 @@ PLMError PLMSqlQueries::getIds(QList<int>& result) const
     }
 
     return error;
+}
+
+bool PLMSqlQueries::idExists(int id) const
+{
+    QSqlQuery query(m_sqlDB);
+    QString   queryStr = "SELECT :id FROM " + m_tableName
+    ;
+
+    query.prepare(queryStr);
+    query.bindValue(":id", id);
+    query.exec();
+
+    if (query.size() == 0) {
+        return false;
+    }
+    return true;
 }
 
 ///
@@ -394,6 +404,19 @@ PLMError PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) 
     return error;
 }
 
+PLMError PLMSqlQueries::removeAll() const
+{
+    PLMError error;
+    {
+        QSqlQuery query(m_sqlDB);
+        QString   queryStr = "DELETE * FROM " + m_tableName;
+        query.prepare(queryStr);
+        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+    }
+
+    return error;
+}
+
 PLMError PLMSqlQueries::remove(int id) const
 {
     PLMError error;
@@ -440,6 +463,19 @@ PLMError PLMSqlQueries::setId(int id, int newId) const
         query.prepare(queryStr);
         query.bindValue(":id",    id);
         query.bindValue(":value", newId);
+        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+    }
+
+    return error;
+}
+
+PLMError PLMSqlQueries::injectDirectSql(const QString& sqlString)
+{
+    PLMError error;
+    {
+        QSqlQuery query(m_sqlDB);
+        QString   queryStr = sqlString;
+        query.prepare(queryStr);
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
     }
 

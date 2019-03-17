@@ -27,22 +27,50 @@
 #include "plmerror.h"
 #include "plume_creator_data_global.h"
 
-class EXPORT PLMUserFileHub : public QObject
-{
+class EXPORT PLMUserHub : public QObject {
     Q_OBJECT
 
 public:
 
-    explicit PLMUserFileHub(QObject *parent);
+    explicit PLMUserHub(QObject *parent);
+
+    PLMError set(int             projectId,
+                 const QString & tableName,
+                 int             id,
+                 const QString & fieldName,
+                 const QVariant& value,
+                 bool            setCurrentDateBool);
+    QVariant get(int            projectId,
+                 const QString& tableName,
+                 int            id,
+                 const QString& fieldName) const;
+
+    PLMError getMultipleValues(int projectId,
+                               const QString& tableName,
+                               int id,
+                               const QStringList& valueList,
+                               QHash<QString, QVariant>& result);
+    PLMError getIds(int            projectId,
+                    const QString& tableName,
+                    QList<int>   & result) const;
+
+    PLMError add(int projectId,
+                 const QString& tableName,
+                 const QHash<QString, QVariant>& values,
+                 int& newId) const;
 
 signals:
 
-    void errorSent(const PLMError &error) const;
+    void errorSent(const PLMError& error) const;
 
 public slots:
+
 private slots:
-    void setError(const PLMError &error);
+
+    void setError(const PLMError& error);
+
 private:
+
     PLMError m_error;
 };
 

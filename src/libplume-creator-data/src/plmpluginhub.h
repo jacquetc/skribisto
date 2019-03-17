@@ -24,6 +24,7 @@
 #include <QObject>
 #include <QVariant>
 #include "plume_creator_data_global.h"
+#include "plmerror.h"
 
 struct PLMCommand
 {
@@ -120,9 +121,26 @@ public:
 
     explicit PLMPluginHub(QObject *parent = nullptr);
 
-    void reloadPlugins();
+    void     reloadPlugins();
+    PLMError set(int             projectId,
+                 int             id,
+                 const QString & tableName,
+                 const QString & fieldName,
+                 const QVariant& value);
+    QVariant get(int            projectId,
+                 int            id,
+                 const QString& tableName,
+                 const QString& fieldName) const;
+
+    QList<int>getIds(int            projectId,
+                     const QString& tableName) const;
+    PLMError  ensureTableExists(int            projectId,
+                                const QString& tableName,
+                                const QString& sqlString);
 
 signals:
+
+    void errorSent(const PLMError& error) const;
 
     void commandSent(const PLMCommand& command);
 

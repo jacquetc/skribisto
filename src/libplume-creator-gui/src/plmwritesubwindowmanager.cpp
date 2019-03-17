@@ -22,8 +22,8 @@
 #include "plmwritesubwindowmanager.h"
 #include "plmwritingwindow.h"
 
-PLMWriteSubWindowManager::PLMWriteSubWindowManager(QWidget *parent) :
-    PLMBaseSubWindowManager(parent, "writeWindowManager")
+PLMWriteSubWindowManager::PLMWriteSubWindowManager(QBoxLayout *parentLayout) :
+    PLMBaseSubWindowManager(parentLayout, "writeWindowManager")
 {}
 
 PLMBaseSubWindow * PLMWriteSubWindowManager::subWindowByName(const QString& subWindowType,
@@ -34,7 +34,7 @@ PLMBaseSubWindow * PLMWriteSubWindowManager::subWindowByName(const QString& subW
     return new PLMBaseSubWindow();
 }
 
-QString PLMWriteSubWindowManager::defaultSubWindowType() const
+QString PLMWriteSubWindowManager::tableName() const
 {
-    return "writeWindow";
+    return "tbl_user_write_subwindow";
 }

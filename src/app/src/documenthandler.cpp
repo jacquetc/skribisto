@@ -8,16 +8,14 @@
 #include <QTextList>
 #include "plmdata.h"
 
-DocumentHandler::DocumentHandler(QObject *parent):
+DocumentHandler::DocumentHandler(QObject *parent) :
     QObject(parent),
     m_textDoc(nullptr),
     m_formatPosition(-2),
-  m_paperId(-1)
-{
+    m_paperId(-1)
+{}
 
-}
-
-QQuickTextDocument *DocumentHandler::textDocument() const
+QQuickTextDocument * DocumentHandler::textDocument() const
 {
     return m_textDoc;
 }
@@ -32,10 +30,18 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
     emit textDocumentChanged();
 
     if (m_textDoc) {
-        connect(m_textDoc->textDocument(), &QTextDocument::undoAvailable, this, &DocumentHandler::canUndoChanged);
-        connect(m_textDoc->textDocument(), &QTextDocument::redoAvailable, this, &DocumentHandler::canRedoChanged);
-        m_textCursor = textDocument->textDocument()->rootFrame()->firstCursorPosition();
-        m_selectionCursor = textDocument->textDocument()->rootFrame()->firstCursorPosition();
+        connect(m_textDoc->textDocument(),
+                &QTextDocument::undoAvailable,
+                this,
+                &DocumentHandler::canUndoChanged);
+        connect(m_textDoc->textDocument(),
+                &QTextDocument::redoAvailable,
+                this,
+                &DocumentHandler::canRedoChanged);
+        m_textCursor =
+            textDocument->textDocument()->rootFrame()->firstCursorPosition();
+        m_selectionCursor =
+            textDocument->textDocument()->rootFrame()->firstCursorPosition();
     } else {
         m_textCursor.setPosition(0);
     }
@@ -45,6 +51,7 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
 QStringList DocumentHandler::allFontFamilies() const
 {
     QFontDatabase db;
+
     return db.families();
 }
 
@@ -55,13 +62,15 @@ int DocumentHandler::cursorPosition() const
 
 void DocumentHandler::setCursorPosition(int position)
 {
-    if (m_formatPosition >= 0 && m_textCursor.position() == position) {
-        m_textCursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor, position - m_formatPosition);
+    if ((m_formatPosition >= 0) && (m_textCursor.position() == position)) {
+        m_textCursor.movePosition(QTextCursor::PreviousCharacter,
+                                  QTextCursor::KeepAnchor,
+                                  position - m_formatPosition);
         m_textCursor.setCharFormat(m_nextFormat);
     }
     m_textCursor.setPosition(position);
     m_formatPosition = -2;
-    m_nextFormat = m_textCursor.charFormat();
+    m_nextFormat     = m_textCursor.charFormat();
 
     emit formatChanged();
 }
@@ -75,7 +84,7 @@ void DocumentHandler::setSelectionStart(int selectionStart)
 {
     m_selectionStart = selectionStart;
     m_selectionCursor.setPosition(m_selectionStart, QTextCursor::MoveAnchor);
-    m_selectionCursor.setPosition(m_selectionEnd, QTextCursor::KeepAnchor);
+    m_selectionCursor.setPosition(m_selectionEnd,   QTextCursor::KeepAnchor);
 }
 
 int DocumentHandler::selectionEnd() const
@@ -87,7 +96,7 @@ void DocumentHandler::setSelectionEnd(int selectionEnd)
 {
     m_selectionEnd = selectionEnd;
     m_selectionCursor.setPosition(m_selectionStart, QTextCursor::MoveAnchor);
-    m_selectionCursor.setPosition(m_selectionEnd, QTextCursor::KeepAnchor);
+    m_selectionCursor.setPosition(m_selectionEnd,   QTextCursor::KeepAnchor);
 }
 
 QString DocumentHandler::fontFamily() const
@@ -102,7 +111,7 @@ QString DocumentHandler::fontFamily() const
     }
 }
 
-void DocumentHandler::setFontFamily(const QString &fontFamily)
+void DocumentHandler::setFontFamily(const QString& fontFamily)
 {
     if (m_selectionCursor.selectedText().isEmpty()) {
         m_nextFormat.setFontFamily(fontFamily);
@@ -115,7 +124,7 @@ void DocumentHandler::setFontFamily(const QString &fontFamily)
     emit formatChanged();
 }
 
-int DocumentHandler::fontSize() const
+qreal DocumentHandler::fontSize() const
 {
     if (m_selectionCursor.selectedText().isEmpty()) {
         if (m_formatPosition != 2) {
@@ -252,7 +261,7 @@ QColor DocumentHandler::color() const
     }
 }
 
-void DocumentHandler::setColor(const QColor &color)
+void DocumentHandler::setColor(const QColor& color)
 {
     if (m_selectionCursor.selectedText().isEmpty()) {
         m_nextFormat.setForeground(QBrush(color));
@@ -283,6 +292,7 @@ Qt::Alignment DocumentHandler::alignment() const
 void DocumentHandler::setAlignment(Qt::Alignment alignment)
 {
     QTextBlockFormat f = m_textCursor.blockFormat();
+
     f.setAlignment(alignment);
     m_textCursor.setBlockFormat(f);
     emit formatChanged();
@@ -290,7 +300,8 @@ void DocumentHandler::setAlignment(Qt::Alignment alignment)
 
 bool DocumentHandler::bulletList() const
 {
-    return m_textCursor.currentList() && m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
+    return m_textCursor.currentList() &&
+           m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
 }
 
 void DocumentHandler::setBulletList(bool bulletList)
@@ -310,7 +321,8 @@ void DocumentHandler::setBulletList(bool bulletList)
 
 bool DocumentHandler::numberedList() const
 {
-    return m_textCursor.currentList() && m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
+    return m_textCursor.currentList() &&
+           m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
 }
 
 void DocumentHandler::setNumberedList(bool numberedList)
@@ -333,14 +345,13 @@ int DocumentHandler::paperId() const
     return m_paperId;
 }
 
-
 void DocumentHandler::setId(const int projectId, const int paperId)
 {
-    if(paperId == -1 || projectId  == -1){
+    if ((paperId == -1) || (projectId  == -1)) {
         return;
     }
     m_projectId = projectId;
-    m_paperId = paperId;
+    m_paperId   = paperId;
 
     QString text = plmdata->sheetHub()->getContent(projectId, paperId);
 
@@ -349,7 +360,6 @@ void DocumentHandler::setId(const int projectId, const int paperId)
 
     emit formatChanged();
     emit idChanged();
-
 }
 
 int DocumentHandler::projectId() const
@@ -357,10 +367,10 @@ int DocumentHandler::projectId() const
     return m_projectId;
 }
 
-
 void DocumentHandler::indentBlock()
 {
     QTextBlockFormat f = m_textCursor.blockFormat();
+
     f.setIndent(f.indent() + 1);
     m_textCursor.setBlockFormat(f);
 }
@@ -368,6 +378,7 @@ void DocumentHandler::indentBlock()
 void DocumentHandler::unindentBlock()
 {
     QTextBlockFormat f = m_textCursor.blockFormat();
+
     f.setIndent(f.indent() - 1);
     m_textCursor.setBlockFormat(f);
 }
@@ -390,6 +401,8 @@ void DocumentHandler::addHorizontalLine()
 {
     m_textCursor.beginEditBlock();
     m_textCursor.insertHtml("____________________");
-    m_textDoc->textDocument()->setHtml(m_textDoc->textDocument()->toHtml().replace(QRegExp("____________________"), "<hr/><p></p>"));
+    m_textDoc->textDocument()->setHtml(m_textDoc->textDocument()->toHtml().replace(QRegExp(
+                                                                                       "____________________"),
+                                                                                   "<hr/><p></p>"));
     m_textCursor.endEditBlock();
 }

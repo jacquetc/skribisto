@@ -54,17 +54,13 @@ public:
     int           id() const;
 
     QString       getTempFileName() const;
-    QString       getUserDBTempFileName() const;
 
     QString       getPath() const;
     PLMError      setPath(const QString& value);
 
-    QString       getUserDBPath() const;
 
     QSqlDatabase  getSqlDb() const;
-    QSqlDatabase  getUserSqlDb() const;
-    QString       getIdNameFromTable(const QString    & tableName,
-                                     PLMProject::DBType dbType = PLMProject::ProjectDB);
+    QString       getIdNameFromTable(const QString& tableName);
 
 signals:
 
@@ -74,7 +70,7 @@ private:
 
     QHash<QString, PLMProperty *>m_plmPropertyForTableNameHash;
     QHash<QString, PLMTree *>m_plmTreeForTableNameHash;
-    QSqlDatabase m_sqlDb, m_userSqlDb;
+    QSqlDatabase m_sqlDb;
     int m_projectId;
     PLMSheetTree *m_sheetTree;
     PLMNoteTree *m_noteTree;

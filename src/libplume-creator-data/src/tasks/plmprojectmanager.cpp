@@ -7,33 +7,35 @@
 PLMProjectManager::PLMProjectManager(QObject *parent) : QObject(parent)
 {
     m_projectIdIncrement = 0;
-    m_instance = this;
+    m_instance           = this;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-PLMError PLMProjectManager::createNewEmptyDatabase(int &projectId)
+PLMError PLMProjectManager::createNewEmptyDatabase(int& projectId)
 {
     return loadProject("", projectId);
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 PLMProjectManager *PLMProjectManager::m_instance = 0;
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 
-PLMError PLMProjectManager::loadProject(const QString &fileName, int &projectId)
+PLMError PLMProjectManager::loadProject(const QString& fileName, int& projectId)
 {
     PLMError error;
+
     m_projectIdIncrement += 1;
-    projectId = m_projectIdIncrement;
+    projectId             = m_projectIdIncrement;
     PLMProject *project = new PLMProject(this, projectId, fileName);
 
     // if error :
     if (project->id() == -1) {
-        //emit plmTaskError->errorSent("E_PROJECT_PROJECTNOTLOADED", Q_FUNC_INFO, "");
+        // emit plmTaskError->errorSent("E_PROJECT_PROJECTNOTLOADED",
+        // Q_FUNC_INFO, "");
         project->deleteLater();
         projectId = -1;
         error.setSuccess(false);
@@ -44,29 +46,34 @@ PLMError PLMProjectManager::loadProject(const QString &fileName, int &projectId)
     return error;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 PLMError PLMProjectManager::saveProject(int projectId)
 {
     PLMProject *project = m_projectForIntHash.value(projectId, 0);
+
     return saveProjectAs(projectId, project->getType(), project->getPath());
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-PLMError PLMProjectManager::saveProjectAs(int projectId, const QString &type, const QString &path)
+PLMError PLMProjectManager::saveProjectAs(int            projectId,
+                                          const QString& type,
+                                          const QString& path)
 {
     PLMError error;
     PLMProject *project = m_projectForIntHash.value(projectId, 0);
 
     if (!project) {
-        //emit plmTaskError->errorSent("E_PROJECT_PROJECTMISSING", Q_FUNC_INFO, "No project with the id " + QString::number(projectId));
+        // emit plmTaskError->errorSent("E_PROJECT_PROJECTMISSING", Q_FUNC_INFO,
+        // "No project with the id " + QString::number(projectId));
         error.setSuccess(false);
         return error;
     }
 
     if (project->getPath() == "") {
-        //emit plmTaskError->errorSent("E_PROJECT_NOPATH", Q_FUNC_INFO, "No project path set");
+        // emit plmTaskError->errorSent("E_PROJECT_NOPATH", Q_FUNC_INFO, "No
+        // project path set");
         error.setSuccess(false);
         return error;
     }
@@ -76,32 +83,32 @@ PLMError PLMProjectManager::saveProjectAs(int projectId, const QString &type, co
     IFOK(error) {
         project->setPath(path);
     }
-    IFOKDO(error, exporter.exportUserSQLiteDbTo(project, path));
     return error;
 }
 
-PLMProject *PLMProjectManager::project(int projectId)
+PLMProject * PLMProjectManager::project(int projectId)
 {
-//    if(!m_projectForIntHash.contains(projectId)){
-//    }
-    //qDebug()   <<  "project n°" << projectId;
+    //    if(!m_projectForIntHash.contains(projectId)){
+    //    }
+    // qDebug()   <<  "project n°" << projectId;
     PLMProject *project = m_projectForIntHash.value(projectId, 0);
 
     if (!project) {
-        //emit plmTaskError->errorSent("E_PROJECTMISSING", Q_FUNC_INFO, "No project with the id " + QString::number(projectId));
+        // emit plmTaskError->errorSent("E_PROJECTMISSING", Q_FUNC_INFO, "No
+        // project with the id " + QString::number(projectId));
     }
 
     return project;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
-QList<int> PLMProjectManager::projectIdList()
+QList<int>PLMProjectManager::projectIdList()
 {
     return m_projectForIntHash.keys();
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 PLMError PLMProjectManager::closeProject(int projectId)
 {
@@ -114,7 +121,9 @@ PLMError PLMProjectManager::closeProject(int projectId)
     }
 
     m_projectForIntHash.remove(projectId);
-    // the project deletion is done outside PLMProject() so the QSqlDatabase is out of scope
+
+    // the project deletion is done outside PLMProject() so the QSqlDatabase is
+    // out of scope
     delete project;
     QSqlDatabase::removeDatabase(QString::number(projectId));
     QSqlDatabase::removeDatabase("user_" + QString::number(projectId));
@@ -122,5 +131,4 @@ PLMError PLMProjectManager::closeProject(int projectId)
     return error;
 }
 
-//-----------------------------------------------------------------------------
-
+// -----------------------------------------------------------------------------
