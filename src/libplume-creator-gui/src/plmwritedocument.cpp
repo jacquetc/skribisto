@@ -2,7 +2,7 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmwritesubwindowmanager.h
+*  Filename: writingwindow.cpp
 *                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
@@ -19,21 +19,38 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMWRITESUBWINDOWMANAGER_H
-#define PLMWRITESUBWINDOWMANAGER_H
+#include "plmwritedocument.h"
+#include "plmdata.h"
+#include "ui_plmwritedocument.h"
+#include <QTextDocument>
 
-#include "plmbasesubwindowmanager.h"
-#include <QObject>
+PLMWriteDocument::PLMWriteDocument(int documentId) : PLMBaseDocument(documentId),
+    ui(new Ui::PLMWriteDocument)
+{
+    ui->setupUi(this);
 
-class PLMWriteSubWindowManager : public PLMBaseSubWindowManager {
-public:
+    ui->writingZone->setHasMinimap(false);
+    ui->writingZone->setIsResizable(true);
 
-    PLMWriteSubWindowManager(QBoxLayout *parentLayout);
+    connect(ui->writingZone, &PLMWritingZone::focused, [this]() {
+        emit documentFocusActived(this->getDocumentId());
+    });
 
-    QString tableName() const;
-    QString documentTableName() const;
+    this->setupActions();
+}
 
-protected:
-};
+PLMWriteDocument::~PLMWriteDocument()
+{
+    delete ui;
+}
 
-#endif // PLMWRITESUBWINDOWMANAGER_H
+void PLMWriteDocument::setTextDocument(int projectId, int sheetId)
+{
+    QTextDocument *document =
+        new QTextDocument(plmdata->sheetHub()->getContent(projectId, sheetId), this);
+
+    ui->writingZone->setTextDocument(document);
+}
+
+void PLMWriteDocument::setupActions()
+{}

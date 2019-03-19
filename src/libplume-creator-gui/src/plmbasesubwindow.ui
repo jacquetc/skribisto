@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PLMWritingWindow</class>
- <widget class="QMainWindow" name="PLMWritingWindow">
+ <class>PLMBaseSubWindow</class>
+ <widget class="QMainWindow" name="PLMBaseSubWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="baseWidget">
-   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
+   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
     <property name="spacing">
      <number>0</number>
     </property>
@@ -54,6 +54,39 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
+       <item>
+        <widget class="QToolButton" name="previousButton">
+         <property name="text">
+          <string>&lt;</string>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="nextButton">
+         <property name="text">
+          <string>&gt;</string>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="documentComboBox"/>
+       </item>
+       <item>
+        <widget class="QToolButton" name="closeDocumentButton">
+         <property name="text">
+          <string>x</string>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
        <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
@@ -97,7 +130,7 @@
      </widget>
     </item>
     <item>
-     <widget class="PLMWritingZone" name="writingZone" native="true"/>
+     <widget class="QStackedWidget" name="stackedWidget"/>
     </item>
    </layout>
   </widget>
@@ -126,14 +159,6 @@
    </property>
   </action>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>PLMWritingZone</class>
-   <extends>QWidget</extends>
-   <header>plmwritingzone.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -20,11 +20,65 @@
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmbasesubwindow.h"
+#include "ui_plmbasesubwindow.h"
 
+PLMBaseSubWindow::PLMBaseSubWindow(int id, QWidget *parent) : QMainWindow(parent),
+    m_id(id), ui(
+        new Ui::PLMBaseSubWindow) {
+    ui->setupUi(this);
 
-PLMBaseSubWindow::PLMBaseSubWindow(QWidget *parent) : QMainWindow(parent), m_id(-1) {}
+    this->setupActions();
+}
+
+PLMBaseSubWindow::~PLMBaseSubWindow()
+{
+    delete ui;
+}
 
 void PLMBaseSubWindow::mousePressEvent(QMouseEvent *event) {
-    qDebug() << "pressed";
+    // qDebug() << "pressed";
     emit subWindowFocusActived(m_id);
+
+    event->ignore();
+}
+
+void PLMBaseSubWindow::addDocument(PLMBaseDocument *document) {
+    ui->stackedWidget->addWidget(document);
+    ui->stackedWidget->setCurrentWidget(document);
+
+    // focus update :
+
+
+    connect(document, &PLMBaseDocument::documentFocusActived,
+            [ = ](int id) {
+        Q_UNUSED(id)
+        emit subWindowFocusActived(m_id);
+    });
+}
+
+void PLMBaseSubWindow::setupActions()
+{
+    ui->closeWindowButton->setDefaultAction(ui->actionClose);
+
+
+    connect(ui->actionClose,
+            &QAction::triggered,
+            [ = ]() {
+        emit subWindowClosed(this->id());
+    });
+
+    ui->splitButton->addAction(ui->actionSplitVertically);
+    ui->splitButton->addAction(ui->actionSplitHorizontally);
+
+    connect(ui->actionSplitVertically,
+            &QAction::triggered,
+            [ = ]() {
+        emit splitCalled(Qt::Vertical, this->id());
+    });
+
+    connect(ui->actionSplitHorizontally,
+            &QAction::triggered,
+            [ = ]() {
+        emit splitCalled(Qt::Horizontal, this->id());
+    });
 }

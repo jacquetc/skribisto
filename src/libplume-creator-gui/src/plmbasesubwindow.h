@@ -22,26 +22,29 @@
 #ifndef PLMBASESUBWINDOW_H
 #define PLMBASESUBWINDOW_H
 #include <QMainWindow>
+#include <QMouseEvent>
 #include <QDebug>
+#include "plmbasedocument.h"
 
+namespace Ui {
+class PLMBaseSubWindow;
+}
 class PLMBaseSubWindow : public QMainWindow {
     Q_OBJECT
 
 public:
 
-    PLMBaseSubWindow(QWidget *parent = nullptr);
+    PLMBaseSubWindow(int      id,
+                     QWidget *parent = nullptr);
 
-protected:
-
-    int id() const
-    {
+    ~PLMBaseSubWindow();
+    int id() {
         return m_id;
     }
 
-    void setId(int id)
-    {
-        m_id = id;
-    }
+    void addDocument(PLMBaseDocument *document);
+
+protected:
 
     void mousePressEvent(QMouseEvent *event);
 
@@ -56,6 +59,8 @@ signals:
 private:
 
     int m_id;
+    Ui::PLMBaseSubWindow *ui;
+    void setupActions();
 };
 
 #endif // PLMBASESUBWINDOW_H

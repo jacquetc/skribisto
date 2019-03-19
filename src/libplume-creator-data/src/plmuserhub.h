@@ -59,6 +59,11 @@ public:
                  const QHash<QString, QVariant>& values,
                  int& newId) const;
 
+    PLMError setCurrentDate(int            projectId,
+                            const QString& tableName,
+                            int            id,
+                            const QString& fieldName) const;
+
 signals:
 
     void errorSent(const PLMError& error) const;

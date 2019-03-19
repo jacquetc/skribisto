@@ -26,5 +26,6 @@ RichTextEdit::RichTextEdit(QWidget *parent) : QTextEdit(parent)
 
 void RichTextEdit::mousePressEvent(QMouseEvent *event)
 {
+    QTextEdit::mousePressEvent(event);
     emit focused();
 }

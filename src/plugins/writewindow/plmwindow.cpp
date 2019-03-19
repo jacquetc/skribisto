@@ -6,7 +6,7 @@
 #include <QStatusBar>
 #include <QTimer>
 #include <QToolButton>
-#include <plmwritingwindow.h>
+#include <plmwritedocument.h>
 
 
 PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
@@ -33,6 +33,10 @@ PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
     connect(plmpluginhub, &PLMPluginHub::commandSent, [this](const PLMCommand& command) {
         if (command.cmd ==
             "open_sheet") this->openSheet(command.projectId, command.paperId);
+
+        if (command.cmd ==
+            "open_sheet_on_new_view") this->openSheet(command.projectId, command.paperId,
+                                                      false);
     });
 }
 
@@ -43,8 +47,27 @@ PLMWindow::~PLMWindow()
 
 // -------------------------------------------------------------------
 
-void PLMWindow::openSheet(int projectId, int sheetId)
+void PLMWindow::openSheet(int projectId, int sheetId, bool onNewView)
 {
+    int newId = -1;
+
+    QHash<QString, QVariant> values;
+    plmdata->userHub()->add(projectId, m_windowManager->documentTableName(), values,
+                            newId);
+    PLMWriteDocument *document = new PLMWriteDocument(newId);
+    document->setTextDocument(projectId, sheetId);
+    PLMBaseSubWindow *subWindow;
+
+    if (onNewView) {
+        int callerId  = m_windowManager->getLastFocusedWindow()->id();
+        int newViewId = m_windowManager->addSubWindow(Qt::Horizontal, callerId);
+        subWindow = m_windowManager->getSubWindowById(newViewId);
+    }
+    else {
+        subWindow = m_windowManager->getLastFocusedWindow();
+    }
+    subWindow->addDocument(document);
+
     //    if (!m_windowManager->haveOneWindow("writeWindow")) {
     //        // create new window
     //        PLMBaseSubWindow *subWindow =

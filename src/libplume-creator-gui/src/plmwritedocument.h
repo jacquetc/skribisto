@@ -22,21 +22,23 @@
 #define WRITINGWINDOW_H
 
 #include "plmwritingzone.h"
-#include "plmbasesubwindow.h"
+#include "plmbasedocument.h"
+
 
 namespace Ui {
-class PLMWritingWindow;
+class PLMWriteDocument;
 }
 
-class PLMWritingWindow : public PLMBaseSubWindow {
+class PLMWriteDocument : public PLMBaseDocument {
     Q_OBJECT
 
 public:
 
-    explicit PLMWritingWindow(int id);
-    ~PLMWritingWindow();
-    void addDocument(int projectId,
-                     int paperId);
+    explicit PLMWriteDocument(int documentId);
+    ~PLMWriteDocument();
+
+    void setTextDocument(int projectId,
+                         int sheetId);
 
 signals:
 
@@ -50,7 +52,7 @@ private:
 
 private:
 
-    Ui::PLMWritingWindow *ui;
+    Ui::PLMWriteDocument *ui;
 };
 
 #endif // WRITINGWINDOW_H

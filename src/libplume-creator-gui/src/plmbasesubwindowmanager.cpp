@@ -27,6 +27,7 @@
 #include <QSettings>
 #include <QTimer>
 #include <QHash>
+#include <QApplication>
 
 
 PLMBaseSubWindowManager::PLMBaseSubWindowManager(QBoxLayout    *parentLayout,
@@ -85,7 +86,7 @@ int PLMBaseSubWindowManager::addSplitter(int parentId, Qt::Orientation orientati
         plmdata->userHub()->add(projectId, tableName(), values, newId);
     }
 
-    Widget widget = Widget(tableName(), newId, Widget::Splitter);
+    Widget widget = Widget(tableName(), documentTableName(), newId, Widget::Splitter);
     widget.setParentId(parentId);
     widget.setOrientation(orientation);
     m_widgetList.append(widget);
@@ -97,7 +98,9 @@ int PLMBaseSubWindowManager::addSplitter(int parentId, Qt::Orientation orientati
         for (Widget parentWidget : m_widgetList) {
             if ((parentWidget.id() == parentId) &&
                 (parentWidget.subWindowType() == Widget::Splitter)) {
+                parentWidget.addChildWidget(newId);
                 parentWidget.getSplitter()->addWidget(widget.getSplitter());
+                this->saveWidgetToList(parentWidget);
                 break;
             }
         }
@@ -109,6 +112,27 @@ int PLMBaseSubWindowManager::addSplitter(int parentId, Qt::Orientation orientati
 
 int PLMBaseSubWindowManager::addSubWindow(int parentId)
 {
+    if (parentId == 0) {
+        // can't be directly added to m_parentLayout, so creating a
+        // splitter between. Adapt if one splitter is found
+        int splitterId = -1;
+
+        for (Widget item : m_widgetList) {
+            if ((item.subWindowType() == Widget::Splitter) &&
+                (item.parentId() == 0)) {
+                splitterId = item.id();
+            }
+        }
+
+        if (splitterId == -1) {
+            splitterId = this->addSplitter(0, Qt::Horizontal);
+        }
+        Widget splitterWidget = this->getWidgetById(splitterId);
+        m_parentLayout->addWidget(splitterWidget.getSplitter().data());
+        parentId = splitterId;
+    }
+
+
     int newId = -1;
 
     QHash<QString, QVariant> values;
@@ -117,38 +141,41 @@ int PLMBaseSubWindowManager::addSubWindow(int parentId)
         plmdata->userHub()->add(projectId, tableName(), values, newId);
     }
 
-    Widget widget = Widget(tableName(), newId, Widget::SubWindow);
+    Widget widget = Widget(tableName(), documentTableName(), newId, Widget::SubWindow);
     widget.setParentId(parentId);
     m_widgetList.append(widget);
 
+    // focus update :
 
-    if (parentId == 0) {
-        // can't be directly added to m_parentLayout, so creating a
-        // splitter between. Adapt if one splitter is found
-        int splitterId = -1;
+    connect(widget.getWindow(), &PLMBaseSubWindow::subWindowFocusActived,
+            [ = ](int id) {
+        Widget widget = this->getWidgetById(id);
+        widget.setLastFocused(QDateTime::currentDateTime());
+        this->saveWidgetToList(widget);
+    });
 
-        for (Widget widget : m_widgetList) {
-            if ((widget.subWindowType() == Widget::Splitter) &&
-                (widget.parentId() == 0)) {
-                splitterId = widget.id();
-            }
-        }
+    connect(widget.getWindow(), &PLMBaseSubWindow::subWindowClosed, this,
+            &PLMBaseSubWindowManager::closeSubWindow);
 
-        if (splitterId == -1) {
-            splitterId = this->addSplitter(0, Qt::Horizontal);
-        }
-        Widget splitterWidget = this->getWidgetById(splitterId);
-        m_parentLayout->addWidget(widget.getSplitter());
-        parentId = splitterId;
+    connect(widget.getWindow(),
+            &PLMBaseSubWindow::splitCalled, [this](Qt::Orientation
+                                                   orientation,
+                                                   int parentId) {
+        this->addSubWindow(orientation, parentId);
     }
+            );
+
 
     for (Widget parentWidget : m_widgetList) {
         if ((parentWidget.id() == parentId) &&
             (parentWidget.subWindowType() == Widget::Splitter)) {
+            parentWidget.addChildWidget(newId);
             parentWidget.getSplitter()->addWidget(widget.getWindow());
+            this->saveWidgetToList(parentWidget);
             break;
         }
     }
+
 
     return newId;
 }
@@ -177,33 +204,35 @@ PLMBaseSubWindow * PLMBaseSubWindowManager::getWindowByType(const QString& subWi
     //    return this->addSubWindow(subWindowType, Qt::Horizontal, 0);
 }
 
-// ---------------------------------------------------------
-
-void PLMBaseSubWindowManager::setLastActiveWindowByType(int id)
+PLMBaseSubWindow * PLMBaseSubWindowManager::getLastFocusedWindow()
 {
-    //    QString subWindowType = subWindowTypeById(id);
+    QDateTime date;
+    Widget    widget;
 
-    //    for (const WindowContainer& item : m_windowContainerList) {
-    //        if (item.subWindowType() == subWindowType) {
-    //            WindowContainer clone(item);
+    for (Widget widget : m_widgetList) {
+        if (widget.subWindowType() == Widget::SubWindow) {
+            date = widget.getLastFocused();
+        }
+    }
 
-    //            if (item.id() == id) {
-    //                clone.setIsLastActive(true);
-    //            }
-    //            else {
-    //                clone.setIsLastActive(false);
-    //            }
-    //
-    //
-    //       m_windowContainerList.replace(m_windowContainerList.indexOf(item),
-    // clone);
-    //        }
-    //    }
+    for (Widget item : m_widgetList) {
+        if ((item.getLastFocused() >= date) &&
+            (item.subWindowType() == Widget::SubWindow)) {
+            date   = item.getLastFocused();
+            widget = item;
+        }
+    }
+
+    if (widget.id() != -1) {
+        return widget.getWindow().data();
+    }
+
+    return this->getSubWindowById(addSubWindow(0));
 }
 
 // ---------------------------------------------------------
 
-PLMBaseSubWindow * PLMBaseSubWindowManager::getfirstSubWindow()
+PLMBaseSubWindow * PLMBaseSubWindowManager::getFirstSubWindow()
 {
     for (Widget widget : m_widgetList) {
         if (widget.subWindowType() == Widget::SubWindow) {
@@ -223,14 +252,49 @@ int PLMBaseSubWindowManager::addSubWindow(Qt::Orientation orientation,
     // is a subWindow :
     Widget callerWidget = this->getWidgetById(callerSubWindowId);
 
+    // get parent splitter :
 
-    int newId = this->addSubWindow(callerWidget.parentId());
-
-
-    // set orientation of parent splitter :
     Widget callerWidgetParent = this->getWidgetById(callerWidget.parentId());
+    int    callerIndex        = callerWidgetParent.getChildWidgetList().indexOf(
+        callerWidget.id());
 
-    callerWidgetParent.getSplitter()->setOrientation(orientation);
+    QList<int> callerWidgetParentSplitterSizes = callerWidgetParent.splitterSizes();
+
+    // add new splitter and window
+    int splitterId        = this->addSplitter(callerWidgetParent.id(), orientation);
+    Widget splitterWidget = this->getWidgetById(splitterId);
+
+
+    callerWidgetParent.getSplitter()->insertWidget(callerIndex,
+                                                   splitterWidget.getSplitter());
+
+    callerWidgetParent.replaceChild(callerWidget.id(), splitterId);
+    this->saveWidgetToList(callerWidgetParent);
+
+    callerWidget.setParentId(splitterId);
+    this->saveWidgetToList(callerWidget);
+
+    splitterWidget.getSplitter()->addWidget(callerWidget.getWindow());
+    splitterWidget.addChildWidget(callerWidget.id());
+    this->saveWidgetToList(splitterWidget);
+
+    int newId = this->addSubWindow(splitterId);
+
+    // resize :
+
+    Widget splitterWidgetBis = this->getWidgetById(splitterId);
+
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout,
+            [ = ]()
+    {
+        splitterWidgetBis.balanceChildrenSizes();
+        callerWidgetParent.setSplitterSizes(callerWidgetParentSplitterSizes);
+    }
+            );
+    timer->setSingleShot(true);
+    timer->start(0);
+
 
     return newId;
 
@@ -431,9 +495,7 @@ PLMBaseSubWindow * PLMBaseSubWindowManager::getSubWindowById(int id)
         Widget::SubWindow) return this->getWidgetById(id).getWindow();
 
     // else
-    if (this->haveOneSubWindow()) return this->getfirstSubWindow();
-
-    return
+    return this->getFirstSubWindow();
 }
 
 // ------------------------------------------------------------
@@ -504,7 +566,7 @@ void PLMBaseSubWindowManager::applyUserSettings()
                                                                       tableName(),
                                                                       id,
                                                                       "l_type").value<Widget::SubWindowType>();
-        m_widgetList.append(Widget(tableName(), id, subWindowType));
+        m_widgetList.append(Widget(tableName(), documentTableName(), id, subWindowType));
     }
 
     for (Widget widget : m_widgetList) {
@@ -539,7 +601,7 @@ void PLMBaseSubWindowManager::applyUserSettings()
     }
 
 
-    // if no window saved, create one. And one widget saved means problem
+    // if no window saved, create one. And only one widget saved means problem
     if (result.count() <= 1) this->addSubWindow(0);
 }
 
@@ -649,6 +711,9 @@ void PLMBaseSubWindowManager::applySettings()
 
 void PLMBaseSubWindowManager::closeSubWindow(int id)
 {
+    getWidgetById(id);
+
+
     //    WindowContainer container;
 
     //    for (const WindowContainer& item : m_windowContainerList) {
@@ -816,6 +881,17 @@ int PLMBaseSubWindowManager::getFreeNumber()
     return freeId;
 }
 
+// ---------------------------------------------------------
+
+void PLMBaseSubWindowManager::saveWidgetToList(Widget widget)
+{
+    for (const Widget& item : m_widgetList) {
+        if (item.id() == widget.id()) {
+            m_widgetList.replace(m_widgetList.indexOf(item), widget);
+        }
+    }
+}
+
 // 1V0-2V1-3V1-4H2
 
 // ---------------------------------------------------------
@@ -823,22 +899,38 @@ int PLMBaseSubWindowManager::getFreeNumber()
 // ---------------------------------------------------------
 
 Widget::Widget() {
-    m_tableName = "";
-    m_id        = -1;
+    m_tableName         = "";
+    m_documentTableName = "";
+    m_id                = -1;
+    m_parentId          = -1;
+    m_orientation       = Qt::Horizontal;
+    m_splitterSizes     = QList<int>();
 }
 
-Widget::Widget(const QString& tableName, int id, Widget::SubWindowType type) {
-    m_tableName     = tableName;
-    m_id            = id;
-    m_subWindowType = type;
+Widget::Widget(const QString       & tableName,
+               const QString       & documentTableName,
+               int                   id,
+               Widget::SubWindowType type) {
+    m_orientation   = Qt::Horizontal;
+    m_splitterSizes = QList<int>();
+
+    m_tableName         = tableName;
+    m_documentTableName = documentTableName;
+    m_id                = id;
+    m_subWindowType     = type;
     loadValues();
 }
 
 Widget::Widget(const Widget& otherWidget) {
-    m_id              = otherWidget.id();
-    m_parentId        = otherWidget.parentId();
-    m_subWindowType   = otherWidget.subWindowType();
-    m_childWidgetList = otherWidget.getChildWidgetList();
+    m_id                = otherWidget.id();
+    m_tableName         = otherWidget.tableName();
+    m_documentTableName = otherWidget.documentTableName();
+    m_parentId          = otherWidget.parentId();
+    m_lastFocused       = otherWidget.getLastFocused();
+    m_subWindowType     = otherWidget.subWindowType();
+    m_childWidgetList   = otherWidget.getChildWidgetList();
+    m_orientation       = Qt::Horizontal;
+    m_splitterSizes     = QList<int>();
 
     if (m_subWindowType == SubWindowType::Splitter) {
         m_orientation   = otherWidget.getOrientation();
@@ -854,11 +946,24 @@ Widget::~Widget()
 {}
 
 Widget& Widget::operator=(const Widget& otherWidget) {
-    m_tableName   = otherWidget.tableName();
-    m_id          = otherWidget.id();
-    m_splitter    = otherWidget.getSplitter();
-    m_window      = otherWidget.getWindow();
-    m_orientation = otherWidget.getOrientation();
+    m_tableName         = otherWidget.tableName();
+    m_lastFocused       = otherWidget.getLastFocused();
+    m_parentId          = otherWidget.parentId();
+    m_documentTableName = otherWidget.documentTableName();
+    m_id                = otherWidget.id();
+    m_subWindowType     = otherWidget.subWindowType();
+    m_childWidgetList   = otherWidget.getChildWidgetList();
+
+    if (m_subWindowType == SubWindowType::Splitter) {
+        m_orientation   = otherWidget.getOrientation();
+        m_splitterSizes = otherWidget.splitterSizes();
+        this->setSplitter(otherWidget.getSplitter());
+    }
+    else {
+        this->setWindow(otherWidget.getWindow());
+    }
+
+
     return *this;
 }
 
@@ -951,6 +1056,11 @@ void Widget::addChildWidget(int id)
     }
 }
 
+void Widget::removeChildWidget(int id)
+{
+    m_childWidgetList.removeAll(id);
+}
+
 int Widget::getChildWidgetId(int index) const
 {
     if (m_childWidgetList.count() > index) return m_childWidgetList.at(index);
@@ -968,12 +1078,21 @@ int Widget::getChildCount() const
     return m_childWidgetList.count();
 }
 
+void Widget::replaceChild(int oldId, int newId)
+{
+    int index = m_childWidgetList.indexOf(oldId);
+
+    if (index == -1) return;
+
+    m_childWidgetList.replace(index, newId);
+}
+
 QString Widget::tableName() const
 {
     return m_tableName;
 }
 
-void Widget::setSplitterSizes(const QList<int>sizes)
+void Widget::setSplitterSizes(const QList<int>sizes) const
 {
     if (m_subWindowType == Widget::SubWindow) return;
 
@@ -997,6 +1116,32 @@ QList<int>Widget::splitterSizes() const
     if (m_subWindowType == Widget::SubWindow) return QList<int>();
 
     return m_splitter->sizes();
+}
+
+void Widget::balanceChildrenSizes() const
+{
+    if (!m_splitter) {
+        return;
+    }
+    QList<int> sizes;
+    int splitterSize = 0;
+
+    if (this->getOrientation() == Qt::Vertical) {
+        splitterSize = m_splitter->height();
+    }
+
+    if (this->getOrientation() == Qt::Horizontal) {
+        splitterSize = m_splitter->width();
+    }
+
+    // qDebug() << "splitterSize" << m_splitter->width();
+
+    for (int index = 0; index < m_childWidgetList.count(); ++index) {
+        sizes << splitterSize / m_childWidgetList.count();
+    }
+
+    // qDebug() << "splitterSizeList" << sizes;
+    m_splitter->setSizes(sizes);
 }
 
 void Widget::setSubWindowType(const SubWindowType& type)
@@ -1047,7 +1192,8 @@ void Widget::loadValues()
     if ((m_id == -1) || m_tableName.isEmpty()) return;
 
     QStringList valueList;
-    valueList << "l_type" << "m_children" << "l_parent" << "m_sizes" << "l_orientation";
+    valueList << "l_type" << "dt_last_focused" << "m_children" << "l_parent" <<
+        "m_sizes" << "l_orientation";
 
     QHash<QString, QVariant> result;
 
@@ -1059,6 +1205,11 @@ void Widget::loadValues()
     m_childWidgetList =
         result.value("m_children",
                      QVariant::fromValue(QList<int>())).value<QList<int> >();
+
+    m_lastFocused =
+        result.value("dt_last_focused",
+                     QVariant::fromValue(QDateTime::currentDateTime())).toDateTime();
+
 
     if (m_subWindowType == SubWindowType::Splitter) {
         if (!m_splitter) setSplitter(new QSplitter());
@@ -1076,7 +1227,7 @@ void Widget::loadValues()
         m_splitter->setOrientation(orientation);
     }
     else {
-        if (!m_window) setWindow(new PLMBaseSubWindow());
+        if (!m_window) setWindow(new PLMBaseSubWindow(m_id));
     }
 }
 
@@ -1102,4 +1253,31 @@ void Widget::setOrientation(const Qt::Orientation& orientation)
 Qt::Orientation Widget::getOrientation() const
 {
     return m_orientation;
+}
+
+QString Widget::documentTableName() const
+{
+    return m_documentTableName;
+}
+
+QDateTime Widget::getLastFocused() const
+{
+    return m_lastFocused;
+}
+
+void Widget::setLastFocused(const QDateTime& lastFocused)
+{
+    for (int projectId : plmdata->projectHub()->getProjectIdList()) {
+        PLMError error = plmdata->userHub()->set(projectId,
+                                                 m_tableName,
+                                                 m_id,
+                                                 "dt_last_focused",
+                                                 lastFocused,
+                                                 true);
+
+        if (error) {
+            qDebug() << "error :" << Q_FUNC_INFO;
+        }
+    }
+    m_lastFocused = lastFocused;
 }

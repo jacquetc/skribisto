@@ -30,6 +30,7 @@
 #include <QBoxLayout>
 #include <QSplitter>
 #include <QMetaEnum>
+#include <QDateTime>
 
 class Widget {
     Q_GADGET
@@ -41,6 +42,7 @@ public:
 
     Widget();
     Widget(const QString       & tableName,
+           const QString       & documentTableName,
            int                   id,
            Widget::SubWindowType type);
     Widget(const Widget& otherWidget);
@@ -60,14 +62,17 @@ public:
 
 
     void                      addChildWidget(int id);
-    bool                      childWidgetIsSubWindow(int index) const;
-    bool                      childWidgetIsSplitter(int index) const;
+    void                      removeChildWidget(int id);
     int                       getChildWidgetId(int index) const;
     QList<int>                getChildWidgetList() const;
     int                       getChildCount() const;
+    void                      replaceChild(int oldId,
+                                           int newId);
+    void                      balanceChildrenSizes() const;
 
-    void                      setSplitterSizes(const QList<int>sizes);
+    void                      setSplitterSizes(const QList<int>sizes) const;
     QList<int>                splitterSizes() const;
+
     QString                   tableName() const;
 
     void                      setSubWindowType(const SubWindowType& type);
@@ -85,6 +90,12 @@ public:
 
     Qt::Orientation           getOrientation() const;
 
+    QString                   documentTableName() const;
+
+
+    QDateTime                 getLastFocused() const;
+    void                      setLastFocused(const QDateTime& lastFocused);
+
 private:
 
     int m_parentId;
@@ -96,7 +107,9 @@ private:
     QList<int>m_childWidgetList;
     bool m_isLastActive;
     QString m_tableName;
+    QString m_documentTableName;
     QList<int>m_splitterSizes;
+    QDateTime m_lastFocused;
 };
 Q_DECLARE_METATYPE(Widget)
 
@@ -110,6 +123,10 @@ public:
     ~PLMBaseSubWindowManager();
 
     PLMBaseSubWindow* getWindowByType(const QString& subWindowType);
+    PLMBaseSubWindow* getLastFocusedWindow();
+
+    virtual QString   tableName() const         = 0;
+    virtual QString   documentTableName() const = 0;
 
 signals:
 
@@ -129,20 +146,14 @@ public slots:
 
 protected:
 
-    virtual PLMBaseSubWindow* subWindowByName(const QString& subWindowType,
-                                              int            id) = 0;
-
-    virtual QString           tableName() const = 0;
-
 private slots:
 
     void closeSubWindow(int id);
-    void setLastActiveWindowByType(int id);
 
 private:
 
     bool                  haveOneSubWindow();
-    PLMBaseSubWindow    * getfirstSubWindow();
+    PLMBaseSubWindow    * getFirstSubWindow();
     int                   addSplitter(int             parentId,
                                       Qt::Orientation orientation);
     int                   addSubWindow(int parentId);
@@ -150,6 +161,7 @@ private:
     Widget::SubWindowType getSubWindowTypeById(int id) const;
     Widget                getWidgetById(int id);
     int                   getFreeNumber();
+    void                  saveWidgetToList(Widget widget);
 
     QList<Widget>m_widgetList;
     QBoxLayout *m_parentLayout;

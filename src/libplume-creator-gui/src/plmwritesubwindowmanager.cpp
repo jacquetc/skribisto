@@ -20,21 +20,19 @@
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmwritesubwindowmanager.h"
-#include "plmwritingwindow.h"
+#include "plmwritedocument.h"
 
 PLMWriteSubWindowManager::PLMWriteSubWindowManager(QBoxLayout *parentLayout) :
     PLMBaseSubWindowManager(parentLayout, "writeWindowManager")
 {}
 
-PLMBaseSubWindow * PLMWriteSubWindowManager::subWindowByName(const QString& subWindowType,
-                                                             int            id)
-{
-    if (subWindowType == "writeWindow") return new PLMWritingWindow(id);
-
-    return new PLMBaseSubWindow();
-}
 
 QString PLMWriteSubWindowManager::tableName() const
 {
     return "tbl_user_write_subwindow";
+}
+
+QString PLMWriteSubWindowManager::documentTableName() const
+{
+    return "tbl_user_write_doc_list";
 }

@@ -91,6 +91,20 @@ PLMError PLMUserHub::getMultipleValues(int projectId,
 // ------------------------------------------------------------
 
 
+PLMError PLMUserHub::setCurrentDate(int            projectId,
+                                    const QString& tableName,
+                                    int            id,
+                                    const QString& fieldName) const
+{
+    PLMSqlQueries queries(projectId, tableName);
+    PLMError error = queries.setCurrentDate(id, fieldName);
+
+    return error;
+}
+
+// ------------------------------------------------------------
+
+
 PLMError PLMUserHub::getIds(int projectId, const QString& tableName,
                             QList<int>& result) const
 {

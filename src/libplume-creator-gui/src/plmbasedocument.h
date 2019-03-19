@@ -2,7 +2,7 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmwritesubwindowmanager.h
+*  Filename: plmbasedocument.h
 *                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
@@ -19,21 +19,32 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMWRITESUBWINDOWMANAGER_H
-#define PLMWRITESUBWINDOWMANAGER_H
+#ifndef PLMBASEDOCUMENT_H
+#define PLMBASEDOCUMENT_H
 
-#include "plmbasesubwindowmanager.h"
-#include <QObject>
+#include <QWidget>
 
-class PLMWriteSubWindowManager : public PLMBaseSubWindowManager {
+class PLMBaseDocument : public QWidget {
+    Q_OBJECT
+
 public:
 
-    PLMWriteSubWindowManager(QBoxLayout *parentLayout);
+    explicit PLMBaseDocument(int      documentId,
+                             QWidget *parent = nullptr);
 
-    QString tableName() const;
-    QString documentTableName() const;
+    void setDocumentId(int documentId);
+    int  getDocumentId();
 
-protected:
+signals:
+
+    void documentFocusActived(int id);
+
+public slots:
+
+private:
+
+    int m_documentId;
 };
 
-#endif // PLMWRITESUBWINDOWMANAGER_H
+
+#endif // PLMBASEDOCUMENT_H
