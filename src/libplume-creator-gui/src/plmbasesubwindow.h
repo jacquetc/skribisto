@@ -44,6 +44,10 @@ public:
 
     void addDocument(PLMBaseDocument *document);
 
+public slots:
+
+    void clearProject(int projectId);
+
 protected:
 
     void mousePressEvent(QMouseEvent *event);
@@ -55,11 +59,14 @@ signals:
                      int             id);
 
     void subWindowFocusActived(int id);
+    void documentAdded(int projectId,
+                       int documentId);
 
 private:
 
     int m_id;
     Ui::PLMBaseSubWindow *ui;
+    QList<PLMBaseDocument *>m_documentList;
     void setupActions();
 };
 

@@ -24,7 +24,11 @@
 #include "ui_plmwritedocument.h"
 #include <QTextDocument>
 
-PLMWriteDocument::PLMWriteDocument(int documentId) : PLMBaseDocument(documentId),
+PLMWriteDocument::PLMWriteDocument(int              projectId,
+                                   int              documentId,
+                                   PLMDocumentList *documentList) : PLMBaseDocument(
+        projectId,
+        documentId),
     ui(new Ui::PLMWriteDocument)
 {
     ui->setupUi(this);
@@ -46,11 +50,29 @@ PLMWriteDocument::~PLMWriteDocument()
 
 void PLMWriteDocument::setTextDocument(int projectId, int sheetId)
 {
-    QTextDocument *document =
+    QTextDocument *textDocument =
         new QTextDocument(plmdata->sheetHub()->getContent(projectId, sheetId), this);
 
-    ui->writingZone->setTextDocument(document);
+    ui->writingZone->setTextDocument(textDocument);
+
+    m_textDocument = textDocument;
+}
+
+QTextDocument * PLMWriteDocument::getTextDocument() const
+{
+    return m_textDocument;
 }
 
 void PLMWriteDocument::setupActions()
 {}
+
+
+int PLMWriteDocument::getCursorPosition()
+{
+    return ui->writingZone->getCursorPosition();
+}
+
+void PLMWriteDocument::setCursorPosition(int value)
+{
+    ui->writingZone->setCursorPosition(value);
+}

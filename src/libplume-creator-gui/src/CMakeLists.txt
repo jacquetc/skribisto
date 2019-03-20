@@ -24,6 +24,7 @@ plmbasesubwindowmanager.cpp
 plmbasesubwindow.cpp
 plmwritesubwindowmanager.cpp
 plmbasedocument.cpp
+plmdocumentlist.cpp
 )
 set(gui_HDR
 global.h
@@ -42,6 +43,7 @@ plmbasesubwindowmanager.h
 plmwritesubwindowmanager.h
 plmbasesubwindow.h
 plmbasedocument.h
+plmdocumentlist.h
 
 )
 

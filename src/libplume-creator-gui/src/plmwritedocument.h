@@ -23,6 +23,7 @@
 
 #include "plmwritingzone.h"
 #include "plmbasedocument.h"
+#include "plmdocumentlist.h"
 
 
 namespace Ui {
@@ -34,11 +35,18 @@ class PLMWriteDocument : public PLMBaseDocument {
 
 public:
 
-    explicit PLMWriteDocument(int documentId);
+    explicit PLMWriteDocument(int              projectId,
+                              int              documentId,
+                              PLMDocumentList *documentList);
     ~PLMWriteDocument();
 
-    void setTextDocument(int projectId,
-                         int sheetId);
+    void           setTextDocument(int projectId,
+                                   int sheetId);
+
+    int            getCursorPosition();
+    void           setCursorPosition(int value);
+
+    QTextDocument* getTextDocument() const;
 
 signals:
 
@@ -53,6 +61,7 @@ private:
 private:
 
     Ui::PLMWriteDocument *ui;
+    QTextDocument *m_textDocument;
 };
 
 #endif // WRITINGWINDOW_H

@@ -48,6 +48,9 @@ public:
     PLMError             getError();
     bool                 isThereAnyOpenedProject();
 
+    int                  getDefaultProject();
+    void                 setDefaultProject(int defaultProject);
+
 
     QList<int>           projectsNotSaved();
     QList<int>           projectsNotYetSavedOnce();
@@ -91,6 +94,7 @@ private:
     PLMError m_error;
     QList<int>m_projectsNotYetSavedOnceList, m_projectsNotSavedList;
     QString m_tableName;
+    int m_defaultProject;
 };
 
 #endif // PLMPROJECTHUB_H

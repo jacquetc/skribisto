@@ -46,6 +46,8 @@ void PLMBaseSubWindow::addDocument(PLMBaseDocument *document) {
     ui->stackedWidget->addWidget(document);
     ui->stackedWidget->setCurrentWidget(document);
 
+    m_documentList.append(document);
+
     // focus update :
 
 
@@ -54,12 +56,25 @@ void PLMBaseSubWindow::addDocument(PLMBaseDocument *document) {
         Q_UNUSED(id)
         emit subWindowFocusActived(m_id);
     });
+
+    emit documentAdded(document->getProjectId(), document->getDocumentId());
+}
+
+void PLMBaseSubWindow::clearProject(int projectId)
+{
+    QMutableListIterator<PLMBaseDocument *> i(m_documentList);
+
+    while (i.hasNext()) {
+        if (i.next()->getProjectId() == projectId) {
+            i.next()->deleteLater();
+            i.remove();
+        }
+    }
 }
 
 void PLMBaseSubWindow::setupActions()
 {
     ui->closeWindowButton->setDefaultAction(ui->actionClose);
-
 
     connect(ui->actionClose,
             &QAction::triggered,
@@ -68,13 +83,14 @@ void PLMBaseSubWindow::setupActions()
     });
 
     ui->splitButton->addAction(ui->actionSplitVertically);
-    ui->splitButton->addAction(ui->actionSplitHorizontally);
 
     connect(ui->actionSplitVertically,
             &QAction::triggered,
             [ = ]() {
         emit splitCalled(Qt::Vertical, this->id());
     });
+
+    ui->splitButton->addAction(ui->actionSplitHorizontally);
 
     connect(ui->actionSplitHorizontally,
             &QAction::triggered,

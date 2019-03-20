@@ -29,11 +29,21 @@ class PLMBaseDocument : public QWidget {
 
 public:
 
-    explicit PLMBaseDocument(int      documentId,
+    explicit PLMBaseDocument(int      projectId,
+                             int      documentId,
                              QWidget *parent = nullptr);
 
     void setDocumentId(int documentId);
     int  getDocumentId();
+
+
+    int  getProjectId() const;
+
+    ///
+    /// \brief setProjectId
+    /// \param value
+    /// default : -1 , meaning not project-specific;
+    void setProjectId(int value);
 
 signals:
 
@@ -44,6 +54,7 @@ public slots:
 private:
 
     int m_documentId;
+    int projectId;
 };
 
 

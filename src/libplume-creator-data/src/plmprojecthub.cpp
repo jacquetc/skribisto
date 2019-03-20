@@ -172,6 +172,23 @@ bool PLMProjectHub::isThereAnyOpenedProject()
     return true;
 }
 
+void PLMProjectHub::setDefaultProject(int defaultProject)
+{
+    m_defaultProject = defaultProject;
+}
+
+int PLMProjectHub::getDefaultProject()
+{
+    if (!this->getProjectIdList().contains(m_defaultProject)) {
+        m_defaultProject = this->getProjectIdList().first();
+    }
+
+    if (this->getProjectIdList().count() == 1) {
+        m_defaultProject = this->getProjectIdList().first();
+    }
+    return m_defaultProject;
+}
+
 void PLMProjectHub::setError(const PLMError& error)
 {
     m_error = error;

@@ -155,6 +155,16 @@ void PLMWritingZone::setTextDocument(QTextDocument *textDocument)
     ui->richTextEdit->setDocument(textDocument);
 }
 
+int PLMWritingZone::getCursorPosition()
+{
+    return ui->richTextEdit->textCursor().position();
+}
+
+void PLMWritingZone::setCursorPosition(int value)
+{
+    ui->richTextEdit->textCursor().setPosition(value);
+}
+
 void PLMWritingZone::setHtmlText(const QString& htmlText)
 {
     m_htmlText = htmlText;

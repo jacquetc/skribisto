@@ -74,6 +74,9 @@ public:
     QTextDocument* textDocument();
     void           setTextDocument(QTextDocument *textDocument);
 
+    int            getCursorPosition();
+    void           setCursorPosition(int value);
+
     // virtual QImage image(const QString& imageName) const = 0;
 
 signals:

@@ -19,12 +19,6 @@ public:
 
 public slots:
 
-    void openSheet(int  projectId,
-                   int  sheetId,
-                   bool onNewView = false);
-    void closeSheet(int projectId,
-                    int sheetId);
-
 protected:
 
     //    void focusInEvent(QFocusEvent *event);

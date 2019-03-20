@@ -134,7 +134,6 @@ public slots:
 
     int               addSubWindow(Qt::Orientation orientation,
                                    int             callerSubWindowId);
-    PLMBaseSubWindow* getSubWindowById(int id);
 
     void              applySettings();
     void              writeSettings();
@@ -143,6 +142,7 @@ public slots:
     void              clear();
 
     void              writeUserSettingsOnOtherProjects();
+    PLMBaseSubWindow* getSubWindowById(int id);
 
 protected:
 
@@ -152,16 +152,19 @@ private slots:
 
 private:
 
-    bool                  haveOneSubWindow();
-    PLMBaseSubWindow    * getFirstSubWindow();
-    int                   addSplitter(int             parentId,
-                                      Qt::Orientation orientation);
-    int                   addSubWindow(int parentId);
+    virtual void             afterApplyUserSetting(int projectId)     = 0;
+    virtual PLMBaseDocument* getDocument(const QString& documentType) = 0;
 
-    Widget::SubWindowType getSubWindowTypeById(int id) const;
-    Widget                getWidgetById(int id);
-    int                   getFreeNumber();
-    void                  saveWidgetToList(Widget widget);
+    bool                     haveOneSubWindow();
+    PLMBaseSubWindow       * getFirstSubWindow();
+    int                      addSplitter(int             parentId,
+                                         Qt::Orientation orientation);
+    int                      addSubWindow(int parentId);
+
+    Widget::SubWindowType    getSubWindowTypeById(int id) const;
+    Widget                   getWidgetById(int id);
+    int                      getFreeNumber();
+    void                     saveWidgetToList(Widget widget);
 
     QList<Widget>m_widgetList;
     QBoxLayout *m_parentLayout;

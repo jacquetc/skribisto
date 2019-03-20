@@ -165,7 +165,6 @@ int PLMBaseSubWindowManager::addSubWindow(int parentId)
     }
             );
 
-
     for (Widget parentWidget : m_widgetList) {
         if ((parentWidget.id() == parentId) &&
             (parentWidget.subWindowType() == Widget::Splitter)) {
@@ -602,27 +601,33 @@ void PLMBaseSubWindowManager::applyUserSettings()
 
 
     // if no window saved, create one. And only one widget saved means problem
-    if (result.count() <= 1) this->addSubWindow(0);
+    if (result.count() <= 1) {
+        this->addSubWindow(0);
+        return;
+    }
+
+    this->afterApplyUserSetting(projectId);
 }
 
 void PLMBaseSubWindowManager::clear()
 {
-    for (Widget widget : m_widgetList) {
-        if (widget.parentId() == 0) widget.getSplitter()->close();
-        widget.getSplitter()->deleteLater();
-    }
-    m_widgetList.clear();
+    //    for (Widget widget : m_widgetList) {
+    //        if (widget.parentId() == 0) widget.getSplitter()->close();
+    //        widget.getSplitter()->deleteLater();
+    //    }
+    //    m_widgetList.clear();
 }
 
 // ------------------------------------------------------------
 
 void PLMBaseSubWindowManager::writeUserSettingsOnOtherProjects()
 {
-    for (Widget widget : m_widgetList) {
-        if (widget.parentId() == 0) widget.getSplitter()->close();
-        widget.getSplitter()->deleteLater();
-    }
-    m_widgetList.clear();
+    // TODO :
+    //    for (Widget widget : m_widgetList) {
+    //        if (widget.parentId() == 0) widget.getSplitter()->close();
+    //        widget.getSplitter()->deleteLater();
+    //    }
+    //    m_widgetList.clear();
 }
 
 // ------------------------------------------------------------
