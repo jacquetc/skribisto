@@ -24,8 +24,9 @@
 // #include "plmsheetmodel.h"
 
 #include <QtCore>
+#include "global_core.h"
 
-class PLMSheetItem {
+class EXPORT_CORE PLMSheetItem {
     Q_GADGET
 
 public:

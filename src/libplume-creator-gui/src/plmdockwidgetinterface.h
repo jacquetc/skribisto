@@ -30,9 +30,10 @@
 
 // #include "plminterfacesettings.h"
 #include "plmbasedockwidget.h"
+#include "global.h"
 
 
-class PLMDockWidgetInterface : public PLMBaseInterface /*: public
+class EXPORT_GUI PLMDockWidgetInterface : public PLMBaseInterface /*: public
                                                           PLMInterfaceSettings
                                                         */
 {

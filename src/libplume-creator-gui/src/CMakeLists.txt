@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.1.0)
 # Populate a CMake variable with the sources
 
 project(plume-creator-gui)
+add_definitions(-DPLUME_CREATOR_GUI_LIBRARY)
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets CONFIG REQUIRED)
 find_package(Qt5QuickCompiler)
@@ -19,12 +20,10 @@ plmmessagehandler.cpp
 plmsidemainbar.cpp
 plmbasedockwidget.cpp
 plmstyle.cpp
-plmwritedocument.cpp
 plmbasesubwindowmanager.cpp
-plmbasesubwindow.cpp
-plmwritesubwindowmanager.cpp
+plmsubwindow.cpp
 plmbasedocument.cpp
-plmdocumentlist.cpp
+plmtextdocumentlist.cpp
 )
 set(gui_HDR
 global.h
@@ -38,12 +37,10 @@ plmbasedockwidget.h
 plmguiinterface.h
 plmdockwidgetinterface.h
 plmstyle.h
-plmwritedocument.h
 plmbasesubwindowmanager.h
-plmwritesubwindowmanager.h
-plmbasesubwindow.h
+plmsubwindow.h
 plmbasedocument.h
-plmdocumentlist.h
+plmtextdocumentlist.h
 
 )
 
@@ -53,7 +50,6 @@ set(gui_UI
     plmbasedockheader.ui
     plmbasedockbody.ui
     plmbasesubwindow.ui
-    plmwritedocument.ui
 
 )
 

@@ -9,16 +9,22 @@ find_package(Qt5QuickCompiler)
 set(writewindow_SRCS
     plmwritewindow.cpp
     plmwindow.cpp
+    plmwritesubwindowmanager.cpp
+    plmwritedocument.cpp
 )
 set(writewindow_HDR
     plmwritewindow.h
     plmwindow.h
     plugininterface.h
+    plmwritesubwindowmanager.h
+    plmwritedocument.h
 )
 
-#set(writewindow_UI
+set(writewindow_UI
 #    plmwindow.ui
-#    )
+plmwritedocument.ui
+    )
+
 set(writewindow_OTHER
     plmwritewindow.json
     )

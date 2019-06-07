@@ -12,7 +12,7 @@ class PLMWindow;
 
 class PLMWindow : public PLMBaseWindow {
     Q_OBJECT
-
+  friend class WelcomeWindowCase;
 public:
 
     explicit PLMWindow(QWidget       *parent,

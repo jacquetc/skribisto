@@ -38,7 +38,6 @@ PLMBaseWindow * PLMWelcomeWindow::window()
     PLMWindow *window = new PLMWindow(nullptr, m_name);
 
     // window->setProperty("name", m_name);
-    window->setWindowTitle(tr("Welcome"));
 
     return window;
 }

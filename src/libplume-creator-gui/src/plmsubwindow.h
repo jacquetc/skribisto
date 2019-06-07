@@ -2,7 +2,7 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmwritesubwindowmanager.h
+*  Filename: plmbasesubwindow.h
 *                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
@@ -19,39 +19,58 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMWRITESUBWINDOWMANAGER_H
-#define PLMWRITESUBWINDOWMANAGER_H
+#ifndef PLMBASESUBWINDOW_H
+#define PLMBASESUBWINDOW_H
+#include <QMainWindow>
+#include <QMouseEvent>
+#include <QDebug>
+#include "plmbasedocument.h"
+#include "global.h"
 
-#include "plmbasesubwindowmanager.h"
-#include "plmdocumentlist.h"
-#include <QObject>
+namespace Ui {
+class PLMBaseSubWindow;
+}
+class EXPORT_GUI PLMSubWindow : public QMainWindow {
+    Q_OBJECT
 
-class PLMWriteSubWindowManager : public PLMBaseSubWindowManager {
 public:
 
-    PLMWriteSubWindowManager(QBoxLayout *parentLayout);
+    PLMSubWindow(int      id,
+                 QWidget *parent = nullptr);
 
-    QString tableName() const;
-    QString documentTableName() const;
+    ~PLMSubWindow();
+    int id() {
+        return m_id;
+    }
 
+    void addDocument(PLMBaseDocument *document);
+    bool setCurrentDocument(int projectId,
+                            int documentId);
 
-    void    openSheet(int  projectId,
-                      int  sheetId,
-                      bool onNewView = false);
-    void    closeSheet(int projectId,
-                       int sheetId);
+public slots:
 
-    void    closeDocument(int projectId,
-                          int documentId);
+    void clearProject(int projectId);
 
 protected:
 
+    void mousePressEvent(QMouseEvent *event);
+
+signals:
+
+    void subWindowClosed(int id);
+    void splitCalled(Qt::Orientation orientation,
+                     int             id);
+
+    void subWindowFocusActived(int id);
+    void documentAdded(int projectId,
+                       int documentId);
+
 private:
 
-    void             afterApplyUserSetting(int projectId);
-    PLMBaseDocument* getDocument(const QString& documentType);
-
-    PLMDocumentList *m_documentList;
+    int m_id;
+    Ui::PLMBaseSubWindow *ui;
+    QList<PLMBaseDocument *>m_documentList;
+    void setupActions();
 };
 
-#endif // PLMWRITESUBWINDOWMANAGER_H
+#endif // PLMBASESUBWINDOW_H

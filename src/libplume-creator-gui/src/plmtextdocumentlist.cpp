@@ -19,16 +19,17 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#include "plmdocumentlist.h"
+#include "plmtextdocumentlist.h"
 #include <QDebug>
 
-PLMDocumentList::PLMDocumentList(QObject *parent, const QString& tableName) : QObject(
+PLMTextDocumentList::PLMTextDocumentList(QObject       *parent,
+                                         const QString& tableName) : QObject(
         parent)
 {}
 
 
-QTextDocument * PLMDocumentList::getTextDocument(int projectId,
-                                                 int paperId, int plmBaseDocumentId)
+QTextDocument * PLMTextDocumentList::getTextDocument(int projectId,
+                                                     int paperId, int plmBaseDocumentId)
 {
     QPair<int, int> wholePaperId(projectId, paperId);
     QPair<int, int> wholeDocId(projectId, plmBaseDocumentId);
@@ -47,13 +48,18 @@ QTextDocument * PLMDocumentList::getTextDocument(int projectId,
     textDocument->setProperty("paperId",   paperId);
     m_textDocumentList.append(textDocument);
     m_subscribedHash.insert(wholePaperId, wholeDocId);
+
+    return textDocument;
 }
 
-bool            PLMDocumentList::contains(int projectId, int paperId)
-{}
+bool PLMTextDocumentList::contains(int projectId, int paperId)
+{
+    QPair<int, int> wholePaperId(projectId, paperId);
+    return m_subscribedHash.contains(wholePaperId);
+}
 
-QTextDocument * PLMDocumentList::getTextDocumentFromPaperId(const QPair<int,
-                                                                        int>& wholePaperId)
+QTextDocument * PLMTextDocumentList::getTextDocumentFromPaperId(const QPair<int,
+                                                                            int>& wholePaperId)
 {
     for (QTextDocument *textDocument : m_textDocumentList) {
         if ((wholePaperId.first == textDocument->property("projectId").toInt()) &&

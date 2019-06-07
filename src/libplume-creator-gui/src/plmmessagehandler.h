@@ -23,6 +23,7 @@
 
 #include <QObject>
 #include <QString>
+#include "global.h"
 
 class PLMMessageHandler : public QObject
 {

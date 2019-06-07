@@ -20,21 +20,18 @@ using namespace std;
 #include "plmpluginloader.h"
 #include "plmdata.h"
 
-
-#if FORCEQML == 0
 # include "documenthandler.h"
 
 # include <QtWidgets/QProxyStyle>
 # include <QtWidgets/QSplashScreen>
 # include <QtWidgets/QStyleFactory>
-
+#
 # include "plmutils.h"
 # include "plmmainwindow.h"
 # include "plmsheetlistmodel.h"
-
+#
 # include <QQmlDebuggingEnabler>
 
-#endif // if FORCEQML
 // -------------------------------------------------------
 void startCore()
 {

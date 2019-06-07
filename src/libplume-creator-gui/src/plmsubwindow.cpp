@@ -19,10 +19,10 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#include "plmbasesubwindow.h"
+#include "plmsubwindow.h"
 #include "ui_plmbasesubwindow.h"
 
-PLMBaseSubWindow::PLMBaseSubWindow(int id, QWidget *parent) : QMainWindow(parent),
+PLMSubWindow::PLMSubWindow(int id, QWidget *parent) : QMainWindow(parent),
     m_id(id), ui(
         new Ui::PLMBaseSubWindow) {
     ui->setupUi(this);
@@ -30,19 +30,19 @@ PLMBaseSubWindow::PLMBaseSubWindow(int id, QWidget *parent) : QMainWindow(parent
     this->setupActions();
 }
 
-PLMBaseSubWindow::~PLMBaseSubWindow()
+PLMSubWindow::~PLMSubWindow()
 {
     delete ui;
 }
 
-void PLMBaseSubWindow::mousePressEvent(QMouseEvent *event) {
+void PLMSubWindow::mousePressEvent(QMouseEvent *event) {
     // qDebug() << "pressed";
     emit subWindowFocusActived(m_id);
 
     event->ignore();
 }
 
-void PLMBaseSubWindow::addDocument(PLMBaseDocument *document) {
+void PLMSubWindow::addDocument(PLMBaseDocument *document) {
     ui->stackedWidget->addWidget(document);
     ui->stackedWidget->setCurrentWidget(document);
 
@@ -60,7 +60,23 @@ void PLMBaseSubWindow::addDocument(PLMBaseDocument *document) {
     emit documentAdded(document->getProjectId(), document->getDocumentId());
 }
 
-void PLMBaseSubWindow::clearProject(int projectId)
+bool PLMSubWindow::setCurrentDocument(int projectId, int documentId)
+{
+    bool success = false;
+
+    for (PLMBaseDocument *document : m_documentList) {
+        if ((document->getProjectId() == projectId) &&
+            (document->getDocumentId() == documentId)) {
+            ui->stackedWidget->setCurrentWidget(document);
+            document->setFocus();
+            success = true;
+        }
+    }
+
+    return success;
+}
+
+void PLMSubWindow::clearProject(int projectId)
 {
     QMutableListIterator<PLMBaseDocument *> i(m_documentList);
 
@@ -72,7 +88,7 @@ void PLMBaseSubWindow::clearProject(int projectId)
     }
 }
 
-void PLMBaseSubWindow::setupActions()
+void PLMSubWindow::setupActions()
 {
     ui->closeWindowButton->setDefaultAction(ui->actionClose);
 

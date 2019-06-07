@@ -24,11 +24,12 @@
 
 #include <QDockWidget>
 #include <QObject>
+#include "global.h"
 
 // #include "plmbasedockwidget.h"
 #include "plmdockwidgetinterface.h"
 
-struct PLMWidgetContainer : public QObject
+struct EXPORT_GUI PLMWidgetContainer : public QObject
 {
     Q_OBJECT
 

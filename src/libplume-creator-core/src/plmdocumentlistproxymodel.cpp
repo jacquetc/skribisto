@@ -2,7 +2,8 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: writingwindow.h                                                   *
+*  Filename: plmdocumentslistproxymodel.cpp
+*                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
 *  Plume Creator is free software: you can redistribute it and/or modify  *
@@ -18,50 +19,7 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef WRITINGWINDOW_H
-#define WRITINGWINDOW_H
+#include "plmdocumentlistproxymodel.h"
 
-#include "plmwritingzone.h"
-#include "plmbasedocument.h"
-#include "plmdocumentlist.h"
-
-
-namespace Ui {
-class PLMWriteDocument;
-}
-
-class PLMWriteDocument : public PLMBaseDocument {
-    Q_OBJECT
-
-public:
-
-    explicit PLMWriteDocument(int              projectId,
-                              int              documentId,
-                              PLMDocumentList *documentList);
-    ~PLMWriteDocument();
-
-    void           setTextDocument(int projectId,
-                                   int sheetId);
-
-    int            getCursorPosition();
-    void           setCursorPosition(int value);
-
-    QTextDocument* getTextDocument() const;
-
-signals:
-
-public slots:
-
-private slots:
-
-private:
-
-    void setupActions();
-
-private:
-
-    Ui::PLMWriteDocument *ui;
-    QTextDocument *m_textDocument;
-};
-
-#endif // WRITINGWINDOW_H
+PLMDocumentListProxyModel::PLMDocumentListProxyModel(QObject *parent) : QObject(parent)
+{}

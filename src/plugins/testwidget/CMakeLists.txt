@@ -43,7 +43,7 @@ set(testwidget_OTHER
 # Tell CMake to create the executable
 add_library(testwidget SHARED ${testwidget_SRCS} ${testwidget_HDR} ${testwidget_UI} ${testwidget_OTHER})
 #${RESOURCES}
-target_link_libraries(testwidget plume-creator-data plume-creator-core)
+target_link_libraries(testwidget plume-creator-gui plume-creator-data plume-creator-core)
 
 qt5_use_modules(testwidget Core Quick Gui Widgets)
 include_directories(

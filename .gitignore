@@ -90,3 +90,6 @@ CMakeLists.txt.user
 
 #plume
 .~lock.*
+
+#cmake
+CMakeLists.txt.user.*

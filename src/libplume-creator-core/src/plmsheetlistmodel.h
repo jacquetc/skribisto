@@ -3,11 +3,12 @@
 
 #include <QAbstractListModel>
 #include "plmdata.h"
+#include "global_core.h"
 
 
 
 
-struct PLMSheetListItem
+struct EXPORT_CORE PLMSheetListItem
 {
     Q_GADGET
 
@@ -34,7 +35,7 @@ private:
 
 
 
-class PLMSheetListModel : public QAbstractListModel
+class EXPORT_CORE PLMSheetListModel : public QAbstractListModel
 {
     Q_OBJECT
 

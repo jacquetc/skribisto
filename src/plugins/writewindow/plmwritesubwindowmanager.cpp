@@ -26,7 +26,10 @@
 PLMWriteSubWindowManager::PLMWriteSubWindowManager(QBoxLayout *parentLayout) :
     PLMBaseSubWindowManager(parentLayout, "writeWindowManager")
 {
-    m_documentList = new PLMDocumentList(this, tableName());
+    m_documentListModel = plmmodels->documentsListModel();
+    m_documentListModel->addTableName(this->documentTableName());
+
+    m_textDocumentList = new PLMTextDocumentList(this, tableName());
 
 
     connect(plmpluginhub, &PLMPluginHub::commandSent, [this](const PLMCommand& command) {
@@ -91,18 +94,20 @@ void PLMWriteSubWindowManager::afterApplyUserSetting(int projectId)
         }
 
         // get Widget :
-        PLMBaseSubWindow *subWindow = this->getSubWindowById(subWindowId);
-        PLMBaseDocument  *document;
+        PLMSubWindow *subWindow = this->getSubWindowById(subWindowId);
+        PLMBaseDocument *document;
 
         // create document
         if (type == "write_document") {
             int sheetId   = result.value("l_sheet_code", QVariant(-1)).toInt();
             int cursorPos = result.value("l_cursor_pos", QVariant(0)).toInt();
 
-            document = new PLMWriteDocument(projectId, documentId, m_documentList);
+            document = new PLMWriteDocument(projectId,
+                                            sheetId,
+                                            documentId,
+                                            m_textDocumentList);
 
             PLMWriteDocument *writeDocument = static_cast<PLMWriteDocument *>(document);
-            writeDocument->setTextDocument(projectId, sheetId);
             writeDocument->setCursorPosition(cursorPos);
         }
         else {
@@ -125,27 +130,108 @@ PLMBaseDocument * PLMWriteSubWindowManager::getDocument(const QString& documentT
 
 void PLMWriteSubWindowManager::openSheet(int projectId, int sheetId, bool onNewView)
 {
-    int newId = -1;
+    // verify if document already created and not asked to open explicitely on a
+    // new view
+    if (m_textDocumentList->contains(projectId, sheetId) && !onNewView) {
+        if (m_documentListModel->getSubWindowIdList(projectId, sheetId).isEmpty()) {
+            qDebug() << "error :" << Q_FUNC_INFO << "getSubWindowId isEmpty";
+            return;
+        }
+        int subWindowId =
+            m_documentListModel->getSubWindowIdList(projectId, sheetId).first();
 
-    QHash<QString, QVariant> values;
-    PLMError error = plmdata->userHub()->add(projectId,
-                                             this->documentTableName(),
-                                             values,
-                                             newId);
+        PLMSubWindow *subWindow      = this->getSubWindowById(subWindowId);
+        QList<int>    documentIdList = m_documentListModel->getDocumentId(projectId,
+                                                                          sheetId,
+                                                                          subWindowId);
 
-    PLMWriteDocument *document = new PLMWriteDocument(projectId, newId, m_documentList);
-    document->setTextDocument(projectId, sheetId);
-    PLMBaseSubWindow *subWindow;
+        if (documentIdList.isEmpty()) {
+            qDebug() << "error :" << Q_FUNC_INFO << "documentIdList isEmpty";
+            return;
+        }
 
-    if (onNewView) {
-        int callerId  = this->getLastFocusedWindow()->id();
-        int newViewId = this->addSubWindow(Qt::Horizontal, callerId);
-        subWindow = this->getSubWindowById(newViewId);
+        int  documentId = documentIdList.first();
+        bool success    = subWindow->setCurrentDocument(projectId, documentId);
+
+        if (!success) {
+            qDebug() << "error :" << Q_FUNC_INFO << "setCurrentDocument";
+            return;
+        }
     }
+
+    // else create one
     else {
-        subWindow = this->getLastFocusedWindow();
+        int newId = -1;
+
+        QHash<QString, QVariant> values;
+        values.insert("t_type", QVariant("writeWindow"));
+        PLMError error = plmdata->userHub()->add(projectId,
+                                                 this->documentTableName(),
+                                                 values,
+                                                 newId);
+
+        if (error) {
+            qDebug() << "error :" << Q_FUNC_INFO << "add";
+            return;
+        }
+
+        PLMWriteDocument *document =
+            new PLMWriteDocument(projectId, sheetId, newId, m_textDocumentList);
+        PLMSubWindow *subWindow;
+
+        if (onNewView) {
+            int callerId  = this->getLastFocusedWindow()->id();
+            int newViewId = this->addSubWindow(Qt::Horizontal, callerId);
+            subWindow = this->getSubWindowById(newViewId);
+        }
+        else {
+            subWindow = this->getLastFocusedWindow();
+        }
+        subWindow->addDocument(document);
+
+        int documentId = newId;
+
+        // save subwindow in db
+        plmdata->userHub()->set(projectId,
+                                this->documentTableName(),
+                                documentId,
+                                "l_subwindow",
+                                subWindow->id(),
+                                true);
+
+        if (error) {
+            qDebug() << "error :" << Q_FUNC_INFO << "set subWindow";
+            return;
+        }
+
+        // save paperId in db
+        plmdata->userHub()->set(projectId,
+                                this->documentTableName(),
+                                documentId,
+                                "l_paper_code",
+                                sheetId,
+                                true);
+
+        if (error) {
+            qDebug() << "error :" << Q_FUNC_INFO << "set paperId";
+            return;
+        }
+
+        // save paperId in db
+        QString title = plmdata->sheetHub()->getTitle(projectId, sheetId);
+        plmdata->userHub()->set(projectId,
+                                this->documentTableName(),
+                                documentId,
+                                "t_name",
+                                title,
+                                true);
+
+        if (error) {
+            qDebug() << "error :" << Q_FUNC_INFO << "set title";
+            return;
+        }
     }
-    subWindow->addDocument(document);
+
 
     //    if (!m_windowManager->haveOneWindow("writeWindow")) {
     //        // create new window

@@ -10,6 +10,7 @@ PLMWindow::PLMWindow(QWidget *parent, const QString& name) :
     ui(new Ui::PLMWindow)
 {
     ui->setupUi(this);
+    this->setWindowTitle(tr("Welcome"));
 
     this->setDockNestingEnabled(false);
 

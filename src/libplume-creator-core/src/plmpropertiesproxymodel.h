@@ -22,8 +22,9 @@
 #define PLMPROPERTIESPROXYMODEL_H
 
 #include <QObject>
+#include "global_core.h"
 
-class PLMPropertiesProxyModel : public QObject
+class EXPORT_CORE PLMPropertiesProxyModel : public QObject
 {
     Q_OBJECT
 public:

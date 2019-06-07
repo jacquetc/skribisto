@@ -49,12 +49,11 @@ QVariant PLMSheetListModel::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid()) return QVariant();
 
-    int row    = index.row();
-    int column = index.column();
+    int row = index.row();
 
 
-    int projectId = m_allPapers[row].projectId;
-    int paperId   = m_allPapers[row].paperId;
+    int projectId = m_allPapers.at(row).projectId;
+    int paperId   = m_allPapers.at(row).paperId;
 
     if (role == Qt::DisplayRole) {
         return plmdata->sheetHub()->getTitle(projectId, paperId);

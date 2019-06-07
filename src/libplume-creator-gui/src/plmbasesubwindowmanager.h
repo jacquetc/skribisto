@@ -22,7 +22,8 @@
 #ifndef PLMSUBWINDOWMANAGER_H
 #define PLMSUBWINDOWMANAGER_H
 
-#include "plmbasesubwindow.h"
+#include "plmsubwindow.h"
+#include "global.h"
 
 #include <QObject>
 #include <QPointer>
@@ -32,7 +33,7 @@
 #include <QMetaEnum>
 #include <QDateTime>
 
-class Widget {
+class EXPORT_GUI Widget {
     Q_GADGET
 
 public:
@@ -47,61 +48,61 @@ public:
            Widget::SubWindowType type);
     Widget(const Widget& otherWidget);
     ~Widget();
-    bool                      operator!() const;
-    Widget                  & operator=(const Widget& otherWidget);
-    bool                      operator==(const Widget& otherWidget) const;
+    bool                  operator!() const;
+    Widget              & operator=(const Widget& otherWidget);
+    bool                  operator==(const Widget& otherWidget) const;
 
-    int                       parentId() const;
-    void                      setParentId(int value);
+    int                   parentId() const;
+    void                  setParentId(int value);
 
-    int                       id() const;
-    void                      setId(int value);
+    int                   id() const;
+    void                  setId(int value);
 
-    QString                   name() const;
-    bool                      setName(const QString& name);
-
-
-    void                      addChildWidget(int id);
-    void                      removeChildWidget(int id);
-    int                       getChildWidgetId(int index) const;
-    QList<int>                getChildWidgetList() const;
-    int                       getChildCount() const;
-    void                      replaceChild(int oldId,
-                                           int newId);
-    void                      balanceChildrenSizes() const;
-
-    void                      setSplitterSizes(const QList<int>sizes) const;
-    QList<int>                splitterSizes() const;
-
-    QString                   tableName() const;
-
-    void                      setSubWindowType(const SubWindowType& type);
-    SubWindowType             subWindowType() const;
-
-    QPointer<PLMBaseSubWindow>getWindow() const;
-    void                      setWindow(const QPointer<PLMBaseSubWindow>& window);
-
-    QPointer<QSplitter>       getSplitter() const;
-    void                      setSplitter(const QPointer<QSplitter>& splitter);
-
-    void                      loadValues();
-
-    void                      setOrientation(const Qt::Orientation& orientation);
-
-    Qt::Orientation           getOrientation() const;
-
-    QString                   documentTableName() const;
+    QString               name() const;
+    bool                  setName(const QString& name);
 
 
-    QDateTime                 getLastFocused() const;
-    void                      setLastFocused(const QDateTime& lastFocused);
+    void                  addChildWidget(int id);
+    void                  removeChildWidget(int id);
+    int                   getChildWidgetId(int index) const;
+    QList<int>            getChildWidgetList() const;
+    int                   getChildCount() const;
+    void                  replaceChild(int oldId,
+                                       int newId);
+    void                  balanceChildrenSizes() const;
+
+    void                  setSplitterSizes(const QList<int>sizes) const;
+    QList<int>            splitterSizes() const;
+
+    QString               tableName() const;
+
+    void                  setSubWindowType(const SubWindowType& type);
+    SubWindowType         subWindowType() const;
+
+    QPointer<PLMSubWindow>getWindow() const;
+    void                  setWindow(const QPointer<PLMSubWindow>& window);
+
+    QPointer<QSplitter>   getSplitter() const;
+    void                  setSplitter(const QPointer<QSplitter>& splitter);
+
+    void                  loadValues();
+
+    void                  setOrientation(const Qt::Orientation& orientation);
+
+    Qt::Orientation       getOrientation() const;
+
+    QString               documentTableName() const;
+
+
+    QDateTime             getLastFocused() const;
+    void                  setLastFocused(const QDateTime& lastFocused);
 
 private:
 
     int m_parentId;
     int m_id;
     Qt::Orientation m_orientation;
-    QPointer<PLMBaseSubWindow>m_window;
+    QPointer<PLMSubWindow>m_window;
     QPointer<QSplitter>m_splitter;
     SubWindowType m_subWindowType;
     QList<int>m_childWidgetList;
@@ -122,27 +123,27 @@ public:
                                      const QString& objectName);
     ~PLMBaseSubWindowManager();
 
-    PLMBaseSubWindow* getWindowByType(const QString& subWindowType);
-    PLMBaseSubWindow* getLastFocusedWindow();
+    PLMSubWindow  * getWindowByType(const QString& subWindowType);
+    PLMSubWindow  * getLastFocusedWindow();
 
-    virtual QString   tableName() const         = 0;
-    virtual QString   documentTableName() const = 0;
+    virtual QString tableName() const         = 0;
+    virtual QString documentTableName() const = 0;
 
 signals:
 
 public slots:
 
-    int               addSubWindow(Qt::Orientation orientation,
-                                   int             callerSubWindowId);
+    int           addSubWindow(Qt::Orientation orientation,
+                               int             callerSubWindowId);
 
-    void              applySettings();
-    void              writeSettings();
+    void          applySettings();
+    void          writeSettings();
 
-    void              applyUserSettings();
-    void              clear();
+    void          applyUserSettings();
+    void          clear();
 
-    void              writeUserSettingsOnOtherProjects();
-    PLMBaseSubWindow* getSubWindowById(int id);
+    void          writeUserSettingsOnOtherProjects();
+    PLMSubWindow* getSubWindowById(int id);
 
 protected:
 
@@ -156,7 +157,7 @@ private:
     virtual PLMBaseDocument* getDocument(const QString& documentType) = 0;
 
     bool                     haveOneSubWindow();
-    PLMBaseSubWindow       * getFirstSubWindow();
+    PLMSubWindow           * getFirstSubWindow();
     int                      addSplitter(int             parentId,
                                          Qt::Orientation orientation);
     int                      addSubWindow(int parentId);

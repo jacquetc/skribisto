@@ -24,7 +24,7 @@ Minimap::Minimap(QWidget *parent) : QGraphicsView(parent)
 {
 }
 
-Cursor::Cursor(QGraphicsItem *parent) : QGraphicsObject(parent)
+MCursor::MCursor(QGraphicsItem *parent) : QGraphicsObject(parent)
 {
     m_width = 10;
     m_height = 10;
@@ -32,7 +32,7 @@ Cursor::Cursor(QGraphicsItem *parent) : QGraphicsObject(parent)
     m_minimapHeight = 1;
     m_docHeight = 1;
     m_posRatio = 1;
-    m_graphicsView = Q_NULLPTR;
+    m_graphicsView = nullptr;
     this->setCursor(Qt::OpenHandCursor);
     this->setFlag(QGraphicsItem::ItemIsMovable, true);
 }

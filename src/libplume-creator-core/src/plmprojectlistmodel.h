@@ -22,8 +22,9 @@
 #define PLMPROJECTLISTMODEL_H
 
 #include <QAbstractListModel>
+#include "global_core.h"
 
-class PLMProjectListModel : public QAbstractListModel
+class EXPORT_CORE PLMProjectListModel : public QAbstractListModel
 {
     Q_OBJECT
 

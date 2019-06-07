@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.1.0)
 # Populate a CMake variable with the sources
 
 project(plume-creator-data)
+add_definitions(-DPLUME_CREATOR_DATA_LIBRARY)
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core Network Sql CONFIG REQUIRED)
 

@@ -26,10 +26,11 @@
 #include "plmsidemainbar.h"
 #include "plmbasedockwidget.h"
 #include "plmcoreinterface.h"
+#include "global.h"
 
 #include <QString>
 
-class PLMWindowInterface : public PLMBaseInterface {
+class EXPORT_GUI PLMWindowInterface : public PLMBaseInterface {
 public:
 
     virtual ~PLMWindowInterface() {}

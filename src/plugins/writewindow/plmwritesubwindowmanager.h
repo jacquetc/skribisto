@@ -2,7 +2,7 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmdocumentlist.h
+*  Filename: plmwritesubwindowmanager.h
 *                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
@@ -19,36 +19,42 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMDOCUMENTLIST_H
-#define PLMDOCUMENTLIST_H
+#ifndef PLMWRITESUBWINDOWMANAGER_H
+#define PLMWRITESUBWINDOWMANAGER_H
 
+#include "plmbasesubwindowmanager.h"
+#include "plmtextdocumentlist.h"
+#include <plmdocumentlistmodel.h>
+#include "plmmodels.h"
 #include <QObject>
-#include <QTextDocument>
 
-class PLMDocumentList : public QObject {
-    Q_OBJECT
-
+class PLMWriteSubWindowManager : public PLMBaseSubWindowManager {
 public:
 
-    explicit PLMDocumentList(QObject       *parent,
-                             const QString& tableName);
+    PLMWriteSubWindowManager(QBoxLayout *parentLayout);
 
-    QTextDocument* getTextDocument(int projectId,
-                                   int paperId,
-                                   int plmBaseDocumentId);
-    bool           contains(int projectId,
-                            int paperId);
+    QString tableName() const;
+    QString documentTableName() const;
 
-signals:
 
-public slots:
+    void    openSheet(int  projectId,
+                      int  sheetId,
+                      bool onNewView = false);
+    void    closeSheet(int projectId,
+                       int sheetId);
+
+    void    closeDocument(int projectId,
+                          int documentId);
+
+protected:
 
 private:
 
-    QTextDocument* getTextDocumentFromPaperId(const QPair<int, int>& wholePaperId);
+    void             afterApplyUserSetting(int projectId);
+    PLMBaseDocument* getDocument(const QString& documentType);
 
-    QList<QTextDocument *>m_textDocumentList;
-    QMultiHash<QPair<int, int>, QPair<int, int> >m_subscribedHash;
+    PLMTextDocumentList *m_textDocumentList;
+    PLMDocumentListModel *m_documentListModel;
 };
 
-#endif // PLMDOCUMENTLIST_H
+#endif // PLMWRITESUBWINDOWMANAGER_H

@@ -22,8 +22,9 @@
 #define PLMNOTEMODEL_H
 
 #include <QAbstractItemModel>
+#include "global_core.h"
 
-class PLMNoteModel : public QAbstractItemModel
+class EXPORT_CORE PLMNoteModel : public QAbstractItemModel
 {
     Q_OBJECT
 

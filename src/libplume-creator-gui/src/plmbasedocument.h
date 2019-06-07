@@ -23,8 +23,9 @@
 #define PLMBASEDOCUMENT_H
 
 #include <QWidget>
+#include "global.h"
 
-class PLMBaseDocument : public QWidget {
+class EXPORT_GUI PLMBaseDocument : public QWidget {
     Q_OBJECT
 
 public:

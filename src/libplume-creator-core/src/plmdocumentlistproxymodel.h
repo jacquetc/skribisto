@@ -2,7 +2,7 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: plmbasesubwindow.h
+*  Filename: plmdocumentslistproxymodel.h
 *                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
@@ -19,55 +19,22 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMBASESUBWINDOW_H
-#define PLMBASESUBWINDOW_H
-#include <QMainWindow>
-#include <QMouseEvent>
-#include <QDebug>
-#include "plmbasedocument.h"
+#ifndef PLMDOCUMENTSLISTPROXYMODEL_H
+#define PLMDOCUMENTSLISTPROXYMODEL_H
 
-namespace Ui {
-class PLMBaseSubWindow;
-}
-class PLMBaseSubWindow : public QMainWindow {
+#include <QObject>
+#include "global_core.h"
+
+class EXPORT_CORE PLMDocumentListProxyModel : public QObject {
     Q_OBJECT
 
 public:
 
-    PLMBaseSubWindow(int      id,
-                     QWidget *parent = nullptr);
-
-    ~PLMBaseSubWindow();
-    int id() {
-        return m_id;
-    }
-
-    void addDocument(PLMBaseDocument *document);
-
-public slots:
-
-    void clearProject(int projectId);
-
-protected:
-
-    void mousePressEvent(QMouseEvent *event);
+    explicit PLMDocumentListProxyModel(QObject *parent = nullptr);
 
 signals:
 
-    void subWindowClosed(int id);
-    void splitCalled(Qt::Orientation orientation,
-                     int             id);
-
-    void subWindowFocusActived(int id);
-    void documentAdded(int projectId,
-                       int documentId);
-
-private:
-
-    int m_id;
-    Ui::PLMBaseSubWindow *ui;
-    QList<PLMBaseDocument *>m_documentList;
-    void setupActions();
+public slots:
 };
 
-#endif // PLMBASESUBWINDOW_H
+#endif // PLMDOCUMENTSLISTPROXYMODEL_H

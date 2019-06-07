@@ -23,9 +23,10 @@
 
 #include <QAbstractItemModel>
 #include "plmsheetitem.h"
+#include "global_core.h"
 
 
-class PLMSheetModel : public QAbstractItemModel {
+class EXPORT_CORE PLMSheetModel : public QAbstractItemModel {
     Q_OBJECT
 
 public:

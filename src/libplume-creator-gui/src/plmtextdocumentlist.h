@@ -2,7 +2,7 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@plume-creator.eu                                        *
 *                                                                         *
-*  Filename: writingwindow.cpp
+*  Filename: plmdocumentlist.h
 *                                                  *
 *  This file is part of Plume Creator.                                    *
 *                                                                         *
@@ -19,60 +19,38 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#include "plmwritedocument.h"
-#include "plmdata.h"
-#include "ui_plmwritedocument.h"
+#ifndef PLMDOCUMENTLIST_H
+#define PLMDOCUMENTLIST_H
+
+#include <QObject>
 #include <QTextDocument>
+#include "global.h"
 
-PLMWriteDocument::PLMWriteDocument(int              projectId,
-                                   int              documentId,
-                                   PLMDocumentList *documentList) : PLMBaseDocument(
-        projectId,
-        documentId),
-    ui(new Ui::PLMWriteDocument)
-{
-    ui->setupUi(this);
+class PLMTextDocumentList : public QObject {
+    Q_OBJECT
 
-    ui->writingZone->setHasMinimap(false);
-    ui->writingZone->setIsResizable(true);
+public:
 
-    connect(ui->writingZone, &PLMWritingZone::focused, [this]() {
-        emit documentFocusActived(this->getDocumentId());
-    });
+    explicit PLMTextDocumentList(QObject       *parent,
+                                 const QString& tableName);
 
-    this->setupActions();
-}
+    QTextDocument* getTextDocument(int projectId,
+                                   int paperId,
+                                   int plmBaseDocumentId);
 
-PLMWriteDocument::~PLMWriteDocument()
-{
-    delete ui;
-}
+    bool contains(int projectId,
+                  int paperId);
 
-void PLMWriteDocument::setTextDocument(int projectId, int sheetId)
-{
-    QTextDocument *textDocument =
-        new QTextDocument(plmdata->sheetHub()->getContent(projectId, sheetId), this);
+signals:
 
-    ui->writingZone->setTextDocument(textDocument);
+public slots:
 
-    m_textDocument = textDocument;
-}
+private:
 
-QTextDocument * PLMWriteDocument::getTextDocument() const
-{
-    return m_textDocument;
-}
+    QTextDocument* getTextDocumentFromPaperId(const QPair<int, int>& wholePaperId);
 
-void PLMWriteDocument::setupActions()
-{}
+    QList<QTextDocument *>m_textDocumentList;
+    QMultiHash<QPair<int, int>, QPair<int, int> >m_subscribedHash;
+};
 
-
-int PLMWriteDocument::getCursorPosition()
-{
-    return ui->writingZone->getCursorPosition();
-}
-
-void PLMWriteDocument::setCursorPosition(int value)
-{
-    ui->writingZone->setCursorPosition(value);
-}
+#endif // PLMDOCUMENTLIST_H

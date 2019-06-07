@@ -5,6 +5,7 @@
 #include "plmpluginloader.h"
 #include "plmguiinterface.h"
 #include "plmdockwidgetinterface.h"
+#include "global.h"
 
 namespace PLMGuiPlugins {
 void addGuiPlugins()

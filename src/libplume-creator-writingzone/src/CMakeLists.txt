@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.1.0)
 # Populate a CMake variable with the sources
 
 project(plume-creator-writingzone)
+add_definitions(-DPLUME_CREATOR_WRITINGZONE_LIBRARY)
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets CONFIG REQUIRED)
 find_package(Qt5QuickCompiler)

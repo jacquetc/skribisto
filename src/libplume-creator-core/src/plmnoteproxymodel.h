@@ -22,8 +22,9 @@
 #define PLMNOTEPROXYMODEL_H
 
 #include <QObject>
+#include "global_core.h"
 
-class PLMNoteProxyModel : public QObject
+class EXPORT_CORE PLMNoteProxyModel : public QObject
 {
     Q_OBJECT
 public:

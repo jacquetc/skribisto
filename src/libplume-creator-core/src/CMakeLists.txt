@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.1.0)
 # Populate a CMake variable with the sources
 
 project(plume-creator-core)
+add_definitions(-DPLUME_CREATOR_CORE_LIBRARY)
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core CONFIG REQUIRED)
 
@@ -17,23 +18,24 @@ set(core_SRCS
     plmnotemodel.cpp
     plmnoteproxymodel.cpp
 plmprojectlistmodel.cpp
-plmdocumentslistmodel.cpp
-plmdocumentslistproxymodel.cpp
+plmdocumentlistmodel.cpp
+plmdocumentlistproxymodel.cpp
 plmpropertiesmodel.cpp
 plmpropertiesproxymodel.cpp
 plmsheetitem.cpp
 plmmodels.cpp
 )
 set(core_HDR
-
+    global_core.h
     plmsheetmodel.h
     plmsheetproxymodel.h
     plmsheetmodel.h
+    plmsheetlistmodel.h
     plmnotemodel.h
     plmnoteproxymodel.h
 plmprojectlistmodel.h
-plmdocumentslistmodel.h
-plmdocumentslistproxymodel.h
+plmdocumentlistmodel.h
+plmdocumentlistproxymodel.h
 plmpropertiesmodel.h
 plmpropertiesproxymodel.h
 plmsheetitem.h

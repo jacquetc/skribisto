@@ -22,6 +22,7 @@
 #define PLMSTYLE_H
 
 #include <QProxyStyle>
+#include "global.h"
 
 
 class PLMStyle : public QProxyStyle {

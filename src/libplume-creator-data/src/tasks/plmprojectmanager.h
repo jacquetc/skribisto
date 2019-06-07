@@ -5,11 +5,12 @@
 
 #include "sql/plmproject.h"
 #include "plmerror.h"
+#include "plume_creator_data_global.h"
 
 #define plmProjectManager PLMProjectManager::instance()
 
 
-class PLMProjectManager : public QObject
+class EXPORT PLMProjectManager : public QObject
 {
     Q_OBJECT
 public:

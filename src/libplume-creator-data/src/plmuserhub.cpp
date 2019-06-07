@@ -99,6 +99,13 @@ PLMError PLMUserHub::setCurrentDate(int            projectId,
     PLMSqlQueries queries(projectId, tableName);
     PLMError error = queries.setCurrentDate(id, fieldName);
 
+    IFKO(error) {
+        queries.rollback();
+    }
+    IFOK(error) {
+        queries.commit();
+    }
+
     return error;
 }
 
@@ -124,6 +131,14 @@ PLMError PLMUserHub::add(int                    projectId,
 {
     PLMSqlQueries queries(projectId, tableName);
     PLMError error = queries.add(values, newId);
+
+    IFKO(error) {
+        queries.rollback();
+    }
+    IFOK(error) {
+        queries.commit();
+        emit userDataAdded(projectId, tableName, newId);
+    }
 
     return error;
 }

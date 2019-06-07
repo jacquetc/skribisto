@@ -22,8 +22,9 @@
 #define PLMPROPERTIESMODEL_H
 
 #include <QAbstractItemModel>
+#include "global_core.h"
 
-class PLMPropertiesModel : public QAbstractItemModel
+class EXPORT_CORE PLMPropertiesModel : public QAbstractItemModel
 {
     Q_OBJECT
 

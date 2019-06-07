@@ -21,14 +21,16 @@
 #ifndef PLMMODELS_H
 #define PLMMODELS_H
 
+#include "plmdocumentlistmodel.h"
 #include "plmsheetmodel.h"
 #include "plmsheetproxymodel.h"
+#include "global_core.h"
 
 #include <QObject>
 
 #define plmmodels PLMModels::instance()
 
-class PLMModels : public QObject {
+class EXPORT_CORE PLMModels : public QObject {
     Q_OBJECT
 
 public:
@@ -40,8 +42,10 @@ public:
         return m_instance;
     }
 
-    PLMSheetModel     * sheetModel();
-    PLMSheetProxyModel* sheetProxyModel();
+    PLMSheetModel       * sheetModel();
+    PLMSheetProxyModel  * sheetProxyModel();
+
+    PLMDocumentListModel* documentsListModel();
 
 signals:
 
@@ -53,6 +57,8 @@ private:
 
     PLMSheetModel *m_sheetModel;
     PLMSheetProxyModel *m_sheetProxyModel;
+
+    PLMDocumentListModel *m_documentsListModel;
 };
 
 #endif // PLMMODELS_H

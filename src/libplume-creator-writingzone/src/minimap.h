@@ -40,11 +40,11 @@ public:
     TextBrowser(QWidget *parent);
 };
 
-class Cursor : public QGraphicsObject
+class MCursor : public QGraphicsObject
 {
 
 public:
-    Cursor(QGraphicsItem *parent = Q_NULLPTR);
+    MCursor(QGraphicsItem *parent = nullptr);
 
 private:
     int m_width;

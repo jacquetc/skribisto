@@ -52,3 +52,4 @@ include_directories(
         "${CMAKE_SOURCE_DIR}/src/libplume-creator-gui/src/"
         "${CMAKE_SOURCE_DIR}/src/libplume-creator-core/src/"
         )
+add_subdirectory(tests)

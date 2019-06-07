@@ -67,6 +67,9 @@ public:
 signals:
 
     void errorSent(const PLMError& error) const;
+    void userDataAdded(int     projectId,
+                       QString tableName,
+                       int     newId) const;
 
 public slots:
 

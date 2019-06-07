@@ -46,7 +46,7 @@ set(sheettree_OTHER
 # Tell CMake to create the executable
 add_library(sheettreewidget SHARED ${sheettree_SRCS} ${sheettree_HDR} ${sheettree_UI} ${sheettree_OTHER})
 #${RESOURCES}
-target_link_libraries(sheettreewidget plume-creator-data plume-creator-core)
+target_link_libraries(sheettreewidget plume-creator-gui plume-creator-data plume-creator-core)
 
 qt5_use_modules(sheettreewidget Core Quick Gui Widgets)
 include_directories(

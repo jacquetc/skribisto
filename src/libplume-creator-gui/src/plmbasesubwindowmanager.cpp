@@ -81,6 +81,7 @@ int PLMBaseSubWindowManager::addSplitter(int parentId, Qt::Orientation orientati
     int newId = -1;
 
     QHash<QString, QVariant> values;
+    values.insert("l_type", QVariant(Widget::Splitter));
 
     for (int projectId : plmdata->projectHub()->getProjectIdList()) {
         plmdata->userHub()->add(projectId, tableName(), values, newId);
@@ -136,6 +137,7 @@ int PLMBaseSubWindowManager::addSubWindow(int parentId)
     int newId = -1;
 
     QHash<QString, QVariant> values;
+    values.insert("l_type", QVariant(Widget::SubWindow));
 
     for (int projectId : plmdata->projectHub()->getProjectIdList()) {
         plmdata->userHub()->add(projectId, tableName(), values, newId);
@@ -147,20 +149,20 @@ int PLMBaseSubWindowManager::addSubWindow(int parentId)
 
     // focus update :
 
-    connect(widget.getWindow(), &PLMBaseSubWindow::subWindowFocusActived,
+    connect(widget.getWindow(), &PLMSubWindow::subWindowFocusActived,
             [ = ](int id) {
         Widget widget = this->getWidgetById(id);
         widget.setLastFocused(QDateTime::currentDateTime());
         this->saveWidgetToList(widget);
     });
 
-    connect(widget.getWindow(), &PLMBaseSubWindow::subWindowClosed, this,
+    connect(widget.getWindow(), &PLMSubWindow::subWindowClosed, this,
             &PLMBaseSubWindowManager::closeSubWindow);
 
     connect(widget.getWindow(),
-            &PLMBaseSubWindow::splitCalled, [this](Qt::Orientation
-                                                   orientation,
-                                                   int parentId) {
+            &PLMSubWindow::splitCalled, [this](Qt::Orientation
+                                               orientation,
+                                               int parentId) {
         this->addSubWindow(orientation, parentId);
     }
             );
@@ -184,7 +186,7 @@ int PLMBaseSubWindowManager::addSubWindow(int parentId)
 /// \param subWindowType
 /// \return
 /// get the one with focus else get the first. Else create one subwindow
-PLMBaseSubWindow * PLMBaseSubWindowManager::getWindowByType(const QString& subWindowType)
+PLMSubWindow * PLMBaseSubWindowManager::getWindowByType(const QString& subWindowType)
 {
     //    QList<PLMBaseSubWindow *> list;
 
@@ -203,7 +205,7 @@ PLMBaseSubWindow * PLMBaseSubWindowManager::getWindowByType(const QString& subWi
     //    return this->addSubWindow(subWindowType, Qt::Horizontal, 0);
 }
 
-PLMBaseSubWindow * PLMBaseSubWindowManager::getLastFocusedWindow()
+PLMSubWindow * PLMBaseSubWindowManager::getLastFocusedWindow()
 {
     QDateTime date;
     Widget    widget;
@@ -231,7 +233,7 @@ PLMBaseSubWindow * PLMBaseSubWindowManager::getLastFocusedWindow()
 
 // ---------------------------------------------------------
 
-PLMBaseSubWindow * PLMBaseSubWindowManager::getFirstSubWindow()
+PLMSubWindow * PLMBaseSubWindowManager::getFirstSubWindow()
 {
     for (Widget widget : m_widgetList) {
         if (widget.subWindowType() == Widget::SubWindow) {
@@ -488,7 +490,7 @@ int PLMBaseSubWindowManager::addSubWindow(Qt::Orientation orientation,
     //    return window;
 }
 
-PLMBaseSubWindow * PLMBaseSubWindowManager::getSubWindowById(int id)
+PLMSubWindow * PLMBaseSubWindowManager::getSubWindowById(int id)
 {
     if (this->getSubWindowTypeById(id) ==
         Widget::SubWindow) return this->getWidgetById(id).getWindow();
@@ -1172,12 +1174,12 @@ Widget::SubWindowType Widget::subWindowType() const
     return m_subWindowType;
 }
 
-QPointer<PLMBaseSubWindow>Widget::getWindow() const
+QPointer<PLMSubWindow>Widget::getWindow() const
 {
     return m_window;
 }
 
-void Widget::setWindow(const QPointer<PLMBaseSubWindow>& window)
+void Widget::setWindow(const QPointer<PLMSubWindow>& window)
 {
     m_window = window;
 }
@@ -1232,7 +1234,7 @@ void Widget::loadValues()
         m_splitter->setOrientation(orientation);
     }
     else {
-        if (!m_window) setWindow(new PLMBaseSubWindow(m_id));
+        if (!m_window) setWindow(new PLMSubWindow(m_id));
     }
 }
 
