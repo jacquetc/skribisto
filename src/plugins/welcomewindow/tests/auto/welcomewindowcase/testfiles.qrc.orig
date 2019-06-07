@@ -1,0 +1,9 @@
+<<<<<<< develop
+<RCC>
+    <qresource prefix="/testfiles"/>
+</RCC>
+=======
+<RCC>
+    <qresource prefix="/testfiles"/>
+</RCC>
+>>>>>>> Add welcomewindow plugin test
