@@ -36,7 +36,7 @@ class EXPORT PLMPaperHub : public QObject {
 public:
 
     // settings
-    enum Setting { SplitterState, Minimap, Fit, SpellCheck, StackState, WindowState };
+    enum Setting { SplitterState, Minimap, Fit, SpellCheck, StackState, WindowState, SettingDate };
     Q_ENUM(Setting)
     enum Stack { Zero, One };
     Q_ENUM(Stack)

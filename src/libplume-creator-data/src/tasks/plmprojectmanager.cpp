@@ -124,9 +124,10 @@ PLMError PLMProjectManager::closeProject(int projectId)
 
     // the project deletion is done outside PLMProject() so the QSqlDatabase is
     // out of scope
+    {
     delete project;
     QSqlDatabase::removeDatabase(QString::number(projectId));
-    QSqlDatabase::removeDatabase("user_" + QString::number(projectId));
+    }
     error.setSuccess(true);
     return error;
 }

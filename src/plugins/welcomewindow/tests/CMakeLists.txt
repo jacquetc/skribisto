@@ -1,1 +1,1 @@
-add_subdirectory(auto/welcomewindowcase)
+#add_subdirectory(auto/welcomewindowcase)

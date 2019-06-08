@@ -1057,7 +1057,7 @@ PLMError PLMPaperHub::settings_setStackSetting(PLMPaperHub::Stack   stack,
             error = setSetting(projectId, "m_window_state", value, true);
         }
 
-        if (setting == PLMPaperHub::Date) {
+        if (setting == PLMPaperHub::SettingDate) {
             error = setSetting(projectId, "dt_updated", value, true);
         }
 
@@ -1124,7 +1124,7 @@ QVariant PLMPaperHub::settings_getStackSetting(PLMPaperHub::Stack   stack,
         value = getSetting(projectId, "m_window_state");
     }
 
-    if (setting == PLMPaperHub::Date) {
+    if (setting == PLMPaperHub::SettingDate) {
         value = getSetting(projectId, "dt_updated");
     }
 

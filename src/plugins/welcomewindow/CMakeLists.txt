@@ -44,7 +44,7 @@ set(welcomewindow_OTHER
 # Tell CMake to create the executable
 add_library(welcomewindow SHARED ${welcomewindow_SRCS} ${welcomewindow_HDR} ${welcomewindow_UI} ${welcomewindow_OTHER})
 #${RESOURCES}
-target_link_libraries(welcomewindow plume-creator-data)
+target_link_libraries(welcomewindow plume-creator-data plume-creator-gui)
 
 qt5_use_modules(welcomewindow Core Quick Gui Widgets)
 include_directories(
