@@ -1,0 +1,9 @@
+<<<<<<< develop
+TEMPLATE = subdirs
+
+SUBDIRS += auto
+=======
+TEMPLATE = subdirs
+
+SUBDIRS += auto
+>>>>>>> Add welcomewindow plugin test

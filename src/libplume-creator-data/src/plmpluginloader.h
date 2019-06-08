@@ -11,9 +11,9 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include "plume_creator_data_global.h"
-#include <string>
-#include <cstdlib>
-#include <cxxabi.h>
+//#include <string>
+//#include <cstdlib>
+//#include <cxxabi.h>
 
 struct EXPORT PLMPlugin {
     PLMPlugin() {}

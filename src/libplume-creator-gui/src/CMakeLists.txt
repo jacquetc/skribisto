@@ -76,7 +76,7 @@ qt5_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
 add_library(plume-creator-gui SHARED ${gui_SRCS} ${gui_HDR} ${gui_UI} ${QRC} ${RESOURCES})
-target_link_libraries(plume-creator-gui plume-creator-data plume-creator-core plume-creator-writingzone)
+target_link_libraries(plume-creator-gui plume-creator-data plume-creator-core)
 
 qt5_use_modules(plume-creator-gui Core Quick Network Gui Widgets)
 include_directories(
