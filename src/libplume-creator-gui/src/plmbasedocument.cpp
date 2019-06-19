@@ -21,9 +21,9 @@
 ***************************************************************************/
 #include "plmbasedocument.h"
 
-PLMBaseDocument::PLMBaseDocument(int projectId, int documentId,
+PLMBaseDocument::PLMBaseDocument(int projectId, int documentId, const QString &documentType, const QString documentTableName,
                                  QWidget *parent) : QWidget(parent),
-    m_documentId(documentId), projectId(projectId)
+    m_documentId(documentId), m_projectId(projectId), m_documentType(documentType), m_documentTableName(documentTableName)
 {}
 
 void PLMBaseDocument::setDocumentId(int documentId)
@@ -36,12 +36,22 @@ int PLMBaseDocument::getDocumentId()
     return m_documentId;
 }
 
+QString PLMBaseDocument::getDocumentType() const
+{
+    return m_documentType;
+}
+
 int PLMBaseDocument::getProjectId() const
 {
-    return projectId;
+    return m_projectId;
 }
 
 void PLMBaseDocument::setProjectId(int value)
 {
-    projectId = value;
+    m_projectId = value;
+}
+
+QString PLMBaseDocument::getDocumentTableName() const
+{
+    return m_documentTableName;
 }

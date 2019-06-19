@@ -19,6 +19,7 @@ set(core_SRCS
     plmnoteproxymodel.cpp
 plmprojectlistmodel.cpp
 plmdocumentlistmodel.cpp
+plmwritedocumentlistmodel.cpp
 plmdocumentlistproxymodel.cpp
 plmpropertiesmodel.cpp
 plmpropertiesproxymodel.cpp
@@ -35,6 +36,7 @@ set(core_HDR
     plmnoteproxymodel.h
 plmprojectlistmodel.h
 plmdocumentlistmodel.h
+plmwritedocumentlistmodel.h
 plmdocumentlistproxymodel.h
 plmpropertiesmodel.h
 plmpropertiesproxymodel.h

@@ -67,7 +67,7 @@ public:
         LasFocusedDateRole = Qt::UserRole + 10
     };
 
-    explicit PLMDocumentListModel(QObject *parent = nullptr);
+    explicit PLMDocumentListModel(QObject *parent, const QString &tableName);
 
     // Header:
     QVariant headerData(int             section,
@@ -92,18 +92,16 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
 
-    // Remove data:
-    bool removeRows(int                row,
-                    int                count,
-                    const QModelIndex& parent = QModelIndex()) override;
-
-    void                  addTableName(const QString& tableName);
     QHash<int, QByteArray>roleNames() const override;
     QList<int>            getSubWindowIdList(int projectId,
                                              int paperId);
     QList<int>            getDocumentId(int projectId,
                                         int paperId,
                                         int subWindowId);
+    QList<int>            getDocumentIdEverywhere(int projectId,
+                                        int paperId);
+
+protected slots:
 
 private slots:
 
@@ -113,11 +111,19 @@ private slots:
     void addDocument(int            projectId,
                      const QString& tableName,
                      int            documentId);
+    void removeDocument(int            projectId,
+                        const QString& tableName,
+                        int            documentId);
+    void modifyDocument(int            projectId,
+                        const QString& tableName,
+                        int            documentId,
+                        const QString& fieldName);
+
 
 private:
 
     QVariant m_headerData;
-    QStringList m_tableNames;
+    QString m_tableName;
     QList<PLMDocumentListItem>m_allDocuments;
 };
 

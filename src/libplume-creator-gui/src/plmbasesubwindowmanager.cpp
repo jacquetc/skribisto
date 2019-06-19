@@ -21,6 +21,7 @@
 ***************************************************************************/
 #include "plmbasesubwindowmanager.h"
 #include "plmdata.h"
+#include "plmmodels.h"
 
 #include <QVariant>
 #include <QDebug>
@@ -37,6 +38,7 @@ PLMBaseSubWindowManager::PLMBaseSubWindowManager(QBoxLayout    *parentLayout,
     qRegisterMetaType<QList<Widget> >("QList<WindowContainer>");
 
     this->setObjectName(objectName);
+
 
 
     //    WindowContainer container;
@@ -497,6 +499,21 @@ PLMSubWindow * PLMBaseSubWindowManager::getSubWindowById(int id)
 
     // else
     return this->getFirstSubWindow();
+}
+
+// ------------------------------------------------------------
+
+QList<PLMSubWindow *> PLMBaseSubWindowManager::getAllSubWindows() const
+{
+    QList<PLMSubWindow *> subWindowList;
+    Widget    widget;
+
+    for (Widget widget : m_widgetList) {
+        if (widget.subWindowType() == Widget::SubWindow) {
+            subWindowList.append(widget.getWindow());
+        }
+    }
+    return subWindowList;
 }
 
 // ------------------------------------------------------------
@@ -1234,7 +1251,11 @@ void Widget::loadValues()
         m_splitter->setOrientation(orientation);
     }
     else {
-        if (!m_window) setWindow(new PLMSubWindow(m_id));
+        if (!m_window){
+            PLMSubWindow* newSubWindow = new PLMSubWindow(m_id);
+
+            this->setWindow(newSubWindow);
+        }
     }
 }
 

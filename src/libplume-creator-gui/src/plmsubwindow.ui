@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PLMBaseSubWindow</class>
- <widget class="QMainWindow" name="PLMBaseSubWindow">
+ <class>PLMSubWindow</class>
+ <widget class="QMainWindow" name="PLMSubWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -75,7 +75,14 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="documentComboBox"/>
+        <widget class="QComboBox" name="documentComboBox">
+         <property name="editable">
+          <bool>false</bool>
+         </property>
+         <property name="insertPolicy">
+          <enum>QComboBox::InsertAlphabetically</enum>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QToolButton" name="closeDocumentButton">
@@ -156,6 +163,17 @@
    </property>
    <property name="toolTip">
     <string>Close</string>
+   </property>
+  </action>
+  <action name="actionCloseDocument">
+   <property name="text">
+    <string>Close Document</string>
+   </property>
+   <property name="toolTip">
+    <string>Close curent document</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
    </property>
   </action>
  </widget>

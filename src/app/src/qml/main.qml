@@ -6,6 +6,7 @@ import "."
 
 
 ApplicationWindow {
+
     id: rootWindow
     visible: true
     minimumHeight: 500
@@ -62,6 +63,10 @@ ApplicationWindow {
         anchors.fill: parent
 
     }
+
+    onClosing: {
+        console.log("quiting")
+        Qt.callLater(Qt.quit)}
    }
 
 //}

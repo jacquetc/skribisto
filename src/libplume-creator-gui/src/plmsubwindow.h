@@ -24,11 +24,13 @@
 #include <QMainWindow>
 #include <QMouseEvent>
 #include <QDebug>
+#include <plmdocumentlistmodel.h>
+#include "plmmodels.h"
 #include "plmbasedocument.h"
 #include "global.h"
 
 namespace Ui {
-class PLMBaseSubWindow;
+class PLMSubWindow;
 }
 class EXPORT_GUI PLMSubWindow : public QMainWindow {
     Q_OBJECT
@@ -47,6 +49,10 @@ public:
     bool setCurrentDocument(int projectId,
                             int documentId);
 
+    PLMBaseDocument *getDocument(int projectId, int documentId);
+
+    bool closeDocument(int projectId, int documentId);
+
 public slots:
 
     void clearProject(int projectId);
@@ -64,11 +70,19 @@ signals:
     void subWindowFocusActived(int id);
     void documentAdded(int projectId,
                        int documentId);
+    void closeDocumentCalled(int projectId, int documentId);
+    void documentClosed(int projectId,
+                         int documentId);
+
+
+private slots:
+
+    void on_documentComboBox_currentIndexChanged(const QString &text);
 
 private:
 
     int m_id;
-    Ui::PLMBaseSubWindow *ui;
+    Ui::PLMSubWindow *ui;
     QList<PLMBaseDocument *>m_documentList;
     void setupActions();
 };

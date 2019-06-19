@@ -166,18 +166,18 @@ QHash<int, int>PLMPaperHub::getAllSortOrders(int projectId) const
 ///
 /// \brief PLMPaperHub::setId
 /// \param projectId
-/// \param sheetId
+/// \param paperId
 /// \param newId
 /// \return
 /// Change de id. No date updated. Be careful since ids must be unique (sql
 // constraint)
-PLMError PLMPaperHub::setId(int projectId, int sheetId, int newId)
+PLMError PLMPaperHub::setId(int projectId, int paperId, int newId)
 {
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
 
     queries.beginTransaction();
-    error = queries.setId(sheetId, newId);
+    error = queries.setId(paperId, newId);
     IFKO(error) {
         queries.rollback();
     }
@@ -188,91 +188,91 @@ PLMError PLMPaperHub::setId(int projectId, int sheetId, int newId)
         emit errorSent(error);
     }
     IFOK(error) {
-        emit paperIdChanged(projectId, sheetId, newId);
+        emit paperIdChanged(projectId, paperId, newId);
     }
     return error;
 }
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setTitle(int projectId, int sheetId, const QString& newTitle)
+PLMError PLMPaperHub::setTitle(int projectId, int paperId, const QString& newTitle)
 {
-    PLMError error = set(projectId, sheetId, "t_title", newTitle);
+    PLMError error = set(projectId, paperId, "t_title", newTitle);
 
     IFOK(error) {
-        emit titleChanged(projectId, sheetId, newTitle);
+        emit titleChanged(projectId, paperId, newTitle);
     }
     return error;
 }
 
 // ------------------------------------------------------------
 
-QString PLMPaperHub::getTitle(int projectId, int sheetId) const
+QString PLMPaperHub::getTitle(int projectId, int paperId) const
 {
-    return get(projectId, sheetId, "t_title").toString();
+    return get(projectId, paperId, "t_title").toString();
 }
 
-PLMError PLMPaperHub::setIndent(int projectId, int sheetId, int newIndent)
+PLMError PLMPaperHub::setIndent(int projectId, int paperId, int newIndent)
 {
-    PLMError error = set(projectId, sheetId, "l_indent", newIndent);
+    PLMError error = set(projectId, paperId, "l_indent", newIndent);
 
     IFOK(error) {
-        emit indentChanged(projectId, sheetId, newIndent);
+        emit indentChanged(projectId, paperId, newIndent);
     }
     return error;
 }
 
 // ------------------------------------------------------------
 
-int PLMPaperHub::getIndent(int projectId, int sheetId) const
+int PLMPaperHub::getIndent(int projectId, int paperId) const
 {
-    return get(projectId, sheetId, "l_indent").toInt();
+    return get(projectId, paperId, "l_indent").toInt();
 }
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setSortOrder(int projectId, int sheetId, int newSortOrder)
+PLMError PLMPaperHub::setSortOrder(int projectId, int paperId, int newSortOrder)
 {
-    PLMError error = set(projectId, sheetId, "l_sort_order", newSortOrder);
+    PLMError error = set(projectId, paperId, "l_sort_order", newSortOrder);
 
     IFOK(error) {
-        emit sortOrderChanged(projectId, sheetId, newSortOrder);
+        emit sortOrderChanged(projectId, paperId, newSortOrder);
     }
     return error;
 }
 
 // ------------------------------------------------------------
 
-int PLMPaperHub::getSortOrder(int projectId, int sheetId) const
+int PLMPaperHub::getSortOrder(int projectId, int paperId) const
 {
-    return get(projectId, sheetId, "l_sort_order").toInt();
+    return get(projectId, paperId, "l_sort_order").toInt();
 }
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setContent(int projectId, int sheetId, const QString& newContent)
+PLMError PLMPaperHub::setContent(int projectId, int paperId, const QString& newContent)
 {
-    PLMError error = set(projectId, sheetId, "m_content", newContent);
+    PLMError error = set(projectId, paperId, "m_content", newContent);
 
     IFOK(error) {
-        emit contentChanged(projectId, sheetId, newContent);
+        emit contentChanged(projectId, paperId, newContent);
     }
     return error;
 }
 
 // ------------------------------------------------------------
 
-QString PLMPaperHub::getContent(int projectId, int sheetId) const
+QString PLMPaperHub::getContent(int projectId, int paperId) const
 {
-    return get(projectId, sheetId, "m_content").toString();
+    return get(projectId, paperId, "m_content").toString();
 }
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setDeleted(int projectId, int sheetId, bool newDeletedState)
+PLMError PLMPaperHub::setDeleted(int projectId, int paperId, bool newDeletedState)
 {
-    int target_sort_order = getSortOrder(projectId, sheetId);
-    int target_indent     = getIndent(projectId, sheetId);
+    int target_sort_order = getSortOrder(projectId, paperId);
+    int target_indent     = getIndent(projectId, paperId);
 
     QHash<int, QVariant> result;
     QHash<QString, QVariant> where;
@@ -334,77 +334,77 @@ PLMError PLMPaperHub::setDeleted(int projectId, int sheetId, bool newDeletedStat
     }
 
     // TODO:  deletion
-    IFOKDO(error, set(projectId, sheetId, "b_deleted", newDeletedState));
+    IFOKDO(error, set(projectId, paperId, "b_deleted", newDeletedState));
     IFOK(error) {
-        emit deletedChanged(projectId, sheetId, newDeletedState);
+        emit deletedChanged(projectId, paperId, newDeletedState);
     }
     return error;
 }
 
 // ------------------------------------------------------------
 
-bool PLMPaperHub::getDeleted(int projectId, int sheetId) const
+bool PLMPaperHub::getDeleted(int projectId, int paperId) const
 {
     // TODO: do recursive deletion
-    return get(projectId, sheetId, "b_deleted").toBool();
+    return get(projectId, paperId, "b_deleted").toBool();
 }
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setCreationDate(int projectId, int sheetId,
+PLMError PLMPaperHub::setCreationDate(int projectId, int paperId,
                                       const QDateTime& newDate)
 {
-    PLMError error = set(projectId, sheetId, "dt_created", newDate);
+    PLMError error = set(projectId, paperId, "dt_created", newDate);
 
     IFOK(error) {
-        emit creationDateChanged(projectId, sheetId, newDate);
+        emit creationDateChanged(projectId, paperId, newDate);
     }
     return error;
 }
 
 // ------------------------------------------------------------
 
-QDateTime PLMPaperHub::getCreationDate(int projectId, int sheetId) const
+QDateTime PLMPaperHub::getCreationDate(int projectId, int paperId) const
 {
-    return get(projectId, sheetId, "dt_created").toDateTime();
+    return get(projectId, paperId, "dt_created").toDateTime();
 }
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setUpdateDate(int projectId, int sheetId, const QDateTime& newDate)
+PLMError PLMPaperHub::setUpdateDate(int projectId, int paperId, const QDateTime& newDate)
 {
-    PLMError error = set(projectId, sheetId, "dt_updated", newDate);
+    PLMError error = set(projectId, paperId, "dt_updated", newDate);
 
     IFOK(error) {
-        emit updateDateChanged(projectId, sheetId, newDate);
+        emit updateDateChanged(projectId, paperId, newDate);
     }
     return error;
 }
 
 // ------------------------------------------------------------
 
-QDateTime PLMPaperHub::getUpdateDate(int projectId, int sheetId) const
+QDateTime PLMPaperHub::getUpdateDate(int projectId, int paperId) const
 {
-    return get(projectId, sheetId, "dt_updated").toDateTime();
+    return get(projectId, paperId, "dt_updated").toDateTime();
 }
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setContentDate(int projectId, int sheetId, const QDateTime& newDate)
+PLMError PLMPaperHub::setContentDate(int projectId, int paperId, const QDateTime& newDate)
 {
-    PLMError error = set(projectId, sheetId, "dt_content", newDate);
+    PLMError error = set(projectId, paperId, "dt_content", newDate);
 
     IFOK(error) {
-        emit contentDateChanged(projectId, sheetId, newDate);
+        emit contentDateChanged(projectId, paperId, newDate);
     }
     return error;
 }
 
 // ------------------------------------------------------------
 
-QDateTime PLMPaperHub::getContentDate(int projectId, int sheetId) const
+QDateTime PLMPaperHub::getContentDate(int projectId, int paperId) const
 {
-    return get(projectId, sheetId, "dt_content").toDateTime();
+    return get(projectId, paperId, "dt_content").toDateTime();
 }
 
 // ------------------------------------------------------------
@@ -424,7 +424,7 @@ void PLMPaperHub::setError(const PLMError& error)
 // ------------------------------------------------------------
 
 PLMError PLMPaperHub::set(int             projectId,
-                          int             sheetId,
+                          int             paperId,
                           const QString & fieldName,
                           const QVariant& value,
                           bool            setCurrentDateBool)
@@ -433,10 +433,10 @@ PLMError PLMPaperHub::set(int             projectId,
     PLMSqlQueries queries(projectId, m_tableName);
 
     queries.beginTransaction();
-    error = queries.set(sheetId, fieldName, value);
+    error = queries.set(paperId, fieldName, value);
 
     if (setCurrentDateBool) {
-        IFOKDO(error, queries.setCurrentDate(sheetId, "dt_updated"));
+        IFOKDO(error, queries.setCurrentDate(paperId, "dt_updated"));
     }
 
     IFKO(error) {
@@ -515,14 +515,14 @@ PLMError PLMPaperHub::setDocSetting(int             projectId,
 // ------------------------------------------------------------
 
 
-QVariant PLMPaperHub::get(int projectId, int sheetId, const QString& fieldName) const
+QVariant PLMPaperHub::get(int projectId, int paperId, const QString& fieldName) const
 {
     PLMError error;
     QVariant var;
     QVariant result;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.get(sheetId, fieldName, var);
+    error = queries.get(paperId, fieldName, var);
     IFOK(error) {
         result = var;
     }

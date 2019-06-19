@@ -20,14 +20,27 @@
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmsubwindow.h"
-#include "ui_plmbasesubwindow.h"
+#include "ui_plmsubwindow.h"
+#include "plmdata.h"
+
+#include <QSortFilterProxyModel>
+#include <plmdocumentlistproxymodel.h>
+#include <plmwritedocumentlistmodel.h>
+#include <QComboBox>
 
 PLMSubWindow::PLMSubWindow(int id, QWidget *parent) : QMainWindow(parent),
-    m_id(id), ui(
-        new Ui::PLMBaseSubWindow) {
+    m_id(id), ui(new Ui::PLMSubWindow) {
     ui->setupUi(this);
 
+
+
+    PLMDocumentListProxyModel *proxyModel = new PLMDocumentListProxyModel(this);
+    proxyModel->setSubWindowId(id);
+    proxyModel->setSourceModel(plmmodels->writeDocumentListModel());
+    ui->documentComboBox->setModel(proxyModel);
+
     this->setupActions();
+
 }
 
 PLMSubWindow::~PLMSubWindow()
@@ -66,15 +79,68 @@ bool PLMSubWindow::setCurrentDocument(int projectId, int documentId)
 
     for (PLMBaseDocument *document : m_documentList) {
         if ((document->getProjectId() == projectId) &&
-            (document->getDocumentId() == documentId)) {
+                (document->getDocumentId() == documentId)) {
             ui->stackedWidget->setCurrentWidget(document);
             document->setFocus();
+
+            QTimer::singleShot(0, [=] {
+                ui->documentComboBox->disconnect(SIGNAL(currentIndexChanged(QString)));
+                QString docTitle = plmdata->userHub()->get(projectId, document->getDocumentTableName(), documentId, "t_title").toString();
+                ui->documentComboBox->setCurrentText(docTitle);
+                this->connect(ui->documentComboBox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged), this, &PLMSubWindow::on_documentComboBox_currentIndexChanged, Qt::UniqueConnection);
+            }  );
+
             success = true;
         }
     }
 
     return success;
 }
+
+PLMBaseDocument *PLMSubWindow::getDocument(int projectId, int documentId)
+{
+    for (PLMBaseDocument *document : m_documentList) {
+        if ((document->getProjectId() == projectId) &&
+                (document->getDocumentId() == documentId))  {
+            return document;
+        }
+    }
+    return nullptr;
+}
+
+
+bool PLMSubWindow::closeDocument(int projectId, int documentId)
+{
+    bool success = false;
+
+    PLMBaseDocument* docToRemove = nullptr;
+    for (PLMBaseDocument *document : m_documentList) {
+        if ((document->getProjectId() == projectId) &&
+                (document->getDocumentId() == documentId)) {
+            docToRemove = document;
+            ui->stackedWidget->removeWidget(document);
+
+           plmdata->userHub()->remove(projectId, document->getDocumentTableName(), documentId);
+
+            //set other current document
+            if(ui->documentComboBox->count() > 1){
+                ui->documentComboBox->setCurrentIndex(1);
+            }
+
+            emit documentClosed(projectId, documentId);
+            success = true;
+
+        }
+
+    }
+    if(success){
+        m_documentList.removeAll(docToRemove);
+        docToRemove->deleteLater();
+    }
+
+    return success;
+}
+
 
 void PLMSubWindow::clearProject(int projectId)
 {
@@ -113,4 +179,27 @@ void PLMSubWindow::setupActions()
             [ = ]() {
         emit splitCalled(Qt::Horizontal, this->id());
     });
+
+    ui->closeDocumentButton->setDefaultAction(ui->actionCloseDocument);
+
+    connect(ui->actionCloseDocument,
+            &QAction::triggered,
+            [ = ]() {
+        int projectId = ui->documentComboBox->currentData(PLMDocumentListModel::Roles::ProjectIdRole).toInt();
+         int documentId = ui->documentComboBox->currentData(PLMDocumentListModel::Roles::DocumentIdRole).toInt();
+
+
+        emit closeDocumentCalled(projectId, documentId);
+    });
+}
+
+void PLMSubWindow::on_documentComboBox_currentIndexChanged(const QString &text)
+{
+    Q_UNUSED(text)
+
+    int projectId = ui->documentComboBox->currentData(PLMDocumentListModel::Roles::ProjectIdRole).toInt();
+    int documentId = ui->documentComboBox->currentData(PLMDocumentListModel::Roles::DocumentIdRole).toInt();
+
+
+    this->setCurrentDocument(projectId, documentId);
 }

@@ -31,11 +31,13 @@ class EXPORT_GUI PLMBaseDocument : public QWidget {
 public:
 
     explicit PLMBaseDocument(int      projectId,
-                             int      documentId,
+                             int      documentId, const QString &documentType,
+                             const QString documentTableName,
                              QWidget *parent = nullptr);
 
     void setDocumentId(int documentId);
     int  getDocumentId();
+    QString  getDocumentType() const;
 
 
     int  getProjectId() const;
@@ -46,6 +48,8 @@ public:
     /// default : -1 , meaning not project-specific;
     void setProjectId(int value);
 
+    QString getDocumentTableName() const;
+
 signals:
 
     void documentFocusActived(int id);
@@ -55,7 +59,9 @@ public slots:
 private:
 
     int m_documentId;
-    int projectId;
+    int m_projectId;
+    QString m_documentType;
+    QString m_documentTableName;
 };
 
 

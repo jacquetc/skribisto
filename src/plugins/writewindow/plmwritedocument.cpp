@@ -25,9 +25,9 @@
 #include <QTextDocument>
 
 PLMWriteDocument::PLMWriteDocument(int projectId, int sheetId,
-                                   int              documentId,
+                                   int              documentId, const QString documentTableName,
                                    PLMTextDocumentList *textDocumentList) :
-    PLMBaseDocument(projectId, documentId),
+    PLMBaseDocument(projectId, documentId, "write_document", documentTableName),
     ui(new Ui::PLMWriteDocument), m_textDocumentList(textDocumentList)
 {
     ui->setupUi(this);

@@ -76,14 +76,59 @@ QVariant PLMUserHub::get(int            projectId,
 
 // ------------------------------------------------------------
 
+QHash<int, QVariant> PLMUserHub::getValueByIdsWhere(int            projectId,
+                                                    const QString& tableName,
+                                                    const QString& valueName,
+                                                    const QHash<QString, QVariant>& where){
+    QHash<int, QVariant> result;
+
+    PLMError error;
+
+    if (tableName.left(8) != "tbl_user") {
+        error.setSuccess(false);
+    }
+    IFKO(error) {
+        emit errorSent(error);
+
+        return result;
+    }
+
+    IFOK(error) {
+        PLMSqlQueries queries(projectId, tableName);
+
+        error = queries.getValueByIdsWhere(valueName, result, where);
+    }
+
+
+    IFKO(error) {
+        return result;
+    }
+
+    return result;
+}
+
+// ------------------------------------------------------------
+
 PLMError PLMUserHub::getMultipleValues(int projectId,
                                        const QString& tableName,
                                        int id,
                                        const QStringList& valueList,
                                        QHash<QString, QVariant>& result)
 {
-    PLMSqlQueries queries(projectId, tableName);
-    PLMError error = queries.getMultipleValues(id, valueList, result);
+    PLMError error;
+
+    if (tableName.left(8) != "tbl_user") {
+        error.setSuccess(false);
+    }
+    IFKO(error) {
+        emit errorSent(error);
+
+    }
+
+    IFOK(error){
+        PLMSqlQueries queries(projectId, tableName);
+        error = queries.getMultipleValues(id, valueList, result);
+    }
 
     return error;
 }
@@ -126,11 +171,23 @@ PLMError PLMUserHub::getIds(int projectId, const QString& tableName,
 PLMError PLMUserHub::add(int                    projectId,
                          const QString        & tableName,
                          const QHash<QString,
-                                     QVariant>& values,
+                         QVariant>& values,
                          int                  & newId) const
 {
+    PLMError error;
+
+    if (tableName.left(8) != "tbl_user") {
+        error.setSuccess(false);
+    }
+    IFKO(error) {
+        emit errorSent(error);
+
+        return error;
+    }
+
+
     PLMSqlQueries queries(projectId, tableName);
-    PLMError error = queries.add(values, newId);
+    error = queries.add(values, newId);
 
     IFKO(error) {
         queries.rollback();
@@ -139,7 +196,41 @@ PLMError PLMUserHub::add(int                    projectId,
         queries.commit();
         emit userDataAdded(projectId, tableName, newId);
     }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return error;
+}
 
+// ------------------------------------------------------------
+
+PLMError PLMUserHub::remove(int projectId, const QString &tableName, int id)
+{
+    PLMError error;
+
+    if (tableName.left(8) != "tbl_user") {
+        error.setSuccess(false);
+    }
+    IFKO(error) {
+        emit errorSent(error);
+
+        return error;
+    }
+
+
+    PLMSqlQueries queries(projectId, tableName);
+    error = queries.remove(id);
+
+    IFKO(error) {
+        queries.rollback();
+    }
+    IFOK(error) {
+        queries.commit();
+        emit userDataRemoved(projectId, tableName, id);
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
     return error;
 }
 
@@ -167,6 +258,7 @@ PLMError PLMUserHub::set(int             projectId,
     }
     IFOK(error) {
         queries.commit();
+        emit userDataModified(projectId, tableName, id, fieldName);
     }
     IFKO(error) {
         emit errorSent(error);

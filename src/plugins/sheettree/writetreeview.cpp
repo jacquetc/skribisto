@@ -25,10 +25,15 @@
 #include "tools.h"
 #include "plmbasedock.h"
 
+#include <QAction>
 #include <QDebug>
+#include <QMenu>
+#include <QContextMenuEvent>
 
-WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent), m_parentDockName("")
+WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent), m_parentDockName(""), m_clickTime(QDateTime::currentSecsSinceEpoch())
 {
+    this->setupActions();
+
     this->setEditTriggers(QTreeView::EditKeyPressed);
 
     this->setHeaderHidden(true);
@@ -49,6 +54,33 @@ WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent), m_parentDockN
             &WriteTreeView::setExpandStateToItems);
 }
 
+//----------------------------------------------------------------------
+
+void WriteTreeView::contextMenuEvent(QContextMenuEvent *event)
+{
+    QModelIndex index = this->indexAt(event->pos());
+
+    if(!index.isValid())
+        return;
+
+    PLMSheetItem *item =
+            static_cast<PLMSheetItem *>(m_model->mapToSource(index).
+                                        internalPointer());
+        m_currentItem = item;
+    if (item->isProjectItem()) {
+        // do nothing for now
+    }
+    else {
+
+        m_contextMenu->popup(event->globalPos());
+
+    }
+
+
+}
+
+//----------------------------------------------------------------------
+
 void WriteTreeView::setExpandStateToItems()
 {
     disconnect(this, &WriteTreeView::expanded,  this, &WriteTreeView::itemExpandedSlot);
@@ -60,9 +92,9 @@ void WriteTreeView::setExpandStateToItems()
             continue;
         }
         int indexId =
-            m_model->data(index, PLMSheetItem::Roles::PaperIdRole).toInt();
+                m_model->data(index, PLMSheetItem::Roles::PaperIdRole).toInt();
         int projectId =
-            this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
+                this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
         QString result = plmdata->sheetPropertyHub()->getProperty(projectId,
                                                                   indexId,
                                                                   "expanded_in_" + m_parentDockName,
@@ -126,9 +158,9 @@ QItemSelection WriteTreeView::selectChildren(const QModelIndex& parent,
 void WriteTreeView::itemCollapsedSlot(QModelIndex index)
 {
     int indexId =
-        this->model()->data(index, PLMSheetItem::Roles::PaperIdRole).toInt();
+            this->model()->data(index, PLMSheetItem::Roles::PaperIdRole).toInt();
     int projectId =
-        this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
+            this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
     PLMError error = plmdata->sheetPropertyHub()->setProperty(projectId,
                                                               indexId,
                                                               "expanded_in_" + m_parentDockName,
@@ -140,9 +172,9 @@ void WriteTreeView::itemCollapsedSlot(QModelIndex index)
 void WriteTreeView::itemExpandedSlot(QModelIndex index)
 {
     int indexId =
-        this->model()->data(index, PLMSheetItem::Roles::PaperIdRole).toInt();
+            this->model()->data(index, PLMSheetItem::Roles::PaperIdRole).toInt();
     int projectId =
-        this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
+            this->model()->data(index, PLMSheetItem::Roles::ProjectIdRole).toInt();
     PLMError error = plmdata->sheetPropertyHub()->setProperty(projectId,
                                                               indexId,
                                                               "expanded_in_" + m_parentDockName,
@@ -153,12 +185,13 @@ void WriteTreeView::itemExpandedSlot(QModelIndex index)
 
 void WriteTreeView::itemClicked(QModelIndex index)
 {
-    if (index != m_oldIndex) { // reset if change
+    if (index != m_oldIndex || QDateTime::currentSecsSinceEpoch() - m_clickTime > 2) { // reset if change
         m_clicksCount = 0;
     }
     m_oldIndex = index;
 
     m_clicksCount += 1;
+    m_clickTime = QDateTime::currentSecsSinceEpoch();
 
     if (m_clicksCount == 3) { // third click
         this->edit(index);
@@ -170,24 +203,88 @@ void WriteTreeView::itemClicked(QModelIndex index)
     }
     else if (m_clicksCount == 1) { // first click
         PLMSheetItem *item =
-            static_cast<PLMSheetItem *>(m_model->mapToSource(index).
-                                        internalPointer());
-        PLMCommand command;
-        command.origin    = this->objectName();
-        command.cmd       = "open_sheet";
-        command.projectId = item->projectId();
-        command.paperId   = item->paperId();
+                static_cast<PLMSheetItem *>(m_model->mapToSource(index).
+                                            internalPointer());
 
-
-        emit plmpluginhub->commandSent(command);
-
-        //        int paperId = item->paperId();
-        //        int projectId = item->projectId();
         if (item->isProjectItem()) {
             // do nothing for now
         }
         else {
+            PLMCommand command;
+
+            command.origin    = this->objectName();
+            command.cmd       = "open_sheet";
+            command.projectId = item->projectId();
+            command.paperId   = item->paperId();
+
+
+            emit plmpluginhub->commandSent(command);
             // emit openSheet(projectId, paperId);
         }
     }
 }
+
+//-----------------------------------------------------------------------
+
+void WriteTreeView::setupActions()
+{
+    m_actionOpenSheet = new QAction(tr("Open sheet"), this);
+
+    connect(m_actionOpenSheet, &QAction::triggered, [=](){
+        if(m_currentItem.isNull()){
+            return;
+        }
+
+        PLMCommand command;
+
+        command.origin    = this->objectName();
+        command.cmd       = "open_sheet";
+        command.projectId = m_currentItem->projectId();
+        command.paperId   = m_currentItem->paperId();
+
+
+        emit plmpluginhub->commandSent(command);
+    });
+    //m_actionOpenSheet->setIcon()
+    m_actionOpenSheetOnNewSubWindow = new QAction(tr("Open sheet in new view"), this);
+    connect(m_actionOpenSheetOnNewSubWindow, &QAction::triggered, [=](){
+        if(m_currentItem.isNull()){
+            return;
+        }
+
+        PLMCommand command;
+
+        command.origin    = this->objectName();
+        command.cmd       = "open_sheet_on_new_view";
+        command.projectId = m_currentItem->projectId();
+        command.paperId   = m_currentItem->paperId();
+
+
+        emit plmpluginhub->commandSent(command);
+    });
+    m_actionRename = new QAction(tr("Rename sheet"), this);
+    connect(m_actionRename, &QAction::triggered, [=](){
+        if(m_currentItem.isNull()){
+            return;
+        }
+        this->edit(this->currentIndex());
+
+
+    });
+
+    m_actionSortAlphabeticaly = new QAction(tr("Alphabeticaly"), this);
+
+
+    m_contextMenu = new QMenu(this);
+    m_contextMenu->addAction(m_actionOpenSheet);
+    m_contextMenu->addAction(m_actionOpenSheetOnNewSubWindow);
+    m_contextMenu->addAction(m_actionRename);
+    QMenu *advancedMenu = new QMenu(tr("Advanced"), this);
+    m_contextMenu->addMenu(advancedMenu);
+    advancedMenu->addAction(m_actionSortAlphabeticaly);
+
+
+
+}
+
+

@@ -238,6 +238,14 @@ int main(int argc, char *argv[])
         engine->rootContext()->setContextProperty("plmData", data);
         engine->load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
 
+        engine->connect(engine, &QQmlApplicationEngine::quit, &QCoreApplication::quit);
+//        QCoreApplication *app = qApp;
+//        engine->connect(engine, &QQmlApplicationEngine::objectCreated, [app](QObject *object, const QUrl &url){
+//            if(object == nullptr){
+//                app->quit();
+//            }
+//        });
+
         if (engine->rootObjects().isEmpty()) return -1;
     }
 #if FORCEQML == 0

@@ -58,6 +58,50 @@ bool PLMTextDocumentList::contains(int projectId, int paperId)
     return m_subscribedHash.contains(wholePaperId);
 }
 
+bool PLMTextDocumentList::unsubscibeBaseDocumentFromTextDocument(const QPair<int,
+                                             int>& wholeDocId)
+{
+    QMutableHashIterator<QPair<int, int>, QPair<int, int> > i(m_subscribedHash);
+
+    QPair<int, int> wholePaperId(-1, -1);
+    while (i.hasNext()) {
+        i.next();
+        if(i.value() == wholeDocId){
+            wholePaperId = i.key();
+            i.remove();
+        }
+    }
+
+    //remove text is no subscription
+
+    if(!m_subscribedHash.contains(wholePaperId)){
+
+        QMutableListIterator<QTextDocument *> j(m_textDocumentList);
+        while (j.hasNext()) {
+            j.next();
+            if(j.value()->property("projectId").toInt() == wholePaperId.first &&
+                    j.value()->property("paperId").toInt() == wholePaperId.second){
+                j.remove();
+            }
+        }
+
+
+   }
+
+//    QTextDocument *textDocumentToRemove;
+//    for (QTextDocument *textDocument : m_textDocumentList) {
+//        if ((wholeDocId.first == textDocument->property("projectId").toInt()) &&
+//            (wholeDocId.second == textDocument->property("paperId").toInt())) {
+//            textDocumentToRemove = textDocument;
+//        }
+//    }
+//    if(textDocumentToRemove == nullptr){
+//        return false;
+//    }
+//    m_textDocumentList.removeOne(textDocumentToRemove);
+//    return true;
+}
+
 QTextDocument * PLMTextDocumentList::getTextDocumentFromPaperId(const QPair<int,
                                                                             int>& wholePaperId)
 {

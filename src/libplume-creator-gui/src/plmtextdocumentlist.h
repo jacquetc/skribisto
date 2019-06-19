@@ -41,6 +41,7 @@ public:
     bool contains(int projectId,
                   int paperId);
 
+    bool unsubscibeBaseDocumentFromTextDocument(const QPair<int, int> &wholePaperId);
 signals:
 
 public slots:

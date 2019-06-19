@@ -56,58 +56,58 @@ public:
     QList<int>                      getAllIds(int projectId) const;
     int                             getOverallSize();
     PLMError                        setId(int projectId,
-                                          int sheetId,
+                                          int paperId,
                                           int newId);
     PLMError                        setTitle(int            projectId,
-                                             int            sheetId,
+                                             int            paperId,
                                              const QString& newTitle);
     QString                         getTitle(int projectId,
-                                             int sheetId) const;
+                                             int paperId) const;
 
     PLMError                        setIndent(int projectId,
-                                              int sheetId,
+                                              int paperId,
                                               int newIndent);
     int                             getIndent(int projectId,
-                                              int sheetId) const;
+                                              int paperId) const;
     PLMError                        setSortOrder(int projectId,
-                                                 int sheetId,
+                                                 int paperId,
                                                  int newSortOrder);
     int                             getSortOrder(int projectId,
-                                                 int sheetId) const;
+                                                 int paperId) const;
     Q_INVOKABLE PLMError            setContent(int            projectId,
-                                               int            sheetId,
+                                               int            paperId,
                                                const QString& newContent);
     Q_INVOKABLE QString             getContent(int projectId,
-                                               int sheetId) const;
+                                               int paperId) const;
     PLMError                        setDeleted(int  projectId,
-                                               int  sheetId,
+                                               int  paperId,
                                                bool newDeletedState);
     bool                            getDeleted(int projectId,
-                                               int sheetId) const;
+                                               int paperId) const;
     PLMError                        setCreationDate(int              projectId,
-                                                    int              sheetId,
+                                                    int              paperId,
                                                     const QDateTime& newDate);
     QDateTime                       getCreationDate(int projectId,
-                                                    int sheetId) const;
+                                                    int paperId) const;
     PLMError                        setUpdateDate(int              projectId,
-                                                  int              sheetId,
+                                                  int              paperId,
                                                   const QDateTime& newDate);
     QDateTime                       getUpdateDate(int projectId,
-                                                  int sheetId) const;
+                                                  int paperId) const;
     PLMError                        setContentDate(int              projectId,
-                                                   int              sheetId,
+                                                   int              paperId,
                                                    const QDateTime& newDate);
     QDateTime                       getContentDate(int projectId,
-                                                   int sheetId) const;
+                                                   int paperId) const;
 
     PLMError                        getError();
     PLMError                        set(int             projectId,
-                                        int             sheetId,
+                                        int             paperId,
                                         const QString & fieldName,
                                         const QVariant& value,
                                         bool            setCurrentDateBool = true);
     QVariant get(int            projectId,
-                 int            sheetId,
+                 int            paperId,
                  const QString& fieldName) const;
 
     int      getLastAddedId();
@@ -177,28 +177,28 @@ signals:
                         int paperId,
                         int newId);
     void titleChanged(int            projectId,
-                      int            sheetId,
+                      int            paperId,
                       const QString& newTitle);
     void indentChanged(int projectId,
-                       int sheetId,
+                       int paperId,
                        int newIndent);
     void sortOrderChanged(int projectId,
-                          int sheetId,
+                          int paperId,
                           int newSortOrder);
     void contentChanged(int            projectId,
-                        int            sheetId,
+                        int            paperId,
                         const QString& newContent);
     void deletedChanged(int  projectId,
-                        int  sheetId,
+                        int  paperId,
                         bool newDeletedState);
     void creationDateChanged(int              projectId,
-                             int              sheetId,
+                             int              paperId,
                              const QDateTime& newDate);
     void updateDateChanged(int              projectId,
-                           int              sheetId,
+                           int              paperId,
                            const QDateTime& newDate);
     void contentDateChanged(int              projectId,
-                            int              sheetId,
+                            int              paperId,
                             const QDateTime& newDate);
     void paperAdded(int projectId,
                     int paperId);
@@ -210,7 +210,7 @@ signals:
                                  PLMPaperHub::Setting setting,
                                  const QVariant     & newValue);
     void settings_docSettingChanged(int                           projectId,
-                                    int                           sheetId,
+                                    int                           paperId,
                                     PLMPaperHub::OpenedDocSetting setting,
                                     const QVariant              & newValue);
 

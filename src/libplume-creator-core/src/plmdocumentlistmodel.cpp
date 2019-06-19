@@ -21,9 +21,10 @@
 ***************************************************************************/
 #include "plmdocumentlistmodel.h"
 #include "plmdata.h"
+#include <QDebug>
 
-PLMDocumentListModel::PLMDocumentListModel(QObject *parent)
-    : QAbstractListModel(parent)
+PLMDocumentListModel::PLMDocumentListModel(QObject *parent, const QString &tableName)
+    : QAbstractListModel(parent), m_tableName(tableName)
 {
     qRegisterMetaType<QList<PLMDocumentListItem> >("QList<PLMSheetListItem>");
 
@@ -38,8 +39,23 @@ PLMDocumentListModel::PLMDocumentListModel(QObject *parent)
 
     connect(plmdata->userHub(),
             &PLMUserHub::userDataAdded,
+//            this, &PLMDocumentListModel::populate
             this, &PLMDocumentListModel::addDocument, Qt::DirectConnection
             );
+
+    connect(plmdata->userHub(),
+            &PLMUserHub::userDataRemoved,
+//            this, &PLMDocumentListModel::populate
+            this, &PLMDocumentListModel::removeDocument, Qt::DirectConnection
+            );
+
+    connect(plmdata->userHub(),
+            &PLMUserHub::userDataModified,
+//            this, &PLMDocumentListModel::populate
+            this, &PLMDocumentListModel::modifyDocument, Qt::DirectConnection
+            );
+
+
 }
 
 QVariant PLMDocumentListModel::headerData(int             section,
@@ -52,8 +68,6 @@ QVariant PLMDocumentListModel::headerData(int             section,
 
 
     return m_headerData;
-
-    // FIXME: Implement me!
 }
 
 bool PLMDocumentListModel::setHeaderData(int             section,
@@ -76,65 +90,66 @@ int PLMDocumentListModel::rowCount(const QModelIndex& parent) const
     // other (valid) parents, rowCount() should return 0 so that it does not
     // become a tree model.
     if (parent.isValid()) return 0;
-
     return m_allDocuments.count();
 }
+
 
 QVariant PLMDocumentListModel::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid()) return QVariant();
 
     int row = index.row();
+    int col = index.column();
 
 
     int projectId     = m_allDocuments.at(row).projectId;
     int documentId    = m_allDocuments.at(row).documentId;
     QString tableName = m_allDocuments.at(row).tableName;
 
-    if (role == Qt::DisplayRole) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "t_name");
+    if (role == Qt::DisplayRole  && (col == 0)) {
+        return plmdata->userHub()->get(projectId, tableName, documentId, "t_title");
     }
 
 
-    if (role == PLMDocumentListModel::ProjectIdRole) {
+    if (role == PLMDocumentListModel::ProjectIdRole  && (col == 0)) {
         return projectId;
     }
 
-    if (role == PLMDocumentListModel::DocumentIdRole) {
+    if (role == PLMDocumentListModel::DocumentIdRole && (col == 0)) {
         return documentId;
     }
 
-    if (role == PLMDocumentListModel::PaperCodeRole) {
+    if (role == PLMDocumentListModel::PaperCodeRole && (col == 0)) {
         return plmdata->userHub()->get(projectId, tableName, documentId, "l_paper_code");
     }
 
-    if (role == PLMDocumentListModel::NameRole) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "t_name");
+    if (role == PLMDocumentListModel::NameRole && (col == 0)) {
+        return plmdata->userHub()->get(projectId, tableName, documentId, "t_title");
     }
 
-    if (role == PLMDocumentListModel::TypeRole) {
+    if (role == PLMDocumentListModel::TypeRole && (col == 0)) {
         return plmdata->userHub()->get(projectId, tableName, documentId, "t_type");
     }
 
-    if (role == PLMDocumentListModel::SubWindowRole) {
+    if (role == PLMDocumentListModel::SubWindowRole && (col == 0)) {
         return plmdata->userHub()->get(projectId, tableName, documentId, "l_subwindow");
     }
 
-    if (role == PLMDocumentListModel::CursorPosRole) {
+    if (role == PLMDocumentListModel::CursorPosRole && (col == 0)) {
         return plmdata->userHub()->get(projectId, tableName, documentId, "l_cursor_pos");
     }
 
-    if (role == PLMDocumentListModel::PropertyRole) {
+    if (role == PLMDocumentListModel::PropertyRole && (col == 0)) {
         return plmdata->userHub()->get(projectId, tableName, documentId, "t_property");
     }
 
 
-    if (role == PLMDocumentListModel::UpdateDateRole) {
+    if (role == PLMDocumentListModel::UpdateDateRole && (col == 0)) {
         return plmdata->userHub()->get(projectId, tableName, documentId, "dt_updated");
     }
 
 
-    if (role == PLMDocumentListModel::LasFocusedDateRole) {
+    if (role == PLMDocumentListModel::LasFocusedDateRole && (col == 0)) {
         return plmdata->userHub()->get(projectId, tableName, documentId,
                                        "dt_last_focused");
     }
@@ -153,7 +168,7 @@ bool PLMDocumentListModel::setData(const QModelIndex& index,
         return true;
     }
     return false;
-}
+}::
 
 Qt::ItemFlags PLMDocumentListModel::flags(const QModelIndex& index) const
 {
@@ -168,23 +183,75 @@ void PLMDocumentListModel::addDocument(int            projectId,
 {
     if (!tableName.endsWith("doc_list")) return;
 
-    QModelIndex parentIndex = this->index(0, 0, QModelIndex());
+    //QModelIndex parentIndex = this->index(0, 0, QModelIndex());
 
-    beginInsertRows(parentIndex, m_allDocuments.count(), m_allDocuments.count());
+    beginInsertRows(QModelIndex(), m_allDocuments.count(), m_allDocuments.count() + 1);
 
+    m_allDocuments.append(PLMDocumentListItem(projectId, documentId, tableName));
 
-    m_allDocuments.append(PLMDocumentListItem(projectId, documentId,
-                                              tableName));
     endInsertRows();
+
 }
 
-bool PLMDocumentListModel::removeRows(int row, int count, const QModelIndex& parent)
+//------------------------------------------------------
+
+void PLMDocumentListModel::removeDocument(int projectId, const QString &tableName, int documentId)
 {
-    beginRemoveRows(parent, row, row + count - 1);
+    if (!tableName.endsWith("doc_list")) return;
 
-    // FIXME: Implement me!
+
+    //QModelIndex parentIndex = this->index(0, 0, QModelIndex());
+
+
+    beginRemoveRows(QModelIndex(), m_allDocuments.count(), m_allDocuments.count());
+
+
+    QMutableListIterator<PLMDocumentListItem> i(m_allDocuments);
+    while(i.hasNext()){
+        i.next();
+        if(i.value().projectId == projectId && i.value().tableName == tableName && i.value().documentId == documentId){
+            i.remove();
+        }
+    }
     endRemoveRows();
+
 }
+
+void PLMDocumentListModel::modifyDocument(int projectId, const QString &tableName, int documentId, const QString &fieldName)
+{
+    if (!tableName.endsWith("doc_list")) return;
+
+
+
+    QList<int> list;
+
+QModelIndexList finalIndexList;
+    QModelIndexList modelList =  this->match(this->index(0, 0,
+                                                         QModelIndex()),
+                                             PLMDocumentListModel::Roles::DocumentIdRole,
+                                             documentId,
+                                             -1,
+                                             Qt::MatchFlag::MatchExactly |
+                                             Qt::MatchFlag::MatchWrap);
+
+    for (const QModelIndex& modelIndex : modelList) {
+        if (modelIndex.data(PLMDocumentListModel::Roles::ProjectIdRole).toInt() ==
+                projectId)  {
+            finalIndexList.append(modelIndex);
+        }
+    }
+
+    QModelIndex index = finalIndexList.first();
+    QVector<int> role;
+    if(fieldName == "t_title"){
+        role << PLMDocumentListModel::Roles::NameRole;
+    }
+
+    emit dataChanged(index, index, role);
+
+}
+
+//------------------------------------------------------
 
 QHash<int, QByteArray>PLMDocumentListModel::roleNames() const {
     QHash<int, QByteArray> roles;
@@ -216,7 +283,7 @@ QList<int>PLMDocumentListModel::getSubWindowIdList(int projectId, int paperId)
 
     for (const QModelIndex& modelIndex : modelList) {
         if (modelIndex.data(PLMDocumentListModel::Roles::ProjectIdRole).toInt() ==
-            projectId) {
+                projectId) {
             list.append(modelIndex.data(
                             PLMDocumentListModel::Roles::SubWindowRole).toInt());
         }
@@ -241,39 +308,44 @@ QList<int>PLMDocumentListModel::getDocumentId(int projectId, int paperId, int su
     for (const QModelIndex& modelIndex : modelList) {
         if ((modelIndex.data(PLMDocumentListModel::Roles::ProjectIdRole).toInt() ==
              projectId) &&
-            (modelIndex.data(PLMDocumentListModel::Roles::PaperCodeRole).toInt() ==
-             paperId)) {
+                (modelIndex.data(PLMDocumentListModel::Roles::PaperCodeRole).toInt() ==
+                 paperId)) {
             list.append(modelIndex.data(
-                            PLMDocumentListModel::Roles::SubWindowRole).toInt());
+                            PLMDocumentListModel::Roles::DocumentIdRole).toInt());
         }
     }
 
     return list;
 }
 
+QList<int> PLMDocumentListModel::getDocumentIdEverywhere(int projectId, int paperId)
+{
+    QList<int> result;
+
+    for(int subWindowId : this->getSubWindowIdList(projectId, paperId)){
+        result.append(getDocumentId(projectId, paperId, subWindowId));
+    }
+
+    return result;
+}
+
 void PLMDocumentListModel::populate()
 {
     this->beginResetModel();
-    foreach(int projectId, plmProjectManager->projectIdList()) {
-        for (const QString& tableName : m_tableNames) {
+    m_allDocuments.clear();
+     foreach(int projectId, plmProjectManager->projectIdList()) {
             QList<int> results;
-            plmdata->userHub()->getIds(projectId, tableName, results);
+            plmdata->userHub()->getIds(projectId, m_tableName, results);
 
             for (int documentId :  results) {
                 m_allDocuments.append(PLMDocumentListItem(projectId, documentId,
-                                                          tableName));
+                                                          m_tableName));
             }
-        }
+
     }
     this->endResetModel();
 }
 
-void PLMDocumentListModel::addTableName(const QString& tableName)
-{
-    if (m_tableNames.contains(tableName)) return;
-
-    m_tableNames.append(tableName);
-}
 
 void PLMDocumentListModel::clear()
 {

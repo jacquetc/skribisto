@@ -54,10 +54,18 @@ public:
                     const QString& tableName,
                     QList<int>   & result) const;
 
+    QHash<int, QVariant> getValueByIdsWhere(int            projectId,
+                                            const QString& tableName,
+                                            const QString &valueName,
+                                            const QHash<QString, QVariant> &where);
+
     PLMError add(int projectId,
                  const QString& tableName,
                  const QHash<QString, QVariant>& values,
                  int& newId) const;
+
+    PLMError remove(int projectId,
+                    const QString& tableName, int id);
 
     PLMError setCurrentDate(int            projectId,
                             const QString& tableName,
@@ -70,6 +78,13 @@ signals:
     void userDataAdded(int     projectId,
                        QString tableName,
                        int     newId) const;
+    void userDataRemoved(int     projectId,
+                         QString tableName,
+                         int     id) const;
+    void userDataModified(int     projectId,
+                          QString tableName,
+                          int     id,
+                          const QString& fieldName) const;
 
 public slots:
 

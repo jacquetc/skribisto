@@ -24,10 +24,11 @@
 // #include "plmsheetmodel.h"
 
 #include <QtCore>
+#include <QObject>
 #include "global_core.h"
 
-class EXPORT_CORE PLMSheetItem {
-    Q_GADGET
+class EXPORT_CORE PLMSheetItem : public QObject {
+    Q_OBJECT
 
 public:
 

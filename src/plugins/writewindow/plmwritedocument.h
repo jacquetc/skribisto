@@ -38,6 +38,7 @@ public:
     explicit PLMWriteDocument(int                  projectId,
                               int                  sheetId,
                               int                  documentId,
+                              const QString documentTableName,
                               PLMTextDocumentList *textDocumentList);
     ~PLMWriteDocument();
 

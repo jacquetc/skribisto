@@ -29,7 +29,7 @@
 
 namespace {
 namespace QObjectUtils {
-template<typename T>T* findParentOfACertainType(QObject *object)
+template<typename T>Q_DECL_UNUSED T* findParentOfACertainType(QObject *object)
 {
     if (qobject_cast<T *>(object->parent())) {
         return qobject_cast<T *>(object->parent());

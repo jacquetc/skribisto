@@ -129,6 +129,7 @@ public:
     virtual QString tableName() const         = 0;
     virtual QString documentTableName() const = 0;
 
+
 signals:
 
 public slots:
@@ -146,6 +147,8 @@ public slots:
     PLMSubWindow* getSubWindowById(int id);
 
 protected:
+    QList<PLMSubWindow *> getAllSubWindows() const;
+
 
 private slots:
 
@@ -169,6 +172,8 @@ private:
 
     QList<Widget>m_widgetList;
     QBoxLayout *m_parentLayout;
+
+
 };
 
 #endif // PLMSUBWINDOWMANAGER_H

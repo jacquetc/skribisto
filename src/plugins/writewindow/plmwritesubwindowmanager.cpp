@@ -26,19 +26,22 @@
 PLMWriteSubWindowManager::PLMWriteSubWindowManager(QBoxLayout *parentLayout) :
     PLMBaseSubWindowManager(parentLayout, "writeWindowManager")
 {
-    m_documentListModel = plmmodels->documentsListModel();
-    m_documentListModel->addTableName(this->documentTableName());
 
     m_textDocumentList = new PLMTextDocumentList(this, tableName());
 
 
     connect(plmpluginhub, &PLMPluginHub::commandSent, [this](const PLMCommand& command) {
         if (command.cmd ==
-            "open_sheet") this->openSheet(command.projectId, command.paperId);
+                "open_sheet") this->openSheet(command.projectId, command.paperId);
 
         if (command.cmd ==
-            "open_sheet_on_new_view") this->openSheet(command.projectId, command.paperId,
-                                                      false);
+                "open_sheet_on_new_view") this->openSheet(command.projectId, command.paperId,
+                                                          true);
+        if (command.cmd ==
+                "close_sheet") this->closeSheet(command.projectId, command.paperId);
+
+        if (command.cmd ==
+                "close_write_document") this->closeDocument(command.projectId, command.arg1.toInt());
     });
 }
 
@@ -49,7 +52,7 @@ QString PLMWriteSubWindowManager::tableName() const
 
 QString PLMWriteSubWindowManager::documentTableName() const
 {
-    return "tbl_user_write_doc_list";
+    return "tbl_user_writewindow_doc_list";
 }
 
 void PLMWriteSubWindowManager::afterApplyUserSetting(int projectId)
@@ -66,9 +69,9 @@ void PLMWriteSubWindowManager::afterApplyUserSetting(int projectId)
 
 
     QStringList valueList;
-    valueList << "l_sheet_code" << "t_type" << "l_subwindow" << "b_visible" <<
-        "l_cursor_pos" << "t_property" << "dt_updated" <<
-        "dt_last_focused";
+    valueList << "l_paper_code" << "t_type" << "l_subwindow" << "b_visible" <<
+                 "l_cursor_pos" << "t_property" << "dt_updated" <<
+                 "dt_last_focused";
 
     for (int documentId : documentIdList) {
         QHash<QString, QVariant> result;
@@ -85,7 +88,7 @@ void PLMWriteSubWindowManager::afterApplyUserSetting(int projectId)
 
         // get document
         QString type =
-            result.value("t_type", QVariant("write_document")).toString();
+                result.value("t_type", QVariant("write_document")).toString();
         int subWindowId = result.value("l_subwindow", QVariant(-1)).toInt();
 
 
@@ -99,12 +102,13 @@ void PLMWriteSubWindowManager::afterApplyUserSetting(int projectId)
 
         // create document
         if (type == "write_document") {
-            int sheetId   = result.value("l_sheet_code", QVariant(-1)).toInt();
+            int sheetId   = result.value("l_paper_code", QVariant(-1)).toInt();
             int cursorPos = result.value("l_cursor_pos", QVariant(0)).toInt();
 
             document = new PLMWriteDocument(projectId,
                                             sheetId,
                                             documentId,
+                                            this->documentTableName(),
                                             m_textDocumentList);
 
             PLMWriteDocument *writeDocument = static_cast<PLMWriteDocument *>(document);
@@ -123,7 +127,7 @@ void PLMWriteSubWindowManager::afterApplyUserSetting(int projectId)
 
 PLMBaseDocument * PLMWriteSubWindowManager::getDocument(const QString& documentType)
 {
-    // TODO : add PLMBaseDocument-based plugin
+    // TODO : add PLMBaseDocument-based plugin, ... maybe not useful
 }
 
 // -------------------------------------------------------------------
@@ -133,15 +137,15 @@ void PLMWriteSubWindowManager::openSheet(int projectId, int sheetId, bool onNewV
     // verify if document already created and not asked to open explicitely on a
     // new view
     if (m_textDocumentList->contains(projectId, sheetId) && !onNewView) {
-        if (m_documentListModel->getSubWindowIdList(projectId, sheetId).isEmpty()) {
+        if (plmmodels->writeDocumentListModel()->getSubWindowIdList(projectId, sheetId).isEmpty()) {
             qDebug() << "error :" << Q_FUNC_INFO << "getSubWindowId isEmpty";
             return;
         }
         int subWindowId =
-            m_documentListModel->getSubWindowIdList(projectId, sheetId).first();
+                plmmodels->writeDocumentListModel()->getSubWindowIdList(projectId, sheetId).first();
 
         PLMSubWindow *subWindow      = this->getSubWindowById(subWindowId);
-        QList<int>    documentIdList = m_documentListModel->getDocumentId(projectId,
+        QList<int>    documentIdList = plmmodels->writeDocumentListModel()->getDocumentId(projectId,
                                                                           sheetId,
                                                                           subWindowId);
 
@@ -157,6 +161,8 @@ void PLMWriteSubWindowManager::openSheet(int projectId, int sheetId, bool onNewV
             qDebug() << "error :" << Q_FUNC_INFO << "setCurrentDocument";
             return;
         }
+
+        //TODO: add focus on current document
     }
 
     // else create one
@@ -164,7 +170,7 @@ void PLMWriteSubWindowManager::openSheet(int projectId, int sheetId, bool onNewV
         int newId = -1;
 
         QHash<QString, QVariant> values;
-        values.insert("t_type", QVariant("writeWindow"));
+        values.insert("t_type", QVariant("write_document"));
         PLMError error = plmdata->userHub()->add(projectId,
                                                  this->documentTableName(),
                                                  values,
@@ -176,28 +182,32 @@ void PLMWriteSubWindowManager::openSheet(int projectId, int sheetId, bool onNewV
         }
 
         PLMWriteDocument *document =
-            new PLMWriteDocument(projectId, sheetId, newId, m_textDocumentList);
+                new PLMWriteDocument(projectId, sheetId, newId, documentTableName(), m_textDocumentList);
         PLMSubWindow *subWindow;
 
         if (onNewView) {
             int callerId  = this->getLastFocusedWindow()->id();
             int newViewId = this->addSubWindow(Qt::Horizontal, callerId);
             subWindow = this->getSubWindowById(newViewId);
+
+            connect(subWindow, &PLMSubWindow::closeDocumentCalled, this, &PLMWriteSubWindowManager::closeDocument, Qt::ConnectionType::UniqueConnection);
         }
         else {
             subWindow = this->getLastFocusedWindow();
+            connect(subWindow, &PLMSubWindow::closeDocumentCalled, this, &PLMWriteSubWindowManager::closeDocument, Qt::ConnectionType::UniqueConnection);
         }
         subWindow->addDocument(document);
+        subWindow->setCurrentDocument(document->getProjectId(), document->getDocumentId());
 
         int documentId = newId;
 
         // save subwindow in db
-        plmdata->userHub()->set(projectId,
-                                this->documentTableName(),
-                                documentId,
-                                "l_subwindow",
-                                subWindow->id(),
-                                true);
+        error =plmdata->userHub()->set(projectId,
+                                       this->documentTableName(),
+                                       documentId,
+                                       "l_subwindow",
+                                       subWindow->id(),
+                                       true);
 
         if (error) {
             qDebug() << "error :" << Q_FUNC_INFO << "set subWindow";
@@ -205,31 +215,34 @@ void PLMWriteSubWindowManager::openSheet(int projectId, int sheetId, bool onNewV
         }
 
         // save paperId in db
-        plmdata->userHub()->set(projectId,
-                                this->documentTableName(),
-                                documentId,
-                                "l_paper_code",
-                                sheetId,
-                                true);
+        error = plmdata->userHub()->set(projectId,
+                                        this->documentTableName(),
+                                        documentId,
+                                        "l_paper_code",
+                                        sheetId,
+                                        true);
 
         if (error) {
             qDebug() << "error :" << Q_FUNC_INFO << "set paperId";
             return;
         }
 
-        // save paperId in db
+        // save title in db
         QString title = plmdata->sheetHub()->getTitle(projectId, sheetId);
-        plmdata->userHub()->set(projectId,
-                                this->documentTableName(),
-                                documentId,
-                                "t_name",
-                                title,
-                                true);
+        error = plmdata->userHub()->set(projectId,
+                                        this->documentTableName(),
+                                        documentId,
+                                        "t_title",
+                                        title,
+                                        true);
 
         if (error) {
             qDebug() << "error :" << Q_FUNC_INFO << "set title";
             return;
         }
+
+        //TODO: add focus on current document
+
     }
 
 
@@ -248,7 +261,34 @@ void PLMWriteSubWindowManager::openSheet(int projectId, int sheetId, bool onNewV
 /// \param sheetId
 /// close documents associated with the sheet
 void PLMWriteSubWindowManager::closeSheet(int projectId, int sheetId)
-{}
+{
+    QHash<int, QVariant> result;
+    QHash<QString, QVariant> where;
+    where.insert("l_paper_code", sheetId);
+
+    result = plmdata->userHub()->getValueByIdsWhere(projectId,
+                                                    this->documentTableName(),
+                                                    "l_subwindow", where);
+
+    if(result.isEmpty()){
+
+        qDebug() << "error :" << Q_FUNC_INFO << "closeSheet getValueByIdsWhere";
+
+        return;
+    }
+    QHashIterator<int, QVariant> i(result);
+    while (i.hasNext()) {
+        i.next();
+        int documentId = i.key();
+        int subWindowId = i.value().toInt();
+
+        PLMSubWindow *subWindow =  this->getSubWindowById(subWindowId);
+
+        subWindow->closeDocument(projectId, documentId);
+
+    }
+
+}
 
 // -------------------------------------------------------------------
 ///
@@ -257,4 +297,34 @@ void PLMWriteSubWindowManager::closeSheet(int projectId, int sheetId)
 /// \param documentId
 /// close Document
 void PLMWriteSubWindowManager::closeDocument(int projectId, int documentId)
-{}
+{
+
+
+    PLMError error = plmdata->userHub()->remove(projectId,
+                                                this->documentTableName(),
+                                                documentId);
+
+
+
+    IFKO(error) {
+        qDebug() << "error :" << Q_FUNC_INFO << "remove";
+        return;
+    }
+    IFOK(error) {
+        QList<PLMSubWindow*> subWindowList = this->getAllSubWindows();
+
+        for(PLMSubWindow* subWindow : subWindowList){
+
+            PLMBaseDocument *document = subWindow->getDocument(projectId, documentId);
+            if(document == nullptr){
+                continue;
+            }
+            if(document->getDocumentType() == "write_document"){
+                QPair<int, int> wholedocId(projectId, documentId);
+                m_textDocumentList->unsubscibeBaseDocumentFromTextDocument(wholedocId);
+            }
+            subWindow->closeDocument(projectId, documentId);
+        }
+
+    }
+}

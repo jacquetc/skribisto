@@ -23,18 +23,29 @@
 #define PLMDOCUMENTSLISTPROXYMODEL_H
 
 #include <QObject>
+#include <QSortFilterProxyModel>
 #include "global_core.h"
 
-class EXPORT_CORE PLMDocumentListProxyModel : public QObject {
+class EXPORT_CORE PLMDocumentListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
 
 public:
 
     explicit PLMDocumentListProxyModel(QObject *parent = nullptr);
+    void setSubWindowId(int subWindowId);
+
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
+
+    Qt::ItemFlags flags(const QModelIndex& index) const override;
+
+    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
 signals:
 
 public slots:
+
+private:
+    int m_subWindowId;
 };
 
 #endif // PLMDOCUMENTSLISTPROXYMODEL_H

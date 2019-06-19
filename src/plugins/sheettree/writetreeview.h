@@ -21,8 +21,11 @@
 #ifndef WRITETREEVIEW_H
 #define WRITETREEVIEW_H
 
+#include <QDateTime>
 #include <QObject>
+#include <QPointer>
 #include <QTreeView>
+#include <plmsheetitem.h>
 #include "plmsheetproxymodel.h"
 
 class WriteTreeView : public QTreeView {
@@ -30,6 +33,8 @@ public:
 
     WriteTreeView(QWidget *parent = nullptr);
 
+protected:
+    void contextMenuEvent(QContextMenuEvent *event);
 private slots:
 
     void              setExpandStateToItems();
@@ -40,14 +45,22 @@ private slots:
     void              itemExpandedSlot(QModelIndex index);
     void              itemClicked(QModelIndex index);
 
+
 private:
+    void setupActions();
 
     QString m_parentDockName;
+
+    //context menu
+    QMenu *m_contextMenu;
+    QPointer<PLMSheetItem> m_currentItem;
+    QAction *m_actionOpenSheet, *m_actionOpenSheetOnNewSubWindow, *m_actionRename, *m_actionSort, *m_actionSortAlphabeticaly;
 
     // clicks :
     int m_clicksCount;
     QModelIndex m_oldIndex;
     PLMSheetProxyModel *m_model;
+    qint64 m_clickTime;
 };
 
 #endif // WRITETREEVIEW_H

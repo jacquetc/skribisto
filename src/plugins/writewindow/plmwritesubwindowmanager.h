@@ -54,7 +54,6 @@ private:
     PLMBaseDocument* getDocument(const QString& documentType);
 
     PLMTextDocumentList *m_textDocumentList;
-    PLMDocumentListModel *m_documentListModel;
 };
 
 #endif // PLMWRITESUBWINDOWMANAGER_H

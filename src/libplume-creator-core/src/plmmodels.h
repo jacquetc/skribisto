@@ -21,7 +21,7 @@
 #ifndef PLMMODELS_H
 #define PLMMODELS_H
 
-#include "plmdocumentlistmodel.h"
+#include "plmwritedocumentlistmodel.h"
 #include "plmsheetmodel.h"
 #include "plmsheetproxymodel.h"
 #include "global_core.h"
@@ -45,7 +45,7 @@ public:
     PLMSheetModel       * sheetModel();
     PLMSheetProxyModel  * sheetProxyModel();
 
-    PLMDocumentListModel* documentsListModel();
+    PLMDocumentListModel* writeDocumentListModel();
 
 signals:
 
@@ -58,7 +58,7 @@ private:
     PLMSheetModel *m_sheetModel;
     PLMSheetProxyModel *m_sheetProxyModel;
 
-    PLMDocumentListModel *m_documentsListModel;
+    PLMWriteDocumentListModel *m_writeDocumentListModel;
 };
 
 #endif // PLMMODELS_H

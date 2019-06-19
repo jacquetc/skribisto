@@ -49,7 +49,7 @@ set(gui_UI
     plmsidemainbar.ui
     plmbasedockheader.ui
     plmbasedockbody.ui
-    plmbasesubwindow.ui
+    plmsubwindow.ui
 
 )
 
