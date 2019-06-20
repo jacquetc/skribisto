@@ -27,7 +27,7 @@ PLMWriteSubWindowManager::PLMWriteSubWindowManager(QBoxLayout *parentLayout) :
     PLMBaseSubWindowManager(parentLayout, "writeWindowManager")
 {
 
-    m_textDocumentList = new PLMTextDocumentList(this, tableName());
+    m_textDocumentList = new PLMWriteTextDocumentList(this);
 
 
     connect(plmpluginhub, &PLMPluginHub::commandSent, [this](const PLMCommand& command) {

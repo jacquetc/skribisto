@@ -24,6 +24,7 @@
 
 #include <QObject>
 #include <QTextDocument>
+#include <QTimer>
 #include "global.h"
 
 class PLMTextDocumentList : public QObject {
@@ -31,8 +32,7 @@ class PLMTextDocumentList : public QObject {
 
 public:
 
-    explicit PLMTextDocumentList(QObject       *parent,
-                                 const QString& tableName);
+    explicit PLMTextDocumentList(QObject       *parent);
 
     QTextDocument* getTextDocument(int projectId,
                                    int paperId,
@@ -42,9 +42,18 @@ public:
                   int paperId);
 
     bool unsubscibeBaseDocumentFromTextDocument(const QPair<int, int> &wholePaperId);
-signals:
 
 public slots:
+    void saveAllTextsImmediately();
+protected slots:
+    virtual void saveTextDocument(QTextDocument *textDocument) = 0;
+
+
+
+signals:
+
+private slots:
+    void contentsChanged();
 
 private:
 
@@ -52,6 +61,7 @@ private:
 
     QList<QTextDocument *>m_textDocumentList;
     QMultiHash<QPair<int, int>, QPair<int, int> >m_subscribedHash;
+    QHash<QTextDocument *, QTimer *> m_textDocumentAndTimerHash;
 };
 
 #endif // PLMDOCUMENTLIST_H

@@ -23,7 +23,7 @@
 #define PLMWRITESUBWINDOWMANAGER_H
 
 #include "plmbasesubwindowmanager.h"
-#include "plmtextdocumentlist.h"
+#include "plmwritetextdocumentlist.h"
 #include <plmdocumentlistmodel.h>
 #include "plmmodels.h"
 #include <QObject>

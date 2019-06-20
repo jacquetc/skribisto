@@ -61,6 +61,9 @@ void PLMWriteDocument::setTextDocument(int projectId, int sheetId)
     ui->writingZone->setTextDocument(textDocument);
 
     m_textDocument = textDocument;
+
+
+
 }
 
 QTextDocument * PLMWriteDocument::getTextDocument() const

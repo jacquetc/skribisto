@@ -11,6 +11,7 @@ set(writewindow_SRCS
     plmwindow.cpp
     plmwritesubwindowmanager.cpp
     plmwritedocument.cpp
+    plmwritetextdocumentlist.cpp
 )
 set(writewindow_HDR
     plmwritewindow.h
@@ -18,6 +19,7 @@ set(writewindow_HDR
     plugininterface.h
     plmwritesubwindowmanager.h
     plmwritedocument.h
+    plmwritetextdocumentlist.h
 )
 
 set(writewindow_UI

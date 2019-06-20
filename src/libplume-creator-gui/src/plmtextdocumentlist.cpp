@@ -20,11 +20,11 @@
 *  along with Plume Creator.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmtextdocumentlist.h"
+#include <QDateTime>
 #include <QDebug>
 
-PLMTextDocumentList::PLMTextDocumentList(QObject       *parent,
-                                         const QString& tableName) : QObject(
-        parent)
+PLMTextDocumentList::PLMTextDocumentList(QObject       *parent) :
+    QObject(parent)
 {}
 
 
@@ -49,14 +49,52 @@ QTextDocument * PLMTextDocumentList::getTextDocument(int projectId,
     m_textDocumentList.append(textDocument);
     m_subscribedHash.insert(wholePaperId, wholeDocId);
 
+    //save timer :
+    QTimer *timer = new QTimer(textDocument);
+    timer->callOnTimeout([=](){
+        saveTextDocument(textDocument);
+    });
+    m_textDocumentAndTimerHash.insert(textDocument, timer);
+
+    // save connection
+
+    connect(textDocument, &QTextDocument::contentsChanged, this, &PLMTextDocumentList::contentsChanged, Qt::UniqueConnection);
+
     return textDocument;
 }
+
+//--------------------------------------------------------------------------------
+void PLMTextDocumentList::contentsChanged()
+{
+    QTextDocument *textDocument = dynamic_cast<QTextDocument*>(this->sender());
+
+    QTimer *timer = m_textDocumentAndTimerHash.value(textDocument);
+    timer->stop();
+    timer->start(1000);
+
+}
+
+//--------------------------------------------------------------------------------
+
+void PLMTextDocumentList::saveAllTextsImmediately()
+{
+    QHashIterator<QTextDocument *, QTimer *> j(m_textDocumentAndTimerHash);
+    while (j.hasNext()) {
+        j.next();
+        j.value()->stop();
+        this->saveTextDocument(j.key());
+    }
+}
+
+//--------------------------------------------------------------------------------
 
 bool PLMTextDocumentList::contains(int projectId, int paperId)
 {
     QPair<int, int> wholePaperId(projectId, paperId);
     return m_subscribedHash.contains(wholePaperId);
 }
+
+//--------------------------------------------------------------------------------
 
 bool PLMTextDocumentList::unsubscibeBaseDocumentFromTextDocument(const QPair<int,
                                              int>& wholeDocId)
@@ -72,7 +110,7 @@ bool PLMTextDocumentList::unsubscibeBaseDocumentFromTextDocument(const QPair<int
         }
     }
 
-    //remove text is no subscription
+    //remove text if no subscription
 
     if(!m_subscribedHash.contains(wholePaperId)){
 
@@ -81,6 +119,7 @@ bool PLMTextDocumentList::unsubscibeBaseDocumentFromTextDocument(const QPair<int
             j.next();
             if(j.value()->property("projectId").toInt() == wholePaperId.first &&
                     j.value()->property("paperId").toInt() == wholePaperId.second){
+                this->saveTextDocument(j.value());
                 j.remove();
             }
         }
