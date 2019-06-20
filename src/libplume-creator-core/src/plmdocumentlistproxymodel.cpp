@@ -44,9 +44,9 @@ bool PLMDocumentListProxyModel::filterAcceptsRow(int source_row, const QModelInd
 {
     QModelIndex index = this->sourceModel()->index(source_row, 0, source_parent);
     qDebug() << "source_row :" << source_row;
-   if (!index.isValid()){
-       return false;
-}
+    if (!index.isValid()){
+        return false;
+    }
     int indexSubWindowId = sourceModel()->data(index, PLMDocumentListModel::Roles::SubWindowRole).toInt();
 
     qDebug() << indexSubWindowId << m_subWindowId;
@@ -61,14 +61,14 @@ bool PLMDocumentListProxyModel::filterAcceptsRow(int source_row, const QModelInd
 
 QVariant PLMDocumentListProxyModel::data(const QModelIndex &index, int role) const
 {
- //   if (!this->mapToSource(index).isValid()) return QVariant();
+    //   if (!this->mapToSource(index).isValid()) return QVariant();
 
-//    QModelIndex sourceIndex = this->mapToSource(index);
-//    int col                 = index.column();
+    //    QModelIndex sourceIndex = this->mapToSource(index);
+    //    int col                 = index.column();
 
-//    if ((role == Qt::DisplayRole) && (col == 0)) {
-//        return this->sourceModel()->data(sourceIndex, PLMDocumentListModel::Roles::NameRole);
-//    }
+    //    if ((role == Qt::DisplayRole) && (col == 0)) {
+    //        return this->sourceModel()->data(sourceIndex, PLMDocumentListModel::Roles::NameRole);
+    //    }
 
     return QSortFilterProxyModel::data(index, role);
 

@@ -200,6 +200,10 @@ QVariant PLMSheetModel::data(const QModelIndex& index, int role) const
     if (role == PLMSheetItem::Roles::ContentDateRole) {
         return item->data(role);
     }
+
+    if (role == PLMSheetItem::Roles::DeletedRole) {
+        return item->data(role);
+    }
     return QVariant();
 }
 
@@ -357,6 +361,7 @@ QHash<int, QByteArray>PLMSheetModel::roleNames() const {
     roles[PLMSheetItem::Roles::CreationDateRole] = "creationDate";
     roles[PLMSheetItem::Roles::UpdateDateRole]   = "updateDate";
     roles[PLMSheetItem::Roles::ContentDateRole]  = "contentDate";
+    roles[PLMSheetItem::Roles::DeletedRole]  = "deleted";
     return roles;
 }
 

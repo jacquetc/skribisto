@@ -34,11 +34,13 @@ public:
     explicit PLMDocumentListProxyModel(QObject *parent = nullptr);
     void setSubWindowId(int subWindowId);
 
-    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
 
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+
+protected:
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
 
 signals:
 

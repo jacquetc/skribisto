@@ -37,6 +37,7 @@ WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent), m_parentDockN
     this->setEditTriggers(QTreeView::EditKeyPressed);
 
     this->setHeaderHidden(true);
+    this->setTabKeyNavigation(true);
 
     this->setModel(plmmodels->sheetProxyModel());
     m_model = plmmodels->sheetProxyModel();
@@ -47,6 +48,8 @@ WriteTreeView::WriteTreeView(QWidget *parent) : QTreeView(parent), m_parentDockN
 
 
     connect(this, &QTreeView::clicked, this, &WriteTreeView::itemClicked);
+
+    connect(this, &QTreeView::activated, this, &WriteTreeView::itemClicked);
 
     connect(m_model,
             &PLMSheetModel::modelReset,
@@ -229,6 +232,7 @@ void WriteTreeView::itemClicked(QModelIndex index)
 void WriteTreeView::setupActions()
 {
     m_actionOpenSheet = new QAction(tr("Open sheet"), this);
+
 
     connect(m_actionOpenSheet, &QAction::triggered, [=](){
         if(m_currentItem.isNull()){
