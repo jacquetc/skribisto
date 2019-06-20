@@ -62,7 +62,7 @@ void PLMSheetItem::invalidateAllData()
     QHash<QString, QVariant>::const_iterator i = newData.constBegin();
 
     while (i != newData.constEnd()) {
-        if (i.key() == "l_sheet_id") {
+        if (i.key() == "l_paper_id") {
             // unused
         }
 

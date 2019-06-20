@@ -80,6 +80,7 @@ public:
 
     QHash<int, QByteArray>roleNames() const override;
 
+    QModelIndexList getModelIndex(int projectId, int paperId);
 private slots:
 
     void populate();

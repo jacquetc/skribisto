@@ -54,7 +54,8 @@ private:
     //context menu
     QMenu *m_contextMenu;
     QPointer<PLMSheetItem> m_currentItem;
-    QAction *m_actionOpenSheet, *m_actionOpenSheetOnNewSubWindow, *m_actionRename, *m_actionSort, *m_actionSortAlphabeticaly;
+    QAction *m_actionOpenSheet, *m_actionOpenSheetOnNewSubWindow,  *m_actionAddSheet, *m_actionAddSubSheet
+    , *m_actionRename, *m_actionSort, *m_actionSortAlphabeticaly;
 
     // clicks :
     int m_clicksCount;

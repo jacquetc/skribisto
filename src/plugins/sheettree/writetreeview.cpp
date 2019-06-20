@@ -272,13 +272,92 @@ void WriteTreeView::setupActions()
 
     });
 
-    m_actionSortAlphabeticaly = new QAction(tr("Alphabeticaly"), this);
+    m_actionAddSheet = new QAction(tr("Add Sheet"), this);
+    connect(m_actionAddSheet, &QAction::triggered, [=](){
+        if(m_currentItem.isNull()){
+            return;
+        }
+        // add :
+        PLMError error = plmdata->sheetHub()->addPaperBelow(m_currentItem->projectId(), m_currentItem->paperId());
 
+        IFKO(error){
+            qWarning() << "Error : Add Sheet" << m_currentItem->projectId() << m_currentItem->paperId();
+            return;
+
+        }
+
+        // edit :
+        int lastAddedId = plmdata->sheetHub()->getLastAddedId();
+
+        QModelIndexList indexList = plmmodels->sheetModel()->getModelIndex(m_currentItem->projectId(), lastAddedId);
+        if(indexList.isEmpty()){
+            qWarning() << "Error : Add Sheet : indexList.isEmpty" << m_currentItem->projectId() << m_currentItem->paperId();
+            return;
+        }
+       QModelIndex index = indexList.first();
+
+        if(!index.isValid()){
+            return;
+        }
+        QModelIndex proxyIndex = m_model->mapFromSource(index);
+
+        this->edit(proxyIndex);
+
+    });
+
+    m_actionAddSubSheet = new QAction(tr("Add Sub-sheet"), this);
+    connect(m_actionAddSubSheet, &QAction::triggered, [=](){
+        if(m_currentItem.isNull()){
+            return;
+        }
+
+        // add :
+
+        PLMError error = plmdata->sheetHub()->addChildPaper(m_currentItem->projectId(), m_currentItem->paperId());
+
+        IFKO(error){
+            qWarning() << "Error : Add Sub-sheet" << m_currentItem->projectId() << m_currentItem->paperId();
+            return;
+
+        }
+        // edit :
+        int lastAddedId = plmdata->sheetHub()->getLastAddedId();
+        QModelIndexList indexList = plmmodels->sheetModel()->getModelIndex(m_currentItem->projectId(), lastAddedId);
+
+        if(indexList.isEmpty()){
+            qWarning() << "Error : Add Sheet : indexList.isEmpty" << m_currentItem->projectId() << m_currentItem->paperId();
+            return;
+        }
+        QModelIndex index = indexList.first();
+
+        if(!index.isValid()){
+            return;
+        }
+        QModelIndex proxyIndex = m_model->mapFromSource(index);
+
+        this->edit(proxyIndex);
+
+
+    });
+
+    m_actionSortAlphabeticaly = new QAction(tr("Alphabeticaly"), this);
+    connect(m_actionRename, &QAction::triggered, [=](){
+        if(m_currentItem.isNull()){
+            return;
+        }
+
+        //TODO: implement this action
+
+    });
 
     m_contextMenu = new QMenu(this);
     m_contextMenu->addAction(m_actionOpenSheet);
     m_contextMenu->addAction(m_actionOpenSheetOnNewSubWindow);
+    m_contextMenu->addSeparator();
+    m_contextMenu->addAction(m_actionAddSheet);
+    m_contextMenu->addAction(m_actionAddSubSheet);
     m_contextMenu->addAction(m_actionRename);
+    m_contextMenu->addSeparator();
     QMenu *advancedMenu = new QMenu(tr("Advanced"), this);
     m_contextMenu->addMenu(advancedMenu);
     advancedMenu->addAction(m_actionSortAlphabeticaly);

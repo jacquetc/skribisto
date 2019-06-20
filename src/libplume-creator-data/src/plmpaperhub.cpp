@@ -1025,7 +1025,7 @@ PLMError PLMPaperHub::removePaper(int projectId, int targetId)
     queries.beginTransaction();
     PLMError error = queries.remove(targetId);
     IFOKDO(error, queries.renumberSortOrder())
-    IFKO(error) {
+            IFKO(error) {
         queries.rollback();
     }
     IFOK(error) {

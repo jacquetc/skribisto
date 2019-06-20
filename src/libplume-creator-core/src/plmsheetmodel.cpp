@@ -42,6 +42,11 @@ PLMSheetModel::PLMSheetModel(QObject *parent)
             &PLMSheetModel::populate);
 
 
+    connect(plmdata->sheetHub(),
+            &PLMSheetHub::paperAdded,
+            this,
+            &PLMSheetModel::populate, Qt::DirectConnection);
+
     this->connectToPLMDataSignals();
 }
 
@@ -555,6 +560,33 @@ void PLMSheetModel::disconnectFromPLMDataSignals()
 
     m_dataConnectionsList.clear();
 }
+//-----------------------------------------------------------------------------------
+
+
+QModelIndexList PLMSheetModel::getModelIndex(int projectId, int paperId)
+{
+    QModelIndexList list;
+
+
+    QModelIndexList modelList =  this->match(this->index(0, 0,
+                                                         QModelIndex()),
+                                             PLMSheetItem::Roles::ProjectIdRole,
+                                             projectId,
+                                             -1,
+                                             Qt::MatchFlag::MatchExactly |
+                                             Qt::MatchFlag::MatchWrap | Qt::MatchFlag::MatchRecursive);
+
+    for (const QModelIndex& modelIndex : modelList) {
+        if ((modelIndex.data(PLMSheetItem::Roles::PaperIdRole).toInt() ==
+             paperId)) {
+            list.append(modelIndex);
+        }
+    }
+
+    return list;
+}
+
+
 
 // ----------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------
