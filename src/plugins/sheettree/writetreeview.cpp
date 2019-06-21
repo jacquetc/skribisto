@@ -324,6 +324,7 @@ void WriteTreeView::setupActions()
             return;
 
         }
+
         // edit :
         int lastAddedId = plmdata->sheetHub()->getLastAddedId();
         QModelIndexList indexList = plmmodels->sheetModel()->getModelIndex(m_currentItem->projectId(), lastAddedId);

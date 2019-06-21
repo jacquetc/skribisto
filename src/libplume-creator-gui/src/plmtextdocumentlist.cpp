@@ -97,7 +97,7 @@ bool PLMTextDocumentList::contains(int projectId, int paperId)
 //--------------------------------------------------------------------------------
 
 bool PLMTextDocumentList::unsubscibeBaseDocumentFromTextDocument(const QPair<int,
-                                             int>& wholeDocId)
+                                                                 int>& wholeDocId)
 {
     QMutableHashIterator<QPair<int, int>, QPair<int, int> > i(m_subscribedHash);
 
@@ -120,33 +120,34 @@ bool PLMTextDocumentList::unsubscibeBaseDocumentFromTextDocument(const QPair<int
             if(j.value()->property("projectId").toInt() == wholePaperId.first &&
                     j.value()->property("paperId").toInt() == wholePaperId.second){
                 this->saveTextDocument(j.value());
+                m_textDocumentAndTimerHash.remove(j.value());
                 j.remove();
             }
         }
 
 
-   }
+    }
 
-//    QTextDocument *textDocumentToRemove;
-//    for (QTextDocument *textDocument : m_textDocumentList) {
-//        if ((wholeDocId.first == textDocument->property("projectId").toInt()) &&
-//            (wholeDocId.second == textDocument->property("paperId").toInt())) {
-//            textDocumentToRemove = textDocument;
-//        }
-//    }
-//    if(textDocumentToRemove == nullptr){
-//        return false;
-//    }
-//    m_textDocumentList.removeOne(textDocumentToRemove);
-//    return true;
+    //    QTextDocument *textDocumentToRemove;
+    //    for (QTextDocument *textDocument : m_textDocumentList) {
+    //        if ((wholeDocId.first == textDocument->property("projectId").toInt()) &&
+    //            (wholeDocId.second == textDocument->property("paperId").toInt())) {
+    //            textDocumentToRemove = textDocument;
+    //        }
+    //    }
+    //    if(textDocumentToRemove == nullptr){
+    //        return false;
+    //    }
+    //    m_textDocumentList.removeOne(textDocumentToRemove);
+    //    return true;
 }
 
 QTextDocument * PLMTextDocumentList::getTextDocumentFromPaperId(const QPair<int,
-                                                                            int>& wholePaperId)
+                                                                int>& wholePaperId)
 {
     for (QTextDocument *textDocument : m_textDocumentList) {
         if ((wholePaperId.first == textDocument->property("projectId").toInt()) &&
-            (wholePaperId.second == textDocument->property("paperId").toInt())) {
+                (wholePaperId.second == textDocument->property("paperId").toInt())) {
             return textDocument;
         }
     }

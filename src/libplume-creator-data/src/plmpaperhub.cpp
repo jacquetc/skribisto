@@ -981,7 +981,7 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
 
         finalSortOrder = lowestSort - 1;
 
-        // if tree is emptyueries.renumberSortOrder())
+        // if tree is empty
         IFKO(error) {
             queries.rollback();
         }

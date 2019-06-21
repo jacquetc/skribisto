@@ -4,6 +4,6 @@
     "longname" :        "Plume Test Widget",
     "version" :         "1.0",
     "mandatory" :    true,
-    "activatedbydefault" :    true,
+    "activatedbydefault" :    false,
     "dependencies" :    ["WriteWindow"]
 }

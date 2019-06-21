@@ -22,6 +22,7 @@
 #include "plmsheetitem.h"
 #include "plmdata.h"
 
+
 PLMSheetItem::PLMSheetItem() : m_isProjectItem(false), m_isRootItem(false)
 {
     m_data.insert(Roles::ProjectIdRole, -2);
@@ -53,8 +54,8 @@ void PLMSheetItem::invalidateData(int role)
 void PLMSheetItem::invalidateAllData()
 {
     QHash<QString, QVariant> newData = plmdata->sheetHub()->getSheetData(
-        this->projectId(),
-        this->paperId());
+                this->projectId(),
+                this->paperId());
     QString newProjectName = plmdata->projectHub()->getProjectName(this->projectId());
     m_data.insert(Roles::ProjectNameRole, newProjectName);
 
@@ -210,7 +211,7 @@ PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
 
 
     if ((this->indent() == 0) &&
-        (plmdata->projectHub()->getProjectIdList().count() <= 1)) {
+            (plmdata->projectHub()->getProjectIdList().count() <= 1)) {
         return nullptr;
     }
 
@@ -244,18 +245,29 @@ int PLMSheetItem::row(const QList<PLMSheetItem *>& itemList)
     int index                  = itemList.indexOf(this);
     int indent                 = this->indent();
     int possibleRow            = 0;
-    int previousItemIndex      = index - 1;
-    PLMSheetItem *previousItem = itemList.at(previousItemIndex);
+
+// create sublist
+    QList<PLMSheetItem *> itemSubList;
+    for (int i = 0; i < index; ++i) {
+        itemSubList.append(itemList.at(i));
+    }
 
 
-    while (previousItem->indent() >= indent && itemList.first() != previousItem) {
-        previousItemIndex -= 1;
-        previousItem       = itemList.at(previousItemIndex);
+    QListIterator<PLMSheetItem *> iterator(itemSubList);
+    iterator.toBack();
+    while(iterator.hasPrevious()){
+        PLMSheetItem *previousItem = iterator.previous();
+        if(previousItem->indent() >= indent){
 
-        if (previousItem->indent() == indent) {
-            possibleRow += 1;
+            if(previousItem->indent() == indent){
+                possibleRow += 1;
+            }
+        }
+        else {
+            break;
         }
     }
+
 
     return possibleRow;
 }
@@ -267,21 +279,29 @@ int PLMSheetItem::childrenCount(const QList<PLMSheetItem *>& itemList) {
         }
 
         int childrenCount      = 0;
-        int nextItemIndex      = 0;
-        PLMSheetItem *nextItem = itemList.at(nextItemIndex);
 
         // switch between multiple projects or one project
-        int indent;
-        plmdata->projectHub()->getProjectIdList().count() > 1 ? indent = -1 : indent = 0;
+        int parentIndent;
+        plmdata->projectHub()->getProjectIdList().count() > 1 ? parentIndent = -2 : parentIndent = -1;
 
-        while (nextItem->indent() >= indent && itemList.last() != nextItem) {
-            nextItem = itemList.at(nextItemIndex);
 
-            if (nextItem->indent() == indent) {
-                childrenCount += 1;
+
+            QListIterator<PLMSheetItem *> iterator(itemList);
+            iterator.toFront();
+            while(iterator.hasNext()){
+                PLMSheetItem *nextItem = iterator.next();
+                if(nextItem->indent() > parentIndent){
+
+                    if(nextItem->indent() == parentIndent + 1){
+                        childrenCount += 1;
+                    }
+                }
+                else {
+                    break;
+                }
             }
-            nextItemIndex += 1;
-        }
+
+
         return childrenCount;
     }
 
@@ -294,17 +314,30 @@ int PLMSheetItem::childrenCount(const QList<PLMSheetItem *>& itemList) {
     int indent             = this->indent();
     int childrenCount      = 0;
     int nextItemIndex      = index + 1;
-    PLMSheetItem *nextItem = itemList.at(nextItemIndex);
 
-
-    while (nextItem->indent() > indent && itemList.last() != nextItem) {
-        nextItem = itemList.at(nextItemIndex);
-
-        if (nextItem->indent() == indent + 1) {
-            childrenCount += 1;
-        }
-        nextItemIndex += 1;
+    if(nextItemIndex >= itemList.count()){
+        return 0;
     }
+
+    QList<PLMSheetItem *> itemSubList = itemList.mid(nextItemIndex);
+
+    QListIterator<PLMSheetItem *> iterator(itemSubList);
+    iterator.toFront();
+    while(iterator.hasNext()){
+        PLMSheetItem *nextItem = iterator.next();
+        QString thisTitle = this->data(PLMSheetItem::Roles::NameRole).toString();
+        QString nextTitle = nextItem->data(PLMSheetItem::Roles::NameRole).toString();
+        if(nextItem->indent() > indent){
+
+            if(nextItem->indent() == indent + 1){
+                childrenCount += 1;
+            }
+        }
+        else {
+            break;
+        }
+    }
+
 
     return childrenCount;
 }
@@ -317,24 +350,37 @@ PLMSheetItem * PLMSheetItem::child(const QList<PLMSheetItem *>& itemList, int ro
         }
 
         int childrenCount       = 0;
-        int nextItemIndex       = 0;
-        PLMSheetItem *nextItem  = itemList.at(nextItemIndex);
         PLMSheetItem *childItem = nullptr;
 
         // switch between multiple projects or one project
-        int indent;
-        plmdata->projectHub()->getProjectIdList().count() > 1 ? indent = -1 : indent = 0;
 
-        while (nextItem->indent() >= indent && itemList.last() != nextItem) {
-            nextItem = itemList.at(nextItemIndex);
 
-            if (nextItem->indent() == indent) {
-                childrenCount += 1;
+        int parentIndent;
+        plmdata->projectHub()->getProjectIdList().count() > 1 ? parentIndent = -2 : parentIndent = -1;
 
-                if (childrenCount == row + 1) childItem = nextItem;
+
+
+            QListIterator<PLMSheetItem *> iterator(itemList);
+            iterator.toFront();
+            while(iterator.hasNext()){
+                PLMSheetItem *nextItem = iterator.next();
+                if(nextItem->indent() > parentIndent){
+
+                    if(nextItem->indent() == parentIndent + 1){
+                        childrenCount += 1;
+                        if (childrenCount == row + 1){
+
+                            childItem = nextItem;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    break;
+                }
             }
-            nextItemIndex += 1;
-        }
+
+
         return childItem;
     }
 
@@ -346,19 +392,33 @@ PLMSheetItem * PLMSheetItem::child(const QList<PLMSheetItem *>& itemList, int ro
     int indent              = this->indent();
     int childrenCount       = 0;
     int nextItemIndex       = index + 1;
-    PLMSheetItem *nextItem  = itemList.at(nextItemIndex);
+
     PLMSheetItem *childItem = nullptr;
 
-    while (nextItem->indent() > indent && itemList.last() != nextItem) {
-        nextItem = itemList.at(nextItemIndex);
 
-        if (nextItem->indent() == indent + 1) {
-            childrenCount += 1;
+    QList<PLMSheetItem *> itemSubList = itemList.mid(nextItemIndex);
 
-            if (childrenCount == row + 1) childItem = nextItem;
+    QListIterator<PLMSheetItem *> iterator(itemSubList);
+    iterator.toFront();
+    while(iterator.hasNext()){
+        PLMSheetItem *nextItem = iterator.next();
+        QString thisTitle = this->data(PLMSheetItem::Roles::NameRole).toString();
+        QString nextTitle = nextItem->data(PLMSheetItem::Roles::NameRole).toString();
+        if(nextItem->indent() > indent){
+
+            if(nextItem->indent() == indent + 1){
+                childrenCount += 1;
+                if (childrenCount == row + 1) {
+                    childItem = nextItem;
+                    break;
+                }
+            }
         }
-        nextItemIndex += 1;
+        else {
+            break;
+        }
     }
+
 
     return childItem;
 }

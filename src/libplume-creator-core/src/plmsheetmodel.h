@@ -88,6 +88,8 @@ private slots:
     void exploitSignalFromPLMData(int                 projectId,
                                   int                 paperId,
                                   PLMSheetItem::Roles role);
+    void addPaper(int                 projectId,
+                  int                 paperId);
 
 private:
 
