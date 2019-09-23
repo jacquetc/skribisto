@@ -76,6 +76,19 @@ void PLMTextDocumentList::contentsChanged()
 
 //--------------------------------------------------------------------------------
 
+void PLMTextDocumentList::saveTextImmediately(QTextDocument *textDocument)
+{
+    if(!m_textDocumentAndTimerHash.contains(textDocument))
+        return;
+
+    QTimer *timer = m_textDocumentAndTimerHash.value(textDocument);
+    timer->stop();
+    this->saveTextDocument(textDocument);
+
+}
+
+//--------------------------------------------------------------------------------
+
 void PLMTextDocumentList::saveAllTextsImmediately()
 {
     QHashIterator<QTextDocument *, QTimer *> j(m_textDocumentAndTimerHash);
@@ -117,10 +130,15 @@ bool PLMTextDocumentList::unsubscibeBaseDocumentFromTextDocument(const QPair<int
         QMutableListIterator<QTextDocument *> j(m_textDocumentList);
         while (j.hasNext()) {
             j.next();
-            if(j.value()->property("projectId").toInt() == wholePaperId.first &&
-                    j.value()->property("paperId").toInt() == wholePaperId.second){
-                this->saveTextDocument(j.value());
-                m_textDocumentAndTimerHash.remove(j.value());
+            QTextDocument *textDocument = j.value();
+            if(textDocument->property("projectId").toInt() == wholePaperId.first &&
+                    textDocument->property("paperId").toInt() == wholePaperId.second){
+                this->saveTextDocument(textDocument);
+
+                //stop timer :
+                m_textDocumentAndTimerHash.value(textDocument)->stop();
+                m_textDocumentAndTimerHash.remove(textDocument);
+
                 j.remove();
             }
         }

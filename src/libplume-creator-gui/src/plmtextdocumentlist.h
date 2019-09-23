@@ -45,6 +45,7 @@ public:
 
 public slots:
     void saveAllTextsImmediately();
+    void saveTextImmediately(QTextDocument *textDocument);
 protected slots:
     virtual void saveTextDocument(QTextDocument *textDocument) = 0;
 
