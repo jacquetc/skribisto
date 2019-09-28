@@ -1,9 +1,0 @@
-{
-    "type" :            "window",
-    "shortname" :            "WelcomeWindow",
-    "longname" :        "Plume Welcome Window",
-    "version" :         "1.0",
-    "mandatory" :    true,
-    "activatedbydefault" :    true,
-    "dependencies" :    []
-}

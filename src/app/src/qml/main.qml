@@ -37,7 +37,7 @@ ApplicationWindow {
 
     //        Image {
     //            id: splashImage
-    //            source: "qrc:/pics/plume-creator.svg"
+    //            source: "qrc:/pics/skribisto.svg"
     //        }
     //        Timer {
     //            interval: splash.timeoutInterval; running: true; repeat: false

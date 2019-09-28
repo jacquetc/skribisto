@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/testfiles">
-        <file>plume_test_project.sqlite</file>
+        <file>skribisto_test_project.sqlite</file>
     </qresource>
 </RCC>

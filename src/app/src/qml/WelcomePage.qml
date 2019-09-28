@@ -1,6 +1,6 @@
 import QtQuick 2.9
 import QtQuick.Dialogs 1.2
-import eu.plumecreator.projecthub 1.0
+import eu.skribisto.projecthub 1.0
 
 WelcomePageForm {
 
@@ -13,7 +13,7 @@ WelcomePageForm {
     function init(){
         //leftBase.onBaseWidthChanged.connect(changeLeftBaseWidth)
         //rightBase.onBaseWidthChanged.connect(changeRightBaseWidth)
-        var error = plmData.projectHub().loadProject("/home/cyril/Devel/plume/plume-creator/resources/test/plume_test_project.sqlite");
+        var error = plmData.projectHub().loadProject("/home/cyril/Devel/skribisto/skribisto/resources/test/skribisto_test_project.sqlite");
         console.log("project loaded : " + error.success);
 //        if (!error.success) {
 //            messageDialog.title = qsTr("")

@@ -2,8 +2,6 @@
 #include <QSettings>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <QtGui/QGuiApplication>
-#include <QApplication>
 
 using namespace std;
 
@@ -13,127 +11,78 @@ using namespace std;
 #include <QTextCodec>
 #include <QDebug>
 #include <QString>
-
+#include <QGuiApplication>
 #include <QTranslator>
+#include <QFileInfo>
+#include <QDir>
 
-#include "plmutils.h"
-#include "plmpluginloader.h"
+//#include "plmpluginloader.h"
 #include "plmdata.h"
+#include "documenthandler.h"
+//#include "plmutils.h"
+//#include "plmsheetlistmodel.h"
 
-# include "documenthandler.h"
-
-# include <QtWidgets/QProxyStyle>
-# include <QtWidgets/QSplashScreen>
-# include <QtWidgets/QStyleFactory>
-#
-# include "plmutils.h"
-# include "plmmainwindow.h"
-# include "plmsheetlistmodel.h"
-#
-# include <QQmlDebuggingEnabler>
+#include <QQmlDebuggingEnabler>
 
 // -------------------------------------------------------
 void startCore()
 {
-    new PLMPluginLoader(qApp);
+//new PLMPluginLoader(qApp);
 
-    // UTF-8 codec
-    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+// UTF-8 codec
+QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 
-    // Names for the QSettings
-    QCoreApplication::setOrganizationName("plume-creator");
-    QCoreApplication::setOrganizationDomain("plume-creator.eu");
+// Names for the QSettings
+QCoreApplication::setOrganizationName("skribisto");
+QCoreApplication::setOrganizationDomain("skribisto.eu");
 
 
-    QCoreApplication::setApplicationVersion(QString::number(VERSIONSTR));
-    QString appName = "Plume-Creator";
-    QCoreApplication::setApplicationName(appName);
-    QSettings::setDefaultFormat(QSettings::IniFormat);
+QCoreApplication::setApplicationVersion(QString::number(VERSIONSTR));
+QString appName = "Skribisto";
+QCoreApplication::setApplicationName(appName);
+QSettings::setDefaultFormat(QSettings::IniFormat);
 }
 
 // -------------------------------------------------------
-#if FORCEQML == 0
 
 
 //// -------------------------------------------------------
 
-void openProjectInArgument(PLMData *data)
-{
-    // open directly a project if *.plume path is the first argument :
-    // TODO: add ignore --qml
-    QStringList args = qApp->arguments();
+//void openProjectInArgument(PLMData *data)
+//{
+//    // open directly a project if *.skribisto path is the first argument :
+//    // TODO: add ignore --qml
+//    QStringList args = qApp->arguments();
 
-    if (args.count() > 1) {
-        QString argument;
+//    if (args.count() > 1) {
+//        QString argument;
 
-        for (int i = 1; i <= args.count() - 1; ++i) {
-            if (QFileInfo(args.at(i)).exists()) {
-                argument = args.at(i);
-                break;
-            }
-        }
+//        for (int i = 1; i <= args.count() - 1; ++i) {
+//            if (QFileInfo(args.at(i)).exists()) {
+//                argument = args.at(i);
+//                break;
+//            }
+//        }
 
-        if (!argument.isEmpty()) {
-# ifdef Q_OS_WIN32
-            QTextCodec *codec = QTextCodec::codecForUtfText(argument.toUtf8());
-            argument = codec->toUnicode(argument.toUtf8());
-# endif // ifdef Q_OS_WIN32
-            argument = QDir::fromNativeSeparators(argument);
+//        if (!argument.isEmpty()) {
+//# ifdef Q_OS_WIN32
+//            QTextCodec *codec = QTextCodec::codecForUtfText(argument.toUtf8());
+//            argument = codec->toUnicode(argument.toUtf8());
+//# endif // ifdef Q_OS_WIN32
+//            argument = QDir::fromNativeSeparators(argument);
 
-            data->projectHub()->loadProject(argument);
-        }
-    }
-}
-
-#endif // if FORCEQML
+//            data->projectHub()->loadProject(argument);
+//        }
+//    }
+//}
 
 
-// -------------------------------------------------------
-
-#if FORCEQML == 0
-PLMMainWindow* startGui(PLMData *data)
-{
-    // Q_INIT_RESOURCE(pics);
-    // Q_INIT_RESOURCE(langs);
-
-    // splashscreen :
-    QPixmap pixmap(":/pics/plume-creator.png");
-    QSplashScreen *splash = new QSplashScreen(pixmap);
-
-    splash->show();
-    qApp->processEvents();
-    qApp->setWindowIcon(QIcon(":/pics/plume-creator.png"));
-
-    // ---------------------------------------style :
-    splash->showMessage("Applying style");
-    qApp->processEvents();
-    QApplication::setStyle(QStyleFactory::create("fusion"));
-
-    QApplication::setWheelScrollLines(1);
-
-    splash->showMessage("Setting language");
-    qApp->processEvents();
-
-
-    PLMMainWindow *mw = new PLMMainWindow(data);
-
-    // install enventfilter (for Mac)
-    QApplication::instance()->installEventFilter(mw);
-    splash->finish(mw);
-    mw->show();
-    mw->setWindowState(Qt::WindowActive);
-
-
-    return mw;
-}
-
-#endif // if FORCEQML
 
 // -------------------------------------------------------
 
-bool hasQMLArg() {
-    return qApp->arguments().contains("--qml");
-}
+
+
+// -------------------------------------------------------
 
 // -------------------------------------------------------
 
@@ -148,9 +97,9 @@ int main(int argc, char *argv[])
     qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QGuiApplication::setQuitOnLastWindowClosed(true);
 
-    QApplication app(argc, argv);
+
+    QGuiApplication app(argc, argv);
 
     startCore();
 
@@ -163,7 +112,7 @@ int main(int argc, char *argv[])
 
     qApp->processEvents();
     QString qtTr    = QString("qt");
-    QString plumeTr = QString("plume-creator");
+    QString skribistoTr = QString("skribisto");
     QLocale locale;
 
 
@@ -175,9 +124,9 @@ int main(int argc, char *argv[])
     }
 
 
-    QTranslator plumeTranslator;
+    QTranslator skribistoTranslator;
 
-    if (plumeTranslator.load(locale, plumeTr, "_", ":/translations")) {
+    if (skribistoTranslator.load(locale, skribistoTr, "_", ":/translations")) {
         settings.setValue("lang", locale.name());
         langCode = settings.value("lang", "none").toString();
     }
@@ -186,9 +135,9 @@ int main(int argc, char *argv[])
         settings.setValue("lang", locale.name());
         langCode = settings.value("lang", "none").toString();
     }
-    app.installTranslator(&plumeTranslator);
+    app.installTranslator(&skribistoTranslator);
 
-    PLMUtils::Lang::setUserLang(langCode);
+   // PLMUtils::Lang::setUserLang(langCode);
 
 
     // Qt translation :
@@ -201,63 +150,51 @@ int main(int argc, char *argv[])
     }
 
     // install translation of plugins:
-    PLMPluginLoader::instance()->installPluginTranslations();
+//    PLMPluginLoader::instance()->installPluginTranslations();
 
 
     // -----------------------------------------------------------------------
 
 
-    QString  forceQML = QString::number(FORCEQML);
-    PLMData *data     = new PLMData(qApp);
+   PLMData *data     = new PLMData(qApp);
 
-    if (hasQMLArg() || (QString::number(FORCEQML) == "1")) {
-        // qmlRegisterType<PLMError>("eu.plumecreator.qml", 1, 0, "PLMError");
-        qmlRegisterUncreatableType<PLMProjectHub>("eu.plumecreator.projecthub",
-                                                  1,
-                                                  0,
-                                                  "PLMProjectHub",
-                                                  "Can't instantiate PLMProjectHub");
-        qmlRegisterUncreatableType<PLMSheetHub>("eu.plumecreator.sheethub",
-                                                1,
-                                                0,
-                                                "PLMSheetHub",
-                                                "Can't instantiate PLMSheetHub");
+    // qmlRegisterType<PLMError>("eu.skribisto.qml", 1, 0, "PLMError");
+//    qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",
+//                                              1,
+//                                              0,
+//                                              "PLMProjectHub",
+//                                              "Can't instantiate PLMProjectHub");
+//    qmlRegisterUncreatableType<PLMSheetHub>("eu.skribisto.sheethub",
+//                                            1,
+//                                            0,
+//                                            "PLMSheetHub",
+//                                            "Can't instantiate PLMSheetHub");
 
 
-        qmlRegisterType<PLMSheetListModel>("eu.plumecreator.sheetlistmodel",
-                                           1,
-                                           0,
-                                           "PLMSheetListModel");
-        qmlRegisterType<DocumentHandler>("eu.plumecreator.documenthandler",
-                                         1,
-                                         0,
-                                         "DocumentHandler");
+//    qmlRegisterType<PLMSheetListModel>("eu.skribisto.sheetlistmodel",
+//                                       1,
+//                                       0,
+//                                       "PLMSheetListModel");
+//    qmlRegisterType<DocumentHandler>("eu.skribisto.documenthandler",
+//                                     1,
+//                                     0,
+//                                     "DocumentHandler");
 
-        QQmlApplicationEngine *engine = new QQmlApplicationEngine(qApp);
+    QQmlApplicationEngine engine(qApp);
 
-        engine->rootContext()->setContextProperty("plmData", data);
-        engine->load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+    //engine.rootContext()->setContextProperty("plmData", data);
+    engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
 
-        engine->connect(engine, &QQmlApplicationEngine::quit, &QCoreApplication::quit);
-//        QCoreApplication *app = qApp;
-//        engine->connect(engine, &QQmlApplicationEngine::objectCreated, [app](QObject *object, const QUrl &url){
-//            if(object == nullptr){
-//                app->quit();
-//            }
-//        });
+    //        QCoreApplication *app = qApp;
+    //        engine->connect(engine, &QQmlApplicationEngine::objectCreated, [app](QObject *object, const QUrl &url){
+    //            if(object == nullptr){
+    //                app->quit();
+    //            }
+    //        });
 
-        if (engine->rootObjects().isEmpty()) return -1;
-    }
-#if FORCEQML == 0
-    else if (!hasQMLArg()) {
-        PLMMainWindow *mw = startGui(data);
-        Q_UNUSED(mw)
-        openProjectInArgument(data);
-    }
-#endif // if FORCEQML
-    else {
-        return -1;
-    }
+    if (engine.rootObjects().isEmpty()) return -1;
+
+
 
 
     return app.exec();

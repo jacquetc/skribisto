@@ -1,5 +1,5 @@
 import QtQuick 2.12
-import eu.plumecreator.documenthandler 1.0
+import eu.skribisto.documenthandler 1.0
 
 WritingZoneForm {
     textAreaWidth: 200

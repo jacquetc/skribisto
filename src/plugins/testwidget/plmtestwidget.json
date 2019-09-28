@@ -1,9 +1,0 @@
-{
-    "type" :            "widget",
-    "shortname" :            "TestWidget",
-    "longname" :        "Plume Test Widget",
-    "version" :         "1.0",
-    "mandatory" :    true,
-    "activatedbydefault" :    false,
-    "dependencies" :    ["WriteWindow"]
-}

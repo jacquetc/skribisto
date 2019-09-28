@@ -38,15 +38,16 @@ qtquick_compiler_add_resources(RESOURCES ${QML})
 qt5_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
-add_executable(plume-creator ${app_SRCS} ${RESOURCES} ${QRC})
+add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC})
 
-#target_link_libraries(plume-creator KF5::Kirigami2)
-target_link_libraries(plume-creator plume-creator-data plume-creator-gui)
-include_directories("${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/")
-include_directories("${CMAKE_SOURCE_DIR}/src/libplume-creator-gui/src/")
-include_directories("${CMAKE_SOURCE_DIR}/src/libplume-creator-core/src/")
+#target_link_libraries(skribisto KF5::Kirigami2)
 
-qt5_use_modules(plume-creator Core Quick Network Gui)
+
+target_link_libraries(skribisto skribisto-data skribisto-core)
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-core/src/")
+
+qt5_use_modules(skribisto Core Quick Network Gui)
 
 
 

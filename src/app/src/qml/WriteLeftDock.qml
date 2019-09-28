@@ -35,7 +35,7 @@ WriteLeftDockForm {
         text: qsTr("Fullscreen")
         icon {
             name: "welcome-icon"
-            source: "qrc:/pics/plume-creator.svg"
+            source: "qrc:/pics/skribisto.svg"
             color: "transparent"
             height: 50
             width: 50

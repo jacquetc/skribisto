@@ -1,0 +1,13 @@
+# KDE Config File
+[Desktop Entry]
+Encoding=UTF-8
+MimeType=application/x-skribisto
+Icon=skribisto
+Comment=Write your fiction here ! Manage your writing projects
+Comment[fr]=Ecrivez ici votre fiction ! Organisez avec vos projets
+Type=MimeType
+Patterns=*.skribisto
+X-KDE-AutoEmbed=false
+[Property::X-KDE-NativeExtension]
+Type=QString
+Value=.skribisto

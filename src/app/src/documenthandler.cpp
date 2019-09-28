@@ -6,7 +6,7 @@
 #include <QTextObject>
 #include <QTextCharFormat>
 #include <QTextList>
-#include "plmdata.h"
+//#include "plmdata.h"
 
 DocumentHandler::DocumentHandler(QObject *parent) :
     QObject(parent),
@@ -353,10 +353,10 @@ void DocumentHandler::setId(const int projectId, const int paperId)
     m_projectId = projectId;
     m_paperId   = paperId;
 
-    QString text = plmdata->sheetHub()->getContent(projectId, paperId);
+//    QString text = plmdata->sheetHub()->getContent(projectId, paperId);
 
     m_selectionCursor.select(QTextCursor::Document);
-    m_selectionCursor.insertHtml(text);
+//    m_selectionCursor.insertHtml(text);
 
     emit formatChanged();
     emit idChanged();

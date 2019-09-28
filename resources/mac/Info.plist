@@ -5,9 +5,9 @@
 	<key>CFBundleIconFile</key>
 	<string>@ICON@</string>
 	<key>CFBundleDisplayName</key>
-	<string>Plume Creator</string>
+	<string>Skribisto</string>
 	<key>CFBundleName</key>
-	<string>Plume Creator</string>
+	<string>Skribisto</string>
 	<key>CFBundleShortVersionString</key>
 	<string>@SHORT_VERSION@</string>
 	<key>CFBundlePackageType</key>
@@ -17,13 +17,13 @@
 	<key>CFBundleExecutable</key>
 	<string>@EXECUTABLE@</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.PlumeSoft.Plume-Creator</string>
+	<string>com.skribisto.skribisto</string>
 	<key>CFBundleTypeExtensions</key>
 	<string>plume</string>
 	<key>CFBundleTypeIconFile</key>
-	<string>plume</string>
+	<string>skribisto</string>
 	<key>CFBundleTypeName</key>
-	<string>Plume Creator Project</string>
+	<string>Skribisto Project</string>
 	<key>CFBundleTypeRole</key>
 	<string>None</string>
 	<key>LSIsAppleDefaultForType</key>

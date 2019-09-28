@@ -151,7 +151,7 @@ RootPageForm {
                 text: qsTr("Welcome")
                 icon {
                     name: "welcome-icon"
-                    source: "qrc:/pics/plume-creator.svg"
+                    source: "qrc:/pics/skribisto.svg"
                     color: "transparent"
                     height: 100
                     width: 100
@@ -186,7 +186,7 @@ RootPageForm {
                 text: qsTr("Notes")
                 icon {
                     name: "document-edit"
-                    source: "qrc:/pics/plume-creator.svg"
+                    source: "qrc:/pics/skribisto.svg"
                     color: "transparent"
                     height: 100
                     width: 100
@@ -203,7 +203,7 @@ RootPageForm {
                 text: qsTr("Gallery")
                 icon {
                     name: "document-edit"
-                    source: "qrc:/pics/plume-creator.svg"
+                    source: "qrc:/pics/skribisto.svg"
                     color: "transparent"
                     height: 100
                     width: 100
@@ -219,7 +219,7 @@ RootPageForm {
                 text: qsTr("Informations")
                 icon {
                     name: "document-edit"
-                    source: "qrc:/pics/plume-creator.svg"
+                    source: "qrc:/pics/skribisto.svg"
                     color: "transparent"
                     height: 100
                     width: 100

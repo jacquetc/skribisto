@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>stylesheets/light.css</file>
-    </qresource>
-</RCC>

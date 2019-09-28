@@ -1,0 +1,13 @@
+# KDE Config File
+[Desktop Entry]
+Encoding=UTF-8
+MimeType=application/x-skribisto-backup
+Icon=skribisto-backup
+Comment=Skribisto Backup file
+Comment[fr]=Copie de secours d'un projet de Skribisto
+Type=MimeType
+Patterns=*.skribisto_backup
+X-KDE-AutoEmbed=false
+[Property::X-KDE-NativeExtension]
+Type=QString
+Value=.skribisto_backup

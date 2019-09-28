@@ -1,7 +1,7 @@
-import QtQuick 2.11
+import QtQuick 2.12
 import QtQml 2.12
-import QtQuick.Controls 2.4
-import eu.plumecreator.sheethub 1.0
+import QtQuick.Controls 2.12
+import eu.skribisto.sheethub 1.0
 import "."
 
 WritePageForm {

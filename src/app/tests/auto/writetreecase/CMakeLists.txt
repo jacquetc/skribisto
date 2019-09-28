@@ -24,8 +24,8 @@ add_executable(${PROJECT_NAME} ${PROJECT_NAME}.qml setup.cpp ${RESOURCES})
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
 
 
-target_link_libraries(${PROJECT_NAME} plume-creator-data)
-include_directories("${CMAKE_SOURCE_DIR}/src/libplume-creator-data/src/"
+target_link_libraries(${PROJECT_NAME} skribisto-data)
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/"
     "${CMAKE_SOURCE_DIR}/src/app/src/qml"
     )
 

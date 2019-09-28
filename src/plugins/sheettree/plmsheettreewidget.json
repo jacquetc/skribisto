@@ -1,9 +1,0 @@
-{
-    "type" :            "widget",
-    "shortname" :            "Sheet Tree",
-    "longname" :        "Plume Sheet Tree",
-    "version" :         "1.0",
-    "mandatory" :    true,
-    "activatedbydefault" :    true,
-    "dependencies" :    ["WriteWindow"]
-}

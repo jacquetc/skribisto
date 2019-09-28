@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+    <mime-type type="application/x-plume">
+	<comment xml:lang="en">Skribisto Project</comment>
+	<comment xml:lang="fr">Projet Skribisto</comment>
+	<generic-icon name="skribisto" />
+	<glob pattern="*.plume" />
+    </mime-type>
+    <mime-type type="application/x-plume-backup">
+	<comment xml:lang="en">Skribisto Project Backup</comment>
+	<comment xml:lang="fr">Projet Skribisto Backup</comment>
+	<generic-icon name="plume-creator-backup" />
+	<glob pattern="*.skribisto_backup" />
+    </mime-type>
+</mime-info>

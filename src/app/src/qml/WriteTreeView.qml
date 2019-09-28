@@ -1,5 +1,5 @@
 import QtQuick 2.4
-import eu.plumecreator.sheetlistmodel 1.0
+import eu.skribisto.sheetlistmodel 1.0
 
 
 WriteTreeViewForm {
