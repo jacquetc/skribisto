@@ -27,7 +27,6 @@
 #include <QDir>
 #include <QModelIndex>
 #include <QTranslator>
-#include "skribisto_data_global.h"
 
 // c = class name; e = enum name; v = enum value
 #define ENUM_TO_STRING(c, e, v) \
@@ -65,7 +64,7 @@ namespace PLMUtils {
 
 
 
-class EXPORT Dir
+class Dir
 {
 public:
 
@@ -78,7 +77,7 @@ public:
 
 //---------------------------------------------------------------------
 
-class EXPORT Models
+class Models
 {
 public:
 
@@ -89,7 +88,7 @@ public:
 
 //---------------------------------------------------------------------
 
-class EXPORT ProjectsArrayInSettings
+class ProjectsArrayInSettings
 {
 public:
     static bool modifyProjectModifiedDateInSettingsArray(int arrayNumber, QString date);
@@ -102,7 +101,7 @@ public:
 
 //---------------------------------------------------------------------
 
-class EXPORT Misc
+class Misc
 {
 public:
 
@@ -122,7 +121,7 @@ private:
 };
 
 
-class EXPORT Lang
+class Lang
 {
 public:
 

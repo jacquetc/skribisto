@@ -22,9 +22,9 @@
 #define PLMPROPERTIESPROXYMODEL_H
 
 #include <QObject>
-#include "global_core.h"
+#include "./skribisto_data_global.h"
 
-class EXPORT_CORE PLMPropertiesProxyModel : public QObject
+class EXPORT PLMPropertiesProxyModel : public QObject
 {
     Q_OBJECT
 public:

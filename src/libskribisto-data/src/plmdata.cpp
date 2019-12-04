@@ -1,8 +1,10 @@
 #include "plmdata.h"
 
+
 PLMData::PLMData(QObject *parent) : QObject(parent)
 {
     m_instance       = this;
+
     m_signalHub      = new PLMSignalHub(this);
     m_errorHub       = new PLMErrorHub(this);
     m_projectManager = new PLMProjectManager(this);
@@ -18,6 +20,7 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
                                            "l_note_code");
     m_userHub   = new PLMUserHub(this);
     m_pluginHub = new PLMPluginHub(this);
+
 }
 
 // -----------------------------------------------------------------------------
@@ -50,7 +53,7 @@ PLMProjectHub * PLMData::projectHub()
 // -----------------------------------------------------------------------------
 
 
-PLMData *PLMData::m_instance = 0;
+PLMData *PLMData::m_instance = nullptr;
 
 // -----------------------------------------------------------------------------
 

@@ -2,7 +2,7 @@
  *   Copyright (C) 2019 by Cyril Jacquet                                 *
  *   cyril.jacquet@skribisto.eu                                        *
  *                                                                         *
- *  Filename: plmnotemodel.cpp                                                   *
+ *  Filename: plmnoteproxymodel.h                                                   *
  *  This file is part of Skribisto.                                    *
  *                                                                         *
  *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,49 +18,21 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#include "plmnotemodel.h"
+#ifndef PLMNOTEPROXYMODEL_H
+#define PLMNOTEPROXYMODEL_H
 
-PLMNoteModel::PLMNoteModel(QObject *parent)
-    : QAbstractItemModel(parent)
+#include <QObject>
+#include "./skribisto_data_global.h"
+
+class EXPORT PLMNoteProxyModel : public QObject
 {
-}
+    Q_OBJECT
+public:
+    explicit PLMNoteProxyModel(QObject *parent = nullptr);
 
-QVariant PLMNoteModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
-    // FIXME: Implement me!
-}
+signals:
 
-QModelIndex PLMNoteModel::index(int row, int column, const QModelIndex &parent) const
-{
-    // FIXME: Implement me!
-}
+public slots:
+};
 
-QModelIndex PLMNoteModel::parent(const QModelIndex &index) const
-{
-    // FIXME: Implement me!
-}
-
-int PLMNoteModel::rowCount(const QModelIndex &parent) const
-{
-    if (!parent.isValid())
-        return 0;
-
-    // FIXME: Implement me!
-}
-
-int PLMNoteModel::columnCount(const QModelIndex &parent) const
-{
-    if (!parent.isValid())
-        return 0;
-
-    // FIXME: Implement me!
-}
-
-QVariant PLMNoteModel::data(const QModelIndex &index, int role) const
-{
-    if (!index.isValid())
-        return QVariant();
-
-    // FIXME: Implement me!
-    return QVariant();
-}
+#endif // PLMNOTEPROXYMODEL_H

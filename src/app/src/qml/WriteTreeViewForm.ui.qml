@@ -55,68 +55,19 @@ Item {
 
             ListView {
                 id: listView
+                antialiasing: true
+                smooth: true
                 clip: true
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                delegate: ItemDelegate {
-                    x: 5
-                    width: listView.width - 5
-                    height: 40
-                    Row {
-                        id: row1
-                        spacing: 10
-                        anchors.fill: parent
-//                        Repeater{
-//                            model: indent
-//                            Item {
-//                                width: 20; height: 20
-//                            }
-//                        }
-                        CheckBox {
-                            //visible: base.selectionMode ? true : false
-
-                            width: 20; height: 20
-                        }
-
-                        Image {
-                            id: image
-                            width: 40
-                            height: 40
-                            fillMode: Image.PreserveAspectFit
-                            source: "qrc:/pics/author.svg"
-                        }
-
-                        Item {
-                            id: item3
-                            width: 200
-                            height: 50
-
-                            Column {
-                                id: column
-                                anchors.fill: parent
-
-                                Text {
-                                    text: name
-                                    font.bold: true
-                                }
-
-                                Text {
-                                    text: tag
-                                    font.pixelSize: 12
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
     }
 }
 
-
-
-
-/*##^## Designer {
+/*##^##
+Designer {
     D{i:0;autoSize:true;height:300;width:300}
 }
- ##^##*/
+##^##*/
+

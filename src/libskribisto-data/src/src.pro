@@ -12,9 +12,9 @@ VERSION = 1.61
 #CONFIG += staticlib
 CONFIG += create_prl
 
-TARGET = plume-creator-data
+TARGET = skribisto-data
 TEMPLATE = lib
-DEFINES += PLUME_CREATOR_DATA_LIBRARY
+DEFINES += SKRIBISTO_DATA_LIBRARY
 
 #CONFIG(release, debug|release) {
 #MYDLLDIR = $$IN_PWD
@@ -53,10 +53,23 @@ SOURCES += \
     plmnotehub.cpp \
     plmpropertyhub.cpp \
     tasks/sql/plmupgrader.cpp \
-    plmuserfilehub.cpp \
     plmutils.cpp \
     plmpluginhub.cpp \
-    plmpluginloader.cpp
+    plmpluginloader.cpp\
+    plmuserhub.cpp \
+    models/plmdocumentlistmodel.cpp \
+    models/plmdocumentlistproxymodel.cpp \
+    models/plmmodels.cpp \
+    models/plmnotemodel.cpp \
+    models/plmnoteproxymodel.cpp \
+    models/plmprojectlistmodel.cpp \
+    models/plmpropertiesmodel.cpp \
+    models/plmpropertiesproxymodel.cpp \
+    models/plmsheetmodel.cpp \
+    models/plmsheetitem.cpp \
+    models/plmsheetlistmodel.cpp \
+    models/plmsheetproxymodel.cpp  \
+    models/plmwritedocumentlistmodel.cpp
 
 HEADERS += \
     plmdata.h \
@@ -74,25 +87,40 @@ HEADERS += \
     tasks/sql/tree/plmtree.h \
     tasks/plmprojectmanager.h \
     tasks/sql/plmproject.h \
-    tasks/plmprojectgetprojectidlist.h \
     plmerrorhub.h \
     tools.h \
-    plume_creator_data_global.h \
+    skribisto_data_global.h \
     tasks/plmsqlqueries.h \
     plmerror.h \
     plmsheethub.h \
     plmnotehub.h \
     plmpropertyhub.h \
     tasks/sql/plmupgrader.h \
-    plmuserfilehub.h \
     plmutils.h \
     plmpluginhub.h \
     plmpluginloader.h \
     plmcoreinterface.h \
-    plmcoreplugins.h
+    plmcoreplugins.h \
+    plmuserhub.h \
+    models/plmdocumentlistmodel.h \
+    models/plmdocumentlistproxymodel.h \
+    models/plmmodels.h \
+    models/plmnotemodel.h \
+    models/plmnoteproxymodel.h \
+    models/plmprojectlistmodel.h \
+    models/plmpropertiesmodel.h \
+    models/plmpropertiesproxymodel.h \
+    models/plmsheetmodel.h \
+    models/plmsheetitem.h \
+    models/plmsheetlistmodel.h \
+    models/plmsheetproxymodel.h  \
+    models/plmwritedocumentlistmodel.h
 
 OTHER_FILES += \
     version.info.in
+
+RESOURCES += \
+    tasks/sql/sql.qrc
 
 # install :
 
@@ -105,14 +133,12 @@ unix: !macx: !android {
     LIBDIR = $$PREFIX/lib
     }
 
-    plume-creator-data.files = $$DESTDIR/libplume-creator-data*
-    plume-creator-data.path = $$LIBDIR
+    skribisto-data.files = $$DESTDIR/libskribisto-data*
+    skribisto-data.path = $$LIBDIR
 
-    INSTALLS += plume-creator-data
+    INSTALLS += skribisto-data
 }
 
 DISTFILES += \
     ../LICENSE
 
-RESOURCES += \
-    tasks/sql/sql.qrc

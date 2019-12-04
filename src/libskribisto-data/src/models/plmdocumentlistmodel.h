@@ -23,9 +23,9 @@
 #define PLMDOCUMENTSLISTMODEL_H
 
 #include <QAbstractListModel>
-#include "global_core.h"
+#include "./skribisto_data_global.h"
 
-struct EXPORT_CORE PLMDocumentListItem
+struct EXPORT PLMDocumentListItem
 {
     Q_GADGET
 
@@ -49,7 +49,7 @@ private:
 };
 
 
-class PLMDocumentListModel : public QAbstractListModel {
+class EXPORT PLMDocumentListModel : public QAbstractListModel {
     Q_OBJECT
 
 public:

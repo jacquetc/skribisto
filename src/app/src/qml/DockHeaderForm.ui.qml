@@ -9,58 +9,62 @@ Item {
     property bool folded: true
     property alias title: dockTitle.text
 
-    Rectangle {
-        id: rectangle
-        color: "#ffffff"
+    GridLayout {
+        id: gridBase
         anchors.fill: parent
 
-        Text {
+        Switch {
+            id: hSwitch
+            scale: 0.5 /*
+                                                                                                                        anchors.top: parent.top
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    anchors.topMargin: -7
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                anchors.left: parent.left
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    anchors.leftMargin: -13*/
+            //                implicitHeight: height * scale
+            //                implicitWidth: width * scale
+            Layout.preferredHeight: 30
+            Layout.preferredWidth: 60
+            padding: 1
+            checked: !folded
+            onCheckedChanged: checked ? folded = false : folded = true
+        }
+        Label {
             id: dockTitle
-            text: qsTr("Text")
-            anchors.left: hSwitch.right
-            anchors.leftMargin: -6
-            anchors.right: parent.right
-            anchors.rightMargin: 0
-            anchors.bottom: parent.top
-            anchors.bottomMargin: -15
-            anchors.top: parent.top
-            anchors.topMargin: 0
+            //width: gridBase.width - hSwitch.width
+            height: 30
+            text: "Text"
+
+
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            /*
+
+                                                                                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    anchors.top: parent.top
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                anchors.topMargin: 0*/
+            padding: 2
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             font.pixelSize: 12
         }
 
-        Switch {
-            id: hSwitch
-            width: 61
-            height: 30
-            scale: 0.5
-            anchors.top: parent.top
-            anchors.topMargin: -7
-            anchors.left: parent.left
-            anchors.leftMargin: -13
-            //                implicitHeight: height * scale
-            //                implicitWidth: width * scale
-            padding: 1
-            checked: !folded
-            onCheckedChanged: checked ? folded = false : folded = true
-        }
-
-        Text {
+        Label {
             id: vDockTitle
-            x: 5
-            y: 178
             text: dockTitle.text
-            anchors.right: hSwitch.left
-            anchors.rightMargin: -43
-            anchors.bottom: parent.left
-            anchors.bottomMargin: -15
-            anchors.top: parent.left
-            anchors.topMargin: 0
-            anchors.left: parent.bottom
-            anchors.leftMargin: 0
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            Layout.row: 1
+            Layout.preferredHeight: 30
+
+
+            /*
+                                                    anchors.left: parent.left
+                                                                                                                                                                                    anchors.leftMargin: 0
+                                                                                                                                                                                                                                                                                                                                                                                                                                    anchors.verticalCenter: parent.verticalCenter*/
+            padding: 2
             antialiasing: true
-            transformOrigin: Item.Center
             rotation: 270
             font.pixelSize: 12
         }
@@ -76,17 +80,17 @@ Item {
             }
             PropertyChanges {
                 target: vDockTitle
-                x: -2
-                y: 157
-                anchors.rightMargin: -44
                 visible: true
             }
 
             PropertyChanges {
                 target: hSwitch
-                anchors.topMargin: 1
-                anchors.leftMargin: -21
                 rotation: 90
+            }
+
+            PropertyChanges {
+                target: base
+                width: 30
             }
         },
         State {
@@ -99,12 +103,13 @@ Item {
             }
             PropertyChanges {
                 target: dockTitle
-                anchors.topMargin: 84
                 visible: true
+            }
+
+            PropertyChanges {
+                target: base
+                height: 30
             }
         }
     ]
 }
-
-
-

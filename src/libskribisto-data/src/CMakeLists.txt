@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1.0)
 
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++11  -pedantic -Wno-deprecated-declarations -fstrict-aliasing -pedantic-errors -Wno-unused-variable")
 #
 # Populate a CMake variable with the sources
@@ -32,12 +32,25 @@ set(data_SRCS
     tasks/sql/plmproject.cpp
     tasks/sql/plmproperty.cpp
     tasks/sql/plmupgrader.cpp
-        tasks/sql/tree/plmdbpaper.cpp
-        tasks/sql/tree/plmdbtree.cpp
+    tasks/sql/tree/plmdbpaper.cpp
+    tasks/sql/tree/plmdbtree.cpp
     tasks/sql/tree/plmnotetree.cpp
     tasks/sql/tree/plmsheettree.cpp
     tasks/sql/tree/plmtree.cpp
-)
+    models/plmsheetmodel.cpp
+    models/plmsheetproxymodel.cpp
+    models/plmsheetlistmodel.cpp
+    models/plmnotemodel.cpp
+    models/plmnoteproxymodel.cpp
+    models/plmprojectlistmodel.cpp
+    models/plmdocumentlistmodel.cpp
+    models/plmwritedocumentlistmodel.cpp
+    models/plmdocumentlistproxymodel.cpp
+    models/plmpropertiesmodel.cpp
+    models/plmpropertiesproxymodel.cpp
+    models/plmsheetitem.cpp
+    models/plmmodels.cpp
+    )
 set(data_HDR
     plmcoreinterface.h
     plmcoreplugins.h
@@ -70,6 +83,19 @@ set(data_HDR
     tasks/sql/tree/plmsheettree.h
     tasks/sql/tree/plmtree.h
     plminterfacesettings.h
+    models/plmsheetmodel.h
+    models/plmsheetproxymodel.h
+    models/plmsheetlistmodel.h
+    models/plmnotemodel.h
+    models/plmnoteproxymodel.h
+    models/plmprojectlistmodel.h
+    models/plmdocumentlistmodel.h
+    models/plmwritedocumentlistmodel.h
+    models/plmdocumentlistproxymodel.h
+    models/plmpropertiesmodel.h
+    models/plmpropertiesproxymodel.h
+    models/plmsheetitem.h
+    models/plmmodels.h
 )
 
 set(QRC

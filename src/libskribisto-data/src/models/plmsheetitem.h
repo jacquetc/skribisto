@@ -25,9 +25,9 @@
 
 #include <QtCore>
 #include <QObject>
-#include "global_core.h"
+#include "./skribisto_data_global.h"
 
-class EXPORT_CORE PLMSheetItem : public QObject {
+class EXPORT PLMSheetItem : public QObject {
     Q_OBJECT
 
 public:

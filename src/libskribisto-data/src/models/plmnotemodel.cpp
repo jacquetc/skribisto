@@ -2,7 +2,7 @@
  *   Copyright (C) 2019 by Cyril Jacquet                                 *
  *   cyril.jacquet@skribisto.eu                                        *
  *                                                                         *
- *  Filename: plmnoteproxymodel.h                                                   *
+ *  Filename: plmnotemodel.cpp                                                   *
  *  This file is part of Skribisto.                                    *
  *                                                                         *
  *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,21 +18,54 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef PLMNOTEPROXYMODEL_H
-#define PLMNOTEPROXYMODEL_H
+#include "plmnotemodel.h"
 
-#include <QObject>
-#include "global_core.h"
-
-class EXPORT_CORE PLMNoteProxyModel : public QObject
+PLMNoteModel::PLMNoteModel(QObject *parent)
+    : QAbstractItemModel(parent)
 {
-    Q_OBJECT
-public:
-    explicit PLMNoteProxyModel(QObject *parent = nullptr);
+}
 
-signals:
+QVariant PLMNoteModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    // FIXME: Implement me!
+    return QVariant();
+}
 
-public slots:
-};
+QModelIndex PLMNoteModel::index(int row, int column, const QModelIndex &parent) const
+{
+    // FIXME: Implement me!
+    return QModelIndex();
+}
 
-#endif // PLMNOTEPROXYMODEL_H
+QModelIndex PLMNoteModel::parent(const QModelIndex &index) const
+{
+    // FIXME: Implement me!
+    return QModelIndex();
+}
+
+int PLMNoteModel::rowCount(const QModelIndex &parent) const
+{
+    if (!parent.isValid())
+        return 0;
+
+    // FIXME: Implement me!
+    return 0;
+}
+
+int PLMNoteModel::columnCount(const QModelIndex &parent) const
+{
+    if (!parent.isValid())
+        return 0;
+
+    // FIXME: Implement me!
+    return 1;
+}
+
+QVariant PLMNoteModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid())
+        return QVariant();
+
+    // FIXME: Implement me!
+    return QVariant();
+}

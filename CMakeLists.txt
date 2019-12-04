@@ -33,7 +33,6 @@ set(CMAKE_CXX_STANDARD 14)
 
 
 add_subdirectory(src/libskribisto-data)
-add_subdirectory(src/libskribisto-core)
 add_subdirectory(src/plugins)
 #add_subdirectory(3rdparty)
 add_subdirectory(src/app)

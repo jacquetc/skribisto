@@ -2,7 +2,8 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmmodels.h                                                   *
+*  Filename: plmdocumentslistproxymodel.h
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,47 +19,35 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMMODELS_H
-#define PLMMODELS_H
-
-#include "plmwritedocumentlistmodel.h"
-#include "plmsheetmodel.h"
-#include "plmsheetproxymodel.h"
-#include "global_core.h"
+#ifndef PLMDOCUMENTSLISTPROXYMODEL_H
+#define PLMDOCUMENTSLISTPROXYMODEL_H
 
 #include <QObject>
+#include <QSortFilterProxyModel>
+#include "./skribisto_data_global.h"
 
-#define plmmodels PLMModels::instance()
-
-class EXPORT_CORE PLMModels : public QObject {
+class EXPORT PLMDocumentListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
 
 public:
 
-    explicit PLMModels(QObject *parent = nullptr);
-    ~PLMModels();
-    static PLMModels* instance()
-    {
-        return m_instance;
-    }
+    explicit PLMDocumentListProxyModel(QObject *parent = nullptr);
+    void setSubWindowId(int subWindowId);
 
-    PLMSheetModel       * sheetModel();
-    PLMSheetProxyModel  * sheetProxyModel();
 
-    PLMDocumentListModel* writeDocumentListModel();
+    Qt::ItemFlags flags(const QModelIndex& index) const override;
+
+    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+
+protected:
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
 
 signals:
 
 public slots:
 
 private:
-
-    static PLMModels *m_instance;
-
-    PLMSheetModel *m_sheetModel;
-    PLMSheetProxyModel *m_sheetProxyModel;
-
-    PLMWriteDocumentListModel *m_writeDocumentListModel;
+    int m_subWindowId;
 };
 
-#endif // PLMMODELS_H
+#endif // PLMDOCUMENTSLISTPROXYMODEL_H

@@ -13,9 +13,8 @@ TEMPLATE = app
 
 # add data lib :
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../../src/release/ -lplume-creator-data
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../../src/debug/ -lplume-creator-data
-else:unix: LIBS += -L$$OUT_PWD/../../../src/ -lplume-creator-data
+win32: LIBS += -L$$OUT_PWD/../../../src/ -lskribisto-data
+else:unix: LIBS += -L$$OUT_PWD/../../../src/ -lskribisto-data
 
 INCLUDEPATH += $$PWD/../../../src
 DEPENDPATH += $$PWD/../../../src

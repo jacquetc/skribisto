@@ -154,7 +154,6 @@ Item {
 
                     id: rightBase
                     z: 1
-                    Layout.minimumHeight: 300
                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     visible: !Globals.compactSize
                     Layout.minimumWidth: 200
@@ -216,7 +215,8 @@ Item {
 
 
 
-/*##^## Designer {
+/*##^##
+Designer {
     D{i:17;anchors_height:100;anchors_width:100}
 }
- ##^##*/
+##^##*/

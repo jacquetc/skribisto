@@ -1,13 +1,15 @@
 import QtQuick 2.11
-import QtQuick.Controls 2.2
-import QtQuick.Layouts 1.3
+import QtQuick.Controls 2.14
+import QtQuick.Layouts 1.12
 
 Item {
     id: base
-    property alias contentWidth: scrollview.contentWidth
     implicitWidth: 300
     property int fixedWidth: 300
     property alias leftDockPane: leftDockPane
+    property alias splitView: splitView
+    property alias writeToolsFrame: writeToolsFrame
+    property alias writeTreeViewFrame: writeTreeViewFrame
 
     Pane {
         id: leftDockPane
@@ -24,149 +26,163 @@ Item {
                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                 Item {
                     id: foldableScrollViewBase
+                    clip: true
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    ScrollView {
-                        id: scrollview
-                        anchors.fill: parent
-                        clip: true
-                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                        ScrollBar.vertical.policy: ScrollBar.AsNeeded
-                        contentWidth: scrollview.width - 10
 
-                        ColumnLayout {
-                            id: column
-                            width: scrollview.contentWidth
 
-                            DockFrame {
-                                id: writeTreeViewFrame
-                                folded: true
-                                title: qsTr("Navigation")
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: dynamicHeight
-                                contentHeight: 400
-                                WriteTreeView {
-                                    id: writeTreeView
-                                    //implicitHeight: 600
-                                    //width: scrollview.contentWidth
-                                    //height: 600
-                                }
-                            }
-                            DockFrame {
-                                id: writeToolsFrame
-                                folded: true
-                                title: qsTr("Tools")
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: dynamicHeight
-                                contentHeight: 400
-                                RowLayout {
+                     ScrollView {
+                         id: scrollView
+                         anchors.fill: parent
 
-                                    //width: scrollview.contentWidth
-                                    ToolButton {
-                                        flat: true
-                                        action: fullscreenAction
-                                    }
-                                    ToolButton {
-                                        flat: true
-                                        action: fullscreenAction
-                                    }
-                                    ToolButton {
-                                        flat: true
-                                        action: fullscreenAction
-                                    }
-                                    ToolButton {
-                                        flat: true
-                                        action: fullscreenAction
+                            SplitView {
+                                id: splitView
+                                orientation: Qt.Vertical
+                                implicitWidth: scrollView.width
+                                implicitHeight: 1000
+
+
+
+                                DockFrame {
+                                    id: writeTreeViewFrame
+                                    folded: true
+                                    title: qsTr("Navigation")
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
+
+ //                                   contentHeight: 300
+
+//                                    Layout.fillWidth: true
+//                                    Layout.preferredHeight: dynamicHeight
+//                                    contentHeight: 400
+                                    WriteTreeView {
+                                        id: writeTreeView
+                                        //width: scrollview.contentWidth
+                                        //height: 600
                                     }
                                 }
+                                DockFrame {
+                                    id: writeToolsFrame
+                                    folded: true
+                                    title: qsTr("Tools")
+//                                    Layout.fillWidth: true
+//                                    Layout.preferredHeight: dynamicHeight
+//                                    contentHeight: 400
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
+                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
+
+
+
+                                    Flow {
+
+                                        //width: scrollview.contentWidth
+                                        ToolButton {
+                                            flat: true
+                                            action: fullscreenAction
+                                        }
+                                        ToolButton {
+                                            flat: true
+                                            action: fullscreenAction
+                                        }
+                                        ToolButton {
+                                            flat: true
+                                            action: fullscreenAction
+                                        }
+                                        ToolButton {
+                                            flat: true
+                                            action: fullscreenAction
+                                        }
+                                    }
+                                }
+
+                                //                            Loader{
+                                //                                id: writeTreeViewHeader
+                                //                                sourceComponent: dockHeaderComp
+                                //                                width: scrollview.contentWidth
+                                //                                property string headerText: qsTr("Navigation")
+
+                                //                            }
+                                //                            WriteTreeView {
+                                //                                id: writeTreeView
+                                //                                width: scrollview.contentWidth
+                                //                                height: 600
+
+                                //                            }
+                                //                            Loader{
+                                //                                id: toolsHeader
+                                //                                sourceComponent: dockHeaderComp
+                                //                                width: scrollview.contentWidth
+                                //                                property string headerText: qsTr("Tools")
+
+                                //                            }
+                                //                            Flow{
+                                //                                width: scrollview.contentWidth
+
+                                //                                ToolButton {
+                                //                                    flat: true
+                                //                                    action: fullscreenAction
+
+                                //                                }
+                                //                                ToolButton {
+                                //                                    flat: true
+                                //                                    action: fullscreenAction
+                                //                                }
+                                //                                ToolButton {
+                                //                                    flat: true
+                                //                                    action: fullscreenAction
+                                //                                }
+                                //                                ToolButton {
+                                //                                    flat: true
+                                //                                    action: fullscreenAction
+                                //                                }
+                                //                            }
                             }
+                            //contentWidth: width
 
-                            //                            Loader{
-                            //                                id: writeTreeViewHeader
-                            //                                sourceComponent: dockHeaderComp
-                            //                                width: scrollview.contentWidth
-                            //                                property string headerText: qsTr("Navigation")
+                            //                    ColumnLayout {
+                            //                        id: columnLayout
+                            //                        //width: scrollview.contentWidth
 
-                            //                            }
-                            //                            WriteTreeView {
-                            //                                id: writeTreeView
-                            //                                width: scrollview.contentWidth
-                            //                                height: 600
+                            //                        Component{
+                            //                            id: dockHeaderComp
+                            //                            RowLayout {
 
-                            //                            }
-                            //                            Loader{
-                            //                                id: toolsHeader
-                            //                                sourceComponent: dockHeaderComp
-                            //                                width: scrollview.contentWidth
-                            //                                property string headerText: qsTr("Tools")
-
-                            //                            }
-                            //                            Flow{
-                            //                                width: scrollview.contentWidth
-
-                            //                                ToolButton {
-                            //                                    flat: true
-                            //                                    action: fullscreenAction
+                            //                                Text{
+                            //                                    id: headerText
 
                             //                                }
-                            //                                ToolButton {
-                            //                                    flat: true
-                            //                                    action: fullscreenAction
-                            //                                }
-                            //                                ToolButton {
-                            //                                    flat: true
-                            //                                    action: fullscreenAction
-                            //                                }
-                            //                                ToolButton {
-                            //                                    flat: true
-                            //                                    action: fullscreenAction
-                            //                                }
                             //                            }
-                        }
-                        //contentWidth: width
 
-                        //                    ColumnLayout {
-                        //                        id: columnLayout
-                        //                        //width: scrollview.contentWidth
+                            //                        }
+                            //                        Loader{
+                            //                            id: writeTreeViewHeader
+                            //                            sourceComponent: dockHeaderComp
+                            //                            //Layout.fillWidth: true
+                            //                            property string headerText: qsTr("Navigation")
 
-                        //                        Component{
-                        //                            id: dockHeaderComp
-                        //                            RowLayout {
+                            //                        }
+                            //                        WriteTreeView {
+                            //                            Layout.fillWidth: true
+                            //                            Layout.fillHeight: true
 
-                        //                                Text{
-                        //                                    id: headerText
+                            //                        }
 
-                        //                                }
-                        //                            }
+                            //                    }
 
-                        //                        }
-                        //                        Loader{
-                        //                            id: writeTreeViewHeader
-                        //                            sourceComponent: dockHeaderComp
-                        //                            //Layout.fillWidth: true
-                        //                            property string headerText: qsTr("Navigation")
+                            //                    //                        Rectangle {
+                            //                    //                            id: rectangle
+                            //                    //                            width: 200
+                            //                    //                            height: 200
+                            //                    //                            color: "#ff1b1b"
+                            //                    //                            Layout.fillWidth: true
+                            //                    //                        }
 
-                        //                        }
-                        //                        WriteTreeView {
-                        //                            Layout.fillWidth: true
-                        //                            Layout.fillHeight: true
+                            //                }
 
-                        //                        }
-
-                        //                    }
-
-                        //                    //                        Rectangle {
-                        //                    //                            id: rectangle
-                        //                    //                            width: 200
-                        //                    //                            height: 200
-                        //                    //                            color: "#ff1b1b"
-                        //                    //                            Layout.fillWidth: true
-                        //                    //                        }
-
-                        //                }
-                    }
+}
                 }
             }
         }
@@ -198,12 +214,9 @@ Item {
     ]
 }
 
-
-
-
-
-
-/*##^## Designer {
+/*##^##
+Designer {
     D{i:0;autoSize:true;height:480;width:640}
 }
- ##^##*/
+##^##*/
+

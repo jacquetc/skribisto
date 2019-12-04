@@ -43,9 +43,8 @@ add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC})
 #target_link_libraries(skribisto KF5::Kirigami2)
 
 
-target_link_libraries(skribisto skribisto-data skribisto-core)
+target_link_libraries(skribisto skribisto-data)
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
-include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-core/src/")
 
 qt5_use_modules(skribisto Core Quick Network Gui)
 

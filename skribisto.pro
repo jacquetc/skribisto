@@ -11,7 +11,7 @@ CONFIG += ordered
 QT += GammaRayProbe
 
 SUBDIRS += \
-plume-creator
+skribisto
 
-plume-creator.file = src/plume-creator.pro
+skribisto.file = src/skribisto.pro
 

@@ -22,9 +22,9 @@
 #define PLMNOTEMODEL_H
 
 #include <QAbstractItemModel>
-#include "global_core.h"
+#include "./skribisto_data_global.h"
 
-class EXPORT_CORE PLMNoteModel : public QAbstractItemModel
+class EXPORT PLMNoteModel : public QAbstractItemModel
 {
     Q_OBJECT
 

@@ -16,11 +16,15 @@ using namespace std;
 #include <QFileInfo>
 #include <QDir>
 
-//#include "plmpluginloader.h"
+#include "plmpluginloader.h"
 #include "plmdata.h"
+#include "plmsheethub.h"
+#include "plmerror.h"
+#include "plmprojecthub.h"
 #include "documenthandler.h"
-//#include "plmutils.h"
-//#include "plmsheetlistmodel.h"
+#include "plmutils.h"
+#include "models/plmsheetlistmodel.h"
+#include "models/plmmodels.h"
 
 #include <QQmlDebuggingEnabler>
 
@@ -94,9 +98,10 @@ int main(int argc, char *argv[])
     qputenv("QT_STYLE_OVERRIDE",           "");
 
     // TODO : add option for UI scale
-    qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
+    //qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 
 
     QGuiApplication app(argc, argv);
@@ -157,40 +162,42 @@ int main(int argc, char *argv[])
 
 
    PLMData *data     = new PLMData(qApp);
-
-    // qmlRegisterType<PLMError>("eu.skribisto.qml", 1, 0, "PLMError");
-//    qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",
-//                                              1,
-//                                              0,
-//                                              "PLMProjectHub",
-//                                              "Can't instantiate PLMProjectHub");
-//    qmlRegisterUncreatableType<PLMSheetHub>("eu.skribisto.sheethub",
-//                                            1,
-//                                            0,
-//                                            "PLMSheetHub",
-//                                            "Can't instantiate PLMSheetHub");
+//   PLMModels *models = new PLMModels(qApp);
 
 
-//    qmlRegisterType<PLMSheetListModel>("eu.skribisto.sheetlistmodel",
-//                                       1,
-//                                       0,
-//                                       "PLMSheetListModel");
-//    qmlRegisterType<DocumentHandler>("eu.skribisto.documenthandler",
-//                                     1,
-//                                     0,
-//                                     "DocumentHandler");
+//     qmlRegisterType<PLMError>("eu.skribisto.qml", 1, 0, "PLMError");
+    qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",
+                                              1,
+                                              0,
+                                              "PLMProjectHub",
+                                              "Can't instantiate PLMProjectHub");
+    qmlRegisterUncreatableType<PLMSheetHub>("eu.skribisto.sheethub",
+                                            1,
+                                            0,
+                                            "PLMSheetHub",
+                                            "Can't instantiate PLMSheetHub");
+
+
+    qmlRegisterType<PLMSheetListModel>("eu.skribisto.sheetlistmodel",
+                                       1,
+                                       0,
+                                       "PLMSheetListModel");
+    qmlRegisterType<DocumentHandler>("eu.skribisto.documenthandler",
+                                     1,
+                                     0,
+                                     "DocumentHandler");
 
     QQmlApplicationEngine engine(qApp);
 
-    //engine.rootContext()->setContextProperty("plmData", data);
+    engine.rootContext()->setContextProperty("plmData", data);
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
 
-    //        QCoreApplication *app = qApp;
-    //        engine->connect(engine, &QQmlApplicationEngine::objectCreated, [app](QObject *object, const QUrl &url){
-    //            if(object == nullptr){
-    //                app->quit();
-    //            }
-    //        });
+//            QCoreApplication *app = qApp;
+//            engine->connect(engine, &QQmlApplicationEngine::objectCreated, [app](QObject *object, const QUrl &url){
+//                if(object == nullptr){
+//                    app->quit();
+//                }
+//            });
 
     if (engine.rootObjects().isEmpty()) return -1;
 

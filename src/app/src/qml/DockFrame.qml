@@ -6,6 +6,7 @@ Item {
     property alias contentParent: container
     property int contentHeight: 100
     property int dynamicHeight: folded ? 30 : contentHeight
+    property int dynamicWidth: folded ? 0x0 : 40
     property alias folded: dockHeader.folded
     property alias title: dockHeader.title
 
@@ -16,9 +17,8 @@ Item {
     implicitHeight: folded ? 30 : contentHeight
 
 
-    RowLayout {
+    GridLayout {
         id: rowLayout
-        spacing: 0
         anchors.fill: parent
 
         DockHeader {
@@ -26,13 +26,13 @@ Item {
             Layout.minimumHeight: 30
             Layout.minimumWidth: 30
             Layout.preferredHeight: dynamicHeight
+            Layout.preferredWidth: dynamicWidth
             Layout.alignment: Qt.AlignLeft | Qt.AlignTop
 
         }
         Item {
             id: container
-            Layout.preferredWidth: contentWidth - dockHeader.width
-            Layout.preferredHeight: contentHeight
+
             Layout.fillHeight: true
             Layout.fillWidth: true
 

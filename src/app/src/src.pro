@@ -31,7 +31,7 @@ CONFIG += c++14
 #unix: QMAKE_LFLAGS_RELEASE += -static-libstdc++ -static-libgcc
 
 
-TARGET = plume-creator
+TARGET = skribisto
 
 #LIBS += -Lstaticplugins -lplumetag
 #LIBS += -L$$top_builddir/bin/staticplugins -lplumetag
@@ -46,7 +46,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #LIBS += -lkirigami
 
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+documenthandler.cpp
+
+HEADERS += \
+documenthandler.h
 
 #QT += core gui widgets qml
 
@@ -107,7 +111,7 @@ BINDIR = $$PREFIX/bin
 isEmpty(DATADIR) {
 DATADIR = $$PREFIX/share
 }
-DEFINES += DATADIR=\\\"$${DATADIR}/plume-creator\\\"
+DEFINES += DATADIR=\\\"$${DATADIR}/skribisto\\\"
 target.files = $$DESTDIR/$$TARGET
 target.path = $$BINDIR
 
@@ -119,7 +123,7 @@ INSTALLS += target
 
 
 macx {
-ICON = resources/mac/plume-creator.icns
+ICON = resources/mac/skribisto.icns
 
 icons.files = resources/images/icons
 icons.path = Contents/Resources/
@@ -155,12 +159,11 @@ QMAKE_INFO_PLIST = resources/mac/Info.plist
 
 # add data lib :
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/release/ -lplume-creator-data
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/debug/ -lplume-creator-data
-else:unix: LIBS += -L$$OUT_PWD/../../libplume-creator-data/src/ -lplume-creator-data
+win32: LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data
+else:unix: LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data
 
-INCLUDEPATH += $$PWD/../../libplume-creator-data/src
-DEPENDPATH += $$PWD/../../libplume-creator-data/src
+INCLUDEPATH += $$PWD/../../libskribisto-data/src
+DEPENDPATH += $$PWD/../../libskribisto-data/src
 
 
 #win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../libplume-creator-data/src/release/libplume-creator-data.a
@@ -208,7 +211,8 @@ DISTFILES += \
     qml/WritePage.qml \
     qml/WriteTreeView.qml \
     qml/WriteLeftDock.qml \
-    qml/WritingZone.qml
+    qml/WritingZone.qml \
+    qml/Minimap.qml
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
     ANDROID_EXTRA_LIBS = \

@@ -23,10 +23,10 @@
 
 #include <QAbstractItemModel>
 #include "plmsheetitem.h"
-#include "global_core.h"
+#include "./skribisto_data_global.h"
 
 
-class EXPORT_CORE PLMSheetModel : public QAbstractItemModel {
+class EXPORT PLMSheetModel : public QAbstractItemModel {
     Q_OBJECT
 
 public:

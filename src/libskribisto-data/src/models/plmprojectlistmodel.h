@@ -22,9 +22,9 @@
 #define PLMPROJECTLISTMODEL_H
 
 #include <QAbstractListModel>
-#include "global_core.h"
+#include "./skribisto_data_global.h"
 
-class EXPORT_CORE PLMProjectListModel : public QAbstractListModel
+class EXPORT PLMProjectListModel : public QAbstractListModel
 {
     Q_OBJECT
 

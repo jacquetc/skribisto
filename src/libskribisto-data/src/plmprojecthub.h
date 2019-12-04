@@ -72,7 +72,7 @@ signals:
 
     void             errorSent(const PLMError& error) const;
     Q_INVOKABLE void projectLoaded(int projectId);
-    void             projectClosed(int projectId);
+    Q_INVOKABLE void projectClosed(int projectId);
     void             allProjectsClosed();
     void             projectTypeChanged(int            projectId,
                                         const QString& newType);

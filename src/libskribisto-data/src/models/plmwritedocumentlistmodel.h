@@ -2,10 +2,11 @@
 #define PLMWRITEDOCUMENTLISTMODEL_H
 
 #include "plmdocumentlistmodel.h"
+#include "./skribisto_data_global.h"
 
 
 
-class PLMWriteDocumentListModel : public PLMDocumentListModel
+class EXPORT PLMWriteDocumentListModel : public PLMDocumentListModel
 {
 public:
     PLMWriteDocumentListModel(QObject *parent);

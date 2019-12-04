@@ -32,7 +32,7 @@ public:
     virtual ~PLMBaseInterface() {}
 };
 
-#define PLMBaseInterface_iid "com.PlumeSoft.Plume-Creator.BaseInterface/1.0"
+#define PLMBaseInterface_iid "com.Skribisto.BaseInterface/1.0"
 
 
 Q_DECLARE_INTERFACE(PLMBaseInterface, PLMBaseInterface_iid)

@@ -22,9 +22,9 @@
 #define PLMPROPERTIESMODEL_H
 
 #include <QAbstractItemModel>
-#include "global_core.h"
+#include "./skribisto_data_global.h"
 
-class EXPORT_CORE PLMPropertiesModel : public QAbstractItemModel
+class EXPORT PLMPropertiesModel : public QAbstractItemModel
 {
     Q_OBJECT
 

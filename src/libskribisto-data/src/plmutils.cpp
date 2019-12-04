@@ -79,7 +79,7 @@ bool PLMUtils::Dir::removeDir(const QString& dirName)
 
 //    //  creation date :
 
-//    QString tempFileName = QDir::tempPath() + "/Plume/info";
+//    QString tempFileName = QDir::tempPath() + "/Skribisto/info";
 //    QString infoFileName = JlCompress::extractFile(fileName, "info",
 // tempFileName );
 //    QFile *infoFile = new QFile(infoFileName);
@@ -481,7 +481,7 @@ QHash<QString,
 // {
 //    //  creation date :
 //    QString realName;
-//    QString tempFileName = QDir::tempPath() + "/Plume/info";
+//    QString tempFileName = QDir::tempPath() + "/Skribisto/info";
 //    QString infoFileName = JlCompress::extractFile(fileName, "info",
 // tempFileName );
 //    QFile *infoFile = new QFile(infoFileName);

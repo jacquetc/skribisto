@@ -1,6 +1,7 @@
 import QtQuick 2.10
 import QtQuick.Controls 2.4
 import QtQuick.Controls.Universal 2.2
+import Qt.labs.settings 1.1
 
 RootPageForm {
 
@@ -21,17 +22,23 @@ RootPageForm {
 
 //    }
 
+
+
     Component{
         id: flow_comp
+
         Flow {
-            id: flow
+            id: menuButtonsflow
             anchors.fill: parent
+            property int buttonSize: 70
+
+            //flow: statusBarMenuButtonsLoader.visible ? Flow.LeftToRight : Flow.TopToBottom
 
             ToolButton {
                 id: welcome_button
                 flat: true
-                height: 70
-                width: 70
+                height: menuButtonsflow.buttonSize
+                width: menuButtonsflow.buttonSize
                 checkable: true
                 display: AbstractButton.IconOnly
                 action: welcomeWindowAction
@@ -55,8 +62,8 @@ RootPageForm {
             ToolButton {
                 id: write_button
                 //flat: true
-                height: 70
-                width: 70
+                height: menuButtonsflow.buttonSize
+                width: menuButtonsflow.buttonSize
                 display: AbstractButton.IconOnly
                 action: writeWindowAction
                 icon {
@@ -78,8 +85,8 @@ RootPageForm {
             ToolButton {
                 id: note_button
                 //flat: true
-                height: 70
-                width: 70
+                height: menuButtonsflow.buttonSize
+                width: menuButtonsflow.buttonSize
                                 display: AbstractButton.IconOnly
                                 action: noteWindowAction
                                 icon {
@@ -99,8 +106,8 @@ RootPageForm {
             ToolButton {
                 id: gallery_button
                 //flat: true
-                height: 70
-                width: 70
+                height: menuButtonsflow.buttonSize
+                width: menuButtonsflow.buttonSize
                 display: AbstractButton.IconOnly
                 action: galleryWindowAction
                 icon {
@@ -119,8 +126,8 @@ RootPageForm {
             ToolButton {
                 id: infos_button
                 //flat: true
-                height: 70
-                width: 70
+                height: menuButtonsflow.buttonSize
+                width: menuButtonsflow.buttonSize
                 display: AbstractButton.IconOnly
                 action: infosWindowAction
                 icon {
@@ -232,5 +239,26 @@ RootPageForm {
             }
 
         }
+
+
+        statusBarMenuButtonsLoader.onLoaded: {
+            statusBarMenuButtonsLoader.item.flow = Flow.LeftToRight
+            statusBarMenuButtonsLoader.item.buttonSize = 30
+        }
+
+        Settings {
+            id: settings
+            property bool menuButtonsInStatusBar: false
+        }
+
+        Component.onCompleted:{
+
+            statusBarMenuButtonsLoader.visible = settings.menuButtonsInStatusBar
+
+        }
+        Component.onDestruction:{
+            settings.menuButtonsInStatusBar = statusBarMenuButtonsLoader.visible
+        }
+
 }
 

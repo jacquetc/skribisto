@@ -2,7 +2,6 @@ import QtQuick 2.12
 import QtQml 2.12
 import QtQuick.Controls 2.12
 import eu.skribisto.sheethub 1.0
-import "."
 
 WritePageForm {
     property int textAreaFixedWidth: 400
@@ -123,6 +122,7 @@ WritePageForm {
 
     Connections{
         target: Globals
+
         onCompactSizeChanged: {
             if (Globals.compactSize === true) {
             }

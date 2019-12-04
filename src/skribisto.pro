@@ -3,16 +3,16 @@ CONFIG += ordered
 
 #ordered
 SUBDIRS += \
-    libplume-creator-data/plume-creator-data.pro \
+    libskribisto-data/skribisto-data.pro \
     app/app.pro \
-    #plugins/plugins.pro
+    plugins/plugins.pro
     #3rdparty/kirigami/kirigami.pri
 
-app.depends = libplume-creator-data
+app.depends = libskribisto-data
 #app.depends = 3rdparty
 plugins.depends = app
 
-TRANSLATIONS = translations/plume-creator_fr_FR.ts \
+TRANSLATIONS = translations/skribisto_fr_FR.ts \
 #translations/plume-creator_it_IT.ts \
 #translations/plume-creator_de_DE.ts \
 #translations/plume-creator_sp_SP.ts \

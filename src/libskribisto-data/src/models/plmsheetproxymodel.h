@@ -2,7 +2,8 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmmodels.cpp                                                   *
+*  Filename: plmsheetproxymodel.h
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,33 +19,36 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#include "plmmodels.h"
+#ifndef PLMSHEETPROXYMODEL_H
+#define PLMSHEETPROXYMODEL_H
 
-PLMModels::PLMModels(QObject *parent) : QObject(parent)
-{
-    m_instance        = this;
-    m_sheetModel      = new PLMSheetModel(this);
-    m_sheetProxyModel = new PLMSheetProxyModel(this);
+#include <QSortFilterProxyModel>
+#include "./skribisto_data_global.h"
 
-    m_writeDocumentListModel = new PLMWriteDocumentListModel(this);
-}
+class EXPORT PLMSheetProxyModel : public QSortFilterProxyModel {
+    Q_OBJECT
 
-PLMModels::~PLMModels()
-{}
+public:
 
-PLMModels *PLMModels::m_instance = nullptr;
+    explicit PLMSheetProxyModel(QObject *parent = nullptr);
 
-PLMSheetModel * PLMModels::sheetModel()
-{
-    return m_sheetModel;
-}
+    Qt::ItemFlags flags(const QModelIndex& index) const;
 
-PLMSheetProxyModel * PLMModels::sheetProxyModel()
-{
-    return m_sheetProxyModel;
-}
+    QVariant      data(const QModelIndex& index,
+                       int                role) const;
+    bool          setData(const QModelIndex& index,
+                          const QVariant   & value,
+                          int                role);
 
-PLMDocumentListModel * PLMModels::writeDocumentListModel()
-{
-    return m_writeDocumentListModel;
-}
+signals:
+
+public slots:
+
+    void setDeletedFilter(bool showDeleted);
+protected:
+    bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+private:
+    bool m_showDeleted;
+};
+
+#endif // PLMSHEETPROXYMODEL_H

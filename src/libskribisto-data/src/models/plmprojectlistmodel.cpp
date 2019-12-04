@@ -28,6 +28,7 @@ PLMProjectListModel::PLMProjectListModel(QObject *parent)
 QVariant PLMProjectListModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     // FIXME: Implement me!
+    return QVariant();
 }
 
 int PLMProjectListModel::rowCount(const QModelIndex &parent) const
@@ -38,6 +39,7 @@ int PLMProjectListModel::rowCount(const QModelIndex &parent) const
         return 0;
 
     // FIXME: Implement me!
+    return 0;
 }
 
 QVariant PLMProjectListModel::data(const QModelIndex &index, int role) const
