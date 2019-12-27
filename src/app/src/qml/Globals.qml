@@ -1,5 +1,5 @@
 pragma Singleton
-import QtQuick 2.9
+import QtQuick 2.12
 
 QtObject {
     property color mainbg: 'red'
@@ -9,7 +9,7 @@ QtObject {
     property int  width
     //readonly property int  compactHeightLimit: 700
     readonly property int  compactWidthLimit: 700
-
+    signal loadAllSettings()
 
     //onHeightChanged: height < 700 ? compactSize = true : compactSize = false
 

@@ -1,5 +1,5 @@
 import QtQuick 2.12
-import QtQml 2.12
+import QtQml 2.14
 import QtQuick.Controls 2.12
 import eu.skribisto.sheethub 1.0
 
@@ -32,6 +32,7 @@ WritePageForm {
     Binding on writingZone.textAreaWidth {
         when: !Globals.compactSize && middleBase.width >= textAreaFixedWidth
         value: textAreaFixedWidth
+        restoreMode: Binding.RestoreBindingOrValue
     }
     Binding on minimap.text {
         value: writingZone.textArea.text
@@ -123,6 +124,7 @@ WritePageForm {
     Connections{
         target: Globals
 
+        // @disable-check M16
         onCompactSizeChanged: {
             if (Globals.compactSize === true) {
             }
@@ -157,9 +159,9 @@ WritePageForm {
         modal: Globals.compactSize ? true : false
         edge: Qt.RightEdge
 
-        interactive: Globals.compactSize ? true : false
-        visible:true
-        position: Globals.compactSize ? 0 : 1
+//        interactive: Globals.compactSize ? true : false
+//        visible:true
+//        position: Globals.compactSize ? 0 : 1
 
         background: Rectangle {
             Rectangle {
@@ -176,6 +178,7 @@ WritePageForm {
     // projectLoaded :
     Connections{
         target: plmData.projectHub()
+        // @disable-check M16
         onProjectLoaded: function (projectId){
             writingZone.text = plmData.sheetHub().getContent(1,1)
 
@@ -187,6 +190,7 @@ WritePageForm {
     // projectClosed :
     Connections{
         target: plmData.projectHub()
+        // @disable-check M16
         onProjectClosed: function (projectId){
             writingZone.text = ""
 

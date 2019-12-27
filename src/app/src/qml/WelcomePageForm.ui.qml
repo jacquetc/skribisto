@@ -6,6 +6,7 @@ Item {
     property alias open_project_button: open_project_button
     property alias recent_list_view: recent_list_view
     property alias new_project: new_project
+    property alias testSwitch: testSwitch
 
     Item {
         anchors.fill: parent
@@ -107,6 +108,13 @@ Item {
                 id: new_project
                 text: qsTr("New project")
             }
+        }
+
+        Switch {
+            id: testSwitch
+            x: 24
+            y: 284
+            text: qsTr("Switch")
         }
     }
     //    ListView {

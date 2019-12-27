@@ -1,6 +1,6 @@
 import QtQuick 2.9
-import QtQuick.Dialogs 1.2
 import eu.skribisto.projecthub 1.0
+import Qt.labs.settings 1.1
 
 WelcomePageForm {
 
@@ -25,16 +25,25 @@ WelcomePageForm {
 
     }
 
-    Component.onCompleted: init()
-
-
-    MessageDialog {
-        id: messageDialog
-        title: ""
-        onAccepted: {
-            visible = false
-        }
+    Settings{
+        id: settings
+        property bool menuButtonsInStatusBar: false
     }
+
+    testSwitch.onCheckedChanged: {
+        testSwitch.checked ? settings.menuButtonsInStatusBar = true :  settings.menuButtonsInStatusBar = false
+        Globals.loadAllSettings()
+    }
+
+    Component.onCompleted: {
+
+        init()
+
+
+    }
+
+
+
 
 
 }

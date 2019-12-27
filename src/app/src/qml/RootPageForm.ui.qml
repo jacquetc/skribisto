@@ -10,6 +10,7 @@ Item {
     property alias root_stack: root_stack
     property alias base: base
     property alias statusBarMenuButtonsLoader: statusBarMenuButtonsLoader
+    property alias sideMenuButtonsLoader: sideMenuButtonsLoader
 
     ColumnLayout {
         id: columnLayout
@@ -17,12 +18,12 @@ Item {
 
         RowLayout {
             id: rowLayout
-            Layout.fillHeight: true
             Layout.fillWidth: true
+            Layout.fillHeight: true
 
             Loader {
-                Layout.minimumHeight: 100
-                Layout.minimumWidth: 50
+                id: sideMenuButtonsLoader
+                Layout.preferredWidth: 70
                 Layout.fillHeight: true
                 sourceComponent: flow_comp
             }
@@ -94,12 +95,13 @@ Item {
             id: statusBar
             visible: true
             Layout.fillWidth: true
-            Layout.preferredHeight: 30
+            Layout.preferredHeight: 50
 
             RowLayout {
                 id: rowLayout1
                 anchors.fill: parent
                 spacing: 1
+
 
                 Label {
                     id: statusLeftLabel
@@ -119,7 +121,7 @@ Item {
                     id: statusBarMenuButtonsLoader
                     Layout.minimumWidth: 100
                     Layout.maximumWidth: 200
-                    Layout.fillHeight: true
+                    Layout.preferredHeight: 40
                     Layout.fillWidth: true
 
                     sourceComponent: flow_comp

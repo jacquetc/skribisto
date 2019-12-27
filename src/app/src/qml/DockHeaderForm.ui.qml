@@ -83,10 +83,10 @@ Item {
                 visible: true
             }
 
-            PropertyChanges {
-                target: hSwitch
-                rotation: 90
-            }
+//            PropertyChanges {
+//                target: hSwitch
+//                rotation: 90
+//            }
 
             PropertyChanges {
                 target: base

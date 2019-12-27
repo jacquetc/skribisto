@@ -1,26 +1,27 @@
-import QtQuick 2.10
+import QtQuick 2.12
 import QtQuick.Controls 2.4
 import QtQuick.Controls.Universal 2.2
 import Qt.labs.settings 1.1
 
+
 RootPageForm {
 
 
-//    Drawer{
-//        id: drawer
-//        width: 70
-//        height: window.height
-//        modal: false
-//        interactive: true
-//        position: 0
+    //    Drawer{
+    //        id: drawer
+    //        width: 70
+    //        height: window.height
+    //        modal: false
+    //        interactive: true
+    //        position: 0
 
-//        Loader{
-//            anchors.fill: parent
-//            sourceComponent: flow_comp
+    //        Loader{
+    //            anchors.fill: parent
+    //            sourceComponent: flow_comp
 
-//        }
+    //        }
 
-//    }
+    //    }
 
 
 
@@ -29,7 +30,6 @@ RootPageForm {
 
         Flow {
             id: menuButtonsflow
-            anchors.fill: parent
             property int buttonSize: 70
 
             //flow: statusBarMenuButtonsLoader.visible ? Flow.LeftToRight : Flow.TopToBottom
@@ -87,14 +87,14 @@ RootPageForm {
                 //flat: true
                 height: menuButtonsflow.buttonSize
                 width: menuButtonsflow.buttonSize
-                                display: AbstractButton.IconOnly
-                                action: noteWindowAction
-                                icon {
-                                    color: "transparent"
-                                    height: 100
-                                    width: 100
+                display: AbstractButton.IconOnly
+                action: noteWindowAction
+                icon {
+                    color: "transparent"
+                    height: 100
+                    width: 100
 
-                                }
+                }
 
                 hoverEnabled: true
                 ToolTip.delay: 1000
@@ -151,114 +151,138 @@ RootPageForm {
 
 
 
-        ActionGroup {
-            id: windowGroup
-            Action{
-                id: welcomeWindowAction
-                text: qsTr("Welcome")
-                icon {
-                    name: "welcome-icon"
-                    source: "qrc:/pics/skribisto.svg"
-                    color: "transparent"
-                    height: 100
-                    width: 100
+    ActionGroup {
+        id: windowGroup
+        Action{
+            id: welcomeWindowAction
+            text: qsTr("Welcome")
+            icon {
+                name: "welcome-icon"
+                source: "qrc:/pics/skribisto.svg"
+                color: "transparent"
+                height: 100
+                width: 100
 
-                }
-
-                shortcut: "F5"
-                checkable: true
-                checked: true
-                onTriggered: root_stack.currentIndex = 0
             }
 
-            Action{
-                id: writeWindowAction
-                text: qsTr("Write")
-                icon {
-                    name: "author"
-                    source: "qrc:/pics/author.svg"
-                    color: "transparent"
-                    height: 100
-                    width: 100
+            shortcut: "F5"
+            checkable: true
+            checked: true
+            onTriggered: root_stack.currentIndex = 0
+        }
 
-                }
+        Action{
+            id: writeWindowAction
+            text: qsTr("Write")
+            icon {
+                name: "author"
+                source: "qrc:/pics/author.svg"
+                color: "transparent"
+                height: 100
+                width: 100
 
-                shortcut: "F6"
-                checkable: true
-                onTriggered: root_stack.currentIndex = 1
             }
 
-            Action{
-                id:noteWindowAction
-                text: qsTr("Notes")
-                icon {
-                    name: "document-edit"
-                    source: "qrc:/pics/skribisto.svg"
-                    color: "transparent"
-                    height: 100
-                    width: 100
+            shortcut: "F6"
+            checkable: true
+            onTriggered: root_stack.currentIndex = 1
+        }
 
-                }
+        Action{
+            id:noteWindowAction
+            text: qsTr("Notes")
+            icon {
+                name: "document-edit"
+                source: "qrc:/pics/skribisto.svg"
+                color: "transparent"
+                height: 100
+                width: 100
 
-                shortcut: "F6"
-                checkable: true
-                onTriggered: root_stack.currentIndex = 1
             }
 
-            Action{
-                id:galleryWindowAction
-                text: qsTr("Gallery")
-                icon {
-                    name: "document-edit"
-                    source: "qrc:/pics/skribisto.svg"
-                    color: "transparent"
-                    height: 100
-                    width: 100
+            shortcut: "F6"
+            checkable: true
+            onTriggered: root_stack.currentIndex = 1
+        }
 
-                }
+        Action{
+            id:galleryWindowAction
+            text: qsTr("Gallery")
+            icon {
+                name: "document-edit"
+                source: "qrc:/pics/skribisto.svg"
+                color: "transparent"
+                height: 100
+                width: 100
 
-                shortcut: "F6"
-                checkable: true
-                onTriggered: root_stack.currentIndex = 1
-            }
-            Action{
-                id:infosWindowAction
-                text: qsTr("Informations")
-                icon {
-                    name: "document-edit"
-                    source: "qrc:/pics/skribisto.svg"
-                    color: "transparent"
-                    height: 100
-                    width: 100
-
-                }
-
-                shortcut: "F6"
-                checkable: true
-                onTriggered: root_stack.currentIndex = 1
             }
 
+            shortcut: "F6"
+            checkable: true
+            onTriggered: root_stack.currentIndex = 1
+        }
+        Action{
+            id:infosWindowAction
+            text: qsTr("Informations")
+            icon {
+                name: "document-edit"
+                source: "qrc:/pics/skribisto.svg"
+                color: "transparent"
+                height: 100
+                width: 100
+
+            }
+
+            shortcut: "F6"
+            checkable: true
+            onTriggered: root_stack.currentIndex = 1
         }
 
+    }
 
-        statusBarMenuButtonsLoader.onLoaded: {
-            statusBarMenuButtonsLoader.item.flow = Flow.LeftToRight
-            statusBarMenuButtonsLoader.item.buttonSize = 30
-        }
+    sideMenuButtonsLoader.onLoaded: {
+        sideMenuButtonsLoader.item.flow = Flow.TopToBottom
 
-        Settings {
-            id: settings
-            property bool menuButtonsInStatusBar: false
-        }
+    }
+    statusBarMenuButtonsLoader.onLoaded: {
+        statusBarMenuButtonsLoader.item.flow = Flow.LeftToRight
+        statusBarMenuButtonsLoader.item.buttonSize = 40
+        statusBarMenuButtonsLoader.item.spacing = 3
+    }
 
-        Component.onCompleted:{
 
-            statusBarMenuButtonsLoader.visible = settings.menuButtonsInStatusBar
+    Component.onCompleted:{
+        //Globals.loadAllSettings.connect(loadSettings)
+        loadSettings()
 
-        }
-        Component.onDestruction:{
-            settings.menuButtonsInStatusBar = statusBarMenuButtonsLoader.visible
-        }
+    }
+    Component.onDestruction:{
+        saveSettings()
+    }
+
+    Settings {
+        id: settings
+        property bool menuButtonsInStatusBar: false
+    }
+
+    Connections {
+        target: Globals
+        onLoadAllSettings: {loadSettings()}
+    }
+
+
+
+
+
+    function loadSettings(){
+        statusBarMenuButtonsLoader.visible = settings.menuButtonsInStatusBar
+        sideMenuButtonsLoader.visible = !settings.menuButtonsInStatusBar
+    }
+
+    function saveSettings(){
+        settings.menuButtonsInStatusBar = statusBarMenuButtonsLoader.visible
+
+    }
 
 }
 
