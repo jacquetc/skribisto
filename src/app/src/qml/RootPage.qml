@@ -32,6 +32,8 @@ RootPageForm {
             id: menuButtonsflow
             property int buttonSize: 70
 
+
+
             //flow: statusBarMenuButtonsLoader.visible ? Flow.LeftToRight : Flow.TopToBottom
 
             ToolButton {
@@ -252,37 +254,20 @@ RootPageForm {
 
 
     Component.onCompleted:{
-        //Globals.loadAllSettings.connect(loadSettings)
-        loadSettings()
+
 
     }
     Component.onDestruction:{
-        saveSettings()
-    }
-
-    Settings {
-        id: settings
-        property bool menuButtonsInStatusBar: false
-    }
-
-    Connections {
-        target: Globals
-        onLoadAllSettings: {loadSettings()}
     }
 
 
 
+    statusBarMenuButtonsLoader.visible: SkrSettings.interfaceSettings.menuButtonsInStatusBar
+    sideMenuButtonsLoader.visible: !SkrSettings.interfaceSettings.menuButtonsInStatusBar
 
 
-    function loadSettings(){
-        statusBarMenuButtonsLoader.visible = settings.menuButtonsInStatusBar
-        sideMenuButtonsLoader.visible = !settings.menuButtonsInStatusBar
-    }
 
-    function saveSettings(){
-        settings.menuButtonsInStatusBar = statusBarMenuButtonsLoader.visible
 
-    }
 
 }
 

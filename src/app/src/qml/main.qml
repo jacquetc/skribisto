@@ -2,7 +2,6 @@ import QtQuick 2.12
 import QtQuick.Controls 2.2
 import QtQuick.Window 2.3
 import QtQml 2.12
-import "."
 
 
 ApplicationWindow {
@@ -66,8 +65,12 @@ ApplicationWindow {
 
     onClosing: {
         console.log("quiting")
-        Qt.callLater(Qt.quit)}
-   }
+        Qt.callLater(Qt.quit)
+
+            }
+
+
+}
 
 //}
 

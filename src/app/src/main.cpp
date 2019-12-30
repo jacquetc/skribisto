@@ -26,8 +26,9 @@ using namespace std;
 #include "models/plmsheetlistmodel.h"
 #include "models/plmmodels.h"
 
+#ifdef QT_DEBUG
 #include <QQmlDebuggingEnabler>
-
+#endif //QT_DEBUG
 // -------------------------------------------------------
 void startCore()
 {
@@ -92,7 +93,9 @@ QSettings::setDefaultFormat(QSettings::IniFormat);
 
 int main(int argc, char *argv[])
 {
+#ifdef QT_DEBUG
     QQmlDebuggingEnabler enabler;
+#endif //QT_DEBUG
 
     // Allows qml styling
     qputenv("QT_STYLE_OVERRIDE",           "");

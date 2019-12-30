@@ -54,26 +54,35 @@ WriteLeftDockForm {
         }
     ]
 
+
     Settings {
         id: settings
-        property string writeLeftDockSplitView: "0"
-        property bool writeTreeViewFrameFolded: writeTreeViewFrame.folded ? true : false
-        property bool writeToolsFrameFolded: writeToolsFrame.folded ? true : false
+        category: "writeLeftDock"
+        property string dockSplitView: "0"
+        property bool treeViewFrameFolded: writeTreeViewFrame.folded ? true : false
+        property bool toolsFrameFolded: writeToolsFrame.folded ? true : false
 
 
     }
 
+        PropertyAnimation {
+            target: writeTreeViewFrame
+            property: "SplitView.preferredHeight"
+            duration: 500
+            easing.type: Easing.InOutQuad
+
+        }
 
 
     Component.onCompleted:{
 
-        writeTreeViewFrame.folded = settings.writeTreeViewFrameFolded
-        writeToolsFrame.folded = settings.writeToolsFrameFolded
-        splitView.restoreState(settings.writeLeftDockSplitView)
+        writeTreeViewFrame.folded = settings.treeViewFrameFolded
+        writeToolsFrame.folded = settings.toolsFrameFolded
+        splitView.restoreState(settings.dockSplitView)
 
     }
     Component.onDestruction:{
-        settings.writeLeftDockSplitView = splitView.saveState()
+        settings.dockSplitView = splitView.saveState()
     }
 
 }

@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 3.1.0)
 project(app)
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core Quick Network Gui CONFIG REQUIRED)
-find_package(Qt5QuickCompiler)
 #find_package(KF5Kirigami2)
 
 #foreach(plugin ${Qt5Gui_PLUGINS})
@@ -24,18 +23,27 @@ set(QML qml.qrc
 )
 ADD_CUSTOM_TARGET(qml.qrc SOURCES qml.qrc)
 
-FILE(GLOB QML_SRC "qml/*.qml")
+#FILE(GLOB QML_SRC "qml/*.qml")
 # Add QML files to project tree without building/compiling them
-ADD_CUSTOM_TARGET(qml SOURCES ${QML_SRC} )
+#ADD_CUSTOM_TARGET(qml SOURCES ${QML_SRC} )
 
 
 set(QRC pics.qrc
 controls.qrc
 ${CMAKE_SOURCE_DIR}/src/translations/langs.qrc
+${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc
+
 )
 
-qtquick_compiler_add_resources(RESOURCES ${QML})
-qt5_add_resources(RESOURCES ${QRC})
+# needed to allow qML debugging :
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    find_package(Qt5QuickCompiler)
+    qtquick_compiler_add_resources(RESOURCES ${QML})
+    qt5_add_resources(RESOURCES ${QRC})
+endif (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    qt5_add_resources(RESOURCES ${QRC} ${QML})
+endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Tell CMake to create the executable
 add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC})

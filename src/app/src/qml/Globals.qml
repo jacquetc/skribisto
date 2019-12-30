@@ -9,7 +9,6 @@ QtObject {
     property int  width
     //readonly property int  compactHeightLimit: 700
     readonly property int  compactWidthLimit: 700
-    signal loadAllSettings()
 
     //onHeightChanged: height < 700 ? compactSize = true : compactSize = false
 
@@ -18,6 +17,9 @@ QtObject {
        // width < compactWidthLimit ? console.log("compact = true") : console.log("compact = false")
     }
     onCompactSizeChanged: console.log("compact = " +  compactSize )
+
+
+
 
 
 

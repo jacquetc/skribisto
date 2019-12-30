@@ -1,6 +1,7 @@
 import QtQuick 2.11
 import QtQuick.Controls 2.14
 import QtQuick.Layouts 1.12
+import ".."
 
 Item {
     id: base
@@ -62,6 +63,7 @@ Item {
                                         //width: scrollview.contentWidth
                                         //height: 600
                                     }
+
                                 }
                                 DockFrame {
                                     id: writeToolsFrame

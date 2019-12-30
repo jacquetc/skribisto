@@ -4,6 +4,8 @@ import QtQuick.Window 2.3
 import QtQuick.Controls 2.3
 
 //import QtGraphicalEffects 1.0
+import "Write"
+import "Welcome"
 Item {
     id: base
     //property variant window: none

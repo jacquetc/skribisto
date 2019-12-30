@@ -1,24 +1,25 @@
 import QtQuick 2.11
 import QtQuick.Layouts 1.3
 Item {
+    id: base
 
     default property alias contents : container.data
     property alias contentParent: container
     property int contentHeight: 100
-    property int dynamicHeight: folded ? 30 : contentHeight
-    property int dynamicWidth: folded ? 0x0 : 40
+    property int dynamicHeight
+    property int dynamicWidth
     property alias folded: dockHeader.folded
     property alias title: dockHeader.title
 
     onFoldedChanged: {
         folded ? state = "folded" : state = "unfolded"
     }
-    implicitWidth: folded ? 0x0 : 30
-    implicitHeight: folded ? 30 : contentHeight
+//    implicitWidth: folded ? 0x0 : 30
+//    implicitHeight: folded ? 30 : contentHeight
 
 
     GridLayout {
-        id: rowLayout
+        id: gridLayout
         anchors.fill: parent
 
         DockHeader {
@@ -33,8 +34,8 @@ Item {
         Item {
             id: container
 
-            Layout.fillHeight: true
             Layout.fillWidth: true
+            Layout.fillHeight: true
 
 
 
@@ -46,6 +47,21 @@ Item {
 
 
     }
+
+
+    transitions: [
+        Transition {
+
+            PropertyAnimation {
+                target: base
+                properties: "dynamicHeight";
+                easing.type: Easing.InOutQuad;duration: 500
+            }
+
+
+        }
+    ]
+
     states: [
         State {
             name: "folded"
@@ -59,6 +75,16 @@ Item {
                 target: dockHeader
                 Layout.fillWidth: true
             }
+            PropertyChanges {
+                target: base
+                implicitHeight: 30
+                implicitWidth: 0x0
+            }
+            PropertyChanges {
+                target: base
+                dynamicHeight: 30
+                dynamicWidth: 0x0
+            }
         },State {
             name: "unfolded"
             when: dockHeader.folded === false
@@ -66,10 +92,21 @@ Item {
             PropertyChanges {
                 target: container
                 visible: true
+
             }
             PropertyChanges {
                 target: dockHeader
                 Layout.fillWidth: false
+            }
+            PropertyChanges {
+                target: base
+                implicitWidth: 30
+                implicitHeight: contentHeight
+            }
+            PropertyChanges {
+                target: base
+                dynamicHeight: contentHeight
+                dynamicWidth: 40
             }
         }
 

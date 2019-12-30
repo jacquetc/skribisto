@@ -10,18 +10,21 @@
         <file>qml/RootPage.qml</file>
         <file>qml/RootPageForm.ui.qml</file>
         <file>qml/settings.js</file>
-        <file>qml/WelcomePage.qml</file>
-        <file>qml/WelcomePageForm.ui.qml</file>
-        <file>qml/WritePage.qml</file>
-        <file>qml/WritePageForm.ui.qml</file>
-        <file>qml/WriteTreeView.qml</file>
-        <file>qml/WriteTreeViewForm.ui.qml</file>
         <file>qml/WritingZone.qml</file>
         <file>qml/WritingZoneForm.ui.qml</file>
         <file>qml/DockHeader.qml</file>
         <file>qml/DockHeaderForm.ui.qml</file>
-        <file>qml/WriteLeftDockForm.ui.qml</file>
-        <file>qml/WriteLeftDock.qml</file>
         <file>qml/Minimap.qml</file>
+        <file>qml/SkrSettings.qml</file>
+        <file>qml/Welcome/WelcomePage.qml</file>
+        <file>qml/Welcome/WelcomePageForm.ui.qml</file>
+        <file>qml/Write/WriteLeftDock.qml</file>
+        <file>qml/Write/WriteLeftDockForm.ui.qml</file>
+        <file>qml/Write/WritePage.qml</file>
+        <file>qml/Write/WritePageForm.ui.qml</file>
+        <file>qml/Write/WritePageForm_old.ui.qml</file>
+        <file>qml/Write/WritePage_old.qml</file>
+        <file>qml/Write/WriteTreeView.qml</file>
+        <file>qml/Write/WriteTreeViewForm.ui.qml</file>
     </qresource>
 </RCC>
