@@ -1,31 +1,31 @@
-#include "plmsheetlistmodel.h"
+#include "plmnotelistmodel.h"
 
-PLMSheetListModel::PLMSheetListModel(QObject *parent)
+PLMNoteListModel::PLMNoteListModel(QObject *parent)
     : QAbstractListModel(parent), m_headerData(QVariant())
 {
 
-    m_rootItem = new PLMSheetItem();
+    m_rootItem = new PLMNoteItem();
     m_rootItem->setIsRootItem();
 
     connect(plmdata->projectHub(),
             &PLMProjectHub::projectLoaded,
             this,
-            &PLMSheetListModel::populate);
+            &PLMNoteListModel::populate);
     connect(plmdata->projectHub(),
             &PLMProjectHub::projectClosed,
             this,
-            &PLMSheetListModel::populate);
+            &PLMNoteListModel::populate);
 
 
-    connect(plmdata->sheetHub(),
-            &PLMSheetHub::paperAdded,
+    connect(plmdata->noteHub(),
+            &PLMNoteHub::paperAdded,
             this,
-            &PLMSheetListModel::addPaper);
+            &PLMNoteListModel::addPaper);
 
     this->connectToPLMDataSignals();
 }
 
-QVariant PLMSheetListModel::headerData(int section, Qt::Orientation orientation,
+QVariant PLMNoteListModel::headerData(int section, Qt::Orientation orientation,
                                        int role) const
 {
     Q_UNUSED(section)
@@ -35,7 +35,7 @@ QVariant PLMSheetListModel::headerData(int section, Qt::Orientation orientation,
     return m_headerData;
 }
 
-bool PLMSheetListModel::setHeaderData(int             section,
+bool PLMNoteListModel::setHeaderData(int             section,
                                       Qt::Orientation orientation,
                                       const QVariant& value,
                                       int             role)
@@ -48,13 +48,14 @@ bool PLMSheetListModel::setHeaderData(int             section,
     return false;
 }
 
-QModelIndex PLMSheetListModel::index(int row, int column, const QModelIndex &parent) const
+
+QModelIndex PLMNoteListModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (column != 0) return QModelIndex();
-    PLMSheetItem *parentItem;
+    PLMNoteItem *parentItem;
     if (!parent.isValid()) parentItem = m_rootItem;
 
-    PLMSheetItem *childItem = m_allSheetItems.at(row);
+    PLMNoteItem *childItem = m_allNoteItems.at(row);
     if (childItem) {
         QModelIndex index = createIndex(row, column, childItem);
         return index;
@@ -64,7 +65,7 @@ QModelIndex PLMSheetListModel::index(int row, int column, const QModelIndex &par
 
 }
 
-int PLMSheetListModel::rowCount(const QModelIndex& parent) const
+int PLMNoteListModel::rowCount(const QModelIndex& parent) const
 {
     // For list models only the root node (an invalid parent) should return the
     // list's size. For all
@@ -72,10 +73,10 @@ int PLMSheetListModel::rowCount(const QModelIndex& parent) const
     // become a tree model.
     if (parent.isValid()) return 0;
 
-    return m_allSheetItems.count();
+    return m_allNoteItems.count();
 }
 
-QVariant PLMSheetListModel::data(const QModelIndex& index, int role) const
+QVariant PLMNoteListModel::data(const QModelIndex& index, int role) const
 {
     //    qDebug() << "checkIndex :"
     //             << (checkIndex(index,
@@ -86,67 +87,67 @@ QVariant PLMSheetListModel::data(const QModelIndex& index, int role) const
                         QAbstractItemModel::CheckIndexOption::IndexIsValid
                         |  QAbstractItemModel::CheckIndexOption::DoNotUseParent));
 
+
     if (!index.isValid()) return QVariant();
 
-    PLMSheetItem *item = static_cast<PLMSheetItem *>(index.internalPointer());
+    PLMNoteItem *item = static_cast<PLMNoteItem *>(index.internalPointer());
 
 
     if ((role == Qt::DisplayRole) && item->isProjectItem()) {
-        return item->data(PLMSheetItem::Roles::ProjectNameRole);
+        return item->data(PLMNoteItem::Roles::ProjectNameRole);
     }
     else if (role == Qt::DisplayRole) {
-        return item->data(PLMSheetItem::Roles::NameRole);
+        return item->data(PLMNoteItem::Roles::NameRole);
     }
 
 
-    if (role == PLMSheetItem::Roles::ProjectNameRole) {
+    if (role == PLMNoteItem::Roles::ProjectNameRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::NameRole) {
+    if (role == PLMNoteItem::Roles::NameRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::PaperIdRole) {
+    if (role == PLMNoteItem::Roles::PaperIdRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::ProjectIdRole) {
+    if (role == PLMNoteItem::Roles::ProjectIdRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::TagRole) {
+    if (role == PLMNoteItem::Roles::TagRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::IndentRole) {
+    if (role == PLMNoteItem::Roles::IndentRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::SortOrderRole) {
+    if (role == PLMNoteItem::Roles::SortOrderRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::CreationDateRole) {
+    if (role == PLMNoteItem::Roles::CreationDateRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::UpdateDateRole) {
+    if (role == PLMNoteItem::Roles::UpdateDateRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::ContentDateRole) {
+    if (role == PLMNoteItem::Roles::ContentDateRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::DeletedRole) {
+    if (role == PLMNoteItem::Roles::DeletedRole) {
         return item->data(role);
     }
-
     return QVariant();
 }
 
-bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value, int role)
+bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
     Q_ASSERT(checkIndex(index,
                         QAbstractItemModel::CheckIndexOption::IndexIsValid |
@@ -154,7 +155,7 @@ bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value,
 
 
     if (data(index, role) != value) {
-        PLMSheetItem *item = static_cast<PLMSheetItem *>(index.internalPointer());
+        PLMNoteItem *item = static_cast<PLMNoteItem *>(index.internalPointer());
         int projectId      = item->projectId();
         int paperId        = item->paperId();
         PLMError error;
@@ -162,70 +163,70 @@ bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value,
         this->disconnectFromPLMDataSignals();
 
         switch (role) {
-        case PLMSheetItem::Roles::ProjectNameRole:
+        case PLMNoteItem::Roles::ProjectNameRole:
             error = plmdata->projectHub()->setProjectName(projectId, value.toString());
             break;
 
-        case PLMSheetItem::Roles::ProjectIdRole:
+        case PLMNoteItem::Roles::ProjectIdRole:
 
             // useless
             break;
 
-        case PLMSheetItem::Roles::PaperIdRole:
+        case PLMNoteItem::Roles::PaperIdRole:
 
             // useless
             break;
 
-        case PLMSheetItem::Roles::NameRole:
-            error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
+        case PLMNoteItem::Roles::NameRole:
+            error = plmdata->noteHub()->setTitle(projectId, paperId, value.toString());
             break;
 
-        case PLMSheetItem::Roles::TagRole:
-            error = plmdata->sheetPropertyHub()->setProperty(projectId, paperId,
+        case PLMNoteItem::Roles::TagRole:
+            error = plmdata->notePropertyHub()->setProperty(projectId, paperId,
                                                              "tag", value.toString());
             break;
 
-        case PLMSheetItem::Roles::IndentRole:
-            error = plmdata->sheetHub()->setIndent(projectId, paperId, value.toInt());
+        case PLMNoteItem::Roles::IndentRole:
+            error = plmdata->noteHub()->setIndent(projectId, paperId, value.toInt());
             break;
 
-        case PLMSheetItem::Roles::SortOrderRole:
-            error = plmdata->sheetHub()->setSortOrder(projectId, paperId, value.toInt());
+        case PLMNoteItem::Roles::SortOrderRole:
+            error = plmdata->noteHub()->setSortOrder(projectId, paperId, value.toInt());
             break;
 
-        case PLMSheetItem::Roles::DeletedRole:
-            error = plmdata->sheetHub()->setDeleted(projectId, paperId, value.toBool());
+        case PLMNoteItem::Roles::DeletedRole:
+            error = plmdata->noteHub()->setDeleted(projectId, paperId, value.toBool());
             break;
 
-        case PLMSheetItem::Roles::CreationDateRole:
-            error = plmdata->sheetHub()->setCreationDate(projectId,
+        case PLMNoteItem::Roles::CreationDateRole:
+            error = plmdata->noteHub()->setCreationDate(projectId,
                                                          paperId,
                                                          value.toDateTime());
             break;
 
-        case PLMSheetItem::Roles::UpdateDateRole:
-            error = plmdata->sheetHub()->setUpdateDate(projectId,
+        case PLMNoteItem::Roles::UpdateDateRole:
+            error = plmdata->noteHub()->setUpdateDate(projectId,
                                                        paperId,
                                                        value.toDateTime());
             break;
 
-        case PLMSheetItem::Roles::ContentDateRole:
-            error = plmdata->sheetHub()->setContentDate(projectId,
+        case PLMNoteItem::Roles::ContentDateRole:
+            error = plmdata->noteHub()->setContentDate(projectId,
                                                         paperId,
                                                         value.toDateTime());
             break;
 
-        case PLMSheetItem::Roles::CharCountRole:
-            error = plmdata->sheetPropertyHub()->setProperty(projectId,
+        case PLMNoteItem::Roles::CharCountRole:
+            error = plmdata->notePropertyHub()->setProperty(projectId,
                                                              paperId,
                                                              "char_count",
                                                              QString::number(
                                                                  value.toInt()));
             break;
 
-        case PLMSheetItem::Roles::WordCountRole:
+        case PLMNoteItem::Roles::WordCountRole:
 
-            error = plmdata->sheetPropertyHub()->setProperty(projectId,
+            error = plmdata->notePropertyHub()->setProperty(projectId,
                                                              paperId,
                                                              "word_count",
                                                              QString::number(
@@ -247,7 +248,7 @@ bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value,
     return false;
 }
 
-Qt::ItemFlags PLMSheetListModel::flags(const QModelIndex& index) const
+Qt::ItemFlags PLMNoteListModel::flags(const QModelIndex& index) const
 {
     Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
 
@@ -256,7 +257,7 @@ Qt::ItemFlags PLMSheetListModel::flags(const QModelIndex& index) const
     return defaultFlags;
 }
 
-bool PLMSheetListModel::insertRows(int row, int count, const QModelIndex& parent)
+bool PLMNoteListModel::insertRows(int row, int count, const QModelIndex& parent)
 {
     beginInsertRows(parent, row, row + count - 1);
 
@@ -265,7 +266,7 @@ bool PLMSheetListModel::insertRows(int row, int count, const QModelIndex& parent
     return false;
 }
 
-bool PLMSheetListModel::removeRows(int row, int count, const QModelIndex& parent)
+bool PLMNoteListModel::removeRows(int row, int count, const QModelIndex& parent)
 {
     beginRemoveRows(parent, row, row + count - 1);
 
@@ -274,61 +275,61 @@ bool PLMSheetListModel::removeRows(int row, int count, const QModelIndex& parent
     return false;
 }
 
-QHash<int, QByteArray>PLMSheetListModel::roleNames() const {
+QHash<int, QByteArray>PLMNoteListModel::roleNames() const {
     QHash<int, QByteArray> roles;
-    roles[PLMSheetItem::Roles::ProjectNameRole]  = "projectName";
-    roles[PLMSheetItem::Roles::PaperIdRole]      = "paperId";
-    roles[PLMSheetItem::Roles::ProjectIdRole]    = "projectId";
-    roles[PLMSheetItem::Roles::NameRole]         = "name";
-    roles[PLMSheetItem::Roles::TagRole]          = "tag";
-    roles[PLMSheetItem::Roles::IndentRole]       = "indent";
-    roles[PLMSheetItem::Roles::SortOrderRole]    = "sortOrder";
-    roles[PLMSheetItem::Roles::CreationDateRole] = "creationDate";
-    roles[PLMSheetItem::Roles::UpdateDateRole]   = "updateDate";
-    roles[PLMSheetItem::Roles::ContentDateRole]  = "contentDate";
-    roles[PLMSheetItem::Roles::DeletedRole]  = "deleted";
-    roles[PLMSheetItem::Roles::WordCountRole]  = "wordCount";
-    roles[PLMSheetItem::Roles::CharCountRole]  = "charCount";
+    roles[PLMNoteItem::Roles::ProjectNameRole]  = "projectName";
+    roles[PLMNoteItem::Roles::PaperIdRole]      = "paperId";
+    roles[PLMNoteItem::Roles::ProjectIdRole]    = "projectId";
+    roles[PLMNoteItem::Roles::NameRole]         = "name";
+    roles[PLMNoteItem::Roles::TagRole]          = "tag";
+    roles[PLMNoteItem::Roles::IndentRole]       = "indent";
+    roles[PLMNoteItem::Roles::SortOrderRole]    = "sortOrder";
+    roles[PLMNoteItem::Roles::CreationDateRole] = "creationDate";
+    roles[PLMNoteItem::Roles::UpdateDateRole]   = "updateDate";
+    roles[PLMNoteItem::Roles::ContentDateRole]  = "contentDate";
+    roles[PLMNoteItem::Roles::DeletedRole]  = "deleted";
+    roles[PLMNoteItem::Roles::WordCountRole]  = "wordCount";
+    roles[PLMNoteItem::Roles::CharCountRole]  = "charCount";
     return roles;
 }
 
-void PLMSheetListModel::populate()
+void PLMNoteListModel::populate()
 {
     this->beginResetModel();
 
-    m_allSheetItems.clear();
+    m_allNoteItems.clear();
     foreach(int projectId, plmdata->projectHub()->getProjectIdList()) {
         if (plmdata->projectHub()->getProjectIdList().count() > 1) {
-            PLMSheetItem *projectItem = new PLMSheetItem();
+            PLMNoteItem *projectItem = new PLMNoteItem();
             projectItem->setIsProjectItem(projectId);
-            m_allSheetItems.append(projectItem);
+            m_allNoteItems.append(projectItem);
         }
 
-        auto idList         = plmdata->sheetHub()->getAllIds(projectId);
-        auto sortOrdersHash = plmdata->sheetHub()->getAllSortOrders(projectId);
-        auto indentsHash    = plmdata->sheetHub()->getAllIndents(projectId);
+        auto idList         = plmdata->noteHub()->getAllIds(projectId);
+        auto sortOrdersHash = plmdata->noteHub()->getAllSortOrders(projectId);
+        auto indentsHash    = plmdata->noteHub()->getAllIndents(projectId);
 
-        foreach(int sheetId, idList) {
-            m_allSheetItems.append(new PLMSheetItem(projectId, sheetId,
-                                                    indentsHash.value(sheetId),
-                                                    sortOrdersHash.value(sheetId)));
+        foreach(int noteId, idList) {
+            m_allNoteItems.append(new PLMNoteItem(projectId, noteId,
+                                                    indentsHash.value(noteId),
+                                                    sortOrdersHash.value(noteId)));
         }
     }
     this->endResetModel();
 }
 
-void PLMSheetListModel::clear()
+void PLMNoteListModel::clear()
 {
     this->beginResetModel();
-    qDeleteAll(m_allSheetItems);
+    qDeleteAll(m_allNoteItems);
     this->endResetModel();
 }
 
-void PLMSheetListModel::exploitSignalFromPLMData(int                 projectId,
-                                                 int                 paperId,
-                                                 PLMSheetItem::Roles role)
+void PLMNoteListModel::exploitSignalFromPLMData(int                 projectId,
+                                             int                 paperId,
+                                             PLMNoteItem::Roles role)
 {
-    PLMSheetItem *item = this->findPaperItem(projectId, paperId);
+    PLMNoteItem *item = this->findPaperItem(projectId, paperId);
 
     if (!item) {
         return;
@@ -340,7 +341,7 @@ void PLMSheetListModel::exploitSignalFromPLMData(int                 projectId,
     QModelIndex index;
     QModelIndexList list =  this->match(this->index(0, 0,
                                                     QModelIndex()),
-                                        PLMSheetItem::Roles::PaperIdRole,
+                                        PLMNoteItem::Roles::PaperIdRole,
                                         paperId,
                                         -1,
                                         Qt::MatchFlag::MatchRecursive |
@@ -348,7 +349,7 @@ void PLMSheetListModel::exploitSignalFromPLMData(int                 projectId,
                                         Qt::MatchFlag::MatchWrap);
 
     for (const QModelIndex& modelIndex : list) {
-        PLMSheetItem *t = static_cast<PLMSheetItem *>(modelIndex.internalPointer());
+        PLMNoteItem *t = static_cast<PLMNoteItem *>(modelIndex.internalPointer());
 
         if (t)
             if (t->projectId() == projectId) index = modelIndex;
@@ -361,15 +362,15 @@ void PLMSheetListModel::exploitSignalFromPLMData(int                 projectId,
 
 //--------------------------------------------------------------------
 
-void PLMSheetListModel::addPaper(int projectId, int paperId)
+void PLMNoteListModel::addPaper(int projectId, int paperId)
 {
     //find parentIndex and row
     QModelIndex parentIndex;
     int row = 0;
 
-    auto idList         = plmdata->sheetHub()->getAllIds(projectId);
-    auto sortOrdersHash = plmdata->sheetHub()->getAllSortOrders(projectId);
-    auto indentsHash    = plmdata->sheetHub()->getAllIndents(projectId);
+    auto idList         = plmdata->noteHub()->getAllIds(projectId);
+    auto sortOrdersHash = plmdata->noteHub()->getAllSortOrders(projectId);
+    auto indentsHash    = plmdata->noteHub()->getAllIndents(projectId);
 
 
     int paperIndex = idList.indexOf(paperId);
@@ -403,7 +404,7 @@ void PLMSheetListModel::addPaper(int projectId, int paperId)
                     return;
                 }
                 parentIndex = modelIndexList.first();
-                //int parentPaperId = parentIndex.data(PLMSheetItem::Roles::PaperIdRole).toInt();
+                //int parentPaperId = parentIndex.data(PLMNoteItem::Roles::PaperIdRole).toInt();
                 row = paperIndex - i - 1;
                 parentFound = true;
                 break;
@@ -416,7 +417,7 @@ void PLMSheetListModel::addPaper(int projectId, int paperId)
         return;
     }
 
-    // find item just before in m_allSheetItems to determine item index to insert in:
+    // find item just before in m_allNoteItems to determine item index to insert in:
 
     int itemIndex = 0;
     if (plmdata->projectHub()->getProjectIdList().count() == 1 && paperIndex == 0){ // so no project items and first item
@@ -424,17 +425,17 @@ void PLMSheetListModel::addPaper(int projectId, int paperId)
     }
     else {
         int idBefore = idList.at(paperIndex - 1);
-        PLMSheetItem *itemBefore = this->findPaperItem(projectId, idBefore);
+        PLMNoteItem *itemBefore = this->findPaperItem(projectId, idBefore);
 
-        int indexBefore = m_allSheetItems.indexOf(itemBefore);
+        int indexBefore = m_allNoteItems.indexOf(itemBefore);
 
         itemIndex = indexBefore + 1;
 
-        //        if(itemIndex >= m_allSheetItems.count() && paperIndent == itemBefore->indent() + 1){
-        //            qWarning() << Q_FUNC_INFO << "last in the m_allSheetItems list and child of previous item, so failsafe used";
-        //            this->populate();
-        //            return;
-        //        }
+//        if(itemIndex >= m_allNoteItems.count() && paperIndent == itemBefore->indent() + 1){
+//            qWarning() << Q_FUNC_INFO << "last in the m_allNoteItems list and child of previous item, so failsafe used";
+//            this->populate();
+//            return;
+//        }
     }
 
 
@@ -442,7 +443,7 @@ void PLMSheetListModel::addPaper(int projectId, int paperId)
 
     beginInsertRows(parentIndex, row, row);
 
-    m_allSheetItems.insert(itemIndex, new PLMSheetItem(projectId, paperId,
+    m_allNoteItems.insert(itemIndex, new PLMNoteItem(projectId, paperId,
                                                        indentsHash.value(paperId),
                                                        sortOrdersHash.value(paperId)));
     endInsertRows();
@@ -450,20 +451,20 @@ void PLMSheetListModel::addPaper(int projectId, int paperId)
 
 //--------------------------------------------------------------------
 
-PLMSheetItem * PLMSheetListModel::findPaperItem(int projectId, int paperId)
+PLMNoteItem * PLMNoteListModel::findPaperItem(int projectId, int paperId)
 {
     QModelIndexList list =  this->match(this->index(0, 0,
                                                     QModelIndex()),
-                                        PLMSheetItem::Roles::PaperIdRole,
+                                        PLMNoteItem::Roles::PaperIdRole,
                                         paperId,
                                         -1,
                                         Qt::MatchFlag::MatchRecursive |
                                         Qt::MatchFlag::MatchExactly |
                                         Qt::MatchFlag::MatchWrap);
-    PLMSheetItem *item = nullptr;
+    PLMNoteItem *item = nullptr;
 
     for (const QModelIndex& modelIndex : list) {
-        PLMSheetItem *t = static_cast<PLMSheetItem *>(modelIndex.internalPointer());
+        PLMNoteItem *t = static_cast<PLMNoteItem *>(modelIndex.internalPointer());
 
         if (t)
             if (t->projectId() == projectId) item = t;
@@ -472,17 +473,17 @@ PLMSheetItem * PLMSheetListModel::findPaperItem(int projectId, int paperId)
     return item;
 }
 
-void PLMSheetListModel::connectToPLMDataSignals()
+void PLMNoteListModel::connectToPLMDataSignals()
 {
-    m_dataConnectionsList << this->connect(plmdata->sheetHub(),
-                                           &PLMSheetHub::titleChanged, this,
+    m_dataConnectionsList << this->connect(plmdata->noteHub(),
+                                           &PLMNoteHub::titleChanged, this,
                                            [this](int projectId, int paperId,
                                            const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, paperId, PLMSheetItem::Roles::NameRole);
+        this->exploitSignalFromPLMData(projectId, paperId, PLMNoteItem::Roles::NameRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->sheetPropertyHub(),
+    m_dataConnectionsList << this->connect(plmdata->notePropertyHub(),
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
                                            int            paperCode,
@@ -492,61 +493,61 @@ void PLMSheetListModel::connectToPLMDataSignals()
         Q_UNUSED(propertyId)
 
         if (name == "tag") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                          PLMSheetItem::Roles::TagRole);
+                                                          PLMNoteItem::Roles::TagRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->sheetHub(),
-                                           &PLMSheetHub::paperIdChanged, this,
+    m_dataConnectionsList << this->connect(plmdata->noteHub(),
+                                           &PLMNoteHub::paperIdChanged, this,
                                            [this](int projectId, int paperId,
                                            int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::PaperIdRole);
+                                       PLMNoteItem::Roles::PaperIdRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->sheetHub(),
-                                           &PLMSheetHub::indentChanged, this,
+    m_dataConnectionsList << this->connect(plmdata->noteHub(),
+                                           &PLMNoteHub::indentChanged, this,
                                            [this](int projectId, int paperId,
                                            int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::IndentRole);
+                                       PLMNoteItem::Roles::IndentRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList.append(this->connect(plmdata->sheetHub(),
-                                               &PLMSheetHub::sortOrderChanged, this,
+    m_dataConnectionsList.append(this->connect(plmdata->noteHub(),
+                                               &PLMNoteHub::sortOrderChanged, this,
                                                [this](int projectId, int paperId,
                                                int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::SortOrderRole);
+                                       PLMNoteItem::Roles::SortOrderRole);
     }));
-    m_dataConnectionsList << this->connect(plmdata->sheetHub(),
-                                           &PLMSheetHub::contentDateChanged, this,
+    m_dataConnectionsList << this->connect(plmdata->noteHub(),
+                                           &PLMNoteHub::contentDateChanged, this,
                                            [this](int projectId, int paperId,
                                            const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::ContentDateRole);
+                                       PLMNoteItem::Roles::ContentDateRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->sheetHub(),
-                                           &PLMSheetHub::updateDateChanged, this,
+    m_dataConnectionsList << this->connect(plmdata->noteHub(),
+                                           &PLMNoteHub::updateDateChanged, this,
                                            [this](int projectId, int paperId,
                                            const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::UpdateDateRole);
+                                       PLMNoteItem::Roles::UpdateDateRole);
     }, Qt::UniqueConnection);
-    m_dataConnectionsList << this->connect(plmdata->sheetHub(),
-                                           &PLMSheetHub::deletedChanged, this,
+    m_dataConnectionsList << this->connect(plmdata->noteHub(),
+                                           &PLMNoteHub::deletedChanged, this,
                                            [this](int projectId, int paperId,
                                            bool value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::DeletedRole);
+                                       PLMNoteItem::Roles::DeletedRole);
     }, Qt::UniqueConnection);
-    m_dataConnectionsList << this->connect(plmdata->sheetPropertyHub(),
+    m_dataConnectionsList << this->connect(plmdata->notePropertyHub(),
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
                                            int            paperCode,
@@ -556,10 +557,10 @@ void PLMSheetListModel::connectToPLMDataSignals()
         Q_UNUSED(propertyId)
 
         if (name == "char_count") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                                 PLMSheetItem::Roles::
+                                                                 PLMNoteItem::Roles::
                                                                  CharCountRole);
     }, Qt::UniqueConnection);
-    m_dataConnectionsList << this->connect(plmdata->sheetPropertyHub(),
+    m_dataConnectionsList << this->connect(plmdata->notePropertyHub(),
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
                                            int            paperCode,
@@ -569,12 +570,12 @@ void PLMSheetListModel::connectToPLMDataSignals()
         Q_UNUSED(propertyId)
 
         if (name == "word_count") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                                 PLMSheetItem::Roles::
+                                                                 PLMNoteItem::Roles::
                                                                  WordCountRole);
     }, Qt::UniqueConnection);
 }
 
-void PLMSheetListModel::disconnectFromPLMDataSignals()
+void PLMNoteListModel::disconnectFromPLMDataSignals()
 {
     // disconnect from PLMPaperHub signals :
     for (const QMetaObject::Connection& connection : m_dataConnectionsList) {
@@ -586,12 +587,12 @@ void PLMSheetListModel::disconnectFromPLMDataSignals()
 //-----------------------------------------------------------------------------------
 
 
-QModelIndexList PLMSheetListModel::getModelIndex(int projectId, int paperId)
+QModelIndexList PLMNoteListModel::getModelIndex(int projectId, int paperId)
 {
     QModelIndexList list;
     QModelIndexList modelList =  this->match(this->index(0, 0,
                                                          QModelIndex()),
-                                             PLMSheetItem::Roles::ProjectIdRole,
+                                             PLMNoteItem::Roles::ProjectIdRole,
                                              projectId,
                                              -1,
                                              Qt::MatchFlag::MatchExactly |
@@ -599,7 +600,7 @@ QModelIndexList PLMSheetListModel::getModelIndex(int projectId, int paperId)
 
     for (const QModelIndex& modelIndex : modelList) {
 
-        int indexPaperId = modelIndex.data(PLMSheetItem::Roles::PaperIdRole).toInt();
+        int indexPaperId = modelIndex.data(PLMNoteItem::Roles::PaperIdRole).toInt();
         if (indexPaperId == paperId) {
             list.append(modelIndex);
         }
@@ -610,8 +611,7 @@ QModelIndexList PLMSheetListModel::getModelIndex(int projectId, int paperId)
 
 //-----------------------------------------------------------------------------------
 
-PLMSheetItem *PLMSheetListModel::getParentSheetItem(PLMSheetItem *chidItem)
+PLMNoteItem *PLMNoteListModel::getParentNoteItem(PLMNoteItem *chidItem)
 {
-    return chidItem->parent(m_allSheetItems);
+    return chidItem->parent(m_allNoteItems);
 }
-

@@ -2,7 +2,8 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmmodels.h                                                   *
+*  Filename: plmsheetlistproxymodel.h
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,50 +19,39 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMMODELS_H
-#define PLMMODELS_H
+#ifndef PLMSHEETLISTPROXYMODEL_H
+#define PLMSHEETLISTPROXYMODEL_H
 
-#include "plmwritedocumentlistmodel.h"
-#include "plmsheetmodel.h"
-#include "plmsheetlistmodel.h"
-#include "plmnotelistmodel.h"
+#include <QSortFilterProxyModel>
 #include "./skribisto_data_global.h"
 
-#include <QObject>
-
-#define plmmodels PLMModels::instance()
-
-class EXPORT PLMModels : public QObject {
+class EXPORT PLMSheetListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
 
 public:
 
-    explicit PLMModels(QObject *parent = nullptr);
-    ~PLMModels();
-    static PLMModels* instance()
-    {
-        return m_instance;
-    }
+    explicit PLMSheetListProxyModel(QObject *parent = nullptr);
 
-    PLMSheetModel       * sheetModel();
+    Qt::ItemFlags flags(const QModelIndex& index) const;
 
-    PLMDocumentListModel* writeDocumentListModel();
+    QVariant      data(const QModelIndex& index,
+                       int                role) const;
+    bool          setData(const QModelIndex& index,
+                          const QVariant   & value,
+                          int                role);
 
-    PLMSheetListModel *sheetListModel();
-    PLMNoteListModel *noteListModel();
 signals:
 
 public slots:
 
+    void setDeletedFilter(bool showDeleted);
+    void setParentFilter(int projectId, int parentId);
+protected:
+    bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
 private:
-
-    static PLMModels *m_instance;
-
-    PLMSheetModel *m_sheetModel;
-    PLMSheetListModel *m_sheetListModel;
-    PLMNoteListModel *m_noteListModel;
-
-    PLMWriteDocumentListModel *m_writeDocumentListModel;
+    bool m_showDeletedFilter;
+    int m_projectIdFilter;
+    int m_parentIdFilter;
 };
 
-#endif // PLMMODELS_H
+#endif // PLMSHEETLISTPROXYMODEL_H

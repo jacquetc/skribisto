@@ -24,7 +24,13 @@
         <file>qml/Write/WritePageForm.ui.qml</file>
         <file>qml/Write/WritePageForm_old.ui.qml</file>
         <file>qml/Write/WritePage_old.qml</file>
-        <file>qml/Write/WriteTreeView.qml</file>
-        <file>qml/Write/WriteTreeViewForm.ui.qml</file>
+        <file>qml/Notes/NotesPage.qml</file>
+        <file>qml/Notes/NotesPageForm.ui.qml</file>
+        <file>qml/Notes/NotesLeftDock.qml</file>
+        <file>qml/Notes/NotesLeftDockForm.ui.qml</file>
+        <file>qml/Commons/TreeView.qml</file>
+        <file>qml/Commons/TreeViewForm.ui.qml</file>
+        <file>qml/Commons/TreeViewItem.qml</file>
+        <file>qml/Commons/TreeViewItemForm.ui.qml</file>
     </qresource>
 </RCC>

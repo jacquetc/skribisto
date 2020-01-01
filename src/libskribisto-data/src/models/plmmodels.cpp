@@ -24,7 +24,8 @@ PLMModels::PLMModels(QObject *parent) : QObject(parent)
 {
     m_instance        = this;
     m_sheetModel      = new PLMSheetModel(this);
-    m_sheetProxyModel = new PLMSheetProxyModel(this);
+    m_sheetListModel = new PLMSheetListModel(this);
+    m_noteListModel = new PLMNoteListModel(this);
 
     m_writeDocumentListModel = new PLMWriteDocumentListModel(this);
 }
@@ -39,11 +40,16 @@ PLMSheetModel * PLMModels::sheetModel()
     return m_sheetModel;
 }
 
-PLMSheetProxyModel * PLMModels::sheetProxyModel()
+PLMSheetListModel * PLMModels::sheetListModel()
 {
-    return m_sheetProxyModel;
+    return m_sheetListModel;
 }
 
+
+PLMNoteListModel * PLMModels::noteListModel()
+{
+    return m_noteListModel;
+}
 //PLMDocumentListModel * PLMModels::writeDocumentListModel()
 //{
 //    return m_writeDocumentListModel;

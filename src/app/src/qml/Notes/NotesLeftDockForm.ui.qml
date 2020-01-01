@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.12
 import ".."
 import "../Commons"
 
+
 Item {
     id: base
     implicitWidth: 300
@@ -12,7 +13,7 @@ Item {
     property alias splitView: splitView
     property alias writeToolsFrame: writeToolsFrame
     property alias writeTreeViewFrame: writeTreeViewFrame
-    property alias writeTreeView: writeTreeView
+    property alias notesTreeView: notesTreeView
 
     Pane {
         id: leftDockPane
@@ -61,7 +62,8 @@ Item {
 //                                    Layout.preferredHeight: dynamicHeight
 //                                    contentHeight: 400
                                     TreeView {
-                                        id: writeTreeView
+                                        id: notesTreeView
+
                                         //width: scrollview.contentWidth
                                         //height: 600
                                     }

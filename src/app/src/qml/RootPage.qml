@@ -204,7 +204,7 @@ RootPageForm {
 
             shortcut: "F6"
             checkable: true
-            onTriggered: root_stack.currentIndex = 1
+            onTriggered: root_stack.currentIndex = 2
         }
 
         Action{

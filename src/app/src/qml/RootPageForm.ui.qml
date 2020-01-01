@@ -6,6 +6,8 @@ import QtQuick.Controls 2.3
 //import QtGraphicalEffects 1.0
 import "Write"
 import "Welcome"
+import "Notes"
+
 Item {
     id: base
     //property variant window: none
@@ -76,6 +78,9 @@ Item {
                     WritePage {
                         id: writePage
                     }
+                    NotesPage {
+                        id: notesPage
+                    }
                 }
                 //        PageIndicator {
                 //            id: indicator
@@ -103,7 +108,6 @@ Item {
                 id: rowLayout1
                 anchors.fill: parent
                 spacing: 1
-
 
                 Label {
                     id: statusLeftLabel
@@ -145,7 +149,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;autoSize:true;height:480;width:640}D{i:9;anchors_height:100;anchors_width:100}
+    D{i:0;autoSize:true;height:480;width:640}D{i:10;anchors_height:100;anchors_width:100}
 }
 ##^##*/
 

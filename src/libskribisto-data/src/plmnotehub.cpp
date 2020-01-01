@@ -85,3 +85,25 @@ QHash<int, int> PLMNoteHub::getAllSheetCodes(int projectId)
     return result;
 
 }
+
+QHash<QString, QVariant> PLMNoteHub::getNoteData(int projectId, int noteId) const
+{
+    PLMError error;
+
+    QHash<QString, QVariant> var;
+    QHash<QString, QVariant> result;
+    QStringList fieldNames;
+    fieldNames << "l_note_id" << "l_dna" << "l_sort_order" << "l_indent" <<
+    "l_version" << "t_title" << "dt_created" << "dt_updated" << "dt_content" <<
+    "b_deleted";
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    error = queries.getMultipleValues(noteId, fieldNames, var);
+    IFOK(error) {
+        result = var;
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return result;
+}

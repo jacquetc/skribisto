@@ -33,6 +33,10 @@ public:
     int getSynopsisFromSheetCode(int projectId, int sheetId);
     QHash<int, int> getAllSynopsisWithSheetCode(int projectId);
     QHash<int, int> getAllSheetCodes(int projectId);
+
+
+    QHash<QString, QVariant>getNoteData(int projectId,
+                                         int noteId) const;
 };
 
 #endif // PLMNOTEHUB_H

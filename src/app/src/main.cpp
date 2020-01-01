@@ -23,7 +23,8 @@ using namespace std;
 #include "plmprojecthub.h"
 #include "documenthandler.h"
 #include "plmutils.h"
-#include "models/plmsheetlistmodel.h"
+#include "models/plmsheetlistproxymodel.h"
+#include "models/plmnotelistproxymodel.h"
 #include "models/plmmodels.h"
 
 #ifdef QT_DEBUG
@@ -165,7 +166,7 @@ int main(int argc, char *argv[])
 
 
    PLMData *data     = new PLMData(qApp);
-//   PLMModels *models = new PLMModels(qApp);
+   new PLMModels(qApp);
 
 
 //     qmlRegisterType<PLMError>("eu.skribisto.qml", 1, 0, "PLMError");
@@ -180,11 +181,23 @@ int main(int argc, char *argv[])
                                             "PLMSheetHub",
                                             "Can't instantiate PLMSheetHub");
 
+    qmlRegisterUncreatableType<PLMNoteHub>("eu.skribisto.sheethub",
+                                            1,
+                                            0,
+                                            "PLMSheetHub",
+                                            "Can't instantiate PLMSheetHub");
 
-    qmlRegisterType<PLMSheetListModel>("eu.skribisto.sheetlistmodel",
+
+    qmlRegisterType<PLMSheetListProxyModel>("eu.skribisto.sheetlistproxymodel",
                                        1,
                                        0,
-                                       "PLMSheetListModel");
+                                       "PLMSheetListProxyModel");
+
+    qmlRegisterType<PLMNoteListProxyModel>("eu.skribisto.notelistproxymodel",
+                                       1,
+                                       0,
+                                       "PLMNoteListProxyModel");
+
     qmlRegisterType<DocumentHandler>("eu.skribisto.documenthandler",
                                      1,
                                      0,

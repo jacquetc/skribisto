@@ -1,6 +1,6 @@
-import QtQuick 2.11
-import QtQuick.Controls 2.4
-import QtQuick.Layouts 1.3
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 
 Item {
     id: base
@@ -9,6 +9,7 @@ Item {
 
     Pane {
         id: pane
+        clip: true
         anchors.fill: parent
         padding: 0
 
@@ -29,26 +30,13 @@ Item {
                     id: row
 
                     ToolButton {
-                        id: toolButton
-                        text: qsTr("Tool Button")
+                        id: goUpToolButton
+                        text: qsTr("^")
                     }
 
                     ToolButton {
-                        id: toolButton2
-                        text: qsTr("Tool Button")
-                    }
-
-                    ToolButton {
-                        id: toolButton1
-                        text: qsTr("Tool Button")
-                    }
-                    ToolButton {
-                        id: toolButton3
-                        text: qsTr("Tool Button")
-                    }
-                    ToolButton {
-                        id: toolButton4
-                        text: qsTr("Tool Button")
+                        id: currentFolderToolButton
+                        text: qsTr("current folder name")
                     }
                 }
             }
@@ -60,6 +48,16 @@ Item {
                 clip: true
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+
+                //                model: ListModel {
+                //                    ListElement {
+                //                        name: "Bill Smith"
+                //                    }
+                //                    ListElement {
+                //                        name: "John Brown"
+                //                    }
+                //                }
+                delegate: TreeViewItem {}
             }
         }
     }

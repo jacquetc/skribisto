@@ -2,7 +2,7 @@
 *   Copyright (C) 2019 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmsheetitem.h                                                   *
+*  Filename: plmnoteitem.h                                                   *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,16 +18,16 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMSHEETITEM_H
-#define PLMSHEETITEM_H
+#ifndef PLMNOTEITEM_H
+#define PLMNOTEITEM_H
 
-// #include "plmsheetmodel.h"
+// #include "plmnotemodel.h"
 
 #include <QtCore>
 #include <QObject>
 #include "./skribisto_data_global.h"
 
-class EXPORT PLMSheetItem : public QObject {
+class EXPORT PLMNoteItem : public QObject {
     Q_OBJECT
 
 public:
@@ -45,19 +45,19 @@ public:
         CreationDateRole = Qt::UserRole + 8,
         UpdateDateRole   = Qt::UserRole + 9,
         ContentDateRole  = Qt::UserRole + 10,
-
-        // specific to sheets:
         CharCountRole = Qt::UserRole + 11,
         WordCountRole = Qt::UserRole + 12
+        // TODO: specific to notes:
+
     };
     Q_ENUM(Roles)
 
-    explicit PLMSheetItem();
-    explicit PLMSheetItem(int projectId,
+    explicit PLMNoteItem();
+    explicit PLMNoteItem(int projectId,
                           int paperId,
                           int indent,
                           int sortOrder);
-    ~PLMSheetItem();
+    ~PLMNoteItem();
 
     void          invalidateData(int role);
     void          invalidateAllData();
@@ -72,14 +72,14 @@ public:
     QVariant      data(int role);
     QList<int>    dataRoles() const;
 
-    PLMSheetItem* parent(const QList<PLMSheetItem *>& itemList);
-    int           row(const QList<PLMSheetItem *>& itemList);
+    PLMNoteItem* parent(const QList<PLMNoteItem *>& itemList);
+    int           row(const QList<PLMNoteItem *>& itemList);
 
     bool          isProjectItem() const;
     void          setIsProjectItem(int projectId);
 
-    int           childrenCount(const QList<PLMSheetItem *>& itemList);
-    PLMSheetItem* child(const QList<PLMSheetItem *>& itemList,
+    int           childrenCount(const QList<PLMNoteItem *>& itemList);
+    PLMNoteItem* child(const QList<PLMNoteItem *>& itemList,
                         int                          row);
     bool          isRootItem() const;
     void          setIsRootItem();
@@ -95,4 +95,4 @@ private:
     bool m_isProjectItem, m_isRootItem;
 };
 
-#endif // PLMSHEETITEM_H
+#endif // PLMNOTEITEM_H

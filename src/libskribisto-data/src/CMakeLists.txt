@@ -37,19 +37,6 @@ set(data_SRCS
     tasks/sql/tree/plmnotetree.cpp
     tasks/sql/tree/plmsheettree.cpp
     tasks/sql/tree/plmtree.cpp
-    models/plmsheetmodel.cpp
-    models/plmsheetproxymodel.cpp
-    models/plmsheetlistmodel.cpp
-    models/plmnotemodel.cpp
-    models/plmnoteproxymodel.cpp
-    models/plmprojectlistmodel.cpp
-    models/plmdocumentlistmodel.cpp
-    models/plmwritedocumentlistmodel.cpp
-    models/plmdocumentlistproxymodel.cpp
-    models/plmpropertiesmodel.cpp
-    models/plmpropertiesproxymodel.cpp
-    models/plmsheetitem.cpp
-    models/plmmodels.cpp
     )
 set(data_HDR
     plmcoreinterface.h
@@ -83,11 +70,39 @@ set(data_HDR
     tasks/sql/tree/plmsheettree.h
     tasks/sql/tree/plmtree.h
     plminterfacesettings.h
+
+    )
+
+set(models_SRCS
+    models/plmsheetmodel.cpp
+    models/plmsheetproxymodel.cpp
+    models/plmsheetlistmodel.cpp
+    models/plmsheetlistproxymodel.cpp
+    models/plmnotemodel.cpp
+    models/plmnotelistmodel.cpp
+    models/plmnotelistproxymodel.cpp
+    models/plmnoteproxymodel.cpp
+    models/plmnoteitem.cpp
+    models/plmprojectlistmodel.cpp
+    models/plmdocumentlistmodel.cpp
+    models/plmwritedocumentlistmodel.cpp
+    models/plmdocumentlistproxymodel.cpp
+    models/plmpropertiesmodel.cpp
+    models/plmpropertiesproxymodel.cpp
+    models/plmsheetitem.cpp
+    models/plmmodels.cpp
+
+    )
+set(models_HDR
     models/plmsheetmodel.h
     models/plmsheetproxymodel.h
     models/plmsheetlistmodel.h
+    models/plmsheetlistproxymodel.h
     models/plmnotemodel.h
+    models/plmnotelistmodel.h
+    models/plmnotelistproxymodel.h
     models/plmnoteproxymodel.h
+    models/plmnoteitem.h
     models/plmprojectlistmodel.h
     models/plmdocumentlistmodel.h
     models/plmwritedocumentlistmodel.h
@@ -96,15 +111,18 @@ set(data_HDR
     models/plmpropertiesproxymodel.h
     models/plmsheetitem.h
     models/plmmodels.h
-)
+    )
+
+
+ADD_CUSTOM_TARGET(models SOURCES ${models_SRCS} ${models_HDR} )
 
 set(QRC
     tasks/sql/sql.qrc
-)
+    )
 
 qt5_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
-add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${RESOURCES})
+add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${models_SRCS} ${models_HDR} ${RESOURCES})
 
 qt5_use_modules(skribisto-data Core Network Gui Sql)

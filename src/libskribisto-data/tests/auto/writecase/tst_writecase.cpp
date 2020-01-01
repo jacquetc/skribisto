@@ -58,6 +58,11 @@ private Q_SLOTS:
     void property();
     void property_replace();
 
+    //tag
+    void getSheetTag();
+    void setSheetTag();
+
+
 private:
     PLMData *m_data;
     QString m_testProjectPath;
@@ -411,6 +416,19 @@ void WriteCase::property_replace()
     plmdata->sheetPropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
     arguments = spy.takeFirst();
     QCOMPARE(arguments.at(1).toInt(), id);
+}
+
+void WriteCase::getSheetTag()
+{
+    QString value = plmdata->sheetPropertyHub()->getProperty(m_currentProjectId, 1, "tag");
+    QCOMPARE(value, "this is a tag");
+}
+
+void WriteCase::setSheetTag()
+{
+    //TODO: setSheetTag test
+    QCOMPARE(true, false);
+
 }
 
 QTEST_GUILESS_MAIN(WriteCase)
