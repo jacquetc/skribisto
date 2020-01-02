@@ -30,7 +30,5 @@
         <file>qml/Notes/NotesLeftDockForm.ui.qml</file>
         <file>qml/Commons/TreeView.qml</file>
         <file>qml/Commons/TreeViewForm.ui.qml</file>
-        <file>qml/Commons/TreeViewItem.qml</file>
-        <file>qml/Commons/TreeViewItemForm.ui.qml</file>
     </qresource>
 </RCC>

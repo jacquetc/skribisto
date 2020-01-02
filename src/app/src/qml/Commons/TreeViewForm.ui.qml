@@ -57,7 +57,6 @@ Item {
                 //                        name: "John Brown"
                 //                    }
                 //                }
-                delegate: TreeViewItem {}
             }
         }
     }

@@ -6,20 +6,24 @@ import eu.skribisto.sheetlistproxymodel 1.0
 
 WriteLeftDockForm {
 
-    property bool folded: state === "leftDockFolded" ? true : false
+    property bool folded: settings.dockFolded
     onFoldedChanged: folded ? fold() : unfold()
 
     function fold() {
         state = "leftDockFolded"
+        settings.dockFolded = true
+        folded = true
     }
     function unfold() {
         state = "leftDockUnfolded"
-    }
-    splitView.handle: Rectangle {
-        implicitWidth: 4
-        implicitHeight: 4
+        settings.dockFolded = false
+        folded = false
     }
 
+    //    splitView.handle: Rectangle {
+    //        implicitWidth: 4
+    //        implicitHeight: 4
+    //    }
     writeTreeView.model: PLMSheetListProxyModel {}
 
     Action {
@@ -55,25 +59,27 @@ WriteLeftDockForm {
     Settings {
         id: settings
         category: "writeLeftDock"
-        property string dockSplitView: "0"
+        //property string dockSplitView: "0"
+        property bool dockFolded: false
         property bool treeViewFrameFolded: writeTreeViewFrame.folded ? true : false
         property bool toolsFrameFolded: writeToolsFrame.folded ? true : false
     }
 
-    PropertyAnimation {
-        target: writeTreeViewFrame
-        property: "SplitView.preferredHeight"
-        duration: 500
-        easing.type: Easing.InOutQuad
-    }
-
+    //    PropertyAnimation {
+    //        target: writeTreeViewFrame
+    //        property: "SplitView.preferredHeight"
+    //        duration: 500
+    //        easing.type: Easing.InOutQuad
+    //    }
     Component.onCompleted: {
+        folded ? fold() : unfold()
 
         writeTreeViewFrame.folded = settings.treeViewFrameFolded
         writeToolsFrame.folded = settings.toolsFrameFolded
-        splitView.restoreState(settings.dockSplitView)
+        //        splitView.restoreState(settings.dockSplitView)
     }
     Component.onDestruction: {
-        settings.dockSplitView = splitView.saveState()
+        //        settings.dockSplitView = splitView.saveState()
+        settings.dockFolded = folded
     }
 }

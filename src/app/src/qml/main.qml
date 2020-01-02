@@ -1,24 +1,36 @@
 import QtQuick 2.12
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.12
 import QtQuick.Window 2.3
 import QtQml 2.12
-
+import Qt.labs.settings 1.1
 
 ApplicationWindow {
 
     id: rootWindow
-    visible: true
+    //visible: true
     minimumHeight: 500
     minimumWidth: 500
-    width: 1500
-    onHeightChanged: Globals.height = height
 
+    onHeightChanged: Globals.height = height
     onWidthChanged: Globals.width = width
 
+    x: settings.x
+    y: settings.y
+    height: settings.height
+    width: settings.width
+
+    visibility: settings.visibility
+    Settings {
+        id: settings
+        category: "window"
+        property int x: 0
+        property int y: 0
+        property int height: Screen.height
+        property int width: Screen.width
+        property int visibility: Window.Maximized
+    }
     // style :
     //palette.window: "white"
-
-
 
     // Splash screen
     //    Window {
@@ -57,25 +69,26 @@ ApplicationWindow {
 
     //    Component{
     //        id: rootPage
-    RootPage{
+    RootPage {
         //window: rootWindow
         anchors.fill: parent
-
     }
 
     onClosing: {
+
+        settings.x = rootWindow.x
+        settings.y = rootWindow.y
+        settings.width = rootWindow.width
+        settings.height = rootWindow.height
+        settings.visibility = rootWindow.visibility
+
         console.log("quiting")
         Qt.callLater(Qt.quit)
-
-            }
-
-
-}
-
-//}
-
+    }
+} //}
 
 /*##^## Designer {
     D{i:0;autoSize:true;height:480;width:640}
 }
  ##^##*/
+

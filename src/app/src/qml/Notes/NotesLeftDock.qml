@@ -6,35 +6,30 @@ import eu.skribisto.notelistproxymodel 1.0
 
 NotesLeftDockForm {
 
-    property bool folded: state === "leftDockFolded" ? true : false
-    onFoldedChanged:  folded ? fold(): unfold()
+    property bool folded: settings.dockFolded
+    onFoldedChanged: folded ? fold() : unfold()
 
-    function fold(){
+    function fold() {
         state = "leftDockFolded"
-
+        settings.dockFolded = true
+        folded = true
     }
-    function unfold(){
+    function unfold() {
         state = "leftDockUnfolded"
-
+        settings.dockFolded = false
+        folded = false
     }
-
-
-    //
-    splitView.handle:      Rectangle {
-                                implicitWidth: 4
-                                implicitHeight: 4
-    }
-
+    //    splitView.handle:      Rectangle {
+    //                                implicitWidth: 4
+    //                                implicitHeight: 4
+    //    }
 
     // tree management :
     notesTreeView.model: PLMNoteListProxyModel {
         id: model
     }
 
-
-
-
-    Action{
+    Action {
 
         id: fullscreenAction
         text: qsTr("Fullscreen")
@@ -44,7 +39,6 @@ NotesLeftDockForm {
             color: "transparent"
             height: 50
             width: 50
-
         }
 
         shortcut: "F5"
@@ -54,45 +48,42 @@ NotesLeftDockForm {
         onTriggered: root_stack.currentIndex = 0
     }
 
-
     transitions: [
         Transition {
 
-            PropertyAnimation { properties: "implicitWidth"; easing.type: Easing.InOutQuad;duration: 500  }
-
-
+            PropertyAnimation {
+                properties: "implicitWidth"
+                easing.type: Easing.InOutQuad
+                duration: 500
+            }
         }
     ]
 
-
     Settings {
         id: settings
-        category: "writeLeftDock"
-        property string dockSplitView: "0"
-        property bool treeViewFrameFolded: writeTreeViewFrame.folded ? true : false
-        property bool toolsFrameFolded: writeToolsFrame.folded ? true : false
-
-
+        category: "notesLeftDock"
+        //property string dockSplitView: "0"
+        property bool dockFolded: false
+        property bool treeViewFrameFolded: treeViewFrame.folded ? true : false
+        property bool toolsFrameFolded: toolsFrame.folded ? true : false
     }
 
-        PropertyAnimation {
-            target: writeTreeViewFrame
-            property: "SplitView.preferredHeight"
-            duration: 500
-            easing.type: Easing.InOutQuad
+    //        PropertyAnimation {
+    //            target: writeTreeViewFrame
+    //            property: "SplitView.preferredHeight"
+    //            duration: 500
+    //            easing.type: Easing.InOutQuad
 
-        }
+    //        }
+    Component.onCompleted: {
+        folded ? fold() : unfold()
 
-
-    Component.onCompleted:{
-
-        writeTreeViewFrame.folded = settings.treeViewFrameFolded
-        writeToolsFrame.folded = settings.toolsFrameFolded
-        splitView.restoreState(settings.dockSplitView)
-
+        treeViewFrame.folded = settings.treeViewFrameFolded
+        toolsFrame.folded = settings.toolsFrameFolded
+        //        splitView.restoreState(settings.dockSplitView)
     }
-    Component.onDestruction:{
-        settings.dockSplitView = splitView.saveState()
-    }
+    Component.onDestruction: {
 
+        settings.dockFolded = folded
+    }
 }
