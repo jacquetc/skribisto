@@ -413,7 +413,7 @@ You will not be able to recover it afterwards.</source>
     <name>DockHeaderForm.ui</name>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Texte</translation>
+        <translation type="obsolete">Texte</translation>
     </message>
 </context>
 <context>
@@ -3007,11 +3007,11 @@ Veuillez ouvrir un fichier .plume.</translation>
     <name>PLMMainWindow</name>
     <message>
         <source>MainWindow</source>
-        <translation>Fenêtre principale</translation>
+        <translation type="vanished">Fenêtre principale</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation>Projet</translation>
+        <translation type="vanished">Projet</translation>
     </message>
     <message>
         <source>Menu</source>
@@ -3019,51 +3019,23 @@ Veuillez ouvrir un fichier .plume.</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation>Importer</translation>
+        <translation type="vanished">Importer</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation>Imprimer</translation>
+        <translation type="vanished">Imprimer</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation>Quitter</translation>
+        <translation type="vanished">Quitter</translation>
     </message>
     <message>
         <source>Do you want to quit ?</source>
-        <translation type="unfinished">Voulez-vous quitter ?</translation>
+        <translation type="obsolete">Voulez-vous quitter ?</translation>
     </message>
     <message>
         <source>Your changes are already saved.</source>
-        <translation type="unfinished">Vos changements ont déjà été sauvegardés.</translation>
-    </message>
-    <message>
-        <source>Recent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save project</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Vos changements ont déjà été sauvegardés.</translation>
     </message>
 </context>
 <context>
@@ -3077,30 +3049,18 @@ Veuillez ouvrir un fichier .plume.</translation>
     <name>PLMSideMainBar</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished">Formulaire</translation>
-    </message>
-    <message>
-        <source>Context menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Attach</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Detach</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Formulaire</translation>
     </message>
 </context>
 <context>
     <name>PLMTestWindow</name>
     <message>
         <source>Test</source>
-        <translation>Fenêtre de test</translation>
+        <translation type="vanished">Fenêtre de test</translation>
     </message>
     <message>
         <source>Test Window</source>
-        <translation type="unfinished">Fenêtre de test</translation>
+        <translation type="obsolete">Fenêtre de test</translation>
     </message>
 </context>
 <context>
@@ -3139,34 +3099,22 @@ Veuillez ouvrir un fichier .plume.</translation>
     <name>PLMWelcomeWindow</name>
     <message>
         <source>Welcome</source>
-        <translation type="unfinished">Bienvenue</translation>
+        <translation type="obsolete">Bienvenue</translation>
     </message>
 </context>
 <context>
     <name>PLMWindow</name>
     <message>
         <source>MainWindow</source>
-        <translation type="unfinished">Fenêtre principale</translation>
+        <translation type="obsolete">Fenêtre principale</translation>
     </message>
     <message>
         <source>French</source>
-        <translation>Français</translation>
-    </message>
-    <message>
-        <source>Test project</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Français</translation>
     </message>
     <message>
         <source>Welcome</source>
-        <translation type="unfinished">Bienvenue</translation>
-    </message>
-    <message>
-        <source>Advanced</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Blabla</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Bienvenue</translation>
     </message>
 </context>
 <context>
@@ -3180,74 +3128,38 @@ Veuillez ouvrir un fichier .plume.</translation>
     <name>PLMWriteWindow</name>
     <message>
         <source>Write</source>
-        <translation type="unfinished">Écrire</translation>
+        <translation type="obsolete">Écrire</translation>
     </message>
 </context>
 <context>
     <name>PLMWritingZone</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished">Formulaire</translation>
+        <translation type="obsolete">Formulaire</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Copier</translation>
+        <translation type="obsolete">Copier</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">Coller</translation>
+        <translation type="obsolete">Coller</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">Couper</translation>
+        <translation type="obsolete">Couper</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished">Gras</translation>
+        <translation type="obsolete">Gras</translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished">Italique</translation>
+        <translation type="obsolete">Italique</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished">Souligné</translation>
-    </message>
-    <message>
-        <source>Ctrl+C</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+V</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+X</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+B</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Strikethrough</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+I</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+U</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Print directly</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+P</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Souligné</translation>
     </message>
 </context>
 <context>
@@ -3375,7 +3287,7 @@ Veuillez ouvrir un fichier .plume.</translation>
     <name>ProjectListItemForm.ui</name>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Texte</translation>
+        <translation type="obsolete">Texte</translation>
     </message>
 </context>
 <context>
@@ -3437,23 +3349,15 @@ Veuillez ouvrir un fichier .plume.</translation>
     <name>RootPage</name>
     <message>
         <source>Welcome</source>
-        <translation type="unfinished">Bienvenue</translation>
+        <translation type="obsolete">Bienvenue</translation>
     </message>
     <message>
         <source>Write</source>
-        <translation type="unfinished">Écrire</translation>
+        <translation type="obsolete">Écrire</translation>
     </message>
     <message>
         <source>Notes</source>
-        <translation type="unfinished">Notes</translation>
-    </message>
-    <message>
-        <source>Gallery</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Informations</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Notes</translation>
     </message>
 </context>
 <context>
@@ -4668,21 +4572,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>WelcomePageForm.ui</name>
-    <message>
-        <source>Open project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recent projects</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New project</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>WordGoalProgressBar</name>
     <message>
         <source>Form</source>
@@ -4745,28 +4634,10 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>WriteLeftDock</name>
-    <message>
-        <source>Fullscreen</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>WriteLeftDockForm.ui</name>
     <message>
-        <source>Navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Tools</source>
-        <translation type="unfinished">Outils</translation>
-    </message>
-</context>
-<context>
-    <name>WriteTreeViewForm.ui</name>
-    <message>
-        <source>Tool Button</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Outils</translation>
     </message>
 </context>
 <context>
@@ -4795,7 +4666,7 @@ p, li { white-space: pre-wrap; }
     <name>sidePanelBar</name>
     <message>
         <source>Write</source>
-        <translation type="unfinished">Écrire</translation>
+        <translation type="obsolete">Écrire</translation>
     </message>
 </context>
 </TS>

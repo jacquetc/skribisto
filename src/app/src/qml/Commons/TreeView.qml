@@ -149,9 +149,19 @@ TreeViewForm {
                 }
 
                 onEntered: {
-                    visualModel.items.move(
-                                drag.source.DelegateModel.itemsIndex,
-                                dragArea.DelegateModel.itemsIndex)
+                    var sourceIndex = drag.source.DelegateModel.itemsIndex
+                    var targetIndex = dragArea.DelegateModel.itemsIndex
+                    visualModel.items.move(sourceIndex, targetIndex)
+                    var sourceModelIndex = drag.source.DelegateModel.modelIndex(
+                                sourceIndex)
+                    var targetModelIndex = dragArea.DelegateModel.modelIndex(
+                                targetIndex)
+
+                    console.log("targetIndex : ", sourceModelIndex.name)
+                }
+
+                onDropped: {
+
                 }
             }
             states: State {

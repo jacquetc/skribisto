@@ -4,13 +4,17 @@ cmake_minimum_required(VERSION 3.1.0)
 
 project(app)
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS Core Quick Network Gui CONFIG REQUIRED)
+find_package(Qt5 COMPONENTS Core Quick Network Gui LinguistTools CONFIG REQUIRED)
 #find_package(KF5Kirigami2)
 
 #foreach(plugin ${Qt5Gui_PLUGINS})
 #  get_target_property(_loc ${plugin} LOCATION)
 #  message("Plugin ${plugin} is at location ${_loc}")
 #endforeach()
+
+# translations :
+set(TS_FILES ${CMAKE_SOURCE_DIR}/src/translations/skribisto_fr_FR.ts)
+
 
 set(app_SRCS 
 main.cpp
@@ -46,16 +50,25 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Tell CMake to create the executable
-add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC})
+
+if(ANDROID)
+    add_library(skribisto ${app_SRCS} ${RESOURCES} ${QRC} ${TS_FILES}
+    )
+else()
+    add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC} ${TS_FILES})
+endif()
 
 #target_link_libraries(skribisto KF5::Kirigami2)
 
+target_compile_definitions(skribisto
+  PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
 target_link_libraries(skribisto skribisto-data)
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 qt5_use_modules(skribisto Core Quick Network Gui)
 
+qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR}/src/translations/ ${TS_FILES})
 
 
 

@@ -1,4 +1,4 @@
-    cmake_minimum_required(VERSION 3.2.0)
+    cmake_minimum_required(VERSION 3.5.0)
 #if (POLICY CMP0063)
 #    cmake_policy(SET CMP0063 NEW)
 #endif()
@@ -7,14 +7,14 @@
 #    cmake_policy(SET CMP0071 NEW)
 #endif()
 
-project(skribisto)
+project(skribisto LANGUAGES CXX)
 
 
 
 #add_compile_definitions(VERSIONSTR=1.6 FORCEQML=1)
 add_definitions(-DVERSIONSTR=1.6)
 
-find_package(Qt5 COMPONENTS Core)
+find_package(Qt5 COMPONENTS Core REQUIRED)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -22,6 +22,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 # Create code from a list of Qt designer ui files
 set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
 
