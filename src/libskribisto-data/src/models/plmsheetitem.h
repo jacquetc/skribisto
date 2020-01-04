@@ -67,7 +67,7 @@ public:
     int           paperId();
     int           sortOrder();
     int           indent();
-    QString       name();
+    Q_INVOKABLE QString       name();
 
     QVariant      data(int role);
     QList<int>    dataRoles() const;

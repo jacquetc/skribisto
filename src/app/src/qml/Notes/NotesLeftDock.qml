@@ -25,9 +25,13 @@ NotesLeftDockForm {
     //    }
 
     // tree management :
-    notesTreeView.model: PLMNoteListProxyModel {
-        id: model
+    PLMNoteListProxyModel {
+
+        id: proxyModel
     }
+
+    notesTreeView.model: proxyModel
+    notesTreeView.proxyModel: proxyModel
 
     Action {
 

@@ -24,7 +24,12 @@ WriteLeftDockForm {
     //        implicitWidth: 4
     //        implicitHeight: 4
     //    }
-    writeTreeView.model: PLMSheetListProxyModel {}
+    PLMSheetListProxyModel {
+        id: proxyModel
+    }
+
+    writeTreeView.model: proxyModel
+    writeTreeView.proxyModel: proxyModel
 
     Action {
 
@@ -64,6 +69,8 @@ WriteLeftDockForm {
         property bool treeViewFrameFolded: writeTreeViewFrame.folded ? true : false
         property bool toolsFrameFolded: writeToolsFrame.folded ? true : false
     }
+
+
 
     //    PropertyAnimation {
     //        target: writeTreeViewFrame

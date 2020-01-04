@@ -58,7 +58,7 @@ public:
     PLMNoteHub               * noteHub();
     PLMPropertyHub           * notePropertyHub();
     Q_INVOKABLE PLMProjectHub* projectHub();
-    PLMUserHub               * userHub();
+    Q_INVOKABLE PLMUserHub   * userHub();
     PLMPluginHub             * pluginHub();
 
 signals:

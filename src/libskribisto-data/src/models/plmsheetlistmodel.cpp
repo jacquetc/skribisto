@@ -191,6 +191,13 @@ bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value,
 
         case PLMSheetItem::Roles::SortOrderRole:
             error = plmdata->sheetHub()->setSortOrder(projectId, paperId, value.toInt());
+
+            IFOKDO(error, plmdata->sheetHub()->renumberSortOrders(projectId));
+            for(PLMSheetItem *item : m_allSheetItems){
+                item->invalidateData(role);
+            }
+            this->populate();
+
             break;
 
         case PLMSheetItem::Roles::DeletedRole:
@@ -273,6 +280,7 @@ bool PLMSheetListModel::removeRows(int row, int count, const QModelIndex& parent
     endRemoveRows();
     return false;
 }
+
 
 QHash<int, QByteArray>PLMSheetListModel::roleNames() const {
     QHash<int, QByteArray> roles;
@@ -447,6 +455,31 @@ void PLMSheetListModel::addPaper(int projectId, int paperId)
                                                        sortOrdersHash.value(paperId)));
     endInsertRows();
 }
+
+//--------------------------------------------------------------------
+
+//void PLMSheetListModel::movePaper(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId)
+//{
+
+
+//    QModelIndex sourceIndex = this->getModelIndex(sourceProjectId, sourcePaperId).first();
+//    QModelIndex targetIndex = this->getModelIndex(targetProjectId, targetPaperId).first();
+
+
+
+////    if (from == to)
+////        return;
+////    int modelFrom = from;
+////    int modelTo = to + (from < to ? 1 : 0);
+
+
+////beginMoveRows(QModelIndex(), sourceIndex.row(), sourceIndex.row(), QModelIndex(), targetIndex.row());
+//beginMoveRows(QModelIndex(), 0, 0, QModelIndex(), 12);
+
+
+
+//endMoveRows();
+//}
 
 //--------------------------------------------------------------------
 

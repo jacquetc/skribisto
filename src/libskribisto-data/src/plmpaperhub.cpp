@@ -582,6 +582,20 @@ int PLMPaperHub::getLastAddedId()
     return m_last_added_id;
 }
 
+
+// -----------------------------------------------------------------------------
+
+PLMError PLMPaperHub::renumberSortOrders(int projectId)
+{
+    PLMError error;
+    PLMSqlQueries queries(projectId,
+                          "tbl_user_" + m_paperType + "_doc_list");
+    error = queries.renumberSortOrder();
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return error;
+}
 // -----------------------------------------------------------------------------
 
 /////
@@ -886,8 +900,24 @@ PLMError PLMPaperHub::addPaper(const QHash<QString, QVariant>& values, int proje
 
 PLMError PLMPaperHub::addPaperBelow(int projectId, int targetId)
 {
-    int target_sort_order = getSortOrder(projectId, targetId);
     int target_indent     = getIndent(projectId, targetId);
+
+    PLMError error;
+    int finalSortOrder = this->getValidSortOrderAfterPaper(projectId, targetId);
+
+    // finally add paper
+    QHash<QString, QVariant> values;
+    values.insert("l_sort_order", finalSortOrder);
+    values.insert("l_indent",     target_indent);
+    IFOKDO(error, addPaper(values, projectId));
+    return error;
+}
+//------------------------------------------------------------------------------
+
+int PLMPaperHub::getValidSortOrderAfterPaper(int projectId, int paperId) const
+{
+    int target_sort_order = getSortOrder(projectId, paperId);
+    int target_indent     = getIndent(projectId, paperId);
 
     // find next node with the same indentation
     QHash<int, QVariant> result;
@@ -939,12 +969,11 @@ PLMError PLMPaperHub::addPaperBelow(int projectId, int targetId)
         finalSortOrder = result2.begin().value().toInt() + 1;
     }
 
-    // finally add paper
-    QHash<QString, QVariant> values;
-    values.insert("l_sort_order", finalSortOrder);
-    values.insert("l_indent",     target_indent);
-    IFOKDO(error, addPaper(values, projectId));
-    return error;
+IFKO(error) {
+    emit errorSent(error);
+}
+
+    return finalSortOrder;
 }
 
 // -----------------------------------------------------------------------------
@@ -1037,6 +1066,34 @@ PLMError PLMPaperHub::removePaper(int projectId, int targetId)
     IFOK(error) {
         emit paperRemoved(projectId, targetId);
     }
+    return error;
+}
+
+// -----------------------------------------------------------------------------
+
+PLMError PLMPaperHub::movePaper(int sourceProjectId, int sourcePaperId, int targetPaperId)
+{
+    PLMError error;
+    int targetProjectId = sourceProjectId;
+    PLMSqlQueries queries(sourceProjectId, m_tableName);
+
+
+
+    //int sourceSortOrder = this->getSortOrder(sourceProjectId, sourcePaperId);
+    int targetSortOrder = this->getSortOrder(sourceProjectId, targetPaperId);
+
+    error = setSortOrder(sourceProjectId, sourcePaperId, targetSortOrder - 1);
+    IFOKDO(error, queries.renumberSortOrder())
+            IFKO(error) {
+        queries.rollback();
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    IFOK(error) {
+        emit paperMoved(sourceProjectId, sourcePaperId, targetProjectId, targetPaperId);
+    }
+
     return error;
 }
 

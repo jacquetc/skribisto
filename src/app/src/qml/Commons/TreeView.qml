@@ -4,6 +4,9 @@ import QtQuick.Layouts 1.12
 import QtQml.Models 2.12
 
 TreeViewForm {
+    id: root
+
+    property var proxyModel
 
     property var model
     onModelChanged: {
@@ -14,6 +17,8 @@ TreeViewForm {
     signal remove(int projectId, int paperId)
     signal clearBin
     signal addAfter(int projectId, int paperId)
+    property int currentParent: -2
+    property int currentProject: -2
 
     listView.model: visualModel
     DelegateModel {
@@ -22,52 +27,192 @@ TreeViewForm {
         delegate: dragDelegate
     }
 
+    //-----------------------------------------------------------------------------
+    // go up button :
+    goUpToolButton.onClicked: {
+        currentParent = proxyModel.goUp()
+    }
+
+    //-----------------------------------------------------------------------------
+    // current parent button :
+    Binding {
+        target: root
+        property: "currentProject"
+        value: proxyModel.projectIdFilter
+    }
+    Binding {
+        target: root
+        property: "currentParent"
+        value: proxyModel.parentIdFilter
+    }
+    //currentParent: proxyModel.parentIdFilter
+    //currentProject: proxyModel.projectIdFilter
+    onCurrentParentChanged: {
+        if (currentParent != -2 & currentProject != -2) {
+            currentParentToolButton.text = proxyModel.getItemName(
+                        currentProject, currentParent)
+            //console.log("onCurrentParentChanged")
+        }
+    }
+    onCurrentProjectChanged: {
+        if (currentParent != -2 & currentProject != -2) {
+            currentParentToolButton.text = proxyModel.getItemName(
+                        currentProject, currentParent)
+            //console.log("onCurrentProjectChanged")
+        }
+    }
+
+    currentParentToolButton.onClicked: {
+
+        //currentParent
+    }
+
+    //-----------------------------------------------------------------------------
+    Component.onCompleted: {
+
+    }
+
+    //-----------------------------------------------------------------------------
+
+    // used to remember the source when moving an item
+    property int moveSourceInt: -2
+
     // TreeView item :
     Component {
         id: dragDelegate
 
-        MouseArea {
-            id: dragArea
+        DropArea {
+            id: delegateRoot
+            onEntered: {
 
+                content.sourceIndex = drag.source.visualIndex
+                visualModel.items.move(drag.source.visualIndex,
+                                       content.visualIndex)
+            }
+
+            onDropped: {
+                console.log("dropped : ", moveSourceInt, content.visualIndex)
+                proxyModel.moveItem(moveSourceInt, content.visualIndex)
+            }
+            property int visualIndex: {
+                return DelegateModel.itemsIndex
+            }
+
+            Binding {
+                target: content
+                property: "visualIndex"
+                value: visualIndex
+            }
             anchors {
                 left: parent.left
                 right: parent.right
             }
             height: content.height
-            property bool held: false
 
-            drag.target: held ? content : undefined
-            drag.axis: Drag.YAxis
+            //            drag.target: held ? content : undefined
+            //            drag.axis: Drag.YAxis
 
-            onPressAndHold: held = true
-            onReleased: held = false
-
+            //            onPressAndHold: held = true
+            //            onReleased: held = false
             Rectangle {
                 id: content
+                property int visualIndex: 0
+                property int sourceIndex: -2
+
+                property bool isCurrent: model.index === listView.currentIndex ? true : false
 
                 anchors {
                     horizontalCenter: parent.horizontalCenter
                     verticalCenter: parent.verticalCenter
                 }
-                width: dragArea.width
+                width: delegateRoot.width
                 height: 40
 
-                Drag.active: dragArea.held
-                Drag.source: dragArea
+                Drag.active: dragHandler.active
+                Drag.source: content
                 Drag.hotSpot.x: width / 2
                 Drag.hotSpot.y: height / 2
 
-                color: dragArea.held ? "lightsteelblue" : "white"
+                color: dragHandler.active | !tapHandler.enabled ? "lightsteelblue" : "white"
                 Behavior on color {
                     ColorAnimation {
                         duration: 100
                     }
                 }
 
+                DragHandler {
+                    id: dragHandler
+                    //acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                    //xAxis.enabled: false
+                    //grabPermissions: PointerHandler.TakeOverForbidden
+                    onActiveChanged: {
+                        if (active) {
+                            moveSourceInt = content.visualIndex
+                        } else {
+                            content.Drag.drop()
+                            tapHandler.enabled = true
+                        }
+                    }
+                    enabled: !tapHandler.enabled
+                }
+
+                //                MouseArea {
+                //                    id: mouseArea
+                //                    z: 2
+                //                    anchors.fill: parent
+                //                    enabled: false
+                //                    hoverEnabled: true
+                //                    //propagateComposedEvents: true
+                //                    onClicked: {
+                //                        listView.currentIndex = model.index
+                //                        console.log("eeeee")
+                //                    }
+                //                    //                    onPressAndHold: {
+                //                    //                        mouse.accepted = false
+                //                    //                    }
+                //                }
+                HoverHandler {
+                    id: hoverHandler
+                }
+
+                TapHandler {
+                    id: tapHandler
+                    onTapped: {
+                        listView.currentIndex = model.index
+                    }
+                    onLongPressed: {
+                        enabled = false
+                    }
+                }
+
+                //                WheelHandler {
+                //                    id: wheelHandler
+                //                    enabled: dragHandler.enabled
+                //                }
+
+                /// without MouseArea, it breaks while dragging and scrolling:
+                MouseArea {
+                    anchors.fill: parent
+                    onWheel: {
+                        //                        console.log('wheel', wheel.angleDelta.y)
+                        //                        listView.flick(wheel.angleDelta.y, 0)
+                        wheel.accepted = true
+                    }
+
+                    enabled: dragHandler.enabled
+                }
                 RowLayout {
                     id: rowLayout
                     spacing: 2
                     anchors.fill: parent
+
+                    Rectangle {
+                        id: currentItemIndicator
+                        color: "#cccccc"
+                        Layout.fillHeight: true
+                        Layout.preferredWidth: 20
+                        visible: listView.currentIndex === model.index
+                    }
 
                     Rectangle {
                         color: "transparent"
@@ -95,7 +240,8 @@ TreeViewForm {
                             Label {
                                 id: tagLabel
 
-                                text: model.tag
+                                //                                text: model.tag
+                                text: model.sortOrder
                                 Layout.bottomMargin: 2
                                 Layout.rightMargin: 4
                                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -115,6 +261,8 @@ TreeViewForm {
                         flat: true
 
                         onClicked: menu.open()
+
+                        visible: hoverHandler.hovered | content.isCurrent
                     }
 
                     ToolButton {
@@ -138,34 +286,46 @@ TreeViewForm {
                         Layout.preferredWidth: 30
                         Layout.fillHeight: true
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                        visible: hoverHandler.hovered | content.isCurrent
+
+                        onClicked: {
+                            currentProject = model.projectId
+                            currentParent = model.paperId
+                            proxyModel.setParentFilter(model.projectId,
+                                                       model.paperId)
+                        }
                     }
                 }
             }
-            DropArea {
-                id: dropArea
-                anchors {
-                    fill: parent
-                    margins: 10
-                }
+            //            DropArea {
+            //                id: dropArea
+            //                anchors {
+            //                    fill: parent
+            //                    margins: 10
+            //                }
+            //                property int sourceIndex: -1
+            //                property int targetIndex: -1
+            //                onEntered: {
+            //                    sourceIndex = drag.source.DelegateModel.itemsIndex
+            //                    targetIndex = dragArea.DelegateModel.itemsIndex
+            //                    //                    var sourceIndex = drag.source.DelegateModel.itemsIndex
+            //                    //                    var targetIndex = dragArea.DelegateModel.itemsIndex
+            //                    visualModel.items.move(sourceIndex, targetIndex)
 
-                onEntered: {
-                    var sourceIndex = drag.source.DelegateModel.itemsIndex
-                    var targetIndex = dragArea.DelegateModel.itemsIndex
-                    visualModel.items.move(sourceIndex, targetIndex)
-                    var sourceModelIndex = drag.source.DelegateModel.modelIndex(
-                                sourceIndex)
-                    var targetModelIndex = dragArea.DelegateModel.modelIndex(
-                                targetIndex)
+            //                    //                    var sourceModelIndex = drag.source.DelegateModel.modelIndex(
+            //                    //                                sourceIndex)
+            //                    //                    var targetModelIndex = dragArea.DelegateModel.modelIndex(
+            //                    //                                targetIndex)
 
-                    console.log("targetIndex : ", sourceModelIndex.name)
-                }
+            //                    //                    console.log("targetIndex : ", sourceModelIndex.name)
+            //                }
 
-                onDropped: {
-
-                }
-            }
+            //                onDropped: {
+            //                    console.log("onDropped")
+            //                }
+            //            }
             states: State {
-                when: dragArea.held
+                when: content.Drag.active
 
                 ParentChange {
                     target: content
@@ -203,18 +363,18 @@ TreeViewForm {
 
             ListView.onRemove: SequentialAnimation {
                 PropertyAction {
-                    target: dragArea
+                    target: delegateRoot
                     property: "ListView.delayRemove"
                     value: true
                 }
                 NumberAnimation {
-                    target: dragArea
+                    target: delegateRoot
                     property: "height"
                     to: 0
                     easing.type: Easing.InOutQuad
                 }
                 PropertyAction {
-                    target: dragArea
+                    target: delegateRoot
                     property: "ListView.delayRemove"
                     value: false
                 }

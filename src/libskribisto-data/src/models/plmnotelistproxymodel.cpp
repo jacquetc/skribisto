@@ -31,6 +31,13 @@ PLMNoteListProxyModel::PLMNoteListProxyModel(QObject *parent) : QSortFilterProxy
     this->setDeletedFilter(false);
     m_parentIdFilter = 0;
     m_projectIdFilter = 0;
+
+    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this,
+            [this](int projectId){
+        //TODO: replace that with loading project settings
+        this->setParentFilter(projectId, 0);
+        qDebug() << "setParentFilter";
+    });
 }
 
 Qt::ItemFlags PLMNoteListProxyModel::flags(const QModelIndex& index) const
@@ -90,6 +97,8 @@ void PLMNoteListProxyModel::setParentFilter(int projectId, int parentId)
 {
     m_projectIdFilter = projectId;
     m_parentIdFilter = parentId;
+    emit parentIdFilterChanged(m_parentIdFilter);
+    emit projectIdFilterChanged(m_projectIdFilter);
     this->invalidate();
 }
 //--------------------------------------------------------------
@@ -122,7 +131,7 @@ bool PLMNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
 
     // path / parent filtering :
     int indexProject = item->data(PLMNoteItem::Roles::ProjectIdRole).toInt();
-    if (indexProject == m_projectIdFilter){
+    if (indexProject != m_projectIdFilter){
         return false;
     }
     PLMNoteItem *parentItem = model->getParentNoteItem(item);
@@ -137,11 +146,168 @@ bool PLMNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     else {
         return false;
     }
-
     // deleted filtering :
 
     if(result && item->data(PLMNoteItem::Roles::DeletedRole).toBool() == m_showDeletedFilter){
+        QString string = item->data(PLMNoteItem::Roles::NameRole).toString();
+        //qDebug() << "deleted : " << string;
         return true;
     }
-    return false;
+    QString string = item->data(PLMNoteItem::Roles::NameRole).toString();
+    //qDebug() << "result : " << string << result;
+
+    return result;
+}
+
+void PLMNoteListProxyModel::setParentIdFilter(int parentIdFilter)
+{
+    m_parentIdFilter = parentIdFilter;
+    emit parentIdFilterChanged(m_parentIdFilter);
+    this->invalidate();
+}
+
+void PLMNoteListProxyModel::setProjectIdFilter(int projectIdFilter)
+{
+    m_projectIdFilter = projectIdFilter;
+    emit projectIdFilterChanged(m_projectIdFilter);
+    this->invalidate();
+}
+
+
+
+
+
+//--------------------------------------------------------------
+
+
+void PLMNoteListProxyModel::moveItem(int from, int to) {
+
+
+
+
+    if (from == to)
+        return;
+    int modelFrom = from;
+    int modelTo = to + (from < to ? 1 : 0);
+
+
+    QModelIndex fromIndex = this->index(modelFrom, 0);
+    int fromPaperId = this->data(fromIndex, PLMNoteItem::Roles::PaperIdRole).toInt();
+    int fromProjectId = this->data(fromIndex, PLMNoteItem::Roles::ProjectIdRole).toInt();
+
+    QModelIndex toIndex = this->index(modelTo, 0);
+    int toPaperId = this->data(toIndex, PLMNoteItem::Roles::PaperIdRole).toInt();
+    int toProjectId = this->data(toIndex, PLMNoteItem::Roles::ProjectIdRole).toInt();
+    int toSortOrder = this->data(toIndex, PLMNoteItem::Roles::SortOrderRole).toInt();
+
+    qDebug() << "fromPaperId : " << fromPaperId << this->data(fromIndex, PLMNoteItem::Roles::NameRole).toString();
+    qDebug() << "toPaperId : " << toPaperId << this->data(toIndex, PLMNoteItem::Roles::NameRole).toString();
+
+    int finalSortOrder = toSortOrder - 1;
+
+
+    // append to end of list if moved here, paperId = 0
+
+    if(toPaperId == 0){
+
+        PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
+
+        QModelIndex modelIndex = model->getModelIndex(fromProjectId, fromPaperId).first();
+        PLMNoteItem *item = static_cast<PLMNoteItem *>(modelIndex.internalPointer());
+
+        int indent = item->indent();
+        QList<int> idList = plmdata->noteHub()->getAllIds(fromProjectId);
+        QHash<int, int> indentHash = plmdata->noteHub()->getAllIndents(fromProjectId);
+        int lastIdWithSameIndent = fromPaperId;
+
+        for(int id : idList){
+            if(indentHash.value(id) == indent){
+            lastIdWithSameIndent = id;
+            }
+        }
+
+        if(lastIdWithSameIndent == fromPaperId){
+            return;
+        }
+
+        finalSortOrder = plmdata->noteHub()->getValidSortOrderAfterPaper(fromProjectId, lastIdWithSameIndent);
+    }
+        qDebug() << "finalSortOrder" << finalSortOrder;
+
+
+
+        //beginMoveRows(QModelIndex(), modelFrom, modelFrom, QModelIndex(), modelTo);
+        //PLMError error = plmdata->noteHub()->movePaper(fromProjectId, fromPaperId, toPaperId);
+        this->setData(fromIndex, finalSortOrder, PLMNoteItem::Roles::SortOrderRole);
+        //plmdata->noteHub()->setSortOrder(fromPaperId, fromPaperId, toSortOrder - 1);
+
+        //endMoveRows();
+}
+
+//--------------------------------------------------------------
+
+int PLMNoteListProxyModel::goUp()
+{
+    PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
+    PLMNoteItem *parentItem = getItem(m_projectIdFilter, m_parentIdFilter);
+    if(!parentItem){
+        return -2;
+    }
+    PLMNoteItem *grandParentItem = model->getParentNoteItem(parentItem);
+
+    int grandParentId = -2;
+    if(grandParentItem){
+        grandParentId = grandParentItem->paperId();
+    }
+    else{
+        if(plmdata->projectHub()->getProjectIdList().count() == 1){
+            grandParentId = 0;
+        }
+        else if(plmdata->projectHub()->getProjectIdList().count() > 1){
+            grandParentId = -1;
+        }
+    }
+    this->setParentFilter(m_projectIdFilter, grandParentId);
+
+    return grandParentId;
+}
+
+//--------------------------------------------------------------
+
+PLMNoteItem *PLMNoteListProxyModel::getItem(int projectId, int paperId)
+{
+    PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
+    QModelIndexList modelIndexList = model->getModelIndex(projectId, paperId);
+    if(modelIndexList.isEmpty()){
+        return nullptr;
+    }
+    QModelIndex modelIndex = modelIndexList.first();
+
+    PLMNoteItem *item = static_cast<PLMNoteItem *>(modelIndex.internalPointer());
+    return item;
+}
+
+//--------------------------------------------------------------
+
+QString PLMNoteListProxyModel::getItemName(int projectId, int paperId)
+{
+    qDebug() << "getItemName" << projectId << paperId;
+    if(projectId == -2 || paperId == -2){
+        return "";
+    }
+    QString name = "";
+    if(paperId == 0 && plmdata->projectHub()->getProjectIdList().count() <= 1){
+        name = plmdata->projectHub()->getProjectName(projectId);
+    }
+    else{
+        PLMNoteItem *item = this->getItem(projectId, paperId);
+        if(item){
+            name = item->name();
+        }
+        else {
+            name = "";
+        }
+    }
+
+    return name;
 }

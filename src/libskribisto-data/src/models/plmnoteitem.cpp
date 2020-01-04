@@ -172,6 +172,11 @@ PLMNoteItem * PLMNoteItem::parent(const QList<PLMNoteItem *>& itemList)
     int index                        = itemList.indexOf(this);
     int indent                       = this->indent();
     int possibleParentIndex          = index - 1;
+
+    if(plmdata->projectHub()->getProjectIdList().count() <= 1 && possibleParentIndex == -1){ // first of list, no parent possible
+        return nullptr;
+    }
+
     PLMNoteItem *possibleParentItem = itemList.at(possibleParentIndex);
 
     while (possibleParentItem->indent() >= indent) {

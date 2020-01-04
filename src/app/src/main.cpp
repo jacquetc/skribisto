@@ -189,7 +189,6 @@ int main(int argc, char *argv[])
                                             "PLMSheetHub",
                                             "Can't instantiate PLMSheetHub");
 
-
     qmlRegisterType<PLMSheetListProxyModel>("eu.skribisto.sheetlistproxymodel",
                                        1,
                                        0,

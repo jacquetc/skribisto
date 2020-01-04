@@ -191,7 +191,13 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
             break;
 
         case PLMNoteItem::Roles::SortOrderRole:
-            error = plmdata->noteHub()->setSortOrder(projectId, paperId, value.toInt());
+            error = plmdata->noteHub()->setSortOrder(projectId, paperId, value.toInt());            
+            IFOKDO(error, plmdata->noteHub()->renumberSortOrders(projectId));
+            for(PLMNoteItem *item : m_allNoteItems){
+                item->invalidateData(role);
+            }
+            this->populate();
+
             break;
 
         case PLMNoteItem::Roles::DeletedRole:

@@ -120,6 +120,10 @@ public:
     PLMError removePaper(int projectId,
                          int targetId);
 
+    PLMError movePaper(int projectId,
+                       int sourcePaperId,
+                       int targetPaperId);
+
     // settings :
     PLMError settings_setStackSetting(Stack           stack,
                                       Setting         setting,
@@ -148,6 +152,8 @@ public:
     //    int       getChildRowCount(int projectId,
     //                               int parentId) const;
 
+    PLMError renumberSortOrders(int projectId);
+    int getValidSortOrderAfterPaper(int projectId, int paperId) const;
 private:
 
     PLMError setSetting(int             projectId,
@@ -204,6 +210,7 @@ signals:
                     int paperId);
     void paperRemoved(int projectId,
                       int paperId);
+    void paperMoved(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId);
 
     // settings :
     void settings_settingChanged(PLMPaperHub::Stack   stack,

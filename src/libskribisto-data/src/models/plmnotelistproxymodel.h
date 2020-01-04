@@ -23,10 +23,13 @@
 #define PLMNOTELISTPROXYMODEL_H
 
 #include <QSortFilterProxyModel>
+#include "plmnoteitem.h"
 #include "./skribisto_data_global.h"
 
 class EXPORT PLMNoteListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
+    Q_PROPERTY(int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)
+    Q_PROPERTY(int parentIdFilter MEMBER m_parentIdFilter WRITE setParentIdFilter NOTIFY parentIdFilterChanged)
 
 public:
 
@@ -40,14 +43,26 @@ public:
                           const QVariant   & value,
                           int                role);
 
+    Q_INVOKABLE void moveItem(int from, int to);
+    Q_INVOKABLE int goUp();
+    Q_INVOKABLE QString getItemName(int projectId, int paperId);
+    void setProjectIdFilter(int projectIdFilter);
+    void setParentIdFilter(int parentIdFilter);
+
 signals:
+    void projectIdFilterChanged(int projectIdFilter);
+    void parentIdFilterChanged(int paperIdFilter);
 
 public slots:
 
     void setDeletedFilter(bool showDeleted);
-    void setParentFilter(int projectId, int parentId);
+    Q_INVOKABLE void setParentFilter(int projectId, int parentId);
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+
+private:
+    PLMNoteItem *getItem(int projectId, int paperId);
+
 private:
     bool m_showDeletedFilter;
     int m_projectIdFilter;

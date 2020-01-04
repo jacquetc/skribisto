@@ -6,6 +6,8 @@ Item {
     id: base
     property alias listView: listView
     property bool selectionMode: false
+    property alias goUpToolButton: goUpToolButton
+    property alias currentParentToolButton: currentParentToolButton
 
     Pane {
         id: pane
@@ -26,6 +28,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
+
                 Row {
                     id: row
 
@@ -35,7 +38,7 @@ Item {
                     }
 
                     ToolButton {
-                        id: currentFolderToolButton
+                        id: currentParentToolButton
                         text: qsTr("current folder name")
                     }
                 }
