@@ -24,12 +24,16 @@ WriteLeftDockForm {
     //        implicitWidth: 4
     //        implicitHeight: 4
     //    }
+
+    //-----------------------------------------------------------
     PLMSheetListProxyModel {
         id: proxyModel
     }
 
     writeTreeView.model: proxyModel
     writeTreeView.proxyModel: proxyModel
+
+    //-----------------------------------------------------------
 
     Action {
 
@@ -49,6 +53,12 @@ WriteLeftDockForm {
 
         onTriggered: root_stack.currentIndex = 0
     }
+
+    //-----------------------------------------------------------
+
+    writeTreeView.onOpen:
+
+    //-----------------------------------------------------------
 
     transitions: [
         Transition {

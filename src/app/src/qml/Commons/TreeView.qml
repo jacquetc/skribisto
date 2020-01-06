@@ -100,7 +100,12 @@ TreeViewForm {
         //            text: qsTr("Remove")
         //        }
         //        MenuSeparator {}
+        Action {
+            text: qsTr("Paste")
+            shortcut: StandardKey.Paste
+        }
         Menu {
+
             title: qsTr("Advanced")
             Action {
                 text: qsTr("Reorder alphabetically")
@@ -112,6 +117,7 @@ TreeViewForm {
     addToolButton.onClicked: {
         proxyModel.addItemAtEnd(currentProject, currentParent,
                                 visualModel.items.count - 1)
+        listView.currentItem.editName()
     }
 
     //----------------------------------------------------------------------------
@@ -154,6 +160,8 @@ TreeViewForm {
         value: proxyModel.forcedCurrentIndex
         //when: proxyModel.onForcedCurrentIndexChanged
     }
+
+    //----------------------------------------------------------------------------
 
     //----------------------------------------------------------------------------
 
@@ -212,6 +220,12 @@ TreeViewForm {
             //            Keys.onBackPressed: {
             //                console.log("eee")
             //            }
+            function editName() {
+                state = "edit_name"
+                titleTextField.forceActiveFocus()
+                titleTextField.selectAll()
+            }
+
             Rectangle {
                 id: content
                 property int visualIndex: 0
@@ -306,6 +320,8 @@ TreeViewForm {
 
                     text: model.hasChildren ? ">" : "+"
                     onTriggered: {
+                        //var _delegateRoot = delegateRoot
+                        //                        var _titleTextField = titleTextField
                         var _proxyModel = proxyModel
                         currentProject = model.projectId
                         currentParent = model.paperId
@@ -321,8 +337,25 @@ TreeViewForm {
                                                      _currentParent)) {
                             _proxyModel.addItemAtEnd(_currentProject,
                                                      _currentParent, 0)
+
+                            // edit it :
+                            //_delegateRoot.editName()
+                            //FIXIT: editName makes the app crash
                         }
                     }
+                }
+                Action {
+                    id: openDocumentAction
+                    shortcut: "Return"
+                    enabled: {
+                        if (listView.currentIndex === model.index) {
+                            return true
+                        } else
+                            return false
+                    }
+
+                    text: "Open document"
+                    onTriggered: delegateRoot.editName()
                 }
 
                 RowLayout {
@@ -355,12 +388,29 @@ TreeViewForm {
                                 id: titleLabel
 
                                 Layout.fillWidth: true
+                                Layout.topMargin: 2
+                                Layout.leftMargin: 4
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
                                 text: model.name
-                                Layout.topMargin: 2
-                                Layout.leftMargin: 4
                             }
+                            TextField {
+                                id: titleTextField
+                                visible: false
+
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                text: titleLabel.text
+                                maximumLength: 50
+
+                                placeholderText: qsTr("Enter name")
+
+                                onAccepted: {
+                                    model.name = text
+                                    delegateRoot.state = ""
+                                }
+                            }
+
                             Label {
                                 id: tagLabel
 
@@ -409,7 +459,7 @@ TreeViewForm {
                         //                                             && (control.checked
                         //                                                 || control.highlighted))
                         //                            }
-                        flat: false
+                        flat: true
                         Layout.preferredWidth: 30
                         Layout.fillHeight: true
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -445,21 +495,47 @@ TreeViewForm {
             //                    console.log("onDropped")
             //                }
             //            }
-            states: State {
-                when: content.Drag.active
+            states: [
+                State {
+                    name: "drag_active"
+                    when: content.Drag.active
 
-                ParentChange {
-                    target: content
-                    parent: base
-                }
-                AnchorChanges {
-                    target: content
-                    anchors {
-                        horizontalCenter: undefined
-                        verticalCenter: undefined
+                    ParentChange {
+                        target: content
+                        parent: base
+                    }
+                    AnchorChanges {
+                        target: content
+                        anchors {
+                            horizontalCenter: undefined
+                            verticalCenter: undefined
+                        }
+                    }
+                },
+                State {
+                    name: "edit_name"
+                    PropertyChanges {
+                        target: menuButton
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: goToChildButton
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: titleLabel
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: tagLabel
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: titleTextField
+                        visible: true
                     }
                 }
-            }
+            ]
 
             //            Shortcut {
             //                sequences: ["Ctrl+Shift+N"]
@@ -476,7 +552,23 @@ TreeViewForm {
                 }
 
                 Action {
+                    id: renameAction
                     text: qsTr("Rename")
+                    shortcut: "F2"
+                    icon {
+                        name: "welcome-icon"
+                        source: "qrc:/pics/skribisto.svg"
+                        color: "transparent"
+                        //                        height: 100
+                        //                        width: 100
+                    }
+                    enabled: contextMenuItemIndex === model.index
+                    onTriggered: {
+                        console.log("rename action", model.projectId,
+                                    model.paperId)
+                        delegateRoot.editName()
+                        //forceActiveFocus(titleTextField)
+                    }
                 }
                 MenuSeparator {}
                 Action {
