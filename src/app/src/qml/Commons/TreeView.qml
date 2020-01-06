@@ -7,7 +7,6 @@ TreeViewForm {
     id: root
 
     property var proxyModel
-
     property var model
     onModelChanged: {
         visualModel.model = model
@@ -45,6 +44,8 @@ TreeViewForm {
         enabled: root.visible
         onTriggered: {
             currentParent = proxyModel.goUp()
+            listView.currentIndex = proxyModel.getLastOfHistory(currentProject)
+            proxyModel.removeLastOfHistory(currentProject)
             console.log("go up action")
         }
     }
@@ -143,6 +144,15 @@ TreeViewForm {
     }
 
     property int contextMenuItemIndex: -2
+    property int itemButtonsIndex: -2
+
+    Binding {
+        target: listView
+        property: "currentIndex"
+        value: proxyModel.forcedCurrentIndex
+        //when: proxyModel.onForcedCurrentIndexChanged
+    }
+
     //----------------------------------------------------------------------------
 
     // used to remember the source when moving an item
@@ -280,6 +290,39 @@ TreeViewForm {
                     enabled: dragHandler.enabled
                 }
 
+                Action {
+                    id: goToChildAction
+                    shortcut: "Right"
+                    enabled: {
+                        if (listView.currentIndex === model.index) {
+                            return true
+                        } else if (hoverHandler.hovered) {
+                            return true
+                        } else
+                            return false
+                    }
+
+                    text: model.hasChildren ? ">" : "+"
+                    onTriggered: {
+                        var _proxyModel = proxyModel
+                        currentProject = model.projectId
+                        currentParent = model.paperId
+                        var _currentProject = currentProject
+                        var _currentParent = currentParent
+                        var _index = model.index
+                        _proxyModel.setParentFilter(model.projectId,
+                                                    model.paperId)
+                        _proxyModel.addHistory(_currentProject, _index)
+
+                        // create a child if none present
+                        if (!_proxyModel.hasChildren(_currentProject,
+                                                     _currentParent)) {
+                            _proxyModel.addItemAtEnd(_currentProject,
+                                                     _currentParent)
+                        }
+                    }
+                }
+
                 RowLayout {
                     id: rowLayout
                     spacing: 2
@@ -349,6 +392,7 @@ TreeViewForm {
 
                     ToolButton {
                         id: goToChildButton
+                        action: goToChildAction
 
                         //                            background: Rectangle {
                         //                                implicitWidth: 30
@@ -363,20 +407,12 @@ TreeViewForm {
                         //                                             && (control.checked
                         //                                                 || control.highlighted))
                         //                            }
-                        text: "+"
                         flat: false
                         Layout.preferredWidth: 30
                         Layout.fillHeight: true
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                         visible: hoverHandler.hovered | content.isCurrent
                         focusPolicy: Qt.NoFocus
-
-                        onClicked: {
-                            currentProject = model.projectId
-                            currentParent = model.paperId
-                            proxyModel.setParentFilter(model.projectId,
-                                                       model.paperId)
-                        }
                     }
                 }
             }
@@ -489,12 +525,17 @@ TreeViewForm {
                         //                        width: 100
                     }
                     enabled: contextMenuItemIndex === model.index
+                             && model.index !== 0
                     onTriggered: {
                         console.log("move up action", model.projectId,
                                     model.paperId)
+                        proxyModel.moveUp(model.projectId, model.paperId,
+                                          model.index)
                     }
                 }
+
                 Action {
+
                     text: qsTr("Move down")
                     shortcut: "Ctrl+Down"
                     icon {
@@ -505,9 +546,13 @@ TreeViewForm {
                         //                        width: 100
                     }
                     enabled: contextMenuItemIndex === model.index
+                             && model.index !== visualModel.items.count - 1
+
                     onTriggered: {
                         console.log("move down action", model.projectId,
                                     model.paperId)
+                        proxyModel.moveDown(model.projectId, model.paperId,
+                                            model.index)
                     }
                 }
                 MenuSeparator {}

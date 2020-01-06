@@ -31,8 +31,10 @@ PLMSheetListProxyModel::PLMSheetListProxyModel(QObject *parent) : QSortFilterPro
     this->setDeletedFilter(false);
 
 
+
     connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &PLMSheetListProxyModel::loadProjectSettings);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, &PLMSheetListProxyModel::saveProjectSettings);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, &PLMSheetListProxyModel::clearHistory);
 }
 
 Qt::ItemFlags PLMSheetListProxyModel::flags(const QModelIndex& index) const
@@ -176,7 +178,11 @@ void PLMSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
 
 //--------------------------------------------------------------
 
-
+///
+/// \brief PLMSheetListProxyModel::moveItem
+/// \param from source item index number
+/// \param to target item index number
+/// Carefull, this is only used for manually moving a visual item
 void PLMSheetListProxyModel::moveItem(int from, int to) {
 
 
@@ -219,7 +225,7 @@ void PLMSheetListProxyModel::moveItem(int from, int to) {
 
         for(int id : idList){
             if(indentHash.value(id) == indent){
-            lastIdWithSameIndent = id;
+                lastIdWithSameIndent = id;
             }
         }
 
@@ -229,16 +235,16 @@ void PLMSheetListProxyModel::moveItem(int from, int to) {
 
         finalSortOrder = plmdata->sheetHub()->getValidSortOrderAfterPaper(fromProjectId, lastIdWithSameIndent);
     }
-        qDebug() << "finalSortOrder" << finalSortOrder;
+    qDebug() << "finalSortOrder" << finalSortOrder;
 
 
 
-        //beginMoveRows(QModelIndex(), modelFrom, modelFrom, QModelIndex(), modelTo);
-        //PLMError error = plmdata->sheetHub()->movePaper(fromProjectId, fromPaperId, toPaperId);
-        this->setData(fromIndex, finalSortOrder, PLMSheetItem::Roles::SortOrderRole);
-        //plmdata->sheetHub()->setSortOrder(fromPaperId, fromPaperId, toSortOrder - 1);
+    //beginMoveRows(QModelIndex(), modelFrom, modelFrom, QModelIndex(), modelTo);
+    //PLMError error = plmdata->sheetHub()->movePaper(fromProjectId, fromPaperId, toPaperId);
+    this->setData(fromIndex, finalSortOrder, PLMSheetItem::Roles::SortOrderRole);
+    //plmdata->sheetHub()->setSortOrder(fromPaperId, fromPaperId, toSortOrder - 1);
 
-        //endMoveRows();
+    //endMoveRows();
 }
 
 //--------------------------------------------------------------
@@ -311,6 +317,88 @@ void PLMSheetListProxyModel::saveProjectSettings(int projectId)
 
 //--------------------------------------------------------------
 
+void PLMSheetListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
+{
+    m_forcedCurrentIndex = forcedCurrentIndex;
+    emit forcedCurrentIndexChanged(m_forcedCurrentIndex);
+}
+
+//--------------------------------------------------------------
+
+bool PLMSheetListProxyModel::hasChildren(int projectId, int paperId)
+{
+    return plmdata->sheetHub()->hasChildren(projectId, paperId);
+}
+
+//--------------------------------------------------------------
+
+int PLMSheetListProxyModel::findVisualIndex(int projectId, int paperId)
+{
+    //    QModelIndexList list =  this->match(this->index(0, 0,
+    //                                                    QModelIndex()),
+    //                                        PLMSheetItem::Roles::PaperIdRole,
+    //                                        paperId,
+    //                                        -1,
+    //                                        Qt::MatchFlag::MatchRecursive |
+    //                                        Qt::MatchFlag::MatchExactly |
+    //                                        Qt::MatchFlag::MatchWrap);
+    //    int result = -2;
+
+    //    for (const QModelIndex& modelIndex : list) {
+    //        PLMSheetItem *t = static_cast<PLMSheetItem *>(modelIndex.internalPointer());
+
+    //        if (t)
+    //            if (t->projectId() == projectId)
+    //                result = modelIndex.row();
+    //    }
+
+    //    return result;
+}
+
+int PLMSheetListProxyModel::getLastOfHistory(int projectId)
+{
+    QList<int> list = m_historyList.value(projectId, QList<int>());
+
+    if(list.isEmpty()){
+        return -2;
+    }
+
+    return list.last();
+}
+
+
+//--------------------------------------------------------------
+
+void PLMSheetListProxyModel::removeLastOfHistory(int projectId)
+{
+    QList<int> list = m_historyList.value(projectId, QList<int>());
+
+    if(list.isEmpty()){
+        return;
+    }
+
+    list.removeLast();
+    m_historyList.insert(projectId, list);
+}
+
+//--------------------------------------------------------------
+
+void PLMSheetListProxyModel::clearHistory(int projectId)
+{
+    m_historyList.remove(projectId);
+}
+
+//--------------------------------------------------------------
+
+void PLMSheetListProxyModel::addHistory(int projectId, int paperId)
+{
+    QList<int> list = m_historyList.value(projectId, QList<int>());
+    list.append(paperId);
+    m_historyList.insert(projectId, list);
+}
+
+//--------------------------------------------------------------
+
 QString PLMSheetListProxyModel::getItemName(int projectId, int paperId)
 {
     qDebug() << "getItemName" << projectId << paperId;
@@ -337,18 +425,48 @@ QString PLMSheetListProxyModel::getItemName(int projectId, int paperId)
 
 void PLMSheetListProxyModel::addItemAtEnd(int projectId, int parentPaperId)
 {
-//    PLMSheetItem *parentItem = this->getItem(projectId, parentPaperId);
-//    if(!parentItem){
-//        if(plmdata->projectHub()->getProjectCount() <= 1){
+    //    PLMSheetItem *parentItem = this->getItem(projectId, parentPaperId);
+    //    if(!parentItem){
+    //        if(plmdata->projectHub()->getProjectCount() <= 1){
 
-//        }
-//        else if (plmdata->projectHub()->getProjectCount() > 1){
+    //        }
+    //        else if (plmdata->projectHub()->getProjectCount() > 1){
 
-//        }
-//        }
+    //        }
+    //        }
 
-//    finalSortOrder = plmdata->sheetHub()->getValidSortOrderAfterPaper(projectId, lastIdWithSameIndent);
+    //    finalSortOrder = plmdata->sheetHub()->getValidSortOrderAfterPaper(projectId, lastIdWithSameIndent);
 
     PLMError error = plmdata->sheetHub()->addChildPaper(projectId, parentPaperId);
-this->invalidate();
+    //this->invalidate();
+}
+
+//--------------------------------------------------------------
+
+void PLMSheetListProxyModel::moveUp(int projectId, int paperId, int visualIndex)
+{
+
+    PLMSheetItem *item = this->getItem(projectId, paperId);
+    if(!item){
+        return;
+    }
+    PLMError error = plmdata->sheetHub()->movePaperUp(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex - 1);
+}
+
+//--------------------------------------------------------------
+
+void PLMSheetListProxyModel::moveDown(int projectId, int paperId, int visualIndex)
+{
+    //    PLMError error = plmdata->sheetHub()->addChildPaper(projectId, paperId);
+
+    PLMSheetItem *item = this->getItem(projectId, paperId);
+    if(!item){
+        return;
+    }
+    PLMError error = plmdata->sheetHub()->movePaperDown(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex + 1);
+
 }

@@ -53,9 +53,11 @@ private slots:
     void exploitSignalFromPLMData(int                 projectId,
                                   int                 paperId,
                                   PLMSheetItem::Roles role);
-    void addPaper(int                 projectId,
+    void refreshAfterDataAddition(int                 projectId,
                   int                 paperId);
-private:
+    void refreshAfterDataMove(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId);
+
+    private:
 
     PLMSheetItem* findPaperItem(int projectId,
                                 int paperId);

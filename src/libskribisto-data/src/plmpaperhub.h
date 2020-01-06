@@ -79,10 +79,10 @@ public:
                                                const QString& newContent);
     Q_INVOKABLE QString             getContent(int projectId,
                                                int paperId) const;
-    PLMError                        setDeleted(int  projectId,
+    Q_INVOKABLE PLMError                        setDeleted(int  projectId,
                                                int  paperId,
                                                bool newDeletedState);
-    bool                            getDeleted(int projectId,
+    Q_INVOKABLE bool                            getDeleted(int projectId,
                                                int paperId) const;
     PLMError                        setCreationDate(int              projectId,
                                                     int              paperId,
@@ -98,6 +98,8 @@ public:
                                                    int              paperId,
                                                    const QDateTime& newDate);
     QDateTime                       getContentDate(int projectId,
+                                                   int paperId) const;
+    Q_INVOKABLE bool                            hasChildren(int projectId,
                                                    int paperId) const;
 
     PLMError                        getError();
@@ -122,7 +124,11 @@ public:
 
     PLMError movePaper(int projectId,
                        int sourcePaperId,
-                       int targetPaperId);
+                       int targetPaperId, bool after= false);
+
+    PLMError movePaperUp(int projectId, int paperId);
+    PLMError movePaperDown(int projectId, int paperId);
+
 
     // settings :
     PLMError settings_setStackSetting(Stack           stack,
@@ -211,6 +217,7 @@ signals:
     void paperRemoved(int projectId,
                       int paperId);
     void paperMoved(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId);
+
 
     // settings :
     void settings_settingChanged(PLMPaperHub::Stack   stack,

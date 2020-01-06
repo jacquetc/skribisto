@@ -30,6 +30,7 @@ class EXPORT PLMSheetListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
     Q_PROPERTY(int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)
     Q_PROPERTY(int parentIdFilter MEMBER m_parentIdFilter WRITE setParentIdFilter NOTIFY parentIdFilterChanged)
+    Q_PROPERTY(int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
 
 public:
 
@@ -50,15 +51,27 @@ public:
     void setParentIdFilter(int parentIdFilter);
 
     Q_INVOKABLE void addItemAtEnd(int projectId, int parentPaperId);
+    Q_INVOKABLE void moveUp(int projectId, int paperId, int visualIndex);
+    Q_INVOKABLE void moveDown(int projectId, int paperId, int visualIndex);
+    Q_INVOKABLE void setForcedCurrentIndex(int forcedCurrentIndex);
+    Q_INVOKABLE bool hasChildren(int projectId, int paperId);
+    Q_INVOKABLE int findVisualIndex(int projectId, int paperId);
+
+    Q_INVOKABLE int getLastOfHistory(int projectId);
+    Q_INVOKABLE void removeLastOfHistory(int projectId);
+    Q_INVOKABLE void addHistory(int projectId, int paperId);
+
 signals:
     void projectIdFilterChanged(int projectIdFilter);
     void parentIdFilterChanged(int paperIdFilter);
+    Q_INVOKABLE void forcedCurrentIndexChanged(int forcedCurrentIndex);
 
 
 public slots:
 
     void setDeletedFilter(bool showDeleted);
     Q_INVOKABLE void setParentFilter(int projectId, int parentId);
+    Q_INVOKABLE void clearHistory(int projectId);
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
 
@@ -72,6 +85,8 @@ private:
     bool m_showDeletedFilter;
     int m_projectIdFilter;
     int m_parentIdFilter;
+    int m_forcedCurrentIndex;
+    QHash<int,QList<int> > m_historyList;
 };
 
 #endif // PLMSHEETLISTPROXYMODEL_H

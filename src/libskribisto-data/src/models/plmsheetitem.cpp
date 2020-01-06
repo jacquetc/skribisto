@@ -129,6 +129,10 @@ QVariant PLMSheetItem::data(int role)
             m_data.insert(role, plmdata->sheetHub()->getContentDate(projectId, paperId));
             break;
 
+        case Roles::HasChildrenRole:
+            m_data.insert(role, plmdata->sheetHub()->hasChildren(projectId, paperId));
+            break;
+
         case Roles::CharCountRole:
             m_data.insert(role,
                           plmdata->sheetPropertyHub()->getProperty(projectId, paperId,

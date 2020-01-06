@@ -407,6 +407,49 @@ QDateTime PLMPaperHub::getContentDate(int projectId, int paperId) const
     return get(projectId, paperId, "dt_content").toDateTime();
 }
 
+
+// ------------------------------------------------------------
+
+bool PLMPaperHub::hasChildren(int projectId, int paperId) const
+{
+
+    PLMError error;
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    // if last of id list:
+    QList<int> idList;
+    IFOKDO(error, queries.getSortedIds(idList));
+
+    if(paperId == idList.last()){
+        return false;
+    }
+
+    int indent     = getIndent(projectId, paperId);
+
+    int possibleFirstChildId = idList.at(idList.indexOf(paperId) + 1);
+
+     bool deleted = getDeleted(projectId, possibleFirstChildId);
+     if(deleted){
+         return false;
+     }
+
+
+
+    int possibleFirstChildIndent = getIndent(projectId, possibleFirstChildId);
+
+
+    if (indent == possibleFirstChildIndent - 1) {
+        return true;
+    }
+
+
+    IFKO(error) {
+        emit errorSent(error);
+    }
+
+    return false;
+}
+
 // ------------------------------------------------------------
 
 PLMError PLMPaperHub::getError()
@@ -994,7 +1037,7 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
 
         //get the highest sort order
         QHash<int, QVariant> sortOrderResult;
-        error     = queries.getValueByIds("l_sort_order", sortOrderResult);
+        error     = queries.getValueByIds("l_sort_order", sortOrderResult, QString(), QVariant(), true);
 
         target_sort_order = 0;
         for(const QVariant &sortOrder : sortOrderResult.values()){
@@ -1089,7 +1132,7 @@ PLMError PLMPaperHub::removePaper(int projectId, int targetId)
 
 // -----------------------------------------------------------------------------
 
-PLMError PLMPaperHub::movePaper(int sourceProjectId, int sourcePaperId, int targetPaperId)
+PLMError PLMPaperHub::movePaper(int sourceProjectId, int sourcePaperId, int targetPaperId, bool after)
 {
     PLMError error;
     int targetProjectId = sourceProjectId;
@@ -1099,8 +1142,8 @@ PLMError PLMPaperHub::movePaper(int sourceProjectId, int sourcePaperId, int targ
 
     //int sourceSortOrder = this->getSortOrder(sourceProjectId, sourcePaperId);
     int targetSortOrder = this->getSortOrder(sourceProjectId, targetPaperId);
-
-    error = setSortOrder(sourceProjectId, sourcePaperId, targetSortOrder - 1);
+    targetSortOrder = targetSortOrder + (after ? 1 : -1);
+    error = setSortOrder(sourceProjectId, sourcePaperId, targetSortOrder);
     IFOKDO(error, queries.renumberSortOrder())
             IFKO(error) {
         queries.rollback();
@@ -1113,6 +1156,108 @@ PLMError PLMPaperHub::movePaper(int sourceProjectId, int sourcePaperId, int targ
     }
 
     return error;
+}
+
+
+// -----------------------------------------------------------------------------
+
+PLMError PLMPaperHub::movePaperUp(int projectId, int paperId)
+{
+    PLMError error;
+
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    // get paper before this :
+
+    QHash<int, QVariant> sortOrderResult;
+    error     = queries.getValueByIds("l_sort_order", sortOrderResult, QString(), QVariant(), true);
+
+
+    QList<int> idList;
+    IFOKDO(error, queries.getSortedIds(idList));
+
+    if(idList.first() == paperId){
+        error.setSuccess(false);
+    }
+    int targetPaperId = -2;
+    IFOK(error){
+        // find paper before with same indent
+        int possibleTargetPaperId = -2;
+        for(int i = idList.indexOf(paperId) - 1; i >= 0 ; --i){
+            possibleTargetPaperId = idList.at(i);
+            if(this->getIndent(projectId, possibleTargetPaperId) == this->getIndent(projectId, paperId)){
+                targetPaperId = possibleTargetPaperId;
+                break;
+            }
+        }
+        if(possibleTargetPaperId == -2){
+            error.setSuccess(false);
+        }
+        IFOK(error){
+
+            int targetIndent = this->getIndent(projectId, targetPaperId);
+            int paperIndent = this->getIndent(projectId, paperId);
+
+            if(paperIndent  != targetIndent){
+                error.setSuccess(false);
+            }
+        }
+    }
+    IFOKDO(error, this->movePaper(projectId, paperId, targetPaperId))
+
+
+            return error;
+}
+
+
+// -----------------------------------------------------------------------------
+
+PLMError PLMPaperHub::movePaperDown(int projectId, int paperId)
+{
+    PLMError error;
+
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    // get paper before this :
+
+    QHash<int, QVariant> sortOrderResult;
+    error     = queries.getValueByIds("l_sort_order", sortOrderResult, QString(), QVariant(), true);
+
+
+    QList<int> idList;
+    IFOKDO(error, queries.getSortedIds(idList));
+
+    if(idList.last() == paperId){
+        error.setSuccess(false);
+    }
+    int targetPaperId = -2;
+    IFOK(error){
+        // find paper after with same indent
+        int possibleTargetPaperId = -2;
+        for(int i = idList.indexOf(paperId) + 1; i < idList.count() ; ++i){
+            possibleTargetPaperId = idList.at(i);
+            if(this->getIndent(projectId, possibleTargetPaperId) == this->getIndent(projectId, paperId)){
+                targetPaperId = possibleTargetPaperId;
+                break;
+            }
+        }
+        if(possibleTargetPaperId == -2){
+            error.setSuccess(false);
+        }
+        IFOK(error){
+
+            int targetIndent = this->getIndent(projectId, targetPaperId);
+            int paperIndent = this->getIndent(projectId, paperId);
+
+            if(paperIndent  != targetIndent){
+                error.setSuccess(false);
+            }
+        }
+    }
+    IFOKDO(error, this->movePaper(projectId, paperId, targetPaperId, true))
+
+
+            return error;
 }
 
 // -----------------------------------------------------------------------------
