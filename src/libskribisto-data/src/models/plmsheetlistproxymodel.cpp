@@ -28,7 +28,7 @@ PLMSheetListProxyModel::PLMSheetListProxyModel(QObject *parent) : QSortFilterPro
     m_showDeletedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-2)
 {
     this->setSourceModel(plmmodels->sheetListModel());
-    this->setDeletedFilter(false);
+    this->setShowDeletedFilter(false);
 
 
 
@@ -101,9 +101,10 @@ void PLMSheetListProxyModel::setParentFilter(int projectId, int parentId)
 //--------------------------------------------------------------
 
 
-void PLMSheetListProxyModel::setDeletedFilter(bool showDeleted)
+void PLMSheetListProxyModel::setShowDeletedFilter(bool showDeleted)
 {
     m_showDeletedFilter = showDeleted;
+    emit showDeletedFilterChanged(m_showDeletedFilter);
     this->invalidate();
 }
 
@@ -150,7 +151,10 @@ bool PLMSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
     if(result && item->data(PLMSheetItem::Roles::DeletedRole).toBool() == m_showDeletedFilter){
         QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
         //qDebug() << "deleted : " << string;
-        return true;
+        result = true;
+    }
+    else {
+        result = false;
     }
     QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
     //qDebug() << "result : " << string << result;
@@ -423,7 +427,7 @@ QString PLMSheetListProxyModel::getItemName(int projectId, int paperId)
 }
 //--------------------------------------------------------------
 
-void PLMSheetListProxyModel::addItemAtEnd(int projectId, int parentPaperId)
+void PLMSheetListProxyModel::addItemAtEnd(int projectId, int parentPaperId, int visualIndex)
 {
     //    PLMSheetItem *parentItem = this->getItem(projectId, parentPaperId);
     //    if(!parentItem){
@@ -438,7 +442,10 @@ void PLMSheetListProxyModel::addItemAtEnd(int projectId, int parentPaperId)
     //    finalSortOrder = plmdata->sheetHub()->getValidSortOrderAfterPaper(projectId, lastIdWithSameIndent);
 
     PLMError error = plmdata->sheetHub()->addChildPaper(projectId, parentPaperId);
-    //this->invalidate();
+
+    this->invalidate();
+    this->setForcedCurrentIndex(visualIndex);
+
 }
 
 //--------------------------------------------------------------

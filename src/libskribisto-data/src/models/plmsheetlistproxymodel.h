@@ -30,6 +30,7 @@ class EXPORT PLMSheetListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
     Q_PROPERTY(int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)
     Q_PROPERTY(int parentIdFilter MEMBER m_parentIdFilter WRITE setParentIdFilter NOTIFY parentIdFilterChanged)
+    Q_PROPERTY(int showDeletedFilter MEMBER m_showDeletedFilter WRITE setShowDeletedFilter NOTIFY showDeletedFilterChanged)
     Q_PROPERTY(int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
 
 public:
@@ -50,7 +51,7 @@ public:
     void setProjectIdFilter(int projectIdFilter);
     void setParentIdFilter(int parentIdFilter);
 
-    Q_INVOKABLE void addItemAtEnd(int projectId, int parentPaperId);
+    Q_INVOKABLE void addItemAtEnd(int projectId, int parentPaperId, int visualIndex);
     Q_INVOKABLE void moveUp(int projectId, int paperId, int visualIndex);
     Q_INVOKABLE void moveDown(int projectId, int paperId, int visualIndex);
     Q_INVOKABLE void setForcedCurrentIndex(int forcedCurrentIndex);
@@ -65,11 +66,12 @@ signals:
     void projectIdFilterChanged(int projectIdFilter);
     void parentIdFilterChanged(int paperIdFilter);
     Q_INVOKABLE void forcedCurrentIndexChanged(int forcedCurrentIndex);
+    Q_INVOKABLE void showDeletedFilterChanged(bool showDeleted);
 
 
 public slots:
 
-    void setDeletedFilter(bool showDeleted);
+    Q_INVOKABLE void setShowDeletedFilter(bool showDeleted);
     Q_INVOKABLE void setParentFilter(int projectId, int parentId);
     Q_INVOKABLE void clearHistory(int projectId);
 protected:

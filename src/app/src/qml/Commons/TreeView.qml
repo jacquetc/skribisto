@@ -109,8 +109,10 @@ TreeViewForm {
     }
 
     //----------------------------------------------------------------------------
-    addToolButton.onClicked: proxyModel.addItemAtEnd(currentProject,
-                                                     currentParent)
+    addToolButton.onClicked: {
+        proxyModel.addItemAtEnd(currentProject, currentParent,
+                                visualModel.items.count - 1)
+    }
 
     //----------------------------------------------------------------------------
 
@@ -318,7 +320,7 @@ TreeViewForm {
                         if (!_proxyModel.hasChildren(_currentProject,
                                                      _currentParent)) {
                             _proxyModel.addItemAtEnd(_currentProject,
-                                                     _currentParent)
+                                                     _currentParent, 0)
                         }
                     }
                 }
@@ -363,7 +365,7 @@ TreeViewForm {
                                 id: tagLabel
 
                                 //                                text: model.tag
-                                text: model.sortOrder
+                                text: model.tag
                                 Layout.bottomMargin: 2
                                 Layout.rightMargin: 4
                                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -570,6 +572,7 @@ TreeViewForm {
                     onTriggered: {
                         console.log("delete action", model.projectId,
                                     model.paperId)
+                        model.deleted = true
                     }
                 }
                 MenuSeparator {}
