@@ -8,6 +8,8 @@ Item {
     property bool selectionMode: false
     property alias goUpToolButton: goUpToolButton
     property alias currentParentToolButton: currentParentToolButton
+    property alias addToolButton: addToolButton
+    property alias treeMenuToolButton: treeMenuToolButton
 
     Pane {
         id: pane
@@ -15,51 +17,59 @@ Item {
         anchors.fill: parent
         padding: 0
 
+
         ColumnLayout {
             id: columnLayout
             anchors.fill: parent
 
-            ScrollView {
-                id: flickable
-                clip: true
-                Layout.minimumHeight: 50
-                Layout.maximumHeight: 50
-                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+            RowLayout {
+                id: rowLayout
+                width: 100
+                height: 100
+                spacing: 1
+                Layout.maximumHeight: 40
+                Layout.preferredHeight: 40
                 Layout.fillWidth: true
-                Layout.fillHeight: true
 
+                ToolButton {
+                    id: goUpToolButton
+                    text: qsTr("^")
+                }
 
-                Row {
-                    id: row
+                ToolButton {
+                    id: currentParentToolButton
+                    text: qsTr("current folder name")
+                }
 
-                    ToolButton {
-                        id: goUpToolButton
-                        text: qsTr("^")
-                    }
+                Item {
+                    id: element
+                    width: 200
+                    height: 200
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                }
 
-                    ToolButton {
-                        id: currentParentToolButton
-                        text: qsTr("current folder name")
-                    }
+                ToolButton {
+                    id: addToolButton
+                    text: qsTr("+")
+                }
+
+                ToolButton {
+                    id: treeMenuToolButton
+                    text: qsTr("...")
                 }
             }
-
-            ListView {
-                id: listView
-                antialiasing: true
-                smooth: true
-                clip: true
+            ScrollView {
+                focusPolicy: Qt.WheelFocus
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                focus: true
 
-                //                model: ListModel {
-                //                    ListElement {
-                //                        name: "Bill Smith"
-                //                    }
-                //                    ListElement {
-                //                        name: "John Brown"
-                //                    }
-                //                }
+                TreeListView {
+                    id: listView
+                    anchors.fill: parent
+                    focus: true
+                }
             }
         }
     }

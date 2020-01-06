@@ -3,9 +3,7 @@ import QtQuick.Controls 2.4
 import QtQuick.Controls.Universal 2.2
 import Qt.labs.settings 1.1
 
-
 RootPageForm {
-
 
     //    Drawer{
     //        id: drawer
@@ -22,20 +20,14 @@ RootPageForm {
     //        }
 
     //    }
-
-
-
-    Component{
+    Component {
         id: flow_comp
 
         Flow {
             id: menuButtonsflow
             property int buttonSize: 70
 
-
-
             //flow: statusBarMenuButtonsLoader.visible ? Flow.LeftToRight : Flow.TopToBottom
-
             ToolButton {
                 id: welcome_button
                 flat: true
@@ -49,7 +41,6 @@ RootPageForm {
                     color: "transparent"
                     height: 100
                     width: 100
-
                 }
 
                 hoverEnabled: true
@@ -58,8 +49,17 @@ RootPageForm {
                 ToolTip.visible: hovered
                 ToolTip.text: welcomeWindowAction.text
 
-            }
+                KeyNavigation.right: welcomePage
+                KeyNavigation.down: write_button
 
+                Accessible.role: Accessible.Button
+                Accessible.name: text
+                Accessible.description: qsTr("Switch to the Welcome page")
+                Accessible.onPressAction: {
+                    welcomeWindowAction.trigger()
+                    welcomePage.forceActiveFocus()
+                }
+            }
 
             ToolButton {
                 id: write_button
@@ -72,16 +72,13 @@ RootPageForm {
                     color: "transparent"
                     height: 100
                     width: 100
-
                 }
-
 
                 hoverEnabled: true
                 ToolTip.delay: 1000
                 ToolTip.timeout: 5000
                 ToolTip.visible: hovered
                 ToolTip.text: writeWindowAction.text
-
             }
 
             ToolButton {
@@ -95,7 +92,6 @@ RootPageForm {
                     color: "transparent"
                     height: 100
                     width: 100
-
                 }
 
                 hoverEnabled: true
@@ -116,7 +112,6 @@ RootPageForm {
                     color: "transparent"
                     height: 100
                     width: 100
-
                 }
 
                 hoverEnabled: true
@@ -136,7 +131,6 @@ RootPageForm {
                     color: "transparent"
                     height: 100
                     width: 100
-
                 }
 
                 hoverEnabled: true
@@ -148,14 +142,9 @@ RootPageForm {
         }
     }
 
-
-
-
-
-
     ActionGroup {
         id: windowGroup
-        Action{
+        Action {
             id: welcomeWindowAction
             text: qsTr("Welcome")
             icon {
@@ -164,16 +153,18 @@ RootPageForm {
                 color: "transparent"
                 height: 100
                 width: 100
-
             }
 
-            shortcut: "F5"
+            shortcut: "F4"
             checkable: true
             checked: true
-            onTriggered: root_stack.currentIndex = 0
+            onTriggered: {
+                root_stack.currentIndex = 0
+                welcomePage.forceActiveFocus()
+            }
         }
 
-        Action{
+        Action {
             id: writeWindowAction
             text: qsTr("Write")
             icon {
@@ -182,16 +173,15 @@ RootPageForm {
                 color: "transparent"
                 height: 100
                 width: 100
-
             }
 
-            shortcut: "F6"
+            shortcut: "F5"
             checkable: true
             onTriggered: root_stack.currentIndex = 1
         }
 
-        Action{
-            id:noteWindowAction
+        Action {
+            id: noteWindowAction
             text: qsTr("Notes")
             icon {
                 name: "document-edit"
@@ -199,7 +189,6 @@ RootPageForm {
                 color: "transparent"
                 height: 100
                 width: 100
-
             }
 
             shortcut: "F6"
@@ -207,8 +196,8 @@ RootPageForm {
             onTriggered: root_stack.currentIndex = 2
         }
 
-        Action{
-            id:galleryWindowAction
+        Action {
+            id: galleryWindowAction
             text: qsTr("Gallery")
             icon {
                 name: "document-edit"
@@ -216,15 +205,14 @@ RootPageForm {
                 color: "transparent"
                 height: 100
                 width: 100
-
             }
 
-            shortcut: "F6"
+            shortcut: "F7"
             checkable: true
             onTriggered: root_stack.currentIndex = 1
         }
-        Action{
-            id:infosWindowAction
+        Action {
+            id: infosWindowAction
             text: qsTr("Informations")
             icon {
                 name: "document-edit"
@@ -232,19 +220,16 @@ RootPageForm {
                 color: "transparent"
                 height: 100
                 width: 100
-
             }
 
             shortcut: "F6"
             checkable: true
             onTriggered: root_stack.currentIndex = 1
         }
-
     }
 
     sideMenuButtonsLoader.onLoaded: {
         sideMenuButtonsLoader.item.flow = Flow.TopToBottom
-
     }
     statusBarMenuButtonsLoader.onLoaded: {
         statusBarMenuButtonsLoader.item.flow = Flow.LeftToRight
@@ -252,22 +237,13 @@ RootPageForm {
         statusBarMenuButtonsLoader.item.spacing = 3
     }
 
-
-    Component.onCompleted:{
-
+    Component.onCompleted: {
 
     }
-    Component.onDestruction:{
+    Component.onDestruction: {
+
     }
-
-
 
     statusBarMenuButtonsLoader.visible: SkrSettings.interfaceSettings.menuButtonsInStatusBar
     sideMenuButtonsLoader.visible: !SkrSettings.interfaceSettings.menuButtonsInStatusBar
-
-
-
-
-
 }
-

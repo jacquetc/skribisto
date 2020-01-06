@@ -109,6 +109,11 @@ QList<int>PLMProjectHub::getProjectIdList()
     return plmProjectManager->projectIdList();
 }
 
+int PLMProjectHub::getProjectCount()
+{
+    return plmProjectManager->projectIdList().count();
+}
+
 QString PLMProjectHub::getPath(int projectId) const
 {
     PLMError error;
@@ -202,6 +207,11 @@ PLMError PLMProjectHub::setProjectName(int projectId, const QString& projectName
     PLMError error = this->set(projectId, "t_project_name", projectName, true);
 
     return error;
+}
+
+QString PLMProjectHub::getProjectUniqueId(int projectId) const
+{
+    return get(projectId, "t_project_unique_identifier").toString();
 }
 
 PLMError PLMProjectHub::set(int             projectId,

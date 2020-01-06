@@ -75,6 +75,7 @@ ApplicationWindow {
     }
 
     onClosing: {
+        console.log("quiting")
 
         settings.x = rootWindow.x
         settings.y = rootWindow.y
@@ -82,8 +83,9 @@ ApplicationWindow {
         settings.height = rootWindow.height
         settings.visibility = rootWindow.visibility
 
-        console.log("quiting")
-        Qt.callLater(Qt.quit)
+        plmData.projectHub().closeAllProjects()
+
+        //close.accepted = false
     }
 } //}
 

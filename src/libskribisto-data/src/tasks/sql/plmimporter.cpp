@@ -34,6 +34,7 @@
 #include <QRegularExpression>
 #include <QSqlDriver>
 #include <QSqlError>
+#include <QRandomGenerator>
 
 PLMImporter::PLMImporter(QObject *parent) :
     QObject(parent)
@@ -170,8 +171,40 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 
     // new project :
     IFOKDO(error, this->executeSQLFile(":/sql/sqlite_project.sql", sqlDb));
+    IFOK(error){
+        //create unique identifier
 
-    sqlDb.commit();
+
+        QString randomString;
+        {
+           const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+           const int randomStringLength = 12;
+
+           for(int i=0; i<randomStringLength; ++i)
+           {
+               quint32 generatedNumber = QRandomGenerator::system()->generate();
+               int index = generatedNumber % possibleCharacters.length();
+               QChar nextChar = possibleCharacters.at(index);
+               randomString.append(nextChar);
+           }
+        }
+        qDebug() << "randomString" << randomString;
+
+
+        QString value = randomString;
+        int id = 1;
+        QSqlQuery query(sqlDb);
+        QString   queryStr = "UPDATE tbl_project SET t_project_unique_identifier = :value"
+                                                     " WHERE l_project_id = :id"
+        ;
+        query.prepare(queryStr);
+        query.bindValue(":value", value);
+        query.bindValue(":id", id);
+        query.exec();
+    }
+    IFOK(error){
+        sqlDb.commit();
+    }
 
     // clean-up :
     sqlDb.transaction();

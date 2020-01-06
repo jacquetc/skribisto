@@ -30,5 +30,14 @@
         <file>qml/Notes/NotesLeftDockForm.ui.qml</file>
         <file>qml/Commons/TreeView.qml</file>
         <file>qml/Commons/TreeViewForm.ui.qml</file>
+        <file>qml/Welcome/SettingsPage.qml</file>
+        <file>qml/Welcome/SettingsPageForm.ui.qml</file>
+        <file>qml/Welcome/ProjectPage.qml</file>
+        <file>qml/Welcome/ProjectPageForm.ui.qml</file>
+        <file>qml/Welcome/HelpPage.qml</file>
+        <file>qml/Welcome/HelpPageForm.ui.qml</file>
+        <file>qml/Welcome/ExamplePage.qml</file>
+        <file>qml/Welcome/ExamplePageForm.ui.qml</file>
+        <file>qml/Commons/TreeListView.qml</file>
     </qresource>
 </RCC>

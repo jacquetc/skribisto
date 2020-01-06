@@ -49,6 +49,7 @@ public:
     void setProjectIdFilter(int projectIdFilter);
     void setParentIdFilter(int parentIdFilter);
 
+    Q_INVOKABLE void addItemAtEnd(int projectId, int parentPaperId);
 signals:
     void projectIdFilterChanged(int projectIdFilter);
     void parentIdFilterChanged(int paperIdFilter);
@@ -63,6 +64,10 @@ protected:
 
 private:
     PLMSheetItem *getItem(int projectId, int paperId);
+
+private slots:
+    void loadProjectSettings(int projectId);
+    void saveProjectSettings(int projectId);
 private:
     bool m_showDeletedFilter;
     int m_projectIdFilter;

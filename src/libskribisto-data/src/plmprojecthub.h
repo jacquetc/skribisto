@@ -34,21 +34,22 @@ public:
 
     explicit PLMProjectHub(QObject *parent);
     Q_INVOKABLE PLMError loadProject(const QString& path);
-    PLMError             saveProject(int projectId);
-    PLMError             saveProjectAs(int            projectId,
+    Q_INVOKABLE PLMError             saveProject(int projectId);
+    Q_INVOKABLE PLMError             saveProjectAs(int            projectId,
                                        const QString& type,
                                        const QString& path);
-    PLMError             closeProject(int projectId);
-    PLMError             closeAllProjects();
+    Q_INVOKABLE PLMError             closeProject(int projectId);
+    Q_INVOKABLE PLMError             closeAllProjects();
     QList<int>           getProjectIdList();
-    QString              getPath(int projectId) const;
+    Q_INVOKABLE int      getProjectCount();
+    Q_INVOKABLE QString              getPath(int projectId) const;
     PLMError             setPath(int            projectId,
                                  const QString& newPath);
-    int                  getLastLoaded() const;
+    Q_INVOKABLE int                  getLastLoaded() const;
     PLMError             getError();
-    bool                 isThereAnyOpenedProject();
+    Q_INVOKABLE bool                 isThereAnyOpenedProject();
 
-    int                  getDefaultProject();
+    Q_INVOKABLE int                  getDefaultProject();
     void                 setDefaultProject(int defaultProject);
 
 
@@ -57,9 +58,11 @@ public:
 
     void                 setProjectNotSavedAnymore(int projectId);
 
-    QString              getProjectName(int projectId) const;
-    PLMError             setProjectName(int            projectId,
+    Q_INVOKABLE QString              getProjectName(int projectId) const;
+    Q_INVOKABLE PLMError             setProjectName(int            projectId,
                                         const QString& projectName);
+
+    QString              getProjectUniqueId(int projectId) const;
 
     PLMError             set(int             projectId,
                              const QString & fieldName,
@@ -73,15 +76,15 @@ signals:
     void             errorSent(const PLMError& error) const;
     Q_INVOKABLE void projectLoaded(int projectId);
     Q_INVOKABLE void projectClosed(int projectId);
-    void             allProjectsClosed();
-    void             projectTypeChanged(int            projectId,
+    Q_INVOKABLE void             allProjectsClosed();
+    Q_INVOKABLE void             projectTypeChanged(int            projectId,
                                         const QString& newType);
-    void             projectPathChanged(int            projectId,
+    Q_INVOKABLE void             projectPathChanged(int            projectId,
                                         const QString& newPath);
-    void             projectNameChanged(int            projectId,
+    Q_INVOKABLE void             projectNameChanged(int            projectId,
                                         const QString& newProjectName);
-    void             projectSaved(int projectId);
-    void             projectNotSavedAnymore(int projectId);
+    Q_INVOKABLE void             projectSaved(int projectId);
+    Q_INVOKABLE void             projectNotSavedAnymore(int projectId);
 
 public slots:
 

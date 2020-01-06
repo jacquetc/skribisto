@@ -372,7 +372,7 @@ void PLMSheetListModel::exploitSignalFromPLMData(int                 projectId,
 void PLMSheetListModel::addPaper(int projectId, int paperId)
 {
     //find parentIndex and row
-    QModelIndex parentIndex;
+//    QModelIndex parentIndex;
     int row = 0;
 
     auto idList         = plmdata->sheetHub()->getAllIds(projectId);
@@ -388,14 +388,14 @@ void PLMSheetListModel::addPaper(int projectId, int paperId)
     if (plmdata->projectHub()->getProjectIdList().count() > 1) {
 
         if(paperIndex == 0){
-            parentIndex = this->getModelIndex(projectId, -1).first();
+//            parentIndex = this->getModelIndex(projectId, -1).first();
             row = 0;
             parentFound = true;
         }
 
     }
     else if(paperIndex == 0){
-        parentIndex = QModelIndex();
+//        parentIndex = QModelIndex();
         row = 0;
         parentFound = true;
 
@@ -405,12 +405,12 @@ void PLMSheetListModel::addPaper(int projectId, int paperId)
             int possibleParentId = idList.at(i);
             int possibleParentIndent = indentsHash.value(possibleParentId);
             if(paperIndent == possibleParentIndent + 1){
-                auto modelIndexList = this->getModelIndex(projectId, possibleParentId);
-                if(modelIndexList.isEmpty()){
-                    qWarning() << Q_FUNC_INFO << "if paperIndent == possibleParentIndent => modelIndexList.isEmpty()";
-                    return;
-                }
-                parentIndex = modelIndexList.first();
+//                auto modelIndexList = this->getModelIndex(projectId, possibleParentId);
+//                if(modelIndexList.isEmpty()){
+//                    qWarning() << Q_FUNC_INFO << "if paperIndent == possibleParentIndent => modelIndexList.isEmpty()";
+//                    return;
+//                }
+//                parentIndex = modelIndexList.first();
                 //int parentPaperId = parentIndex.data(PLMSheetItem::Roles::PaperIdRole).toInt();
                 row = paperIndex - i - 1;
                 parentFound = true;
@@ -448,11 +448,12 @@ void PLMSheetListModel::addPaper(int projectId, int paperId)
 
 
 
-    beginInsertRows(parentIndex, row, row);
+    beginInsertRows(QModelIndex(), row, row);
 
     m_allSheetItems.insert(itemIndex, new PLMSheetItem(projectId, paperId,
                                                        indentsHash.value(paperId),
                                                        sortOrdersHash.value(paperId)));
+    this->index(row, 0, QModelIndex());
     endInsertRows();
 }
 

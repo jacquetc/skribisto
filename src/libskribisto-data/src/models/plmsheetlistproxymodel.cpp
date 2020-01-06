@@ -25,20 +25,14 @@
 #include <QTimer>
 
 PLMSheetListProxyModel::PLMSheetListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
-    m_showDeletedFilter(false), m_projectIdFilter(0), m_parentIdFilter(-1)
+    m_showDeletedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-2)
 {
     this->setSourceModel(plmmodels->sheetListModel());
     this->setDeletedFilter(false);
-    m_parentIdFilter = -2;
-    m_projectIdFilter = -2;
 
 
-    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this,
-            [this](int projectId){
-        //TODO: replace that with loading project settings
-        this->setParentFilter(projectId, 0);
-        qDebug() << "setParentFilter";
-    });
+    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &PLMSheetListProxyModel::loadProjectSettings);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, &PLMSheetListProxyModel::saveProjectSettings);
 }
 
 Qt::ItemFlags PLMSheetListProxyModel::flags(const QModelIndex& index) const
@@ -292,6 +286,31 @@ PLMSheetItem *PLMSheetListProxyModel::getItem(int projectId, int paperId)
 
 //--------------------------------------------------------------
 
+
+void PLMSheetListProxyModel::loadProjectSettings(int projectId)
+{
+    QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QSettings settings;
+    settings.beginGroup("project_" + unique_identifier);
+    int writeCurrentParent = settings.value("writeCurrentParent", 0).toInt();
+    this->setParentFilter(projectId, writeCurrentParent);
+    settings.endGroup();
+}
+
+//--------------------------------------------------------------
+
+
+void PLMSheetListProxyModel::saveProjectSettings(int projectId)
+{
+    QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QSettings settings;
+    settings.beginGroup("project_" + unique_identifier);
+    settings.setValue("writeCurrentParent", m_parentIdFilter);
+    settings.endGroup();
+}
+
+//--------------------------------------------------------------
+
 QString PLMSheetListProxyModel::getItemName(int projectId, int paperId)
 {
     qDebug() << "getItemName" << projectId << paperId;
@@ -313,4 +332,23 @@ QString PLMSheetListProxyModel::getItemName(int projectId, int paperId)
     }
 
     return name;
+}
+//--------------------------------------------------------------
+
+void PLMSheetListProxyModel::addItemAtEnd(int projectId, int parentPaperId)
+{
+//    PLMSheetItem *parentItem = this->getItem(projectId, parentPaperId);
+//    if(!parentItem){
+//        if(plmdata->projectHub()->getProjectCount() <= 1){
+
+//        }
+//        else if (plmdata->projectHub()->getProjectCount() > 1){
+
+//        }
+//        }
+
+//    finalSortOrder = plmdata->sheetHub()->getValidSortOrderAfterPaper(projectId, lastIdWithSameIndent);
+
+    PLMError error = plmdata->sheetHub()->addChildPaper(projectId, parentPaperId);
+this->invalidate();
 }

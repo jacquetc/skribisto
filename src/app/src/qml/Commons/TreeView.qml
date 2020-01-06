@@ -29,8 +29,24 @@ TreeViewForm {
 
     //-----------------------------------------------------------------------------
     // go up button :
-    goUpToolButton.onClicked: {
-        currentParent = proxyModel.goUp()
+    goUpToolButton.action: goUpAction
+    goUpToolButton.icon {
+        color: "transparent"
+    }
+
+    Action {
+        id: goUpAction
+        text: qsTr("Go up")
+        //shortcut: "Left,Backspace" Doesn't work well
+        icon {
+            source: "qrc:/pics/skribisto.svg"
+            color: "transparent"
+        }
+        enabled: root.visible
+        onTriggered: {
+            currentParent = proxyModel.goUp()
+            console.log("go up action")
+        }
     }
 
     //-----------------------------------------------------------------------------
@@ -68,11 +84,66 @@ TreeViewForm {
     }
 
     //-----------------------------------------------------------------------------
+    treeMenuToolButton.onClicked: navigationMenu.open()
+
+    Menu {
+        id: navigationMenu
+        y: treeMenuToolButton.height
+
+        //        Action {
+        //            text: qsTr("Rename")
+        //        }
+
+        //        MenuSeparator {}
+        //        Action {
+        //            text: qsTr("Remove")
+        //        }
+        //        MenuSeparator {}
+        Menu {
+            title: qsTr("Advanced")
+            Action {
+                text: qsTr("Reorder alphabetically")
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------
+    addToolButton.onClicked: proxyModel.addItemAtEnd(currentProject,
+                                                     currentParent)
+
+    //----------------------------------------------------------------------------
+
+    // shortcuts
+
+    //listView.focus: true
+    //    listView.Keys.onLeftPressed: {
+
+    //        console.log("onLeftPressed")
+    //        goUpAction.trigger()
+    //    }
+    //    listView.Keys.onBackPressed: {
+
+    //        console.log("onBackPressed")
+    //        goUpAction.trigger()
+
+    //    }
+    Shortcut {
+        sequences: ["Left", "Backspace"]
+        onActivated: goUpAction.trigger()
+        enabled: root.visible
+    }
+    //-----------------------------------------------------------------------------
     Component.onCompleted: {
 
     }
 
     //-----------------------------------------------------------------------------
+    listView.onCurrentIndexChanged: {
+        contextMenuItemIndex = listView.currentIndex
+    }
+
+    property int contextMenuItemIndex: -2
+    //----------------------------------------------------------------------------
 
     // used to remember the source when moving an item
     property int moveSourceInt: -2
@@ -83,6 +154,7 @@ TreeViewForm {
 
         DropArea {
             id: delegateRoot
+
             onEntered: {
 
                 content.sourceIndex = drag.source.visualIndex
@@ -103,6 +175,7 @@ TreeViewForm {
                 property: "visualIndex"
                 value: visualIndex
             }
+
             anchors {
                 left: parent.left
                 right: parent.right
@@ -114,6 +187,19 @@ TreeViewForm {
 
             //            onPressAndHold: held = true
             //            onReleased: held = false
+            //            Shortcut {
+            //                sequence: "Ctrl+Up"
+            //                onActivated: moveUpAction.trigger(delegateRoot)
+            //            }
+            //            Keys.onShortcutOverride: {
+            //                if (event.key === Qt.Key_Backspace) {
+            //                    console.log("onShortcutOverride")
+            //                    event.accepted = true
+            //                }
+            //            }
+            //            Keys.onBackPressed: {
+            //                console.log("eee")
+            //            }
             Rectangle {
                 id: content
                 property int visualIndex: 0
@@ -156,21 +242,6 @@ TreeViewForm {
                     enabled: !tapHandler.enabled
                 }
 
-                //                MouseArea {
-                //                    id: mouseArea
-                //                    z: 2
-                //                    anchors.fill: parent
-                //                    enabled: false
-                //                    hoverEnabled: true
-                //                    //propagateComposedEvents: true
-                //                    onClicked: {
-                //                        listView.currentIndex = model.index
-                //                        console.log("eeeee")
-                //                    }
-                //                    //                    onPressAndHold: {
-                //                    //                        mouse.accepted = false
-                //                    //                    }
-                //                }
                 HoverHandler {
                     id: hoverHandler
                 }
@@ -178,11 +249,18 @@ TreeViewForm {
                 TapHandler {
                     id: tapHandler
                     onTapped: {
+
                         listView.currentIndex = model.index
+                        delegateRoot.forceActiveFocus()
                     }
                     onLongPressed: {
                         enabled = false
                     }
+                }
+                TapHandler {
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                    acceptedButtons: Qt.RightButton
+                    onTapped: menu.open()
                 }
 
                 //                WheelHandler {
@@ -201,6 +279,7 @@ TreeViewForm {
 
                     enabled: dragHandler.enabled
                 }
+
                 RowLayout {
                     id: rowLayout
                     spacing: 2
@@ -216,7 +295,7 @@ TreeViewForm {
 
                     Rectangle {
                         color: "transparent"
-                        border.width: 1
+                        //border.width: 1
                         Layout.fillWidth: true
                         Layout.fillHeight: true
 
@@ -259,8 +338,11 @@ TreeViewForm {
 
                         text: "..."
                         flat: true
+                        focusPolicy: Qt.NoFocus
 
-                        onClicked: menu.open()
+                        onClicked: {
+                            menu.open()
+                        }
 
                         visible: hoverHandler.hovered | content.isCurrent
                     }
@@ -287,6 +369,7 @@ TreeViewForm {
                         Layout.fillHeight: true
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                         visible: hoverHandler.hovered | content.isCurrent
+                        focusPolicy: Qt.NoFocus
 
                         onClicked: {
                             currentProject = model.projectId
@@ -340,25 +423,111 @@ TreeViewForm {
                 }
             }
 
+            //            Shortcut {
+            //                sequences: ["Ctrl+Shift+N"]
+            //                onActivated: addBeforeAction.trigger()
+            //                enabled: root.visible
+            //            }
             Menu {
                 id: menu
                 y: menuButton.height
+
+                onOpened: {
+                    // necessary to differenciate between all items
+                    contextMenuItemIndex = model.index
+                }
+
                 Action {
                     text: qsTr("Rename")
                 }
+                MenuSeparator {}
+                Action {
+                    id: addBeforeAction
+                    text: qsTr("Add before")
+                    shortcut: "Ctrl+Shift+N"
+                    icon {
+                        name: "welcome-icon"
+                        source: "qrc:/pics/skribisto.svg"
+                        color: "transparent"
+                        //                        height: 100
+                        //                        width: 100
+                    }
+                    enabled: contextMenuItemIndex === model.index
+                    onTriggered: {
+                        console.log("add before action", model.projectId,
+                                    model.paperId)
+                    }
+                }
 
+                Action {
+                    id: addAfterAction
+                    text: qsTr("Add after")
+                    shortcut: "Ctrl+N"
+                    icon {
+                        name: "welcome-icon"
+                        source: "qrc:/pics/skribisto.svg"
+                        color: "transparent"
+                        //                        height: 100
+                        //                        width: 100
+                    }
+                    enabled: contextMenuItemIndex === model.index
+                    onTriggered: {
+                        console.log("add after action", model.projectId,
+                                    model.paperId)
+                    }
+                }
+                MenuSeparator {}
+                Action {
+                    id: moveUpAction
+                    text: qsTr("Move up")
+                    shortcut: "Ctrl+Up"
+                    icon {
+                        name: "welcome-icon"
+                        source: "qrc:/pics/skribisto.svg"
+                        color: "transparent"
+                        //                        height: 100
+                        //                        width: 100
+                    }
+                    enabled: contextMenuItemIndex === model.index
+                    onTriggered: {
+                        console.log("move up action", model.projectId,
+                                    model.paperId)
+                    }
+                }
+                Action {
+                    text: qsTr("Move down")
+                    shortcut: "Ctrl+Down"
+                    icon {
+                        //name: "welcome-icon"
+                        source: "qrc:/pics/skribisto.svg"
+                        color: "transparent"
+                        //                        height: 100
+                        //                        width: 100
+                    }
+                    enabled: contextMenuItemIndex === model.index
+                    onTriggered: {
+                        console.log("move down action", model.projectId,
+                                    model.paperId)
+                    }
+                }
                 MenuSeparator {}
                 Action {
                     text: qsTr("Remove")
-                }
-                MenuSeparator {}
-
-                Menu {
-                    title: qsTr("Advanced")
-                    Action {
-                        text: qsTr("Reorder alphabetically")
+                    shortcut: "Del"
+                    icon {
+                        name: "welcome-icon"
+                        source: "qrc:/pics/skribisto.svg"
+                        color: "transparent"
+                        //                        height: 100
+                        //                        width: 100
+                    }
+                    enabled: contextMenuItemIndex === model.index
+                    onTriggered: {
+                        console.log("delete action", model.projectId,
+                                    model.paperId)
                     }
                 }
+                MenuSeparator {}
             }
 
             ListView.onRemove: SequentialAnimation {
@@ -377,6 +546,21 @@ TreeViewForm {
                     target: delegateRoot
                     property: "ListView.delayRemove"
                     value: false
+                }
+            }
+
+            ListView.onAdd: SequentialAnimation {
+                PropertyAction {
+                    target: delegateRoot
+                    property: "height"
+                    value: 0
+                }
+                NumberAnimation {
+                    target: delegateRoot
+                    property: "height"
+                    to: 80
+                    duration: 250
+                    easing.type: Easing.InOutQuad
                 }
             }
 

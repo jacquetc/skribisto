@@ -15,6 +15,9 @@ Item {
     property alias base: base
     property alias statusBarMenuButtonsLoader: statusBarMenuButtonsLoader
     property alias sideMenuButtonsLoader: sideMenuButtonsLoader
+    property alias welcomePage: welcomePage
+    property alias writePage: writePage
+    property alias notesPage: notesPage
 
     ColumnLayout {
         id: columnLayout
