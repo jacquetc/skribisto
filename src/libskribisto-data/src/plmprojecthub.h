@@ -75,6 +75,11 @@ signals:
 
     void             errorSent(const PLMError& error) const;
     Q_INVOKABLE void projectLoaded(int projectId);
+    ///
+    /// \brief projectToBeClosed
+    /// \param projectId
+    /// To be used with a direct connection
+    Q_INVOKABLE void projectToBeClosed(int projectId);
     Q_INVOKABLE void projectClosed(int projectId);
     Q_INVOKABLE void             allProjectsClosed();
     Q_INVOKABLE void             projectTypeChanged(int            projectId,

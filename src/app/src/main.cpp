@@ -16,6 +16,8 @@ using namespace std;
 #include <QFileInfo>
 #include <QDir>
 
+#include <QIcon>
+
 #include "plmpluginloader.h"
 #include "plmdata.h"
 #include "plmsheethub.h"
@@ -110,7 +112,22 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
+
+
+
     QGuiApplication app(argc, argv);
+
+    //icons :
+    //qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
+
+    //if Gnome desktop :
+//    if(qgetenv("XDG_CURRENT_DESKTOP") == "GNOME"){
+
+//        QIcon::setThemeName("Adwaita");
+//    }
+//    else {
+        QIcon::setThemeName("breeze");
+//    }
 
     startCore();
 

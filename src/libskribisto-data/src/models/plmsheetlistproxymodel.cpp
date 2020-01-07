@@ -33,7 +33,7 @@ PLMSheetListProxyModel::PLMSheetListProxyModel(QObject *parent) : QSortFilterPro
 
 
     connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &PLMSheetListProxyModel::loadProjectSettings);
-    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, &PLMSheetListProxyModel::saveProjectSettings);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &PLMSheetListProxyModel::saveProjectSettings, Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, &PLMSheetListProxyModel::clearHistory);
 }
 

@@ -31,7 +31,7 @@ Item {
 
                 ToolButton {
                     id: goUpToolButton
-                    text: qsTr("^")
+                    display: AbstractButton.IconOnly
                 }
 
                 ToolButton {
@@ -49,12 +49,14 @@ Item {
 
                 ToolButton {
                     id: addToolButton
-                    text: qsTr("+")
+                    text: qsTr("Add a document")
+                    display: AbstractButton.IconOnly
                 }
 
                 ToolButton {
                     id: treeMenuToolButton
-                    text: qsTr("...")
+                    text: qsTr("Navigation menu")
+                    display: AbstractButton.IconOnly
                 }
             }
             ScrollView {

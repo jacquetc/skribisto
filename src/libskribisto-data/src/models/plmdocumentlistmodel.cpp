@@ -168,7 +168,7 @@ bool PLMDocumentListModel::setData(const QModelIndex& index,
         return true;
     }
     return false;
-}::
+}
 
 Qt::ItemFlags PLMDocumentListModel::flags(const QModelIndex& index) const
 {
@@ -182,6 +182,7 @@ void PLMDocumentListModel::addDocument(int            projectId,
                                        int            documentId)
 {
     if (!tableName.endsWith("doc_list")) return;
+    if (tableName != m_tableName) return;
 
     //QModelIndex parentIndex = this->index(0, 0, QModelIndex());
 
@@ -198,6 +199,7 @@ void PLMDocumentListModel::addDocument(int            projectId,
 void PLMDocumentListModel::removeDocument(int projectId, const QString &tableName, int documentId)
 {
     if (!tableName.endsWith("doc_list")) return;
+    if (tableName != m_tableName) return;
 
 
     //QModelIndex parentIndex = this->index(0, 0, QModelIndex());
@@ -220,6 +222,7 @@ void PLMDocumentListModel::removeDocument(int projectId, const QString &tableNam
 void PLMDocumentListModel::modifyDocument(int projectId, const QString &tableName, int documentId, const QString &fieldName)
 {
     if (!tableName.endsWith("doc_list")) return;
+    if (tableName != m_tableName) return;
 
 
 
@@ -327,6 +330,64 @@ QList<int> PLMDocumentListModel::getDocumentIdEverywhere(int projectId, int pape
     }
 
     return result;
+}
+
+QString PLMDocumentListModel::translateRole(PLMDocumentListModel::Roles role) const
+{
+    QString result;
+
+    switch (role){
+
+    case PLMDocumentListModel::Roles::DocumentIdRole:
+        result = "l_document_id";
+        break;
+
+        case PLMDocumentListModel::Roles::PaperCodeRole:
+            result = "l_paper_code";
+            break;
+
+    case PLMDocumentListModel::Roles::ProjectIdRole:
+        //useless
+        break;
+
+    case PLMDocumentListModel::Roles::NameRole:
+        result = "t_title";
+        break;
+
+
+    case PLMDocumentListModel::Roles::TypeRole:
+        result = "t_type"  ;
+        break;
+
+    case PLMDocumentListModel::Roles::SubWindowRole:
+        result = "l_subwindow";
+        break;
+
+    case PLMDocumentListModel::Roles::CursorPosRole:
+        result =  "l_cursor_pos";
+        break;
+
+    case PLMDocumentListModel::Roles::PropertyRole:
+        result =  "t_property";
+        break;
+
+    case PLMDocumentListModel::Roles::UpdateDateRole:
+        result =  "dt_updated";
+        break;
+
+    case PLMDocumentListModel::Roles::LasFocusedDateRole:
+        result =  "dt_last_focused";
+        break;
+
+    default:
+        break;
+
+        return result;
+}
+
+
+
+
 }
 
 void PLMDocumentListModel::populate()

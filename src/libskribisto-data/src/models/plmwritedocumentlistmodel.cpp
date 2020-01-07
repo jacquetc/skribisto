@@ -22,3 +22,47 @@ PLMWriteDocumentListModel::PLMWriteDocumentListModel(QObject *parent):
 
 
 }
+
+QVariant PLMWriteDocumentListModel::getDocumentData(int projectId, int paperId, int subWindowId, PLMDocumentListModel::Roles role) const
+{
+
+    QHash<int, QVariant> result;
+    QHash<QString, QVariant> where;
+    where.insert("l_paper_code =", paperId);
+    where.insert("l_subWindow =", subWindowId);
+
+    QString roleString = this->translateRole(role);
+    result = plmdata->userHub()->getValueByIdsWhere(projectId, m_tableName, roleString, where);
+
+    if(result.isEmpty()){  // create a new document
+
+
+        return QVariant();
+    }
+
+    return result.values().first();
+
+
+}
+
+int PLMWriteDocumentListModel::closeDocument(int projectId, int paperId, int subWindowId)
+{
+    QHash<int, QVariant> result;
+    QHash<QString, QVariant> where;
+    where.insert("l_paper_code =", paperId);
+    where.insert("l_subWindow =", subWindowId);
+
+    QString roleString = this->translateRole(PLMDocumentListModel::Roles::PropertyRole);
+    result = plmdata->userHub()->getValueByIdsWhere(projectId, m_tableName, roleString, where);
+
+    int documentId = result.keys().first();
+
+
+
+    if(result.isEmpty()){
+        return -2;
+    }
+
+    return documentId;
+
+}

@@ -168,9 +168,7 @@ RootPageForm {
             id: writeWindowAction
             text: qsTr("Write")
             icon {
-                name: "author"
-                source: "qrc:/pics/author.svg"
-                color: "transparent"
+                name: "editor"
                 height: 100
                 width: 100
             }

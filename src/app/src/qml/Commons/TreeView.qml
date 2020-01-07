@@ -29,23 +29,20 @@ TreeViewForm {
     //-----------------------------------------------------------------------------
     // go up button :
     goUpToolButton.action: goUpAction
-    goUpToolButton.icon {
-        color: "transparent"
-    }
 
     Action {
         id: goUpAction
         text: qsTr("Go up")
         //shortcut: "Left,Backspace" Doesn't work well
         icon {
-            source: "qrc:/pics/skribisto.svg"
-            color: "transparent"
+            name: "go-parent-folder"
         }
         enabled: root.visible
         onTriggered: {
             currentParent = proxyModel.goUp()
             listView.currentIndex = proxyModel.getLastOfHistory(currentProject)
             proxyModel.removeLastOfHistory(currentProject)
+            //proxyModel.setForcedCurrentIndex(0)
             console.log("go up action")
         }
     }
@@ -84,7 +81,8 @@ TreeViewForm {
         //currentParent
     }
 
-    //-----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    treeMenuToolButton.icon.name: "overflow-menu"
     treeMenuToolButton.onClicked: navigationMenu.open()
 
     Menu {
@@ -103,17 +101,20 @@ TreeViewForm {
         Action {
             text: qsTr("Paste")
             shortcut: StandardKey.Paste
+            icon.name: "edit-paste"
         }
         Menu {
 
             title: qsTr("Advanced")
             Action {
-                text: qsTr("Reorder alphabetically")
+                text: qsTr("Sort alphabetically")
+                icon.name: "view-sort-ascending-name"
             }
         }
     }
 
     //----------------------------------------------------------------------------
+    addToolButton.icon.name: "document-new"
     addToolButton.onClicked: {
         proxyModel.addItemAtEnd(currentProject, currentParent,
                                 visualModel.items.count - 1)
@@ -352,7 +353,8 @@ TreeViewForm {
                     id: openDocumentAction
                     shortcut: "Return"
                     enabled: {
-                        if (listView.currentIndex === model.index) {
+                        if (titleTextField.visible === false
+                                && listView.currentIndex === model.index) {
                             return true
                         } else
                             return false
@@ -413,6 +415,12 @@ TreeViewForm {
                                 onAccepted: {
                                     model.name = text
                                     delegateRoot.state = ""
+                                }
+
+                                onEditingFinished: {
+                                    if (!activeFocus) {
+                                        accepted()
+                                    }
                                 }
                             }
 
@@ -561,11 +569,7 @@ TreeViewForm {
                     text: qsTr("Rename")
                     shortcut: "F2"
                     icon {
-                        name: "welcome-icon"
-                        source: "qrc:/pics/skribisto.svg"
-                        color: "transparent"
-                        //                        height: 100
-                        //                        width: 100
+                        name: "edit-rename"
                     }
                     enabled: contextMenuItemIndex === model.index
                     onTriggered: {
@@ -575,17 +579,46 @@ TreeViewForm {
                         //forceActiveFocus(titleTextField)
                     }
                 }
+
+                MenuSeparator {}
+
+                Action {
+
+                    text: qsTr("Copy")
+                    shortcut: StandardKey.Copy
+                    icon {
+                        name: "edit-copy"
+                    }
+                    enabled: contextMenuItemIndex === model.index
+
+                    onTriggered: {
+                        console.log("copy action", model.projectId,
+                                    model.paperId)
+                        proxyModel.copy(model.projectId, model.paperId)
+                    }
+                }
+                Action {
+
+                    text: qsTr("Cut")
+                    shortcut: StandardKey.Cut
+                    icon {
+                        name: "edit-cut"
+                    }
+                    enabled: contextMenuItemIndex === model.index
+
+                    onTriggered: {
+                        console.log("cut action", model.projectId,
+                                    model.paperId)
+                        proxyModel.cut(model.projectId, model.paperId, -2)
+                    }
+                }
                 MenuSeparator {}
                 Action {
                     id: addBeforeAction
                     text: qsTr("Add before")
                     shortcut: "Ctrl+Shift+N"
                     icon {
-                        name: "welcome-icon"
-                        source: "qrc:/pics/skribisto.svg"
-                        color: "transparent"
-                        //                        height: 100
-                        //                        width: 100
+                        name: "document-new"
                     }
                     enabled: contextMenuItemIndex === model.index
                     onTriggered: {
@@ -599,11 +632,7 @@ TreeViewForm {
                     text: qsTr("Add after")
                     shortcut: "Ctrl+N"
                     icon {
-                        name: "welcome-icon"
-                        source: "qrc:/pics/skribisto.svg"
-                        color: "transparent"
-                        //                        height: 100
-                        //                        width: 100
+                        name: "document-new"
                     }
                     enabled: contextMenuItemIndex === model.index
                     onTriggered: {
@@ -611,17 +640,15 @@ TreeViewForm {
                                     model.paperId)
                     }
                 }
+
                 MenuSeparator {}
+
                 Action {
                     id: moveUpAction
                     text: qsTr("Move up")
                     shortcut: "Ctrl+Up"
                     icon {
-                        name: "welcome-icon"
-                        source: "qrc:/pics/skribisto.svg"
-                        color: "transparent"
-                        //                        height: 100
-                        //                        width: 100
+                        name: "object-order-raise"
                     }
                     enabled: contextMenuItemIndex === model.index
                              && model.index !== 0
@@ -638,11 +665,7 @@ TreeViewForm {
                     text: qsTr("Move down")
                     shortcut: "Ctrl+Down"
                     icon {
-                        //name: "welcome-icon"
-                        source: "qrc:/pics/skribisto.svg"
-                        color: "transparent"
-                        //                        height: 100
-                        //                        width: 100
+                        name: "object-order-lower"
                     }
                     enabled: contextMenuItemIndex === model.index
                              && model.index !== visualModel.items.count - 1
@@ -656,14 +679,10 @@ TreeViewForm {
                 }
                 MenuSeparator {}
                 Action {
-                    text: qsTr("Remove")
+                    text: qsTr("Delete")
                     shortcut: "Del"
                     icon {
-                        name: "welcome-icon"
-                        source: "qrc:/pics/skribisto.svg"
-                        color: "transparent"
-                        //                        height: 100
-                        //                        width: 100
+                        name: "edit-delete"
                     }
                     enabled: contextMenuItemIndex === model.index
                     onTriggered: {

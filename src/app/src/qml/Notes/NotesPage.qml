@@ -70,8 +70,6 @@ NotesPageForm {
                                                         ) : leftDock.fold()
     leftDockShowButton.icon {
         name: leftDock.folded ? "go-next" : "go-previous"
-        source: leftDock.folded ? "qrc:/pics/go-next.svg" : "qrc:/pics/go-previous.svg"
-        color: "transparent"
         height: 50
         width: 50
     }
@@ -79,9 +77,7 @@ NotesPageForm {
     leftDockMenuButton.onCheckedChanged: leftDockMenuButton.checked ? leftDockMenuGroup.visible = true : leftDockMenuGroup.visible = false
     leftDockMenuButton.checked: false
     leftDockMenuButton.icon {
-        name: "application-menu"
-        source: "qrc:/pics/application-menu.svg"
-        color: "transparent"
+        name: "overflow-menu"
         height: 50
         width: 50
     }
@@ -91,8 +87,6 @@ NotesPageForm {
     leftDockMenuGroup.visible: false
     leftDockResizeButton.icon {
         name: "resizecol"
-        source: "qrc:/pics/resizecol.svg"
-        color: "transparent"
         height: 50
         width: 50
     }

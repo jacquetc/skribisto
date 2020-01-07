@@ -102,6 +102,7 @@ public:
                                         int paperId);
 
 protected slots:
+    QString translateRole(Roles role) const;
 
 private slots:
 
