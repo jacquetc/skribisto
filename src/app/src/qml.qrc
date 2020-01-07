@@ -39,5 +39,7 @@
         <file>qml/Welcome/ExamplePage.qml</file>
         <file>qml/Welcome/ExamplePageForm.ui.qml</file>
         <file>qml/Commons/TreeListView.qml</file>
+        <file>qml/Commons/DocumentListView.qml</file>
+        <file>qml/Commons/DocumentListViewForm.ui.qml</file>
     </qresource>
 </RCC>

@@ -5,7 +5,6 @@ import QtQuick.Layouts 1.12
 Item {
     id: base
     property alias listView: listView
-    property bool selectionMode: false
     property alias goUpToolButton: goUpToolButton
     property alias currentParentToolButton: currentParentToolButton
     property alias addToolButton: addToolButton
@@ -16,7 +15,6 @@ Item {
         clip: true
         anchors.fill: parent
         padding: 0
-
 
         ColumnLayout {
             id: columnLayout

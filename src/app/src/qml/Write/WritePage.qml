@@ -22,7 +22,11 @@ WritePageForm {
     //    <td>$100</td>
     //  </tr></table></body>"
     Component.onCompleted: {
-
+        Globals.openSheetCalled.connect(openDocument)
+    }
+    function openDocument(projectId, paperId) {
+        console.log("opening sheet :", projectId, paperId)
+        writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
     }
 
     Binding on writingZone.textAreaWidth {

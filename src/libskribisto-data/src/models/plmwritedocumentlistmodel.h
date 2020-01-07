@@ -8,8 +8,9 @@
 
 class EXPORT PLMWriteDocumentListModel : public PLMDocumentListModel
 {
+    Q_OBJECT
 public:
-    PLMWriteDocumentListModel(QObject *parent);
+    PLMWriteDocumentListModel(QObject *parent = nullptr);
 
 private:
     QString m_tableName;

@@ -35,6 +35,7 @@ PLMModels::~PLMModels()
 
 PLMModels *PLMModels::m_instance = nullptr;
 
+//TODO: remove that, useless
 PLMSheetModel * PLMModels::sheetModel()
 {
     return m_sheetModel;
@@ -50,7 +51,7 @@ PLMNoteListModel * PLMModels::noteListModel()
 {
     return m_noteListModel;
 }
-//PLMDocumentListModel * PLMModels::writeDocumentListModel()
-//{
-//    return m_writeDocumentListModel;
-//}
+PLMWriteDocumentListModel *PLMModels::writeDocumentListModel()
+{
+    return m_writeDocumentListModel;
+}

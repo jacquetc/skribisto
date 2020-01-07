@@ -10,9 +10,10 @@ Item {
     property int fixedWidth: 300
     property alias leftDockPane: leftDockPane
     //    property alias splitView: splitView
-    property alias writeToolsFrame: writeToolsFrame
-    property alias writeTreeViewFrame: writeTreeViewFrame
-    property alias writeTreeView: writeTreeView
+    property alias documentFrame: documentFrame
+    property alias documentView: documentView
+    property alias treeViewFrame: treeViewFrame
+    property alias treeView: treeView
 
     Pane {
         id: leftDockPane
@@ -51,7 +52,7 @@ Item {
                                 width: scrollView.width
 
                                 DockFrame {
-                                    id: writeTreeViewFrame
+                                    id: treeViewFrame
                                     folded: true
                                     title: qsTr("Navigation")
                                     //                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
@@ -62,40 +63,23 @@ Item {
                                     Layout.minimumWidth: 100
 
                                     TreeView {
-                                        id: writeTreeView
+                                        id: treeView
                                     }
                                 }
                                 DockFrame {
-                                    id: writeToolsFrame
+                                    id: documentFrame
                                     folded: true
-                                    title: qsTr("Tools")
+                                    title: qsTr("Opened documents")
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: dynamicHeight
-                                    contentHeight: 200
+                                    contentHeight: 300
                                     //                                    Layout.preferredHeight: dynamicHeight
                                     //                                    contentHeight: 400
                                     //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
                                     //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
                                     //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
-                                    Flow {
-
-                                        //width: scrollview.contentWidth
-                                        ToolButton {
-                                            flat: true
-                                            action: fullscreenAction
-                                        }
-                                        ToolButton {
-                                            flat: true
-                                            action: fullscreenAction
-                                        }
-                                        ToolButton {
-                                            flat: true
-                                            action: fullscreenAction
-                                        }
-                                        ToolButton {
-                                            flat: true
-                                            action: fullscreenAction
-                                        }
+                                    DocumentListView {
+                                        id: documentView
                                     }
                                 }
 

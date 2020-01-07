@@ -45,7 +45,7 @@ public:
 
     PLMSheetModel       * sheetModel();
 
-    PLMDocumentListModel* writeDocumentListModel();
+    Q_INVOKABLE PLMWriteDocumentListModel* writeDocumentListModel();
 
     PLMSheetListModel *sheetListModel();
     PLMNoteListModel *noteListModel();

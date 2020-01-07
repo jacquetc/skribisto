@@ -3,6 +3,8 @@ import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import Qt.labs.settings 1.1
 import eu.skribisto.sheetlistproxymodel 1.0
+import eu.skribisto.writedocumentlistmodel 1.0
+import ".."
 
 WriteLeftDockForm {
 
@@ -25,16 +27,23 @@ WriteLeftDockForm {
     //        implicitHeight: 4
     //    }
 
+    //Navigation List :
     //-----------------------------------------------------------
     PLMSheetListProxyModel {
         id: proxyModel
     }
 
-    writeTreeView.model: proxyModel
-    writeTreeView.proxyModel: proxyModel
+    treeView.model: proxyModel
+    treeView.proxyModel: proxyModel
 
     //-----------------------------------------------------------
 
+    //Document List :
+    //-----------------------------------------------------------
+    documentView.model: plmModels.writeDocumentListModel()
+    documentView.documentModel: plmModels.writeDocumentListModel()
+
+    //-----------------------------------------------------------
     Action {
 
         id: fullscreenAction
@@ -56,10 +65,7 @@ WriteLeftDockForm {
 
     //-----------------------------------------------------------
 
-    writeTreeView.onOpen:
-
     //-----------------------------------------------------------
-
     transitions: [
         Transition {
 
@@ -76,11 +82,9 @@ WriteLeftDockForm {
         category: "writeLeftDock"
         //property string dockSplitView: "0"
         property bool dockFolded: false
-        property bool treeViewFrameFolded: writeTreeViewFrame.folded ? true : false
-        property bool toolsFrameFolded: writeToolsFrame.folded ? true : false
+        property bool treeViewFrameFolded: treeViewFrame.folded ? true : false
+        property bool documentFrameFolded: documentFrame.folded ? true : false
     }
-
-
 
     //    PropertyAnimation {
     //        target: writeTreeViewFrame
@@ -91,9 +95,11 @@ WriteLeftDockForm {
     Component.onCompleted: {
         folded ? fold() : unfold()
 
-        writeTreeViewFrame.folded = settings.treeViewFrameFolded
-        writeToolsFrame.folded = settings.toolsFrameFolded
+        treeViewFrame.folded = settings.treeViewFrameFolded
+        documentFrame.folded = settings.documentFrameFolded
+
         //        splitView.restoreState(settings.dockSplitView)
+        treeView.onOpenDocument.connect(Globals.openSheetCalled)
     }
     Component.onDestruction: {
         //        settings.dockSplitView = splitView.saveState()

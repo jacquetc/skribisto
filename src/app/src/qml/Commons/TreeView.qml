@@ -12,8 +12,8 @@ TreeViewForm {
         visualModel.model = model
     }
 
-    signal open(int projectId, int paperId)
-    signal remove(int projectId, int paperId)
+    signal openDocument(int projectId, int paperId)
+    signal removeDocument(int projectId, int paperId)
     signal clearBin
     signal addAfter(int projectId, int paperId)
     property int currentParent: -2
@@ -279,6 +279,10 @@ TreeViewForm {
                         listView.currentIndex = model.index
                         delegateRoot.forceActiveFocus()
                     }
+                    onDoubleTapped: {
+                        openDocumentAction.trigger()
+                    }
+
                     onLongPressed: {
                         enabled = false
                     }
@@ -355,7 +359,8 @@ TreeViewForm {
                     }
 
                     text: "Open document"
-                    onTriggered: delegateRoot.editName()
+                    onTriggered: root.openDocument(model.projectId,
+                                                   model.paperId)
                 }
 
                 RowLayout {

@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 
 
    PLMData *data     = new PLMData(qApp);
-   new PLMModels(qApp);
+   PLMModels *models = new PLMModels(qApp);
 
 
 //     qmlRegisterType<PLMError>("eu.skribisto.qml", 1, 0, "PLMError");
@@ -189,6 +189,19 @@ int main(int argc, char *argv[])
                                             "PLMSheetHub",
                                             "Can't instantiate PLMSheetHub");
 
+    qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
+                                            1,
+                                            0,
+                                            "PLMModels",
+                                            "Can't instantiate PLMModels");
+
+
+    qmlRegisterUncreatableType<PLMWriteDocumentListModel>("eu.skribisto.writedocumentlistmodel",
+                                            1,
+                                            0,
+                                            "PLMWriteDocumentListModel",
+                                            "Can't instantiate PLMWriteDocumentListModel");
+
     qmlRegisterType<PLMSheetListProxyModel>("eu.skribisto.sheetlistproxymodel",
                                        1,
                                        0,
@@ -207,6 +220,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine(qApp);
 
     engine.rootContext()->setContextProperty("plmData", data);
+    engine.rootContext()->setContextProperty("plmModels", models);
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
 
 //            QCoreApplication *app = qApp;
