@@ -60,14 +60,18 @@ SOURCES += \
     models/plmdocumentlistmodel.cpp \
     models/plmdocumentlistproxymodel.cpp \
     models/plmmodels.cpp \
+    models/plmnoteitem.cpp \
     models/plmnotemodel.cpp \
     models/plmnoteproxymodel.cpp \
+    models/plmnotelistmodel.cpp  \
+    models/plmnotelistproxymodel.cpp  \
     models/plmprojectlistmodel.cpp \
     models/plmpropertiesmodel.cpp \
     models/plmpropertiesproxymodel.cpp \
     models/plmsheetmodel.cpp \
     models/plmsheetitem.cpp \
     models/plmsheetlistmodel.cpp \
+    models/plmsheetlistproxymodel.cpp  \
     models/plmsheetproxymodel.cpp  \
     models/plmwritedocumentlistmodel.cpp
 
@@ -105,14 +109,18 @@ HEADERS += \
     models/plmdocumentlistmodel.h \
     models/plmdocumentlistproxymodel.h \
     models/plmmodels.h \
+    models/plmnoteitem.h \
     models/plmnotemodel.h \
     models/plmnoteproxymodel.h \
+    models/plmnotelistmodel.h \
+    models/plmnotelistproxymodel.h \
     models/plmprojectlistmodel.h \
     models/plmpropertiesmodel.h \
     models/plmpropertiesproxymodel.h \
     models/plmsheetmodel.h \
     models/plmsheetitem.h \
     models/plmsheetlistmodel.h \
+    models/plmsheetlistproxymodel.h \
     models/plmsheetproxymodel.h  \
     models/plmwritedocumentlistmodel.h
 

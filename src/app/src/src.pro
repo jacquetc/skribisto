@@ -196,10 +196,13 @@ DISTFILES += \
     qml/DockRoller.qml \
     qml/ProjectListItemForm.ui.qml \
     qml/RootPageForm.ui.qml \
-    qml/WelcomePageForm.ui.qml \
-    qml/WritePageForm.ui.qml \
-    qml/WriteTreeViewForm.ui.qml \
-    qml/WriteLeftDockForm.ui.qml \
+    qml/Commons/TreeViewForm.ui.qml \
+    qml/Write/WriteLeftDockForm.ui.qml \
+    qml/Write/WritePageForm.ui.qml \
+    qml/Notes/NotesLeftDockForm.ui.qml \
+    qml/Notes/NotesPageForm.ui.qml \
+    qml/Commons/TreeViewForm.ui.qml \
+    qml/Write/WriteLeftDockForm.ui.qml \
     qml/WritingZoneForm.ui.qml \
     qml/qmldir \
     qml/DockFrame.qml \
@@ -208,11 +211,26 @@ DISTFILES += \
     qml/ProjectListItem.qml \
     qml/RootPage.qml \
     qml/WelcomePage.qml \
-    qml/WritePage.qml \
-    qml/WriteTreeView.qml \
-    qml/WriteLeftDock.qml \
+    qml/Write/WritePage.qml \
+    qml/Notes/NotesPage.qml \
+    qml/Commons/TreeView.qml \
+    qml/Commons/TreeListView.qml \
+    qml/Commons/DocumentListView.qml \
+    qml/Commons/DocumentListViewForm.ui.qml \
+    qml/Write/WriteLeftDock.qml \
+    qml/Notes/NotesLeftDock.qml \
     qml/WritingZone.qml \
-    qml/Minimap.qml
+    qml/Minimap.qml \
+    qml/Welcome/WelcomePage.qml \
+    qml/Welcome/WelcomePageForm.ui.qml \
+    qml/Welcome/ExamplePage.qml \
+    qml/Welcome/ExamplePageForm.ui.qml \
+    qml/Welcome/HelpPage.qml \
+    qml/Welcome/HelpPageForm.ui.qml \
+    qml/Welcome/ProjectPage.qml \
+    qml/Welcome/ProjectPageForm.ui.qml \
+    qml/Welcome/SettingsPage.qml \
+    qml/Welcome/SettingsPageForm.ui.qml
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
     ANDROID_EXTRA_LIBS = \

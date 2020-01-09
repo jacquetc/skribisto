@@ -304,6 +304,8 @@ void PLMSheetListProxyModel::loadProjectSettings(int projectId)
     settings.beginGroup("project_" + unique_identifier);
     int writeCurrentParent = settings.value("writeCurrentParent", 0).toInt();
     this->setParentFilter(projectId, writeCurrentParent);
+    int writeCurrentIndex = settings.value("writeCurrentPaper", 0).toInt();
+    this->setForcedCurrentIndex(writeCurrentIndex);
     settings.endGroup();
 }
 
@@ -312,6 +314,10 @@ void PLMSheetListProxyModel::loadProjectSettings(int projectId)
 
 void PLMSheetListProxyModel::saveProjectSettings(int projectId)
 {
+    if(m_projectIdFilter != projectId){
+    return;
+    }
+
     QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
     settings.beginGroup("project_" + unique_identifier);
