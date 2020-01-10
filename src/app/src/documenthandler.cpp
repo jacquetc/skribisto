@@ -73,6 +73,7 @@ void DocumentHandler::setCursorPosition(int position)
     m_nextFormat     = m_textCursor.charFormat();
 
     emit formatChanged();
+    emit cursorPositionChanged();
 }
 
 int DocumentHandler::selectionStart() const
@@ -365,6 +366,11 @@ void DocumentHandler::setId(const int projectId, const int paperId)
 int DocumentHandler::projectId() const
 {
     return m_projectId;
+}
+
+int DocumentHandler::maxCursorPosition() const
+{
+    return m_textDoc->textDocument()->characterCount();
 }
 
 void DocumentHandler::indentBlock()

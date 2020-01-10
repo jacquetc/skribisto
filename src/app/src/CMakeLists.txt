@@ -20,7 +20,8 @@ set(app_SRCS
 main.cpp
 documenthandler.h
 documenthandler.cpp
-
+skrusersettings.h
+skrusersettings.cpp
 )
 
 set(QML qml.qrc

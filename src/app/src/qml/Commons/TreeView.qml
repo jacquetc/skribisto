@@ -37,7 +37,7 @@ TreeViewForm {
         icon {
             name: "go-parent-folder"
         }
-        enabled: root.visible
+        enabled: root.visible & currentParent < -1
         onTriggered: {
             currentParent = proxyModel.goUp()
             listView.currentIndex = proxyModel.getLastOfHistory(currentProject)
@@ -163,6 +163,13 @@ TreeViewForm {
     }
 
     //----------------------------------------------------------------------------
+
+    // focus :
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            listView.forceActiveFocus()
+        }
+    }
 
     //----------------------------------------------------------------------------
 

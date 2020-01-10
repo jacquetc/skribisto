@@ -1,6 +1,5 @@
 import QtQuick 2.12
-import QtQuick.Controls 2.4
-import QtQuick.Controls.Universal 2.2
+import QtQuick.Controls 2.12
 import Qt.labs.settings 1.1
 
 RootPageForm {
@@ -63,13 +62,13 @@ RootPageForm {
 
             ToolButton {
                 id: write_button
-                //flat: true
+                flat: true
                 height: menuButtonsflow.buttonSize
                 width: menuButtonsflow.buttonSize
                 display: AbstractButton.IconOnly
                 action: writeWindowAction
                 icon {
-                    color: "transparent"
+                    //color: "transparent"
                     height: 100
                     width: 100
                 }
@@ -83,7 +82,7 @@ RootPageForm {
 
             ToolButton {
                 id: note_button
-                //flat: true
+                flat: true
                 height: menuButtonsflow.buttonSize
                 width: menuButtonsflow.buttonSize
                 display: AbstractButton.IconOnly
@@ -103,7 +102,7 @@ RootPageForm {
 
             ToolButton {
                 id: gallery_button
-                //flat: true
+                flat: true
                 height: menuButtonsflow.buttonSize
                 width: menuButtonsflow.buttonSize
                 display: AbstractButton.IconOnly
@@ -144,20 +143,19 @@ RootPageForm {
 
     ActionGroup {
         id: windowGroup
+        exclusive: true
         Action {
             id: welcomeWindowAction
             text: qsTr("Welcome")
             icon {
-                name: "welcome-icon"
-                source: "qrc:/pics/skribisto.svg"
+                //                source: "qrc:/pics/skribisto.svg"
                 color: "transparent"
                 height: 100
                 width: 100
             }
 
-            shortcut: "F4"
+            shortcut: "F5"
             checkable: true
-            checked: true
             onTriggered: {
                 root_stack.currentIndex = 0
                 welcomePage.forceActiveFocus()
@@ -173,9 +171,12 @@ RootPageForm {
                 width: 100
             }
 
-            shortcut: "F5"
+            shortcut: "F6"
             checkable: true
-            onTriggered: root_stack.currentIndex = 1
+            onTriggered: {
+                root_stack.currentIndex = 1
+                writePage.forceActiveFocus()
+            }
         }
 
         Action {
@@ -189,9 +190,12 @@ RootPageForm {
                 width: 100
             }
 
-            shortcut: "F6"
+            shortcut: "F7"
             checkable: true
-            onTriggered: root_stack.currentIndex = 2
+            onTriggered: {
+                root_stack.currentIndex = 2
+                notesPage.forceActiveFocus()
+            }
         }
 
         Action {
@@ -205,7 +209,7 @@ RootPageForm {
                 width: 100
             }
 
-            shortcut: "F7"
+            shortcut: "F8"
             checkable: true
             onTriggered: root_stack.currentIndex = 1
         }
@@ -220,7 +224,7 @@ RootPageForm {
                 width: 100
             }
 
-            shortcut: "F6"
+            shortcut: "F9"
             checkable: true
             onTriggered: root_stack.currentIndex = 1
         }

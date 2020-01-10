@@ -95,6 +95,8 @@ public:
 
     int                 projectId() const;
 
+    Q_INVOKABLE int     maxCursorPosition() const;
+
 public slots:
 
     void addHorizontalLine();

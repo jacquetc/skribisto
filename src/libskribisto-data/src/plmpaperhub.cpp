@@ -13,9 +13,9 @@
 PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName)
     : QObject(parent), m_tableName(tableName), m_last_added_id(-1)
 {
-    qRegisterMetaType<Setting>(         "Setting");
-    qRegisterMetaType<Stack>(           "Stack");
-    qRegisterMetaType<OpenedDocSetting>("OpenedDocSetting");
+//    qRegisterMetaType<Setting>(         "Setting");
+//    qRegisterMetaType<Stack>(           "Stack");
+//    qRegisterMetaType<OpenedDocSetting>("OpenedDocSetting");
 
     // connection for 'getxxx' functions to have a way to get errors.
     connect(this,
@@ -496,64 +496,64 @@ PLMError PLMPaperHub::set(int             projectId,
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setSetting(int             projectId,
-                                 const QString & fieldName,
-                                 const QVariant& value,
-                                 bool            setCurrentDateBool)
-{
-    PLMError error;
-    PLMSqlQueries queries(projectId,
-                          "tbl_user_" + m_paperType + "_setting");
+//PLMError PLMPaperHub::setSetting(int             projectId,
+//                                 const QString & fieldName,
+//                                 const QVariant& value,
+//                                 bool            setCurrentDateBool)
+//{
+//    PLMError error;
+//    PLMSqlQueries queries(projectId,
+//                          "tbl_user_" + m_paperType + "_setting");
 
-    queries.beginTransaction();
-    error = queries.set(1, fieldName, value);
+//    queries.beginTransaction();
+//    error = queries.set(1, fieldName, value);
 
-    if (setCurrentDateBool) {
-        IFOKDO(error, queries.setCurrentDate(1, "dt_updated"));
-    }
+//    if (setCurrentDateBool) {
+//        IFOKDO(error, queries.setCurrentDate(1, "dt_updated"));
+//    }
 
-    IFKO(error) {
-        queries.rollback();
-    }
-    IFOK(error) {
-        queries.commit();
-    }
-    IFKO(error) {
-        emit errorSent(error);
-    }
-    return error;
-}
+//    IFKO(error) {
+//        queries.rollback();
+//    }
+//    IFOK(error) {
+//        queries.commit();
+//    }
+//    IFKO(error) {
+//        emit errorSent(error);
+//    }
+//    return error;
+//}
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setDocSetting(int             projectId,
-                                    int             paperId,
-                                    const QString & fieldName,
-                                    const QVariant& value,
-                                    bool            setCurrentDateBool)
-{
-    PLMError error;
-    PLMSqlQueries queries(projectId,
-                          "tbl_user_" + m_paperType + "_doc_list");
+//PLMError PLMPaperHub::setDocSetting(int             projectId,
+//                                    int             paperId,
+//                                    const QString & fieldName,
+//                                    const QVariant& value,
+//                                    bool            setCurrentDateBool)
+//{
+//    PLMError error;
+//    PLMSqlQueries queries(projectId,
+//                          "tbl_user_" + m_paperType + "_doc_list");
 
-    queries.beginTransaction();
-    error = queries.set(paperId, fieldName, value);
+//    queries.beginTransaction();
+//    error = queries.set(paperId, fieldName, value);
 
-    if (setCurrentDateBool) {
-        IFOKDO(error, queries.setCurrentDate(1, "dt_updated"));
-    }
+//    if (setCurrentDateBool) {
+//        IFOKDO(error, queries.setCurrentDate(1, "dt_updated"));
+//    }
 
-    IFKO(error) {
-        queries.rollback();
-    }
-    IFOK(error) {
-        queries.commit();
-    }
-    IFKO(error) {
-        emit errorSent(error);
-    }
-    return error;
-}
+//    IFKO(error) {
+//        queries.rollback();
+//    }
+//    IFOK(error) {
+//        queries.commit();
+//    }
+//    IFKO(error) {
+//        emit errorSent(error);
+//    }
+//    return error;
+//}
 
 // ------------------------------------------------------------
 
@@ -578,45 +578,45 @@ QVariant PLMPaperHub::get(int projectId, int paperId, const QString& fieldName) 
 // ------------------------------------------------------------
 
 
-QVariant PLMPaperHub::getSetting(int projectId, const QString& fieldName) const
-{
-    PLMError error;
-    QVariant var;
-    QVariant result;
-    PLMSqlQueries queries(projectId,
-                          "tbl_user_" + m_paperType + "_setting");
+//QVariant PLMPaperHub::getSetting(int projectId, const QString& fieldName) const
+//{
+//    PLMError error;
+//    QVariant var;
+//    QVariant result;
+//    PLMSqlQueries queries(projectId,
+//                          "tbl_user_" + m_paperType + "_setting");
 
-    error = queries.get(1, fieldName, var);
-    IFOK(error) {
-        result = var;
-    }
-    IFKO(error) {
-        emit errorSent(error);
-    }
-    return result;
-}
+//    error = queries.get(1, fieldName, var);
+//    IFOK(error) {
+//        result = var;
+//    }
+//    IFKO(error) {
+//        emit errorSent(error);
+//    }
+//    return result;
+//}
 
-// ------------------------------------------------------------
+//// ------------------------------------------------------------
 
 
-QVariant PLMPaperHub::getDocSetting(int projectId, int paperId,
-                                    const QString& fieldName) const
-{
-    PLMError error;
-    QVariant var;
-    QVariant result;
-    PLMSqlQueries queries(projectId,
-                          "tbl_user_" + m_paperType + "_doc_list");
+//QVariant PLMPaperHub::getDocSetting(int projectId, int paperId,
+//                                    const QString& fieldName) const
+//{
+//    PLMError error;
+//    QVariant var;
+//    QVariant result;
+//    PLMSqlQueries queries(projectId,
+//                          "tbl_user_" + m_paperType + "_doc_list");
 
-    error = queries.get(paperId, fieldName, var);
-    IFOK(error) {
-        result = var;
-    }
-    IFKO(error) {
-        emit errorSent(error);
-    }
-    return result;
-}
+//    error = queries.get(paperId, fieldName, var);
+//    IFOK(error) {
+//        result = var;
+//    }
+//    IFKO(error) {
+//        emit errorSent(error);
+//    }
+//    return result;
+//}
 
 // -----------------------------------------------------------------------------
 
@@ -1262,213 +1262,213 @@ PLMError PLMPaperHub::movePaperDown(int projectId, int paperId)
 
 // -----------------------------------------------------------------------------
 
-PLMError PLMPaperHub::settings_setStackSetting(PLMPaperHub::Stack   stack,
-                                               PLMPaperHub::Setting setting,
-                                               const QVariant     & value)
-{
-    PLMError error;
+//PLMError PLMPaperHub::settings_setStackSetting(PLMPaperHub::Stack   stack,
+//                                               PLMPaperHub::Setting setting,
+//                                               const QVariant     & value)
+//{
+//    PLMError error;
 
-    foreach(int projectId, plmProjectManager->projectIdList()) {
-        if (setting == PLMPaperHub::SplitterState) {
-            error = setSetting(projectId, "m_splitter_state", value, true);
-        }
+//    foreach(int projectId, plmProjectManager->projectIdList()) {
+//        if (setting == PLMPaperHub::SplitterState) {
+//            error = setSetting(projectId, "m_splitter_state", value, true);
+//        }
 
-        if (setting == PLMPaperHub::WindowState) {
-            error = setSetting(projectId, "m_window_state", value, true);
-        }
+//        if (setting == PLMPaperHub::WindowState) {
+//            error = setSetting(projectId, "m_window_state", value, true);
+//        }
 
-        if (setting == PLMPaperHub::SettingDate) {
-            error = setSetting(projectId, "dt_updated", value, true);
-        }
+//        if (setting == PLMPaperHub::SettingDate) {
+//            error = setSetting(projectId, "dt_updated", value, true);
+//        }
 
-        if (setting == PLMPaperHub::Minimap) {
-            if (stack == PLMPaperHub::Zero) {
-                error = setSetting(projectId, "b_stack_0_map", value, true);
-            }
+//        if (setting == PLMPaperHub::Minimap) {
+//            if (stack == PLMPaperHub::Zero) {
+//                error = setSetting(projectId, "b_stack_0_map", value, true);
+//            }
 
-            if (stack == PLMPaperHub::One) {
-                error = setSetting(projectId, "b_stack_1_map", value, true);
-            }
-        }
+//            if (stack == PLMPaperHub::One) {
+//                error = setSetting(projectId, "b_stack_1_map", value, true);
+//            }
+//        }
 
-        if (setting == PLMPaperHub::Fit) {
-            if (stack == PLMPaperHub::Zero) {
-                error = setSetting(projectId, "b_stack_0_fit", value, true);
-            }
+//        if (setting == PLMPaperHub::Fit) {
+//            if (stack == PLMPaperHub::Zero) {
+//                error = setSetting(projectId, "b_stack_0_fit", value, true);
+//            }
 
-            if (stack == PLMPaperHub::One) {
-                error = setSetting(projectId, "b_stack_1_fit", value, true);
-            }
-        }
+//            if (stack == PLMPaperHub::One) {
+//                error = setSetting(projectId, "b_stack_1_fit", value, true);
+//            }
+//        }
 
-        if (setting == PLMPaperHub::SpellCheck) {
-            if (stack == PLMPaperHub::Zero) {
-                error = setSetting(projectId, "b_stack_0_spellcheck", value, true);
-            }
+//        if (setting == PLMPaperHub::SpellCheck) {
+//            if (stack == PLMPaperHub::Zero) {
+//                error = setSetting(projectId, "b_stack_0_spellcheck", value, true);
+//            }
 
-            if (stack == PLMPaperHub::One) {
-                error = setSetting(projectId, "b_stack_1_spellcheck", value, true);
-            }
-        }
+//            if (stack == PLMPaperHub::One) {
+//                error = setSetting(projectId, "b_stack_1_spellcheck", value, true);
+//            }
+//        }
 
-        if (setting == PLMPaperHub::StackState) {
-            if (stack == PLMPaperHub::Zero) {
-                error = setSetting(projectId, "b_stack_0_state", value, true);
-            }
+//        if (setting == PLMPaperHub::StackState) {
+//            if (stack == PLMPaperHub::Zero) {
+//                error = setSetting(projectId, "b_stack_0_state", value, true);
+//            }
 
-            if (stack == PLMPaperHub::One) {
-                error = setSetting(projectId, "b_stack_1_state", value, true);
-            }
-        }
-    }
+//            if (stack == PLMPaperHub::One) {
+//                error = setSetting(projectId, "b_stack_1_state", value, true);
+//            }
+//        }
+//    }
 
-    IFOK(error) {
-        emit settings_settingChanged(stack, setting, value);
-    }
-    return error;
-}
+//    IFOK(error) {
+//        emit settings_settingChanged(stack, setting, value);
+//    }
+//    return error;
+//}
 
-// -----------------------------------------------------------------------------
+//// -----------------------------------------------------------------------------
 
-QVariant PLMPaperHub::settings_getStackSetting(PLMPaperHub::Stack   stack,
-                                               PLMPaperHub::Setting setting) const
-{
-    int projectId = plmProjectManager->projectIdList().first();
-    QVariant value;
+//QVariant PLMPaperHub::settings_getStackSetting(PLMPaperHub::Stack   stack,
+//                                               PLMPaperHub::Setting setting) const
+//{
+//    int projectId = plmProjectManager->projectIdList().first();
+//    QVariant value;
 
-    if (setting == PLMPaperHub::SplitterState) {
-        value = getSetting(projectId, "m_splitter_state");
-    }
+//    if (setting == PLMPaperHub::SplitterState) {
+//        value = getSetting(projectId, "m_splitter_state");
+//    }
 
-    if (setting == PLMPaperHub::WindowState) {
-        value = getSetting(projectId, "m_window_state");
-    }
+//    if (setting == PLMPaperHub::WindowState) {
+//        value = getSetting(projectId, "m_window_state");
+//    }
 
-    if (setting == PLMPaperHub::SettingDate) {
-        value = getSetting(projectId, "dt_updated");
-    }
+//    if (setting == PLMPaperHub::SettingDate) {
+//        value = getSetting(projectId, "dt_updated");
+//    }
 
-    if (setting == PLMPaperHub::Minimap) {
-        if (stack == PLMPaperHub::Zero) {
-            value = getSetting(projectId, "b_stack_0_map");
-        }
+//    if (setting == PLMPaperHub::Minimap) {
+//        if (stack == PLMPaperHub::Zero) {
+//            value = getSetting(projectId, "b_stack_0_map");
+//        }
 
-        if (stack == PLMPaperHub::One) {
-            value = getSetting(projectId, "b_stack_1_map");
-        }
-    }
+//        if (stack == PLMPaperHub::One) {
+//            value = getSetting(projectId, "b_stack_1_map");
+//        }
+//    }
 
-    if (setting == PLMPaperHub::Fit) {
-        if (stack == PLMPaperHub::Zero) {
-            value = getSetting(projectId, "b_stack_0_fit");
-        }
+//    if (setting == PLMPaperHub::Fit) {
+//        if (stack == PLMPaperHub::Zero) {
+//            value = getSetting(projectId, "b_stack_0_fit");
+//        }
 
-        if (stack == PLMPaperHub::One) {
-            value = getSetting(projectId, "b_stack_1_fit");
-        }
-    }
+//        if (stack == PLMPaperHub::One) {
+//            value = getSetting(projectId, "b_stack_1_fit");
+//        }
+//    }
 
-    if (setting == PLMPaperHub::SpellCheck) {
-        if (stack == PLMPaperHub::Zero) {
-            value = getSetting(projectId, "b_stack_0_spellcheck");
-        }
+//    if (setting == PLMPaperHub::SpellCheck) {
+//        if (stack == PLMPaperHub::Zero) {
+//            value = getSetting(projectId, "b_stack_0_spellcheck");
+//        }
 
-        if (stack == PLMPaperHub::One) {
-            value = getSetting(projectId, "b_stack_1_spellcheck");
-        }
-    }
+//        if (stack == PLMPaperHub::One) {
+//            value = getSetting(projectId, "b_stack_1_spellcheck");
+//        }
+//    }
 
-    if (setting == PLMPaperHub::StackState) {
-        if (stack == PLMPaperHub::Zero) {
-            value = getSetting(projectId, "b_stack_0_state");
-        }
+//    if (setting == PLMPaperHub::StackState) {
+//        if (stack == PLMPaperHub::Zero) {
+//            value = getSetting(projectId, "b_stack_0_state");
+//        }
 
-        if (stack == PLMPaperHub::One) {
-            value = getSetting(projectId, "b_stack_1_state");
-        }
-    }
+//        if (stack == PLMPaperHub::One) {
+//            value = getSetting(projectId, "b_stack_1_state");
+//        }
+//    }
 
-    return value;
-}
+//    return value;
+//}
 
-// -----------------------------------------------------------------------------
+//// -----------------------------------------------------------------------------
 
-PLMError PLMPaperHub::settings_setDocSetting(int                           projectId,
-                                             int                           paperId,
-                                             PLMPaperHub::OpenedDocSetting setting,
-                                             const QVariant              & value)
-{
-    PLMError error;
+//PLMError PLMPaperHub::settings_setDocSetting(int                           projectId,
+//                                             int                           paperId,
+//                                             PLMPaperHub::OpenedDocSetting setting,
+//                                             const QVariant              & value)
+//{
+//    PLMError error;
 
-    if (setting == PLMPaperHub::StackNumber) {
-        error = setDocSetting(projectId, paperId, "l_statck", value, true);
-    }
+//    if (setting == PLMPaperHub::StackNumber) {
+//        error = setDocSetting(projectId, paperId, "l_statck", value, true);
+//    }
 
-    if (setting == PLMPaperHub::Hovering) {
-        error = setDocSetting(projectId, paperId, "b_hovering", value, true);
-    }
+//    if (setting == PLMPaperHub::Hovering) {
+//        error = setDocSetting(projectId, paperId, "b_hovering", value, true);
+//    }
 
-    if (setting == PLMPaperHub::Visible) {
-        error = setDocSetting(projectId, paperId, "b_visible", value, true);
-    }
+//    if (setting == PLMPaperHub::Visible) {
+//        error = setDocSetting(projectId, paperId, "b_visible", value, true);
+//    }
 
-    if (setting == PLMPaperHub::HasFocus) {
-        error = setDocSetting(projectId, paperId, "b_has_focus", value, true);
-    }
+//    if (setting == PLMPaperHub::HasFocus) {
+//        error = setDocSetting(projectId, paperId, "b_has_focus", value, true);
+//    }
 
-    if (setting == PLMPaperHub::CursorPosition) {
-        error = setDocSetting(projectId, paperId, "l_cursor_pos", value, true);
-    }
+//    if (setting == PLMPaperHub::CursorPosition) {
+//        error = setDocSetting(projectId, paperId, "l_cursor_pos", value, true);
+//    }
 
-    if (setting == PLMPaperHub::HoveringGeometry) {
-        error = setDocSetting(projectId, paperId, "m_geometry", value, true);
-    }
+//    if (setting == PLMPaperHub::HoveringGeometry) {
+//        error = setDocSetting(projectId, paperId, "m_geometry", value, true);
+//    }
 
-    if (setting == PLMPaperHub::Date) {
-        error = setDocSetting(projectId, paperId, "dt_updated", value, true);
-    }
+//    if (setting == PLMPaperHub::Date) {
+//        error = setDocSetting(projectId, paperId, "dt_updated", value, true);
+//    }
 
-    IFOK(error) {
-        emit settings_docSettingChanged(projectId, paperId, setting, value);
-    }
-    return error;
-}
+//    IFOK(error) {
+//        emit settings_docSettingChanged(projectId, paperId, setting, value);
+//    }
+//    return error;
+//}
 
-// -----------------------------------------------------------------------------
+//// -----------------------------------------------------------------------------
 
-QVariant PLMPaperHub::settings_getDocSetting(int                           projectId,
-                                             int                           paperId,
-                                             PLMPaperHub::OpenedDocSetting setting) const
-{
-    QVariant value;
+//QVariant PLMPaperHub::settings_getDocSetting(int                           projectId,
+//                                             int                           paperId,
+//                                             PLMPaperHub::OpenedDocSetting setting) const
+//{
+//    QVariant value;
 
-    if (setting == PLMPaperHub::StackNumber) {
-        value = getDocSetting(projectId, paperId, "l_statck");
-    }
+//    if (setting == PLMPaperHub::StackNumber) {
+//        value = getDocSetting(projectId, paperId, "l_statck");
+//    }
 
-    if (setting == PLMPaperHub::Hovering) {
-        value = getDocSetting(projectId, paperId, "b_hovering");
-    }
+//    if (setting == PLMPaperHub::Hovering) {
+//        value = getDocSetting(projectId, paperId, "b_hovering");
+//    }
 
-    if (setting == PLMPaperHub::Visible) {
-        value = getDocSetting(projectId, paperId, "b_visible");
-    }
+//    if (setting == PLMPaperHub::Visible) {
+//        value = getDocSetting(projectId, paperId, "b_visible");
+//    }
 
-    if (setting == PLMPaperHub::HasFocus) {
-        value = getDocSetting(projectId, paperId, "b_has_focus");
-    }
+//    if (setting == PLMPaperHub::HasFocus) {
+//        value = getDocSetting(projectId, paperId, "b_has_focus");
+//    }
 
-    if (setting == PLMPaperHub::CursorPosition) {
-        value = getDocSetting(projectId, paperId, "l_cursor_pos");
-    }
+//    if (setting == PLMPaperHub::CursorPosition) {
+//        value = getDocSetting(projectId, paperId, "l_cursor_pos");
+//    }
 
-    if (setting == PLMPaperHub::HoveringGeometry) {
-        value = getDocSetting(projectId, paperId, "m_geometry");
-    }
+//    if (setting == PLMPaperHub::HoveringGeometry) {
+//        value = getDocSetting(projectId, paperId, "m_geometry");
+//    }
 
-    if (setting == PLMPaperHub::Date) {
-        value = getDocSetting(projectId, paperId, "dt_updated");
-    }
+//    if (setting == PLMPaperHub::Date) {
+//        value = getDocSetting(projectId, paperId, "dt_updated");
+//    }
 
-    return value;
-}
+//    return value;
+//}

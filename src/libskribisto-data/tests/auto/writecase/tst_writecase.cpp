@@ -426,8 +426,10 @@ void WriteCase::getSheetTag()
 
 void WriteCase::setSheetTag()
 {
-    //TODO: setSheetTag test
-    QCOMPARE(true, false);
+   plmdata->sheetPropertyHub()->setProperty(m_currentProjectId, 1, "tag", "new");
+    QString value = plmdata->sheetPropertyHub()->getProperty(m_currentProjectId, 1, "tag");
+    QCOMPARE(value, "new");
+
 
 }
 

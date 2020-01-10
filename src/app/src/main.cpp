@@ -28,6 +28,7 @@ using namespace std;
 #include "models/plmsheetlistproxymodel.h"
 #include "models/plmnotelistproxymodel.h"
 #include "models/plmmodels.h"
+#include "skrusersettings.h"
 
 #ifdef QT_DEBUG
 #include <QQmlDebuggingEnabler>
@@ -233,6 +234,11 @@ int main(int argc, char *argv[])
                                      1,
                                      0,
                                      "DocumentHandler");
+
+    qmlRegisterType<SkrUserSettings>("eu.skribisto.skrusersettings",
+                                     1,
+                                     0,
+                                     "SkrUserSettings");
 
     QQmlApplicationEngine engine(qApp);
 

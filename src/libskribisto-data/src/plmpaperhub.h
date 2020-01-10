@@ -35,16 +35,17 @@ class EXPORT PLMPaperHub : public QObject {
 
 public:
 
+    //TODO: clean all settings
     // settings
-    enum Setting { SplitterState, Minimap, Fit, SpellCheck, StackState, WindowState, SettingDate };
-    Q_ENUM(Setting)
-    enum Stack { Zero, One };
-    Q_ENUM(Stack)
+//    enum Setting { SplitterState, Minimap, Fit, SpellCheck, StackState, WindowState, SettingDate };
+//    Q_ENUM(Setting)
+//    enum Stack { Zero, One };
+//    Q_ENUM(Stack)
 
-    // opened docs list
-    enum OpenedDocSetting { SheetId, StackNumber, Hovering, Visible, HasFocus,
-                            CursorPosition, HoveringGeometry, Date };
-    Q_ENUM(OpenedDocSetting)
+//    // opened docs list
+//    enum OpenedDocSetting { SheetId, StackNumber, Hovering, Visible, HasFocus,
+//                            CursorPosition, HoveringGeometry, Date };
+//    Q_ENUM(OpenedDocSetting)
 
     explicit PLMPaperHub(QObject       *parent,
                          const QString& tableName);
@@ -130,21 +131,21 @@ public:
     PLMError movePaperDown(int projectId, int paperId);
 
 
-    // settings :
-    PLMError settings_setStackSetting(Stack           stack,
-                                      Setting         setting,
-                                      const QVariant& value);
-    QVariant settings_getStackSetting(Stack   stack,
-                                      Setting setting) const;
+//    // settings :
+//    PLMError settings_setStackSetting(Stack           stack,
+//                                      Setting         setting,
+//                                      const QVariant& value);
+//    QVariant settings_getStackSetting(Stack   stack,
+//                                      Setting setting) const;
 
-    // opened docs settings :
-    PLMError settings_setDocSetting(int              projectId,
-                                    int              paperId,
-                                    OpenedDocSetting setting,
-                                    const QVariant & value);
-    QVariant settings_getDocSetting(int              projectId,
-                                    int              paperId,
-                                    OpenedDocSetting setting) const;
+//    // opened docs settings :
+//    PLMError settings_setDocSetting(int              projectId,
+//                                    int              paperId,
+//                                    OpenedDocSetting setting,
+//                                    const QVariant & value);
+//    QVariant settings_getDocSetting(int              projectId,
+//                                    int              paperId,
+//                                    OpenedDocSetting setting) const;
 
     //    QList<int>getParentList(int projectId,
     //                            int paperId) const;
@@ -162,21 +163,21 @@ public:
     int getValidSortOrderAfterPaper(int projectId, int paperId) const;
 private:
 
-    PLMError setSetting(int             projectId,
-                        const QString & fieldName,
-                        const QVariant& value,
-                        bool            setCurrentDateBool);
-    QVariant getSetting(int            projectId,
-                        const QString& fieldName) const;
+//    PLMError setSetting(int             projectId,
+//                        const QString & fieldName,
+//                        const QVariant& value,
+//                        bool            setCurrentDateBool);
+//    QVariant getSetting(int            projectId,
+//                        const QString& fieldName) const;
 
-    PLMError setDocSetting(int             projectId,
-                           int             paperId,
-                           const QString & fieldName,
-                           const QVariant& value,
-                           bool            setCurrentDateBool);
-    QVariant getDocSetting(int            projectId,
-                           int            paperId,
-                           const QString& fieldName) const;
+//    PLMError setDocSetting(int             projectId,
+//                           int             paperId,
+//                           const QString & fieldName,
+//                           const QVariant& value,
+//                           bool            setCurrentDateBool);
+//    QVariant getDocSetting(int            projectId,
+//                           int            paperId,
+//                           const QString& fieldName) const;
 
 private slots:
 
@@ -220,13 +221,13 @@ signals:
 
 
     // settings :
-    void settings_settingChanged(PLMPaperHub::Stack   stack,
-                                 PLMPaperHub::Setting setting,
-                                 const QVariant     & newValue);
-    void settings_docSettingChanged(int                           projectId,
-                                    int                           paperId,
-                                    PLMPaperHub::OpenedDocSetting setting,
-                                    const QVariant              & newValue);
+//    void settings_settingChanged(PLMPaperHub::Stack   stack,
+//                                 PLMPaperHub::Setting setting,
+//                                 const QVariant     & newValue);
+//    void settings_docSettingChanged(int                           projectId,
+//                                    int                           paperId,
+//                                    PLMPaperHub::OpenedDocSetting setting,
+//                                    const QVariant              & newValue);
 
 public slots:
 

@@ -93,3 +93,7 @@ CMakeLists.txt.user
 
 #cmake
 CMakeLists.txt.user.*
+
+#kdevelop
+.kdev4/
+.kdev4 
