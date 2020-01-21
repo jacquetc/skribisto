@@ -45,7 +45,7 @@ NotesLeftDockForm {
             width: 50
         }
 
-        shortcut: "F5"
+        shortcut: "F11"
         checkable: true
         checked: true
 

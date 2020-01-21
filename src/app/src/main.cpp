@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
 {
 #ifdef QT_DEBUG
     QQmlDebuggingEnabler enabler;
+    //QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
 #endif //QT_DEBUG
 
     // Allows qml styling

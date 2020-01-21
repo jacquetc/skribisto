@@ -18,6 +18,8 @@ Item {
     property alias leftTouch1: leftTouch1
     property alias leftScrollTouchArea: leftScrollTouchArea
     property alias leftScrollMouseArea: leftScrollMouseArea
+    property alias rightScrollMouseArea: rightScrollMouseArea
+    property alias rightScrollTouchArea: rightScrollTouchArea
 
     Pane {
         id: pane
@@ -100,6 +102,24 @@ Item {
                     id: rightScrollItem
                     Layout.fillHeight: true
                     Layout.fillWidth: true
+                    MultiPointTouchArea {
+                        id: rightScrollTouchArea
+                        z: 1
+                        anchors.fill: parent
+                        mouseEnabled: false
+                        maximumTouchPoints: 1
+                        touchPoints: [
+                            TouchPoint {
+                                id: rightTouch1
+                            }
+                        ]
+                    }
+                    MouseArea {
+                        id: rightScrollMouseArea
+                        z: 0
+                        anchors.fill: parent
+
+                    }
                 }
             }
         }

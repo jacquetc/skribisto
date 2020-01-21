@@ -4,10 +4,17 @@ import QtQuick.Controls 2.12
 import Qt.labs.settings 1.1
 import eu.skribisto.sheetlistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
+import eu.skribisto.skrusersettings 1.0
 import ".."
 
 WriteLeftDockForm {
 
+
+    SkrUserSettings {
+        id: skrUserSettings
+    }
+
+    // fold :
     property bool folded: settings.dockFolded
     onFoldedChanged: folded ? fold() : unfold()
 
@@ -27,14 +34,35 @@ WriteLeftDockForm {
     //        implicitHeight: 4
     //    }
 
+
     //Navigation List :
     //-----------------------------------------------------------
+
     PLMSheetListProxyModel {
         id: proxyModel
     }
 
     treeView.model: proxyModel
     treeView.proxyModel: proxyModel
+
+    Connections {
+        target: Globals
+        onOpenSheetCalled: function (projectId, paperId) {
+
+            //TODO: find a way to change the parent filter
+
+           proxyModel.setCurrentPaperId(projectId, paperId)
+
+
+        }
+    }
+
+
+
+
+
+
+
 
     //-----------------------------------------------------------
 
@@ -56,7 +84,7 @@ WriteLeftDockForm {
             width: 50
         }
 
-        shortcut: "F5"
+        shortcut: "F11"
         checkable: true
         checked: true
 
@@ -85,6 +113,9 @@ WriteLeftDockForm {
         property bool treeViewFrameFolded: treeViewFrame.folded ? true : false
         property bool documentFrameFolded: documentFrame.folded ? true : false
     }
+
+
+
 
     //    PropertyAnimation {
     //        target: writeTreeViewFrame

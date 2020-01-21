@@ -48,8 +48,10 @@ public:
         HasChildrenRole  = Qt::UserRole + 11,
 
         // specific to sheets:
-        CharCountRole = Qt::UserRole + 12,
-        WordCountRole = Qt::UserRole + 13
+        CharCountRole = Qt::UserRole + 13,
+        WordCountRole = Qt::UserRole + 14
+
+
     };
     Q_ENUM(Roles)
 

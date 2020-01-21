@@ -180,7 +180,7 @@ PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
     int indent                       = this->indent();
     int possibleParentIndex          = index - 1;
 
-    if(plmdata->projectHub()->getProjectIdList().count() <= 1 && possibleParentIndex == -1){ // first of list, no parent possible
+    if(plmdata->projectHub()->getProjectIdList().count() <= 1 && possibleParentIndex == -1){ // first of list, so no parent
         return nullptr;
     }
 

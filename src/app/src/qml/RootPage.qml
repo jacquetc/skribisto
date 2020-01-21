@@ -48,16 +48,16 @@ RootPageForm {
                 ToolTip.visible: hovered
                 ToolTip.text: welcomeWindowAction.text
 
-                KeyNavigation.right: welcomePage
-                KeyNavigation.down: write_button
+//                KeyNavigation.right: welcomePage
+//                KeyNavigation.down: write_button
 
-                Accessible.role: Accessible.Button
-                Accessible.name: text
-                Accessible.description: qsTr("Switch to the Welcome page")
-                Accessible.onPressAction: {
-                    welcomeWindowAction.trigger()
-                    welcomePage.forceActiveFocus()
-                }
+//                Accessible.role: Accessible.Button
+//                Accessible.name: text
+//                Accessible.description: qsTr("Switch to the Welcome page")
+//                Accessible.onPressAction: {
+//                    welcomeWindowAction.trigger()
+//                    welcomePage.forceActiveFocus()
+//                }
             }
 
             ToolButton {
@@ -144,11 +144,12 @@ RootPageForm {
     ActionGroup {
         id: windowGroup
         exclusive: true
+
         Action {
             id: welcomeWindowAction
             text: qsTr("Welcome")
             icon {
-                //                source: "qrc:/pics/skribisto.svg"
+                source: "qrc:/pics/skribisto.svg"
                 color: "transparent"
                 height: 100
                 width: 100
@@ -161,7 +162,6 @@ RootPageForm {
                 welcomePage.forceActiveFocus()
             }
         }
-
         Action {
             id: writeWindowAction
             text: qsTr("Write")
@@ -184,7 +184,6 @@ RootPageForm {
             text: qsTr("Notes")
             icon {
                 name: "document-edit"
-                source: "qrc:/pics/skribisto.svg"
                 color: "transparent"
                 height: 100
                 width: 100
@@ -203,7 +202,6 @@ RootPageForm {
             text: qsTr("Gallery")
             icon {
                 name: "document-edit"
-                source: "qrc:/pics/skribisto.svg"
                 color: "transparent"
                 height: 100
                 width: 100

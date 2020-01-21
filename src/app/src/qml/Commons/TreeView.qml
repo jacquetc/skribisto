@@ -18,6 +18,7 @@ TreeViewForm {
     signal addAfter(int projectId, int paperId)
     property int currentParent: -2
     property int currentProject: -2
+    property int currentIndex: listView.currentIndex
 
     listView.model: visualModel
     DelegateModel {
@@ -37,7 +38,7 @@ TreeViewForm {
         icon {
             name: "go-parent-folder"
         }
-        enabled: root.visible & currentParent < -1
+        enabled: root.visible & currentParent > (plmData.projectHub().getProjectCount() > 1 ? -1 : 0)
         onTriggered: {
             currentParent = proxyModel.goUp()
             listView.currentIndex = proxyModel.getLastOfHistory(currentProject)

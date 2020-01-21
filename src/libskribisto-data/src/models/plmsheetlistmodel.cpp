@@ -320,6 +320,7 @@ void PLMSheetListModel::populate()
     this->beginResetModel();
 
     m_allSheetItems.clear();
+
     foreach(int projectId, plmdata->projectHub()->getProjectIdList()) {
         if (plmdata->projectHub()->getProjectIdList().count() > 1) {
             PLMSheetItem *projectItem = new PLMSheetItem();
@@ -351,7 +352,7 @@ void PLMSheetListModel::exploitSignalFromPLMData(int                 projectId,
                                                  int                 paperId,
                                                  PLMSheetItem::Roles role)
 {
-    PLMSheetItem *item = this->findPaperItem(projectId, paperId);
+    PLMSheetItem *item = this->getItem(projectId, paperId);
 
     if (!item) {
         return;
@@ -447,7 +448,7 @@ void PLMSheetListModel::refreshAfterDataAddition(int projectId, int paperId)
     }
     else {
         int idBefore = idList.at(paperIndex - 1);
-        PLMSheetItem *itemBefore = this->findPaperItem(projectId, idBefore);
+        PLMSheetItem *itemBefore = this->getItem(projectId, idBefore);
 
         int indexBefore = m_allSheetItems.indexOf(itemBefore);
 
@@ -487,13 +488,13 @@ void PLMSheetListModel::refreshAfterDataMove(int sourceProjectId, int sourcePape
 
 
 
-    PLMSheetItem* sourceItem = this->findPaperItem(sourceProjectId, sourcePaperId);
+    PLMSheetItem* sourceItem = this->getItem(sourceProjectId, sourcePaperId);
 
     if(!sourceItem){
         qWarning() << "refreshAfterDataMove no sourceItem";
         return;
     }
-    PLMSheetItem* targetItem = this->findPaperItem(targetProjectId, targetPaperId);
+    PLMSheetItem* targetItem = this->getItem(targetProjectId, targetPaperId);
     if(!targetItem){
         qWarning() << "refreshAfterDataMove no targetItem";
         return;
@@ -559,27 +560,6 @@ void PLMSheetListModel::refreshAfterDataMove(int sourceProjectId, int sourcePape
 
 //--------------------------------------------------------------------
 
-PLMSheetItem * PLMSheetListModel::findPaperItem(int projectId, int paperId)
-{
-    QModelIndexList list =  this->match(this->index(0, 0,
-                                                    QModelIndex()),
-                                        PLMSheetItem::Roles::PaperIdRole,
-                                        paperId,
-                                        -1,
-                                        Qt::MatchFlag::MatchRecursive |
-                                        Qt::MatchFlag::MatchExactly |
-                                        Qt::MatchFlag::MatchWrap);
-    PLMSheetItem *item = nullptr;
-
-    for (const QModelIndex& modelIndex : list) {
-        PLMSheetItem *t = static_cast<PLMSheetItem *>(modelIndex.internalPointer());
-
-        if (t)
-            if (t->projectId() == projectId) item = t;
-    }
-
-    return item;
-}
 
 void PLMSheetListModel::connectToPLMDataSignals()
 {
@@ -723,5 +703,23 @@ QModelIndexList PLMSheetListModel::getModelIndex(int projectId, int paperId)
 PLMSheetItem *PLMSheetListModel::getParentSheetItem(PLMSheetItem *chidItem)
 {
     return chidItem->parent(m_allSheetItems);
+}
+
+PLMSheetItem *PLMSheetListModel::getItem(int projectId, int paperId)
+{
+    PLMSheetItem *result_item = nullptr;
+
+    for(PLMSheetItem *item : m_allSheetItems){
+        if(item->projectId() == projectId && item->paperId() == paperId){
+            result_item = item;
+            break;
+        }
+    }
+
+    if(!result_item){
+        qDebug() << "result_item is null";
+    }
+
+    return result_item;
 }
 

@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.12
 Item {
     width: 400
     height: 400
+    property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
     property alias gridLayout: gridLayout
 
     property alias open_project_button: open_project_button
@@ -114,6 +115,11 @@ Item {
                                 id: open_project_button
                                 text: qsTr("Open project")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                            }
+                            
+                            Switch {
+                                id: createEmpyProjectAtStartSwitch
+                                text: qsTr("Switch")
                             }
                         }
                     }

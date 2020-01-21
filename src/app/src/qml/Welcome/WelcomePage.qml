@@ -30,6 +30,22 @@ WelcomePageForm {
     function init() {
         //leftBase.onBaseWidthChanged.connect(changeLeftBaseWidth)
         //rightBase.onBaseWidthChanged.connect(changeRightBaseWidth)
+
+        //show Welcome window
+
+
+        //        if (!error.success) {
+        //            messageDialog.title = qsTr("")
+        //            messageDialog.text = qsTr("")
+        //            messageDialog.informativeText = "inf"
+        //            messageDialog.detailedText = "det"
+        //            messageDialog.visible = true
+        //        }
+
+
+
+        welcomeWindowAction.trigger()
+
         var arg
         var arguments
         arguments = Qt.application.arguments
@@ -39,19 +55,26 @@ WelcomePageForm {
                             testProjectFileName)
                 console.log("project loaded : " + error.success)
                 console.log("projectFileName :", testProjectFileName, "\n")
-            }
-        }
-        if (plmData.projectHub().getProjectCount() === 0) {
-            plmData.projectHub().loadProject("")
-        }
 
-        //        if (!error.success) {
-        //            messageDialog.title = qsTr("")
-        //            messageDialog.text = qsTr("")
-        //            messageDialog.informativeText = "inf"
-        //            messageDialog.detailedText = "det"
-        //            messageDialog.visible = true
-        //        }
+                //show Write window
+                writeWindowAction.trigger()
+                break
+            }
+//            else {
+//                var error = plmData.projectHub().loadProject(
+//                            arguments[0])
+//                //show Write window
+//                writeWindowAction.trigger()
+//                break
+//            }
+        }
+        if (plmData.projectHub().getProjectCount() === 0 & SkrSettings.welcomeSettings.createEmptyProjectAtStart === true) {
+            plmData.projectHub().loadProject("")
+
+            //show Write window
+            writeWindowAction.trigger()
+
+        }
     }
 
     onActiveFocusChanged: {

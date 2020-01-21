@@ -55,6 +55,7 @@ public:
     Q_INVOKABLE void moveUp(int projectId, int paperId, int visualIndex);
     Q_INVOKABLE void moveDown(int projectId, int paperId, int visualIndex);
     Q_INVOKABLE void setForcedCurrentIndex(int forcedCurrentIndex);
+    Q_INVOKABLE void setForcedCurrentIndex(int projectId, int paperId);
     Q_INVOKABLE bool hasChildren(int projectId, int paperId);
     Q_INVOKABLE int findVisualIndex(int projectId, int paperId);
 
@@ -62,6 +63,7 @@ public:
     Q_INVOKABLE void removeLastOfHistory(int projectId);
     Q_INVOKABLE void addHistory(int projectId, int paperId);
 
+    Q_INVOKABLE void setCurrentPaperId(int projectId, int paperId);
 signals:
     void projectIdFilterChanged(int projectIdFilter);
     void parentIdFilterChanged(int paperIdFilter);

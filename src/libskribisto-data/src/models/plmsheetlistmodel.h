@@ -46,6 +46,7 @@ public:
     QHash<int, QByteArray> roleNames() const override;
     QModelIndexList getModelIndex(int projectId, int paperId);
     PLMSheetItem *getParentSheetItem(PLMSheetItem *chidItem);
+    PLMSheetItem *getItem(int projectId, int paperId);
 
 private slots:
     void populate();
@@ -59,8 +60,6 @@ private slots:
 
     private:
 
-    PLMSheetItem* findPaperItem(int projectId,
-                                int paperId);
     void          connectToPLMDataSignals();
     void          disconnectFromPLMDataSignals();
 

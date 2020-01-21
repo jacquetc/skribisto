@@ -156,8 +156,10 @@ bool PLMSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
     else {
         result = false;
     }
-    QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
+    //QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
     //qDebug() << "result : " << string << result;
+
+
 
     return result;
 }
@@ -284,13 +286,15 @@ int PLMSheetListProxyModel::goUp()
 PLMSheetItem *PLMSheetListProxyModel::getItem(int projectId, int paperId)
 {
     PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
-    QModelIndexList modelIndexList = model->getModelIndex(projectId, paperId);
-    if(modelIndexList.isEmpty()){
-        return nullptr;
-    }
-    QModelIndex modelIndex = modelIndexList.first();
+//    QModelIndexList modelIndexList = model->getModelIndex(projectId, paperId);
+//    if(modelIndexList.isEmpty()){
+//        return nullptr;
+//    }
+//    QModelIndex modelIndex = modelIndexList.first();
 
-    PLMSheetItem *item = static_cast<PLMSheetItem *>(modelIndex.internalPointer());
+//    PLMSheetItem *item = static_cast<PLMSheetItem *>(modelIndex.internalPointer());
+
+    PLMSheetItem *item = model->getItem(projectId, paperId);
     return item;
 }
 
@@ -304,18 +308,16 @@ void PLMSheetListProxyModel::loadProjectSettings(int projectId)
     settings.beginGroup("project_" + unique_identifier);
     int writeCurrentParent = settings.value("writeCurrentParent", 0).toInt();
     this->setParentFilter(projectId, writeCurrentParent);
-    int writeCurrentIndex = settings.value("writeCurrentPaper", 0).toInt();
-    this->setForcedCurrentIndex(writeCurrentIndex);
     settings.endGroup();
-}
 
+}
 //--------------------------------------------------------------
 
 
 void PLMSheetListProxyModel::saveProjectSettings(int projectId)
 {
     if(m_projectIdFilter != projectId){
-    return;
+        return;
     }
 
     QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
@@ -335,6 +337,31 @@ void PLMSheetListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
 
 //--------------------------------------------------------------
 
+void PLMSheetListProxyModel::setForcedCurrentIndex(int projectId, int paperId)
+{
+    int forcedCurrentIndex = this->findVisualIndex(projectId, paperId);
+    setForcedCurrentIndex(forcedCurrentIndex);
+}
+
+//--------------------------------------------------------------
+
+void PLMSheetListProxyModel::setCurrentPaperId(int projectId, int paperId)
+{
+    PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
+    //prone to crash
+    PLMSheetItem *item = this->getItem(projectId, paperId);
+    PLMSheetItem *parentItem = model->getParentSheetItem(item);
+    if(parentItem){
+        this->setParentFilter(projectId, parentItem->paperId());
+    }
+    else {
+        this->setParentFilter(projectId, 0);
+    }
+    this->setForcedCurrentIndex(projectId, paperId);
+}
+
+//--------------------------------------------------------------
+
 bool PLMSheetListProxyModel::hasChildren(int projectId, int paperId)
 {
     return plmdata->sheetHub()->hasChildren(projectId, paperId);
@@ -344,25 +371,22 @@ bool PLMSheetListProxyModel::hasChildren(int projectId, int paperId)
 
 int PLMSheetListProxyModel::findVisualIndex(int projectId, int paperId)
 {
-    //    QModelIndexList list =  this->match(this->index(0, 0,
-    //                                                    QModelIndex()),
-    //                                        PLMSheetItem::Roles::PaperIdRole,
-    //                                        paperId,
-    //                                        -1,
-    //                                        Qt::MatchFlag::MatchRecursive |
-    //                                        Qt::MatchFlag::MatchExactly |
-    //                                        Qt::MatchFlag::MatchWrap);
-    //    int result = -2;
 
-    //    for (const QModelIndex& modelIndex : list) {
-    //        PLMSheetItem *t = static_cast<PLMSheetItem *>(modelIndex.internalPointer());
+    int rowCount = this->rowCount(QModelIndex());
 
-    //        if (t)
-    //            if (t->projectId() == projectId)
-    //                result = modelIndex.row();
-    //    }
+    int result = -2;
 
-    //    return result;
+    QModelIndex modelIndex;
+    for(int i = 0; i < rowCount ; ++i){
+        modelIndex = this->index(i, 0);
+        if(this->data(modelIndex, PLMSheetItem::Roles::ProjectIdRole).toInt() == projectId
+                && this->data(modelIndex, PLMSheetItem::Roles::PaperIdRole).toInt() == paperId){
+            result = i;
+            break;
+        }
+
+    }
+    return result;
 }
 
 int PLMSheetListProxyModel::getLastOfHistory(int projectId)

@@ -449,6 +449,22 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
 
     return false;
 }
+// ------------------------------------------------------------
+
+
+int PLMPaperHub::getTopPaperId(int projectId) const
+{
+    int result = -2;
+    QList<int> list = this->getAllIds(projectId);
+    for (int id : list){
+        if(!this->getDeleted(projectId, id)){
+            result = id;
+            break;
+        }
+    }
+
+    return result;
+}
 
 // ------------------------------------------------------------
 

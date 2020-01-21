@@ -96,6 +96,8 @@ PLMProject * PLMProjectManager::project(int projectId)
     if (!project) {
         // emit plmTaskError->errorSent("E_PROJECTMISSING", Q_FUNC_INFO, "No
         // project with the id " + QString::number(projectId));
+
+        qDebug() << "project not found : " << projectId;
     }
 
     return project;

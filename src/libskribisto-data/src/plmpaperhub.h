@@ -103,6 +103,8 @@ public:
     Q_INVOKABLE bool                            hasChildren(int projectId,
                                                    int paperId) const;
 
+    Q_INVOKABLE int                 getTopPaperId(int projectId) const;
+
     PLMError                        getError();
     PLMError                        set(int             projectId,
                                         int             paperId,

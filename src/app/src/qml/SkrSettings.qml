@@ -12,6 +12,16 @@ QtObject {
         }
     }
 
+    property Settings welcomeSettings: Settings{
+        category: "welcome"
+        property bool createEmptyProjectAtStart: false
 
+    }
+
+    property Settings writeSettings: Settings{
+        category: "write"
+        property int textWidth: Globals.width / 3
+
+    }
 
 }
