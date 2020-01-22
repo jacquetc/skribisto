@@ -41,5 +41,7 @@
         <file>qml/Commons/TreeListView.qml</file>
         <file>qml/Commons/DocumentListView.qml</file>
         <file>qml/Commons/DocumentListViewForm.ui.qml</file>
+        <file>qml/Write/WriteRightDock.qml</file>
+        <file>qml/Write/WriteRightDockForm.ui.qml</file>
     </qresource>
 </RCC>

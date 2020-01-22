@@ -306,8 +306,8 @@ void PLMSheetListProxyModel::loadProjectSettings(int projectId)
     QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
     settings.beginGroup("project_" + unique_identifier);
-    int writeCurrentParent = settings.value("writeCurrentParent", 0).toInt();
-    this->setParentFilter(projectId, writeCurrentParent);
+//    int writeCurrentParent = settings.value("writeCurrentParent", 0).toInt();
+//    this->setParentFilter(projectId, writeCurrentParent);
     settings.endGroup();
 
 }
@@ -323,7 +323,7 @@ void PLMSheetListProxyModel::saveProjectSettings(int projectId)
     QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
     settings.beginGroup("project_" + unique_identifier);
-    settings.setValue("writeCurrentParent", m_parentIdFilter);
+//    settings.setValue("writeCurrentParent", m_parentIdFilter);
     settings.endGroup();
 }
 
@@ -348,14 +348,18 @@ void PLMSheetListProxyModel::setForcedCurrentIndex(int projectId, int paperId)
 void PLMSheetListProxyModel::setCurrentPaperId(int projectId, int paperId)
 {
     PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
-    //prone to crash
     PLMSheetItem *item = this->getItem(projectId, paperId);
+    if(!item){
+        item = this->getItem(projectId, plmdata->sheetHub()->getTopPaperId(projectId));
+    }
+
+
     PLMSheetItem *parentItem = model->getParentSheetItem(item);
     if(parentItem){
         this->setParentFilter(projectId, parentItem->paperId());
     }
     else {
-        this->setParentFilter(projectId, 0);
+        this->setParentFilter(projectId, 0); // root item
     }
     this->setForcedCurrentIndex(projectId, paperId);
 }

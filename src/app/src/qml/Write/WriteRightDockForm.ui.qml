@@ -8,15 +8,15 @@ Item {
     id: base
     implicitWidth: 300
     property int fixedWidth: 300
-    //property alias dockPane: dockPane
+//    property alias dockPane: rightDockPane
     //    property alias splitView: splitView
-    property alias documentFrame: documentFrame
-    property alias documentView: documentView
-    property alias treeViewFrame: treeViewFrame
-    property alias treeView: treeView
+    property alias editFrame: editFrame
+    property alias editView: editView
+    property alias noteFrame: noteFrame
+    property alias noteView: noteView
 
     Pane {
-        id: dockPane
+        id: rightDockPane
         anchors.fill: parent
 
         ColumnLayout {
@@ -52,9 +52,9 @@ Item {
                                 width: scrollView.width
 
                                 DockFrame {
-                                    id: treeViewFrame
+                                    id: editFrame
                                     folded: true
-                                    title: qsTr("Navigation")
+                                    title: qsTr("Edit")
                                     //                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
                                     //                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
                                     Layout.fillWidth: true
@@ -62,14 +62,17 @@ Item {
                                     contentHeight: 400
                                     Layout.minimumWidth: 100
 
-                                    TreeView {
-                                        id: treeView
+//                                    TreeView {
+//                                        id: treeView
+//                                    }
+                                    Rectangle {
+                                        id: editView
                                     }
                                 }
                                 DockFrame {
-                                    id: documentFrame
+                                    id: noteFrame
                                     folded: true
-                                    title: qsTr("Opened documents")
+                                    title: qsTr("Notes")
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: dynamicHeight
                                     contentHeight: 300
@@ -78,8 +81,8 @@ Item {
                                     //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
                                     //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
                                     //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
-                                    DocumentListView {
-                                        id: documentView
+                                    Rectangle {
+                                        id: noteView
                                     }
                                 }
 

@@ -7,7 +7,7 @@ import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import ".."
 
-WriteLeftDockForm {
+WriteRightDockForm {
 
 
     SkrUserSettings {
@@ -35,23 +35,14 @@ WriteLeftDockForm {
     //    }
 
 
-    //Navigation List :
     //-----------------------------------------------------------
 
-    PLMSheetListProxyModel {
-        id: proxyModel
-    }
-
-    treeView.model: proxyModel
-    treeView.proxyModel: proxyModel
 
     Connections {
         target: Globals
         onOpenSheetCalled: function (projectId, paperId) {
 
-            //TODO: find a way to change the parent filter
 
-           proxyModel.setCurrentPaperId(projectId, paperId)
 
 
         }
@@ -68,8 +59,6 @@ WriteLeftDockForm {
 
     //Document List :
     //-----------------------------------------------------------
-    documentView.model: plmModels.writeDocumentListModel()
-    documentView.documentModel: plmModels.writeDocumentListModel()
 
     //-----------------------------------------------------------
     Action {
@@ -107,11 +96,12 @@ WriteLeftDockForm {
 
     Settings {
         id: settings
-        category: "writeLeftDock"
+        category: "writeRightDock"
         //property string dockSplitView: "0"
         property bool dockFolded: false
-        property bool treeViewFrameFolded: treeViewFrame.folded ? true : false
-        property bool documentFrameFolded: documentFrame.folded ? true : false
+        property bool editFrameFolded: editFrame.folded ? true : false
+        property bool noteFrameFolded: editFrame.folded ? true : false
+//        property bool documentFrameFolded: documentFrame.folded ? true : false
     }
 
 
@@ -126,11 +116,11 @@ WriteLeftDockForm {
     Component.onCompleted: {
         folded ? fold() : unfold()
 
-        treeViewFrame.folded = settings.treeViewFrameFolded
-        documentFrame.folded = settings.documentFrameFolded
+        editFrame.folded = settings.editFrameFolded
+        noteFrame.folded = settings.noteFrameFolded
 
         //        splitView.restoreState(settings.dockSplitView)
-        treeView.onOpenDocument.connect(Globals.openSheetCalled)
+        //treeView.onOpenDocument.connect(Globals.openSheetCalled)
     }
     Component.onDestruction: {
         //        settings.dockSplitView = splitView.saveState()

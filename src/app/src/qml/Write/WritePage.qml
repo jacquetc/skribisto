@@ -14,31 +14,31 @@ WritePageForm {
 
     writingZone.stretch: Globals.compactSize
     writingZone.minimapVisibility: true
+    minimap.visible: false
 
     property int currentPaperId: -2
+    property int currentProjectId: -2
+
+
+    Component.onCompleted: {
+        if(!Globals.compactSize){
+            leftDrawer.close()
+            rightDrawer.close()
+            leftDrawer.interactive = false
+            rightDrawer.interactive = false
+        }
+    }
+
 
     SkrUserSettings {
         id: skrUserSettings
     }
 
-//    Component.onCompleted: {
-//        textAreaFixedWidth = SkrSettings.writeSettings.textWidth
-//    }
     function openDocument(projectId, paperId) {
         if (currentPaperId != -2) {
 
             //save cursor position of current document :
-            var previousCursorPosition = writingZone.cursorPosition
-            console.log("previousCursorPosition", previousCursorPosition)
-            var previousY = writingZone.flickable.contentY
-            console.log("previousContentY", previousY)
-            skrUserSettings.insertInProjectSettingHash(
-                        projectId, "writeSheetPositionHash", currentPaperId,
-                        previousCursorPosition)
-            skrUserSettings.insertInProjectSettingHash(projectId,
-                                                       "writeSheetYHash",
-                                                       currentPaperId,
-                                                       previousY)
+            saveCurrentPaperCursorPositionAndY()
         }
 
         console.log("opening sheet :", projectId, paperId)
@@ -51,17 +51,49 @@ WritePageForm {
         var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
                     projectId, "writeSheetYHash", paperId, 0)
         console.log("newCursorPosition", position)
+
+        // set positions :
         writingZone.cursorPosition = position
         writingZone.flickable.contentY = visibleAreaY
         currentPaperId = paperId
+        currentProjectId = projectId
 
         writingZone.forceActiveFocus()
         //save :
         skrUserSettings.setProjectSetting(projectId, "writeCurrentPaperId", currentPaperId)
 
-        // select the paper in the navigator :
+        // start the timer for automatic position saving
+        if(!saveCurrentPaperCursorPositionAndYTimer.running){
+            saveCurrentPaperCursorPositionAndYTimer.start()
+        }
 
 
+    }
+
+    function saveCurrentPaperCursorPositionAndY(){
+
+        if(currentPaperId != -2 || currentProjectId != -2){
+            //save cursor position of current document :
+
+            var previousCursorPosition = writingZone.cursorPosition
+            console.log("previousCursorPosition", previousCursorPosition)
+            var previousY = writingZone.flickable.contentY
+            console.log("previousContentY", previousY)
+            skrUserSettings.insertInProjectSettingHash(
+                        currentProjectId, "writeSheetPositionHash", currentPaperId,
+                        previousCursorPosition)
+            skrUserSettings.insertInProjectSettingHash(currentProjectId,
+                                                       "writeSheetYHash",
+                                                       currentPaperId,
+                                                       previousY)
+        }
+    }
+
+    Timer{
+        id: saveCurrentPaperCursorPositionAndYTimer
+        repeat: true
+        interval: 10000
+        onTriggered: saveCurrentPaperCursorPositionAndY()
     }
 
     //needed to adapt width to a shrinking window
@@ -78,7 +110,7 @@ WritePageForm {
 
 
 
-// minimap:
+    // minimap:
     Binding on minimap.text {
         value: writingZone.textArea.text
         delayed: true
@@ -101,6 +133,11 @@ WritePageForm {
     //    }
 
     //minimap.height: minimapRatio() >= 1 ? minimapFlickable.height : writingZone.flickable.contentHeight * minimapRatio()
+
+
+    //-------------------------------------------------------------
+    //-------Left Dock------------------------------------------
+    //-------------------------------------------------------------
     leftDock.onFoldedChanged: {
         if (leftDock.folded) {
             leftDockMenuGroup.visible = false
@@ -148,16 +185,71 @@ WritePageForm {
         width: 50
     }
 
+    //-------------------------------------------------------------
+    //-------Right Dock------------------------------------------
+    //-------------------------------------------------------------
+    rightDock.onFoldedChanged: {
+        if (rightDock.folded) {
+            rightDockMenuGroup.visible = false
+            rightDockMenuButton.checked = false
+            rightDockMenuButton.visible = false
+        } else {
+            rightDockMenuButton.visible = true
+        }
+    }
+
+    rightDockShowButton.onClicked: rightDock.folded ? rightDock.unfold(
+                                                          ) : rightDock.fold()
+    rightDockShowButton.icon {
+        name: rightDock.folded ? "go-previous" : "go-next"
+        height: 50
+        width: 50
+    }
+
+    rightDockMenuButton.onCheckedChanged: rightDockMenuButton.checked ? rightDockMenuGroup.visible = true : rightDockMenuGroup.visible = false
+    rightDockMenuButton.checked: false
+    rightDockMenuButton.icon {
+        name: "overflow-menu"
+        height: 50
+        width: 50
+    }
+
+    //rightDockResizeButton.onVisibleChanged: rightDock.folded = false
+    //rightDockResizeButton.onClicked:
+    rightDockMenuGroup.visible: false
+    rightDockResizeButton.icon {
+        name: "resizecol"
+        height: 50
+        width: 50
+    }
+
+    // compact mode :
+
+    compactRightDockShowButton.onClicked: rightDrawer.open()
+    compactRightDockShowButton.icon {
+        name: "go-next"
+        source: "qrc:/pics/go-next.svg"
+        color: "transparent"
+        height: 50
+        width: 50
+    }
+
+    //---------------------------------------------------------
+
     Connections {
         target: Globals
 
         // @disable-check M16
         onCompactSizeChanged: {
             if (Globals.compactSize === true) {
+                leftDrawer.interactive = true
+                rightDrawer.interactive = true
 
             } else {
                 leftDrawer.close()
                 rightDrawer.close()
+                leftDrawer.interactive = false
+                rightDrawer.interactive = false
             }
         }
     }
@@ -197,13 +289,8 @@ WritePageForm {
         //        interactive: Globals.compactSize ? true : false
         //        visible:true
         //        position: Globals.compactSize ? 0 : 1
-        background: Rectangle {
-            Rectangle {
-                x: parent.width - 1
-                width: 0
-                height: parent.height
-                color: "transparent"
-            }
+        WriteRightDock {
+            anchors.fill: parent
         }
     }
 
@@ -223,12 +310,11 @@ WritePageForm {
             projectIdForProjectLoading = projectId
             paperIdForProjectLoading = paperId
 
-
             projectLoadingTimer.start()
 
 
 
-    }
+        }
     }
     Timer{
         id: projectLoadingTimer
@@ -242,7 +328,29 @@ WritePageForm {
         target: plmData.projectHub()
         // @disable-check M16
         onProjectClosed: function (projectId) {
+            // save
+            saveCurrentPaperCursorPositionAndY()
+
             writingZone.text = ""
+
+            //if there is another project, switch to its last paper
+            if(plmData.projectHub().getProjectCount() > 0){
+
+                var otherProjectId = plmData.projectHub().getProjectIdList()[0]
+                var defaultPaperId = proxyModel.getLastOfHistory(otherProjectId)
+                if (defaultPaperId === -2) {// no history
+                    defaultPaperId = plmData.sheetHub().getTopPaperId(otherProjectId)
+                }
+                var otherPaperId = skrUserSettings.getProjectSetting(otherProjectId, "writeCurrentPaperId", defaultPaperId)
+                Globals.openSheetCalled(otherProjectId, otherPaperId)
+            }
+            else { // no project
+
+                if(saveCurrentPaperCursorPositionAndYTimer.running){
+                    saveCurrentPaperCursorPositionAndYTimer.stop()
+                }
+
+            }
         }
     }
 

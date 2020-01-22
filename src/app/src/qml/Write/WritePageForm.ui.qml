@@ -1,6 +1,6 @@
-import QtQuick 2.11
-import QtQuick.Controls 2.4
-import QtQuick.Layouts 1.3
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 import ".."
 
 Item {
@@ -11,10 +11,15 @@ Item {
     property alias compactRightDockShowButton: compactRightDockShowButton
     property alias compactLeftDockShowButton: compactLeftDockShowButton
     property alias leftDockMenuGroup: leftDockMenuGroup
+    property alias rightDockMenuGroup: rightDockMenuGroup
     property alias leftDockResizeButton: leftDockResizeButton
+    property alias rightDockResizeButton: rightDockResizeButton
     property alias leftDockMenuButton: leftDockMenuButton
+    property alias rightDockMenuButton: rightDockMenuButton
     property alias leftDock: leftDock
+    property alias rightDock: rightDock
     property alias leftDockShowButton: leftDockShowButton
+    property alias rightDockShowButton: rightDockShowButton
     property alias minimap: minimap
     property alias middleBase: middleBase
     property alias writingZone: writingZone
@@ -139,19 +144,48 @@ Item {
             }
 
             Item {
-
                 id: rightBase
-                z: 1
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                 Layout.minimumWidth: 200
+                visible: !Globals.compactSize
                 Layout.fillHeight: true
-                Layout.fillWidth: false
                 Layout.preferredWidth: Globals.compactSize ? -1 : base.width / 6
+                z: 1
 
                 RowLayout {
-                    visible: false
                     anchors.fill: parent
+                    ColumnLayout {
+                        Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                        Layout.maximumWidth: 60
+                        Button {
+                            id: rightDockShowButton
+                            Layout.preferredHeight: 50
+                            Layout.preferredWidth: 50
+                            flat: true
+                            Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                        }
 
+                        Button {
+                            id: rightDockMenuButton
+                            checkable: true
+                            Layout.preferredHeight: 50
+                            Layout.preferredWidth: 50
+                            flat: true
+                            Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                        }
+
+                        ColumnLayout {
+                            id: rightDockMenuGroup
+                            Layout.alignment: Qt.AlignRight | Qt.AlignTop
+
+                            Button {
+                                id: rightDockResizeButton
+                                Layout.preferredHeight: 50
+                                Layout.preferredWidth: 50
+                                flat: true
+                                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                            }
+                        }
+                    }
                     Minimap {
                         Layout.fillHeight: true
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -163,33 +197,11 @@ Item {
                         sourceWidth: writingZone.textArea.width
                         sourcePointSize: writingZone.textArea.font.pointSize
                     }
+                    WriteRightDock {
+                        id: rightDock
+                        Layout.fillHeight: true
+                    }
 
-                    //                ScrollBar {
-                    //                    id: minimapScrollBar
-                    //                    visible: true
-                    //                    active: true
-                    //                    background:ScrollView {
-                    //                        TextEdit {
-                    //                            scale: minimapFlickable.height / writingZone.flickable.contentHeight
-                    //                            textFormat: TextEdit.RichText
-                    //                            visible: true
-                    //                            readOnly: true
-                    //                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
-
-                    //                            text: writingZone.textArea.text
-                    //                        }
-                    //}
-
-                    //                    contentItem: Rectangle {
-                    //                        id: content
-                    //                        implicitWidth: 6
-                    //                        implicitHeight: 20
-                    //                        radius: 5
-                    //                        visible: true
-                    //                        border.color: "red"
-                    //                        color: minimapScrollBar.pressed ? "#81e889" : "transparent"
-                    //                    }
-                    //                }
                 }
             }
         }

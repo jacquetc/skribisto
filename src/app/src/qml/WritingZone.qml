@@ -25,9 +25,10 @@ WritingZoneForm {
     property bool cursorPositionBindingBool: false
     property int cursorPosition: 0
     onCursorPositionChanged: {
-        if(!textArea.activeFocus){
+        if(textArea.activeFocus){
                     if (documentHandler.maxCursorPosition() >= cursorPosition) {
                         textArea.cursorPosition = cursorPosition
+                        console.log("textArea.cursorPosition =", cursorPosition)
 
                     } else {
                         textArea.cursorPosition = documentHandler.maxCursorPosition()
