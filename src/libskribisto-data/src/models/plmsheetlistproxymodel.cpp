@@ -350,7 +350,8 @@ void PLMSheetListProxyModel::setCurrentPaperId(int projectId, int paperId)
     PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
     PLMSheetItem *item = this->getItem(projectId, paperId);
     if(!item){
-        item = this->getItem(projectId, plmdata->sheetHub()->getTopPaperId(projectId));
+        paperId = plmdata->sheetHub()->getTopPaperId(projectId);
+        item = this->getItem(projectId, paperId);
     }
 
 

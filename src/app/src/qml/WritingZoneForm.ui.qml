@@ -55,7 +55,6 @@ Item {
                         id: leftScrollMouseArea
                         z: 0
                         anchors.fill: parent
-
                     }
                 }
                 ScrollView {
@@ -118,7 +117,6 @@ Item {
                         id: rightScrollMouseArea
                         z: 0
                         anchors.fill: parent
-
                     }
                 }
             }
@@ -142,7 +140,18 @@ Item {
             PropertyChanges {
                 target: scrollView
                 implicitWidth: textAreaWidth
+                Layout.maximumWidth: maximumTextAreaWidth
                 Layout.fillWidth: false
+            }
+            PropertyChanges {
+                target: leftScrollItem
+                Layout.minimumWidth: 0
+                Layout.fillWidth: true
+            }
+            PropertyChanges {
+                target: rightScrollItem
+                Layout.minimumWidth: 0
+                Layout.fillWidth: true
             }
         },
         State {
@@ -163,18 +172,26 @@ Item {
             PropertyChanges {
                 target: scrollView
                 implicitWidth: 0
+                Layout.maximumWidth: undefined
                 Layout.fillWidth: true
+            }
+            PropertyChanges {
+                target: leftScrollItem
+                Layout.minimumWidth: 30
+                Layout.fillWidth: false
+            }
+            PropertyChanges {
+                target: rightScrollItem
+                Layout.minimumWidth: 30
+                Layout.fillWidth: false
             }
         }
     ]
 }
 
-
-
-
-
-
-/*##^## Designer {
+/*##^##
+Designer {
     D{i:0;autoSize:true;height:480;width:640}
 }
- ##^##*/
+##^##*/
+

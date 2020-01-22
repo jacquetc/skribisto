@@ -4,7 +4,7 @@ import eu.skribisto.documenthandler 1.0
 WritingZoneForm {
     id: root
     stretch: true
-    minimapVisibility: false
+    minimapVisibility: true
     readonly property int textAreaLeftPos: base.width / 2 - textAreaWidth / 2
     readonly property int textAreaRightPos: base.width / 2 + textAreaWidth / 2
 

@@ -7,13 +7,13 @@ import ".."
 
 WritePageForm {
     id: root
-    property int textAreaFixedWidth: SkrSettings.writeSettings.textWidth
+    //property int textAreaFixedWidth: SkrSettings.writeSettings.textWidth
 
 
-    //writingZone.textAreaWidth: 800 //
+    writingZone.maximumTextAreaWidth: SkrSettings.writeSettings.textWidth
 
     writingZone.stretch: Globals.compactSize
-    writingZone.minimapVisibility: true
+    writingZone.minimapVisibility: false
     minimap.visible: false
 
     property int currentPaperId: -2
@@ -98,13 +98,13 @@ WritePageForm {
 
     //needed to adapt width to a shrinking window
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactSize && middleBase.width < textAreaFixedWidth
+        when: !Globals.compactSize && middleBase.width < writingZone.maximumTextAreaWidth
         value: middleBase.width
 
     }
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactSize && middleBase.width >= textAreaFixedWidth
-        value: textAreaFixedWidth
+        when: !Globals.compactSize && middleBase.width >= writingZone.maximumTextAreaWidth
+        value: writingZone.maximumTextAreaWidth
 
     }
 
@@ -233,6 +233,8 @@ WritePageForm {
         height: 50
         width: 50
     }
+
+
 
     //---------------------------------------------------------
 

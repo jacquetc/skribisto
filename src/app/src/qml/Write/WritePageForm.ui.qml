@@ -79,7 +79,7 @@ Item {
 
             Item {
                 id: leftBase
-                Layout.minimumWidth: 200
+                Layout.minimumWidth: 400
                 visible: !Globals.compactSize
                 Layout.fillHeight: true
                 Layout.preferredWidth: Globals.compactSize ? -1 : base.width / 6
@@ -130,12 +130,9 @@ Item {
 
             Item {
                 id: middleBase
-                width: 400
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 Layout.fillHeight: true
-                Layout.minimumWidth: 200
-                Layout.fillWidth: Globals.compactSize
-                Layout.preferredWidth: Globals.compactSize ? -1 : base.width / 3 * 2
+                Layout.fillWidth: true
 
                 WritingZone {
                     id: writingZone
@@ -145,7 +142,7 @@ Item {
 
             Item {
                 id: rightBase
-                Layout.minimumWidth: 200
+                Layout.minimumWidth: 400
                 visible: !Globals.compactSize
                 Layout.fillHeight: true
                 Layout.preferredWidth: Globals.compactSize ? -1 : base.width / 6
@@ -201,7 +198,6 @@ Item {
                         id: rightDock
                         Layout.fillHeight: true
                     }
-
                 }
             }
         }
@@ -210,7 +206,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:17;anchors_height:100;anchors_width:100}
+    D{i:0;width:1200}D{i:17;anchors_height:100;anchors_width:100}
 }
 ##^##*/
 
