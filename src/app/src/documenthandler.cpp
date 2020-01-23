@@ -164,6 +164,7 @@ bool DocumentHandler::italic() const
 
 void DocumentHandler::setItalic(bool italic)
 {
+    qDebug() << "set italic";
     if (m_selectionCursor.selectedText().isEmpty()) {
         m_nextFormat.setFontItalic(italic);
         m_formatPosition = m_textCursor.position();

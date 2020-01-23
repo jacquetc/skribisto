@@ -8,17 +8,23 @@ import ".."
 WritePageForm {
     id: root
     //property int textAreaFixedWidth: SkrSettings.writeSettings.textWidth
-
+    property var lastFocused: writingZone
 
     writingZone.maximumTextAreaWidth: SkrSettings.writeSettings.textWidth
+    writingZone.textPointSize: SkrSettings.writeSettings.textPointSize
+    writingZone.textFontFamily: SkrSettings.writeSettings.textFontFamily
 
     writingZone.stretch: Globals.compactSize
     writingZone.minimapVisibility: false
+    writingZone.name: "write-0" //useful ?
     minimap.visible: false
 
     property int currentPaperId: -2
     property int currentProjectId: -2
 
+
+
+    //---------------------------------------------------------
 
     Component.onCompleted: {
         if(!Globals.compactSize){
@@ -30,11 +36,126 @@ WritePageForm {
     }
 
 
+    //---------------------------------------------------------
+    //------Actions----------------------------------------
+    //---------------------------------------------------------
+
+    // fullscreen :
+    rightDock.editView.fullScreenToolButton.action: fullscreenAction
+
+    Action {
+
+        id: italicAction
+        text: qsTr("Italic")
+        icon {
+            name: "format-text-italic"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.Italic
+        checkable: true
+
+        onCheckedChanged: {
+            writingZone.documentHandler.italic = italicAction.checked
+            if(!lastFocused.activeFocus){
+                writingZone.forceActiveFocus()
+                if(Globals.compactSize){
+                    rightDrawer.close()
+                }
+            }
+        }
+    }
+    rightDock.editView.italicToolButton.action: italicAction
+
+    Action {
+
+        id: boldAction
+        text: qsTr("Bold")
+        icon {
+            name: "format-text-bold"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.Bold
+        checkable: true
+
+        onCheckedChanged: {
+            writingZone.documentHandler.bold = boldAction.checked
+            if(!lastFocused.activeFocus){
+                writingZone.forceActiveFocus()
+                if(Globals.compactSize){
+                    rightDrawer.close()
+                }
+            }
+        }
+    }
+    rightDock.editView.boldToolButton.action: boldAction
+
+    Action {
+
+        id: strikeAction
+        text: qsTr("Strike")
+        icon {
+            name: "format-text-strikethrough"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey
+        checkable: true
+
+        onCheckedChanged: {
+            writingZone.documentHandler.strikeout = strikeAction.checked
+            if(!lastFocused.activeFocus){
+                writingZone.forceActiveFocus()
+                if(Globals.compactSize){
+                    rightDrawer.close()
+                }
+            }
+        }
+    }
+    rightDock.editView.strikeToolButton.action: strikeAction
+
+
+    Action {
+
+        id: underlineAction
+        text: qsTr("Underline")
+        icon {
+            name: "format-text-underline"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.Underline
+        checkable: true
+
+        onCheckedChanged: {
+            writingZone.documentHandler.underline = underlineAction.checked
+            if(!lastFocused.activeFocus){
+                writingZone.forceActiveFocus()
+                if(Globals.compactSize){
+                    rightDrawer.close()
+                }
+            }
+        }
+    }
+    rightDock.editView.underlineToolButton.action: underlineAction
+    //---------------------------------------------------------
+
+
     SkrUserSettings {
         id: skrUserSettings
     }
 
     function openDocument(projectId, paperId) {
+        if (currentProjectId === projectId & currentPaperId === paperId){
+            writingZone.forceActiveFocus()
+            return
+        }
+
         if (currentPaperId != -2) {
 
             //save cursor position of current document :
@@ -53,7 +174,7 @@ WritePageForm {
         console.log("newCursorPosition", position)
 
         // set positions :
-        writingZone.cursorPosition = position
+        writingZone.setCursorPosition(position)
         writingZone.flickable.contentY = visibleAreaY
         currentPaperId = paperId
         currentProjectId = projectId
@@ -138,6 +259,8 @@ WritePageForm {
     //-------------------------------------------------------------
     //-------Left Dock------------------------------------------
     //-------------------------------------------------------------
+    leftDock.enabled: !Globals.compactSize
+
     leftDock.onFoldedChanged: {
         if (leftDock.folded) {
             leftDockMenuGroup.visible = false
@@ -179,8 +302,6 @@ WritePageForm {
     compactLeftDockShowButton.onClicked: leftDrawer.open()
     compactLeftDockShowButton.icon {
         name: "go-next"
-        source: "qrc:/pics/go-next.svg"
-        color: "transparent"
         height: 50
         width: 50
     }
@@ -188,6 +309,7 @@ WritePageForm {
     //-------------------------------------------------------------
     //-------Right Dock------------------------------------------
     //-------------------------------------------------------------
+    rightDock.enabled: !Globals.compactSize
     rightDock.onFoldedChanged: {
         if (rightDock.folded) {
             rightDockMenuGroup.visible = false
@@ -227,9 +349,7 @@ WritePageForm {
 
     compactRightDockShowButton.onClicked: rightDrawer.open()
     compactRightDockShowButton.icon {
-        name: "go-next"
-        source: "qrc:/pics/go-next.svg"
-        color: "transparent"
+        name: "go-previous"
         height: 50
         width: 50
     }
@@ -272,6 +392,7 @@ WritePageForm {
         //        visible:true
         //        position: Globals.compactSize ? 0 : 1
         WriteLeftDock {
+            id: compactLeftDock
             anchors.fill: parent
         }
     }
@@ -291,8 +412,16 @@ WritePageForm {
         //        interactive: Globals.compactSize ? true : false
         //        visible:true
         //        position: Globals.compactSize ? 0 : 1
+
         WriteRightDock {
+            id: compactRightDock
             anchors.fill: parent
+
+            editView.italicToolButton.action: italicAction
+            editView.boldToolButton.action: boldAction
+            editView.strikeToolButton.action: strikeAction
+            editView.underlineToolButton.action: underlineAction
+            editView.fullScreenToolButton.action: fullscreenAction
         }
     }
 
@@ -325,15 +454,25 @@ WritePageForm {
         onTriggered: Globals.openSheetCalled(projectIdForProjectLoading, paperIdForProjectLoading)
     }
 
+
+
+    // project to be closed :
+    Connections{
+        target: plmData.projectHub()
+        // @disable-check M16
+        onProjectToBeClosed: function (projectId) {
+            // save
+            saveCurrentPaperCursorPositionAndY()
+
+            writingZone.text = ""
+        }
+    }
+
     // projectClosed :
     Connections {
         target: plmData.projectHub()
         // @disable-check M16
         onProjectClosed: function (projectId) {
-            // save
-            saveCurrentPaperCursorPositionAndY()
-
-            writingZone.text = ""
 
             //if there is another project, switch to its last paper
             if(plmData.projectHub().getProjectCount() > 0){
@@ -362,6 +501,29 @@ WritePageForm {
         // @disable-check M16
         onOpenSheetCalled: function (projectId, paperId) {
             openDocument(projectId, paperId)
+        }
+    }
+
+
+    property bool fullscreen_left_dock_folded: false
+    property bool fullscreen_right_dock_folded: false
+    // fullscreen :
+    Connections {
+        target: Globals
+        // @disable-check M16
+        onFullScreenCalled: function (value) {
+            if(value){
+                //save previous conf
+                fullscreen_left_dock_folded = leftDock.folded
+                fullscreen_right_dock_folded = rightDock.folded
+                leftDock.fold()
+                rightDock.fold()
+            }
+            else{
+                leftDock.folded = fullscreen_left_dock_folded
+                rightDock.folded = fullscreen_right_dock_folded
+            }
+
         }
     }
 

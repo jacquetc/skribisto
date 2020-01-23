@@ -18,6 +18,11 @@ QtObject {
     }
     onCompactSizeChanged: console.log("compact = " + compactSize)
 
+
+
     //Write :
     signal openSheetCalled(int projectId, int paperId)
+
+    //FullScreen
+    signal fullScreenCalled(bool value)
 }

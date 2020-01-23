@@ -24,7 +24,6 @@ Item {
     property alias middleBase: middleBase
     property alias writingZone: writingZone
     property alias base: base
-    property int middleBasePreferredWidth
 
     ColumnLayout {
         id: columnLayout
@@ -97,6 +96,7 @@ Item {
                         Layout.maximumWidth: 60
                         Button {
                             id: leftDockShowButton
+                            focusPolicy: Qt.NoFocus
                             Layout.preferredHeight: 50
                             Layout.preferredWidth: 50
                             flat: true
@@ -105,6 +105,7 @@ Item {
 
                         Button {
                             id: leftDockMenuButton
+                            focusPolicy: Qt.NoFocus
                             checkable: true
                             Layout.preferredHeight: 50
                             Layout.preferredWidth: 50
@@ -118,6 +119,7 @@ Item {
 
                             Button {
                                 id: leftDockResizeButton
+                                focusPolicy: Qt.NoFocus
                                 Layout.preferredHeight: 50
                                 Layout.preferredWidth: 50
                                 flat: true
@@ -155,6 +157,7 @@ Item {
                         Layout.maximumWidth: 60
                         Button {
                             id: rightDockShowButton
+                            focusPolicy: Qt.NoFocus
                             Layout.preferredHeight: 50
                             Layout.preferredWidth: 50
                             flat: true
@@ -163,6 +166,7 @@ Item {
 
                         Button {
                             id: rightDockMenuButton
+                            focusPolicy: Qt.NoFocus
                             checkable: true
                             Layout.preferredHeight: 50
                             Layout.preferredWidth: 50
@@ -176,6 +180,7 @@ Item {
 
                             Button {
                                 id: rightDockResizeButton
+                                focusPolicy: Qt.NoFocus
                                 Layout.preferredHeight: 50
                                 Layout.preferredWidth: 50
                                 flat: true

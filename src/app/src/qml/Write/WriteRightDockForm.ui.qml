@@ -62,11 +62,10 @@ Item {
                                     contentHeight: 400
                                     Layout.minimumWidth: 100
 
-//                                    TreeView {
-//                                        id: treeView
-//                                    }
-                                    Rectangle {
+
+                                    EditView {
                                         id: editView
+                                        clip: true
                                     }
                                 }
                                 DockFrame {
@@ -83,6 +82,7 @@ Item {
                                     //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
                                     Rectangle {
                                         id: noteView
+                                        clip: true
                                     }
                                 }
 

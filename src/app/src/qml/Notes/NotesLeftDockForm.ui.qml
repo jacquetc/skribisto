@@ -79,26 +79,7 @@ Item {
                                     //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
                                     //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
                                     //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
-                                    Flow {
 
-                                        //width: scrollview.contentWidth
-                                        ToolButton {
-                                            flat: true
-                                            action: fullscreenAction
-                                        }
-                                        ToolButton {
-                                            flat: true
-                                            action: fullscreenAction
-                                        }
-                                        ToolButton {
-                                            flat: true
-                                            action: fullscreenAction
-                                        }
-                                        ToolButton {
-                                            flat: true
-                                            action: fullscreenAction
-                                        }
-                                    }
                                 }
 
                                 //                            Loader{

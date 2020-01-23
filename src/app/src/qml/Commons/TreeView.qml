@@ -141,7 +141,7 @@ TreeViewForm {
     Shortcut {
         sequences: ["Left", "Backspace"]
         onActivated: goUpAction.trigger()
-        enabled: root.visible
+        enabled: listView.activeFocus
     }
     //-----------------------------------------------------------------------------
     Component.onCompleted: {
@@ -283,18 +283,44 @@ TreeViewForm {
 
                 TapHandler {
                     id: tapHandler
-                    onTapped: {
+                    onTapCountChanged: {
+                        console.log("tap", tapHandler.tapCount)
+                        if(tapCount == 1){
+                            tapCountTimer.start()
 
+
+                        }
+
+                        if(tapCount == 2 & tapCountTimer.running){
+                            //tripleTap
+                            console.log("tripletap")
+                            tapCountTimer.stop()
+                            delegateRoot.editName()
+                        }
+
+
+
+                    }
+
+                    onSingleTapped: {
                         listView.currentIndex = model.index
                         delegateRoot.forceActiveFocus()
-                    }
-                    onDoubleTapped: {
-                        openDocumentAction.trigger()
+                        eventPoint.accepted = true
                     }
 
-                    onLongPressed: {
+                    onDoubleTapped: {
+                        openDocumentAction.trigger()
+                        eventPoint.accepted = true
+                    }
+
+                    onLongPressed: { // needed to activate the grab handler
                         enabled = false
                     }
+                }
+                Timer{
+                    id: tapCountTimer
+                    interval: 200
+                    repeat: false
                 }
                 TapHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
@@ -323,6 +349,10 @@ TreeViewForm {
                     id: goToChildAction
                     shortcut: "Right"
                     enabled: {
+                        if (!listView.activeFocus){
+                            return false
+                        }
+
                         if (listView.currentIndex === model.index) {
                             return true
                         } else if (hoverHandler.hovered) {
@@ -352,9 +382,9 @@ TreeViewForm {
                                                      _currentParent, 0)
 
                             // edit it :
-                            //_delegateRoot.editName()
-                            //FIXIT: editName makes the app crash
                         }
+                        //_delegateRoot.editName()
+                        //FIXIT: editName makes the app crash
                     }
                 }
                 Action {
@@ -584,7 +614,6 @@ TreeViewForm {
                         console.log("rename action", model.projectId,
                                     model.paperId)
                         delegateRoot.editName()
-                        //forceActiveFocus(titleTextField)
                     }
                 }
 

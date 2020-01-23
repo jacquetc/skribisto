@@ -49,8 +49,6 @@ WriteLeftDockForm {
         target: Globals
         onOpenSheetCalled: function (projectId, paperId) {
 
-            //TODO: find a way to change the parent filter
-
            proxyModel.setCurrentPaperId(projectId, paperId)
 
 
@@ -72,24 +70,7 @@ WriteLeftDockForm {
     documentView.documentModel: plmModels.writeDocumentListModel()
 
     //-----------------------------------------------------------
-    Action {
 
-        id: fullscreenAction
-        text: qsTr("Fullscreen")
-        icon {
-            name: "welcome-icon"
-            source: "qrc:/pics/skribisto.svg"
-            color: "transparent"
-            height: 50
-            width: 50
-        }
-
-        shortcut: "F11"
-        checkable: true
-        checked: true
-
-        onTriggered: root_stack.currentIndex = 0
-    }
 
     //-----------------------------------------------------------
 

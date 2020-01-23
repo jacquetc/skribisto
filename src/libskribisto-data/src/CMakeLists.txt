@@ -91,7 +91,7 @@ set(models_SRCS
     models/plmpropertiesproxymodel.cpp
     models/plmsheetitem.cpp
     models/plmmodels.cpp
-
+    models/skrfontfamilylistmodel.cpp
     )
 set(models_HDR
     models/plmsheetmodel.h
@@ -111,6 +111,7 @@ set(models_HDR
     models/plmpropertiesproxymodel.h
     models/plmsheetitem.h
     models/plmmodels.h
+    models/skrfontfamilylistmodel.h
     )
 
 

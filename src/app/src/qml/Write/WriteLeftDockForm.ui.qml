@@ -64,6 +64,7 @@ Item {
 
                                     TreeView {
                                         id: treeView
+                                        clip: true
                                     }
                                 }
                                 DockFrame {
@@ -80,6 +81,7 @@ Item {
                                     //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
                                     DocumentListView {
                                         id: documentView
+                                        clip: true
                                     }
                                 }
 

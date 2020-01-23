@@ -20,8 +20,20 @@ QtObject {
 
     property Settings writeSettings: Settings{
         category: "write"
-        property int textWidth: Globals.width / 3
-
+        property int textWidth: initialTextWidth
+        property int textPointSize: Qt.application.font.pointSize
+        property string textFontFamily: Qt.application.font.family
     }
 
+    property Settings noteSettings: Settings{
+        category: "note"
+        property int textWidth: initialTextWidth
+        property int textPointSize: Qt.application.font.pointSize
+        property string textFontFamily: Qt.application.font.family
+    }
+
+    property int initialTextWidth: 0
+    Component.onCompleted: {
+        initialTextWidth = Globals.width / 3
+    }
 }

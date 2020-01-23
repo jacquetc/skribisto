@@ -22,8 +22,6 @@
         <file>qml/Write/WriteLeftDockForm.ui.qml</file>
         <file>qml/Write/WritePage.qml</file>
         <file>qml/Write/WritePageForm.ui.qml</file>
-        <file>qml/Write/WritePageForm_old.ui.qml</file>
-        <file>qml/Write/WritePage_old.qml</file>
         <file>qml/Notes/NotesPage.qml</file>
         <file>qml/Notes/NotesPageForm.ui.qml</file>
         <file>qml/Notes/NotesLeftDock.qml</file>
@@ -43,5 +41,7 @@
         <file>qml/Commons/DocumentListViewForm.ui.qml</file>
         <file>qml/Write/WriteRightDock.qml</file>
         <file>qml/Write/WriteRightDockForm.ui.qml</file>
+        <file>qml/Write/EditView.qml</file>
+        <file>qml/Write/EditViewForm.ui.qml</file>
     </qresource>
 </RCC>

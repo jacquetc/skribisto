@@ -1,6 +1,6 @@
 import QtQuick 2.12
-import QtQuick.Controls 2.4
-import QtQuick.Layouts 1.3
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 
 Item {
     id: base
@@ -81,18 +81,21 @@ Item {
                         }
                         TextArea.flickable: TextArea {
                             id: textArea
-                            renderType: Text.NativeRendering
+//                            renderType: Text.NativeRendering
                             font.preferShaping: false
                             font.kerning: false
                             clip: true
-                            textFormat: Text.PlainText
+                            textFormat: Text.RichText
                             focus: true
                             selectByMouse: true
-                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
+                            wrapMode: TextEdit.WordWrap
 
                             //                        background: Rectangle {
                             //                            border.color: "transparent"
                             //                        }
+
+
+
                         }
                     }
                 }

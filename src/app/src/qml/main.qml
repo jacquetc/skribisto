@@ -29,6 +29,28 @@ ApplicationWindow {
         property int width: Screen.width
         property int visibility: Window.Maximized
     }
+
+
+    Action {
+
+        id: fullscreenAction
+        text: qsTr("Fullscreen")
+        icon {
+            name: "view-fullscreen"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.FullScreen
+        checkable: true
+        onCheckedChanged: {
+            Globals.fullScreenCalled(fullscreenAction.checked)
+        }
+    }
+
+
+
+
     // style :
     //palette.window: "white"
 
@@ -72,6 +94,23 @@ ApplicationWindow {
     RootPage {
         //window: rootWindow
         anchors.fill: parent
+    }
+
+
+
+    Connections {
+        target: Globals
+        // @disable-check M16
+        onFullScreenCalled: function (value) {
+            console.log("fullscreen")
+            if(value){
+                visibility = Window.FullScreen
+            }
+            else {
+                visibility = Window.AutomaticVisibility
+            }
+
+        }
     }
 
     onClosing: {
