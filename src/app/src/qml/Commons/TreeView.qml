@@ -285,19 +285,20 @@ TreeViewForm {
                     id: tapHandler
                     onTapCountChanged: {
                         console.log("tap", tapHandler.tapCount)
-                        if(tapCount == 1){
-                            tapCountTimer.start()
 
-
-                        }
 
                         if(tapCount == 2 & tapCountTimer.running){
                             //tripleTap
                             console.log("tripletap")
                             tapCountTimer.stop()
                             delegateRoot.editName()
+                            return
                         }
+                        if(tapCount == 1){
+                            tapCountTimer.start()
+                            return
 
+                        }
 
 
                     }

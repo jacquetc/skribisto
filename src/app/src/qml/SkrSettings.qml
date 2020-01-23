@@ -22,6 +22,8 @@ QtObject {
         category: "write"
         property int textWidth: initialTextWidth
         property int textPointSize: Qt.application.font.pointSize
+        property real textIndent: 2
+        property real textTopMargin: 2
         property string textFontFamily: Qt.application.font.family
     }
 
@@ -29,6 +31,8 @@ QtObject {
         category: "note"
         property int textWidth: initialTextWidth
         property int textPointSize: Qt.application.font.pointSize
+        property real textIndent: 2
+        property real textTopMargin: 2
         property string textFontFamily: Qt.application.font.family
     }
 

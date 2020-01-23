@@ -38,6 +38,9 @@ class DocumentHandler : public QObject {
     Q_PROPERTY(int paperId READ paperId NOTIFY idChanged)
     Q_PROPERTY(int projectId READ projectId NOTIFY idChanged)
 
+    Q_PROPERTY(qreal topMarginEverywhere READ topMarginEverywhere WRITE setTopMarginEverywhere NOTIFY topMarginEverywhereChanged)
+    Q_PROPERTY(qreal indentEverywhere READ indentEverywhere WRITE setIndentEverywhere NOTIFY indentEverywhereChanged)
+
 public:
 
     DocumentHandler(QObject *parent = nullptr);
@@ -97,6 +100,11 @@ public:
 
     Q_INVOKABLE int     maxCursorPosition() const;
 
+    qreal topMarginEverywhere() const;
+    void setTopMarginEverywhere(qreal topMargin);
+    qreal indentEverywhere() const;
+    void setIndentEverywhere(qreal indent);
+
 public slots:
 
     void addHorizontalLine();
@@ -115,6 +123,8 @@ signals:
     void canUndoChanged(bool canUndo);
     void canRedoChanged(bool canRedo);
     void idChanged();
+    void topMarginEverywhereChanged(qreal topMargin);
+    void indentEverywhereChanged(qreal indent);
 
 private:
 
@@ -128,6 +138,8 @@ private:
     int m_selectionEnd;
     int m_projectId;
     int m_paperId;
+    qreal m_topMarginEverywhere;
+    qreal m_indentEverywhere;
 };
 
 #endif // DOCUMENTHANDLER_H

@@ -121,6 +121,7 @@ Item {
                                 id: createEmpyProjectAtStartSwitch
                                 text: qsTr("Switch")
                             }
+
                         }
                     }
 

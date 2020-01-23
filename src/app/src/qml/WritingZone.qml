@@ -21,6 +21,17 @@ WritingZoneForm {
         textArea.font.family = textFontFamily
     }
 
+    property real textIndent: 0
+    onTextIndentChanged: {
+        console.log("eeee")
+        documentHandler.indentEverywhere = textIndent
+    }
+
+    property real textTopMargin: 0
+    onTextTopMarginChanged: {
+        console.log("bbbb")
+        documentHandler.topMarginEverywhere = textTopMargin
+    }
 
     //quit fullscreen :
     Shortcut {
@@ -213,6 +224,7 @@ WritingZoneForm {
 
         selectionStart: textArea.selectionStart
         selectionEnd: textArea.selectionEnd
+
 
     }
 

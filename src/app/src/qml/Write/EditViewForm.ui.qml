@@ -15,6 +15,8 @@ Item {
     property alias textWidthSlider: textWidthSlider
     property alias textPointSizeSlider: textPointSizeSlider
     property alias fontFamilyComboBox: fontFamilyComboBox
+    property alias textTopMarginSlider: textTopMarginSlider
+    property alias textIndentSlider: textIndentSlider
 
     SwipeView {
         id: swipeView
@@ -124,6 +126,29 @@ Item {
                 ComboBox {
                     id: fontFamilyComboBox
                     Layout.fillWidth: true
+                }
+                Label {
+                    text: qsTr("Text indent :")
+                }
+
+                Slider {
+                    id: textIndentSlider
+                    snapMode: Slider.SnapOnRelease
+                    stepSize: 1
+                    from: 0
+                    to: 200
+                }
+
+                Label {
+                    text: qsTr("Top margin :")
+                }
+
+                Slider {
+                    id: textTopMarginSlider
+                    snapMode: Slider.SnapOnRelease
+                    stepSize: 1
+                    from: 0
+                    to: 30
                 }
             }
         }

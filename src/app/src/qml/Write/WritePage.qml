@@ -13,6 +13,8 @@ WritePageForm {
     writingZone.maximumTextAreaWidth: SkrSettings.writeSettings.textWidth
     writingZone.textPointSize: SkrSettings.writeSettings.textPointSize
     writingZone.textFontFamily: SkrSettings.writeSettings.textFontFamily
+    writingZone.textIndent: SkrSettings.writeSettings.textIndent
+    writingZone.textTopMargin: SkrSettings.writeSettings.textTopMargin
 
     writingZone.stretch: Globals.compactSize
     writingZone.minimapVisibility: false
@@ -157,13 +159,20 @@ WritePageForm {
         }
 
         if (currentPaperId != -2) {
-
+            //save content :
+            contentSaveTimer.stop()
+            saveContent()
             //save cursor position of current document :
             saveCurrentPaperCursorPositionAndY()
         }
 
         console.log("opening sheet :", projectId, paperId)
         writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
+
+        // apply format
+        writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent
+        writingZone.documentHandler.topMarginEverywhere = SkrSettings.writeSettings.textTopMargin
+
 
         //get cursor position
         var position = skrUserSettings.getFromProjectSettingHash(
@@ -187,6 +196,7 @@ WritePageForm {
         if(!saveCurrentPaperCursorPositionAndYTimer.running){
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
+
 
 
     }
@@ -453,6 +463,29 @@ WritePageForm {
         interval: 100
         onTriggered: Globals.openSheetCalled(projectIdForProjectLoading, paperIdForProjectLoading)
     }
+
+
+
+
+// save content once after writing:
+    writingZone.textArea.onTextChanged: {
+        if(contentSaveTimer.running){
+            contentSaveTimer.stop()
+        }
+        contentSaveTimer.start()
+    }
+    Timer{
+        id: contentSaveTimer
+        repeat: false
+        interval: 1000
+        onTriggered: saveContent()
+    }
+
+    function saveContent(){
+        console.log("saving sheet")
+        plmData.sheetHub().setContent(currentProjectId, currentPaperId, writingZone.text)
+    }
+
 
 
 

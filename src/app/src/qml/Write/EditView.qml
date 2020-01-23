@@ -88,7 +88,8 @@ EditViewForm {
         id: settings
             category: "write"
     }
-    Component.onCompleted: {
+
+    function loadFontFamily(){
         var fontFamily = settings.value("textFontFamily", Qt.application.font.family)
         console.log("fontFamily", fontFamily)
         console.log("fontFamily", Qt.application.font.family)
@@ -103,8 +104,34 @@ EditViewForm {
         fontFamilyComboBox.currentIndex = index
     }
 
-    // go back when losing focus
+    // Indent :
+     textIndentSlider.value: SkrSettings.writeSettings.textIndent
 
+    Binding {
+        target: SkrSettings.writeSettings
+        property: "textIndent"
+        value: textIndentSlider.value
+        delayed: true
+    }
+
+    // Indent :
+     textTopMarginSlider.value: SkrSettings.writeSettings.textTopMargin
+
+    Binding {
+        target: SkrSettings.writeSettings
+        property: "textTopMargin"
+        value: textTopMarginSlider.value
+        delayed: true
+    }
+
+
+    Component.onCompleted: {
+        loadFontFamily()
+    }
+
+
+
+    // go back when losing focus
 
     swipeView.onActiveFocusChanged: {
         console.log('activeFocus', swipeView.activeFocus)

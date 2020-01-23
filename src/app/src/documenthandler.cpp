@@ -374,6 +374,62 @@ int DocumentHandler::maxCursorPosition() const
     return m_textDoc->textDocument()->characterCount();
 }
 
+qreal DocumentHandler::topMarginEverywhere() const
+{
+    return m_topMarginEverywhere;
+}
+
+void DocumentHandler::setTopMarginEverywhere(qreal topMargin)
+{
+    if(!m_textDoc){
+        return;
+    }
+
+    int previousPosition = m_textCursor.position();
+
+    m_textCursor.setPosition(0);
+    int posMax = m_textDoc->textDocument()->rootFrame()->lastCursorPosition().position();
+    m_textCursor.setPosition(posMax , QTextCursor::KeepAnchor);
+
+    QTextBlockFormat f = m_textCursor.blockFormat();
+
+    f.setTopMargin(topMargin);
+    m_textCursor.setBlockFormat(f);
+    m_topMarginEverywhere = topMargin;
+
+    m_textCursor.setPosition(previousPosition);
+
+    emit topMarginEverywhereChanged(topMargin);
+}
+
+qreal DocumentHandler::indentEverywhere() const
+{
+    return m_indentEverywhere;
+}
+
+void DocumentHandler::setIndentEverywhere(qreal indent)
+{
+    if(!m_textDoc){
+        return;
+    }
+
+    int previousPosition = m_textCursor.position();
+
+    m_textCursor.setPosition(0);
+    int posMax = m_textDoc->textDocument()->rootFrame()->lastCursorPosition().position();
+    m_textCursor.setPosition(posMax, QTextCursor::KeepAnchor);
+
+    QTextBlockFormat f = m_textCursor.blockFormat();
+
+    f.setTextIndent(indent);
+    m_textCursor.setBlockFormat(f);
+    m_indentEverywhere = indent;
+
+    m_textCursor.setPosition(previousPosition);
+
+    emit indentEverywhereChanged(indent);
+}
+
 void DocumentHandler::indentBlock()
 {
     QTextBlockFormat f = m_textCursor.blockFormat();
