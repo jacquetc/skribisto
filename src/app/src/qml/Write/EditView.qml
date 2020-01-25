@@ -27,6 +27,25 @@ EditViewForm {
     }
     sizeToolButton.action: sizeAction
 
+    Action{
+        id: fullScreenColorAction
+        text: qsTr("Full Screen Colors")
+        icon {
+            name: "color-picker-white"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.
+        onTriggered: {
+            swipeView.setCurrentIndex(2)
+            backroundColorTextField.forceActiveFocus()
+        }
+
+    }
+    fullScreenColorToolButton.action: fullScreenColorAction
+
+
 
     Action{
         id: goBackAction
@@ -52,8 +71,11 @@ EditViewForm {
     //    }
 
     goBackToolButton.action: goBackAction
+    goBack2ToolButton.action: goBackAction
 
     // textWidthSlider :
+
+    textWidthSlider.visible: !Globals.compactSize
 
     textWidthSlider.value: SkrSettings.writeSettings.textWidth
 
@@ -65,6 +87,7 @@ EditViewForm {
     }
 
     // textPointSizeSlider :
+
     textPointSizeSlider.value: SkrSettings.writeSettings.textPointSize
 
 
@@ -84,6 +107,8 @@ EditViewForm {
         value: fontFamilyComboBox.currentText
         delayed: true
     }
+
+    // needed because the SkrSettings won't work for FontFamily
     Settings{
         id: settings
             category: "write"

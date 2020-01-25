@@ -37,6 +37,87 @@ WritePageForm {
         }
     }
 
+    //--------------------------------------------------------
+    //---Left Scroll Area-----------------------------------------
+    //--------------------------------------------------------
+
+
+    leftPaneScrollTouchArea.onUpdated: {
+        var deltaY = touchPoints[0].y - touchPoints[0].previousY
+        //        console.log("deltaY :", deltaY)
+
+        if (writingZone.flickable.atYBeginning && deltaY > 0) {
+            writingZone.flickable.returnToBounds()
+            return
+        }
+        if (writingZone.flickable.atYEnd && deltaY < 0) {
+            writingZone.flickable.returnToBounds()
+            return
+        }
+
+         writingZone.flickable.flick(0, deltaY * 50)
+
+    }
+
+    leftPaneScrollMouseArea.onPressAndHold: {
+
+    }
+    leftPaneScrollMouseArea.onWheel: {
+
+        var deltaY = wheel.angleDelta.y *10
+
+        flickable.flick(0, deltaY)
+
+        if (writingZone.flickable.atYBeginning && wheel.angleDelta.y > 0) {
+            flickable.returnToBounds()
+            return
+        }
+        if (writingZone.flickable.atYEnd && wheel.angleDelta.y < 0) {
+            writingZone.flickable.returnToBounds()
+            return
+        }
+    }
+
+    //--------------------------------------------------------
+    //---Right Scroll Area-----------------------------------------
+    //--------------------------------------------------------
+
+
+    rightPaneScrollTouchArea.onUpdated: {
+        var deltaY = touchPoints[0].y - touchPoints[0].previousY
+        //        console.log("deltaY :", deltaY)
+
+        if (writingZone.flickable.atYBeginning && deltaY > 0) {
+            writingZone.flickable.returnToBounds()
+            return
+        }
+        if (writingZone.flickable.atYEnd && deltaY < 0) {
+            writingZone.flickable.returnToBounds()
+            return
+        }
+
+         writingZone.flickable.flick(0, deltaY * 50)
+
+    }
+
+    rightPaneScrollMouseArea.onPressAndHold: {
+
+    }
+    rightPaneScrollMouseArea.onWheel: {
+
+        var deltaY = wheel.angleDelta.y *10
+
+        flickable.flick(0, deltaY)
+
+        if (writingZone.flickable.atYBeginning && wheel.angleDelta.y > 0) {
+            flickable.returnToBounds()
+            return
+        }
+        if (writingZone.flickable.atYEnd && wheel.angleDelta.y < 0) {
+            writingZone.flickable.returnToBounds()
+            return
+        }
+    }
 
     //---------------------------------------------------------
     //------Actions----------------------------------------

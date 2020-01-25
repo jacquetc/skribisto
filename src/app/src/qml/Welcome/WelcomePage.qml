@@ -42,14 +42,23 @@ WelcomePageForm {
         //            messageDialog.visible = true
         //        }
 
-
-
         welcomeWindowAction.trigger()
+        this.openArgument()
+
+    }
+
+    function openArgument(){
+
 
         var arg
         var arguments
+        var isTestProject = false
+        var oneProjectInArgument = false
+        var projectInArgument = ""
+
         arguments = Qt.application.arguments
         for (arg in arguments) {
+            console.log("argument : " , arguments[arg])
             if (arguments[arg] === "--testProject") {
                 var error = plmData.projectHub().loadProject(
                             testProjectFileName)
@@ -58,17 +67,25 @@ WelcomePageForm {
 
                 //show Write window
                 writeWindowAction.trigger()
-                break
+                isTestProject = true
+
             }
-//            else {
-//                var error = plmData.projectHub().loadProject(
-//                            arguments[0])
-//                //show Write window
-//                writeWindowAction.trigger()
-//                break
-//            }
+            else {
+                oneProjectInArgument = true
+                projectInArgument = plmData.projectHub().loadProject(
+                            arguments[arg])
+
+            }
         }
-        if (plmData.projectHub().getProjectCount() === 0 & SkrSettings.welcomeSettings.createEmptyProjectAtStart === true) {
+        if(!isTestProject & oneProjectInArgument){
+            var error = plmData.projectHub().loadProject(
+                        projectInArgument)
+            //show Write window
+            writeWindowAction.trigger()
+        }
+
+
+        if (!isTestProject & !oneProjectInArgument & plmData.projectHub().getProjectCount() === 0 & SkrSettings.welcomeSettings.createEmptyProjectAtStart === true) {
             plmData.projectHub().loadProject("")
 
             //show Write window

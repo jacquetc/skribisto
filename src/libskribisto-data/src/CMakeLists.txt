@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 project(skribisto-data)
 add_definitions(-DSKRIBISTO_DATA_LIBRARY)
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS Core Network Sql Gui CONFIG REQUIRED)
+find_package(Qt5 COMPONENTS Core Network Sql CONFIG REQUIRED)
 
 
 set(data_SRCS
@@ -91,7 +91,6 @@ set(models_SRCS
     models/plmpropertiesproxymodel.cpp
     models/plmsheetitem.cpp
     models/plmmodels.cpp
-    models/skrfontfamilylistmodel.cpp
     )
 set(models_HDR
     models/plmsheetmodel.h
@@ -111,7 +110,6 @@ set(models_HDR
     models/plmpropertiesproxymodel.h
     models/plmsheetitem.h
     models/plmmodels.h
-    models/skrfontfamilylistmodel.h
     )
 
 
@@ -126,4 +124,4 @@ qt5_add_resources(RESOURCES ${QRC})
 # Tell CMake to create the executable
 add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${models_SRCS} ${models_HDR} ${RESOURCES})
 
-qt5_use_modules(skribisto-data Core Network Gui Sql)
+qt5_use_modules(skribisto-data Core Network Sql)

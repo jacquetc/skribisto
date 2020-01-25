@@ -160,7 +160,6 @@ TreeViewForm {
         target: listView
         property: "currentIndex"
         value: proxyModel.forcedCurrentIndex
-        //when: proxyModel.onForcedCurrentIndexChanged
     }
 
     //----------------------------------------------------------------------------
@@ -176,6 +175,10 @@ TreeViewForm {
 
     // used to remember the source when moving an item
     property int moveSourceInt: -2
+
+    //used to differenciante tapCount between ItemSelectionModel
+    property int tapCountIndex: -2
+
 
     // TreeView item :
     Component {
@@ -284,10 +287,11 @@ TreeViewForm {
                 TapHandler {
                     id: tapHandler
                     onTapCountChanged: {
-                        console.log("tap", tapHandler.tapCount)
+//                        console.log("tap", tapHandler.tapCount)
+//                        console.log("tap", tapCountTimer.running)
 
 
-                        if(tapCount == 2 & tapCountTimer.running){
+                        if(tapCount == 2 & tapCountTimer.running & tapCountIndex === model.index){
                             //tripleTap
                             console.log("tripletap")
                             tapCountTimer.stop()
@@ -295,6 +299,7 @@ TreeViewForm {
                             return
                         }
                         if(tapCount == 1){
+                            tapCountIndex = model.index
                             tapCountTimer.start()
                             return
 
@@ -329,17 +334,11 @@ TreeViewForm {
                     onTapped: menu.open()
                 }
 
-                //                WheelHandler {
-                //                    id: wheelHandler
-                //                    enabled: dragHandler.enabled
-                //                }
-
                 /// without MouseArea, it breaks while dragging and scrolling:
                 MouseArea {
                     anchors.fill: parent
                     onWheel: {
-                        //                        console.log('wheel', wheel.angleDelta.y)
-                        //                        listView.flick(wheel.angleDelta.y, 0)
+                       listView.flick(0, wheel.angleDelta.y * 50)
                         wheel.accepted = true
                     }
 

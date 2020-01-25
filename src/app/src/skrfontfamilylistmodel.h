@@ -3,8 +3,9 @@
 
 #include <QObject>
 #include <QAbstractListModel>
+#include "./skribisto_data_global.h"
 
-class SKRFontFamilyListModel : public QAbstractListModel
+class EXPORT SKRFontFamilyListModel : public QAbstractListModel
 {
     Q_OBJECT
 public:

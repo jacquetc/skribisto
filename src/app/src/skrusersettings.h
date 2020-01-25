@@ -21,6 +21,8 @@ public:
     Q_INVOKABLE QVariant getFromProjectSettingHash(int projectId, const QString &key, const QString &hashKey, const QVariant &defaultValue);
     Q_INVOKABLE void removeFromProjectSettingHash(int projectId, const QString &key, const QString &hashKey);
 
+
+
 signals:
 private:
     QByteArray serializingHash(const QHash<QString, QVariant> &hash) const;

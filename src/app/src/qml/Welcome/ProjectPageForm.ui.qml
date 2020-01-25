@@ -5,12 +5,24 @@ import QtQuick.Layouts 1.12
 Item {
     width: 400
     height: 400
+    property alias projectFileTextField: projectFileTextField
+    property alias createNewProjectButton: createNewProjectButton
+    property alias partSpinBox: partSpinBox
+    property alias projectDetailPathLabel: projectDetailPathLabel
+    property alias selectProjectPathToolButton: selectProjectPathToolButton
+    property alias projectPathTextField: projectPathTextField
+    property alias projectTitleTextField: projectTitleTextField
+    property alias goBackToolButton: goBackToolButton
     property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
     property alias gridLayout: gridLayout
+    property alias gridLayout1: gridLayout1
+    property alias swipeView: swipeView
 
-    property alias open_project_button: open_project_button
-    property alias recent_list_view: recent_list_view
-    property alias new_project: new_project
+    property alias openProjectButton: openProjectButton
+    property alias recentListView: recentListView
+    property alias newProjectButton: newProjectButton
+    property alias folderDialogLoader: folderDialogLoader
+    property string fileName: fileName
 
     Pane {
         id: pane1
@@ -18,7 +30,10 @@ Item {
 
         SwipeView {
             id: swipeView
+            currentIndex: 1
             anchors.fill: parent
+            interactive: false
+            clip: true
 
             Item {
                 GridLayout {
@@ -37,7 +52,7 @@ Item {
                             height: 100
 
                             ListView {
-                                id: recent_list_view
+                                id: recentListView
                                 width: 110
                                 height: 160
                                 clip: true
@@ -49,27 +64,6 @@ Item {
                                 Layout.fillWidth: false
                                 keyNavigationWraps: false
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                                model: ListModel {
-                                    ListElement {
-                                        name: "Grey"
-                                        colorCode: "grey"
-                                    }
-
-                                    ListElement {
-                                        name: "Red"
-                                        colorCode: "red"
-                                    }
-
-                                    ListElement {
-                                        name: "Blue"
-                                        colorCode: "blue"
-                                    }
-
-                                    ListElement {
-                                        name: "Green"
-                                        colorCode: "green"
-                                    }
-                                }
                                 delegate: Item {
                                     x: 5
                                     width: 80
@@ -105,33 +99,166 @@ Item {
                             width: 100
                             height: 100
 
-
                             Button {
-                                id: new_project
+                                id: newProjectButton
                                 text: qsTr("New project")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             }
 
                             Button {
-                                id: open_project_button
+                                id: openProjectButton
                                 text: qsTr("Open project")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             }
-                            
+
                             Switch {
                                 id: createEmpyProjectAtStartSwitch
                                 text: qsTr("Switch")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             }
+                        }
+                    }
+
+                    Item {
+                        id: stretcher1
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                    }
+                }
+            }
+
+            Item {
+                ColumnLayout {
+                    id: columnLayout3
+                    anchors.fill: parent
+
+                    RowLayout {
+                        id: rowLayout2
+                        Layout.fillWidth: true
+
+                        ToolButton {
+                            id: goBackToolButton
+                            text: qsTr("Go back")
+                        }
+
+                        Label {
+                            id: titleLabel
+                            text: qsTr("<h2>New project</h2>")
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        }
+                    }
+                    GridLayout {
+                        id: gridLayout2
+                        rows: -1
+                        columns: 2
+                        flow: GridLayout.TopToBottom
+                        Layout.alignment: Qt.AlignHCenter
+
+                        GridLayout {
+                            id: gridLayout1
+                            rows: 2
+                            columns: 3
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: 600
+
+                            Label {
+                                id: projectTitleLabel
+                                text: qsTr("Project title :")
+                            }
+                            TextField {
+
+                                id: projectTitleTextField
+                                placeholderText: qsTr("project title")
+                                Layout.columnSpan: 2
+                                Layout.fillWidth: true
+                            }
+                            Label {
+                                id: projectFileLabel
+                                text: qsTr("Project file :")
+                            }
+                            TextField {
+
+                                id: projectFileTextField
+                                placeholderText: qsTr("project file")
+                                Layout.columnSpan: 2
+                                Layout.fillWidth: true
+                            }
+                            Label {
+                                id: projectPathLabel
+                                text: qsTr("Project path :")
+                            }
+
+                            TextField {
+                                id: projectPathTextField
+                                placeholderText: qsTr("project path")
+                                Layout.fillWidth: true
+                            }
+
+                            ToolButton {
+                                id: selectProjectPathToolButton
+                                text: qsTr("Select")
+                            }
+                        }
+                        ColumnLayout{
+                            id: columnLayout6s
+                            Label {
+                                id: projectDetailLabel
+                                text: qsTr("This project will be created as : ")
+                            }
+                            Label {
+                                id: projectDetailPathLabel
+                                text: fileName
+                            }
+
+                        }
+                        RowLayout{
+                            id: rowLayout3
+                            Layout.alignment: Qt.AlignHCenter
+                            Label{
+                                id: partLabel
+                                text: qsTr("Number of parts :")
+                            }
+
+                            SpinBox{
+                                id: partSpinBox
+                                value: 1
+                                from: 1
+                                to: 40
+                                editable: true
+
+                            }
+
+
+                        }
+                        RowLayout{
+                            id: rowLayout4
+                            Layout.alignment: Qt.AlignHCenter
+
+
+                            Button{
+                                id: createNewProjectButton
+                                text: qsTr("Create")
+                            }
+
 
                         }
                     }
 
                     Item {
-                        id: element
-                        width: 200
-                        height: 200
+                        id: stretcher2
                         Layout.fillHeight: true
                         Layout.fillWidth: true
                     }
+                }
+            }
+            Item {
+
+                Loader {
+                    id: folderDialogLoader
+                    anchors.fill: parent
                 }
             }
         }

@@ -130,3 +130,5 @@ void SkrUserSettings::removeFromProjectSettingHash(int projectId, const QString 
 
     settings.endGroup();
 }
+
+//--------------------------------------------------------------------

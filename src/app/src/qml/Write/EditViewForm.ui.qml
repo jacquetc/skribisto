@@ -17,6 +17,10 @@ Item {
     property alias fontFamilyComboBox: fontFamilyComboBox
     property alias textTopMarginSlider: textTopMarginSlider
     property alias textIndentSlider: textIndentSlider
+    property alias fullScreenColorToolButton: fullScreenColorToolButton
+    property alias goBack2ToolButton: goBack2ToolButton
+    property alias backroundColorTextField: backroundColorTextField
+    property alias backgroundColorToolButton: backgroundColorToolButton
 
     SwipeView {
         id: swipeView
@@ -64,9 +68,24 @@ Item {
                             display: AbstractButton.IconOnly
                         }
 
+
+
+                    }
+                }
+                GroupBox {
+                    id: groupBox2
+                    Layout.fillWidth: true
+                    title: qsTr("Display")
+
+                    GridLayout {
+                        id: gridLayout2
+                        columns: groupBox2.contentItem.width / fullScreenToolButton.width -1
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+
                         ToolButton {
                             id: fullScreenToolButton
-                            text: qsTr("Fullscreen")
+                            text: qsTr("Full screen")
                             display: AbstractButton.IconOnly
                         }
 
@@ -76,15 +95,25 @@ Item {
                             display: AbstractButton.IconOnly
 
                         }
+                        ToolButton {
+                            id: fullScreenColorToolButton
+                            text: qsTr("Full screen Colors")
+                            display: AbstractButton.IconOnly
+
+                        }
 
                     }
+
+
                 }
 
-            Item{
-                id: stretcher
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-            }
+
+
+                Item{
+                    id: stretcher
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                }
             }
 
         }
@@ -149,6 +178,61 @@ Item {
                     stepSize: 1
                     from: 0
                     to: 30
+                }
+            }
+        }
+        
+        Item {
+            id: fullScreenColorPage
+            
+            ColumnLayout {
+                id: columnLayout
+                anchors.fill: parent
+
+                ToolButton {
+                    id: goBack2ToolButton
+                    text: qsTr("Go back")
+                    display: AbstractButton.IconOnly
+                }
+
+                RowLayout {
+                    id: rowLayout
+                    Layout.fillWidth: true
+                    
+                    Label {
+                        id: label
+                        text: qsTr("Background :")
+                    }
+                    
+                    TextField {
+                        id: backroundColorTextField
+                        text: qsTr("Text Field")
+                    }
+
+                    ToolButton {
+                        id: backgroundColorToolButton
+                        text: qsTr("Tool Button")
+                    }
+                }
+
+                RowLayout {
+                    id: rowLayout1
+                    Layout.fillWidth: true
+
+                    Label {
+                        id: label2
+                        text: qsTr("Paper :")
+                    }
+
+                    TextField {
+                        id: paperColorTextField
+                        text: qsTr("#1234")
+                    }
+
+                    ToolButton {
+                        id: paperColorToolButton
+                        text: qsTr("")
+                    }
                 }
             }
         }

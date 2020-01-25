@@ -22,6 +22,9 @@ documenthandler.h
 documenthandler.cpp
 skrusersettings.h
 skrusersettings.cpp
+skrrecentprojectlistmodel.h
+skrrecentprojectlistmodel.cpp
+
 )
 
 set(QML qml.qrc
@@ -67,7 +70,7 @@ target_compile_definitions(skribisto
 target_link_libraries(skribisto skribisto-data)
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
-qt5_use_modules(skribisto Core Quick Network Gui)
+qt5_use_modules(skribisto Core Quick Network Gui LinguistTools)
 
 qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR}/src/translations/ ${TS_FILES})
 

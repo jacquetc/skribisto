@@ -2,7 +2,7 @@
  *   Copyright (C) 2019 by Cyril Jacquet                                 *
  *   cyril.jacquet@skribisto.eu                                        *
  *                                                                         *
- *  Filename: plmprojectlistmodel.cpp                                                   *
+ *  Filename: skrrecentprojectlistmodel.cpp                                                   *
  *  This file is part of Skribisto.                                    *
  *                                                                         *
  *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,19 +18,22 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#include "plmprojectlistmodel.h"
+#include "skrrecentprojectlistmodel.h"
 #include <QFileInfo>
 #include <QSettings>
 #include "plmdata.h"
 
-PLMProjectListModel::PLMProjectListModel(QObject *parent)
+SKRRecentProjectListModel::SKRRecentProjectListModel(QObject *parent)
     : QAbstractListModel(parent)
 {
     this->populate();
 
+    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &SKRRecentProjectListModel::insertInRecentProjectsFromAnId);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, &SKRRecentProjectListModel::populate);
+
 }
 
-QVariant PLMProjectListModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant SKRRecentProjectListModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
 
     Q_UNUSED(section)
@@ -40,7 +43,7 @@ QVariant PLMProjectListModel::headerData(int section, Qt::Orientation orientatio
     return QVariant();
 }
 
-int PLMProjectListModel::rowCount(const QModelIndex &parent) const
+int SKRRecentProjectListModel::rowCount(const QModelIndex &parent) const
 {
     // For list models only the root node (an invalid parent) should return the list's size. For all
     // other (valid) parents, rowCount() should return 0 so that it does not become a tree model.
@@ -50,7 +53,7 @@ int PLMProjectListModel::rowCount(const QModelIndex &parent) const
     return m_allRecentProjects.count();
 }
 
-QVariant PLMProjectListModel::data(const QModelIndex &index, int role) const
+QVariant SKRRecentProjectListModel::data(const QModelIndex &index, int role) const
 {
     Q_ASSERT(checkIndex(index,
                         QAbstractItemModel::CheckIndexOption::IndexIsValid
@@ -62,6 +65,9 @@ QVariant PLMProjectListModel::data(const QModelIndex &index, int role) const
 
 
     if (role == Qt::DisplayRole){
+        return m_allRecentProjects.at(index.row())->title;
+    }
+    if (role == Qt::UserRole){
         return m_allRecentProjects.at(index.row())->title;
     }
     if (role == Qt::UserRole + 1){
@@ -76,25 +82,29 @@ QVariant PLMProjectListModel::data(const QModelIndex &index, int role) const
     if (role == Qt::UserRole + 4){
         return m_allRecentProjects.at(index.row())->lastModification;
     }
+    if (role == Qt::UserRole + 5){
+        return m_allRecentProjects.at(index.row())->isOpened;
+    }
     return QVariant();
 }
 
 //----------------------------------------------------------
 
-QHash<int, QByteArray>PLMProjectListModel::roleNames() const {
+QHash<int, QByteArray>SKRRecentProjectListModel::roleNames() const {
     QHash<int, QByteArray> roles;
     roles[Qt::UserRole]  = "title";
     roles[Qt::UserRole + 1]  = "fileName";
     roles[Qt::UserRole + 2]  = "writable";
     roles[Qt::UserRole + 3]  = "exists";
     roles[Qt::UserRole + 4]  = "lastModification";
+    roles[Qt::UserRole + 5]  = "isOpened";
 
     return roles;
 }
 
 //----------------------------------------------------------
 
-void PLMProjectListModel::insertInRecentProjects(const QString &title, const QString &fileName)
+void SKRRecentProjectListModel::insertInRecentProjects(const QString &title, const QString &fileName)
 {
     bool alreadyHere = false;
     int alreadyHereIndex = -1;
@@ -136,12 +146,22 @@ void PLMProjectListModel::insertInRecentProjects(const QString &title, const QSt
 
    settings.endGroup();
 
-    this->populate();
+   this->populate();
 }
 
 //----------------------------------------------------------
 
-void PLMProjectListModel::populate()
+void SKRRecentProjectListModel::insertInRecentProjectsFromAnId(int projectId)
+{
+    QString title = plmdata->projectHub()->getProjectName(projectId);
+    QString fileName = plmdata->projectHub()->getPath(projectId);
+
+    this->insertInRecentProjects(title, fileName);
+}
+
+//----------------------------------------------------------
+
+void SKRRecentProjectListModel::populate()
 {
     this->beginResetModel();
 

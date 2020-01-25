@@ -37,6 +37,7 @@ TARGET = skribisto
 #LIBS += -L$$top_builddir/bin/staticplugins -lplumetag
 DEFINES += QT_DEPRECATED_WARNINGS
 
+
 # dossier de zlib.h
 #INCLUDEPATH += ../../externals/zlib
 
@@ -47,12 +48,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += main.cpp \
-documenthandler.cpp
+documenthandler.cpp \
+skrrecentprojectlistmodel.cpp \
+skrusersettings.cpp \
+skrfontfamilylistmodel.cpp
 
 HEADERS += \
-documenthandler.h
-
-#QT += core gui widgets qml
+documenthandler.h \
+skrrecentprojectlistmodel.h \
+skrusersettings.h \
+skrfontfamilylistmodel.h
 
 CODECFORTR = UTF-8
 
@@ -160,6 +165,7 @@ QMAKE_INFO_PLIST = resources/mac/Info.plist
 # add data lib :
 
 win32: LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data
+android: LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data_x86
 else:unix: LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data
 
 INCLUDEPATH += $$PWD/../../libskribisto-data/src
@@ -173,21 +179,15 @@ DEPENDPATH += $$PWD/../../libskribisto-data/src
 #else:unix: PRE_TARGETDEPS += $$top_builddir/build/libplume-creator-data.a
 
 
-android {
 
 DISTFILES += \
     android/AndroidManifest.xml \
-    android/gradle/wrapper/gradle-wrapper.jar \
-    android/gradlew \
-    android/res/values/libs.xml \
     android/build.gradle \
+    android/gradle/wrapper/gradle-wrapper.jar \
     android/gradle/wrapper/gradle-wrapper.properties \
-    android/gradlew.bat
-
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
-}
-
-DISTFILES += \
+    android/gradlew \
+    android/gradlew.bat \
+    android/res/values/libs.xml \
     qml/dockFrame.js \
     qml/settings.js \
     qml/DockFrameForm.ui.qml \
@@ -230,19 +230,24 @@ DISTFILES += \
     qml/Welcome/ProjectPage.qml \
     qml/Welcome/ProjectPageForm.ui.qml \
     qml/Welcome/SettingsPage.qml \
-    qml/Welcome/SettingsPageForm.ui.qml
+    qml/Welcome/SettingsPageForm.ui.qml \
+    qml/Write/EditView.qml \
+    qml/Write/EditViewForm.ui.qml \
+    qml/SkrSettings.qml
 
-contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    ANDROID_EXTRA_LIBS = \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Core.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Network.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Qml.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Quick.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickControls2.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickTemplates2.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickTest.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickWidgets.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Sql.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Widgets.so \
-        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Xml.so
-}
+#contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+#    ANDROID_EXTRA_LIBS = \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Core.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Network.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Qml.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Quick.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickControls2.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickTemplates2.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickTest.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5QuickWidgets.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Sql.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Widgets.so \
+#        $$PWD/../../../../Qt/5.10.1/android_armv7/lib/libQt5Xml.so
+#}
+
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android

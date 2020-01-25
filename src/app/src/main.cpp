@@ -28,6 +28,7 @@ using namespace std;
 #include "models/plmsheetlistproxymodel.h"
 #include "models/plmnotelistproxymodel.h"
 #include "models/plmmodels.h"
+#include "skrrecentprojectlistmodel.h"
 #include "skrusersettings.h"
 
 #ifdef QT_DEBUG
@@ -230,6 +231,11 @@ int main(int argc, char *argv[])
                                        1,
                                        0,
                                        "PLMNoteListProxyModel");
+
+    qmlRegisterType<SKRRecentProjectListModel>("eu.skribisto.recentprojectlistmodel",
+                                       1,
+                                       0,
+                                       "SKRRecentProjectListModel");
 
     qmlRegisterType<DocumentHandler>("eu.skribisto.documenthandler",
                                      1,

@@ -245,7 +245,7 @@ WritingZoneForm {
             return
         }
 
-        flickable.contentY = flickable.contentY - deltaY
+        flickable.flick(0, deltaY * 50 )
 
         //        for (var touch in touchPoints)
         //            console.log("Multitouch updated touch", touchPoints[touch].pointId,
@@ -258,13 +258,11 @@ WritingZoneForm {
 
     }
     leftScrollMouseArea.onWheel: {
-        //        if(wheel.pixelDelta.y !== 0){
-        //console.log("pixelDelta :", wheel.pixelDelta.y)
-        //            flickable.contentY = flickable.contentY - wheel.pixelDelta.y
-        //        }else
-        flickable.contentY = flickable.contentY - wheel.angleDelta.y / 8
-        //        console.log("angleDelta :", wheel.angleDelta.y)
-        //        console.log("flickable.contentY :", flickable.contentY)
+
+
+        var deltaY = wheel.angleDelta.y *10
+
+        flickable.flick(0, deltaY)
 
         if (flickable.atYBeginning && wheel.angleDelta.y > 0) {
             flickable.returnToBounds()
@@ -293,7 +291,7 @@ WritingZoneForm {
             return
         }
 
-        flickable.contentY = flickable.contentY - deltaY
+        flickable.flick(0, deltaY * 50)
 
         //        for (var touch in touchPoints)
         //            console.log("Multitouch updated touch", touchPoints[touch].pointId,
@@ -306,13 +304,10 @@ WritingZoneForm {
 
     }
     rightScrollMouseArea.onWheel: {
-        //        if(wheel.pixelDelta.y !== 0){
-        //console.log("pixelDelta :", wheel.pixelDelta.y)
-        //            flickable.contentY = flickable.contentY - wheel.pixelDelta.y
-        //        }else
-        flickable.contentY = flickable.contentY - wheel.angleDelta.y / 8
-        //        console.log("angleDelta :", wheel.angleDelta.y)
-        //        console.log("flickable.contentY :", flickable.contentY)
+
+        var deltaY = wheel.angleDelta.y *10
+
+        flickable.flick(0, deltaY)
 
         if (flickable.atYBeginning && wheel.angleDelta.y > 0) {
             flickable.returnToBounds()

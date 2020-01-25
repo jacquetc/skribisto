@@ -7,6 +7,8 @@ Item {
     id: base
     width: 1000
     height: 600
+    property alias rightPaneScrollMouseArea: rightPaneScrollMouseArea
+    property alias rightPaneScrollTouchArea: rightPaneScrollTouchArea
     property alias compactHeaderPane: compactHeaderPane
     property alias compactRightDockShowButton: compactRightDockShowButton
     property alias compactLeftDockShowButton: compactLeftDockShowButton
@@ -24,6 +26,8 @@ Item {
     property alias middleBase: middleBase
     property alias writingZone: writingZone
     property alias base: base
+    property alias leftPaneScrollMouseArea: leftPaneScrollMouseArea
+    property alias leftPaneScrollTouchArea: leftPaneScrollTouchArea
 
     ColumnLayout {
         id: columnLayout
@@ -91,42 +95,69 @@ Item {
                         id: leftDock
                         Layout.fillHeight: true
                     }
-                    ColumnLayout {
-                        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                        Layout.maximumWidth: 60
-                        Button {
-                            id: leftDockShowButton
-                            focusPolicy: Qt.NoFocus
-                            Layout.preferredHeight: 50
-                            Layout.preferredWidth: 50
-                            flat: true
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+
+                    Pane{
+                        id: leftPane
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+
+                        MultiPointTouchArea {
+                            id: leftPaneScrollTouchArea
+                            z: 1
+                            anchors.fill: parent
+                            mouseEnabled: false
+                            maximumTouchPoints: 1
+                            touchPoints: [
+                                TouchPoint {
+                                    id: leftTouch1
+                                }
+                            ]
                         }
 
-                        Button {
-                            id: leftDockMenuButton
-                            focusPolicy: Qt.NoFocus
-                            checkable: true
-                            Layout.preferredHeight: 50
-                            Layout.preferredWidth: 50
-                            flat: true
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                        MouseArea {
+                            id: leftPaneScrollMouseArea
+                            z: 0
+                            anchors.fill: parent
                         }
 
                         ColumnLayout {
-                            id: leftDockMenuGroup
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-
+                            anchors.fill: parent
                             Button {
-                                id: leftDockResizeButton
+                                id: leftDockShowButton
                                 focusPolicy: Qt.NoFocus
                                 Layout.preferredHeight: 50
                                 Layout.preferredWidth: 50
                                 flat: true
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                             }
+
+                            Button {
+                                id: leftDockMenuButton
+                                focusPolicy: Qt.NoFocus
+                                checkable: true
+                                Layout.preferredHeight: 50
+                                Layout.preferredWidth: 50
+                                flat: true
+                                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                            }
+
+                            ColumnLayout {
+                                id: leftDockMenuGroup
+                                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+
+                                Button {
+                                    id: leftDockResizeButton
+                                    focusPolicy: Qt.NoFocus
+                                    Layout.preferredHeight: 50
+                                    Layout.preferredWidth: 50
+                                    flat: true
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                                }
+                            }
                         }
                     }
+
+
                 }
             }
 
@@ -152,39 +183,66 @@ Item {
 
                 RowLayout {
                     anchors.fill: parent
-                    ColumnLayout {
-                        Layout.alignment: Qt.AlignRight | Qt.AlignTop
-                        Layout.maximumWidth: 60
-                        Button {
-                            id: rightDockShowButton
-                            focusPolicy: Qt.NoFocus
-                            Layout.preferredHeight: 50
-                            Layout.preferredWidth: 50
-                            flat: true
-                            Layout.alignment: Qt.AlignRight | Qt.AlignTop
+
+
+                    Pane{
+                        id: rightPane
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+
+                        MultiPointTouchArea {
+                            id: rightPaneScrollTouchArea
+                            z: 1
+                            anchors.fill: parent
+                            mouseEnabled: false
+                            maximumTouchPoints: 1
+                            touchPoints: [
+                                TouchPoint {
+                                    id: leftTouch2
+                                }
+                            ]
                         }
 
-                        Button {
-                            id: rightDockMenuButton
-                            focusPolicy: Qt.NoFocus
-                            checkable: true
-                            Layout.preferredHeight: 50
-                            Layout.preferredWidth: 50
-                            flat: true
-                            Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                        MouseArea {
+                            id: rightPaneScrollMouseArea
+                            z: 0
+                            anchors.fill: parent
                         }
 
                         ColumnLayout {
-                            id: rightDockMenuGroup
-                            Layout.alignment: Qt.AlignRight | Qt.AlignTop
 
+                            anchors.fill: parent
                             Button {
-                                id: rightDockResizeButton
+                                id: rightDockShowButton
                                 focusPolicy: Qt.NoFocus
                                 Layout.preferredHeight: 50
                                 Layout.preferredWidth: 50
                                 flat: true
                                 Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                            }
+
+                            Button {
+                                id: rightDockMenuButton
+                                focusPolicy: Qt.NoFocus
+                                checkable: true
+                                Layout.preferredHeight: 50
+                                Layout.preferredWidth: 50
+                                flat: true
+                                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                            }
+
+                            ColumnLayout {
+                                id: rightDockMenuGroup
+                                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+
+                                Button {
+                                    id: rightDockResizeButton
+                                    focusPolicy: Qt.NoFocus
+                                    Layout.preferredHeight: 50
+                                    Layout.preferredWidth: 50
+                                    flat: true
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                                }
                             }
                         }
                     }
@@ -203,6 +261,7 @@ Item {
                         id: rightDock
                         Layout.fillHeight: true
                     }
+
                 }
             }
         }
@@ -211,7 +270,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;width:1200}D{i:17;anchors_height:100;anchors_width:100}
+    D{i:0;width:1200}D{i:17;anchors_height:100;anchors_width:100}D{i:21;anchors_height:100;anchors_width:100}
 }
 ##^##*/
 

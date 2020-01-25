@@ -18,8 +18,8 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef PLMPROJECTLISTMODEL_H
-#define PLMPROJECTLISTMODEL_H
+#ifndef SKRRECENTPROJECTLISTMODEL_H
+#define SKRRECENTPROJECTLISTMODEL_H
 
 #include <QAbstractListModel>
 #include <QDateTime>
@@ -48,12 +48,12 @@ public:
 
 };
 
-class EXPORT PLMProjectListModel : public QAbstractListModel
+class EXPORT SKRRecentProjectListModel : public QAbstractListModel
 {
     Q_OBJECT
 
 public:
-    explicit PLMProjectListModel(QObject *parent = nullptr);
+    explicit SKRRecentProjectListModel(QObject *parent = nullptr);
 
     // Header:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
@@ -66,6 +66,7 @@ public:
     Q_INVOKABLE void insertInRecentProjects(const QString &title, const QString &fileName);
 
 private slots:
+    void insertInRecentProjectsFromAnId(int projectId);
     void populate();
 
 private:
@@ -73,4 +74,4 @@ private:
 
 };
 
-#endif // PLMPROJECTLISTMODEL_H
+#endif // SKRRECENTPROJECTLISTMODEL_H

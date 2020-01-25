@@ -9,7 +9,7 @@ ApplicationWindow {
     id: rootWindow
     //visible: true
     minimumHeight: 500
-    minimumWidth: 500
+    minimumWidth: 600
 
     onHeightChanged: Globals.height = height
     onWidthChanged: Globals.width = width

@@ -175,7 +175,7 @@ Item {
             PropertyChanges {
                 target: scrollView
                 implicitWidth: 0
-                Layout.maximumWidth: undefined
+                Layout.maximumWidth: Number.POSITIVE_INFINITY
                 Layout.fillWidth: true
             }
             PropertyChanges {
