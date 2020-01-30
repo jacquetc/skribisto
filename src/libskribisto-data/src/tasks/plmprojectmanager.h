@@ -33,7 +33,7 @@ public slots:
 
 private:
     static PLMProjectManager *m_instance;
-    QHash<int, PLMProject *> m_projectForIntHash;
+    QMap<int, PLMProject *> m_projectForIntMap;
     int m_projectIdIncrement;
 
 };

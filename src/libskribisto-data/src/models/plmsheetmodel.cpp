@@ -501,6 +501,10 @@ void PLMSheetModel::addPaper(int projectId, int paperId)
         itemIndex = 0;
     }
     else {
+        if(paperIndex == 0){
+            paperIndex = 1;
+        }
+
         int idBefore = idList.at(paperIndex - 1);
         PLMSheetItem *itemBefore = this->findPaperItem(projectId, idBefore);
 

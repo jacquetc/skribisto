@@ -2,6 +2,7 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
 import QtQml.Models 2.12
+import ".."
 
 TreeViewForm {
     id: root
@@ -29,6 +30,8 @@ TreeViewForm {
 
     //-----------------------------------------------------------------------------
     // go up button :
+    property bool goUpButtonEnabled: true
+
     goUpToolButton.action: goUpAction
 
     Action {
@@ -38,14 +41,45 @@ TreeViewForm {
         icon {
             name: "go-parent-folder"
         }
-        enabled: root.visible & currentParent > (plmData.projectHub().getProjectCount() > 1 ? -1 : 0)
+        //enabled:
         onTriggered: {
             currentParent = proxyModel.goUp()
             listView.currentIndex = proxyModel.getLastOfHistory(currentProject)
             proxyModel.removeLastOfHistory(currentProject)
-            //proxyModel.setForcedCurrentIndex(0)
-            console.log("go up action")
+
         }
+    }
+    function determineIfGoUpButtonEnabled() {
+        var currentIndent = proxyModel.getItemIndent(currentProject, currentParent) + 1
+        //console.log("determineIfGoUpButtonEnabled", currentIndent)
+        if(!root.visible){
+            goUpAction.enabled = false
+            return
+        }
+        if(Globals.multipleProjects & currentIndent <= -1){
+            goUpAction.enabled = false
+
+        }
+        else if(!Globals.multipleProjects & currentIndent <= 0){
+            goUpAction.enabled = false
+
+        }
+        else {
+            goUpAction.enabled = true
+        }
+    }
+
+    onVisibleChanged: {
+        determineIfGoUpButtonEnabled()
+    }
+
+    Connections {
+        target: Globals
+        onMultipleProjectsChanged: function() {
+
+            console.log("onMultipleProjectsChanged", Globals.multipleProjects)
+                determineIfGoUpButtonEnabled()
+    }
     }
 
     //-----------------------------------------------------------------------------
@@ -63,10 +97,17 @@ TreeViewForm {
     //currentParent: proxyModel.parentIdFilter
     //currentProject: proxyModel.projectIdFilter
     onCurrentParentChanged: {
+        determineIfGoUpButtonEnabled()
+
+
         if (currentParent != -2 & currentProject != -2) {
             currentParentToolButton.text = proxyModel.getItemName(
                         currentProject, currentParent)
             //console.log("onCurrentParentChanged")
+        }
+        // clear :
+        if (currentParent === -2 & currentProject === -2 ){
+            currentParentToolButton.text = ""
         }
     }
     onCurrentProjectChanged: {
@@ -75,12 +116,19 @@ TreeViewForm {
                         currentProject, currentParent)
             //console.log("onCurrentProjectChanged")
         }
+        // clear :
+        if (currentParent === -2 & currentProject === -2 ){
+            currentParentToolButton.text = ""
+        }
     }
 
     currentParentToolButton.onClicked: {
 
         //currentParent
     }
+
+    //----------------------------------------------------------------------------
+
 
     //----------------------------------------------------------------------------
     treeMenuToolButton.icon.name: "overflow-menu"
@@ -118,7 +166,7 @@ TreeViewForm {
     addToolButton.icon.name: "document-new"
     addToolButton.onClicked: {
         proxyModel.addItemAtEnd(currentProject, currentParent,
-                                visualModel.items.count - 1)
+                                visualModel.items.count)
         listView.currentItem.editName()
     }
 
@@ -287,8 +335,8 @@ TreeViewForm {
                 TapHandler {
                     id: tapHandler
                     onTapCountChanged: {
-//                        console.log("tap", tapHandler.tapCount)
-//                        console.log("tap", tapCountTimer.running)
+                        //                        console.log("tap", tapHandler.tapCount)
+                        //                        console.log("tap", tapCountTimer.running)
 
 
                         if(tapCount == 2 & tapCountTimer.running & tapCountIndex === model.index){
@@ -338,7 +386,7 @@ TreeViewForm {
                 MouseArea {
                     anchors.fill: parent
                     onWheel: {
-                       listView.flick(0, wheel.angleDelta.y * 50)
+                        listView.flick(0, wheel.angleDelta.y * 50)
                         wheel.accepted = true
                     }
 
@@ -349,7 +397,7 @@ TreeViewForm {
                     id: goToChildAction
                     shortcut: "Right"
                     enabled: {
-                        if (!listView.activeFocus){
+                        if (!listView.enabled){
                             return false
                         }
 
@@ -402,121 +450,155 @@ TreeViewForm {
                     onTriggered: root.openDocument(model.projectId,
                                                    model.paperId)
                 }
-
-                RowLayout {
-                    id: rowLayout
-                    spacing: 2
+                ColumnLayout{
+                    id: columnLayout3
                     anchors.fill: parent
 
-                    Rectangle {
-                        id: currentItemIndicator
-                        color: "#cccccc"
-                        Layout.fillHeight: true
-                        Layout.preferredWidth: 20
-                        visible: listView.currentIndex === model.index
-                    }
 
-                    Rectangle {
-                        color: "transparent"
-                        //border.width: 1
+                    RowLayout {
+                        id: rowLayout
+                        spacing: 2
+                        Layout.fillHeight: true
                         Layout.fillWidth: true
-                        Layout.fillHeight: true
 
-                        ColumnLayout {
-                            id: columnLayout2
-                            spacing: 1
-                            anchors.fill: parent
+
+                        Rectangle {
+                            id: currentItemIndicator
+                            color: "#cccccc"
                             Layout.fillHeight: true
+                            Layout.preferredWidth: 5
+                            visible: listView.currentIndex === model.index
+                        }
+
+                        Rectangle {
+                            color: "transparent"
+                            //border.width: 1
                             Layout.fillWidth: true
+                            Layout.fillHeight: true
 
-                            Label {
-                                id: titleLabel
-
-                                Layout.fillWidth: true
-                                Layout.topMargin: 2
-                                Layout.leftMargin: 4
-                                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-
-                                text: model.name
-                            }
-                            TextField {
-                                id: titleTextField
-                                visible: false
-
-                                Layout.fillWidth: true
+                            ColumnLayout {
+                                id: columnLayout2
+                                spacing: 1
+                                anchors.fill: parent
                                 Layout.fillHeight: true
-                                text: titleLabel.text
-                                maximumLength: 50
+                                Layout.fillWidth: true
 
-                                placeholderText: qsTr("Enter name")
+                                Label {
+                                    id: titleLabel
 
-                                onAccepted: {
-                                    model.name = text
-                                    delegateRoot.state = ""
+                                    Layout.fillWidth: true
+                                    Layout.topMargin: 2
+                                    Layout.leftMargin: 4
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+
+                                    text: model.indent === -1 ? model.projectName : model.name
                                 }
+                                TextField {
+                                    id: titleTextField
+                                    visible: false
 
-                                onEditingFinished: {
-                                    if (!activeFocus) {
-                                        accepted()
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    text: titleLabel.text
+                                    maximumLength: 50
+
+                                    placeholderText: qsTr("Enter name")
+
+                                    onAccepted: {
+                                        model.name = text
+                                        delegateRoot.state = ""
+                                    }
+
+                                    onEditingFinished: {
+                                        if (!activeFocus) {
+                                            accepted()
+                                        }
                                     }
                                 }
+
+                                Label {
+                                    id: tagLabel
+
+                                    //                                text: model.tag
+                                    text: model.tag
+                                    Layout.bottomMargin: 2
+                                    Layout.rightMargin: 4
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                }
                             }
-
-                            Label {
-                                id: tagLabel
-
-                                //                                text: model.tag
-                                text: model.tag
-                                Layout.bottomMargin: 2
-                                Layout.rightMargin: 4
-                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            }
-                        }
-                        //                        MouseArea {
-                        //                            anchors.fill: parent
-                        //                        }
-                    }
-
-                    ToolButton {
-                        id: menuButton
-                        Layout.fillHeight: true
-                        Layout.preferredWidth: 30
-
-                        text: "..."
-                        flat: true
-                        focusPolicy: Qt.NoFocus
-
-                        onClicked: {
-                            menu.open()
+                            //                        MouseArea {
+                            //                            anchors.fill: parent
+                            //                        }
                         }
 
-                        visible: hoverHandler.hovered | content.isCurrent
+                        ToolButton {
+                            id: menuButton
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: 30
+
+                            text: "..."
+                            flat: true
+                            focusPolicy: Qt.NoFocus
+
+                            onClicked: {
+                                menu.open()
+                            }
+
+                            visible: hoverHandler.hovered | content.isCurrent
+                        }
+
+                        ToolButton {
+                            id: goToChildButton
+                            action: goToChildAction
+
+                            //                            background: Rectangle {
+                            //                                implicitWidth: 30
+                            //                                implicitHeight: 30
+                            //                                color: Qt.darker(
+                            //                                           "#33333333", control.enabled
+                            //                                           && (control.checked
+                            //                                               || control.highlighted) ? 1.5 : 1.0)
+                            //                                opacity: enabled ? 1 : 0.3
+                            //                                visible: control.down
+                            //                                         || (control.enabled
+                            //                                             && (control.checked
+                            //                                                 || control.highlighted))
+                            //                            }
+                            flat: true
+                            Layout.preferredWidth: 30
+                            Layout.fillHeight: true
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            visible: hoverHandler.hovered | content.isCurrent
+                            focusPolicy: Qt.NoFocus
+                        }
+                    }
+                    Rectangle {
+                        id: separator
+                        Layout.preferredHeight: 1
+                        Layout.preferredWidth: content.width / 2
+                        Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
+                        gradient: Gradient {
+                            orientation: Qt.Horizontal
+                            GradientStop {
+                                position: 0.00;
+                                color: "#ffffff";
+                            }
+                            GradientStop {
+                                position: 0.30;
+                                color: "#9e9e9e";
+                            }
+                            GradientStop {
+                                position: 0.70;
+                                color: "#9e9e9e";
+                            }
+                            GradientStop {
+                                position: 1.00;
+                                color: "#ffffff";
+                            }
+                        }
+
                     }
 
-                    ToolButton {
-                        id: goToChildButton
-                        action: goToChildAction
-
-                        //                            background: Rectangle {
-                        //                                implicitWidth: 30
-                        //                                implicitHeight: 30
-                        //                                color: Qt.darker(
-                        //                                           "#33333333", control.enabled
-                        //                                           && (control.checked
-                        //                                               || control.highlighted) ? 1.5 : 1.0)
-                        //                                opacity: enabled ? 1 : 0.3
-                        //                                visible: control.down
-                        //                                         || (control.enabled
-                        //                                             && (control.checked
-                        //                                                 || control.highlighted))
-                        //                            }
-                        flat: true
-                        Layout.preferredWidth: 30
-                        Layout.fillHeight: true
-                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                        visible: hoverHandler.hovered | content.isCurrent
-                        focusPolicy: Qt.NoFocus
-                    }
                 }
             }
             //            DropArea {

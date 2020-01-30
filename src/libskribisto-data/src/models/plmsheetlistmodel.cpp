@@ -443,8 +443,17 @@ void PLMSheetListModel::refreshAfterDataAddition(int projectId, int paperId)
     // find item just before in m_allSheetItems to determine item index to insert in:
 
     int itemIndex = 0;
-    if (plmdata->projectHub()->getProjectIdList().count() == 1 && paperIndex == 0){ // so no project items and first item
+    if (plmdata->projectHub()->getProjectCount() == 1 && paperIndex == 0){ // so no project items and first item
         itemIndex = 0;
+    }
+    else if (plmdata->projectHub()->getProjectCount() > 1 && idList.count() == 1) { // first of a second new project
+            this->populate();
+            return;
+        }
+    else if (plmdata->projectHub()->getProjectCount() > 1 && idList.count() > 1) { // stopgap
+        this->populate();
+        return;
+
     }
     else {
         int idBefore = idList.at(paperIndex - 1);
@@ -722,4 +731,7 @@ PLMSheetItem *PLMSheetListModel::getItem(int projectId, int paperId)
 
     return result_item;
 }
+
+//-----------------------------------------------------------------------------------
+
 

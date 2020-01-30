@@ -50,12 +50,12 @@ struct EXPORT PLMError
 public:
     explicit PLMError();
     PLMError(const PLMError &error);
-    bool operator !() const;
-    operator bool() const;
-    PLMError &operator =(const PLMError &iError);
+    Q_INVOKABLE bool operator !() const;
+    Q_INVOKABLE operator bool() const;
+    Q_INVOKABLE PLMError &operator =(const PLMError &iError);
 
-    void setSuccess(bool value);
-    bool isSuccess() const;
+    Q_INVOKABLE void setSuccess(bool value);
+    Q_INVOKABLE bool isSuccess() const;
 
 signals:
 

@@ -35,6 +35,10 @@ PLMSheetListProxyModel::PLMSheetListProxyModel(QObject *parent) : QSortFilterPro
     connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &PLMSheetListProxyModel::loadProjectSettings);
     connect(plmdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &PLMSheetListProxyModel::saveProjectSettings, Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, &PLMSheetListProxyModel::clearHistory);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this](){
+        this->clearFilters();
+
+    });
 }
 
 Qt::ItemFlags PLMSheetListProxyModel::flags(const QModelIndex& index) const
@@ -138,12 +142,14 @@ bool PLMSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
             result = true;
         }
     }
-    else if(!parentItem && item->indent() == 0 && m_parentIdFilter == 0){
-        //qDebug() << "c" ;
+    // first indent with one project:
+    else if(!parentItem && item->indent() == 0 && (m_parentIdFilter == 0 || m_parentIdFilter == -2) && plmdata->projectHub()->getProjectCount() <= 1){
+        result = true;
+    }    // first indent with multiple projects:
+    else if(!parentItem && item->indent() == 0 && m_parentIdFilter == -1 && plmdata->projectHub()->getProjectCount() > 1){
         result = true;
     }
     else {
-        //qDebug() << "d" ;
         return false;
     }
     // deleted filtering :
@@ -164,12 +170,17 @@ bool PLMSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
     return result;
 }
 
+//--------------------------------------------------------------
+
 void PLMSheetListProxyModel::setParentIdFilter(int parentIdFilter)
 {
     m_parentIdFilter = parentIdFilter;
     emit parentIdFilterChanged(m_parentIdFilter);
     this->invalidate();
 }
+
+
+//--------------------------------------------------------------
 
 void PLMSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
 {
@@ -178,6 +189,17 @@ void PLMSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
     this->invalidate();
 }
 
+//--------------------------------------------------------------
+
+void PLMSheetListProxyModel::clearFilters()
+{
+    m_parentIdFilter = -2;
+    m_projectIdFilter = -2;
+    emit projectIdFilterChanged(m_projectIdFilter);
+    emit parentIdFilterChanged(m_parentIdFilter);
+    this->invalidate();
+
+}
 
 
 
@@ -268,17 +290,17 @@ int PLMSheetListProxyModel::goUp()
     if(grandParentItem){
         grandParentId = grandParentItem->paperId();
     }
-    else{
-        if(plmdata->projectHub()->getProjectIdList().count() == 1){
-            grandParentId = 0;
-        }
-        else if(plmdata->projectHub()->getProjectIdList().count() > 1){
-            grandParentId = -1;
-        }
-    }
+//    else{
+//        if(plmdata->projectHub()->getProjectIdList().count() == 1){
+//            grandParentId = -2;
+//        }
+//        else if(plmdata->projectHub()->getProjectIdList().count() > 1){
+//            grandParentId = -1;
+//        }
+//    }
     this->setParentFilter(m_projectIdFilter, grandParentId);
 
-    return grandParentId;
+     return grandParentId;
 }
 
 //--------------------------------------------------------------
@@ -347,13 +369,24 @@ void PLMSheetListProxyModel::setForcedCurrentIndex(int projectId, int paperId)
 
 void PLMSheetListProxyModel::setCurrentPaperId(int projectId, int paperId)
 {
+    if (paperId == -2 && projectId != -2 && plmdata->projectHub()->getProjectCount() > 1){
+        this->setParentFilter(projectId, -1);
+        return;
+    }
+    else if(paperId == -2 && projectId != -2){
+       this->setParentFilter(projectId, 0);
+        return;
+    }
+
     PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
     PLMSheetItem *item = this->getItem(projectId, paperId);
     if(!item){
         paperId = plmdata->sheetHub()->getTopPaperId(projectId);
         item = this->getItem(projectId, paperId);
     }
-
+//    if(paperId == -2){
+//        return;
+//    }
 
     PLMSheetItem *parentItem = model->getParentSheetItem(item);
     if(parentItem){
@@ -461,6 +494,26 @@ QString PLMSheetListProxyModel::getItemName(int projectId, int paperId)
     return name;
 }
 //--------------------------------------------------------------
+int PLMSheetListProxyModel::getItemIndent(int projectId, int paperId)
+{
+    if(projectId == -2 || paperId == -2){ // root item or error
+        return -2;
+    }
+    if(paperId == -1){ // project item
+        return -1;
+    }
+
+    int indent = -2;
+    PLMSheetItem *item = this->getItem(projectId, paperId);
+    if(item){
+        indent = item->indent();
+    }
+
+
+    return indent;
+}
+
+//-----------------------------------------------------------------
 
 void PLMSheetListProxyModel::addItemAtEnd(int projectId, int parentPaperId, int visualIndex)
 {

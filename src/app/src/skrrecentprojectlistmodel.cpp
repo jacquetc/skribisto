@@ -30,6 +30,9 @@ SKRRecentProjectListModel::SKRRecentProjectListModel(QObject *parent)
 
     connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &SKRRecentProjectListModel::insertInRecentProjectsFromAnId);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, &SKRRecentProjectListModel::populate);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectNameChanged, this, [this](int projectId, const QString &name){
+        this->insertInRecentProjectsFromAnId(projectId);
+    });
 
 }
 
@@ -85,6 +88,9 @@ QVariant SKRRecentProjectListModel::data(const QModelIndex &index, int role) con
     if (role == Qt::UserRole + 5){
         return m_allRecentProjects.at(index.row())->isOpened;
     }
+    if (role == Qt::UserRole + 6){
+        return m_allRecentProjects.at(index.row())->projectId;
+    }
     return QVariant();
 }
 
@@ -98,6 +104,7 @@ QHash<int, QByteArray>SKRRecentProjectListModel::roleNames() const {
     roles[Qt::UserRole + 3]  = "exists";
     roles[Qt::UserRole + 4]  = "lastModification";
     roles[Qt::UserRole + 5]  = "isOpened";
+    roles[Qt::UserRole + 6]  = "projectId";
 
     return roles;
 }
@@ -197,6 +204,7 @@ void SKRRecentProjectListModel::populate()
 
             if(projectName == projectItem->title && projectPath == projectItem->fileName){
                 projectItem->isOpened = true;
+                projectItem->projectId = projectId;
 
                 m_allRecentProjects.removeLast();
                 m_allRecentProjects.prepend(projectItem);

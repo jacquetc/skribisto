@@ -191,12 +191,14 @@ int main(int argc, char *argv[])
    PLMModels *models = new PLMModels(qApp);
 
 
-//     qmlRegisterType<PLMError>("eu.skribisto.qml", 1, 0, "PLMError");
+    qmlRegisterUncreatableType<PLMError>("eu.skribisto.plmerror", 1, 0, "PLMError", "Can't instantiate PLMError");
+
     qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",
                                               1,
                                               0,
                                               "PLMProjectHub",
                                               "Can't instantiate PLMProjectHub");
+
     qmlRegisterUncreatableType<PLMSheetHub>("eu.skribisto.sheethub",
                                             1,
                                             0,

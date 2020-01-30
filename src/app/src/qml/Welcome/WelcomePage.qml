@@ -59,6 +59,10 @@ WelcomePageForm {
         arguments = Qt.application.arguments
         for (arg in arguments) {
             console.log("argument : " , arguments[arg])
+            if(arg === 0 ){
+                continue
+            }
+
             if (arguments[arg] === "--testProject") {
                 var error = plmData.projectHub().loadProject(
                             testProjectFileName)
@@ -71,10 +75,12 @@ WelcomePageForm {
 
             }
             else {
-                oneProjectInArgument = true
-                projectInArgument = plmData.projectHub().loadProject(
-                            arguments[arg])
+                if (arguments[arg][-6] === ".skrib"){
+                    oneProjectInArgument = true
+                    projectInArgument = plmData.projectHub().loadProject(
+                                arguments[arg])
 
+                }
             }
         }
         if(!isTestProject & oneProjectInArgument){

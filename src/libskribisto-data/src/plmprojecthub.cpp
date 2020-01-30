@@ -26,6 +26,27 @@ PLMError PLMProjectHub::loadProject(const QString& path)
         m_projectsNotYetSavedOnceList.append(projectId);
         m_projectsNotSavedList.append(projectId);
         emit projectLoaded(projectId);
+        emit projectCountChanged(this->getProjectCount());
+    }
+
+
+    return error;
+}
+
+PLMError PLMProjectHub::createNewEmptyProject(const QString &path)
+{
+
+    int projectId  = -1;
+    PLMError error = plmProjectManager->createNewEmptyDatabase(projectId);
+    IFOK(error){
+        this->setPath(projectId, path);
+    }
+
+    IFOK(error) {
+        m_projectsNotYetSavedOnceList.append(projectId);
+        m_projectsNotSavedList.append(projectId);
+        emit projectLoaded(projectId);
+        emit projectCountChanged(this->getProjectCount());
     }
 
 
@@ -82,6 +103,7 @@ PLMError PLMProjectHub::closeProject(int projectId)
     error = plmProjectManager->closeProject(projectId);
     IFOK(error) {
         emit projectClosed(projectId);
+        emit projectCountChanged(this->getProjectCount());
     }
     return error;
 }
@@ -206,7 +228,12 @@ QString PLMProjectHub::getProjectName(int projectId) const {
 
 PLMError PLMProjectHub::setProjectName(int projectId, const QString& projectName) {
     PLMError error = this->set(projectId, "t_project_name", projectName, true);
-
+    IFOK(error) {
+        emit projectNameChanged(projectId, projectName);
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
     return error;
 }
 

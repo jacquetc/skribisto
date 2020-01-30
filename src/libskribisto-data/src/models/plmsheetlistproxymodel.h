@@ -30,7 +30,7 @@ class EXPORT PLMSheetListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
     Q_PROPERTY(int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)
     Q_PROPERTY(int parentIdFilter MEMBER m_parentIdFilter WRITE setParentIdFilter NOTIFY parentIdFilterChanged)
-    Q_PROPERTY(int showDeletedFilter MEMBER m_showDeletedFilter WRITE setShowDeletedFilter NOTIFY showDeletedFilterChanged)
+    Q_PROPERTY(bool showDeletedFilter MEMBER m_showDeletedFilter WRITE setShowDeletedFilter NOTIFY showDeletedFilterChanged)
     Q_PROPERTY(int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
 
 public:
@@ -47,9 +47,11 @@ public:
 
     Q_INVOKABLE void moveItem(int from, int to);
     Q_INVOKABLE int goUp();
+    Q_INVOKABLE int getItemIndent(int projectId, int paperId);
     Q_INVOKABLE QString getItemName(int projectId, int paperId);
     void setProjectIdFilter(int projectIdFilter);
     void setParentIdFilter(int parentIdFilter);
+    void clearFilters();
 
     Q_INVOKABLE void addItemAtEnd(int projectId, int parentPaperId, int visualIndex);
     Q_INVOKABLE void moveUp(int projectId, int paperId, int visualIndex);

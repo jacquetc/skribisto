@@ -137,8 +137,8 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 
     tempFile.open();
     tempFile.setAutoRemove(false);
-    tempFile.remove();
     QString tempFileName = tempFile.fileName();
+    qDebug() << "tempFileName :" << tempFileName;
 
     // open temp file
 
@@ -148,6 +148,13 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     bool ok = sqlDb.open();
 
     if (!ok) {
+        error.setSuccess(false);
+        return QSqlDatabase();
+    }
+
+    // upgrade :
+    IFOKDO(error, PLMUpgrader::upgradeSQLite(sqlDb));
+    IFKO(error) {
         error.setSuccess(false);
         return QSqlDatabase();
     }
@@ -171,6 +178,10 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 
     // new project :
     IFOKDO(error, this->executeSQLFile(":/sql/sqlite_project.sql", sqlDb));
+    QString sqlString = "INSERT INTO tbl_project (l_skribisto_maj_version, l_skribisto_min_version, l_db_maj_version, l_db_min_version) VALUES (2, 0, 1, 0)";
+    IFOKDO(error, this->executeSQLString(sqlString, sqlDb));
+
+
     IFOK(error){
         //create unique identifier
 
@@ -299,12 +310,24 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 PLMError PLMImporter::executeSQLFile(const QString& fileName, QSqlDatabase& sqlDB) {
     PLMError  error;
     QFile     file(fileName);
-    QSqlQuery query(sqlDB);
 
     // Read query file content
     file.open(QIODevice::ReadOnly);
-    QString queryStr(file.readAll());
+    error = this->executeSQLString(file.readAll(), sqlDB);
     file.close();
+
+    return error;
+
+}
+
+PLMError PLMImporter::executeSQLString(const QString &sqlString, QSqlDatabase &sqlDB)
+{
+    PLMError  error;
+
+    QSqlQuery query(sqlDB);
+
+
+    QString queryStr = sqlString + "\n";
 
     // Check if SQL Driver supports Transactions
     if (sqlDB.driver()->hasFeature(QSqlDriver::Transactions)) {
@@ -327,15 +350,17 @@ PLMError PLMImporter::executeSQLFile(const QString& fileName, QSqlDatabase& sqlD
                                      QRegularExpression::CaseInsensitiveOption);
 
         // Check if query file is already wrapped with a transaction
-        bool isStartedWithTransaction = qMax(re_transaction.match(qList.at(0)).hasMatch(),
+        bool isStartedWithTransaction = false;
+        if(qList.size() > 1){
+        isStartedWithTransaction = qMax(re_transaction.match(qList.at(0)).hasMatch(),
                                              re_transaction.match(qList.at(1)).hasMatch());
-
+        }
         if (!isStartedWithTransaction) sqlDB.transaction();
 
         // Execute each individual queries
         bool success = true;
 
-        foreach(const QString &s, qList) {
+        for(const QString &s : qList) {
             if (re_transaction.match(s).hasMatch()) sqlDB.transaction();
             else if (re_commit.match(s).hasMatch()) sqlDB.commit();
             else {

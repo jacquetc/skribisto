@@ -44,38 +44,46 @@ ProjectPageForm {
     }
 
 
-        FileDialog{
-            id: folderDialog
-            selectFolder: true
-            folder: shortcuts.documents
+    FileDialog{
+        id: folderDialog
+        selectFolder: true
+        folder: shortcuts.documents
 
-            onAccepted: {
-                var path = folderDialog.fileUrl.toString()
-                path = path.replace(/^(file:\/{2})/,"");
-                projectPathTextField.text = path
-            }
-            onRejected: {
-
-            }
-
-
+        onAccepted: {
+            var path = folderDialog.fileUrl.toString()
+            path = path.replace(/^(file:\/{2})/,"");
+            projectPathTextField.text = path
+        }
+        onRejected: {
 
         }
+
+
+
+    }
 
     property bool projectFileTextFiledEdited: false
     // title :
     projectTitleTextField.onTextChanged: {
         if(!projectFileTextFiledEdited){
-            projectFileTextField.text = projectTitleTextField.text + ".skrib"
+            var name = projectTitleTextField.text
+
+            name = name.replace(/[\"\/\%\(\)|.'?!$#\n\r]/g, "");
+
+            projectFileTextField.text = name
         }
 
     }
 
-    //file :
-    projectFileTextField.validator: RegExpValidator { regExp: /^([a-zA-Z0-9_]+)\.(?!\.)([a-zA-Z0-9]{1,5})(?<!\.)$/ }
-    projectFileTextField.onTextChanged: {
 
-        fileName = projectPathTextField.text + "/" + projectFileTextField.text + ".skrib"
+
+    //file :
+    projectFileTextField.validator: RegExpValidator { regExp: /^[^ ][\w\s]{1,60}$/ }
+    projectFileTextField.onTextChanged: {
+        var file = projectPathTextField.text + "/" + projectFileTextField.text + ".skrib"
+
+
+        fileName = file
     }
     projectFileTextField.onTextEdited: {
         projectFileTextFiledEdited = true
@@ -98,11 +106,38 @@ ProjectPageForm {
     // create :
 
     createNewProjectButton.onClicked: {
+        //TODO: test fileName
 
+        plmData.projectHub().createNewEmptyProject(fileName)
 
+        var projetId = plmData.projectHub().getLastLoaded()
+        console.log("new project : getLastLoaded : ", projetId)
+        plmData.projectHub().setProjectName(projetId, projectTitleTextField.text)
+
+        var firstSheetId = -2
+        for(var i = 1; i <= partSpinBox.value ; ++i){
+            var error = plmData.sheetHub().addChildPaper(projetId, -1)
+            console.log("new project : add sheet : ", error.isSuccess())
+            var sheetId = plmData.sheetHub().getLastAddedId()
+            plmData.sheetHub().setTitle(projetId, sheetId, qsTr("Part ") + i)
+
+            if(sheetId === 1){
+                firstSheetId = sheetId
+            }
+
+        }
+
+        swipeView.currentIndex = 0
+        root_stack.currentIndex = 1
+        Globals.openSheetCalled(projetId, firstSheetId)
+
+        //reset :
+        projectTitleTextField.text = ""
+        projectFileTextField.text = ""
         projectFileTextFiledEdited = false
-
+        projectPathTextField.text = ""
     }
+
 
 
     //--------------------------------------------------
@@ -255,6 +290,10 @@ ProjectPageForm {
                         focusPolicy: Qt.NoFocus
                         visible: model.isOpened
                         icon.name: "document-close"
+                        onClicked: {
+                          itemButtonsIndex = model.index
+                            closeAction.trigger()
+                        }
 
                     }
 
@@ -266,7 +305,20 @@ ProjectPageForm {
                             // necessary to differenciate between all items
                             contextMenuItemIndex = model.index
                         }
+                        Action {
+                            id: closeAction
+                            text: qsTr("Close project")
+                            //shortcut: "F2"
+                            icon {
+                                name: "window-close"
+                            }
+                            enabled: contextMenuItemIndex === model.index | itemButtonsIndex === model.index
+                            onTriggered: {
+                                plmData.projectHub().closeProject(model.projectId)
+                                console.log("close project action")
 
+                            }
+                        }
                         Action {
                             id: forgetAction
                             text: qsTr("Forget")

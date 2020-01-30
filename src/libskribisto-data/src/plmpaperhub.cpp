@@ -413,6 +413,10 @@ QDateTime PLMPaperHub::getContentDate(int projectId, int paperId) const
 bool PLMPaperHub::hasChildren(int projectId, int paperId) const
 {
 
+    if(paperId == -1){ // project item in multiple projects
+        return true;
+    }
+
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -427,7 +431,7 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
     int indent     = getIndent(projectId, paperId);
 
     int possibleFirstChildId = idList.at(idList.indexOf(paperId) + 1);
-
+      //TODO: fix that :
      bool deleted = getDeleted(projectId, possibleFirstChildId);
      if(deleted){
          return false;
@@ -981,7 +985,7 @@ int PLMPaperHub::getValidSortOrderAfterPaper(int projectId, int paperId) const
     // find next node with the same indentation
     QHash<int, QVariant> result;
     QHash<QString, QVariant> where;
-    where.insert("l_indent <=",    target_indent);
+    where.insert("l_indent =",    target_indent);
     where.insert("l_sort_order >", target_sort_order);
     PLMSqlQueries queries(projectId, m_tableName);
     PLMError error     = queries.getValueByIdsWhere("l_sort_order", result, where, true);
@@ -1018,7 +1022,6 @@ int PLMPaperHub::getValidSortOrderAfterPaper(int projectId, int paperId) const
 
         if (idList.isEmpty()) {
             error.setSuccess(false);
-            return error;
         }
 
         int lastId = idList.last();
@@ -1048,7 +1051,7 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
     int target_indent     = getIndent(projectId, targetId);
 
     //for invalid parent ("root")
-    if(targetId == 0){
+    if(targetId == -2){
         target_indent = -1;
 
         //get the highest sort order
@@ -1064,7 +1067,7 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
     // find next node with the same indentation
     QHash<int, QVariant> result;
     QHash<QString, QVariant> where;
-    where.insert("l_indent <=",    target_indent);
+    where.insert("l_indent =",    target_indent);
     where.insert("l_sort_order >", target_sort_order);
     error     = queries.getValueByIdsWhere("l_sort_order", result, where, true);
     int finalSortOrder = 0;
@@ -1088,9 +1091,6 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
         finalSortOrder = lowestSort - 1;
 
         // if tree is empty
-        IFKO(error) {
-            queries.rollback();
-        }
 
         if (finalSortOrder == -1) {
             finalSortOrder = 0;
@@ -1103,15 +1103,16 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
         IFOKDO(error, queries.getSortedIds(idList));
 
         if (idList.isEmpty()) {
-            error.setSuccess(false);
-            return error;
-        }
+
+            finalSortOrder = 1000;
+        } else {
 
         int lastId = idList.last();
         QHash<int, QVariant> result2;
         IFOKDO(error,
                queries.getValueByIds("l_sort_order", result2, "id", QVariant(lastId)));
         finalSortOrder = result2.begin().value().toInt() + 1;
+        }
     }
 
     // finally add paper

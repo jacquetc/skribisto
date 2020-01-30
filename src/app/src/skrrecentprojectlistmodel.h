@@ -38,6 +38,7 @@ public:
         writable = false;
         exists = false;
         isOpened = false;
+        projectId = -2;
     }
     QString title;
     QString fileName;
@@ -45,6 +46,7 @@ public:
     bool writable;
     bool exists;
     bool isOpened;
+    int projectId;
 
 };
 

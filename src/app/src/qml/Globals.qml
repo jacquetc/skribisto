@@ -18,6 +18,21 @@ QtObject {
     }
     onCompactSizeChanged: console.log("compact = " + compactSize)
 
+    // multiple projects ? :
+    property bool multipleProjects: false
+
+    function setMultipleProject() {
+
+            if(plmData.projectHub().getProjectCount() > 1){
+
+                multipleProjects = true
+            }
+            else {
+
+                multipleProjects = false
+            }
+        }
+
 
 
     //Write :
@@ -25,4 +40,9 @@ QtObject {
 
     //FullScreen
     signal fullScreenCalled(bool value)
+
+
+    Component.onCompleted: {
+        plmData.projectHub().onProjectLoaded.connect(setMultipleProject)
+    }
 }

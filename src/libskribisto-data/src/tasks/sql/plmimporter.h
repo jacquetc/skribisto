@@ -52,6 +52,8 @@ private:
     // projectId, PLMError &error);
     PLMError executeSQLFile(const QString& fileName,
                             QSqlDatabase & sqlDB);
+    PLMError executeSQLString(const QString& sqlString,
+                            QSqlDatabase & sqlDB);
 };
 
 #endif // PLMIMPORTER_H

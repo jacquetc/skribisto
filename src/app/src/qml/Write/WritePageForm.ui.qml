@@ -122,6 +122,7 @@ Item {
 
                         ColumnLayout {
                             anchors.fill: parent
+                            z: 2
                             Button {
                                 id: leftDockShowButton
                                 focusPolicy: Qt.NoFocus
@@ -153,6 +154,12 @@ Item {
                                     flat: true
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                                 }
+                            }
+
+                            Item{
+                                id: stretcher
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
                             }
                         }
                     }
@@ -210,8 +217,8 @@ Item {
                         }
 
                         ColumnLayout {
-
                             anchors.fill: parent
+                            z: 2
                             Button {
                                 id: rightDockShowButton
                                 focusPolicy: Qt.NoFocus

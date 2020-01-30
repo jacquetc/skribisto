@@ -42,7 +42,7 @@ PLMError PLMProjectManager::loadProject(const QString& fileName, int& projectId)
         return error;
     }
 
-    m_projectForIntHash.insert(projectId, project);
+    m_projectForIntMap.insert(projectId, project);
     return error;
 }
 
@@ -50,7 +50,7 @@ PLMError PLMProjectManager::loadProject(const QString& fileName, int& projectId)
 
 PLMError PLMProjectManager::saveProject(int projectId)
 {
-    PLMProject *project = m_projectForIntHash.value(projectId, 0);
+    PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     return saveProjectAs(projectId, project->getType(), project->getPath());
 }
@@ -62,7 +62,7 @@ PLMError PLMProjectManager::saveProjectAs(int            projectId,
                                           const QString& path)
 {
     PLMError error;
-    PLMProject *project = m_projectForIntHash.value(projectId, 0);
+    PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {
         // emit plmTaskError->errorSent("E_PROJECT_PROJECTMISSING", Q_FUNC_INFO,
@@ -91,7 +91,7 @@ PLMProject * PLMProjectManager::project(int projectId)
     //    if(!m_projectForIntHash.contains(projectId)){
     //    }
     // qDebug()   <<  "project n°" << projectId;
-    PLMProject *project = m_projectForIntHash.value(projectId, 0);
+    PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {
         // emit plmTaskError->errorSent("E_PROJECTMISSING", Q_FUNC_INFO, "No
@@ -107,7 +107,7 @@ PLMProject * PLMProjectManager::project(int projectId)
 
 QList<int>PLMProjectManager::projectIdList()
 {
-    return m_projectForIntHash.keys();
+    return m_projectForIntMap.keys();
 }
 
 // -----------------------------------------------------------------------------
@@ -115,14 +115,14 @@ QList<int>PLMProjectManager::projectIdList()
 PLMError PLMProjectManager::closeProject(int projectId)
 {
     PLMError error;
-    PLMProject *project = m_projectForIntHash.value(projectId, 0);
+    PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {
         error.setSuccess(false);
         return error;
     }
 
-    m_projectForIntHash.remove(projectId);
+    m_projectForIntMap.remove(projectId);
 
     // the project deletion is done outside PLMProject() so the QSqlDatabase is
     // out of scope

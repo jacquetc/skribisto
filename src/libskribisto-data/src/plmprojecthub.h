@@ -34,13 +34,14 @@ public:
 
     explicit PLMProjectHub(QObject *parent);
     Q_INVOKABLE PLMError loadProject(const QString& path);
+    Q_INVOKABLE PLMError createNewEmptyProject(const QString& path);
     Q_INVOKABLE PLMError             saveProject(int projectId);
     Q_INVOKABLE PLMError             saveProjectAs(int            projectId,
                                        const QString& type,
                                        const QString& path);
     Q_INVOKABLE PLMError             closeProject(int projectId);
     Q_INVOKABLE PLMError             closeAllProjects();
-    QList<int>           getProjectIdList();
+    Q_INVOKABLE QList<int>           getProjectIdList();
     Q_INVOKABLE int      getProjectCount();
     Q_INVOKABLE QString              getPath(int projectId) const;
     PLMError             setPath(int            projectId,
@@ -90,6 +91,7 @@ signals:
                                         const QString& newProjectName);
     Q_INVOKABLE void             projectSaved(int projectId);
     Q_INVOKABLE void             projectNotSavedAnymore(int projectId);
+    Q_INVOKABLE void             projectCountChanged(int count);
 
 public slots:
 

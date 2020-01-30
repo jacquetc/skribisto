@@ -54,12 +54,12 @@ public:
     QHash<int, QString>             getAllTitles(int projectId) const;
     QHash<int, int>                 getAllSortOrders(int projectId) const;
     QHash<int, int>                 getAllIndents(int projectId) const;
-    QList<int>                      getAllIds(int projectId) const;
+    Q_INVOKABLE QList<int>                      getAllIds(int projectId) const;
     int                             getOverallSize();
     PLMError                        setId(int projectId,
                                           int paperId,
                                           int newId);
-    PLMError                        setTitle(int            projectId,
+    Q_INVOKABLE PLMError            setTitle(int            projectId,
                                              int            paperId,
                                              const QString& newTitle);
     QString                         getTitle(int projectId,
@@ -115,12 +115,12 @@ public:
                  int            paperId,
                  const QString& fieldName) const;
 
-    int      getLastAddedId();
+    Q_INVOKABLE int      getLastAddedId();
     PLMError addPaper(const QHash<QString, QVariant>& values,
                       int projectId);
     PLMError addPaperBelow(int projectId,
                            int targetId);
-    PLMError addChildPaper(int projectId,
+    Q_INVOKABLE PLMError addChildPaper(int projectId,
                            int targetId);
     PLMError removePaper(int projectId,
                          int targetId);

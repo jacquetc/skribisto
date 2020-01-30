@@ -180,7 +180,7 @@ PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
     int indent                       = this->indent();
     int possibleParentIndex          = index - 1;
 
-    if(plmdata->projectHub()->getProjectIdList().count() <= 1 && possibleParentIndex == -1){ // first of list, so no parent
+    if(plmdata->projectHub()->getProjectCount() <= 1 && possibleParentIndex == -1){ // first of list, so no parent
         return nullptr;
     }
 
@@ -188,6 +188,9 @@ PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
 
     while (possibleParentItem->indent() >= indent) {
         possibleParentIndex -= 1;
+        if(possibleParentIndex == -1){
+            return nullptr;
+        }
         possibleParentItem   = itemList.at(possibleParentIndex);
     }
 
@@ -291,8 +294,6 @@ int PLMSheetItem::childrenCount(const QList<PLMSheetItem *>& itemList) {
     iterator.toFront();
     while(iterator.hasNext()){
         PLMSheetItem *nextItem = iterator.next();
-        QString thisTitle = this->data(PLMSheetItem::Roles::NameRole).toString();
-        QString nextTitle = nextItem->data(PLMSheetItem::Roles::NameRole).toString();
         if(nextItem->indent() > indent){
 
             if(nextItem->indent() == indent + 1){
@@ -419,6 +420,7 @@ void PLMSheetItem::setIsProjectItem(int projectId)
     // TODO: add infoHub->getProjectName(projectId)
     // m_data.insert(Roles::NameRole, /*plmdata->infoHub()->*/ );
     this->invalidateData(Roles::ProjectNameRole);
+    this->invalidateData(Roles::HasChildrenRole);
 }
 
 int PLMSheetItem::projectId()

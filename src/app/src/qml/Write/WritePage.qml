@@ -10,6 +10,14 @@ WritePageForm {
     //property int textAreaFixedWidth: SkrSettings.writeSettings.textWidth
     property var lastFocused: writingZone
 
+
+
+
+
+    //--------------------------------------------------------
+    //---Writing Zone-----------------------------------------
+    //--------------------------------------------------------
+
     writingZone.maximumTextAreaWidth: SkrSettings.writeSettings.textWidth
     writingZone.textPointSize: SkrSettings.writeSettings.textPointSize
     writingZone.textFontFamily: SkrSettings.writeSettings.textFontFamily
@@ -20,6 +28,24 @@ WritePageForm {
     writingZone.minimapVisibility: false
     writingZone.name: "write-0" //useful ?
     minimap.visible: false
+
+    Connections {
+        target: plmData.projectHub()
+        // @disable-check M16
+        onProjectCountChanged: function (count){
+            if(count === 0){
+                writingZone.enabled = false
+            }
+            else {
+                writingZone.enabled = true
+            }
+
+        }
+    }
+
+
+    //---------------------------------------------------------
+
 
     property int currentPaperId: -2
     property int currentProjectId: -2
@@ -59,17 +85,14 @@ WritePageForm {
 
     }
 
-    leftPaneScrollMouseArea.onPressAndHold: {
-
-    }
     leftPaneScrollMouseArea.onWheel: {
 
         var deltaY = wheel.angleDelta.y *10
 
-        flickable.flick(0, deltaY)
+        writingZone.flickable.flick(0, deltaY)
 
         if (writingZone.flickable.atYBeginning && wheel.angleDelta.y > 0) {
-            flickable.returnToBounds()
+            writingZone.flickable.returnToBounds()
             return
         }
         if (writingZone.flickable.atYEnd && wheel.angleDelta.y < 0) {
@@ -100,17 +123,14 @@ WritePageForm {
 
     }
 
-    rightPaneScrollMouseArea.onPressAndHold: {
-
-    }
     rightPaneScrollMouseArea.onWheel: {
 
         var deltaY = wheel.angleDelta.y *10
 
-        flickable.flick(0, deltaY)
+        writingZone.flickable.flick(0, deltaY)
 
         if (writingZone.flickable.atYBeginning && wheel.angleDelta.y > 0) {
-            flickable.returnToBounds()
+            writingZone.flickable.returnToBounds()
             return
         }
         if (writingZone.flickable.atYEnd && wheel.angleDelta.y < 0) {
@@ -237,6 +257,11 @@ WritePageForm {
         if (currentProjectId === projectId & currentPaperId === paperId){
             writingZone.forceActiveFocus()
             return
+        }
+
+        // invalid paper id, empty project ?
+        if(paperId === -2){
+            return;
         }
 
         if (currentPaperId != -2) {
@@ -526,12 +551,34 @@ WritePageForm {
         onProjectLoaded: function (projectId) {
 
             var topPaperId = plmData.sheetHub().getTopPaperId(projectId)
+            console.log("topPaperId ::", topPaperId)
             var paperId = skrUserSettings.getProjectSetting(projectId, "writeCurrentPaperId", topPaperId)
             console.log("paperId ::", paperId)
             console.log("projectId ::", projectId)
             projectIdForProjectLoading = projectId
             paperIdForProjectLoading = paperId
 
+            var isPresent = false
+            var idList = plmData.sheetHub().getAllIds(projectId)
+            var count = idList.length
+            console.log("idList", idList)
+            console.log("count", count)
+            console.log("a", paperId)
+            for(var i = 0; i < count ; i++ ){
+                console.log("b", paperId)
+                if(paperId === idList[i]){
+                    isPresent = true
+                    console.log("c", paperId)
+                }
+            }
+            if(!isPresent & count > 0){
+                console.log("d", paperId)
+                paperIdForProjectLoading = idList[0]            }
+            else if(!isPresent & count === 0){
+                console.log("e", paperId)
+                paperIdForProjectLoading = -2
+
+            }
             projectLoadingTimer.start()
 
 
@@ -592,7 +639,7 @@ WritePageForm {
             if(plmData.projectHub().getProjectCount() > 0){
 
                 var otherProjectId = plmData.projectHub().getProjectIdList()[0]
-                var defaultPaperId = proxyModel.getLastOfHistory(otherProjectId)
+                var defaultPaperId = leftDock.treeView.proxyModel.getLastOfHistory(otherProjectId)
                 if (defaultPaperId === -2) {// no history
                     defaultPaperId = plmData.sheetHub().getTopPaperId(otherProjectId)
                 }
