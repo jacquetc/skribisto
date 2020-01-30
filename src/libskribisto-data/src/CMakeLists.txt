@@ -23,7 +23,6 @@ set(data_SRCS
     plmprojecthub.cpp
     plmpropertyhub.cpp
     plmsheethub.cpp
-    plmuserhub.cpp
     plmutils.cpp
     tasks/plmprojectmanager.cpp
     tasks/plmsqlqueries.cpp
@@ -52,7 +51,6 @@ set(data_HDR
     plmpropertyhub.h
     plmsheethub.h
     plmsignalhub.h
-    plmuserhub.h
     plmutils.h
     skribisto_data_global.h
     tools.h

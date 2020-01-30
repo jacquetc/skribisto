@@ -13,9 +13,9 @@ PLMWriteDocumentListModel::PLMWriteDocumentListModel(QObject *parent):
             int            paperId,
             const QString& newTitle){
         QList<int> documentIds = this->getDocumentIdEverywhere(projectId, paperId);
-        for(int docId : documentIds){
-            plmdata->userHub()->set(projectId, m_tableName, docId, "t_title", newTitle, true);
-        }
+//        for(int docId : documentIds){
+//            plmdata->userHub()->set(projectId, m_tableName, docId, "t_title", newTitle, true);
+//        }
 
     }
     );
@@ -32,7 +32,7 @@ QVariant PLMWriteDocumentListModel::getDocumentData(int projectId, int paperId, 
     where.insert("l_subWindow =", subWindowId);
 
     QString roleString = this->translateRole(role);
-    result = plmdata->userHub()->getValueByIdsWhere(projectId, m_tableName, roleString, where);
+//    result = plmdata->userHub()->getValueByIdsWhere(projectId, m_tableName, roleString, where);
 
     if(result.isEmpty()){  // create a new document
 
@@ -53,7 +53,7 @@ int PLMWriteDocumentListModel::closeDocument(int projectId, int paperId, int sub
     where.insert("l_subWindow =", subWindowId);
 
     QString roleString = this->translateRole(PLMDocumentListModel::Roles::PropertyRole);
-    result = plmdata->userHub()->getValueByIdsWhere(projectId, m_tableName, roleString, where);
+//    result = plmdata->userHub()->getValueByIdsWhere(projectId, m_tableName, roleString, where);
 
     int documentId = result.keys().first();
 

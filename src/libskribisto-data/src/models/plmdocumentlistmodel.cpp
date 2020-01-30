@@ -37,23 +37,6 @@ PLMDocumentListModel::PLMDocumentListModel(QObject *parent, const QString &table
             this,
             &PLMDocumentListModel::populate);
 
-    connect(plmdata->userHub(),
-            &PLMUserHub::userDataAdded,
-//            this, &PLMDocumentListModel::populate
-            this, &PLMDocumentListModel::addDocument, Qt::DirectConnection
-            );
-
-    connect(plmdata->userHub(),
-            &PLMUserHub::userDataRemoved,
-//            this, &PLMDocumentListModel::populate
-            this, &PLMDocumentListModel::removeDocument, Qt::DirectConnection
-            );
-
-    connect(plmdata->userHub(),
-            &PLMUserHub::userDataModified,
-//            this, &PLMDocumentListModel::populate
-            this, &PLMDocumentListModel::modifyDocument, Qt::DirectConnection
-            );
 
 
 }
@@ -106,53 +89,53 @@ QVariant PLMDocumentListModel::data(const QModelIndex& index, int role) const
     int documentId    = m_allDocuments.at(row).documentId;
     QString tableName = m_allDocuments.at(row).tableName;
 
-    if (role == Qt::DisplayRole  && (col == 0)) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "t_title");
-    }
+//    if (role == Qt::DisplayRole  && (col == 0)) {
+//        return plmdata->userHub()->get(projectId, tableName, documentId, "t_title");
+//    }
 
 
-    if (role == PLMDocumentListModel::ProjectIdRole  && (col == 0)) {
-        return projectId;
-    }
+//    if (role == PLMDocumentListModel::ProjectIdRole  && (col == 0)) {
+//        return projectId;
+//    }
 
-    if (role == PLMDocumentListModel::DocumentIdRole && (col == 0)) {
-        return documentId;
-    }
+//    if (role == PLMDocumentListModel::DocumentIdRole && (col == 0)) {
+//        return documentId;
+//    }
 
-    if (role == PLMDocumentListModel::PaperCodeRole && (col == 0)) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "l_paper_code");
-    }
+//    if (role == PLMDocumentListModel::PaperCodeRole && (col == 0)) {
+//        return plmdata->userHub()->get(projectId, tableName, documentId, "l_paper_code");
+//    }
 
-    if (role == PLMDocumentListModel::NameRole && (col == 0)) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "t_title");
-    }
+//    if (role == PLMDocumentListModel::NameRole && (col == 0)) {
+//        return plmdata->userHub()->get(projectId, tableName, documentId, "t_title");
+//    }
 
-    if (role == PLMDocumentListModel::TypeRole && (col == 0)) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "t_type");
-    }
+//    if (role == PLMDocumentListModel::TypeRole && (col == 0)) {
+//        return plmdata->userHub()->get(projectId, tableName, documentId, "t_type");
+//    }
 
-    if (role == PLMDocumentListModel::SubWindowRole && (col == 0)) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "l_subwindow");
-    }
+//    if (role == PLMDocumentListModel::SubWindowRole && (col == 0)) {
+//        return plmdata->userHub()->get(projectId, tableName, documentId, "l_subwindow");
+//    }
 
-    if (role == PLMDocumentListModel::CursorPosRole && (col == 0)) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "l_cursor_pos");
-    }
+//    if (role == PLMDocumentListModel::CursorPosRole && (col == 0)) {
+//        return plmdata->userHub()->get(projectId, tableName, documentId, "l_cursor_pos");
+//    }
 
-    if (role == PLMDocumentListModel::PropertyRole && (col == 0)) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "t_property");
-    }
-
-
-    if (role == PLMDocumentListModel::UpdateDateRole && (col == 0)) {
-        return plmdata->userHub()->get(projectId, tableName, documentId, "dt_updated");
-    }
+//    if (role == PLMDocumentListModel::PropertyRole && (col == 0)) {
+//        return plmdata->userHub()->get(projectId, tableName, documentId, "t_property");
+//    }
 
 
-    if (role == PLMDocumentListModel::LasFocusedDateRole && (col == 0)) {
-        return plmdata->userHub()->get(projectId, tableName, documentId,
-                                       "dt_last_focused");
-    }
+//    if (role == PLMDocumentListModel::UpdateDateRole && (col == 0)) {
+//        return plmdata->userHub()->get(projectId, tableName, documentId, "dt_updated");
+//    }
+
+
+//    if (role == PLMDocumentListModel::LasFocusedDateRole && (col == 0)) {
+//        return plmdata->userHub()->get(projectId, tableName, documentId,
+//                                       "dt_last_focused");
+//    }
 
 
     return QVariant();
@@ -393,17 +376,17 @@ QString PLMDocumentListModel::translateRole(PLMDocumentListModel::Roles role) co
 void PLMDocumentListModel::populate()
 {
     this->beginResetModel();
-    m_allDocuments.clear();
-     foreach(int projectId, plmProjectManager->projectIdList()) {
-            QList<int> results;
-            plmdata->userHub()->getIds(projectId, m_tableName, results);
+//    m_allDocuments.clear();
+//     foreach(int projectId, plmProjectManager->projectIdList()) {
+//            QList<int> results;
+//            plmdata->userHub()->getIds(projectId, m_tableName, results);
 
-            for (int documentId :  results) {
-                m_allDocuments.append(PLMDocumentListItem(projectId, documentId,
-                                                          m_tableName));
-            }
+//            for (int documentId :  results) {
+//                m_allDocuments.append(PLMDocumentListItem(projectId, documentId,
+//                                                          m_tableName));
+//            }
 
-    }
+//    }
     this->endResetModel();
 }
 

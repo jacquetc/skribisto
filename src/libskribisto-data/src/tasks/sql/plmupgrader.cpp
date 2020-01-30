@@ -37,16 +37,3 @@ error.setSuccess(true);
 
 return error;
 }
-
-PLMError PLMUpgrader::upgradeUserSQLite(QSqlDatabase sqlDb)
-{
-    Q_UNUSED(sqlDb);
-
-
-PLMError error;
-error.setSuccess(true);
-// from 1.5 to 1.6
-
-
-return error;
-}

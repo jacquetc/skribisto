@@ -32,7 +32,6 @@ class PLMUpgrader : public QObject
 public:
     explicit PLMUpgrader(QObject *parent = nullptr);
     static PLMError upgradeSQLite(QSqlDatabase sqlDb);
-    static PLMError upgradeUserSQLite(QSqlDatabase sqlDb);
 signals:
 
 public slots:
