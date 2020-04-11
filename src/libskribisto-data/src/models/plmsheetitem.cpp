@@ -157,6 +157,7 @@ QList<int>PLMSheetItem::dataRoles() const
 
 PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
 {
+
     if (this->isRootItem()) {
         return nullptr;
     }
@@ -166,21 +167,11 @@ PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
         return nullptr;
     }
 
-
-    if ((this->indent() == 0) &&
-            (plmdata->projectHub()->getProjectIdList().count() <= 1)) {
-        return nullptr;
-    }
-    if ((this->indent() == -1) &&
-            (plmdata->projectHub()->getProjectIdList().count() > 1)) {
-        return nullptr;
-    }
-
     int index                        = itemList.indexOf(this);
     int indent                       = this->indent();
     int possibleParentIndex          = index - 1;
 
-    if(plmdata->projectHub()->getProjectCount() <= 1 && possibleParentIndex == -1){ // first of list, so no parent
+    if(possibleParentIndex == -1){ // first of list, so no real parent, parent is root item
         return nullptr;
     }
 
@@ -250,8 +241,7 @@ int PLMSheetItem::childrenCount(const QList<PLMSheetItem *>& itemList) {
         int childrenCount      = 0;
 
         // switch between multiple projects or one project
-        int parentIndent;
-        plmdata->projectHub()->getProjectIdList().count() > 1 ? parentIndent = -2 : parentIndent = -1;
+        int parentIndent = -2 ;
 
 
 
@@ -311,6 +301,7 @@ int PLMSheetItem::childrenCount(const QList<PLMSheetItem *>& itemList) {
 
 PLMSheetItem * PLMSheetItem::child(const QList<PLMSheetItem *>& itemList, int row)
 {
+    // if this is root item :
     if (this->isRootItem()) {
         if (itemList.isEmpty()) {
             return nullptr;
@@ -322,8 +313,7 @@ PLMSheetItem * PLMSheetItem::child(const QList<PLMSheetItem *>& itemList, int ro
         // switch between multiple projects or one project
 
 
-        int parentIndent;
-        plmdata->projectHub()->getProjectIdList().count() > 1 ? parentIndent = -2 : parentIndent = -1;
+        int parentIndent = this->indent(); // = -2
 
 
 
@@ -336,7 +326,7 @@ PLMSheetItem * PLMSheetItem::child(const QList<PLMSheetItem *>& itemList, int ro
                     if(nextItem->indent() == parentIndent + 1){
                         childrenCount += 1;
                         if (childrenCount == row + 1){
-
+                            // found searched-for child
                             childItem = nextItem;
                             break;
                         }
@@ -395,9 +385,15 @@ bool PLMSheetItem::isRootItem() const
     return m_isRootItem;
 }
 
-void PLMSheetItem::setIsRootItem()
+void PLMSheetItem::setIsRootItem() // not used
 {
     m_isRootItem = true;
+
+    m_data.clear();
+    m_invalidatedRoles.clear();
+    m_data.insert(Roles::PaperIdRole,          -2);
+    m_data.insert(Roles::IndentRole,           -2);
+    m_data.insert(Roles::SortOrderRole,     -90000000);
 }
 
 bool PLMSheetItem::isProjectItem() const

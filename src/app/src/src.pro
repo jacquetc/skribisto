@@ -68,7 +68,8 @@ CODECFORTR = UTF-8
 RESOURCES += \
 pics.qrc \
 ../../translations/langs.qrc \
-    qml.qrc
+    qml.qrc \
+icons.qrc
 
 #OTHER_FILES += \
 #    $$top_dir/resources/windows/icon.rc
@@ -165,7 +166,21 @@ QMAKE_INFO_PLIST = resources/mac/Info.plist
 # add data lib :
 
 win32: LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data
-android: LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data_x86
+android {
+
+    equals(ANDROID_TARGET_ARCH, armeabi-v7a) {
+        LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data_armeabi-v7a
+    }
+    equals(ANDROID_TARGET_ARCH, arm64-v8a) {
+        LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data_arm64-v8a
+    }
+    equals(ANDROID_TARGET_ARCH, x86)  {
+        LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data_x86
+    }
+    equals(ANDROID_TARGET_ARCH, x86_64)  {
+        LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data_x86_64
+    }
+}
 else:unix: LIBS += -L$$OUT_PWD/../../libskribisto-data/src/ -lskribisto-data
 
 INCLUDEPATH += $$PWD/../../libskribisto-data/src

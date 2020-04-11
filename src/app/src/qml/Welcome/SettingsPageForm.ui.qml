@@ -6,7 +6,7 @@ Item {
     width: 400
     height: 400
 
-    property alias testSwitch: testSwitch
+    property alias menuButtonsInStatusBarSwitch: menuButtonsInStatusBarSwitch
 
     Pane {
         id: pane2
@@ -17,8 +17,8 @@ Item {
             anchors.fill: parent
 
             Switch {
-                id: testSwitch
-                text: qsTr("Switch")
+                id: menuButtonsInStatusBarSwitch
+                text: qsTr("Set main menu in status bar")
             }
         }
     }

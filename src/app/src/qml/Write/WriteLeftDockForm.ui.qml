@@ -6,7 +6,7 @@ import "../Commons"
 
 Item {
     id: base
-    implicitWidth: 300
+    //implicitWidth: 300
     property int fixedWidth: 300
     //property alias dockPane: dockPane
     //    property alias splitView: splitView

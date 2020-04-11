@@ -7,6 +7,8 @@ import QtQuick.Controls 2.3
 import "Write"
 import "Welcome"
 import "Notes"
+import "Gallery"
+import "Projects"
 
 Item {
     id: base
@@ -18,13 +20,18 @@ Item {
     property alias welcomePage: welcomePage
     property alias writePage: writePage
     property alias notesPage: notesPage
+    property alias galleryPage: galleryPage
+    property alias projectsPage: projectsPage
+    property alias notificationButton: notificationButton
 
     ColumnLayout {
         id: columnLayout
+        spacing: 1
         anchors.fill: parent
 
         RowLayout {
             id: rowLayout
+            spacing: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
 
@@ -84,6 +91,12 @@ Item {
                     NotesPage {
                         id: notesPage
                     }
+                    GalleryPage {
+                        id: galleryPage
+                    }
+                    ProjectsPage {
+                        id: projectsPage
+                    }
                 }
                 //        PageIndicator {
                 //            id: indicator
@@ -103,14 +116,15 @@ Item {
 
         Pane {
             id: statusBar
+            Layout.preferredHeight: 30
             visible: true
             Layout.fillWidth: true
-            Layout.preferredHeight: 50
+            padding: 0
 
             RowLayout {
                 id: rowLayout1
                 anchors.fill: parent
-                spacing: 1
+                spacing: 0
 
                 Label {
                     id: statusLeftLabel
@@ -130,10 +144,21 @@ Item {
                     id: statusBarMenuButtonsLoader
                     Layout.minimumWidth: 100
                     Layout.maximumWidth: 200
-                    Layout.preferredHeight: 40
+                    //Layout.preferredHeight: 30
+                    Layout.fillHeight: true
                     Layout.fillWidth: true
 
                     sourceComponent: flow_comp
+                }
+
+                Button{
+                    id: notificationButton
+                    flat: true
+                    Layout.preferredWidth: 40
+                    Layout.fillHeight: true
+                    padding: 0
+
+
                 }
             }
         }

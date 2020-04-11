@@ -42,10 +42,10 @@ PLMSheetModel::PLMSheetModel(QObject *parent)
             &PLMSheetModel::populate);
 
 
-    connect(plmdata->sheetHub(),
-            &PLMSheetHub::paperAdded,
-            this,
-            &PLMSheetModel::addPaper);
+//    connect(plmdata->sheetHub(),
+//            &PLMSheetHub::paperAdded,
+//            this,
+//            &PLMSheetModel::addPaper);
 
     this->connectToPLMDataSignals();
 }

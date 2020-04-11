@@ -16,7 +16,6 @@ TreeViewForm {
     signal openDocument(int projectId, int paperId)
     signal removeDocument(int projectId, int paperId)
     signal clearBin
-    signal addAfter(int projectId, int paperId)
     property int currentParent: -2
     property int currentProject: -2
     property int currentIndex: listView.currentIndex
@@ -27,6 +26,26 @@ TreeViewForm {
 
         delegate: dragDelegate
     }
+
+
+    // scrollBar interactivity :
+
+    listView.onContentHeightChanged: {
+        //fix scrollbar visible at start
+        if(scrollView.height === 0){
+            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
+            return
+        }
+
+        if(listView.contentHeight > scrollView.height){
+            scrollBarVerticalPolicy = ScrollBar.AlwaysOn
+        }
+        else {
+            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
+        }
+    }
+
+
 
     //-----------------------------------------------------------------------------
     // go up button :
@@ -56,11 +75,7 @@ TreeViewForm {
             goUpAction.enabled = false
             return
         }
-        if(Globals.multipleProjects & currentIndent <= -1){
-            goUpAction.enabled = false
-
-        }
-        else if(!Globals.multipleProjects & currentIndent <= 0){
+        if(currentIndent <= -1){
             goUpAction.enabled = false
 
         }
@@ -73,14 +88,8 @@ TreeViewForm {
         determineIfGoUpButtonEnabled()
     }
 
-    Connections {
-        target: Globals
-        onMultipleProjectsChanged: function() {
 
-            console.log("onMultipleProjectsChanged", Globals.multipleProjects)
-                determineIfGoUpButtonEnabled()
-    }
-    }
+
 
     //-----------------------------------------------------------------------------
     // current parent button :
@@ -163,12 +172,25 @@ TreeViewForm {
     }
 
     //----------------------------------------------------------------------------
-    addToolButton.icon.name: "document-new"
-    addToolButton.onClicked: {
-        proxyModel.addItemAtEnd(currentProject, currentParent,
-                                visualModel.items.count)
-        listView.currentItem.editName()
+    // add button :
+
+    Action {
+        id: addPaperAction
+        text: qsTr("Add")
+        shortcut: "Ctrl+T"
+        icon{
+            name: "document-new"
+            height: 100
+            width: 100
+        }
+        onTriggered: {
+            proxyModel.addItemAtEnd(currentProject, currentParent,
+                                    visualModel.items.count)
+            listView.currentItem.editName()
+        }
     }
+
+    addToolButton.action: addPaperAction
 
     //----------------------------------------------------------------------------
 
@@ -259,7 +281,9 @@ TreeViewForm {
             anchors {
                 left: parent.left
                 right: parent.right
+                rightMargin: 5
             }
+
             height: content.height
 
             //            drag.target: held ? content : undefined
@@ -339,19 +363,19 @@ TreeViewForm {
                         //                        console.log("tap", tapCountTimer.running)
 
 
-                        if(tapCount == 2 & tapCountTimer.running & tapCountIndex === model.index){
-                            //tripleTap
-                            console.log("tripletap")
-                            tapCountTimer.stop()
-                            delegateRoot.editName()
-                            return
-                        }
-                        if(tapCount == 1){
-                            tapCountIndex = model.index
-                            tapCountTimer.start()
-                            return
+                        //                        if(tapCount == 2 & tapCountTimer.running & tapCountIndex === model.index){
+                        //                            //tripleTap
+                        //                            console.log("tripletap")
+                        //                            tapCountTimer.stop()
+                        //                            delegateRoot.editName()
+                        //                            return
+                        //                        }
+                        //                        if(tapCount == 1){
+                        //                            tapCountIndex = model.index
+                        //                            tapCountTimer.start()
+                        //                            return
 
-                        }
+                        //                        }
 
 
                     }
@@ -741,6 +765,7 @@ TreeViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index
                     onTriggered: {
+                        //TODO: fill that
                         console.log("add before action", model.projectId,
                                     model.paperId)
                     }
@@ -755,6 +780,7 @@ TreeViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index
                     onTriggered: {
+                        //TODO: fill that
                         console.log("add after action", model.projectId,
                                     model.paperId)
                     }

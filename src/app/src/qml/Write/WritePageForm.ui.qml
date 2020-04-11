@@ -1,6 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
+import "../Commons"
 import ".."
 
 Item {
@@ -89,14 +90,16 @@ Item {
                 z: 1
 
                 RowLayout {
+                    spacing: 0
                     anchors.fill: parent
 
                     WriteLeftDock {
                         id: leftDock
+                        z: 1
                         Layout.fillHeight: true
                     }
 
-                    Pane{
+                    Pane {
                         id: leftPane
                         Layout.fillHeight: true
                         Layout.fillWidth: true
@@ -156,15 +159,13 @@ Item {
                                 }
                             }
 
-                            Item{
+                            Item {
                                 id: stretcher
                                 Layout.fillHeight: true
                                 Layout.fillWidth: true
                             }
                         }
                     }
-
-
                 }
             }
 
@@ -189,10 +190,10 @@ Item {
                 z: 1
 
                 RowLayout {
+                    spacing: 0
                     anchors.fill: parent
 
-
-                    Pane{
+                    Pane {
                         id: rightPane
                         Layout.fillHeight: true
                         Layout.fillWidth: true
@@ -250,6 +251,20 @@ Item {
                                     flat: true
                                     Layout.alignment: Qt.AlignRight | Qt.AlignTop
                                 }
+
+                                Button {
+                                    id: showMinimapButton
+                                    focusPolicy: Qt.NoFocus
+                                    Layout.preferredHeight: 50
+                                    Layout.preferredWidth: 50
+                                    flat: true
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                                }
+                            }
+                            Item {
+                                id: stretcher2
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
                             }
                         }
                     }
@@ -268,16 +283,16 @@ Item {
                         id: rightDock
                         Layout.fillHeight: true
                     }
-
                 }
             }
         }
     }
+
 }
 
 /*##^##
 Designer {
-    D{i:0;width:1200}D{i:17;anchors_height:100;anchors_width:100}D{i:21;anchors_height:100;anchors_width:100}
+    D{i:0;width:1200}D{i:1;anchors_height:200;anchors_width:200}
 }
 ##^##*/
 

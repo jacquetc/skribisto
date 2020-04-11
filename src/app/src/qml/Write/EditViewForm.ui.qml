@@ -37,6 +37,7 @@ Item {
 
                 GroupBox {
                     id: groupBox
+                    padding: 5
                     Layout.fillWidth: true
                     title: qsTr("Edit text")
 
@@ -45,26 +46,32 @@ Item {
                         columns: groupBox.contentItem.width / italicToolButton.width -1
                         anchors.left: parent.left
                         anchors.right: parent.right
+                        columnSpacing:5
+                        rowSpacing: 5
 
                         ToolButton {
                             id: italicToolButton
                             text: qsTr("Italic")
+                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
                         ToolButton {
                             id: boldToolButton
                             text: qsTr("Bold")
+                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
                         ToolButton {
                             id: strikeToolButton
                             text: qsTr("Strike")
+                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
 
                         ToolButton {
                             id: underlineToolButton
                             text: qsTr("Underline")
+                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
 
@@ -74,11 +81,14 @@ Item {
                 }
                 GroupBox {
                     id: groupBox2
+                    padding: 5
                     Layout.fillWidth: true
                     title: qsTr("Display")
 
                     GridLayout {
                         id: gridLayout2
+                        columnSpacing: 5
+                        rowSpacing: 5
                         columns: groupBox2.contentItem.width / fullScreenToolButton.width -1
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -86,18 +96,21 @@ Item {
                         ToolButton {
                             id: fullScreenToolButton
                             text: qsTr("Full screen")
+                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
 
                         ToolButton {
                             id: sizeToolButton
                             text: qsTr("Size")
+                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
 
                         }
                         ToolButton {
                             id: fullScreenColorToolButton
                             text: qsTr("Full screen Colors")
+                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
 
                         }

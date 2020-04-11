@@ -56,7 +56,6 @@ SOURCES += \
     plmutils.cpp \
     plmpluginhub.cpp \
     plmpluginloader.cpp\
-    plmuserhub.cpp \
     models/plmdocumentlistmodel.cpp \
     models/plmdocumentlistproxymodel.cpp \
     models/plmmodels.cpp \
@@ -105,7 +104,6 @@ HEADERS += \
     plmpluginloader.h \
     plmcoreinterface.h \
     plmcoreplugins.h \
-    plmuserhub.h \
     models/plmdocumentlistmodel.h \
     models/plmdocumentlistproxymodel.h \
     models/plmmodels.h \

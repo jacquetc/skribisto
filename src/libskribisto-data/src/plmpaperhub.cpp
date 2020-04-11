@@ -985,7 +985,7 @@ int PLMPaperHub::getValidSortOrderAfterPaper(int projectId, int paperId) const
     // find next node with the same indentation
     QHash<int, QVariant> result;
     QHash<QString, QVariant> where;
-    where.insert("l_indent =",    target_indent);
+    where.insert("l_indent <=",    target_indent);
     where.insert("l_sort_order >", target_sort_order);
     PLMSqlQueries queries(projectId, m_tableName);
     PLMError error     = queries.getValueByIdsWhere("l_sort_order", result, where, true);
@@ -1052,6 +1052,14 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
 
     //for invalid parent ("root")
     if(targetId == -2){
+
+        error.setSuccess(false);
+        return  error;
+    }
+
+    // for project item as parent :
+    if(targetId == -1){
+
         target_indent = -1;
 
         //get the highest sort order
@@ -1063,11 +1071,10 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
             target_sort_order = qMax(sortOrder.toInt(), target_sort_order);
         }
     }
-
     // find next node with the same indentation
     QHash<int, QVariant> result;
     QHash<QString, QVariant> where;
-    where.insert("l_indent =",    target_indent);
+    where.insert("l_indent <=",    target_indent);
     where.insert("l_sort_order >", target_sort_order);
     error     = queries.getValueByIdsWhere("l_sort_order", result, where, true);
     int finalSortOrder = 0;

@@ -139,7 +139,7 @@ EditViewForm {
         delayed: true
     }
 
-    // Indent :
+    // Margins :
      textTopMarginSlider.value: SkrSettings.writeSettings.textTopMargin
 
     Binding {

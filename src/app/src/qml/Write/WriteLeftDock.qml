@@ -93,6 +93,7 @@ WriteLeftDockForm {
         property bool dockFolded: false
         property bool treeViewFrameFolded: treeViewFrame.folded ? true : false
         property bool documentFrameFolded: documentFrame.folded ? true : false
+        property int width: fixedWidth
     }
 
 
@@ -112,6 +113,8 @@ WriteLeftDockForm {
 
         //        splitView.restoreState(settings.dockSplitView)
         treeView.onOpenDocument.connect(Globals.openSheetCalled)
+
+        fixedWidth = settings.width
     }
     Component.onDestruction: {
         //        settings.dockSplitView = splitView.saveState()

@@ -12,6 +12,7 @@ using namespace std;
 #include <QDebug>
 #include <QString>
 #include <QGuiApplication>
+#include <QApplication>
 #include <QTranslator>
 #include <QFileInfo>
 #include <QDir>
@@ -106,19 +107,22 @@ int main(int argc, char *argv[])
     // Allows qml styling
     qputenv("QT_STYLE_OVERRIDE",           "");
 
+
+    QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << ":icons");
+
     // TODO : add option for UI scale
 
 #if QT_VERSION >= 0x051400
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 #else
-    qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
+    //qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
 
 
 
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
 
     //icons :
     //qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
@@ -250,10 +254,18 @@ int main(int argc, char *argv[])
                                      "SkrUserSettings");
 
     QQmlApplicationEngine engine(qApp);
+    const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
 
     engine.rootContext()->setContextProperty("plmData", data);
     engine.rootContext()->setContextProperty("plmModels", models);
-    engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
+                     &app, [url](QObject *obj, const QUrl &objUrl) {
+        if (!obj && url == objUrl)
+            QCoreApplication::exit(-1);
+    }, Qt::QueuedConnection);
+
+    engine.load(url);
 
 //            QCoreApplication *app = qApp;
 //            engine->connect(engine, &QQmlApplicationEngine::objectCreated, [app](QObject *object, const QUrl &url){

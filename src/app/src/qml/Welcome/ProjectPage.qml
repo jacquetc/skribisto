@@ -1,5 +1,5 @@
 import QtQuick 2.12
-import QtQuick.Dialogs 1.3
+import Qt.labs.platform 1.1
 import ".."
 import eu.skribisto.recentprojectlistmodel 1.0
 import QtQuick.Layouts 1.12
@@ -39,18 +39,17 @@ ProjectPageForm {
     }
 
     selectProjectPathToolButton.onClicked: {
-        folderDialog.visible = true
+        folderDialog.open()
 
     }
 
 
-    FileDialog{
+    FolderDialog{
         id: folderDialog
-        selectFolder: true
-        folder: shortcuts.documents
+        currentFolder: StandardPaths.standardLocations(StandardPaths.DocumentsLocation)[0]
 
         onAccepted: {
-            var path = folderDialog.fileUrl.toString()
+            var path = folderDialog.folder.toString()
             path = path.replace(/^(file:\/{2})/,"");
             projectPathTextField.text = path
         }
@@ -91,7 +90,7 @@ ProjectPageForm {
 
     // path :
     projectPathTextField.text: {
-        var path = folderDialog.shortcuts.documents
+        var path = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)[0].toString()
         path = path.replace(/^(file:\/{2})/,"")
 
         return path
@@ -155,7 +154,7 @@ ProjectPageForm {
     //-Recent projects list ------------------------------
     //----------------------------------------------
     recentListView.onCurrentIndexChanged: {
-        contextMenuItemIndex = listView.currentIndex
+        contextMenuItemIndex = recentListView.currentIndex
     }
 
     property int contextMenuItemIndex: -2

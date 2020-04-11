@@ -10,11 +10,8 @@
         <file>qml/RootPage.qml</file>
         <file>qml/RootPageForm.ui.qml</file>
         <file>qml/settings.js</file>
-        <file>qml/WritingZone.qml</file>
-        <file>qml/WritingZoneForm.ui.qml</file>
         <file>qml/DockHeader.qml</file>
         <file>qml/DockHeaderForm.ui.qml</file>
-        <file>qml/Minimap.qml</file>
         <file>qml/SkrSettings.qml</file>
         <file>qml/Welcome/WelcomePage.qml</file>
         <file>qml/Welcome/WelcomePageForm.ui.qml</file>
@@ -43,5 +40,12 @@
         <file>qml/Write/WriteRightDockForm.ui.qml</file>
         <file>qml/Write/EditView.qml</file>
         <file>qml/Write/EditViewForm.ui.qml</file>
+        <file>qml/Projects/ProjectsPage.qml</file>
+        <file>qml/Projects/ProjectsPageForm.ui.qml</file>
+        <file>qml/Gallery/GalleryPageForm.ui.qml</file>
+        <file>qml/Gallery/GalleryPage.qml</file>
+        <file>qml/Commons/WritingZone.qml</file>
+        <file>qml/Commons/WritingZoneForm.ui.qml</file>
+        <file>qml/Commons/Minimap.qml</file>
     </qresource>
 </RCC>

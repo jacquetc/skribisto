@@ -422,6 +422,31 @@ WritePageForm {
         width: 50
     }
 
+    // resizing with leftDockResizeButton:
+
+    property int leftDockResizeButtonFirstPressX: 0
+    leftDockResizeButton.onReleased: {
+        leftDockResizeButtonFirstPressX = 0
+    }
+
+    leftDockResizeButton.onPressXChanged: {
+        if(leftDockResizeButtonFirstPressX === 0){
+            leftDockResizeButtonFirstPressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
+        }
+
+        var pressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
+        var displacement = leftDockResizeButtonFirstPressX - pressX
+        leftDock.fixedWidth = leftDock.fixedWidth - displacement
+        leftDockResizeButtonFirstPressX = pressX
+
+        if(leftDock.fixedWidth < 300){
+            leftDock.fixedWidth = 300
+        }
+        if(leftDock.fixedWidth > 600){
+            leftDock.fixedWidth = 600
+        }
+    }
+
     //-------------------------------------------------------------
     //-------Right Dock------------------------------------------
     //-------------------------------------------------------------
@@ -470,7 +495,32 @@ WritePageForm {
         width: 50
     }
 
+    // resizing with rightDockResizeButton:
 
+    property int rightDockResizeButtonFirstPressX: 0
+    rightDockResizeButton.onReleased: {
+        rightDockResizeButtonFirstPressX = 0
+    }
+
+    rightDockResizeButton.onPressXChanged: {
+        if(rightDockResizeButtonFirstPressX === 0){
+            rightDockResizeButtonFirstPressX = root.mapFromItem(rightDockResizeButton, rightDockResizeButton.pressX, 0).x
+        }
+
+        var pressX = root.mapFromItem(rightDockResizeButton, rightDockResizeButton.pressX, 0).x
+        var displacement = rightDockResizeButtonFirstPressX - pressX
+        rightDock.fixedWidth = rightDock.fixedWidth + displacement
+        rightDockResizeButtonFirstPressX = pressX
+
+        if(rightDock.fixedWidth < 200){
+            rightDock.fixedWidth = 200
+        }
+        if(rightDock.fixedWidth > 350){
+            rightDock.fixedWidth = 350
+        }
+
+
+    }
 
     //---------------------------------------------------------
 

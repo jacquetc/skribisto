@@ -32,9 +32,10 @@ RootPageForm {
                 flat: true
                 height: menuButtonsflow.buttonSize
                 width: menuButtonsflow.buttonSize
-                checkable: true
+                //checkable: true
                 display: AbstractButton.IconOnly
                 action: welcomeWindowAction
+                padding: 1
 
                 icon {
                     color: "transparent"
@@ -60,17 +61,17 @@ RootPageForm {
 //                }
             }
 
-            ToolButton {
+            Button {
                 id: write_button
                 flat: true
                 height: menuButtonsflow.buttonSize
                 width: menuButtonsflow.buttonSize
-                display: AbstractButton.IconOnly
+                display: AbstractButton.TextUnderIcon
                 action: writeWindowAction
+                padding: 1
                 icon {
-                    //color: "transparent"
-                    height: 100
-                    width: 100
+                    height: 50
+                    width: 50
                 }
 
                 hoverEnabled: true
@@ -80,17 +81,17 @@ RootPageForm {
                 ToolTip.text: writeWindowAction.text
             }
 
-            ToolButton {
+            Button {
                 id: note_button
                 flat: true
                 height: menuButtonsflow.buttonSize
                 width: menuButtonsflow.buttonSize
-                display: AbstractButton.IconOnly
+                display: AbstractButton.TextUnderIcon
                 action: noteWindowAction
+                padding: 1
                 icon {
-                    color: "transparent"
-                    height: 100
-                    width: 100
+                    height: 50
+                    width: 50
                 }
 
                 hoverEnabled: true
@@ -100,17 +101,17 @@ RootPageForm {
                 ToolTip.text: noteWindowAction.text
             }
 
-            ToolButton {
+            Button {
                 id: gallery_button
                 flat: true
                 height: menuButtonsflow.buttonSize
                 width: menuButtonsflow.buttonSize
-                display: AbstractButton.IconOnly
+                display: AbstractButton.TextUnderIcon
                 action: galleryWindowAction
+                padding: 1
                 icon {
-                    color: "transparent"
-                    height: 100
-                    width: 100
+                    height: 50
+                    width: 50
                 }
 
                 hoverEnabled: true
@@ -119,24 +120,24 @@ RootPageForm {
                 ToolTip.visible: hovered
                 ToolTip.text: galleryWindowAction.text
             }
-            ToolButton {
-                id: infos_button
-                //flat: true
+            Button {
+                id: projects_button
+                flat: true
                 height: menuButtonsflow.buttonSize
                 width: menuButtonsflow.buttonSize
-                display: AbstractButton.IconOnly
-                action: infosWindowAction
+                display: AbstractButton.TextUnderIcon
+                action: projectsWindowAction
+                padding: 1
                 icon {
-                    color: "transparent"
-                    height: 100
-                    width: 100
+                    height: 50
+                    width: 50
                 }
 
                 hoverEnabled: true
                 ToolTip.delay: 1000
                 ToolTip.timeout: 5000
                 ToolTip.visible: hovered
-                ToolTip.text: infosWindowAction.text
+                ToolTip.text: projectsWindowAction.text
             }
         }
     }
@@ -183,8 +184,7 @@ RootPageForm {
             id: noteWindowAction
             text: qsTr("Notes")
             icon {
-                name: "document-edit"
-                color: "transparent"
+                name: "story-editor"
                 height: 100
                 width: 100
             }
@@ -201,30 +201,33 @@ RootPageForm {
             id: galleryWindowAction
             text: qsTr("Gallery")
             icon {
-                name: "document-edit"
-                color: "transparent"
+                name: "view-preview"
                 height: 100
                 width: 100
             }
 
             shortcut: "F8"
             checkable: true
-            onTriggered: root_stack.currentIndex = 1
+            onTriggered: {
+                root_stack.currentIndex = 3
+                galleryPage.forceActiveFocus()
+            }
         }
         Action {
-            id: infosWindowAction
-            text: qsTr("Informations")
+            id: projectsWindowAction
+            text: qsTr("Project")
             icon {
-                name: "document-edit"
-                source: "qrc:/pics/skribisto.svg"
-                color: "transparent"
+                name: "configure"
                 height: 100
                 width: 100
             }
 
             shortcut: "F9"
             checkable: true
-            onTriggered: root_stack.currentIndex = 1
+            onTriggered: {
+                root_stack.currentIndex = 4
+                projectsPage.forceActiveFocus()
+            }
         }
     }
 
@@ -233,9 +236,30 @@ RootPageForm {
     }
     statusBarMenuButtonsLoader.onLoaded: {
         statusBarMenuButtonsLoader.item.flow = Flow.LeftToRight
-        statusBarMenuButtonsLoader.item.buttonSize = 40
+        statusBarMenuButtonsLoader.item.buttonSize = 30
         statusBarMenuButtonsLoader.item.spacing = 3
     }
+
+
+    //------------------------------------------------
+    // notification :
+    Action{
+        id: notificationButtonAction
+        icon{
+            name: "dialog-messages"
+            width: 50
+            height: 50
+        }
+
+        onTriggered: {
+            //show notification list
+        }
+    }
+
+    notificationButton.action: notificationButtonAction
+
+
+
 
     Component.onCompleted: {
 

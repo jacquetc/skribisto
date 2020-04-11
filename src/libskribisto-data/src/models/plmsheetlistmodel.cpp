@@ -321,18 +321,17 @@ void PLMSheetListModel::populate()
 
     m_allSheetItems.clear();
 
-    foreach(int projectId, plmdata->projectHub()->getProjectIdList()) {
-        if (plmdata->projectHub()->getProjectIdList().count() > 1) {
-            PLMSheetItem *projectItem = new PLMSheetItem();
-            projectItem->setIsProjectItem(projectId);
-            m_allSheetItems.append(projectItem);
-        }
+    for(int projectId : plmdata->projectHub()->getProjectIdList()) {
+        PLMSheetItem *projectItem = new PLMSheetItem();
+        projectItem->setIsProjectItem(projectId);
+        m_allSheetItems.append(projectItem);
+
 
         auto idList         = plmdata->sheetHub()->getAllIds(projectId);
         auto sortOrdersHash = plmdata->sheetHub()->getAllSortOrders(projectId);
         auto indentsHash    = plmdata->sheetHub()->getAllIndents(projectId);
 
-        foreach(int sheetId, idList) {
+        for(int sheetId : idList) {
             m_allSheetItems.append(new PLMSheetItem(projectId, sheetId,
                                                     indentsHash.value(sheetId),
                                                     sortOrdersHash.value(sheetId)));
@@ -401,23 +400,14 @@ void PLMSheetListModel::refreshAfterDataAddition(int projectId, int paperId)
     int paperSortOrders = sortOrdersHash.value(paperId);
 
     bool parentFound = false;
-    if (plmdata->projectHub()->getProjectIdList().count() > 1) {
 
-        if(paperIndex == 0){
-            //            parentIndex = this->getModelIndex(projectId, -1).first();
-            row = 0;
-            parentFound = true;
-        }
-
+    if(paperIndex == 0){ // meaning the parent have to be a project item
+        this->populate();
+        return;
     }
-    else if(paperIndex == 0){
-        //        parentIndex = QModelIndex();
-        row = 0;
-        parentFound = true;
 
-    }
     if(!parentFound){
-        for (int i = paperIndex; i >= 0 ; --i ) {
+        for (int i = paperIndex - 1; i >= 0 ; --i ) {
             int possibleParentId = idList.at(i);
             int possibleParentIndent = indentsHash.value(possibleParentId);
             if(paperIndent == possibleParentIndent + 1){
@@ -428,7 +418,7 @@ void PLMSheetListModel::refreshAfterDataAddition(int projectId, int paperId)
                 //                }
                 //                parentIndex = modelIndexList.first();
                 //int parentPaperId = parentIndex.data(PLMSheetItem::Roles::PaperIdRole).toInt();
-                row = paperIndex - i - 1;
+                row = paperIndex - i;
                 parentFound = true;
                 break;
             }
@@ -440,35 +430,24 @@ void PLMSheetListModel::refreshAfterDataAddition(int projectId, int paperId)
         return;
     }
 
+
     // find item just before in m_allSheetItems to determine item index to insert in:
 
-    int itemIndex = 0;
-    if (plmdata->projectHub()->getProjectCount() == 1 && paperIndex == 0){ // so no project items and first item
-        itemIndex = 0;
-    }
-    else if (plmdata->projectHub()->getProjectCount() > 1 && idList.count() == 1) { // first of a second new project
-            this->populate();
-            return;
-        }
-    else if (plmdata->projectHub()->getProjectCount() > 1 && idList.count() > 1) { // stopgap
-        this->populate();
-        return;
 
-    }
-    else {
-        int idBefore = idList.at(paperIndex - 1);
-        PLMSheetItem *itemBefore = this->getItem(projectId, idBefore);
 
-        int indexBefore = m_allSheetItems.indexOf(itemBefore);
+    int idBefore = idList.at(paperIndex - 1);
+    PLMSheetItem *itemBefore = this->getItem(projectId, idBefore);
+    // needed because m_allSheetItems can have multiple projects :
+    int indexBefore = m_allSheetItems.indexOf(itemBefore);
 
-        itemIndex = indexBefore + 1;
+    int itemIndex = indexBefore + 1;
 
-        //        if(itemIndex >= m_allSheetItems.count() && paperIndent == itemBefore->indent() + 1){
-        //            qWarning() << Q_FUNC_INFO << "last in the m_allSheetItems list and child of previous item, so failsafe used";
-        //            this->populate();
-        //            return;
-        //        }
-    }
+    //        if(itemIndex >= m_allSheetItems.count() && paperIndent == itemBefore->indent() + 1){
+    //            qWarning() << Q_FUNC_INFO << "last in the m_allSheetItems list and child of previous item, so failsafe used";
+    //            this->populate();
+    //            return;
+    //        }
+
 
     for(PLMSheetItem *item : m_allSheetItems){
         item->invalidateData(PLMSheetItem::Roles::SortOrderRole);

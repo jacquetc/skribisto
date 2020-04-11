@@ -5,6 +5,8 @@ import QtQuick.Layouts 1.12
 Item {
     id: base
     property alias listView: listView
+    property alias scrollView: scrollView
+    property int scrollBarVerticalPolicy: ScrollBar.AlwaysOff
     property alias goUpToolButton: goUpToolButton
     property alias currentParentToolButton: currentParentToolButton
     property alias addToolButton: addToolButton
@@ -14,62 +16,82 @@ Item {
         id: pane
         clip: true
         anchors.fill: parent
-        padding: 0
 
         ColumnLayout {
             id: columnLayout
+            spacing: 0
             anchors.fill: parent
 
-            RowLayout {
-                id: rowLayout
-                width: 100
-                height: 100
-                spacing: 1
+            ToolBar {
+                id: toolBar
                 Layout.maximumHeight: 40
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
 
-                ToolButton {
-                    id: goUpToolButton
-                    display: AbstractButton.IconOnly
-                }
 
-                ToolButton {
-                    id: currentParentToolButton
-                    text: qsTr("current folder name")
-                }
 
-                Item {
-                    id: element
-                    width: 200
-                    height: 200
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                }
+                //                Item {
+                //                    id: element
+                //                    Layout.fillHeight: true
+                //                    Layout.fillWidth: true
+                //                }
 
-                ToolButton {
-                    id: addToolButton
-                    text: qsTr("Add a document")
-                    display: AbstractButton.IconOnly
-                }
 
-                ToolButton {
-                    id: treeMenuToolButton
-                    text: qsTr("Navigation menu")
-                    display: AbstractButton.IconOnly
+                RowLayout {
+                    id: rowLayout
+                    spacing: 1
+                    anchors.fill: parent
+
+
+                    ToolButton {
+                        id: goUpToolButton
+                        flat: true
+                        display: AbstractButton.IconOnly
+                    }
+
+                    ToolButton {
+                        id: currentParentToolButton
+                        flat: true
+                        Layout.fillWidth: true
+                        text: qsTr("current folder name")
+                    }
+                    ToolButton {
+                        id: addToolButton
+                        flat: true
+                        text: qsTr("Add a document")
+                        display: AbstractButton.IconOnly
+                    }
+
+                    ToolButton {
+                        id: treeMenuToolButton
+                        flat: true
+                        text: qsTr("Navigation menu")
+                        display: AbstractButton.IconOnly
+                    }
                 }
             }
             ScrollView {
-                focusPolicy: Qt.WheelFocus
+                id: scrollView
+                focusPolicy: Qt.StrongFocus
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                focus: true
+                clip: true
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical.policy: scrollBarVerticalPolicy
+
 
                 TreeListView {
                     id: listView
-                    anchors.fill: parent
+                    //anchors.fill: parent
                     focus: true
+//                    ScrollBar.vertical: ScrollBar {
+//                        id: internalScrollBar
+//                        parent: listView.parent
+//                    }
+
                 }
+
+
             }
         }
     }

@@ -30,7 +30,7 @@ Item {
 
         SwipeView {
             id: swipeView
-            currentIndex: 1
+            currentIndex: 0
             anchors.fill: parent
             interactive: false
             clip: true
@@ -44,12 +44,29 @@ Item {
                         id: groupBox1
                         width: 200
                         height: 200
-                        title: qsTr("Recent projects")
+                        title: qsTr("Projects")
 
                         ColumnLayout {
                             id: columnLayout
-                            width: 100
-                            height: 100
+                            anchors.fill: parent
+
+                            RowLayout {
+                                id: rowLayout
+                                width: 100
+                                height: 100
+
+                                Button {
+                                    id: newProjectButton
+                                    text: qsTr("New project")
+                                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                }
+
+                                Button {
+                                    id: openProjectButton
+                                    text: qsTr("Open project")
+                                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                }
+                            }
 
                             ListView {
                                 id: recentListView
@@ -85,6 +102,7 @@ Item {
                                     }
                                 }
                             }
+
                         }
                     }
 
@@ -98,18 +116,6 @@ Item {
                             id: columnLayout1
                             width: 100
                             height: 100
-
-                            Button {
-                                id: newProjectButton
-                                text: qsTr("New project")
-                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                            }
-
-                            Button {
-                                id: openProjectButton
-                                text: qsTr("Open project")
-                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                            }
 
                             Switch {
                                 id: createEmpyProjectAtStartSwitch
@@ -267,7 +273,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:2;anchors_height:200;anchors_width:200}
+    D{i:0;height:500;width:600}D{i:6;anchors_height:100;anchors_width:100}D{i:2;anchors_height:200;anchors_width:200}
 }
 ##^##*/
 
