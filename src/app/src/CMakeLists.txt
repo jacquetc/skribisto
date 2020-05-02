@@ -32,6 +32,9 @@ set(app_SRCS
     skrusersettings.cpp
     skrrecentprojectlistmodel.h
     skrrecentprojectlistmodel.cpp
+    skrfonts.h
+    skrfonts.cpp
+
 
     )
 

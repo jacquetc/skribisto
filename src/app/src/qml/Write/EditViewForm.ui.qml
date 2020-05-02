@@ -30,10 +30,8 @@ Item {
         Item {
             id: mainPage
 
-
             ColumnLayout {
                 anchors.fill: parent
-
 
                 GroupBox {
                     id: groupBox
@@ -43,10 +41,10 @@ Item {
 
                     GridLayout {
                         id: gridLayout
-                        columns: groupBox.contentItem.width / italicToolButton.width -1
+                        columns: groupBox.contentItem.width / italicToolButton.width - 1
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        columnSpacing:5
+                        columnSpacing: 5
                         rowSpacing: 5
 
                         ToolButton {
@@ -74,9 +72,6 @@ Item {
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
-
-
-
                     }
                 }
                 GroupBox {
@@ -89,7 +84,7 @@ Item {
                         id: gridLayout2
                         columnSpacing: 5
                         rowSpacing: 5
-                        columns: groupBox2.contentItem.width / fullScreenToolButton.width -1
+                        columns: groupBox2.contentItem.width / fullScreenToolButton.width - 1
                         anchors.left: parent.left
                         anchors.right: parent.right
 
@@ -105,30 +100,22 @@ Item {
                             text: qsTr("Size")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
-
                         }
                         ToolButton {
                             id: fullScreenColorToolButton
                             text: qsTr("Full screen Colors")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
-
                         }
-
                     }
-
-
                 }
 
-
-
-                Item{
+                Item {
                     id: stretcher
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                 }
             }
-
         }
 
         Item {
@@ -141,7 +128,6 @@ Item {
                     text: qsTr("Go back")
                     display: AbstractButton.IconOnly
                 }
-
 
                 Label {
                     text: qsTr("Text width :")
@@ -167,6 +153,7 @@ Item {
 
                 ComboBox {
                     id: fontFamilyComboBox
+                    wheelEnabled: true
                     Layout.fillWidth: true
                 }
                 Label {
@@ -194,10 +181,10 @@ Item {
                 }
             }
         }
-        
+
         Item {
             id: fullScreenColorPage
-            
+
             ColumnLayout {
                 id: columnLayout
                 anchors.fill: parent
@@ -211,12 +198,12 @@ Item {
                 RowLayout {
                     id: rowLayout
                     Layout.fillWidth: true
-                    
+
                     Label {
                         id: label
                         text: qsTr("Background :")
                     }
-                    
+
                     TextField {
                         id: backroundColorTextField
                         text: qsTr("Text Field")

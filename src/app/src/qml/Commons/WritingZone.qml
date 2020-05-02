@@ -7,8 +7,11 @@ WritingZoneForm {
     stretch: true
     minimapVisibility: true
     property string name: ""
-    readonly property int textAreaLeftPos: base.width / 2 - textAreaWidth / 2
-    readonly property int textAreaRightPos: base.width / 2 + textAreaWidth / 2
+    readonly property int wantedCenteredTextAreaLeftPos: rootPageBase.width / 2 - textAreaWidth / 2
+    readonly property int wantedCenteredTextAreaRightPos: rootPageBase.width / 2 + textAreaWidth / 2
+
+    readonly property int wantedCenteredWritingZoneLeftPos: rootPageBase.width / 2 - root.width / 2
+    readonly property int wantedCenteredWritingZoneRightPos: rootPageBase.width / 2 + root.width / 2
 
     textArea.persistentSelection: true
 
@@ -23,13 +26,13 @@ WritingZoneForm {
 
     property real textIndent: 0
     onTextIndentChanged: {
-        console.log("eeee")
+        //console.log("eeee")
         documentHandler.indentEverywhere = textIndent
     }
 
     property real textTopMargin: 0
     onTextTopMarginChanged: {
-        console.log("bbbb")
+        //console.log("bbbb")
         documentHandler.topMarginEverywhere = textTopMargin
     }
 

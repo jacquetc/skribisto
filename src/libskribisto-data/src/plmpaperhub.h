@@ -62,7 +62,7 @@ public:
     Q_INVOKABLE PLMError            setTitle(int            projectId,
                                              int            paperId,
                                              const QString& newTitle);
-    QString                         getTitle(int projectId,
+    Q_INVOKABLE QString                         getTitle(int projectId,
                                              int paperId) const;
 
     PLMError                        setIndent(int projectId,
@@ -191,7 +191,7 @@ signals:
     void paperIdChanged(int projectId,
                         int paperId,
                         int newId);
-    void titleChanged(int            projectId,
+    Q_INVOKABLE void titleChanged(int            projectId,
                       int            paperId,
                       const QString& newTitle);
     void indentChanged(int projectId,

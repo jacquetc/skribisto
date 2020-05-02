@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick 2.12
 
+
 QtObject {
     property color mainbg: 'red'
     property bool compactSize: false

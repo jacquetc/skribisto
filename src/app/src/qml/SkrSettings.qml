@@ -10,8 +10,14 @@ QtObject {
         onMenuButtonsInStatusBarChanged: {
             console.log("menuButtonsInStatusBar", menuButtonsInStatusBar)
         }
-    }
 
+    }
+    property Settings rootSettings: Settings{
+        category: "root"
+        property  int leftDockWidth: 300
+        property  bool leftDockFolded: false
+
+    }
     property Settings welcomeSettings: Settings{
         category: "welcome"
         property bool createEmptyProjectAtStart: false

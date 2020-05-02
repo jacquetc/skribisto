@@ -99,7 +99,7 @@ EditViewForm {
     }
 
     // Font family combo :
-    fontFamilyComboBox.model: Qt.fontFamilies()
+    fontFamilyComboBox.model: skrFonts.getModel()
 
     Binding {
         target: SkrSettings.writeSettings

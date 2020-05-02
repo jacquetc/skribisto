@@ -102,7 +102,7 @@ QVariant PLMSheetItem::data(int role)
         case Roles::TagRole:
             m_data.insert(role,
                           plmdata->sheetPropertyHub()->getProperty(projectId, paperId,
-                                                                   "tag"));
+                                                                   "tag", ""));
             break;
 
         case Roles::IndentRole:

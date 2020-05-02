@@ -17,7 +17,9 @@ Item {
     //text:
     property alias text: textEdit.text
 
-    implicitWidth: sourceWidth * scaleValue
+    //implicitWidth: sourceWidth * scaleValue
+
+    implicitWidth: 50
 
     Flickable {
         id: minimapFlickable
