@@ -110,83 +110,6 @@ RootPageForm {
 
 
 
-    //-------------------------------------------------------------
-    //-------Left Dock------------------------------------------
-    //-------------------------------------------------------------
-    rootLeftDock.enabled: !Globals.compactSize
-
-    rootLeftDock.onFoldedChanged: {
-        if (rootLeftDock.folded) {
-            leftDockMenuGroup.visible = false
-            leftDockMenuButton.checked = false
-            leftDockMenuButton.visible = false
-        } else {
-            leftDockMenuButton.visible = true
-        }
-    }
-
-    leftDockShowButton.onClicked: rootLeftDock.folded ? rootLeftDock.unfold(
-                                                            ) : rootLeftDock.fold()
-    leftDockShowButton.icon {
-        name: rootLeftDock.folded ? "go-next" : "go-previous"
-        height: 30
-        width: 30
-    }
-
-    leftDockMenuButton.onCheckedChanged: leftDockMenuButton.checked ? leftDockMenuGroup.visible = true : leftDockMenuGroup.visible = false
-    leftDockMenuButton.checked: false
-    leftDockMenuButton.icon {
-        name: "overflow-menu"
-        height: 30
-        width: 30
-    }
-
-    //leftDockResizeButton.onVisibleChanged: leftDock.folded = false
-    //leftDockResizeButton.onClicked:
-    leftDockMenuGroup.visible: false
-    leftDockResizeButton.icon {
-        name: "resizecol"
-        height: 30
-        width: 30
-    }
-
-    // compact mode :
-    //    compactHeaderPane.visible: Globals.compactSize
-
-    //    compactLeftDockShowButton.onClicked: leftDrawer.open()
-    //    compactLeftDockShowButton.icon {
-    //        name: "go-next"
-    //        height: 50
-    //        width: 50
-    //    }
-
-    // resizing with leftDockResizeButton:
-
-    property int leftDockResizeButtonFirstPressX: 0
-    leftDockResizeButton.onReleased: {
-        leftDockResizeButtonFirstPressX = 0
-    }
-
-    leftDockResizeButton.onPressXChanged: {
-        if(leftDockResizeButtonFirstPressX === 0){
-            leftDockResizeButtonFirstPressX = rootPage.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
-        }
-
-        var pressX = rootPage.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
-        var displacement = leftDockResizeButtonFirstPressX - pressX
-        rootLeftDock.fixedWidth = rootLeftDock.fixedWidth - displacement
-        leftDockResizeButtonFirstPressX = pressX
-
-        if(rootLeftDock.fixedWidth < 300){
-            rootLeftDock.fixedWidth = 300
-        }
-        if(rootLeftDock.fixedWidth > 600){
-            rootLeftDock.fixedWidth = 600
-        }
-
-        SkrSettings.rootSettings.leftDockWidth = rootLeftDock.fixedWidth
-    }
-
 
     //---------------------------------------------------------
 
@@ -205,26 +128,7 @@ RootPageForm {
         }
     }
 
-    Drawer {
-        id: leftDrawer
-        enabled: Globals.compactSize
-        width: if (rootPageBase.width * 0.6 > 400) {
-                   return 400
-               } else {
-                   return rootPageBase.width * 0.6
-               }
-        height: rootPageBase.height
-        modal: Globals.compactSize ? true : false
-        edge: Qt.LeftEdge
 
-        //        interactive: Globals.compactSize ? true : false
-        //        visible:true
-        //        position: Globals.compactSize ? 0 : 1
-        RootLeftDock {
-            id: compactLeftDock
-            anchors.fill: parent
-        }
-    }
     //---------------------------------------------------------
 
     // fullscreen :
@@ -395,10 +299,6 @@ RootPageForm {
     //---------------------------------------------------------
 
     Component.onCompleted: {
-        if(!Globals.compactSize){
-            leftDrawer.close()
-            leftDrawer.interactive = false
-        }
 
         this.openArgument()
     }

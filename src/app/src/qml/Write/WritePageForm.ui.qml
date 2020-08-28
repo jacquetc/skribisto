@@ -13,10 +13,15 @@ Item {
     property alias compactHeaderPane: compactHeaderPane
     property alias compactRightDockShowButton: compactRightDockShowButton
     property alias compactLeftDockShowButton: compactLeftDockShowButton
+    property alias leftDockMenuGroup: leftDockMenuGroup
     property alias rightDockMenuGroup: rightDockMenuGroup
+    property alias leftDockResizeButton: leftDockResizeButton
     property alias rightDockResizeButton: rightDockResizeButton
+    property alias leftDockMenuButton: leftDockMenuButton
     property alias rightDockMenuButton: rightDockMenuButton
+    property alias leftDock: leftDock
     property alias rightDock: rightDock
+    property alias leftDockShowButton: leftDockShowButton
     property alias rightDockShowButton: rightDockShowButton
     property alias minimap: minimap
     property alias middleBase: middleBase
@@ -95,7 +100,11 @@ Item {
                     spacing: 0
                     anchors.fill: parent
 
-
+                    WriteLeftDock {
+                        id: leftDock
+                        z: 1
+                        Layout.fillHeight: true
+                    }
                     Pane {
                         id: leftPane
                         Layout.fillHeight: true
@@ -120,6 +129,48 @@ Item {
                             anchors.fill: parent
                         }
 
+                        ColumnLayout {
+                            anchors.fill: parent
+                            z: 2
+                            Button {
+                                id: leftDockShowButton
+                                focusPolicy: Qt.NoFocus
+                                Layout.preferredHeight: 50
+                                Layout.preferredWidth: 50
+                                flat: true
+                                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                            }
+
+                            Button {
+                                id: leftDockMenuButton
+                                focusPolicy: Qt.NoFocus
+                                checkable: true
+                                Layout.preferredHeight: 50
+                                Layout.preferredWidth: 50
+                                flat: true
+                                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                            }
+
+                            ColumnLayout {
+                                id: leftDockMenuGroup
+                                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+
+                                Button {
+                                    id: leftDockResizeButton
+                                    focusPolicy: Qt.NoFocus
+                                    Layout.preferredHeight: 50
+                                    Layout.preferredWidth: 50
+                                    flat: true
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                                }
+                            }
+
+                            Item {
+                                id: stretcher
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
+                            }
+                        }
                     }
 
                 }
@@ -127,7 +178,7 @@ Item {
 
             Item {
                 id: middleBase
-                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 Layout.fillHeight: true
                 Layout.fillWidth: true
 

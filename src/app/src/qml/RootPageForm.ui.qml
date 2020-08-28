@@ -9,12 +9,6 @@ Item {
     //property variant window: none
     property alias rootPageBase: rootPageBase
     property alias notificationButton: notificationButton
-    property alias rootLeftDock: rootLeftDock
-//    property alias compactLeftDockShowButton: compactLeftDockShowButton
-    property alias leftDockMenuGroup: leftDockMenuGroup
-    property alias leftDockResizeButton: leftDockResizeButton
-    property alias leftDockMenuButton: leftDockMenuButton
-    property alias leftDockShowButton: leftDockShowButton
     property alias rootSwipeView: rootSwipeView
     property alias rootTabBar: rootTabBar
 
@@ -25,7 +19,6 @@ Item {
 
         TabBar {
             id: rootTabBar
-            width: 240
             Layout.preferredHeight: 30
             Layout.minimumHeight: 30
             Layout.fillWidth: true
@@ -36,12 +29,7 @@ Item {
             spacing: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
-            RootLeftDock {
-                id: rootLeftDock
-                visible: !Globals.compactSize
-                Layout.fillHeight: true
 
-            }
             Item {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
@@ -103,33 +91,33 @@ Item {
                     z: 0
                     anchors.fill: parent
 
-                    //        TabBar {
-                    //            id: bar
-                    //            position: TabBar.Header
-                    //            wheelEnabled: true
-                    //            Layout.fillHeight: false
-                    //            Layout.fillWidth: true
-                    //            TabButton {
-                    //                text: qsTr("Welcome")
-                    //                width: implicitWidth
-                    //            }
-                    //            TabButton {
-                    //                text: qsTr("Write")
-                    //                width: implicitWidth
-                    //            }
-                    //            TabButton {
-                    //                text: qsTr("Notes")
-                    //                width: implicitWidth
-                    //            }
-                    //            TabButton {
-                    //                text: qsTr("Gallery")
-                    //                width: implicitWidth
-                    //            }
-                    //            TabButton {
-                    //                text: qsTr("Informations")
-                    //                width: implicitWidth
-                    //            }
-                    //        }
+//                            TabBar {
+//                                id: bar
+//                                position: TabBar.Header
+//                                wheelEnabled: true
+//                                Layout.fillHeight: false
+//                                Layout.fillWidth: true
+//                                TabButton {
+//                                    text: qsTr("Welcome")
+//                                    width: implicitWidth
+//                                }
+//                                TabButton {
+//                                    text: qsTr("Write")
+//                                    width: implicitWidth
+//                                }
+//                                TabButton {
+//                                    text: qsTr("Notes")
+//                                    width: implicitWidth
+//                                }
+//                                TabButton {
+//                                    text: qsTr("Gallery")
+//                                    width: implicitWidth
+//                                }
+//                                TabButton {
+//                                    text: qsTr("Informations")
+//                                    width: implicitWidth
+//                                }
+//                            }
 
                     SwipeView {
                         id: rootSwipeView

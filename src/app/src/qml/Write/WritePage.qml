@@ -471,9 +471,81 @@ WritePageForm {
     //minimap.height: minimapRatio() >= 1 ? minimapFlickable.height : writingZone.flickable.contentHeight * minimapRatio()
 
 
+    //-------------------------------------------------------------
+    //-------Left Dock------------------------------------------
+    //-------------------------------------------------------------
+    leftDock.enabled: !Globals.compactSize
+
+    leftDock.onFoldedChanged: {
+        if (leftDock.folded) {
+            leftDockMenuGroup.visible = false
+            leftDockMenuButton.checked = false
+            leftDockMenuButton.visible = false
+        } else {
+            leftDockMenuButton.visible = true
+        }
+    }
+
+    leftDockShowButton.onClicked: leftDock.folded ? leftDock.unfold(
+                                                        ) : leftDock.fold()
+    leftDockShowButton.icon {
+        name: leftDock.folded ? "go-next" : "go-previous"
+        height: 50
+        width: 50
+    }
+
+    leftDockMenuButton.onCheckedChanged: leftDockMenuButton.checked ? leftDockMenuGroup.visible = true : leftDockMenuGroup.visible = false
+    leftDockMenuButton.checked: false
+    leftDockMenuButton.icon {
+        name: "overflow-menu"
+        height: 50
+        width: 50
+    }
+
+    //leftDockResizeButton.onVisibleChanged: leftDock.folded = false
+    //leftDockResizeButton.onClicked:
+    leftDockMenuGroup.visible: false
+    leftDockResizeButton.icon {
+        name: "resizecol"
+        height: 50
+        width: 50
+    }
+
+
     // compact mode :
     compactHeaderPane.visible: Globals.compactSize
 
+    compactLeftDockShowButton.onClicked: leftDrawer.open()
+    compactLeftDockShowButton.icon {
+        name: "go-next"
+        height: 50
+        width: 50
+    }
+
+    // resizing with leftDockResizeButton:
+
+    property int leftDockResizeButtonFirstPressX: 0
+    leftDockResizeButton.onReleased: {
+        leftDockResizeButtonFirstPressX = 0
+    }
+
+    leftDockResizeButton.onPressXChanged: {
+        if(leftDockResizeButtonFirstPressX === 0){
+            leftDockResizeButtonFirstPressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
+        }
+
+        var pressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
+        var displacement = leftDockResizeButtonFirstPressX - pressX
+        leftDock.fixedWidth = leftDock.fixedWidth - displacement
+        leftDockResizeButtonFirstPressX = pressX
+
+        if(leftDock.fixedWidth < 300){
+            leftDock.fixedWidth = 300
+        }
+        if(leftDock.fixedWidth > 600){
+            leftDock.fixedWidth = 600
+        }
+    }
 
     //-------------------------------------------------------------
     //-------Right Dock------------------------------------------
@@ -570,6 +642,26 @@ WritePageForm {
         }
     }
 
+    Drawer {
+        id: leftDrawer
+        enabled: Globals.compactSize
+        width: if (base.width * 0.6 > 400) {
+                   return 400
+               } else {
+                   return base.width * 0.6
+               }
+        height: base.height
+        modal: Globals.compactSize ? true : false
+        edge: Qt.LeftEdge
+
+        //        interactive: Globals.compactSize ? true : false
+        //        visible:true
+        //        position: Globals.compactSize ? 0 : 1
+        WriteLeftDock {
+            id: compactLeftDock
+            anchors.fill: parent
+        }
+    }
 
     Drawer {
         id: rightDrawer
@@ -668,6 +760,7 @@ WritePageForm {
     //    }
 
 
+    property bool fullscreen_left_dock_folded: false
     property bool fullscreen_right_dock_folded: false
     // fullscreen :
     Connections {
@@ -676,10 +769,13 @@ WritePageForm {
         onFullScreenCalled: function (value) {
             if(value){
                 //save previous conf
+                fullscreen_left_dock_folded = leftDock.folded
                 fullscreen_right_dock_folded = rightDock.folded
+                leftDock.fold()
                 rightDock.fold()
             }
             else{
+                leftDock.folded = fullscreen_left_dock_folded
                 rightDock.folded = fullscreen_right_dock_folded
             }
 
