@@ -101,7 +101,7 @@ WritePageForm {
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------
-    property int offset: rootLeftDock.width
+    property int offset: leftDock.width
 
     //    Connections {
     //        target: Globals

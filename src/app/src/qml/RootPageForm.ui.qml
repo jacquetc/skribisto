@@ -3,6 +3,12 @@ import QtQuick.Layouts 1.3
 import QtQuick.Window 2.12
 import QtQuick.Controls 2.12
 
+import "WriteOverview"
+import "Welcome"
+import "Notes"
+import "Gallery"
+import "Projects"
+
 //import QtGraphicalEffects 1.0
 Item {
     id: rootPageBase
@@ -11,6 +17,11 @@ Item {
     property alias notificationButton: notificationButton
     property alias rootSwipeView: rootSwipeView
     property alias rootTabBar: rootTabBar
+    property alias welcomeTab: welcomeTab
+    property alias writeTab: writeTab
+    property alias projectTab: projectTab
+    property alias galleryTab: galleryTab
+    property alias notesTab: notesTab
 
     ColumnLayout {
         id: columnLayout
@@ -22,6 +33,31 @@ Item {
             Layout.preferredHeight: 30
             Layout.minimumHeight: 30
             Layout.fillWidth: true
+                        Tab {
+                            id: welcomeTab
+                            closable: false
+
+                        }
+                        Tab {
+                            id: writeTab
+                            closable: false
+
+                        }
+                        Tab {
+                            id: notesTab
+                            closable: false
+
+                        }
+                        Tab {
+                            id: galleryTab
+                            closable: false
+
+                        }
+                        Tab {
+                            id: projectTab
+                            closable: false
+
+                       }
         }
 
         RowLayout {
@@ -33,59 +69,7 @@ Item {
             Item {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
-                Item {
-                    z: 2
-                    id: dockMenuItem
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    width: 30
-                    height: 200
 
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        Button {
-                            id: leftDockShowButton
-                            focusPolicy: Qt.NoFocus
-                            Layout.preferredHeight: 30
-                            Layout.preferredWidth: 30
-                            flat: true
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                        }
-
-                        Button {
-                            id: leftDockMenuButton
-                            visible: !Globals.compactSize
-                            focusPolicy: Qt.NoFocus
-                            checkable: true
-                            Layout.preferredHeight: 30
-                            Layout.preferredWidth: 30
-                            flat: true
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                        }
-
-                        ColumnLayout {
-                            id: leftDockMenuGroup
-                            visible: !Globals.compactSize
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-
-                            Button {
-                                id: leftDockResizeButton
-                                focusPolicy: Qt.NoFocus
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: 30
-                                flat: true
-                                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                            }
-                        }
-
-                        Item {
-                            id: stretcher
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
-                        }
-                    }
-                }
 
                 ColumnLayout {
                     z: 0
@@ -124,6 +108,27 @@ Item {
                         clip: true
                         Layout.fillHeight: true
                         Layout.fillWidth: true
+
+                        WelcomePage {
+
+                        }
+
+                        WriteOverviewPage {
+
+                        }
+
+                        NotesPage {
+
+                        }
+
+                        GalleryPage {
+
+                        }
+
+                        ProjectsPage {
+
+                        }
+
                     }
                     //        PageIndicator {
                     //            id: indicator

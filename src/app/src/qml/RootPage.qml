@@ -1,5 +1,6 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
+import QtQml 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.skrusersettings 1.0
 
@@ -55,6 +56,41 @@ RootPageForm {
                 //                welcomePage.forceActiveFocus()
             }
         }
+
+        Action {
+            id: writeWindowAction
+            text: qsTr("Write")
+            icon {
+                name: "story-editor"
+                height: 100
+                width: 100
+            }
+
+            shortcut: "F6"
+            checkable: true
+            onTriggered: {
+
+                //                welcomePage.forceActiveFocus()
+            }
+        }
+
+        Action {
+            id: notesWindowAction
+            text: qsTr("Notes")
+            icon {
+                name: "story-editor"
+                color: "transparent"
+                height: 100
+                width: 100
+            }
+
+            shortcut: "F6"
+            checkable: true
+            onTriggered: {
+
+                //                welcomePage.forceActiveFocus()
+            }
+        }
         Action {
             id: galleryWindowAction
             text: qsTr("Gallery")
@@ -73,7 +109,7 @@ RootPageForm {
             }
         }
         Action {
-            id: projectsWindowAction
+            id: projectWindowAction
             text: qsTr("Project")
             icon {
                 name: "configure"
@@ -133,22 +169,22 @@ RootPageForm {
 
     // fullscreen :
 
-    property bool fullscreen_left_dock_folded: false
-    Connections {
-        target: Globals
-        // @disable-check M16
-        onFullScreenCalled: function (value) {
-            if(value){
-                //save previous conf
-                fullscreen_left_dock_folded = rootLeftDock.folded
-                rootLeftDock.fold()
-            }
-            else{
-                rootLeftDock.folded = fullscreen_left_dock_folded
-            }
+//    property bool fullscreen_left_dock_folded: false
+//    Connections {
+//        target: Globals
+//        // @disable-check M16
+//        onFullScreenCalled: function (value) {
+//            if(value){
+//                //save previous conf
+//                fullscreen_left_dock_folded = rootLeftDock.folded
+//                rootLeftDock.fold()
+//            }
+//            else{
+//                rootLeftDock.folded = fullscreen_left_dock_folded
+//            }
 
-        }
-    }
+//        }
+//    }
 
     //---------------------------------------------------------
     // projectLoaded :
@@ -157,7 +193,6 @@ RootPageForm {
 
     Connections {
         target: plmData.projectHub()
-        // @disable-check M16
         onProjectLoaded: function (projectId) {
 
             // get last sheet id from e=settings or get top sheet id
@@ -204,16 +239,20 @@ RootPageForm {
         onTriggered: Globals.openSheetCalled(projectIdForProjectLoading, paperIdForProjectLoading)
     }
     //---------------------------------------------------------
+    //---------Tab bar ------------------------------------------
+    //---------------------------------------------------------
 
     //rootSwipeView.currentIndex: rootTabBar.currentIndex
 
     rootTabBar.currentIndex: rootSwipeView.currentIndex
 
     Binding {
-        when: rootTabBar.currentIndex !== rootSwipeView.currentIndex
+        //when: rootTabBar.currentIndex !== rootSwipeView.currentIndex
+        when: rootSwipeView.currentIndexChanged
         target: rootSwipeView
         property: "currentIndex"
         value: rootTabBar.currentIndex
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     function addTab(incubator, insertionIndex, projectId, paperId) {
@@ -264,11 +303,18 @@ RootPageForm {
 
     //---------------------------------------------------------
 
+    welcomeTab.action: welcomeWindowAction
+    writeTab.action: writeWindowAction
+    notesTab.action: notesWindowAction
+    galleryTab.action: galleryWindowAction
+    projectTab.action: projectWindowAction
+
+    //---------------------------------------------------------
+
 
     // openDocument :
     Connections {
         target: Globals
-        // @disable-check M16
         onOpenSheetCalled: function (projectId, paperId) {
             // verify if project/sheetId not already opened
 

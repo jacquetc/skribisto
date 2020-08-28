@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.1.0)
 
 project(app LANGUAGES CXX)
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools CONFIG REQUIRED)
+find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg CONFIG REQUIRED)
 #find_package(KF5Kirigami2)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -94,7 +94,7 @@ target_compile_definitions(skribisto
 target_link_libraries(skribisto skribisto-data)
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
-qt5_use_modules(skribisto Core Quick Network Gui Widgets LinguistTools)
+qt5_use_modules(skribisto Core Quick Network Gui Widgets LinguistTools Svg)
 
 
 

@@ -279,8 +279,8 @@ TreeViewForm {
             }
 
             anchors {
-                left: parent.left
-                right: parent.right
+                left: Qt.isQtObject(parent) ? parent.left : undefined
+                right: Qt.isQtObject(parent) ? parent.right : undefined
                 rightMargin: 5
             }
 
@@ -544,7 +544,7 @@ TreeViewForm {
                                     id: tagLabel
 
                                     //                                text: model.tag
-                                    text: model.tag
+                                    text:  model.tag
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter

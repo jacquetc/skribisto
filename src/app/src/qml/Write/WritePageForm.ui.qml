@@ -135,8 +135,8 @@ Item {
                             Button {
                                 id: leftDockShowButton
                                 focusPolicy: Qt.NoFocus
-                                Layout.preferredHeight: 50
-                                Layout.preferredWidth: 50
+                                Layout.preferredHeight: 30
+                                Layout.preferredWidth: 30
                                 flat: true
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                             }
@@ -145,8 +145,8 @@ Item {
                                 id: leftDockMenuButton
                                 focusPolicy: Qt.NoFocus
                                 checkable: true
-                                Layout.preferredHeight: 50
-                                Layout.preferredWidth: 50
+                                Layout.preferredHeight: 30
+                                Layout.preferredWidth: 30
                                 flat: true
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                             }
@@ -158,8 +158,8 @@ Item {
                                 Button {
                                     id: leftDockResizeButton
                                     focusPolicy: Qt.NoFocus
-                                    Layout.preferredHeight: 50
-                                    Layout.preferredWidth: 50
+                                    Layout.preferredHeight: 30
+                                    Layout.preferredWidth: 30
                                     flat: true
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                                 }
@@ -182,10 +182,12 @@ Item {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
 
+
                 WritingZone {
                     id: writingZone
                     anchors.fill: parent
                 }
+
             }
 
             Item {

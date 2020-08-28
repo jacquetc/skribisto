@@ -99,10 +99,10 @@ QVariant SkrUserSettings::getFromProjectSettingHash(int projectId, const QString
 
     //Deserializing
     QHash<QString, QVariant> hash = deserializingHash(hashArray);
+    settings.endGroup();
 
     return hash.value(hashKey, defaultValue);
 
-    settings.endGroup();
 }
 
 void SkrUserSettings::removeFromProjectSettingHash(int projectId, const QString &key, const QString &hashKey)

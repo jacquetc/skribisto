@@ -176,8 +176,8 @@ ProjectPageForm {
             id: content
 
             anchors {
-                left: parent.left
-                right: parent.right
+                left: Qt.isQtObject(parent) ? parent.left : undefined
+                right: Qt.isQtObject(parent) ? parent.right : undefined
             }
 
             property bool isCurrent: model.index === recentListView.currentIndex ? true : false

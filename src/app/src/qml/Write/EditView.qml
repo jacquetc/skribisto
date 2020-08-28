@@ -99,7 +99,7 @@ EditViewForm {
     }
 
     // Font family combo :
-    fontFamilyComboBox.model: skrFonts.getModel()
+    //fontFamilyComboBox.model: skrFonts.getModel()
 
     Binding {
         target: SkrSettings.writeSettings

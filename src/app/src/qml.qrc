@@ -49,5 +49,9 @@
         <file>qml/Commons/Minimap.qml</file>
         <file>qml/Tab.qml</file>
         <file>qml/TabForm.ui.qml</file>
+        <file>qml/WriteOverview/WriteOverviewPage.qml</file>
+        <file>qml/WriteOverview/LeftDockForm.ui.qml</file>
+        <file>qml/WriteOverview/LeftDock.qml</file>
+        <file>qml/WriteOverview/WriteOverviewPageForm.ui.qml</file>
     </qresource>
 </RCC>
