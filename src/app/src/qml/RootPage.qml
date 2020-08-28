@@ -53,7 +53,7 @@ RootPageForm {
             checkable: true
             onTriggered: {
 
-                //                welcomePage.forceActiveFocus()
+                welcomePage.forceActiveFocus()
             }
         }
 
@@ -70,7 +70,7 @@ RootPageForm {
             checkable: true
             onTriggered: {
 
-                //                welcomePage.forceActiveFocus()
+                writeOverviewPage.forceActiveFocus()
             }
         }
 
@@ -84,11 +84,11 @@ RootPageForm {
                 width: 100
             }
 
-            shortcut: "F6"
+            shortcut: "F7"
             checkable: true
             onTriggered: {
 
-                //                welcomePage.forceActiveFocus()
+                notesPage.forceActiveFocus()
             }
         }
         Action {
@@ -100,12 +100,12 @@ RootPageForm {
                 width: 100
             }
 
-            shortcut: "F6"
+            shortcut: "F8"
             checkable: true
             onTriggered: {
                 //                rootStack.
 
-                //                galleryPage.forceActiveFocus()
+                galleryPage.forceActiveFocus()
             }
         }
         Action {
@@ -117,11 +117,11 @@ RootPageForm {
                 width: 100
             }
 
-            shortcut: "F7"
+            shortcut: "F9"
             checkable: true
             onTriggered: {
 
-                //                projectsPage.forceActiveFocus()
+                projectsPage.forceActiveFocus()
             }
         }
     }
@@ -151,8 +151,6 @@ RootPageForm {
 
     Connections {
         target: Globals
-
-        // @disable-check M16
         onCompactSizeChanged: {
             if (Globals.compactSize === true) {
                 leftDrawer.interactive = true
@@ -169,22 +167,22 @@ RootPageForm {
 
     // fullscreen :
 
-//    property bool fullscreen_left_dock_folded: false
-//    Connections {
-//        target: Globals
-//        // @disable-check M16
-//        onFullScreenCalled: function (value) {
-//            if(value){
-//                //save previous conf
-//                fullscreen_left_dock_folded = rootLeftDock.folded
-//                rootLeftDock.fold()
-//            }
-//            else{
-//                rootLeftDock.folded = fullscreen_left_dock_folded
-//            }
+    //    property bool fullscreen_left_dock_folded: false
+    //    Connections {
+    //        target: Globals
+    //        // @disable-check M16
+    //        onFullScreenCalled: function (value) {
+    //            if(value){
+    //                //save previous conf
+    //                fullscreen_left_dock_folded = rootLeftDock.folded
+    //                rootLeftDock.fold()
+    //            }
+    //            else{
+    //                rootLeftDock.folded = fullscreen_left_dock_folded
+    //            }
 
-//        }
-//    }
+    //        }
+    //    }
 
     //---------------------------------------------------------
     // projectLoaded :
@@ -200,29 +198,29 @@ RootPageForm {
             var topPaperId = plmData.sheetHub().getTopPaperId(projectId)
             console.log("topPaperId ::", topPaperId)
             var paperId = skrUserSettings.getProjectSetting(projectId, "writeCurrentPaperId", topPaperId)
-//            console.log("paperId ::", paperId)
-//            console.log("projectId ::", projectId)
+            //            console.log("paperId ::", paperId)
+            //            console.log("projectId ::", projectId)
             projectIdForProjectLoading = projectId
             paperIdForProjectLoading = paperId
 
             var isPresent = false
             var idList = plmData.sheetHub().getAllIds(projectId)
             var count = idList.length
-//            console.log("idList", idList)
-//            console.log("count", count)
-//            console.log("a", paperId)
+            //            console.log("idList", idList)
+            //            console.log("count", count)
+            //            console.log("a", paperId)
             for(var i = 0; i < count ; i++ ){
-//                console.log("b", paperId)
+                //                console.log("b", paperId)
                 if(paperId === idList[i]){
                     isPresent = true
-//                    console.log("c", paperId)
+                    //                    console.log("c", paperId)
                 }
             }
             if(!isPresent & count > 0){
-//                console.log("d", paperId)
+                //                console.log("d", paperId)
                 paperIdForProjectLoading = idList[0]            }
             else if(!isPresent & count === 0){
-//                console.log("e", paperId)
+                //                console.log("e", paperId)
                 paperIdForProjectLoading = -2
 
             }
@@ -236,7 +234,7 @@ RootPageForm {
         id: projectLoadingTimer
         repeat: false
         interval: 100
-        onTriggered: Globals.openSheetCalled(projectIdForProjectLoading, paperIdForProjectLoading)
+        onTriggered: Globals.openSheetInNewTabCalled(projectIdForProjectLoading, paperIdForProjectLoading)
     }
     //---------------------------------------------------------
     //---------Tab bar ------------------------------------------
@@ -255,16 +253,16 @@ RootPageForm {
         restoreMode: Binding.RestoreBindingOrValue
     }
 
-    function addTab(incubator, insertionIndex, projectId, paperId) {
+    function addTab(incubator, insertionIndex, pageType, projectId, paperId) {
         var title = incubator.object.title
-//        console.debug("debug title : ", title)
+        //        console.debug("debug title : ", title)
         var page  = incubator.object
 
 
         rootSwipeView.insertItem(insertionIndex, incubator);
 
         var component = Qt.createComponent("Tab.qml");
-        var tabIncubator = component.incubateObject(rootTabBar, {text: title, projectId: projectId, paperId: paperId, height: rootTabBar.height });
+        var tabIncubator = component.incubateObject(rootTabBar, {text: title, pageType: pageType,projectId: projectId, paperId: paperId, height: rootTabBar.height });
         console.debug("debug : ", component.errorString())
         if (tabIncubator.status !== Component.Ready) {
             tabIncubator.onStatusChanged = function(status) {
@@ -311,39 +309,97 @@ RootPageForm {
 
     //---------------------------------------------------------
 
-
+    property int insertionIndex: 0
     // openDocument :
     Connections {
         target: Globals
-        onOpenSheetCalled: function (projectId, paperId) {
-            // verify if project/sheetId not already opened
+        onOpenSheetCalled: function (openedProjectId, openedPaperId, projectId, paperId) {
+            var pageType = "write"
 
+            // verify if project/sheetId not already opened
+            var tabId = pageType + "_" +  projectId + "_" + paperId
+            var i;
+            for (i = 0; i < rootTabBar.count; i++) {
+                if (rootTabBar.itemAt(i).tabId === tabId){
+
+                    rootTabBar.setCurrentIndex(i)
+         break
+                }
+            }
+
+
+            // determine from which page the call comes from
+
+
+            var senderTabId = pageType + "_" +  openedProjectId + "_" + openedPaperId
+            var j;
+            for (j = 0; j < rootTabBar.count; j++) {
+                if (rootTabBar.itemAt(j).tabId === senderTabId){
+
+                    rootSwipeView.itemAt(j).openDocument(projectId, paperId)
+                    rootTabBar.itemAt(j).setTitle(plmData.sheetHub().getTitle(projectId, paperId))
+                    rootTabBar.itemAt(j).projectId = projectId
+                    rootTabBar.itemAt(j).paperId = paperId
+                    break
+                }
+            }
+
+
+        }
+    }
+
+    //---------------------------------------------------------
+    Connections {
+        target: Globals
+        onOpenSheetInNewTabCalled: function (projectId, paperId) {
+            var pageType = "write"
+            // verify if project/sheetId not already opened
+            var tabId = pageType + "_" +  projectId + "_" + paperId
+            var i;
+            for (i = 0; i < rootTabBar.count; i++) {
+                if (rootTabBar.itemAt(i).tabId === tabId){
+
+                    rootTabBar.setCurrentIndex(i)
+                    return
+                }
+            }
+
+            //
+
+            insertionIndex = rootSwipeView.count
             // create WritePage tab
             var component = Qt.createComponent("Write/WritePage.qml");
-            var incubator = component.incubateObject(rootSwipeView, {projectId: projectId, paperId: paperId });
+            var incubator = component.incubateObject(rootSwipeView, {pageType: pageType,projectId: projectId, paperId: paperId });
             if (incubator.status !== Component.Ready) {
                 incubator.onStatusChanged = function(status) {
                     if (status === Component.Ready) {
 
-                        var insertionIndex = rootSwipeView.currentIndex + 1
-                        addTab(incubator, insertionIndex, projectId, paperId)
+                        addTab(incubator, insertionIndex, pageType, projectId, paperId)
                         console.debug("paprer 1 : ",paperId)
                         console.debug("count 1 : ",rootSwipeView.count)
+                        openSheetTimer.start()
                     }
                 }
             } else {
 
-                var insertionIndex = rootSwipeView.currentIndex + 1
-                addTab(incubator, projectId, paperId)
+                addTab(incubator, insertionIndex,  pageType, projectId, paperId)
+                openSheetTimer.start()
 
             }
 
             console.debug("paprer : ",paperId)
             console.debug("count : ",rootSwipeView.count)
+
         }
     }
-    //---------------------------------------------------------
+    Timer{
+        id: openSheetTimer
+        repeat: false
+        interval: 10
+        onTriggered: rootTabBar.setCurrentIndex(insertionIndex)
+    }
 
+    //---------------------------------------------------------
     Component.onCompleted: {
 
         this.openArgument()

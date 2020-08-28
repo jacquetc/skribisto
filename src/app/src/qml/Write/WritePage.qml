@@ -21,6 +21,7 @@ WritePageForm {
     //property int textAreaFixedWidth: SkrSettings.writeSettings.textWidth
     property var lastFocused: writingZone
 
+        property string pageType: "write"
 
 
 
@@ -42,7 +43,6 @@ WritePageForm {
 
     Connections {
         target: plmData.projectHub()
-        // @disable-check M16
         onProjectCountChanged: function (count){
             if(count === 0){
                 writingZone.enabled = false
@@ -369,10 +369,11 @@ WritePageForm {
         id: skrUserSettings
     }
 
-    function openDocument(projectId, paperId) {
+    function openDocument(_projectId, _paperId) {
 
-        console.log("opening sheet :", projectId, paperId)
-        writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
+        console.log("opening sheet :", _projectId, _paperId)
+        writingZone.text = plmData.sheetHub().getContent(_projectId, _paperId)
+        title = plmData.sheetHub().getTitle(_projectId, _paperId)
 
         // apply format
         writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent
@@ -381,17 +382,17 @@ WritePageForm {
 
         //get cursor position
         var position = skrUserSettings.getFromProjectSettingHash(
-                    projectId, "writeSheetPositionHash", paperId, 0)
+                    _projectId, "writeSheetPositionHash", _paperId, 0)
         //get Y
         var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
-                    projectId, "writeSheetYHash", paperId, 0)
+                    _projectId, "writeSheetYHash", _paperId, 0)
         console.log("newCursorPosition", position)
 
         // set positions :
         writingZone.setCursorPosition(position)
         writingZone.flickable.contentY = visibleAreaY
-        paperId = paperId
-        projectId = projectId
+        paperId = _paperId
+        projectId = _projectId
 
         writingZone.forceActiveFocus()
         //save :
@@ -402,7 +403,8 @@ WritePageForm {
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
 
-
+        leftDock.setCurrentPaperId(projectId, paperId)
+        leftDock.setOpenedPaperId(projectId, paperId)
 
     }
 

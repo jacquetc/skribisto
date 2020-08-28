@@ -13,12 +13,16 @@ TreeViewForm {
         visualModel.model = model
     }
 
-    signal openDocument(int projectId, int paperId)
+    signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
+    signal openDocumentInNewTab(int projectId, int paperId)
     signal removeDocument(int projectId, int paperId)
     signal clearBin
     property int currentParent: -2
     property int currentProject: -2
+    property int currentPaperId: -2
     property int currentIndex: listView.currentIndex
+    property int openedProjectId: -2
+    property int openedPaperId: -2
 
     listView.model: visualModel
     DelegateModel {
@@ -403,7 +407,10 @@ TreeViewForm {
                 TapHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
-                    onTapped: menu.open()
+                    onTapped: {
+                        listView.currentIndex = model.index
+                        menu.open()
+                    }
                 }
 
                 /// without MouseArea, it breaks while dragging and scrolling:
@@ -461,7 +468,7 @@ TreeViewForm {
                 }
                 Action {
                     id: openDocumentAction
-                    shortcut: "Return"
+                    //shortcut: "Return"
                     enabled: {
                         if (titleTextField.visible === false
                                 && listView.currentIndex === model.index) {
@@ -471,8 +478,32 @@ TreeViewForm {
                     }
 
                     text: "Open document"
-                    onTriggered: root.openDocument(model.projectId,
+                    onTriggered: {
+                        console.log("model.openedProjectId", openedProjectId)
+                        console.log("model.projectId", model.projectId)
+                        root.openDocument(openedProjectId, openedPaperId, model.projectId,
                                                    model.paperId)
+                    }
+                }
+
+                Action {
+                    id: openDocumentInNewTabAction
+                    //shortcut: "Alt+Return"
+                    enabled: {
+                        if (titleTextField.visible === false
+                                && listView.currentIndex === model.index) {
+                            return true
+                        } else
+                            return false
+                    }
+
+                    text: "Open document in a new tab"
+                    onTriggered: {
+                        console.log("model.projectId", model.projectId)
+                        root.openDocumentInNewTab(model.projectId,
+                                                   model.paperId)
+
+                    }
                 }
                 ColumnLayout{
                     id: columnLayout3
@@ -492,6 +523,13 @@ TreeViewForm {
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
                             visible: listView.currentIndex === model.index
+                        }
+                        Rectangle {
+                            id: openedItemIndicator
+                            color: "#2ba200"
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: 5
+                            visible: model.projectId === openedProjectId && model.paperId === openedPaperId
                         }
 
                         Rectangle {
@@ -707,6 +745,37 @@ TreeViewForm {
                     // necessary to differenciate between all items
                     contextMenuItemIndex = model.index
                 }
+                Action {
+                    id: openPaperAction
+                    text: qsTr("Open")
+                    shortcut: "Return"
+                    icon {
+                        name: "document-edit"
+                    }
+                    enabled: contextMenuItemIndex === model.index
+                    onTriggered: {
+                        console.log("open paper action", model.projectId,
+                                    model.paperId)
+                        openDocumentAction.trigger()
+                    }
+                }
+
+                Action {
+                    id: openPaperInNewTabAction
+                    text: qsTr("Open in new tab")
+                    shortcut: "Alt+Return"
+                    icon {
+                        name: "tab-new"
+                    }
+                    enabled: contextMenuItemIndex === model.index
+                    onTriggered: {
+                        console.log("open paper in new tab action", model.projectId,
+                                    model.paperId)
+                        openDocumentInNewTabAction.trigger()
+                    }
+                }
+
+                MenuSeparator {}
 
                 Action {
                     id: renameAction

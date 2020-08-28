@@ -45,15 +45,15 @@ LeftDockForm {
     treeView.model: proxyModel
     treeView.proxyModel: proxyModel
 
-    Connections {
-        target: Globals
-        onOpenSheetCalled: function (projectId, paperId) {
+    //    Connections {
+    //        target: Globals
+    //        onOpenSheetCalled: function (projectId, paperId) {
 
-           proxyModel.setCurrentPaperId(projectId, paperId)
+    //           //proxyModel.setCurrentPaperId(projectId, paperId)
 
 
-        }
-    }
+    //        }
+    //    }
 
 
 
@@ -83,15 +83,17 @@ LeftDockForm {
 
     Settings {
         id: settings
-        category: "writeLeftDock"
+        category: "writeOverviewLeftDock"
         //property string dockSplitView: "0"
         property bool dockFolded: false
         property bool treeViewFrameFolded: treeViewFrame.folded ? true : false
-        property bool documentFrameFolded: documentFrame.folded ? true : false
         property int width: fixedWidth
     }
 
 
+    function setCurrentPaperId(projectId, paperId) {
+        proxyModel.setCurrentPaperId(projectId, paperId)
+    }
 
 
     //    PropertyAnimation {
@@ -100,14 +102,24 @@ LeftDockForm {
     //        duration: 500
     //        easing.type: Easing.InOutQuad
     //    }
+
+    Connections {
+        target: treeView
+        onOpenDocument: function (openedProjectId, openedPaperId, _projectId, _paperId) {
+            Globals.openSheetInNewTabCalled(_projectId, _paperId)
+        }
+        }
+
     Component.onCompleted: {
         folded ? fold() : unfold()
 
         treeViewFrame.folded = settings.treeViewFrameFolded
-        documentFrame.folded = settings.documentFrameFolded
 
         //        splitView.restoreState(settings.dockSplitView)
-        treeView.onOpenDocument.connect(Globals.openSheetCalled)
+
+        // treeView :
+
+        treeView.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
 
         fixedWidth = settings.width
     }

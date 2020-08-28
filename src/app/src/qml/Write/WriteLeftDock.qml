@@ -45,15 +45,15 @@ WriteLeftDockForm {
     treeView.model: proxyModel
     treeView.proxyModel: proxyModel
 
-    Connections {
-        target: Globals
-        onOpenSheetCalled: function (projectId, paperId) {
+    //    Connections {
+    //        target: Globals
+    //        onOpenSheetCalled: function (projectId, paperId) {
 
-           proxyModel.setCurrentPaperId(projectId, paperId)
+    //           proxyModel.setCurrentPaperId(projectId, paperId)
 
 
-        }
-    }
+    //        }
+    //    }
 
 
 
@@ -96,7 +96,13 @@ WriteLeftDockForm {
         property int width: fixedWidth
     }
 
-
+    function setCurrentPaperId(projectId, paperId) {
+        proxyModel.setCurrentPaperId(projectId, paperId)
+    }
+    function setOpenedPaperId(projectId, paperId) {
+        treeView.openedProjectId = projectId
+        treeView.openedPaperId = paperId
+    }
 
 
     //    PropertyAnimation {
@@ -111,10 +117,16 @@ WriteLeftDockForm {
         treeViewFrame.folded = settings.treeViewFrameFolded
         documentFrame.folded = settings.documentFrameFolded
 
-        //        splitView.restoreState(settings.dockSplitView)
+        //        splitView.restoreState(settings.dockSplitView
+        // treeView :
         treeView.onOpenDocument.connect(Globals.openSheetCalled)
+        treeView.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
+
+        //
 
         fixedWidth = settings.width
+
+
     }
     Component.onDestruction: {
         //        settings.dockSplitView = splitView.saveState()

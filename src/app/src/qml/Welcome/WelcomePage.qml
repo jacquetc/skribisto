@@ -3,6 +3,7 @@ import eu.skribisto.projecthub 1.0
 import ".."
 
 WelcomePageForm {
+    property string pageType: "welcome"
 
     //    Connections {
     //        target: plmData.projectHub()

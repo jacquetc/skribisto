@@ -2,6 +2,7 @@ import QtQuick 2.12
 import ".."
 
 ProjectsPageForm {
+    property string pageType: "projects"
 
     Connections {
         target: plmData.projectHub()

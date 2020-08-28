@@ -5,6 +5,9 @@ import eu.skribisto.sheethub 1.0
 import ".."
 
 NotesPageForm {
+    property string pageType: "notes"
+
+
     property int textAreaFixedWidth: 400
 
     writingZone.textAreaWidth: 400

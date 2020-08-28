@@ -22,6 +22,11 @@ Item {
     property alias projectTab: projectTab
     property alias galleryTab: galleryTab
     property alias notesTab: notesTab
+    property alias welcomePage: welcomePage
+    property alias notesPage: notesPage
+    property alias galleryPage: galleryPage
+    property alias projectsPage: projectsPage
+    property alias writeOverviewPage: writeOverviewPage
 
     ColumnLayout {
         id: columnLayout
@@ -110,22 +115,27 @@ Item {
                         Layout.fillWidth: true
 
                         WelcomePage {
+                            id: welcomePage
 
                         }
 
                         WriteOverviewPage {
+                            id: writeOverviewPage
 
                         }
 
                         NotesPage {
+                            id: notesPage
 
                         }
 
                         GalleryPage {
+                            id: galleryPage
 
                         }
 
                         ProjectsPage {
+                            id: projectsPage
 
                         }
 
