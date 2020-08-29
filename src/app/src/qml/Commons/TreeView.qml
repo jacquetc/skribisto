@@ -320,6 +320,11 @@ TreeViewForm {
                     goToChildAction.trigger()
                     event.accepted = true
                 }
+                if (event.key === Qt.Key_Return && titleTextField.visible === false){
+                  console.log("Return key pressed")
+                    openDocumentAction.trigger()
+                    event.accepted = true
+                }
             }
 
             Rectangle {
@@ -404,6 +409,7 @@ TreeViewForm {
                     }
 
                     onDoubleTapped: {
+                        console.log("double tapped")
                         listView.currentIndex = model.index
                         openDocumentAction.trigger()
                         eventPoint.accepted = true
@@ -474,6 +480,7 @@ TreeViewForm {
                         var _currentParent = currentParent
                         var _index = model.index
 
+                        var _listView = listView
 
 
                         // change level
@@ -488,8 +495,9 @@ TreeViewForm {
                                                      _currentParent, 0)
 
                             // edit it :
-                            //_delegateRoot.editName()
-                            //FIXIT: editName makes the app crash
+                            _listView.itemAtIndex(0).editName()
+
+
                         }
 
                     }
@@ -583,9 +591,11 @@ TreeViewForm {
 
                                     text: model.indent === -1 ? model.projectName : model.name
                                 }
+
                                 TextField {
                                     id: titleTextField
                                     visible: false
+                                    focus: true
 
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
@@ -604,6 +614,8 @@ TreeViewForm {
                                             accepted()
                                         }
                                     }
+
+                                    Keys.priority: Keys.AfterItem
                                 }
 
                                 Label {
@@ -787,7 +799,7 @@ TreeViewForm {
                     icon {
                         name: "document-edit"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true && titleTextField.visible === false
                     onTriggered: {
                         console.log("open paper action", model.projectId,
                                     model.paperId)
