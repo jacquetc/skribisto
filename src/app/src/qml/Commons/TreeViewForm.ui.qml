@@ -12,6 +12,7 @@ Item {
     property alias addToolButton: addToolButton
     property alias treeMenuToolButton: treeMenuToolButton
 
+
     Pane {
         id: pane
         clip: true
@@ -96,6 +97,7 @@ Item {
         }
     }
 }
+
 
 /*##^##
 Designer {

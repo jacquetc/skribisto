@@ -23,7 +23,7 @@ TreeViewForm {
     property int currentIndex: listView.currentIndex
     property int openedProjectId: -2
     property int openedPaperId: -2
-    property bool hoveringChangingTheCurrentItemAllowed: false
+    property bool hoveringChangingTheCurrentItemAllowed: true
     listView.model: visualModel
     DelegateModel {
         id: visualModel
@@ -258,7 +258,7 @@ TreeViewForm {
     Component {
         id: dragDelegate
 
-        DropArea {
+       DropArea {
             id: delegateRoot
 
             onEntered: {
@@ -312,6 +312,14 @@ TreeViewForm {
                 state = "edit_name"
                 titleTextField.forceActiveFocus()
                 titleTextField.selectAll()
+            }
+
+            Keys.onPressed: {
+                if (event.key === Qt.Key_Right){
+                  console.log("Right key pressed")
+                    goToChildAction.trigger()
+                    event.accepted = true
+                }
             }
 
             Rectangle {
@@ -440,7 +448,7 @@ TreeViewForm {
 
                 Action {
                     id: goToChildAction
-                    shortcut: "Right"
+                    //shortcut: "Right"
                     enabled: {
                         if (!listView.enabled){
                             return false
@@ -456,6 +464,7 @@ TreeViewForm {
 
                     text: model.hasChildren ? ">" : "+"
                     onTriggered: {
+                        console.log("goToChildAction triggered")
                         //var _delegateRoot = delegateRoot
                         //                        var _titleTextField = titleTextField
                         var _proxyModel = proxyModel
@@ -464,8 +473,12 @@ TreeViewForm {
                         var _currentProject = currentProject
                         var _currentParent = currentParent
                         var _index = model.index
-                        _proxyModel.setParentFilter(model.projectId,
-                                                    model.paperId)
+
+
+
+                        // change level
+                        _proxyModel.setParentFilter(_currentProject,
+                                                    _currentParent)
                         _proxyModel.addHistory(_currentProject, _index)
 
                         // create a child if none present
@@ -475,9 +488,10 @@ TreeViewForm {
                                                      _currentParent, 0)
 
                             // edit it :
+                            //_delegateRoot.editName()
+                            //FIXIT: editName makes the app crash
                         }
-                        //_delegateRoot.editName()
-                        //FIXIT: editName makes the app crash
+
                     }
                 }
                 Action {
@@ -845,6 +859,7 @@ TreeViewForm {
                         proxyModel.cut(model.projectId, model.paperId, -2)
                     }
                 }
+
                 MenuSeparator {}
                 Action {
                     id: addBeforeAction
