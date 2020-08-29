@@ -139,12 +139,23 @@ RootPageForm {
 
         onTriggered: {
             //show notification list
+            popup.open()
+
         }
     }
 
     notificationButton.action: notificationButtonAction
 
-
+    Popup {
+        id: popup
+        x: notificationButton.x - 100
+        y: notificationButton.y + 400
+        width: 100 + notificationButton.width
+        height: 400
+        modal: false
+        focus: false
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+    }
 
 
     //---------------------------------------------------------

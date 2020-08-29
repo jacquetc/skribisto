@@ -313,6 +313,7 @@ TreeViewForm {
                 titleTextField.forceActiveFocus()
                 titleTextField.selectAll()
             }
+            //Keys.priority: Keys.AfterItem
 
             Keys.onPressed: {
                 if (event.key === Qt.Key_Right){
@@ -320,9 +321,14 @@ TreeViewForm {
                     goToChildAction.trigger()
                     event.accepted = true
                 }
-                if (event.key === Qt.Key_Return && titleTextField.visible === false){
+                if (event.key === Qt.Key_Return){
                   console.log("Return key pressed")
                     openDocumentAction.trigger()
+                    event.accepted = true
+                }
+                if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
+                  console.log("Alt Return key pressed")
+                    openDocumentInNewTabAction.trigger()
                     event.accepted = true
                 }
             }
@@ -371,11 +377,11 @@ TreeViewForm {
 
                 HoverHandler {
                     id: hoverHandler
-                    onHoveredChanged: {
-                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
-                            listView.currentIndex = model.index
-                        }
-                    }
+//                    onHoveredChanged: {
+//                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
+//                            listView.currentIndex = model.index
+//                        }
+//                    }
                 }
 
                 TapHandler {
@@ -595,7 +601,7 @@ TreeViewForm {
                                 TextField {
                                     id: titleTextField
                                     visible: false
-                                    focus: true
+
 
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
@@ -604,18 +610,30 @@ TreeViewForm {
 
                                     placeholderText: qsTr("Enter name")
 
-                                    onAccepted: {
+
+                                    onEditingFinished: {
+                                        //if (!activeFocus) {
+                                            //accepted()
+                                        //}
+                                        console.log("editing finished")
                                         model.name = text
                                         delegateRoot.state = ""
                                     }
 
-                                    onEditingFinished: {
-                                        if (!activeFocus) {
-                                            accepted()
+                                    //Keys.priority: Keys.AfterItem
+
+                                    Keys.onPressed: {
+                                        if (event.key === Qt.Key_Return){
+                                          console.log("Return key pressed title")
+                                            editingFinished()
+                                            event.accepted = true
+                                        }
+                                        if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
+                                          console.log("Alt Return key pressed title")
+                                            event.accepted = true
                                         }
                                     }
 
-                                    Keys.priority: Keys.AfterItem
                                 }
 
                                 Label {
@@ -799,7 +817,7 @@ TreeViewForm {
                     icon {
                         name: "document-edit"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true && titleTextField.visible === false
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.activeFocus === true
                     onTriggered: {
                         console.log("open paper action", model.projectId,
                                     model.paperId)
@@ -814,7 +832,7 @@ TreeViewForm {
                     icon {
                         name: "tab-new"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.activeFocus === true
                     onTriggered: {
                         console.log("open paper in new tab action", model.projectId,
                                     model.paperId)
@@ -831,7 +849,7 @@ TreeViewForm {
                     icon {
                         name: "edit-rename"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
                     onTriggered: {
                         console.log("rename action", model.projectId,
                                     model.paperId)
@@ -848,7 +866,7 @@ TreeViewForm {
                     icon {
                         name: "edit-copy"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
 
                     onTriggered: {
                         console.log("copy action", model.projectId,
@@ -863,7 +881,7 @@ TreeViewForm {
                     icon {
                         name: "edit-cut"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
 
                     onTriggered: {
                         console.log("cut action", model.projectId,
@@ -880,7 +898,7 @@ TreeViewForm {
                     icon {
                         name: "document-new"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
                     onTriggered: {
                         //TODO: fill that
                         console.log("add before action", model.projectId,
@@ -895,7 +913,7 @@ TreeViewForm {
                     icon {
                         name: "document-new"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
                     onTriggered: {
                         //TODO: fill that
                         console.log("add after action", model.projectId,
@@ -912,7 +930,7 @@ TreeViewForm {
                     icon {
                         name: "object-order-raise"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
                              && model.index !== 0
                     onTriggered: {
                         console.log("move up action", model.projectId,
@@ -929,7 +947,7 @@ TreeViewForm {
                     icon {
                         name: "object-order-lower"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
                              && model.index !== visualModel.items.count - 1
 
                     onTriggered: {
@@ -946,7 +964,7 @@ TreeViewForm {
                     icon {
                         name: "edit-delete"
                     }
-                    enabled: contextMenuItemIndex === model.index
+                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
                     onTriggered: {
                         console.log("delete action", model.projectId,
                                     model.paperId)

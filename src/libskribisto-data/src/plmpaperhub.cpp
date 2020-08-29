@@ -13,9 +13,9 @@
 PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName)
     : QObject(parent), m_tableName(tableName), m_last_added_id(-1)
 {
-//    qRegisterMetaType<Setting>(         "Setting");
-//    qRegisterMetaType<Stack>(           "Stack");
-//    qRegisterMetaType<OpenedDocSetting>("OpenedDocSetting");
+    //    qRegisterMetaType<Setting>(         "Setting");
+    //    qRegisterMetaType<Stack>(           "Stack");
+    //    qRegisterMetaType<OpenedDocSetting>("OpenedDocSetting");
 
     // connection for 'getxxx' functions to have a way to get errors.
     connect(this,
@@ -431,21 +431,35 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
     int indent     = getIndent(projectId, paperId);
 
     int possibleFirstChildId = idList.at(idList.indexOf(paperId) + 1);
-      //TODO: fix that :
-     bool deleted = getDeleted(projectId, possibleFirstChildId);
-     if(deleted){
-         return false;
-     }
 
 
 
     int possibleFirstChildIndent = getIndent(projectId, possibleFirstChildId);
 
-
+    //verify indent of child
     if (indent == possibleFirstChildIndent - 1) {
-        return true;
-    }
 
+        //verify if at least one child is not deleted
+        bool haveOneNotDeletedChild = false;
+        int firstChildIndex = idList.indexOf(possibleFirstChildId);
+        for (int i = firstChildIndex; i < idList.count() ; i++){
+            int childId = idList.at(i);
+            int indent = getIndent(projectId, childId);
+            if(indent < possibleFirstChildIndent){
+                break;
+            }
+            if(indent == possibleFirstChildIndent){
+                if(getDeleted(projectId, childId) == false){
+                        haveOneNotDeletedChild = true;
+                }
+            }
+        }
+
+        if(haveOneNotDeletedChild){
+            return true;
+        }
+        return false;
+    }
 
     IFKO(error) {
         emit errorSent(error);
@@ -1114,11 +1128,11 @@ PLMError PLMPaperHub::addChildPaper(int projectId, int targetId)
             finalSortOrder = 1000;
         } else {
 
-        int lastId = idList.last();
-        QHash<int, QVariant> result2;
-        IFOKDO(error,
-               queries.getValueByIds("l_sort_order", result2, "id", QVariant(lastId)));
-        finalSortOrder = result2.begin().value().toInt() + 1;
+            int lastId = idList.last();
+            QHash<int, QVariant> result2;
+            IFOKDO(error,
+                   queries.getValueByIds("l_sort_order", result2, "id", QVariant(lastId)));
+            finalSortOrder = result2.begin().value().toInt() + 1;
         }
     }
 
