@@ -23,7 +23,7 @@ TreeViewForm {
     property int currentIndex: listView.currentIndex
     property int openedProjectId: -2
     property int openedPaperId: -2
-
+    property bool hoveringChangingTheCurrentItemAllowed: false
     listView.model: visualModel
     DelegateModel {
         id: visualModel
@@ -358,6 +358,11 @@ TreeViewForm {
 
                 HoverHandler {
                     id: hoverHandler
+                    onHoveredChanged: {
+                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
+                            listView.currentIndex = model.index
+                        }
+                    }
                 }
 
                 TapHandler {
@@ -391,6 +396,7 @@ TreeViewForm {
                     }
 
                     onDoubleTapped: {
+                        listView.currentIndex = model.index
                         openDocumentAction.trigger()
                         eventPoint.accepted = true
                     }
@@ -412,7 +418,15 @@ TreeViewForm {
                         menu.open()
                     }
                 }
+                TapHandler {
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                    acceptedButtons: Qt.MiddleButton
+                    onTapped: {
+                        listView.currentIndex = model.index
+                        openDocumentInNewTabAction.trigger()
 
+                    }
+                }
                 /// without MouseArea, it breaks while dragging and scrolling:
                 MouseArea {
                     anchors.fill: parent
@@ -742,9 +756,16 @@ TreeViewForm {
                 y: menuButton.height
 
                 onOpened: {
+                    hoveringChangingTheCurrentItemAllowed = false
                     // necessary to differenciate between all items
                     contextMenuItemIndex = model.index
                 }
+
+                onClosed: {
+                    hoveringChangingTheCurrentItemAllowed = true
+
+                }
+
                 Action {
                     id: openPaperAction
                     text: qsTr("Open")
