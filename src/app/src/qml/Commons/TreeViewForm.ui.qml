@@ -84,7 +84,6 @@ Item {
                 TreeListView {
                     id: listView
                     //anchors.fill: parent
-                    focus: true
 //                    ScrollBar.vertical: ScrollBar {
 //                        id: internalScrollBar
 //                        parent: listView.parent

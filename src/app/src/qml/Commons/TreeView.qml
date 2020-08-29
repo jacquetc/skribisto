@@ -173,6 +173,15 @@ TreeViewForm {
                 icon.name: "view-sort-ascending-name"
             }
         }
+
+        MenuSeparator{}
+
+        Action {
+            text: qsTr("Trash")
+            //shortcut: StandardKey.Paste
+            icon.name: "edit-delete"
+        }
+
     }
 
     //----------------------------------------------------------------------------
@@ -182,6 +191,7 @@ TreeViewForm {
         id: addPaperAction
         text: qsTr("Add")
         shortcut: "Ctrl+T"
+        enabled: listView.focus === true
         icon{
             name: "document-new"
             height: 100
@@ -253,6 +263,13 @@ TreeViewForm {
     //used to differenciante tapCount between ItemSelectionModel
     property int tapCountIndex: -2
 
+    Keys.priority: Keys.AfterItem
+
+    Keys.onPressed: {
+          console.log("treeview key pressed")
+
+        event.accepted = true
+        }
 
     // TreeView item :
     Component {
@@ -313,7 +330,7 @@ TreeViewForm {
                 titleTextField.forceActiveFocus()
                 titleTextField.selectAll()
             }
-            //Keys.priority: Keys.AfterItem
+            Keys.priority: Keys.AfterItem
 
             Keys.onPressed: {
                 if (event.key === Qt.Key_Right){
@@ -466,7 +483,7 @@ TreeViewForm {
                             return false
                         }
 
-                        if (listView.currentIndex === model.index) {
+                        if (listView.focus === true && listView.currentIndex === model.index) {
                             return true
                         } else if (hoverHandler.hovered) {
                             return true
@@ -512,7 +529,7 @@ TreeViewForm {
                     id: openDocumentAction
                     //shortcut: "Return"
                     enabled: {
-                        if (titleTextField.visible === false
+                        if (listView.focus === true && titleTextField.visible === false
                                 && listView.currentIndex === model.index) {
                             return true
                         } else
@@ -532,7 +549,7 @@ TreeViewForm {
                     id: openDocumentInNewTabAction
                     //shortcut: "Alt+Return"
                     enabled: {
-                        if (titleTextField.visible === false
+                        if (listView.focus === true && titleTextField.visible === false
                                 && listView.currentIndex === model.index) {
                             return true
                         } else
@@ -817,7 +834,7 @@ TreeViewForm {
                     icon {
                         name: "document-edit"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true
                     onTriggered: {
                         console.log("open paper action", model.projectId,
                                     model.paperId)
@@ -832,7 +849,7 @@ TreeViewForm {
                     icon {
                         name: "tab-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true
                     onTriggered: {
                         console.log("open paper in new tab action", model.projectId,
                                     model.paperId)
@@ -849,7 +866,7 @@ TreeViewForm {
                     icon {
                         name: "edit-rename"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && listView.focus === true
                     onTriggered: {
                         console.log("rename action", model.projectId,
                                     model.paperId)
@@ -866,7 +883,7 @@ TreeViewForm {
                     icon {
                         name: "edit-copy"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && listView.focus === true
 
                     onTriggered: {
                         console.log("copy action", model.projectId,
@@ -881,7 +898,7 @@ TreeViewForm {
                     icon {
                         name: "edit-cut"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && listView.focus === true
 
                     onTriggered: {
                         console.log("cut action", model.projectId,
@@ -898,7 +915,7 @@ TreeViewForm {
                     icon {
                         name: "document-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && listView.focus === true
                     onTriggered: {
                         //TODO: fill that
                         console.log("add before action", model.projectId,
@@ -913,7 +930,7 @@ TreeViewForm {
                     icon {
                         name: "document-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && listView.focus === true
                     onTriggered: {
                         //TODO: fill that
                         console.log("add after action", model.projectId,
@@ -930,7 +947,7 @@ TreeViewForm {
                     icon {
                         name: "object-order-raise"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && listView.focus === true
                              && model.index !== 0
                     onTriggered: {
                         console.log("move up action", model.projectId,
@@ -947,7 +964,7 @@ TreeViewForm {
                     icon {
                         name: "object-order-lower"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && listView.focus === true
                              && model.index !== visualModel.items.count - 1
 
                     onTriggered: {
@@ -964,7 +981,7 @@ TreeViewForm {
                     icon {
                         name: "edit-delete"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.activeFocus === true
+                    enabled: contextMenuItemIndex === model.index && listView.focus === true && model.indent !== -1
                     onTriggered: {
                         console.log("delete action", model.projectId,
                                     model.paperId)
