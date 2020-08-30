@@ -223,21 +223,19 @@ RootPageForm {
             var isPresent = false
             var idList = plmData.sheetHub().getAllIds(projectId)
             var count = idList.length
-            //            console.log("idList", idList)
-            //            console.log("count", count)
-            //            console.log("a", paperId)
+
             for(var i = 0; i < count ; i++ ){
-                //                console.log("b", paperId)
+
                 if(paperId === idList[i]){
                     isPresent = true
-                    //                    console.log("c", paperId)
+
                 }
             }
             if(!isPresent & count > 0){
-                //                console.log("d", paperId)
+
                 paperIdForProjectLoading = idList[0]            }
             else if(!isPresent & count === 0){
-                //                console.log("e", paperId)
+
                 paperIdForProjectLoading = -2
 
             }
@@ -319,8 +317,8 @@ RootPageForm {
     //---------------------------------------------------------
 
     welcomeTab.action: welcomeWindowAction
-    writeTab.action: writeWindowAction
-    noteTab.action: noteWindowAction
+    writeOverviewTab.action: writeWindowAction
+    noteOverviewTab.action: noteWindowAction
     galleryTab.action: galleryWindowAction
     projectTab.action: projectWindowAction
 

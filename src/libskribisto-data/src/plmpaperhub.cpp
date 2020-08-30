@@ -189,6 +189,7 @@ PLMError PLMPaperHub::setId(int projectId, int paperId, int newId)
     }
     IFOK(error) {
         emit paperIdChanged(projectId, paperId, newId);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -201,6 +202,7 @@ PLMError PLMPaperHub::setTitle(int projectId, int paperId, const QString& newTit
 
     IFOK(error) {
         emit titleChanged(projectId, paperId, newTitle);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -218,6 +220,7 @@ PLMError PLMPaperHub::setIndent(int projectId, int paperId, int newIndent)
 
     IFOK(error) {
         emit indentChanged(projectId, paperId, newIndent);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -237,6 +240,7 @@ PLMError PLMPaperHub::setSortOrder(int projectId, int paperId, int newSortOrder)
 
     IFOK(error) {
         emit sortOrderChanged(projectId, paperId, newSortOrder);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -256,6 +260,7 @@ PLMError PLMPaperHub::setContent(int projectId, int paperId, const QString& newC
 
     IFOK(error) {
         emit contentChanged(projectId, paperId, newContent);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -337,6 +342,7 @@ PLMError PLMPaperHub::setDeleted(int projectId, int paperId, bool newDeletedStat
     IFOKDO(error, set(projectId, paperId, "b_deleted", newDeletedState));
     IFOK(error) {
         emit deletedChanged(projectId, paperId, newDeletedState);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -358,6 +364,7 @@ PLMError PLMPaperHub::setCreationDate(int projectId, int paperId,
 
     IFOK(error) {
         emit creationDateChanged(projectId, paperId, newDate);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -377,6 +384,7 @@ PLMError PLMPaperHub::setUpdateDate(int projectId, int paperId, const QDateTime&
 
     IFOK(error) {
         emit updateDateChanged(projectId, paperId, newDate);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -396,6 +404,7 @@ PLMError PLMPaperHub::setContentDate(int projectId, int paperId, const QDateTime
 
     IFOK(error) {
         emit contentDateChanged(projectId, paperId, newDate);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -969,6 +978,7 @@ PLMError PLMPaperHub::addPaper(const QHash<QString, QVariant>& values, int proje
     m_last_added_id = newId;
     IFOK(error) {
         emit paperAdded(projectId, newId);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -1164,6 +1174,7 @@ PLMError PLMPaperHub::removePaper(int projectId, int targetId)
     }
     IFOK(error) {
         emit paperRemoved(projectId, targetId);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -1191,6 +1202,8 @@ PLMError PLMPaperHub::movePaper(int sourceProjectId, int sourcePaperId, int targ
     }
     IFOK(error) {
         emit paperMoved(sourceProjectId, sourcePaperId, targetProjectId, targetPaperId);
+        emit projectModified(sourceProjectId);
+        emit projectModified(targetProjectId);
     }
 
     return error;

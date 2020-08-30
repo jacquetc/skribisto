@@ -29,8 +29,13 @@ PLMError PLMExporter::exportSQLiteDbTo(PLMProject    *db,
                                        const QString& fileName)
 {
     PLMError error;
+    QString finalType = type;
 
-    if (type == "SQLITE") {
+    if (type == "skrib"){
+        finalType = "SQLITE";
+    }
+
+    if (finalType == "SQLITE") {
         // shrink the database
         db->getSqlDb().transaction();
         QString   queryStr("VACUUM");
@@ -47,12 +52,14 @@ PLMError PLMExporter::exportSQLiteDbTo(PLMProject    *db,
         if (!tempFile.open(QIODevice::ReadOnly)) {
             qWarning() << fileName + " can't be opened";
             error.setSuccess(false);
+            error.setErrorCode("E_PROJECT_tempfile_cant_be_opened");
             return error;
         }
 
         if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             qWarning() << fileName + " can't be opened";
             error.setSuccess(false);
+            error.setErrorCode("E_PROJECT_path_is_readonly");
             return error;
         }
 

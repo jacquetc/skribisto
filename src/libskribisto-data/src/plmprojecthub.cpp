@@ -28,6 +28,7 @@ PLMError PLMProjectHub::loadProject(const QString& path)
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
         emit isThereAnyLoadedProjectChanged(true);
+        this->setProjectNotSavedAnymore(projectId);
     }
 
 
@@ -47,6 +48,7 @@ PLMError PLMProjectHub::createNewEmptyProject(const QString &path)
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
         emit isThereAnyLoadedProjectChanged(true);
+        this->setProjectNotSavedAnymore(projectId);
     }
 
 
@@ -68,8 +70,10 @@ PLMError PLMProjectHub::saveProject(int projectId)
 
 void PLMProjectHub::setProjectNotSavedAnymore(int projectId)
 {
-    m_projectsNotSavedList.append(projectId);
-    emit projectNotSavedAnymore(projectId);
+    if(!m_projectsNotSavedList.contains(projectId)){
+        m_projectsNotSavedList.append(projectId);
+        emit projectNotSavedAnymore(projectId);
+    }
 }
 
 QList<int>PLMProjectHub::projectsNotYetSavedOnce() {
@@ -239,6 +243,7 @@ PLMError PLMProjectHub::setProjectName(int projectId, const QString& projectName
     }
     IFKO(error) {
         emit errorSent(error);
+        this->setProjectNotSavedAnymore(projectId);
     }
     return error;
 }

@@ -3,7 +3,7 @@ import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import Qt.labs.settings 1.1
 import eu.skribisto.notelistproxymodel 1.0
-import eu.skribisto.writedocumentlistmodel 1.0
+//import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import ".."
 
@@ -49,7 +49,7 @@ LeftDockForm {
     //        target: Globals
     //        onOpenSheetCalled: function (projectId, paperId) {
 
-    //           proxyModel.setCurrentPaperId(projectId, paperId)
+    //           //proxyModel.setCurrentPaperId(projectId, paperId)
 
 
     //        }
@@ -63,11 +63,6 @@ LeftDockForm {
 
 
     //-----------------------------------------------------------
-
-    //Document List :
-    //-----------------------------------------------------------
-//    documentView.model: plmModels.noteDocumentListModel()
-//    documentView.documentModel: plmModels.noteDocumentListModel()
 
     //-----------------------------------------------------------
 
@@ -88,20 +83,16 @@ LeftDockForm {
 
     Settings {
         id: settings
-        category: "noteLeftDock"
+        category: "noteOverviewLeftDock"
         //property string dockSplitView: "0"
         property bool dockFolded: false
         property bool treeViewFrameFolded: treeViewFrame.folded ? true : false
-        property bool documentFrameFolded: documentFrame.folded ? true : false
         property int width: fixedWidth
     }
 
+
     function setCurrentPaperId(projectId, paperId) {
         proxyModel.setCurrentPaperId(projectId, paperId)
-    }
-    function setOpenedPaperId(projectId, paperId) {
-        treeView.openedProjectId = projectId
-        treeView.openedPaperId = paperId
     }
 
 
@@ -111,22 +102,26 @@ LeftDockForm {
     //        duration: 500
     //        easing.type: Easing.InOutQuad
     //    }
+
+    Connections {
+        target: treeView
+        onOpenDocument: function (openedProjectId, openedPaperId, _projectId, _paperId) {
+            Globals.openNoteInNewTabCalled(_projectId, _paperId)
+        }
+        }
+
     Component.onCompleted: {
         folded ? fold() : unfold()
 
         treeViewFrame.folded = settings.treeViewFrameFolded
-        documentFrame.folded = settings.documentFrameFolded
 
-        //        splitView.restoreState(settings.dockSplitView
+        //        splitView.restoreState(settings.dockSplitView)
+
         // treeView :
-        treeView.onOpenDocument.connect(Globals.openNoteCalled)
+
         treeView.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
 
-        //
-
         fixedWidth = settings.width
-
-
     }
     Component.onDestruction: {
         //        settings.dockSplitView = splitView.saveState()

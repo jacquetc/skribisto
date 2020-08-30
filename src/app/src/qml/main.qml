@@ -2,9 +2,12 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Window 2.3
 import QtQml 2.12
+//import QtQuick.Dialogs 1.3
 import Qt.labs.settings 1.1
+import Qt.labs.platform 1.1
 import eu.skribisto.plmerror 1.0
 import eu.skribisto.projecthub 1.0
+import "Commons"
 
 ApplicationWindow {
 
@@ -54,7 +57,6 @@ ApplicationWindow {
     Action {
 
         id: saveAction
-        enabled: plmData.projectHub().isThereAnyLoadedProject
         text: qsTr("Save")
         icon {
             name: "document-save"
@@ -67,21 +69,155 @@ ApplicationWindow {
             var projectId = plmData.projectHub().getDefaultProject()
             var error = plmData.projectHub().saveProject(projectId)
 
-            console.log("save !!!", error.errorCode)
-
-            if (error.errorCode === "E_PROJECT_NOPATH"){
-                console.log("E_PROJECT_NOPATH")
+            if (error.getErrorCode() === "E_PROJECT_no_path"){
+                saveAsFileDialog.open()
             }
+
+
 
         }
     }
 
-//    Shortcut {
-//        sequence: StandardKey.Save
-//        context: Qt.ApplicationShortcut
-//        onActivated: saveAction.trigger()
+    Connections {
+        target: plmData.projectHub()
+        onProjectNotSavedAnymore: function (projectId){
+            if (projectId === plmData.projectHub().getDefaultProject()){
+                saveAction.enabled = true
+            }
+        }
 
-//    }
+    }
+
+    Connections {
+        target: plmData.projectHub()
+        onProjectSaved: function (projectId){
+            if (projectId === plmData.projectHub().getDefaultProject()){
+                saveAction.enabled = false
+            }
+        }
+
+    }
+
+    Action {
+
+        id: saveAsAction
+        text: qsTr("Save as...")
+        icon {
+            name: "document-save-as"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.SaveAs
+        onTriggered: {
+            var projectId = plmData.projectHub().getDefaultProject()
+            saveAsFileDialog.open()
+
+
+
+
+
+
+
+
+        }
+    }
+
+    Action {
+
+        id: saveAllAction
+        text: qsTr("Save All")
+        icon {
+            name: "document-save-all"
+            height: 50
+            width: 50
+        }
+
+        shortcut: "Ctrl+Shift+S"
+        onTriggered: {
+            var projectIdList = plmData.projectHub().getProjectIdList()
+            var projectCount = plmData.projectHub().getProjectCount()
+
+            var i;
+            for (i = 0; i < projectCount ; i++ ){
+                var projectId = projectIdList[i]
+                var error = plmData.projectHub().saveProject(projectId)
+
+                if (error.getErrorCode() === "E_PROJECT_no_path"){
+                    var errorProjectId = error.getDataList()[0];
+                    saveAsFileDialog.projectId = errorProjectId
+                    saveAsFileDialog.open()
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: plmData.projectHub()
+        onIsThereAnyLoadedProjectChanged: function (value){
+            saveAction.enabled = value
+            saveAsAction.enabled = value
+            saveAllAction.enabled = value
+
+        }
+
+    }
+
+
+    FileDialog{
+        property int projectId: -2
+        property string projectName: ""
+
+        id: saveAsFileDialog
+        title: qsTr("Save the %1 project as ...").arg(projectName)
+        modality: Qt.ApplicationModal
+        folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        fileMode: FileDialog.SaveFile
+        selectedNameFilter.index: 0
+        nameFilters: ["Skribisto file (*.skrib)"]
+        onAccepted: {
+
+            var file = saveAsFileDialog.file.toString()
+            file = file.replace(/^(file:\/{2})/,"");
+
+            if(file.indexOf(".skrib") === -1){ // not found
+                file = file + ".skrib"
+            }
+            if(projectId == -2){
+                projectId = plmData.projectHub().getDefaultProject()
+            }
+            console.log("FileDialog :" , projectId)
+
+            if(projectName == ""){
+                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+            }
+
+            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", file)
+
+            if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+                // Dialog:
+                pathIsReadOnlydialog.open()
+
+            }
+
+        }
+        onRejected: {
+
+        }
+    }
+    SimpleDialog {
+        id: pathIsReadOnlydialog
+        title: "Error"
+        text: qsTr("This path is read-only, please choose another path.")
+        onAccepted: saveAsFileDialog.open()
+    }
+
+    //    Shortcut {
+    //        sequence: StandardKey.Save
+    //        context: Qt.ApplicationShortcut
+    //        onActivated: saveAction.trigger()
+
+    //    }
 
     Shortcut {
         sequence: StandardKey.Quit
@@ -154,16 +290,129 @@ ApplicationWindow {
     onClosing: {
         console.log("quiting")
 
-        settings.x = rootWindow.x
-        settings.y = rootWindow.y
-        settings.width = rootWindow.width
-        settings.height = rootWindow.height
-        settings.visibility = rootWindow.visibility
 
-        plmData.projectHub().closeAllProjects()
+        // determine if all projects are saved
 
-        //close.accepted = false
+
+        var projectsNotSavedList = plmData.projectHub().projectsNotSaved()
+        var i;
+        for (i = 0; i < projectsNotSavedList.length ; i++ ){
+            var projectId = projectsNotSavedList[i]
+            saveOrNotBeforeClosingDialog.projectId = projectId
+            saveOrNotBeforeClosingDialog.projectName = plmData.projectHub().getProjectName(projectId)
+            saveOrNotBeforeClosingDialog.open()
+
+            close.accepted = false
+        }
+        if(projectsNotSavedList.length === 0){
+
+
+
+            // geometry
+            settings.x = rootWindow.x
+            settings.y = rootWindow.y
+            settings.width = rootWindow.width
+            settings.height = rootWindow.height
+            settings.visibility = rootWindow.visibility
+
+
+            close.accepted = true
+        }
+
     }
+
+
+    SimpleDialog {
+        property int projectId: -2
+        property string projectName: ""
+
+        id: saveOrNotBeforeClosingDialog
+        title: "Warning"
+        text: qsTr("The project %1 is not saved. Do you want to save it before quiting ?").arg(projectName)
+        standardButtons: Dialog.Save  | Dialog.Discard | Dialog.Cancel
+
+        onRejected: {
+
+        }
+
+        onDiscarded: {
+            plmData.projectHub().closeProject(projectId)
+
+            rootWindow.close()
+        }
+
+        onAccepted: {
+
+
+            var error = plmData.projectHub().saveProject(projectId)
+            if (error.getErrorCode() === "E_PROJECT_no_path"){
+                var errorProjectId = error.getDataList()[0];
+                saveAsBeforeQuitingFileDialog.projectId = errorProjectId
+                saveAsBeforeQuitingFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                saveAsBeforeQuitingFileDialog.open()
+            }
+            else {
+                rootWindow.close()
+            }
+
+
+
+
+        }
+
+
+
+
+    }
+
+    FileDialog{
+        property int projectId: -2
+        property string projectName: ""
+
+        id: saveAsBeforeQuitingFileDialog
+        title: qsTr("Save the %1 project as ...").arg(projectName)
+        modality: Qt.ApplicationModal
+        folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        fileMode: FileDialog.SaveFile
+        selectedNameFilter.index: 0
+        nameFilters: ["Skribisto file (*.skrib)"]
+        onAccepted: {
+
+            var file = saveAsFileDialog.file.toString()
+            file = file.replace(/^(file:\/{2})/,"");
+
+            if(file.indexOf(".skrib") === -1){ // not found
+                file = file + ".skrib"
+            }
+            if(projectId == -2){
+                projectId = plmData.projectHub().getDefaultProject()
+            }
+            console.log("FileDialog :" , projectId)
+
+            if(projectName == ""){
+                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+            }
+
+            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", file)
+
+            if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+                // Dialog:
+                pathIsReadOnlydialog.open()
+
+            }
+            else{
+                rootWindow.close()
+            }
+        }
+        onRejected: {
+            rootWindow.close()
+        }
+    }
+
+
+
+
+
 } //}
 
 /*##^## Designer {

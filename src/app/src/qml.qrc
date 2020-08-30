@@ -57,5 +57,10 @@
         <file>qml/Note/LeftDockForm.ui.qml</file>
         <file>qml/Note/RightDock.qml</file>
         <file>qml/Note/RightDockForm.ui.qml</file>
+        <file>qml/NoteOverview/LeftDock.qml</file>
+        <file>qml/NoteOverview/NoteOverviewPage.qml</file>
+        <file>qml/NoteOverview/LeftDockForm.ui.qml</file>
+        <file>qml/NoteOverview/NoteOverviewPageForm.ui.qml</file>
+        <file>qml/Commons/SimpleDialog.qml</file>
     </qresource>
 </RCC>

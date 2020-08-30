@@ -20,6 +20,14 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
                                            "l_note_code");
     m_pluginHub = new PLMPluginHub(this);
 
+
+
+
+    connect(m_sheetHub, &PLMSheetHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
+    connect(m_sheetPropertyHub, &PLMPropertyHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
+    connect(m_noteHub, &PLMNoteHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
+    connect(m_notePropertyHub, &PLMPropertyHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
+
 }
 
 // -----------------------------------------------------------------------------

@@ -55,10 +55,9 @@ public:
     void                 setDefaultProject(int defaultProject);
 
 
-    QList<int>           projectsNotSaved();
-    QList<int>           projectsNotYetSavedOnce();
+    Q_INVOKABLE QList<int>           projectsNotSaved();
+    Q_INVOKABLE QList<int>           projectsNotYetSavedOnce();
 
-    void                 setProjectNotSavedAnymore(int projectId);
 
     Q_INVOKABLE QString              getProjectName(int projectId) const;
     Q_INVOKABLE PLMError             setProjectName(int            projectId,
@@ -96,6 +95,7 @@ signals:
     Q_INVOKABLE void             projectCountChanged(int count);
 
 public slots:
+    void                 setProjectNotSavedAnymore(int projectId);
 
 private slots:
 

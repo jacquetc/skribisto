@@ -383,10 +383,10 @@ NotePageForm {
 
         //get cursor position
         var position = skrUserSettings.getFromProjectSettingHash(
-                    _projectId, "writeNotePositionHash", _paperId, 0)
+                    _projectId, "notePositionHash", _paperId, 0)
         //get Y
         var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
-                    _projectId, "writeNoteYHash", _paperId, 0)
+                    _projectId, "noteYHash", _paperId, 0)
         console.log("newCursorPosition", position)
 
         // set positions :
@@ -397,7 +397,7 @@ NotePageForm {
 
         writingZone.forceActiveFocus()
         //save :
-        skrUserSettings.setProjectSetting(projectId, "writeCurrentPaperId", paperId)
+        skrUserSettings.setProjectSetting(projectId, "noteCurrentPaperId", paperId)
 
         // start the timer for automatic position saving
         if(!saveCurrentPaperCursorPositionAndYTimer.running){
@@ -419,10 +419,10 @@ NotePageForm {
             var previousY = writingZone.flickable.contentY
             console.log("previousContentY", previousY)
             skrUserSettings.insertInProjectSettingHash(
-                        projectId, "writeNotePositionHash", paperId,
+                        projectId, "notePositionHash", paperId,
                         previousCursorPosition)
             skrUserSettings.insertInProjectSettingHash(projectId,
-                                                       "writeNoteYHash",
+                                                       "noteYHash",
                                                        paperId,
                                                        previousY)
         }

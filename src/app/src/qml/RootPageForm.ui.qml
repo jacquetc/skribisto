@@ -5,7 +5,7 @@ import QtQuick.Controls 2.12
 
 import "WriteOverview"
 import "Welcome"
-import "Note"
+import "NoteOverview"
 import "Gallery"
 import "Projects"
 
@@ -18,12 +18,12 @@ Item {
     property alias rootSwipeView: rootSwipeView
     property alias rootTabBar: rootTabBar
     property alias welcomeTab: welcomeTab
-    property alias writeTab: writeTab
+    property alias writeOverviewTab: writeOverviewTab
     property alias projectTab: projectTab
     property alias galleryTab: galleryTab
-    property alias noteTab: noteTab
+    property alias noteOverviewTab: noteOverviewTab
     property alias welcomePage: welcomePage
-    property alias notePage: notePage
+    property alias noteOverviewPage: noteOverviewPage
     property alias galleryPage: galleryPage
     property alias projectsPage: projectsPage
     property alias writeOverviewPage: writeOverviewPage
@@ -45,12 +45,12 @@ Item {
 
                         }
                         Tab {
-                            id: writeTab
+                            id: writeOverviewTab
                             closable: false
 
                         }
                         Tab {
-                            id: noteTab
+                            id: noteOverviewTab
                             closable: false
 
                         }
@@ -125,8 +125,8 @@ Item {
 
                         }
 
-                        NotePage {
-                            id: notePage
+                        NoteOverviewPage {
+                            id: noteOverviewPage
 
                         }
 

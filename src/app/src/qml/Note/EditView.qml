@@ -77,10 +77,10 @@ EditViewForm {
 
     textWidthSlider.visible: !Globals.compactSize
 
-    textWidthSlider.value: SkrSettings.writeSettings.textWidth
+    textWidthSlider.value: SkrSettings.noteSettings.textWidth
 
     Binding {
-        target: SkrSettings.writeSettings
+        target: SkrSettings.noteSettings
         property: "textWidth"
         value: textWidthSlider.value
         delayed: true
@@ -88,11 +88,11 @@ EditViewForm {
 
     // textPointSizeSlider :
 
-    textPointSizeSlider.value: SkrSettings.writeSettings.textPointSize
+    textPointSizeSlider.value: SkrSettings.noteSettings.textPointSize
 
 
     Binding {
-        target: SkrSettings.writeSettings
+        target: SkrSettings.noteSettings
         property: "textPointSize"
         value: textPointSizeSlider.value
         delayed: true
@@ -102,7 +102,7 @@ EditViewForm {
     //fontFamilyComboBox.model: skrFonts.getModel()
 
     Binding {
-        target: SkrSettings.writeSettings
+        target: SkrSettings.noteSettings
         property: "textFontFamily"
         value: fontFamilyComboBox.currentText
         delayed: true
@@ -111,7 +111,7 @@ EditViewForm {
     // needed because the SkrSettings won't work for FontFamily
     Settings{
         id: settings
-            category: "write"
+            category: "note"
     }
 
     function loadFontFamily(){
@@ -130,20 +130,20 @@ EditViewForm {
     }
 
     // Indent :
-     textIndentSlider.value: SkrSettings.writeSettings.textIndent
+     textIndentSlider.value: SkrSettings.noteSettings.textIndent
 
     Binding {
-        target: SkrSettings.writeSettings
+        target: SkrSettings.noteSettings
         property: "textIndent"
         value: textIndentSlider.value
         delayed: true
     }
 
     // Margins :
-     textTopMarginSlider.value: SkrSettings.writeSettings.textTopMargin
+     textTopMarginSlider.value: SkrSettings.noteSettings.textTopMargin
 
     Binding {
-        target: SkrSettings.writeSettings
+        target: SkrSettings.noteSettings
         property: "textTopMargin"
         value: textTopMarginSlider.value
         delayed: true

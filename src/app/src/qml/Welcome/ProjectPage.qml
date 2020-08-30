@@ -14,8 +14,10 @@ ProjectPageForm {
     //compact mode :
     gridLayout.columns: Globals.compactSize ? 1 : 3
 
-    
-    
+    saveButton.action: saveAction
+    saveAsButton.action: saveAsAction
+    saveAllButton.action: saveAllAction
+
     createEmpyProjectAtStartSwitch.checked: SkrSettings.welcomeSettings.createEmptyProjectAtStart
     Binding {
         target: SkrSettings.welcomeSettings

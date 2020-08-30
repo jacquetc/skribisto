@@ -173,6 +173,7 @@ PLMError PLMPropertyHub::setProperty(int            projectId,
 
     IFOKDO(error, setPropertyById(projectId, propertyId, name, value));
 
+
     return error;
 }
 
@@ -200,6 +201,7 @@ PLMError PLMPropertyHub::setPropertyById(int            projectId,
     IFOKDO(error, queries.get(propertyId, m_paperCodeFieldName, result));
     IFOK(error) {
         emit propertyChanged(projectId, propertyId, result.toInt(), name, value);
+        emit projectModified(projectId);
     }
     IFKO(error) {
         emit errorSent(error);
@@ -228,6 +230,7 @@ PLMError PLMPropertyHub::setId(int projectId, int propertyId, int newId)
     }
     IFOK(error) {
         emit idChanged(projectId, propertyId, newId);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -258,6 +261,7 @@ PLMError PLMPropertyHub::setValue(int projectId, int propertyId, const QString& 
     }
     IFOK(error) {
         emit propertyChanged(projectId, propertyId, paperCode, name, value);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -286,6 +290,7 @@ PLMError PLMPropertyHub::setName(int projectId, int propertyId, const QString& n
     }
     IFOK(error) {
         emit propertyChanged(projectId, propertyId, paperCode, name, value);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -334,6 +339,7 @@ PLMError PLMPropertyHub::setPaperCode(int projectId, int propertyId, int paperCo
     }
     IFOK(error) {
         emit propertyChanged(projectId, propertyId, paperCode, name, value);
+        emit projectModified(projectId);
     }
     return error;
 }
@@ -591,6 +597,7 @@ PLMError PLMPropertyHub::addProperty(int projectId, int paperCode, int imposedPr
         queries.commit();
         m_last_added_id = newPropertyId;
         emit propertyAdded(projectId, newPropertyId);
+        emit projectModified(projectId);
     }
     IFKO(error) {
         emit errorSent(error);
@@ -609,6 +616,7 @@ PLMError PLMPropertyHub::removeProperty(int projectId, int propertyId)
     IFOK(error) {
         queries.commit();
         emit propertyRemoved(projectId, propertyId);
+        emit projectModified(projectId);
     }
     IFKO(error) {
         emit errorSent(error);

@@ -113,6 +113,7 @@ public:
 signals:
 
     void errorSent(const PLMError& error) const;
+    void projectModified(int projectId);
     void propertyChanged(int            projectId,
                          int            propertyId,
                          int            paperCode,

@@ -20,7 +20,7 @@
  ***************************************************************************/
 #include "plmerror.h"
 
-PLMError::PLMError() :  m_success(true)
+PLMError::PLMError() :  m_success(true), m_errorCode("")
 {
 
 }
@@ -28,7 +28,8 @@ PLMError::PLMError() :  m_success(true)
 PLMError::PLMError(const PLMError& error)
 {
     m_success = error.isSuccess();
-
+    m_errorCode = error.getErrorCode();
+    m_dataList = error.getDataList();
 }
 
 bool PLMError::operator!() const
@@ -47,9 +48,10 @@ PLMError& PLMError::operator= (const PLMError& iError)
 
         m_success = iError.isSuccess();
         m_errorCode = iError.getErrorCode();
+        m_dataList = iError.getDataList();
 
     }
-   // m_success = iError.isSuccess();
+    // m_success = iError.isSuccess();
     return *this;
 }
 void PLMError::setSuccess(bool value)
@@ -70,4 +72,19 @@ QString PLMError::getErrorCode() const
 void PLMError::setErrorCode(const QString &value)
 {
     m_errorCode = value;
+}
+
+QVariantList PLMError::getDataList() const
+{
+    return m_dataList;
+}
+
+void PLMError::setDataList(const QVariantList &dataList)
+{
+    m_dataList = dataList;
+}
+
+void PLMError::addData(const QVariant &value)
+{
+    m_dataList.append(value);
 }

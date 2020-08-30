@@ -18,6 +18,10 @@ Item {
     property alias gridLayout1: gridLayout1
     property alias swipeView: swipeView
 
+    property alias saveButton: saveButton
+    property alias saveAsButton: saveAsButton
+    property alias saveAllButton: saveAllButton
+
     property alias openProjectButton: openProjectButton
     property alias recentListView: recentListView
     property alias newProjectButton: newProjectButton
@@ -71,7 +75,7 @@ Item {
                                     }
                                 }
                                 Button {
-                                    id: saveAllButtton
+                                    id: saveAllButton
                                     text: qsTr("Save all")
                                     icon {
                                         name: "document-save-all"
@@ -154,13 +158,40 @@ Item {
 
                         ColumnLayout {
                             id: columnLayout1
-                            width: 100
-                            height: 100
+                            anchors.fill: parent
 
                             Switch {
                                 id: createEmpyProjectAtStartSwitch
-                                text: qsTr("Switch")
+                                text: qsTr("Create an empty project at start")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                            }
+                        }
+                    }
+
+                    GroupBox {
+                        id: groupBox3
+                        width: 200
+                        height: 200
+                        title: qsTr("Group Box")
+
+                        ColumnLayout {
+                            id: columnLayout4
+                            anchors.fill: parent
+
+                            RowLayout {
+                                id: rowLayout5
+                                width: 100
+                                height: 100
+
+                                Button {
+                                    id: printButton
+                                    text: qsTr("Print")
+                                }
+
+                                Button {
+                                    id: exportButton
+                                    text: qsTr("Export")
+                                }
                             }
                         }
                     }
@@ -170,6 +201,7 @@ Item {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
                     }
+
                 }
             }
 
