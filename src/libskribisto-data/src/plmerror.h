@@ -22,6 +22,7 @@
 #define PLMERROR_H
 
 #include <QObject>
+#include <QString>
 #include "skribisto_data_global.h"
 
 /**
@@ -42,10 +43,11 @@
 #define IFOKDO(ERROR, ACTION) \
         IFOK(ERROR) {ERROR = ACTION; }
 
-struct EXPORT PLMError
+class EXPORT PLMError
 {
     Q_GADGET
     Q_PROPERTY(bool success MEMBER m_success)
+    Q_PROPERTY(QString errorCode MEMBER m_errorCode)
 
 public:
     explicit PLMError();
@@ -57,12 +59,16 @@ public:
     Q_INVOKABLE void setSuccess(bool value);
     Q_INVOKABLE bool isSuccess() const;
 
+    Q_INVOKABLE QString getErrorCode() const;
+    Q_INVOKABLE void setErrorCode(const QString &value);
+
 signals:
 
 public slots:
 
 private:
     bool m_success;
+    QString m_errorCode;
 };
 
 #endif // PLMERROR_H

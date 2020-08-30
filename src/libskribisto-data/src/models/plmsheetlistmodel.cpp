@@ -693,6 +693,8 @@ PLMSheetItem *PLMSheetListModel::getParentSheetItem(PLMSheetItem *chidItem)
     return chidItem->parent(m_allSheetItems);
 }
 
+//-----------------------------------------------------------------------------------
+
 PLMSheetItem *PLMSheetListModel::getItem(int projectId, int paperId)
 {
     PLMSheetItem *result_item = nullptr;

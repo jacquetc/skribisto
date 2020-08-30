@@ -45,8 +45,9 @@ public:
         CreationDateRole = Qt::UserRole + 8,
         UpdateDateRole   = Qt::UserRole + 9,
         ContentDateRole  = Qt::UserRole + 10,
-        CharCountRole = Qt::UserRole + 11,
-        WordCountRole = Qt::UserRole + 12
+        HasChildrenRole  = Qt::UserRole + 11,
+        CharCountRole = Qt::UserRole + 12,
+        WordCountRole = Qt::UserRole + 13
         // TODO: specific to notes:
 
     };
@@ -67,7 +68,7 @@ public:
     int           paperId();
     int           sortOrder();
     int           indent();
-    QString       name();
+    Q_INVOKABLE QString       name();
 
     QVariant      data(int role);
     QList<int>    dataRoles() const;

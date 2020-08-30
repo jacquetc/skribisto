@@ -36,9 +36,50 @@ Item {
             clip: true
 
             Item {
+
                 GridLayout {
                     id: gridLayout
                     anchors.fill: parent
+                    flow: GridLayout.TopToBottom
+
+                    GroupBox {
+                        id: groupBox2
+                        title: qsTr("Group Box")
+
+                        ColumnLayout {
+                            id: columnLayout2
+                            anchors.fill: parent
+
+                            RowLayout {
+                                id: rowLayout1
+                                width: 100
+                                height: 100
+
+                                Button {
+                                    id: saveButton
+                                    text: qsTr("Save")
+                                    icon {
+                                        name: "document-save"
+                                    }
+                                }
+
+                                Button {
+                                    id: saveAsButton
+                                    text: qsTr("Save as")
+                                    icon {
+                                        name: "document-save-as"
+                                    }
+                                }
+                                Button {
+                                    id: saveAllButtton
+                                    text: qsTr("Save all")
+                                    icon {
+                                        name: "document-save-all"
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     GroupBox {
                         id: groupBox1
@@ -102,7 +143,6 @@ Item {
                                     }
                                 }
                             }
-
                         }
                     }
 
@@ -208,7 +248,7 @@ Item {
                                 text: qsTr("Select")
                             }
                         }
-                        ColumnLayout{
+                        ColumnLayout {
                             id: columnLayout6s
                             Label {
                                 id: projectDetailLabel
@@ -218,38 +258,31 @@ Item {
                                 id: projectDetailPathLabel
                                 text: fileName
                             }
-
                         }
-                        RowLayout{
+                        RowLayout {
                             id: rowLayout3
                             Layout.alignment: Qt.AlignHCenter
-                            Label{
+                            Label {
                                 id: partLabel
                                 text: qsTr("Number of parts :")
                             }
 
-                            SpinBox{
+                            SpinBox {
                                 id: partSpinBox
                                 value: 1
                                 from: 1
                                 to: 40
                                 editable: true
-
                             }
-
-
                         }
-                        RowLayout{
+                        RowLayout {
                             id: rowLayout4
                             Layout.alignment: Qt.AlignHCenter
 
-
-                            Button{
+                            Button {
                                 id: createNewProjectButton
                                 text: qsTr("Create")
                             }
-
-
                         }
                     }
 
@@ -273,7 +306,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;height:500;width:600}D{i:6;anchors_height:100;anchors_width:100}D{i:2;anchors_height:200;anchors_width:200}
+    D{i:0;height:800;width:800}D{i:11}D{i:2}
 }
 ##^##*/
 

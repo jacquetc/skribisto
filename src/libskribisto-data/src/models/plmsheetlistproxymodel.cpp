@@ -457,7 +457,7 @@ void PLMSheetListProxyModel::addHistory(int projectId, int paperId)
 
 QString PLMSheetListProxyModel::getItemName(int projectId, int paperId)
 {
-    qDebug() << "getItemName" << projectId << paperId;
+    //qDebug() << "getItemName" << projectId << paperId;
     if(projectId == -2 || paperId == -2){
         return "";
     }

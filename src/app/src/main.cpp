@@ -22,6 +22,7 @@ using namespace std;
 #include "plmpluginloader.h"
 #include "plmdata.h"
 #include "plmsheethub.h"
+#include "plmnotehub.h"
 #include "plmerror.h"
 #include "plmprojecthub.h"
 #include "documenthandler.h"
@@ -211,11 +212,11 @@ int main(int argc, char *argv[])
                                             "PLMSheetHub",
                                             "Can't instantiate PLMSheetHub");
 
-    qmlRegisterUncreatableType<PLMNoteHub>("eu.skribisto.sheethub",
+    qmlRegisterUncreatableType<PLMNoteHub>("eu.skribisto.notehub",
                                             1,
                                             0,
-                                            "PLMSheetHub",
-                                            "Can't instantiate PLMSheetHub");
+                                            "PLMNoteHub",
+                                            "Can't instantiate PLMNoteHub");
 
     qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
                                             1,

@@ -628,8 +628,6 @@ WritePageForm {
 
     Connections {
         target: Globals
-
-        // @disable-check M16
         onCompactSizeChanged: {
             if (Globals.compactSize === true) {
                 leftDrawer.interactive = true
@@ -712,7 +710,6 @@ WritePageForm {
 
     function saveContent(){
         console.log("saving sheet")
-        plmData.sheetHub()
         plmData.sheetHub().setContent(projectId, paperId, writingZone.text)
     }
 
@@ -722,7 +719,6 @@ WritePageForm {
     // project to be closed :
     Connections{
         target: plmData.projectHub()
-        // @disable-check M16
         onProjectToBeClosed: function (projectId) {
 
             if (projectId === this.projectId){
@@ -767,7 +763,6 @@ WritePageForm {
     // fullscreen :
     Connections {
         target: Globals
-        // @disable-check M16
         onFullScreenCalled: function (value) {
             if(value){
                 //save previous conf

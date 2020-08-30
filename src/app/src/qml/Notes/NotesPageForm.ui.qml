@@ -1,6 +1,6 @@
-import QtQuick 2.11
-import QtQuick.Controls 2.4
-import QtQuick.Layouts 1.3
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 import "../Commons"
 import ".."
 
@@ -8,22 +8,35 @@ Item {
     id: base
     width: 1000
     height: 600
+    property alias rightPaneScrollMouseArea: rightPaneScrollMouseArea
+    property alias rightPaneScrollTouchArea: rightPaneScrollTouchArea
     property alias compactHeaderPane: compactHeaderPane
     property alias compactRightDockShowButton: compactRightDockShowButton
     property alias compactLeftDockShowButton: compactLeftDockShowButton
     property alias leftDockMenuGroup: leftDockMenuGroup
+    property alias rightDockMenuGroup: rightDockMenuGroup
     property alias leftDockResizeButton: leftDockResizeButton
+    property alias rightDockResizeButton: rightDockResizeButton
     property alias leftDockMenuButton: leftDockMenuButton
+    property alias rightDockMenuButton: rightDockMenuButton
     property alias leftDock: leftDock
+    property alias rightDock: rightDock
     property alias leftDockShowButton: leftDockShowButton
+    property alias rightDockShowButton: rightDockShowButton
     property alias minimap: minimap
     property alias middleBase: middleBase
     property alias writingZone: writingZone
     property alias base: base
-    property int middleBasePreferredWidth
+    property alias leftPaneScrollMouseArea: leftPaneScrollMouseArea
+    property alias leftPaneScrollTouchArea: leftPaneScrollTouchArea
+    property int leftBasePreferredWidth: 0
+    //property int leftBaseMaximumWidth: 0
+    property int rightBasePreferredWidth: 0
+
 
     ColumnLayout {
         id: columnLayout
+        clip: false
         spacing: 0
         anchors.fill: parent
 
@@ -75,84 +88,197 @@ Item {
 
             Item {
                 id: leftBase
-                Layout.minimumWidth: 200
+                Layout.preferredWidth: leftBasePreferredWidth
+                Layout.maximumWidth: leftBasePreferredWidth
+                Layout.minimumWidth: 30
                 visible: !Globals.compactSize
                 Layout.fillHeight: true
-                Layout.preferredWidth: Globals.compactSize ? -1 : base.width / 6
+
                 z: 1
 
                 RowLayout {
+                    spacing: 0
                     anchors.fill: parent
 
-                    NotesLeftDock {
+                    LeftDock {
                         id: leftDock
+                        z: 1
                         Layout.fillHeight: true
                     }
-                    ColumnLayout {
-                        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                        Layout.maximumWidth: 60
-                        Button {
-                            id: leftDockShowButton
-                            Layout.preferredHeight: 50
-                            Layout.preferredWidth: 50
-                            flat: true
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                    Pane {
+                        id: leftPane
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+
+                        MultiPointTouchArea {
+                            id: leftPaneScrollTouchArea
+                            z: 1
+                            anchors.fill: parent
+                            mouseEnabled: false
+                            maximumTouchPoints: 1
+                            touchPoints: [
+                                TouchPoint {
+                                    id: leftTouch1
+                                }
+                            ]
                         }
 
-                        Button {
-                            id: leftDockMenuButton
-                            checkable: true
-                            Layout.preferredHeight: 50
-                            Layout.preferredWidth: 50
-                            flat: true
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                        MouseArea {
+                            id: leftPaneScrollMouseArea
+                            z: 0
+                            anchors.fill: parent
                         }
 
                         ColumnLayout {
-                            id: leftDockMenuGroup
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-
+                            anchors.fill: parent
+                            z: 2
                             Button {
-                                id: leftDockResizeButton
-                                Layout.preferredHeight: 50
-                                Layout.preferredWidth: 50
+                                id: leftDockShowButton
+                                focusPolicy: Qt.NoFocus
+                                Layout.preferredHeight: 30
+                                Layout.preferredWidth: 30
                                 flat: true
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                             }
+
+                            Button {
+                                id: leftDockMenuButton
+                                focusPolicy: Qt.NoFocus
+                                checkable: true
+                                Layout.preferredHeight: 30
+                                Layout.preferredWidth: 30
+                                flat: true
+                                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                            }
+
+                            ColumnLayout {
+                                id: leftDockMenuGroup
+                                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+
+                                Button {
+                                    id: leftDockResizeButton
+                                    focusPolicy: Qt.NoFocus
+                                    Layout.preferredHeight: 30
+                                    Layout.preferredWidth: 30
+                                    flat: true
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                                }
+                            }
+
+                            Item {
+                                id: stretcher
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
+                            }
                         }
                     }
+
                 }
             }
 
             Item {
                 id: middleBase
-                width: 400
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 Layout.fillHeight: true
-                Layout.minimumWidth: 200
-                Layout.fillWidth: Globals.compactSize
-                Layout.preferredWidth: Globals.compactSize ? -1 : base.width / 3 * 2
+                Layout.fillWidth: true
+
 
                 WritingZone {
                     id: writingZone
                     anchors.fill: parent
                 }
+
             }
 
             Item {
-
                 id: rightBase
-                z: 1
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                Layout.minimumWidth: 200
+                visible: !Globals.compactSize
                 Layout.fillHeight: true
-                Layout.fillWidth: false
-                Layout.preferredWidth: Globals.compactSize ? -1 : base.width / 6
+                Layout.preferredWidth: rightBasePreferredWidth
+                Layout.minimumWidth: 30
+                //Layout.maximumWidth: 300
+
+                z: 1
 
                 RowLayout {
-                    visible: false
+                    spacing: 0
                     anchors.fill: parent
 
+                    Pane {
+                        id: rightPane
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+
+                        MultiPointTouchArea {
+                            id: rightPaneScrollTouchArea
+                            z: 1
+                            anchors.fill: parent
+                            mouseEnabled: false
+                            maximumTouchPoints: 1
+                            touchPoints: [
+                                TouchPoint {
+                                    id: leftTouch2
+                                }
+                            ]
+                        }
+
+                        MouseArea {
+                            id: rightPaneScrollMouseArea
+                            z: 0
+                            anchors.fill: parent
+                        }
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            z: 2
+                            Button {
+                                id: rightDockShowButton
+                                focusPolicy: Qt.NoFocus
+                                Layout.preferredHeight: 30
+                                Layout.preferredWidth: 30
+                                flat: true
+                                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                            }
+
+                            Button {
+                                id: rightDockMenuButton
+                                focusPolicy: Qt.NoFocus
+                                checkable: true
+                                Layout.preferredHeight: 30
+                                Layout.preferredWidth: 30
+                                flat: true
+                                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                            }
+
+                            ColumnLayout {
+                                id: rightDockMenuGroup
+                                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+
+                                Button {
+                                    id: rightDockResizeButton
+                                    focusPolicy: Qt.NoFocus
+                                    Layout.preferredHeight: 30
+                                    Layout.preferredWidth: 30
+                                    flat: true
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                                }
+
+                                Button {
+                                    id: showMinimapButton
+                                    focusPolicy: Qt.NoFocus
+                                    Layout.preferredHeight: 30
+                                    Layout.preferredWidth: 30
+                                    flat: true
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                                }
+                            }
+                            Item {
+                                id: stretcher2
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
+                            }
+                        }
+                    }
                     Minimap {
                         Layout.fillHeight: true
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -164,42 +290,20 @@ Item {
                         sourceWidth: writingZone.textArea.width
                         sourcePointSize: writingZone.textArea.font.pointSize
                     }
-
-                    //                ScrollBar {
-                    //                    id: minimapScrollBar
-                    //                    visible: true
-                    //                    active: true
-                    //                    background:ScrollView {
-                    //                        TextEdit {
-                    //                            scale: minimapFlickable.height / writingZone.flickable.contentHeight
-                    //                            textFormat: TextEdit.RichText
-                    //                            visible: true
-                    //                            readOnly: true
-                    //                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
-
-                    //                            text: writingZone.textArea.text
-                    //                        }
-                    //}
-
-                    //                    contentItem: Rectangle {
-                    //                        id: content
-                    //                        implicitWidth: 6
-                    //                        implicitHeight: 20
-                    //                        radius: 5
-                    //                        visible: true
-                    //                        border.color: "red"
-                    //                        color: minimapScrollBar.pressed ? "#81e889" : "transparent"
-                    //                    }
-                    //                }
+                    RightDock {
+                        id: rightDock
+                        Layout.fillHeight: true
+                    }
                 }
             }
         }
     }
+
 }
 
 /*##^##
 Designer {
-    D{i:17;anchors_height:100;anchors_width:100}
+    D{i:0;width:1200}D{i:1;anchors_height:200;anchors_width:200}
 }
 ##^##*/
 

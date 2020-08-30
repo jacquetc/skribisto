@@ -51,11 +51,11 @@ public:
     }
 
     PLMSignalHub             * signalHub();
-    PLMErrorHub              * errorHub();
+    Q_INVOKABLE PLMErrorHub              * errorHub();
     Q_INVOKABLE PLMSheetHub  * sheetHub();
-    PLMPropertyHub           * sheetPropertyHub();
-    PLMNoteHub               * noteHub();
-    PLMPropertyHub           * notePropertyHub();
+    Q_INVOKABLE PLMPropertyHub           * sheetPropertyHub();
+    Q_INVOKABLE PLMNoteHub               * noteHub();
+    Q_INVOKABLE PLMPropertyHub           * notePropertyHub();
     Q_INVOKABLE PLMProjectHub* projectHub();
     PLMPluginHub             * pluginHub();
 

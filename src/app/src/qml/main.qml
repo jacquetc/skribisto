@@ -3,6 +3,8 @@ import QtQuick.Controls 2.12
 import QtQuick.Window 2.3
 import QtQml 2.12
 import Qt.labs.settings 1.1
+import eu.skribisto.plmerror 1.0
+import eu.skribisto.projecthub 1.0
 
 ApplicationWindow {
 
@@ -49,7 +51,44 @@ ApplicationWindow {
     }
 
 
+    Action {
 
+        id: saveAction
+        enabled: plmData.projectHub().isThereAnyLoadedProject
+        text: qsTr("Save")
+        icon {
+            name: "document-save"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.Save
+        onTriggered: {
+            var projectId = plmData.projectHub().getDefaultProject()
+            var error = plmData.projectHub().saveProject(projectId)
+
+            console.log("save !!!", error.getErrorCode())
+
+            if (error.errorCode === "E_PROJECT_NOPATH"){
+                console.log("E_PROJECT_NOPATH")
+            }
+
+        }
+    }
+
+//    Shortcut {
+//        sequence: StandardKey.Save
+//        context: Qt.ApplicationShortcut
+//        onActivated: saveAction.trigger()
+
+//    }
+
+    Shortcut {
+        sequence: StandardKey.Quit
+        context: Qt.ApplicationShortcut
+        onActivated: Qt.quit()
+
+    }
 
     // style :
     //palette.window: "white"
@@ -100,7 +139,6 @@ ApplicationWindow {
 
     Connections {
         target: Globals
-        // @disable-check M16
         onFullScreenCalled: function (value) {
             console.log("fullscreen")
             if(value){

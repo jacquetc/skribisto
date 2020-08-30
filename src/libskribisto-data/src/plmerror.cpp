@@ -46,6 +46,7 @@ PLMError& PLMError::operator= (const PLMError& iError)
     if (Q_LIKELY(&iError != this)) {
 
         m_success = iError.isSuccess();
+        m_errorCode = iError.getErrorCode();
 
     }
    // m_success = iError.isSuccess();
@@ -59,4 +60,14 @@ void PLMError::setSuccess(bool value)
 bool PLMError::isSuccess() const
 {
     return m_success;
+}
+
+QString PLMError::getErrorCode() const
+{
+    return m_errorCode;
+}
+
+void PLMError::setErrorCode(const QString &value)
+{
+    m_errorCode = value;
 }

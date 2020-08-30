@@ -70,6 +70,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString& fileName) 
         } else {
             m_sqlDb = importer.createSQLiteDbFrom("SQLITE", fileName, projectId, error);
         }
+        this->setPath(fileName);
     }
     setType("SQLITE");
     IFOK(error) {

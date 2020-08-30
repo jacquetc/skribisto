@@ -27,6 +27,7 @@ Item {
     property alias galleryPage: galleryPage
     property alias projectsPage: projectsPage
     property alias writeOverviewPage: writeOverviewPage
+    property alias saveButton: saveButton
 
     ColumnLayout {
         id: columnLayout
@@ -176,6 +177,17 @@ Item {
                 anchors.topMargin: 0
                 spacing: 0
 
+                Button {
+                    id: saveButton
+                    flat: true
+                    text: qsTr("Save")
+                    padding: 0
+                    Layout.preferredHeight: 30
+                    Layout.preferredWidth: 30
+                    focusPolicy: Qt.NoFocus
+                    display: AbstractButton.IconOnly
+                }
+
                 Label {
                     id: statusLeftLabel
                     text: qsTr("Label")
@@ -219,7 +231,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;autoSize:true;height:480;width:640}D{i:9;anchors_height:100;anchors_width:100}
+    D{i:0;autoSize:true;height:480;width:640}D{i:9}
 }
 ##^##*/
 

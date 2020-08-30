@@ -44,20 +44,22 @@ public:
 
     QHash<int, QByteArray> roleNames() const override;
     QModelIndexList getModelIndex(int projectId, int paperId);
-
     PLMNoteItem *getParentNoteItem(PLMNoteItem *chidItem);
+    PLMNoteItem *getItem(int projectId, int paperId);
+
 private slots:
     void populate();
     void clear();
     void exploitSignalFromPLMData(int                 projectId,
                                   int                 paperId,
                                   PLMNoteItem::Roles role);
-    void addPaper(int                 projectId,
-                  int                 paperId);
+
+    void refreshAfterDataAddition(int                 projectId,
+                                  int                 paperId);
+    void refreshAfterDataMove(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId);
+
 private:
 
-    PLMNoteItem* findPaperItem(int projectId,
-                                int paperId);
     void          connectToPLMDataSignals();
     void          disconnectFromPLMDataSignals();
 
@@ -65,8 +67,8 @@ private:
 
     PLMNoteItem *m_rootItem;
     QVariant m_headerData;
-    QList<PLMNoteItem *>m_allNoteItems;
-    QList<QMetaObject::Connection>m_dataConnectionsList;
+    QList<PLMNoteItem *> m_allNoteItems;
+    QList<QMetaObject::Connection> m_dataConnectionsList;
 };
 
 #endif // PLMNOTELISTMODEL_H

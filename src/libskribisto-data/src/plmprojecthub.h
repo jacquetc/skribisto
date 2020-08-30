@@ -29,6 +29,7 @@
 
 class EXPORT PLMProjectHub : public QObject {
     Q_OBJECT
+    Q_PROPERTY(bool isThereAnyLoadedProject READ isThereAnyLoadedProject NOTIFY isThereAnyLoadedProjectChanged)
 
 public:
 
@@ -48,7 +49,7 @@ public:
                                  const QString& newPath);
     Q_INVOKABLE int                  getLastLoaded() const;
     PLMError             getError();
-    Q_INVOKABLE bool                 isThereAnyOpenedProject();
+    Q_INVOKABLE bool                 isThereAnyLoadedProject();
 
     Q_INVOKABLE int                  getDefaultProject();
     void                 setDefaultProject(int defaultProject);
@@ -83,6 +84,7 @@ signals:
     Q_INVOKABLE void projectToBeClosed(int projectId);
     Q_INVOKABLE void projectClosed(int projectId);
     Q_INVOKABLE void             allProjectsClosed();
+    Q_INVOKABLE void  isThereAnyLoadedProjectChanged(bool value);
     Q_INVOKABLE void             projectTypeChanged(int            projectId,
                                         const QString& newType);
     Q_INVOKABLE void             projectPathChanged(int            projectId,

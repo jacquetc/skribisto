@@ -74,6 +74,7 @@ PLMError PLMProjectManager::saveProjectAs(int            projectId,
     if (project->getPath() == "") {
         // emit plmTaskError->errorSent("E_PROJECT_NOPATH", Q_FUNC_INFO, "No
         // project path set");
+        error.setErrorCode("E_PROJECT_NOPATH");
         error.setSuccess(false);
         return error;
     }

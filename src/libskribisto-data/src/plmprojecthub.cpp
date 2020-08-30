@@ -27,6 +27,7 @@ PLMError PLMProjectHub::loadProject(const QString& path)
         m_projectsNotSavedList.append(projectId);
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
+        emit isThereAnyLoadedProjectChanged(true);
     }
 
 
@@ -38,15 +39,14 @@ PLMError PLMProjectHub::createNewEmptyProject(const QString &path)
 
     int projectId  = -1;
     PLMError error = plmProjectManager->createNewEmptyDatabase(projectId);
-    IFOK(error){
-        this->setPath(projectId, path);
-    }
+
 
     IFOK(error) {
         m_projectsNotYetSavedOnceList.append(projectId);
         m_projectsNotSavedList.append(projectId);
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
+        emit isThereAnyLoadedProjectChanged(true);
     }
 
 
@@ -104,6 +104,12 @@ PLMError PLMProjectHub::closeProject(int projectId)
     IFOK(error) {
         emit projectClosed(projectId);
         emit projectCountChanged(this->getProjectCount());
+        if (isThereAnyLoadedProject()){
+            emit isThereAnyLoadedProjectChanged(true);
+        }
+        else{
+            emit isThereAnyLoadedProjectChanged(false);
+        }
     }
     return error;
 }
@@ -114,7 +120,7 @@ PLMError PLMProjectHub::closeAllProjects()
 
     QList<int> idList = plmProjectManager->projectIdList();
 
-    foreach(int id, idList) {
+    for(int id : idList) {
         IFOKDO(error, closeProject(id));
         IFKO(error) {
             break;
@@ -147,11 +153,11 @@ QString PLMProjectHub::getPath(int projectId) const
         error.setSuccess(false);
     }
 
-    IFKO(error) {
-        // no project
-    }
     IFOK(error) {
         result = project->getPath();
+    }
+    IFKO(error) {
+        // no project
         emit errorSent(error);
     }
     return result;
@@ -190,7 +196,7 @@ PLMError PLMProjectHub::getError()
     return m_error;
 }
 
-bool PLMProjectHub::isThereAnyOpenedProject()
+bool PLMProjectHub::isThereAnyLoadedProject()
 {
     QList<int> list = plmProjectManager->projectIdList();
 

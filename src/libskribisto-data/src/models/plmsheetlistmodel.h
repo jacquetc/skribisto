@@ -55,10 +55,10 @@ private slots:
                                   int                 paperId,
                                   PLMSheetItem::Roles role);
     void refreshAfterDataAddition(int                 projectId,
-                  int                 paperId);
+                                  int                 paperId);
     void refreshAfterDataMove(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId);
 
-    private:
+private:
 
     void          connectToPLMDataSignals();
     void          disconnectFromPLMDataSignals();

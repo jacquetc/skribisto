@@ -53,5 +53,11 @@
         <file>qml/WriteOverview/LeftDockForm.ui.qml</file>
         <file>qml/WriteOverview/LeftDock.qml</file>
         <file>qml/WriteOverview/WriteOverviewPageForm.ui.qml</file>
+        <file>qml/Notes/LeftDock.qml</file>
+        <file>qml/Notes/EditView.qml</file>
+        <file>qml/Notes/EditViewForm.ui.qml</file>
+        <file>qml/Notes/LeftDockForm.ui.qml</file>
+        <file>qml/Notes/RightDock.qml</file>
+        <file>qml/Notes/RightDockForm.ui.qml</file>
     </qresource>
 </RCC>

@@ -25,18 +25,19 @@
 #include <QTimer>
 
 PLMNoteListProxyModel::PLMNoteListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
-    m_showDeletedFilter(false), m_projectIdFilter(0), m_parentIdFilter(-1)
+    m_showDeletedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-1)
 {
     this->setSourceModel(plmmodels->noteListModel());
-    this->setDeletedFilter(false);
-    m_parentIdFilter = 0;
-    m_projectIdFilter = 0;
+    this->setShowDeletedFilter(false);
 
-    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this,
-            [this](int projectId){
-        //TODO: replace that with loading project settings
-        this->setParentFilter(projectId, 0);
-        qDebug() << "setParentFilter";
+
+
+    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &PLMNoteListProxyModel::loadProjectSettings);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &PLMNoteListProxyModel::saveProjectSettings, Qt::DirectConnection);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, &PLMNoteListProxyModel::clearHistory);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this](){
+        this->clearFilters();
+
     });
 }
 
@@ -104,9 +105,10 @@ void PLMNoteListProxyModel::setParentFilter(int projectId, int parentId)
 //--------------------------------------------------------------
 
 
-void PLMNoteListProxyModel::setDeletedFilter(bool showDeleted)
+void PLMNoteListProxyModel::setShowDeletedFilter(bool showDeleted)
 {
     m_showDeletedFilter = showDeleted;
+    emit showDeletedFilterChanged(m_showDeletedFilter);
     this->invalidate();
 }
 
@@ -124,9 +126,12 @@ bool PLMNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     PLMNoteItem *item = static_cast<PLMNoteItem *>(index.internalPointer());
     PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
 
-    // displays project list :
-    if(m_parentIdFilter == -2 && item->isProjectItem() && plmdata->projectHub()->getProjectIdList().count() > 1){
+    // displays or not project list :
+    if(m_parentIdFilter == -2 && item->isProjectItem()){
         return true;
+    }
+    else if(m_parentIdFilter != -2 && item->isProjectItem()){
+        return false;
     }
 
     // path / parent filtering :
@@ -140,21 +145,21 @@ bool PLMNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
             result = true;
         }
     }
-    else if(!parentItem && item->indent() == 0 ){
-        result = true;
-    }
-    else {
-        return false;
-    }
+
     // deleted filtering :
 
     if(result && item->data(PLMNoteItem::Roles::DeletedRole).toBool() == m_showDeletedFilter){
         QString string = item->data(PLMNoteItem::Roles::NameRole).toString();
         //qDebug() << "deleted : " << string;
-        return true;
+        result = true;
     }
-    QString string = item->data(PLMNoteItem::Roles::NameRole).toString();
+    else {
+        result = false;
+    }
+    //QString string = item->data(PLMNoteItem::Roles::NameRole).toString();
     //qDebug() << "result : " << string << result;
+
+
 
     return result;
 }
@@ -173,13 +178,26 @@ void PLMNoteListProxyModel::setProjectIdFilter(int projectIdFilter)
     this->invalidate();
 }
 
+//--------------------------------------------------------------
 
+void PLMNoteListProxyModel::clearFilters()
+{
+    m_parentIdFilter = -2;
+    m_projectIdFilter = -2;
+    emit projectIdFilterChanged(m_projectIdFilter);
+    emit parentIdFilterChanged(m_parentIdFilter);
+    this->invalidate();
 
-
+}
 
 //--------------------------------------------------------------
 
 
+///
+/// \brief PLMNoteListProxyModel::moveItem
+/// \param from source item index number
+/// \param to target item index number
+/// Carefull, this is only used for manually moving a visual item
 void PLMNoteListProxyModel::moveItem(int from, int to) {
 
 
@@ -259,17 +277,9 @@ int PLMNoteListProxyModel::goUp()
     if(grandParentItem){
         grandParentId = grandParentItem->paperId();
     }
-    else{
-        if(plmdata->projectHub()->getProjectIdList().count() == 1){
-            grandParentId = 0;
-        }
-        else if(plmdata->projectHub()->getProjectIdList().count() > 1){
-            grandParentId = -1;
-        }
-    }
     this->setParentFilter(m_projectIdFilter, grandParentId);
 
-    return grandParentId;
+     return grandParentId;
 }
 
 //--------------------------------------------------------------
@@ -277,21 +287,170 @@ int PLMNoteListProxyModel::goUp()
 PLMNoteItem *PLMNoteListProxyModel::getItem(int projectId, int paperId)
 {
     PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
-    QModelIndexList modelIndexList = model->getModelIndex(projectId, paperId);
-    if(modelIndexList.isEmpty()){
-        return nullptr;
-    }
-    QModelIndex modelIndex = modelIndexList.first();
+//    QModelIndexList modelIndexList = model->getModelIndex(projectId, paperId);
+//    if(modelIndexList.isEmpty()){
+//        return nullptr;
+//    }
+//    QModelIndex modelIndex = modelIndexList.first();
 
-    PLMNoteItem *item = static_cast<PLMNoteItem *>(modelIndex.internalPointer());
+//    PLMNoteItem *item = static_cast<PLMNoteItem *>(modelIndex.internalPointer());
+
+    PLMNoteItem *item = model->getItem(projectId, paperId);
     return item;
+}
+
+
+//--------------------------------------------------------------
+
+
+void PLMNoteListProxyModel::loadProjectSettings(int projectId)
+{
+    QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QSettings settings;
+    settings.beginGroup("project_" + unique_identifier);
+//    int writeCurrentParent = settings.value("noteCurrentParent", 0).toInt();
+//    this->setParentFilter(projectId, noteCurrentParent);
+    settings.endGroup();
+
+}
+//--------------------------------------------------------------
+
+
+void PLMNoteListProxyModel::saveProjectSettings(int projectId)
+{
+    if(m_projectIdFilter != projectId){
+        return;
+    }
+
+    QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QSettings settings;
+    settings.beginGroup("project_" + unique_identifier);
+//    settings.setValue("noteCurrentParent", m_parentIdFilter);
+    settings.endGroup();
 }
 
 //--------------------------------------------------------------
 
+void PLMNoteListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
+{
+    m_forcedCurrentIndex = forcedCurrentIndex;
+    emit forcedCurrentIndexChanged(m_forcedCurrentIndex);
+}
+
+//--------------------------------------------------------------
+
+void PLMNoteListProxyModel::setForcedCurrentIndex(int projectId, int paperId)
+{
+    int forcedCurrentIndex = this->findVisualIndex(projectId, paperId);
+    setForcedCurrentIndex(forcedCurrentIndex);
+}
+
+//--------------------------------------------------------------
+
+void PLMNoteListProxyModel::setCurrentPaperId(int projectId, int paperId)
+{
+    if(projectId == -2){
+        return;
+    }
+    if (paperId == -2 && projectId != -2){
+        this->setParentFilter(projectId, -1);
+        return;
+    }
+
+
+    PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+    if(!item){
+        paperId = plmdata->noteHub()->getTopPaperId(projectId);
+        item = this->getItem(projectId, paperId);
+    }
+
+
+    PLMNoteItem *parentItem = model->getParentNoteItem(item);
+    if(parentItem){
+        this->setParentFilter(projectId, parentItem->paperId());
+    }
+    else {
+        this->setParentFilter(projectId, -2); // root item
+    }
+    this->setForcedCurrentIndex(projectId, paperId);
+}
+
+//--------------------------------------------------------------
+
+bool PLMNoteListProxyModel::hasChildren(int projectId, int paperId)
+{
+    return plmdata->noteHub()->hasChildren(projectId, paperId);
+}
+
+//--------------------------------------------------------------
+
+int PLMNoteListProxyModel::findVisualIndex(int projectId, int paperId)
+{
+
+    int rowCount = this->rowCount(QModelIndex());
+
+    int result = -2;
+
+    QModelIndex modelIndex;
+    for(int i = 0; i < rowCount ; ++i){
+        modelIndex = this->index(i, 0);
+        if(this->data(modelIndex, PLMNoteItem::Roles::ProjectIdRole).toInt() == projectId
+                && this->data(modelIndex, PLMNoteItem::Roles::PaperIdRole).toInt() == paperId){
+            result = i;
+            break;
+        }
+
+    }
+    return result;
+}
+
+int PLMNoteListProxyModel::getLastOfHistory(int projectId)
+{
+    QList<int> list = m_historyList.value(projectId, QList<int>());
+
+    if(list.isEmpty()){
+        return -2;
+    }
+
+    return list.last();
+}
+
+
+//--------------------------------------------------------------
+
+void PLMNoteListProxyModel::removeLastOfHistory(int projectId)
+{
+    QList<int> list = m_historyList.value(projectId, QList<int>());
+
+    if(list.isEmpty()){
+        return;
+    }
+
+    list.removeLast();
+    m_historyList.insert(projectId, list);
+}
+
+//--------------------------------------------------------------
+
+void PLMNoteListProxyModel::clearHistory(int projectId)
+{
+    m_historyList.remove(projectId);
+}
+
+//--------------------------------------------------------------
+
+void PLMNoteListProxyModel::addHistory(int projectId, int paperId)
+{
+    QList<int> list = m_historyList.value(projectId, QList<int>());
+    list.append(paperId);
+    m_historyList.insert(projectId, list);
+}
+
+//--------------------------------------------------------------
 QString PLMNoteListProxyModel::getItemName(int projectId, int paperId)
 {
-    qDebug() << "getItemName" << projectId << paperId;
+    //qDebug() << "getItemName" << projectId << paperId;
     if(projectId == -2 || paperId == -2){
         return "";
     }
@@ -305,9 +464,83 @@ QString PLMNoteListProxyModel::getItemName(int projectId, int paperId)
             name = item->name();
         }
         else {
+            qDebug() << this->metaObject()->className() << "no valid item found";
             name = "";
         }
     }
 
     return name;
+}
+//--------------------------------------------------------------
+int PLMNoteListProxyModel::getItemIndent(int projectId, int paperId)
+{
+    if(projectId == -2 || paperId == -2){ // root item or error
+        return -2;
+    }
+    if(paperId == -1){ // project item
+        return -1;
+    }
+
+    int indent = -2;
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+    if(item){
+        indent = item->indent();
+    }
+
+
+    return indent;
+}
+
+
+//-----------------------------------------------------------------
+
+void PLMNoteListProxyModel::addItemAtEnd(int projectId, int parentPaperId, int visualIndex)
+{
+    //    PLMNoteItem *parentItem = this->getItem(projectId, parentPaperId);
+    //    if(!parentItem){
+    //        if(plmdata->projectHub()->getProjectCount() <= 1){
+
+    //        }
+    //        else if (plmdata->projectHub()->getProjectCount() > 1){
+
+    //        }
+    //        }
+
+    //    finalSortOrder = plmdata->noteHub()->getValidSortOrderAfterPaper(projectId, lastIdWithSameIndent);
+
+    PLMError error = plmdata->noteHub()->addChildPaper(projectId, parentPaperId);
+
+    this->invalidate();
+    this->setForcedCurrentIndex(visualIndex);
+
+}
+
+//--------------------------------------------------------------
+
+void PLMNoteListProxyModel::moveUp(int projectId, int paperId, int visualIndex)
+{
+
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+    if(!item){
+        return;
+    }
+    PLMError error = plmdata->noteHub()->movePaperUp(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex - 1);
+}
+
+//--------------------------------------------------------------
+
+void PLMNoteListProxyModel::moveDown(int projectId, int paperId, int visualIndex)
+{
+    //    PLMError error = plmdata->noteHub()->addChildPaper(projectId, paperId);
+
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+    if(!item){
+        return;
+    }
+    PLMError error = plmdata->noteHub()->movePaperDown(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex + 1);
+
 }

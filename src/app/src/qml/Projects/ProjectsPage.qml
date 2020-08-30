@@ -4,11 +4,11 @@ import ".."
 ProjectsPageForm {
     property string pageType: "projects"
 
+    // hide tabbar
     Connections {
         target: plmData.projectHub()
-        // @disable-check M16
         onProjectCountChanged: function (count){
-            if(count === 0){
+            if(count <= 1){
                 tabBar.visible = false
             }
             else {
@@ -18,17 +18,4 @@ ProjectsPageForm {
         }
     }
 
-    Connections {
-        target: plmData.projectHub()
-        // @disable-check M16
-        onProjectOpened: function (){
-            if(count === 0){
-                tabBar.visible = false
-            }
-            else {
-                tabBar.visible = true
-            }
-
-        }
-    }
 }

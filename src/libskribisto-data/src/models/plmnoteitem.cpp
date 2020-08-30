@@ -130,6 +130,10 @@ QVariant PLMNoteItem::data(int role)
             m_data.insert(role, plmdata->noteHub()->getContentDate(projectId, paperId));
             break;
 
+        case Roles::HasChildrenRole:
+            m_data.insert(role, plmdata->noteHub()->hasChildren(projectId, paperId));
+            break;
+
         case Roles::CharCountRole:
             m_data.insert(role,
                           plmdata->notePropertyHub()->getProperty(projectId, paperId,
@@ -164,16 +168,11 @@ PLMNoteItem * PLMNoteItem::parent(const QList<PLMNoteItem *>& itemList)
     }
 
 
-    if ((this->indent() == 0) &&
-            (plmdata->projectHub()->getProjectIdList().count() <= 1)) {
-        return nullptr;
-    }
-
     int index                        = itemList.indexOf(this);
     int indent                       = this->indent();
     int possibleParentIndex          = index - 1;
 
-    if(plmdata->projectHub()->getProjectIdList().count() <= 1 && possibleParentIndex == -1){ // first of list, no parent possible
+    if(possibleParentIndex == -1){ // first of list, so no real parent, parent is root item
         return nullptr;
     }
 
@@ -181,6 +180,9 @@ PLMNoteItem * PLMNoteItem::parent(const QList<PLMNoteItem *>& itemList)
 
     while (possibleParentItem->indent() >= indent) {
         possibleParentIndex -= 1;
+        if(possibleParentIndex == -1){
+            return nullptr;
+        }
         possibleParentItem   = itemList.at(possibleParentIndex);
     }
 
@@ -240,8 +242,7 @@ int PLMNoteItem::childrenCount(const QList<PLMNoteItem *>& itemList) {
         int childrenCount      = 0;
 
         // switch between multiple projects or one project
-        int parentIndent;
-        plmdata->projectHub()->getProjectIdList().count() > 1 ? parentIndent = -2 : parentIndent = -1;
+        int parentIndent = -2 ;
 
 
 
@@ -284,8 +285,6 @@ int PLMNoteItem::childrenCount(const QList<PLMNoteItem *>& itemList) {
     iterator.toFront();
     while(iterator.hasNext()){
         PLMNoteItem *nextItem = iterator.next();
-        QString thisTitle = this->data(PLMNoteItem::Roles::NameRole).toString();
-        QString nextTitle = nextItem->data(PLMNoteItem::Roles::NameRole).toString();
         if(nextItem->indent() > indent){
 
             if(nextItem->indent() == indent + 1){
@@ -303,6 +302,7 @@ int PLMNoteItem::childrenCount(const QList<PLMNoteItem *>& itemList) {
 
 PLMNoteItem * PLMNoteItem::child(const QList<PLMNoteItem *>& itemList, int row)
 {
+    // if this is root item :
     if (this->isRootItem()) {
         if (itemList.isEmpty()) {
             return nullptr;
@@ -313,9 +313,7 @@ PLMNoteItem * PLMNoteItem::child(const QList<PLMNoteItem *>& itemList, int row)
 
         // switch between multiple projects or one project
 
-
-        int parentIndent;
-        plmdata->projectHub()->getProjectIdList().count() > 1 ? parentIndent = -2 : parentIndent = -1;
+        int parentIndent = this->indent(); // = -2
 
 
 
@@ -328,7 +326,7 @@ PLMNoteItem * PLMNoteItem::child(const QList<PLMNoteItem *>& itemList, int row)
                     if(nextItem->indent() == parentIndent + 1){
                         childrenCount += 1;
                         if (childrenCount == row + 1){
-
+                            // found searched-for child
                             childItem = nextItem;
                             break;
                         }
@@ -390,6 +388,12 @@ bool PLMNoteItem::isRootItem() const
 void PLMNoteItem::setIsRootItem()
 {
     m_isRootItem = true;
+
+    m_data.clear();
+    m_invalidatedRoles.clear();
+    m_data.insert(Roles::PaperIdRole,          -2);
+    m_data.insert(Roles::IndentRole,           -2);
+    m_data.insert(Roles::SortOrderRole,     -90000000);
 }
 
 bool PLMNoteItem::isProjectItem() const
@@ -412,6 +416,7 @@ void PLMNoteItem::setIsProjectItem(int projectId)
     // TODO: add infoHub->getProjectName(projectId)
     // m_data.insert(Roles::NameRole, /*plmdata->infoHub()->*/ );
     this->invalidateData(Roles::ProjectNameRole);
+    this->invalidateData(Roles::HasChildrenRole);
 }
 
 int PLMNoteItem::projectId()

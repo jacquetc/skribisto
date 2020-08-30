@@ -1,9 +1,10 @@
 import QtQuick 2.12
 import Qt.labs.platform 1.1
 import ".."
-import eu.skribisto.recentprojectlistmodel 1.0
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
+import eu.skribisto.recentprojectlistmodel 1.0
+import eu.skribisto.plmerror 1.0
 
 
 ProjectPageForm {
@@ -90,8 +91,10 @@ ProjectPageForm {
 
     // path :
     projectPathTextField.text: {
-        var path = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)[0].toString()
-        path = path.replace(/^(file:\/{2})/,"")
+        //TODO : avoid empty writableLocation
+        var path = ""
+//                StandardPaths.writableLocation(StandardPaths.DocumentsLocation)[0].toString()
+//        path = path.replace(/^(file:\/{2})/,"")
 
         return path
 
