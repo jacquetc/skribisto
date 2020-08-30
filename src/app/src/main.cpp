@@ -206,17 +206,17 @@ int main(int argc, char *argv[])
                                               "PLMProjectHub",
                                               "Can't instantiate PLMProjectHub");
 
-    qmlRegisterUncreatableType<PLMSheetHub>("eu.skribisto.sheethub",
-                                            1,
-                                            0,
-                                            "PLMSheetHub",
-                                            "Can't instantiate PLMSheetHub");
-
     qmlRegisterUncreatableType<PLMNoteHub>("eu.skribisto.notehub",
                                             1,
                                             0,
                                             "PLMNoteHub",
                                             "Can't instantiate PLMNoteHub");
+
+    qmlRegisterUncreatableType<PLMSheetHub>("eu.skribisto.sheethub",
+                                            1,
+                                            0,
+                                            "PLMSheetHub",
+                                            "Can't instantiate PLMSheetHub");
 
     qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
                                             1,

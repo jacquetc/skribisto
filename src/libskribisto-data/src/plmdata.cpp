@@ -16,7 +16,7 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
                                             "l_sheet_code");
     m_noteHub         = new PLMNoteHub(this);
     m_notePropertyHub = new PLMPropertyHub(this,
-                                           "tbl_sheet_property",
+                                           "tbl_note_property",
                                            "l_note_code");
     m_pluginHub = new PLMPluginHub(this);
 

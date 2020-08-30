@@ -28,6 +28,7 @@
 
 class EXPORT PLMNoteHub : public PLMPaperHub
 {
+    Q_OBJECT
 public:
     PLMNoteHub(QObject *parent);
     int getSynopsisFromSheetCode(int projectId, int sheetId);
