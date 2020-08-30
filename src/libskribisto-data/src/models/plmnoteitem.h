@@ -48,7 +48,7 @@ public:
         HasChildrenRole  = Qt::UserRole + 11,
         CharCountRole = Qt::UserRole + 12,
         WordCountRole = Qt::UserRole + 13
-        // TODO: specific to notes:
+        // TODO: specific to note:
 
     };
     Q_ENUM(Roles)

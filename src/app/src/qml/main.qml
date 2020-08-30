@@ -67,7 +67,7 @@ ApplicationWindow {
             var projectId = plmData.projectHub().getDefaultProject()
             var error = plmData.projectHub().saveProject(projectId)
 
-            console.log("save !!!", error.getErrorCode())
+            console.log("save !!!", error.errorCode)
 
             if (error.errorCode === "E_PROJECT_NOPATH"){
                 console.log("E_PROJECT_NOPATH")

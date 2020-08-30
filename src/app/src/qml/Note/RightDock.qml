@@ -7,7 +7,7 @@ import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import ".."
 
-LeftDockForm {
+RightDockForm {
 
 
     SkrUserSettings {
@@ -35,25 +35,18 @@ LeftDockForm {
     //    }
 
 
-    //Navigation List :
     //-----------------------------------------------------------
 
-    PLMNoteListProxyModel {
-        id: proxyModel
+
+    Connections {
+        target: Globals
+        onOpenNoteCalled: function (projectId, paperId) {
+
+
+
+
+        }
     }
-
-    treeView.model: proxyModel
-    treeView.proxyModel: proxyModel
-
-    //    Connections {
-    //        target: Globals
-    //        onOpenSheetCalled: function (projectId, paperId) {
-
-    //           proxyModel.setCurrentPaperId(projectId, paperId)
-
-
-    //        }
-    //    }
 
 
 
@@ -66,11 +59,8 @@ LeftDockForm {
 
     //Document List :
     //-----------------------------------------------------------
-    documentView.model: plmModels.writeDocumentListModel()
-    documentView.documentModel: plmModels.writeDocumentListModel()
 
     //-----------------------------------------------------------
-
 
     //-----------------------------------------------------------
 
@@ -88,21 +78,16 @@ LeftDockForm {
 
     Settings {
         id: settings
-        category: "notesLeftDock"
+        category: "noteRightDock"
         //property string dockSplitView: "0"
         property bool dockFolded: false
-        property bool treeViewFrameFolded: treeViewFrame.folded ? true : false
-        property bool documentFrameFolded: documentFrame.folded ? true : false
+        property bool editFrameFolded: editFrame.folded ? true : false
+        property bool noteFrameFolded: editFrame.folded ? true : false
+//        property bool documentFrameFolded: documentFrame.folded ? true : false
         property int width: fixedWidth
     }
 
-    function setCurrentPaperId(projectId, paperId) {
-        proxyModel.setCurrentPaperId(projectId, paperId)
-    }
-    function setOpenedPaperId(projectId, paperId) {
-        treeView.openedProjectId = projectId
-        treeView.openedPaperId = paperId
-    }
+
 
 
     //    PropertyAnimation {
@@ -114,19 +99,12 @@ LeftDockForm {
     Component.onCompleted: {
         folded ? fold() : unfold()
 
-        treeViewFrame.folded = settings.treeViewFrameFolded
-        documentFrame.folded = settings.documentFrameFolded
+        editFrame.folded = settings.editFrameFolded
+        noteFrame.folded = settings.noteFrameFolded
 
-        //        splitView.restoreState(settings.dockSplitView
-        // treeView :
-        treeView.onOpenDocument.connect(Globals.openNoteCalled)
-        treeView.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
-
-        //
-
+        //        splitView.restoreState(settings.dockSplitView)
+        //treeView.onOpenDocument.connect(Globals.openSheetCalled)
         fixedWidth = settings.width
-
-
     }
     Component.onDestruction: {
         //        settings.dockSplitView = splitView.saveState()

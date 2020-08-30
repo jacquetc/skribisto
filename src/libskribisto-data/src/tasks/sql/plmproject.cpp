@@ -74,7 +74,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString& fileName) 
     }
     setType("SQLITE");
     IFOK(error) {
-        // sheet and notes sql tree :
+        // sheet and note sql tree :
         m_sheetTree = new PLMSheetTree(this, "tbl_sheet", "l_sheet_id", m_sqlDb);
         m_plmTreeForTableNameHash.insert("tbl_sheet", m_sheetTree);
         m_noteTree = new PLMNoteTree(this, "tbl_note", "l_note_id", m_sqlDb);

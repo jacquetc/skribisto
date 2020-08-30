@@ -5,7 +5,7 @@ import eu.skribisto.notehub 1.0
 import eu.skribisto.skrusersettings 1.0
 import ".."
 
-NotesPageForm {
+NotePageForm {
 
     id: root
 
@@ -22,7 +22,7 @@ NotesPageForm {
     //property int textAreaFixedWidth: SkrSettings.writeSettings.textWidth
     property var lastFocused: writingZone
 
-        property string pageType: "write"
+        property string pageType: "note"
 
 
 

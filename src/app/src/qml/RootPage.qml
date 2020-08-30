@@ -8,7 +8,7 @@ import eu.skribisto.projecthub 1.0
 
 import "Write"
 import "Welcome"
-import "Notes"
+import "Note"
 import "Gallery"
 import "Projects"
 
@@ -77,8 +77,8 @@ RootPageForm {
         }
 
         Action {
-            id: notesWindowAction
-            text: qsTr("Notes")
+            id: noteWindowAction
+            text: qsTr("Note")
             icon {
                 name: "story-editor"
                 color: "transparent"
@@ -90,7 +90,7 @@ RootPageForm {
             checkable: true
             onTriggered: {
 
-                notesPage.forceActiveFocus()
+                notePage.forceActiveFocus()
             }
         }
         Action {
@@ -320,7 +320,7 @@ RootPageForm {
 
     welcomeTab.action: welcomeWindowAction
     writeTab.action: writeWindowAction
-    notesTab.action: notesWindowAction
+    noteTab.action: noteWindowAction
     galleryTab.action: galleryWindowAction
     projectTab.action: projectWindowAction
 
