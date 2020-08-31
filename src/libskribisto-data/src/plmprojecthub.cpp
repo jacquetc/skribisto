@@ -1,5 +1,7 @@
 #include "plmprojecthub.h"
+#include <QDateTime>
 #include <QDebug>
+#include <QFileInfo>
 #include <QVariant>
 #include "tasks/plmprojectmanager.h"
 #include "tasks/plmsqlqueries.h"
@@ -97,6 +99,77 @@ PLMError PLMProjectHub::saveProjectAs(int            projectId,
         emit projectSaved(projectId);
     }
     return error;
+}
+
+PLMError PLMProjectHub::saveAProjectCopy(int projectId, const QString &type, const QString &path)
+{
+    PLMError error;
+
+    // firstly, save the project
+    error = this->saveProjectAs(projectId, type, path);
+    // then create a copy
+    IFOK(error) {
+        error = plmProjectManager->saveProjectAs(projectId, type, path, true);
+    }
+    return error;
+}
+
+
+PLMError PLMProjectHub::backupAProject(int projectId, const QString &type, const QString &folderPath){
+
+
+    PLMError error;
+
+    QString projectPath = this->getPath(projectId);
+    if (projectPath == ""){
+        error.addData(projectId);
+            error.setSuccess(false);
+            error.setErrorCode("E_PROJECT_no_path");
+}
+    IFOK(error){
+        // verify backup path
+        QFileInfo folderInfo(folderPath);
+        if(!folderInfo.exists()){
+            error.addData(projectId);
+                error.setSuccess(false);
+                error.setErrorCode("E_PROJECT_path_dont_exist");
+
+        }
+        if(!folderInfo.isDir()){
+            error.addData(projectId);
+                error.setSuccess(false);
+                error.setErrorCode("E_PROJECT_path_not_a_directory");
+
+        }
+        if(!folderInfo.isWritable()){
+            error.addData(projectId);
+                error.setSuccess(false);
+                error.setErrorCode("E_PROJECT_path_not_writable");
+
+        }
+    }
+
+
+    // determine file base
+    QFileInfo info(projectPath);
+      QString  backupFile = info.canonicalPath() + "/" + info.completeBaseName();
+
+      // add date and time :
+      QDateTime now = QDateTime::currentDateTime();
+      QString nowText = now.toString("_yyyy-MM-dd-HHmmss");
+      backupFile = backupFile + nowText;
+
+      //add suffix :
+backupFile = backupFile + "." + type;
+
+      // firstly, save the project
+    IFOKDO(error, this->saveProjectAs(projectId, type, backupFile));
+    // then create a copy
+    IFOK(error) {
+        error = plmProjectManager->saveProjectAs(projectId, type, backupFile, true);
+    }
+    return error;
+
 }
 
 PLMError PLMProjectHub::closeProject(int projectId)

@@ -28,6 +28,12 @@ PLMSheetListModel::PLMSheetListModel(QObject *parent)
             this,
             &PLMSheetListModel::refreshAfterDataMove);
 
+    connect(plmdata->sheetHub(),
+            &PLMSheetHub::deletedChanged, // careful, paper is deleted = true, not a true removal
+            this,
+            &PLMSheetListModel::refreshAfterDeletedStateChanged);
+
+
     this->connectToPLMDataSignals();
 }
 
@@ -519,6 +525,26 @@ void PLMSheetListModel::refreshAfterDataMove(int sourceProjectId, int sourcePape
     m_allSheetItems.insert(targetIndex, tempItem);
 
     endMoveRows();
+}
+
+//--------------------------------------------------------------------
+///
+/// \brief PLMSheetListModel::refreshAfterDataDeletion
+/// \param projectId
+/// \param paperId
+/// \param newDeletedState
+/// careful, paper is deleted = true, not a true removal
+void PLMSheetListModel::refreshAfterDeletedStateChanged(int projectId, int paperId, bool newDeletedState)
+{
+    Q_UNUSED(projectId)
+    Q_UNUSED(paperId)
+    Q_UNUSED(newDeletedState)
+
+    for(PLMSheetItem *item : m_allSheetItems){
+        item->invalidateData(PLMSheetItem::Roles::SortOrderRole);
+        item->invalidateData(PLMSheetItem::Roles::HasChildrenRole); // needed to refresh the parent item when no child anymore
+    }
+
 }
 
 //--------------------------------------------------------------------

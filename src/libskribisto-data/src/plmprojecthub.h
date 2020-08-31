@@ -40,6 +40,10 @@ public:
     Q_INVOKABLE PLMError             saveProjectAs(int            projectId,
                                        const QString& type,
                                        const QString& path);
+    Q_INVOKABLE PLMError             saveAProjectCopy(int            projectId,
+                                       const QString& type,
+                                       const QString& path);
+    Q_INVOKABLE PLMError backupAProject(int projectId, const QString &type, const QString &folderPath);
     Q_INVOKABLE PLMError             closeProject(int projectId);
     Q_INVOKABLE PLMError             closeAllProjects();
     Q_INVOKABLE QList<int>           getProjectIdList();

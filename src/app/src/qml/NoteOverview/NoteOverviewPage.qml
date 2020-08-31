@@ -8,6 +8,12 @@ import ".."
 NoteOverviewPageForm {
     property string pageType: "noteOverview"
 
+    Component.onCompleted: {
+        if(!Globals.compactSize){
+            leftDrawer.close()
+            leftDrawer.interactive = false
+        }
+    }
 
     //-------------------------------------------------------------
     //-------Left Dock------------------------------------------

@@ -54,6 +54,11 @@ ApplicationWindow {
     }
 
 
+
+    //------------------------------------------------------------------
+    //---------Save---------
+    //------------------------------------------------------------------
+
     Action {
 
         id: saveAction
@@ -98,30 +103,11 @@ ApplicationWindow {
 
     }
 
-    Action {
-
-        id: saveAsAction
-        text: qsTr("Save as...")
-        icon {
-            name: "document-save-as"
-            height: 50
-            width: 50
-        }
-
-        shortcut: StandardKey.SaveAs
-        onTriggered: {
-            var projectId = plmData.projectHub().getDefaultProject()
-            saveAsFileDialog.open()
 
 
-
-
-
-
-
-
-        }
-    }
+    //------------------------------------------------------------------
+    //---------Save All---------
+    //------------------------------------------------------------------
 
     Action {
 
@@ -164,12 +150,42 @@ ApplicationWindow {
     }
 
 
+    //------------------------------------------------------------------
+    //---------Save As---------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: saveAsAction
+        text: qsTr("Save as...")
+        icon {
+            name: "document-save-as"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.SaveAs
+        onTriggered: {
+            var projectId = plmData.projectHub().getDefaultProject()
+            saveACopyFileDialog.projectId = projectId
+            saveACopyFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
+            saveAsFileDialog.open()
+
+
+
+
+
+
+
+
+        }
+    }
     FileDialog{
         property int projectId: -2
         property string projectName: ""
 
         id: saveAsFileDialog
-        title: qsTr("Save the %1 project as ...").arg(projectName)
+        title: qsTr("Save the \"%1\" project as ...").arg(projectName)
         modality: Qt.ApplicationModal
         folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
         fileMode: FileDialog.SaveFile
@@ -212,6 +228,86 @@ ApplicationWindow {
         onAccepted: saveAsFileDialog.open()
     }
 
+
+    //------------------------------------------------------------------
+    //---------Save A Copy---------
+    //------------------------------------------------------------------
+
+
+    Action {
+
+        id: saveACopyAction
+        text: qsTr("Save a Copy")
+        icon {
+            name: "document-save-as-template"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.SaveAs
+        onTriggered: {
+            var projectId = plmData.projectHub().getDefaultProject()
+            saveACopyFileDialog.projectId = projectId
+            saveACopyFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
+            saveACopyFileDialog.open()
+
+
+
+
+
+
+
+
+        }
+    }
+
+    FileDialog{
+        property int projectId: -2
+        property string projectName: ""
+
+        id: saveACopyFileDialog
+        title: qsTr("Save a copy of the \"%1\" project as ...").arg(projectName)
+        modality: Qt.ApplicationModal
+        folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        fileMode: FileDialog.SaveFile
+        selectedNameFilter.index: 0
+        nameFilters: ["Skribisto file (*.skrib)"]
+        onAccepted: {
+
+            var file = saveACopyFileDialog.file.toString()
+            file = file.replace(/^(file:\/{2})/,"");
+
+            if(file.indexOf(".skrib") === -1){ // not found
+                file = file + ".skrib"
+            }
+            if(projectId == -2){
+                projectId = plmData.projectHub().getDefaultProject()
+            }
+            console.log("FileDialog :" , projectId)
+
+            if(projectName == ""){
+                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+            }
+
+            var error = plmData.projectHub().saveAProjectCopy(projectId, "skrib", file)
+
+            if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+                // Dialog:
+                saveACopyFileDialog.open()
+
+            }
+
+        }
+        onRejected: {
+
+        }
+    }
+    SimpleDialog {
+        id: pathIsReadOnlySaveACopydialog
+        title: "Error"
+        text: qsTr("This path is read-only, please choose another path.")
+        onAccepted: saveACopyFileDialog.open()
+    }
     //    Shortcut {
     //        sequence: StandardKey.Save
     //        context: Qt.ApplicationShortcut
@@ -288,6 +384,77 @@ ApplicationWindow {
     }
 
 
+
+    //------------------------------------------------------------
+    //------------Back up-----------------------------------
+    //------------------------------------------------------------
+
+    Action {
+
+        id: backUpAction
+        text: qsTr("Back up")
+        icon {
+            name: "tools-media-optical-burn-image"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.SaveAs
+        onTriggered: {
+
+
+            var backupPaths = SkrSettings.backupSettings.paths
+            var backupPathList = backupPaths.split(";")
+
+
+
+            var projectIdList = plmData.projectHub().getProjectIdList()
+            var projectCobackUpButtonunt = plmData.projectHub().getProjectCount()
+            console.log("z")
+
+            // all projects :
+            var i;
+            for (i = 0; i < projectCount ; i++ ){
+                var projectId = projectIdList[i]
+
+                //no backup path set
+                if (backupPaths === ""){
+                    //TODO: send notification, backup not configured
+
+                    break
+                }
+                //no backup path set
+                if (plmData.projectHub().getPath(projectId) === ""){
+                    //TODO: send notification, project not yet saved once
+
+                    break
+                }
+
+                // in all backup paths :
+                var j;
+                for (j = 0; j < backupPathList.length ; j++ ){
+                    var path = backupPathList[j]
+                    console.log("b")
+
+                    if (path === ""){
+                        //TODO: send notification
+                        continue
+                    }
+                    console.log("c")
+
+
+                    var error = plmData.projectHub().backupAProject(projectId, "skrib", path)
+
+                    if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+
+
+                    }
+
+                }
+            }
+
+        }
+    }
 
     //------------------------------------------------------------
     //------------Close logic-----------------------------------

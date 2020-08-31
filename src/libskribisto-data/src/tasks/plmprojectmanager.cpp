@@ -59,7 +59,7 @@ PLMError PLMProjectManager::saveProject(int projectId)
 
 PLMError PLMProjectManager::saveProjectAs(int            projectId,
                                           const QString& type,
-                                          const QString& path)
+                                          const QString& path, bool isCopy)
 {
     PLMError error;
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
@@ -86,7 +86,10 @@ PLMError PLMProjectManager::saveProjectAs(int            projectId,
     PLMExporter exporter(this);
     IFOKDO(error, exporter.exportSQLiteDbTo(project, type, path));
     IFOK(error) {
-        project->setPath(path);
+        // if it's a true save and not a copy :
+        if (!isCopy){
+            project->setPath(path);
+        }
     }
     return error;
 }

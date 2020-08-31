@@ -67,6 +67,8 @@ WritePageForm {
 
     Component.onCompleted: {
         if(!Globals.compactSize){
+            leftDrawer.close()
+            leftDrawer.interactive = false
             rightDrawer.close()
             rightDrawer.interactive = false
         }

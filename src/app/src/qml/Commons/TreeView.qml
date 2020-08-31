@@ -986,6 +986,7 @@ TreeViewForm {
                         console.log("delete action", model.projectId,
                                     model.paperId)
                         model.deleted = true
+
                     }
                 }
                 MenuSeparator {}

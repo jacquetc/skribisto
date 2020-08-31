@@ -229,7 +229,15 @@ PLMError PLMPaperHub::setIndent(int projectId, int paperId, int newIndent)
 
 int PLMPaperHub::getIndent(int projectId, int paperId) const
 {
-    return get(projectId, paperId, "l_indent").toInt();
+
+    int indent;
+    if (paperId == -1) // is project item
+        indent = -1;
+    else {
+        indent = get(projectId, paperId, "l_indent").toInt();
+    }
+
+    return indent;
 }
 
 // ------------------------------------------------------------
@@ -422,9 +430,6 @@ QDateTime PLMPaperHub::getContentDate(int projectId, int paperId) const
 bool PLMPaperHub::hasChildren(int projectId, int paperId) const
 {
 
-    if(paperId == -1){ // project item in multiple projects
-        return true;
-    }
 
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -433,14 +438,24 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
     QList<int> idList;
     IFOKDO(error, queries.getSortedIds(idList));
 
+    if (paperId == -1 && idList.isEmpty()){// project item with nothing else
+        return false;
+    }
     if(paperId == idList.last()){
         return false;
     }
 
     int indent     = getIndent(projectId, paperId);
 
-    int possibleFirstChildId = idList.at(idList.indexOf(paperId) + 1);
+    int possibleFirstChildId;
+    if (paperId == -1) { // project item
 
+
+        possibleFirstChildId = idList.at(0); // first real paper in table
+    }
+    else {
+        possibleFirstChildId = idList.at(idList.indexOf(paperId) + 1);
+    }
 
 
     int possibleFirstChildIndent = getIndent(projectId, possibleFirstChildId);
@@ -459,7 +474,7 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
             }
             if(indent == possibleFirstChildIndent){
                 if(getDeleted(projectId, childId) == false){
-                        haveOneNotDeletedChild = true;
+                    haveOneNotDeletedChild = true;
                 }
             }
         }
@@ -489,6 +504,8 @@ int PLMPaperHub::getTopPaperId(int projectId) const
             break;
         }
     }
+
+
 
     return result;
 }

@@ -21,6 +21,8 @@ Item {
     property alias saveButton: saveButton
     property alias saveAsButton: saveAsButton
     property alias saveAllButton: saveAllButton
+    property alias saveACopyButton: saveACopyButton
+    property alias backUpButton: backUpButton
 
     property alias openProjectButton: openProjectButton
     property alias recentListView: recentListView
@@ -72,6 +74,20 @@ Item {
                                     text: qsTr("Save as")
                                     icon {
                                         name: "document-save-as"
+                                    }
+                                }
+                                Button {
+                                    id: saveACopyButton
+                                    text: qsTr("Save a copy")
+                                    icon {
+                                        name: "document-save-as-template"
+                                    }
+                                }
+                                Button {
+                                    id: backUpButton
+                                    text: qsTr("Back up")
+                                    icon {
+                                        name: "tools-media-optical-burn-image"
                                     }
                                 }
                                 Button {

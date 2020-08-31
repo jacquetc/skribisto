@@ -13,6 +13,12 @@ QtObject {
 
     }
 
+    property Settings backupSettings: Settings{
+        category: "backup"
+        property string paths: ""
+
+    }
+
     property Settings welcomeSettings: Settings{
         category: "welcome"
         property bool createEmptyProjectAtStart: false

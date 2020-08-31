@@ -9,6 +9,12 @@ WriteOverviewPageForm {
     property string pageType: "writeOverview"
 
 
+    Component.onCompleted: {
+        if(!Globals.compactSize){
+            leftDrawer.close()
+            leftDrawer.interactive = false
+        }
+    }
     //-------------------------------------------------------------
     //-------Left Dock------------------------------------------
     //-------------------------------------------------------------

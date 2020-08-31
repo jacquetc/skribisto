@@ -17,6 +17,8 @@ ProjectPageForm {
     saveButton.action: saveAction
     saveAsButton.action: saveAsAction
     saveAllButton.action: saveAllAction
+    saveACopyButton.action: saveACopyAction
+    backUpButton.action: backUpAction
 
     createEmpyProjectAtStartSwitch.checked: SkrSettings.welcomeSettings.createEmptyProjectAtStart
     Binding {

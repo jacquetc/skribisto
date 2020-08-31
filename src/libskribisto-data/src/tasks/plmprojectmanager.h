@@ -22,7 +22,7 @@ public:
     PLMError createNewEmptyDatabase(int &projectId);
     PLMError loadProject(const QString &fileName, int &projectId);
     PLMError saveProject(int projectId);
-    PLMError saveProjectAs(int projectId, const QString &type, const QString &path);
+    PLMError saveProjectAs(int projectId, const QString &type, const QString &path, bool isCopy=false);
     PLMProject *project(int projectId);
     QList<int> projectIdList();
     PLMError closeProject(int projectId);

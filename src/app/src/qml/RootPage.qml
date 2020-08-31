@@ -187,7 +187,6 @@ RootPageForm {
     //    property bool fullscreen_left_dock_folded: false
     //    Connections {
     //        target: Globals
-    //        // @disable-check M16
     //        onFullScreenCalled: function (value) {
     //            if(value){
     //                //save previous conf
@@ -210,16 +209,22 @@ RootPageForm {
         target: plmData.projectHub()
         onProjectLoaded: function (projectId) {
 
-            // get last sheet id from e=settings or get top sheet id
-
+            // get last sheet id from settings or get top sheet id
             var topPaperId = plmData.sheetHub().getTopPaperId(projectId)
             console.log("topPaperId ::", topPaperId)
+
+            // when no result (e.g. empty table) :
+            if(topPaperId === -2){
+                return;
+            }
+
             var paperId = skrUserSettings.getProjectSetting(projectId, "writeCurrentPaperId", topPaperId)
             //            console.log("paperId ::", paperId)
             //            console.log("projectId ::", projectId)
             projectIdForProjectLoading = projectId
             paperIdForProjectLoading = paperId
 
+            // verify if the paperId really exists
             var isPresent = false
             var idList = plmData.sheetHub().getAllIds(projectId)
             var count = idList.length
