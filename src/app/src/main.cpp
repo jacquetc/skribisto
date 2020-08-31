@@ -29,6 +29,8 @@ using namespace std;
 #include "plmutils.h"
 #include "models/plmsheetlistproxymodel.h"
 #include "models/plmnotelistproxymodel.h"
+#include "models/plmdeletedsheetlistproxymodel.h"
+#include "models/plmdeletednotelistproxymodel.h"
 #include "models/plmmodels.h"
 #include "skrrecentprojectlistmodel.h"
 #include "skrusersettings.h"
@@ -241,6 +243,16 @@ int main(int argc, char *argv[])
                                        1,
                                        0,
                                        "PLMNoteListProxyModel");
+
+    qmlRegisterType<PLMDeletedNoteListProxyModel>("eu.skribisto.deletednotelistproxymodel",
+                                       1,
+                                       0,
+                                       "PLMDeletedNoteListProxyModel");
+
+    qmlRegisterType<PLMDeletedSheetListProxyModel>("eu.skribisto.deletedsheetlistproxymodel",
+                                       1,
+                                       0,
+                                       "PLMDeletedSheetListProxyModel");
 
     qmlRegisterType<SKRRecentProjectListModel>("eu.skribisto.recentprojectlistmodel",
                                        1,

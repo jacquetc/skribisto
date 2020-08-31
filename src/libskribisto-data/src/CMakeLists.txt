@@ -53,6 +53,9 @@ set(data_SRCS
     models/plmpropertiesproxymodel.cpp
     models/plmsheetitem.cpp
     models/plmmodels.cpp
+    models/plmdeletedsheetlistproxymodel.cpp
+    models/plmdeletednotelistproxymodel.cpp
+
     )
 set(data_HDR
     plmcoreinterface.h
@@ -102,7 +105,8 @@ set(data_HDR
     models/plmpropertiesproxymodel.h
     models/plmsheetitem.h
     models/plmmodels.h
-
+    models/plmdeletedsheetlistproxymodel.h
+    models/plmdeletednotelistproxymodel.h
     )
 
 set(QRC

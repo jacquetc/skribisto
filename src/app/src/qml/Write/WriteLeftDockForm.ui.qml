@@ -12,8 +12,8 @@ Item {
     //    property alias splitView: splitView
     property alias documentFrame: documentFrame
     property alias documentView: documentView
-    property alias treeViewFrame: treeViewFrame
-    property alias treeView: treeView
+    property alias navigationFrame: navigationFrame
+    property alias navigation: navigation
 
     Pane {
         id: dockPane
@@ -52,7 +52,7 @@ Item {
                                 width: scrollView.width
 
                                 DockFrame {
-                                    id: treeViewFrame
+                                    id: navigationFrame
                                     folded: true
                                     title: qsTr("Navigation")
                                     //                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
@@ -62,8 +62,8 @@ Item {
                                     contentHeight: 400
                                     Layout.minimumWidth: 100
 
-                                    TreeView {
-                                        id: treeView
+                                    Navigation {
+                                        id: navigation
                                         clip: true
                                     }
                                 }

@@ -3,6 +3,7 @@ import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import Qt.labs.settings 1.1
 import eu.skribisto.notelistproxymodel 1.0
+import eu.skribisto.deletednotelistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import ".."
@@ -42,8 +43,12 @@ LeftDockForm {
         id: proxyModel
     }
 
-    treeView.model: proxyModel
-    treeView.proxyModel: proxyModel
+    navigation.treeListViewProxyModel: proxyModel
+
+    PLMDeletedNoteListProxyModel {
+        id: deletedNoteProxyModel
+    }
+    navigation.deletedListViewProxyModel: deletedNoteProxyModel
 
     //    Connections {
     //        target: Globals
@@ -91,7 +96,7 @@ LeftDockForm {
         category: "noteLeftDock"
         //property string dockSplitView: "0"
         property bool dockFolded: false
-        property bool treeViewFrameFolded: treeViewFrame.folded ? true : false
+        property bool navigationFrameFolded: navigationFrame.folded ? true : false
         property bool documentFrameFolded: documentFrame.folded ? true : false
         property int width: fixedWidth
     }
@@ -100,13 +105,13 @@ LeftDockForm {
         proxyModel.setCurrentPaperId(projectId, paperId)
     }
     function setOpenedPaperId(projectId, paperId) {
-        treeView.openedProjectId = projectId
-        treeView.openedPaperId = paperId
+        navigation.openedProjectId = projectId
+        navigation.openedPaperId = paperId
     }
 
 
     //    PropertyAnimation {
-    //        target: writeTreeViewFrame
+    //        target: writeNavigationFrame
     //        property: "SplitView.preferredHeight"
     //        duration: 500
     //        easing.type: Easing.InOutQuad
@@ -114,13 +119,13 @@ LeftDockForm {
     Component.onCompleted: {
         folded ? fold() : unfold()
 
-        treeViewFrame.folded = settings.treeViewFrameFolded
+        navigationFrame.folded = settings.navigationFrameFolded
         documentFrame.folded = settings.documentFrameFolded
 
         //        splitView.restoreState(settings.dockSplitView
-        // treeView :
-        treeView.onOpenDocument.connect(Globals.openNoteCalled)
-        treeView.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+        // navigation :
+        navigation.onOpenDocument.connect(Globals.openNoteCalled)
+        navigation.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
 
         //
 

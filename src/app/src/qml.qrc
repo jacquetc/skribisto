@@ -21,8 +21,8 @@
         <file>qml/Write/WritePageForm.ui.qml</file>
         <file>qml/Note/NotePage.qml</file>
         <file>qml/Note/NotePageForm.ui.qml</file>
-        <file>qml/Commons/TreeView.qml</file>
-        <file>qml/Commons/TreeViewForm.ui.qml</file>
+        <file>qml/Commons/Navigation.qml</file>
+        <file>qml/Commons/NavigationForm.ui.qml</file>
         <file>qml/Welcome/SettingsPage.qml</file>
         <file>qml/Welcome/SettingsPageForm.ui.qml</file>
         <file>qml/Welcome/ProjectPage.qml</file>
@@ -31,7 +31,7 @@
         <file>qml/Welcome/HelpPageForm.ui.qml</file>
         <file>qml/Welcome/ExamplePage.qml</file>
         <file>qml/Welcome/ExamplePageForm.ui.qml</file>
-        <file>qml/Commons/TreeListView.qml</file>
+        <file>qml/Commons/TreeListViewForm.ui.qml</file>
         <file>qml/Commons/DocumentListView.qml</file>
         <file>qml/Commons/DocumentListViewForm.ui.qml</file>
         <file>qml/Write/WriteRightDock.qml</file>
@@ -62,5 +62,8 @@
         <file>qml/NoteOverview/LeftDockForm.ui.qml</file>
         <file>qml/NoteOverview/NoteOverviewPageForm.ui.qml</file>
         <file>qml/Commons/SimpleDialog.qml</file>
+        <file>qml/Commons/TreeListView.qml</file>
+        <file>qml/Commons/DeletedListView.qml</file>
+        <file>qml/Commons/DeletedListViewForm.ui.qml</file>
     </qresource>
 </RCC>

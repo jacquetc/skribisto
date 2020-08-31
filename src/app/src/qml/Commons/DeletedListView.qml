@@ -3,7 +3,7 @@ import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
 import QtQml.Models 2.12
 
-TreeListViewForm {
+DeletedListViewForm {
     id: root
 
     property var proxyModel
@@ -11,12 +11,12 @@ TreeListViewForm {
     onModelChanged: {
         visualModel.model = model
     }
-
     signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openDocumentInNewTab(int projectId, int paperId)
-    signal showDeletedList()
 
-    property int currentParent: -2
+
+
+
     property int currentProject: -2
     property int currentPaperId: -2
     property int currentIndex: listView.currentIndex
@@ -51,105 +51,33 @@ TreeListViewForm {
 
     //-----------------------------------------------------------------------------
     // go up button :
-    property bool goUpButtonEnabled: true
 
-    goUpToolButton.action: goUpAction
+    signal goBack()
 
-    Action {
-        id: goUpAction
-        text: qsTr("Go up")
-        //shortcut: "Left,Backspace" Doesn't work well
-        icon {
-            name: "go-parent-folder"
-        }
-        //enabled:
-        onTriggered: {
-            currentParent = proxyModel.goUp()
-            listView.currentIndex = proxyModel.getLastOfHistory(currentProject)
-            proxyModel.removeLastOfHistory(currentProject)
-
-        }
-    }
-    function determineIfGoUpButtonEnabled() {
-        var currentIndent = proxyModel.getItemIndent(currentProject, currentParent) + 1
-        //console.log("determineIfGoUpButtonEnabled", currentIndent)
-        if(!root.visible){
-            goUpAction.enabled = false
-            return
-        }
-        if(currentIndent <= -1){
-            goUpAction.enabled = false
-
-        }
-        else {
-            goUpAction.enabled = true
+    goBackToolButton.action: Action {
+        id: goBackAction
+        text: "<"
+        icon.name: "go-previous"
+        onTriggered:{
+            goBack()
         }
     }
 
-    onVisibleChanged: {
-        determineIfGoUpButtonEnabled()
-    }
 
 
 
 
-
-
-    //-----------------------------------------------------------------------------
-    // current parent button :
-    Binding {
-        target: root
-        property: "currentProject"
-        value: proxyModel.projectIdFilter
-    }
-    Binding {
-        target: root
-        property: "currentParent"
-        value: proxyModel.parentIdFilter
-    }
-    //currentParent: proxyModel.parentIdFilter
-    //currentProject: proxyModel.projectIdFilter
-    onCurrentParentChanged: {
-        determineIfGoUpButtonEnabled()
-
-
-        if (currentParent != -2 & currentProject != -2) {
-            currentParentToolButton.text = proxyModel.getItemName(
-                        currentProject, currentParent)
-            //console.log("onCurrentParentChanged")
-        }
-        // clear :
-        if (currentParent === -2 & currentProject === -2 ){
-            currentParentToolButton.text = ""
-        }
-    }
-    onCurrentProjectChanged: {
-        if (currentParent != -2 & currentProject != -2) {
-            currentParentToolButton.text = proxyModel.getItemName(
-                        currentProject, currentParent)
-            //console.log("onCurrentProjectChanged")
-        }
-        // clear :
-        if (currentParent === -2 & currentProject === -2 ){
-            currentParentToolButton.text = ""
-        }
-    }
-
-    currentParentToolButton.onClicked: {
-
-        //currentParent
-    }
 
     //----------------------------------------------------------------------------
 
 
     //----------------------------------------------------------------------------
-    treeMenuToolButton.icon.name: "overflow-menu"
-    treeMenuToolButton.onClicked: navigationMenu.open()
+    listMenuToolButton.icon.name: "overflow-menu"
+    listMenuToolButton.onClicked: navigationMenu.open()
 
     Menu {
         id: navigationMenu
-        y: treeMenuToolButton.height
+        y: listMenuToolButton.height
 
         //        Action {
         //            text: qsTr("Rename")
@@ -160,52 +88,38 @@ TreeListViewForm {
         //            text: qsTr("Remove")
         //        }
         //        MenuSeparator {}
-        Action {
-            text: qsTr("Paste")
-            shortcut: StandardKey.Paste
-            icon.name: "edit-paste"
-        }
-        Menu {
 
-            title: qsTr("Advanced")
-            Action {
-                text: qsTr("Sort alphabetically")
-                icon.name: "view-sort-ascending-name"
+        Action {
+            text: qsTr("Empty the trash")
+            shortcut: "Ctrl+Shift+Del"
+            icon.name: "edit-delete-shred"
+            onTriggered: {
+
             }
-        }
-
-        MenuSeparator{}
-
-        Action {
-            text: qsTr("Trash")
-            //shortcut: StandardKey.Paste
-            icon.name: "edit-delete"
-            onTriggered: showDeletedList()
         }
 
     }
 
     //----------------------------------------------------------------------------
-    // add button :
+    // restore button :
 
     Action {
-        id: addPaperAction
-        text: qsTr("Add")
-        shortcut: "Ctrl+T"
+        id: restoreAction
+        text: qsTr("Restore")
+        //shortcut: ""
         enabled: listView.focus === true
         icon{
-            name: "document-new"
+            name: "edit-undo"
             height: 100
             width: 100
         }
         onTriggered: {
-            proxyModel.addItemAtEnd(currentProject, currentParent,
-                                    visualModel.items.count)
-            listView.currentItem.editName()
+
+
         }
     }
 
-    addToolButton.action: addPaperAction
+    restoreToolButton.action: restoreAction
 
     //----------------------------------------------------------------------------
 
@@ -225,8 +139,8 @@ TreeListViewForm {
     //    }
     Shortcut {
         sequences: ["Left", "Backspace"]
-        onActivated: goUpAction.trigger()
-        enabled: listView.activeFocus
+        onActivated: goBackAction.trigger()
+        //enabled: listView.activeFocus
     }
     //-----------------------------------------------------------------------------
     Component.onCompleted: {
@@ -258,9 +172,6 @@ TreeListViewForm {
 
     //----------------------------------------------------------------------------
 
-    // used to remember the source when moving an item
-    property int moveSourceInt: -2
-
     //used to differenciante tapCount between ItemSelectionModel
     property int tapCountIndex: -2
 
@@ -276,20 +187,9 @@ TreeListViewForm {
     Component {
         id: dragDelegate
 
-       DropArea {
+       Item {
             id: delegateRoot
 
-            onEntered: {
-
-                content.sourceIndex = drag.source.visualIndex
-                visualModel.items.move(drag.source.visualIndex,
-                                       content.visualIndex)
-            }
-
-            onDropped: {
-                console.log("dropped : ", moveSourceInt, content.visualIndex)
-                proxyModel.moveItem(moveSourceInt, content.visualIndex)
-            }
             property int visualIndex: {
                 return DelegateModel.itemsIndex
             }
@@ -334,11 +234,6 @@ TreeListViewForm {
             Keys.priority: Keys.AfterItem
 
             Keys.onPressed: {
-                if (event.key === Qt.Key_Right){
-                  console.log("Right key pressed")
-                    goToChildAction.trigger()
-                    event.accepted = true
-                }
                 if (event.key === Qt.Key_Return){
                   console.log("Return key pressed")
                     openDocumentAction.trigger()
@@ -365,32 +260,11 @@ TreeListViewForm {
                 width: delegateRoot.width
                 height: 40
 
-                Drag.active: dragHandler.active
-                Drag.source: content
-                Drag.hotSpot.x: width / 2
-                Drag.hotSpot.y: height / 2
-
-                color: dragHandler.active | !tapHandler.enabled ? "lightsteelblue" : "white"
+                color: !tapHandler.enabled ? "lightsteelblue" : "white"
                 Behavior on color {
                     ColorAnimation {
                         duration: 100
                     }
-                }
-
-                DragHandler {
-                    id: dragHandler
-                    //acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
-                    //xAxis.enabled: false
-                    //grabPermissions: PointerHandler.TakeOverForbidden
-                    onActiveChanged: {
-                        if (active) {
-                            moveSourceInt = content.visualIndex
-                        } else {
-                            content.Drag.drop()
-                            tapHandler.enabled = true
-                        }
-                    }
-                    enabled: !tapHandler.enabled
                 }
 
                 HoverHandler {
@@ -464,16 +338,6 @@ TreeListViewForm {
                         openDocumentInNewTabAction.trigger()
 
                     }
-                }
-                /// without MouseArea, it breaks while dragging and scrolling:
-                MouseArea {
-                    anchors.fill: parent
-                    onWheel: {
-                        listView.flick(0, wheel.angleDelta.y * 50)
-                        wheel.accepted = true
-                    }
-
-                    enabled: dragHandler.enabled
                 }
 
                 Action {
@@ -576,7 +440,13 @@ TreeListViewForm {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
-
+                        Rectangle {
+                            id: deletedIndicator
+                            color: "#b50003"
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: 5
+                            visible: model.deleted
+                        }
                         Rectangle {
                             id: currentItemIndicator
                             color: "#cccccc"
@@ -591,6 +461,7 @@ TreeListViewForm {
                             Layout.preferredWidth: 5
                             visible: model.projectId === openedProjectId && model.paperId === openedPaperId
                         }
+
 
                         Rectangle {
                             color: "transparent"
@@ -708,15 +579,6 @@ TreeListViewForm {
                             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                             visible: hoverHandler.hovered | content.isCurrent
                             focusPolicy: Qt.NoFocus
-                        }
-                        Label {
-                            id: hasChildrenLabel
-                            Layout.preferredWidth: 30
-                            Layout.fillHeight: true
-                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            text: ">"
-                            visible: model.hasChildren & !(hoverHandler.hovered | content.isCurrent)
-
                         }
 
 
@@ -1041,4 +903,6 @@ TreeListViewForm {
             // move :
         }
     }
+
+
 }
