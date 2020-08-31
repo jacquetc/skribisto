@@ -27,6 +27,12 @@ PLMNoteListModel::PLMNoteListModel(QObject *parent)
             this,
             &PLMNoteListModel::refreshAfterDataMove);
 
+    connect(plmdata->sheetHub(),
+            &PLMNoteHub::deletedChanged, // careful, paper is deleted = true, not a true removal
+            this,
+            &PLMNoteListModel::refreshAfterDeletedStateChanged);
+
+
     this->connectToPLMDataSignals();
 }
 
@@ -318,21 +324,21 @@ void PLMNoteListModel::populate()
     this->beginResetModel();
 
     m_allNoteItems.clear();
-    foreach(int projectId, plmdata->projectHub()->getProjectIdList()) {
-        if (plmdata->projectHub()->getProjectIdList().count() > 1) {
+
+    for(int projectId : plmdata->projectHub()->getProjectIdList()) {
             PLMNoteItem *projectItem = new PLMNoteItem();
             projectItem->setIsProjectItem(projectId);
             m_allNoteItems.append(projectItem);
-        }
+
 
         auto idList         = plmdata->noteHub()->getAllIds(projectId);
         auto sortOrdersHash = plmdata->noteHub()->getAllSortOrders(projectId);
         auto indentsHash    = plmdata->noteHub()->getAllIndents(projectId);
 
-        foreach(int noteId, idList) {
-            m_allNoteItems.append(new PLMNoteItem(projectId, noteId,
-                                                    indentsHash.value(noteId),
-                                                    sortOrdersHash.value(noteId)));
+        for(int sheetId : idList) {
+            m_allNoteItems.append(new PLMNoteItem(projectId, sheetId,
+                                                    indentsHash.value(sheetId),
+                                                    sortOrdersHash.value(sheetId)));
         }
     }
     this->endResetModel();
@@ -517,6 +523,26 @@ void PLMNoteListModel::refreshAfterDataMove(int sourceProjectId, int sourcePaper
     m_allNoteItems.insert(targetIndex, tempItem);
 
     endMoveRows();
+}
+
+//--------------------------------------------------------------------
+///
+/// \brief PLMNoteListModel::refreshAfterDeletedStateChanged
+/// \param projectId
+/// \param paperId
+/// \param newDeletedState
+/// careful, paper is deleted = true, not a true removal
+void PLMNoteListModel::refreshAfterDeletedStateChanged(int projectId, int paperId, bool newDeletedState)
+{
+    Q_UNUSED(projectId)
+    Q_UNUSED(paperId)
+    Q_UNUSED(newDeletedState)
+
+    for(PLMNoteItem *item : m_allNoteItems){
+        item->invalidateData(PLMNoteItem::Roles::SortOrderRole);
+        item->invalidateData(PLMNoteItem::Roles::HasChildrenRole); // needed to refresh the parent item when no child anymore
+    }
+
 }
 
 //--------------------------------------------------------------------

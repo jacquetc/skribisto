@@ -71,6 +71,8 @@ Item {
                     }
                 }
             }
+
+
             ScrollView {
                 id: scrollView
                 focusPolicy: Qt.StrongFocus

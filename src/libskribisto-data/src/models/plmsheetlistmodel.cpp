@@ -529,7 +529,7 @@ void PLMSheetListModel::refreshAfterDataMove(int sourceProjectId, int sourcePape
 
 //--------------------------------------------------------------------
 ///
-/// \brief PLMSheetListModel::refreshAfterDataDeletion
+/// \brief PLMSheetListModel::refreshAfterDeletedStateChanged
 /// \param projectId
 /// \param paperId
 /// \param newDeletedState

@@ -25,7 +25,7 @@
 #include <QTimer>
 
 PLMNoteListProxyModel::PLMNoteListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
-    m_showDeletedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-1)
+    m_showDeletedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-2)
 {
     this->setSourceModel(plmmodels->noteListModel());
     this->setShowDeletedFilter(false);

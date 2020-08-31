@@ -708,6 +708,17 @@ TreeViewForm {
                             visible: hoverHandler.hovered | content.isCurrent
                             focusPolicy: Qt.NoFocus
                         }
+                        Label {
+                            id: hasChildrenLabel
+                            Layout.preferredWidth: 30
+                            Layout.fillHeight: true
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            text: ">"
+                            visible: model.hasChildren & !(hoverHandler.hovered | content.isCurrent)
+
+                        }
+
+
                     }
                     Rectangle {
                         id: separator
