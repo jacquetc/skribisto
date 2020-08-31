@@ -31,13 +31,20 @@ class EXPORT PLMNoteHub : public PLMPaperHub
     Q_OBJECT
 public:
     PLMNoteHub(QObject *parent);
-    int getSynopsisFromSheetCode(int projectId, int sheetId);
-    QHash<int, int> getAllSynopsisWithSheetCode(int projectId);
-    QHash<int, int> getAllSheetCodes(int projectId);
-
 
     QHash<QString, QVariant>getNoteData(int projectId,
-                                         int noteId) const;
+                                        int noteId) const;
+    int getSynopsisNote(int projectId, int sheetId) const;
+    QList<int> getNotesFromSheetId(int projectId, int sheetId) const;
+    QList<int> getSheetsFromNoteId(int projectId, int noteId) const;
+    PLMError setSheetNoteRelationship(int projectId, int sheetId, int noteId, bool isSynopsys=false);
+    PLMError removeSheetNoteRelationship(int projectId, int sheetId, int noteId);
+
+signals:
+    void sheetNoteRelationshipChanged(int projectId, int sheetId, int noteId);
+    void sheetNoteRelationshipRemoved(int projectId, int sheetId, int noteId);
+    void sheetNoteRelationshipAdded(int projectId, int sheetId, int noteId);
+
 };
 
 #endif // PLMNOTEHUB_H
