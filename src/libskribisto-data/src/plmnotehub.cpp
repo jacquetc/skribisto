@@ -72,7 +72,7 @@ QList<int> PLMNoteHub::getSheetsFromNoteId(int projectId, int noteId) const
 
 //--------------------------------------------------------------------------------
 
-int PLMNoteHub::getSynopsisNote(int projectId, int sheetId) const
+int PLMNoteHub::getSynopsisNoteId(int projectId, int sheetId) const
 {
 
     PLMError error;
@@ -150,6 +150,7 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int projectId, int sheetId, int no
 
             IFOK(error){
             emit sheetNoteRelationshipAdded(projectId, sheetId, noteId);
+            emit sheetNoteRelationshipChanged(projectId, sheetId, noteId);
             }
         }
         else {
@@ -227,6 +228,20 @@ PLMError PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int
 
 //--------------------------------------------------------------------------------
 
+PLMError PLMNoteHub::createSynopsys(int projectId, int sheetId){
+    PLMError error;
+    error = this->addChildPaper(projectId, -1); // add child to project item
+
+
+    IFOK(error){
+        int lastAddedNoteId = this->getLastAddedId();
+
+        error = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId, true);
+    }
+
+    return error;
+
+}
 
 
 //--------------------------------------------------------------------------------

@@ -34,12 +34,13 @@ public:
 
     QHash<QString, QVariant>getNoteData(int projectId,
                                         int noteId) const;
-    int getSynopsisNote(int projectId, int sheetId) const;
-    QList<int> getNotesFromSheetId(int projectId, int sheetId) const;
-    QList<int> getSheetsFromNoteId(int projectId, int noteId) const;
-    PLMError setSheetNoteRelationship(int projectId, int sheetId, int noteId, bool isSynopsys=false);
-    PLMError removeSheetNoteRelationship(int projectId, int sheetId, int noteId);
+    Q_INVOKABLE int getSynopsisNoteId(int projectId, int sheetId) const;
+    Q_INVOKABLE QList<int> getNotesFromSheetId(int projectId, int sheetId) const;
+    Q_INVOKABLE QList<int> getSheetsFromNoteId(int projectId, int noteId) const;
+    Q_INVOKABLE PLMError setSheetNoteRelationship(int projectId, int sheetId, int noteId, bool isSynopsys=false);
+    Q_INVOKABLE PLMError removeSheetNoteRelationship(int projectId, int sheetId, int noteId);
 
+    Q_INVOKABLE  PLMError createSynopsys(int projectId, int sheetId);
 signals:
     void sheetNoteRelationshipChanged(int projectId, int sheetId, int noteId);
     void sheetNoteRelationshipRemoved(int projectId, int sheetId, int noteId);

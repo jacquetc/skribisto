@@ -144,6 +144,11 @@ QVariant PLMSheetItem::data(int role)
                           plmdata->sheetPropertyHub()->getProperty(projectId, paperId,
                                                                    "word_count"));
             break;
+
+        case Roles::SynopsysNoteIdRole:
+            m_data.insert(role,
+                          plmdata->noteHub()->getSynopsisNoteId(projectId, paperId));
+            break;
         }
         m_invalidatedRoles.removeAll(role);
     }

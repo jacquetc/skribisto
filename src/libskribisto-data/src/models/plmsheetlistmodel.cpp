@@ -159,6 +159,19 @@ QVariant PLMSheetListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
+    if (role == PLMSheetItem::Roles::CharCountRole) {
+        return item->data(role);
+    }
+
+    if (role == PLMSheetItem::Roles::WordCountRole) {
+        return item->data(role);
+    }
+
+    if (role == PLMSheetItem::Roles::SynopsysNoteIdRole) {
+        return item->data(role);
+    }
+
+
     return QVariant();
 }
 
@@ -318,6 +331,7 @@ QHash<int, QByteArray>PLMSheetListModel::roleNames() const {
     roles[PLMSheetItem::Roles::DeletedRole]  = "deleted";
     roles[PLMSheetItem::Roles::WordCountRole]  = "wordCount";
     roles[PLMSheetItem::Roles::CharCountRole]  = "charCount";
+    roles[PLMSheetItem::Roles::SynopsysNoteIdRole]  = "synopsysNoteId";
     return roles;
 }
 
@@ -675,6 +689,22 @@ void PLMSheetListModel::connectToPLMDataSignals()
         if (name == "word_count") this->exploitSignalFromPLMData(projectId, paperCode,
                                                                  PLMSheetItem::Roles::
                                                                  WordCountRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(plmdata->noteHub(),
+                                           &PLMNoteHub::sheetNoteRelationshipChanged, this,
+                                           [this](int projectId, int sheetId, int noteId) {
+        Q_UNUSED(noteId)
+        this->exploitSignalFromPLMData(projectId, sheetId,
+                                       PLMSheetItem::Roles::SynopsysNoteIdRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(plmdata->noteHub(),
+                                           &PLMNoteHub::sheetNoteRelationshipAdded, this,
+                                           [this](int projectId, int sheetId, int noteId) {
+        Q_UNUSED(noteId)
+        this->exploitSignalFromPLMData(projectId, sheetId,
+                                       PLMSheetItem::Roles::SynopsysNoteIdRole);
     }, Qt::UniqueConnection);
 }
 
