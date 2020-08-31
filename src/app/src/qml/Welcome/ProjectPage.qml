@@ -30,6 +30,8 @@ ProjectPageForm {
         swipeView.currentIndex = 1
     }
 
+    openProjectButton.onClicked: openFileDialog.open()
+
 
     //-----------------------------------------------------------
     //--New project page-----------------------------------------
@@ -371,4 +373,32 @@ ProjectPageForm {
         }
     }
 
+
+    //----------------------------------------------------
+    //------------------------------------------------------------
+    //------------------------------------------------------------
+
+
+    FileDialog{
+
+
+        id: openFileDialog
+        title: qsTr("Open an existing project")
+        modality: Qt.ApplicationModal
+        folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        fileMode: FileDialog.OpenFile
+        selectedNameFilter.index: 0
+        nameFilters: ["Skribisto file (*.skrib)"]
+        onAccepted: {
+
+            var file = openFileDialog.file.toString()
+            file = file.replace(/^(file:\/{2})/,"");
+             var error = plmData.projectHub().loadProject(file)
+
+
+        }
+        onRejected: {
+
+        }
+    }
 }

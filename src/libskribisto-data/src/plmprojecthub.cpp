@@ -114,6 +114,8 @@ PLMError PLMProjectHub::closeProject(int projectId)
         else{
             emit isThereAnyLoadedProjectChanged(false);
         }
+        m_projectsNotYetSavedOnceList.removeAll(projectId);
+        m_projectsNotSavedList.removeAll(projectId);
     }
     return error;
 }

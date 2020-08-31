@@ -90,7 +90,7 @@ RootPageForm {
             checkable: true
             onTriggered: {
 
-                notePage.forceActiveFocus()
+                noteOverviewPage.forceActiveFocus()
             }
         }
         Action {
