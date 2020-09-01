@@ -65,5 +65,7 @@
         <file>qml/Commons/TreeListView.qml</file>
         <file>qml/Commons/DeletedListView.qml</file>
         <file>qml/Commons/DeletedListViewForm.ui.qml</file>
+        <file>qml/Write/NotePad.qml</file>
+        <file>qml/Write/NotePadForm.ui.qml</file>
     </qresource>
 </RCC>

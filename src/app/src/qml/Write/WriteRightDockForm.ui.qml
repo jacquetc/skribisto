@@ -80,8 +80,8 @@ Item {
                                     //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
                                     //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
                                     //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
-                                    Rectangle {
-                                        id: noteView
+                                    NotePad {
+                                        id: notePad
                                         clip: true
                                     }
                                 }
