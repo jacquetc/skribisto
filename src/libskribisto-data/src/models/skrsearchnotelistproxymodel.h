@@ -1,18 +1,18 @@
-#ifndef PLMDELETEDNOTELISTPROXYMODEL_H
-#define PLMDELETEDNOTELISTPROXYMODEL_H
+#ifndef SKRSEARCHNOTELISTPROXYMODEL_H
+#define SKRSEARCHNOTELISTPROXYMODEL_H
 
 
 #include <QSortFilterProxyModel>
 #include "plmnoteitem.h"
 #include "./skribisto_data_global.h"
 
-class EXPORT PLMDeletedNoteListProxyModel : public QSortFilterProxyModel {
+class EXPORT SKRSearchNoteListProxyModel : public QSortFilterProxyModel {
 
     Q_OBJECT
     Q_PROPERTY(int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)
     Q_PROPERTY(int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
 public:
-    explicit PLMDeletedNoteListProxyModel(QObject *parent = nullptr);
+    explicit SKRSearchNoteListProxyModel(QObject *parent = nullptr);
 
     Qt::ItemFlags flags(const QModelIndex& index) const;
 
@@ -23,7 +23,7 @@ public:
                           int                role);
 
     Q_INVOKABLE QString getItemName(int projectId, int paperId);
-    void setProjectIdFilter(int projectIdFilter);
+    Q_INVOKABLE void setProjectIdFilter(int projectIdFilter);
     void clearFilters();
 
     Q_INVOKABLE void setForcedCurrentIndex(int forcedCurrentIndex);
@@ -53,4 +53,4 @@ private:
     int m_forcedCurrentIndex;
 };
 
-#endif // PLMDELETEDNOTELISTPROXYMODEL_H
+#endif // SKRSEARCHNOTELISTPROXYMODEL_H

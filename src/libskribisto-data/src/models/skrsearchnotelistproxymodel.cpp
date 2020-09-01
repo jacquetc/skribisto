@@ -1,24 +1,24 @@
-#include "plmdeletednotelistproxymodel.h"
+#include "skrsearchnotelistproxymodel.h"
 #include "plmmodels.h"
 
 #include <QTimer>
 
-PLMDeletedNoteListProxyModel::PLMDeletedNoteListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
+SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
      m_projectIdFilter(-2)
 {
     this->setSourceModel(plmmodels->noteListModel());
 
 
 
-    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &PLMDeletedNoteListProxyModel::loadProjectSettings);
-    connect(plmdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &PLMDeletedNoteListProxyModel::saveProjectSettings, Qt::DirectConnection);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &SKRSearchNoteListProxyModel::loadProjectSettings);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &SKRSearchNoteListProxyModel::saveProjectSettings, Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this](){
         this->clearFilters();
 
     });
 }
 
-Qt::ItemFlags PLMDeletedNoteListProxyModel::flags(const QModelIndex& index) const
+Qt::ItemFlags SKRSearchNoteListProxyModel::flags(const QModelIndex& index) const
 {
     Qt::ItemFlags defaultFlags = QSortFilterProxyModel::flags(index);
 
@@ -30,7 +30,7 @@ Qt::ItemFlags PLMDeletedNoteListProxyModel::flags(const QModelIndex& index) cons
 // -----------------------------------------------------------------------
 
 
-QVariant PLMDeletedNoteListProxyModel::data(const QModelIndex& index, int role) const
+QVariant SKRSearchNoteListProxyModel::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid()) return QVariant();
 
@@ -48,7 +48,7 @@ QVariant PLMDeletedNoteListProxyModel::data(const QModelIndex& index, int role) 
 
 // -----------------------------------------------------------------------
 
-bool PLMDeletedNoteListProxyModel::setData(const QModelIndex& index, const QVariant& value,
+bool SKRSearchNoteListProxyModel::setData(const QModelIndex& index, const QVariant& value,
                                      int role)
 {
     QModelIndex sourceIndex = this->mapToSource(index);
@@ -76,7 +76,7 @@ bool PLMDeletedNoteListProxyModel::setData(const QModelIndex& index, const QVari
 
 
 
-bool PLMDeletedNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+bool SKRSearchNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
     bool result = false;
 
@@ -105,7 +105,7 @@ bool PLMDeletedNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelI
     return result;
 }
 
-void PLMDeletedNoteListProxyModel::setProjectIdFilter(int projectIdFilter)
+void SKRSearchNoteListProxyModel::setProjectIdFilter(int projectIdFilter)
 {
     m_projectIdFilter = projectIdFilter;
     emit projectIdFilterChanged(m_projectIdFilter);
@@ -114,7 +114,7 @@ void PLMDeletedNoteListProxyModel::setProjectIdFilter(int projectIdFilter)
 
 //--------------------------------------------------------------
 
-void PLMDeletedNoteListProxyModel::clearFilters()
+void SKRSearchNoteListProxyModel::clearFilters()
 {
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
@@ -126,7 +126,7 @@ void PLMDeletedNoteListProxyModel::clearFilters()
 
 //--------------------------------------------------------------
 
-PLMNoteItem *PLMDeletedNoteListProxyModel::getItem(int projectId, int paperId)
+PLMNoteItem *SKRSearchNoteListProxyModel::getItem(int projectId, int paperId)
 {
     PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
 
@@ -139,7 +139,7 @@ PLMNoteItem *PLMDeletedNoteListProxyModel::getItem(int projectId, int paperId)
 //--------------------------------------------------------------
 
 
-void PLMDeletedNoteListProxyModel::loadProjectSettings(int projectId)
+void SKRSearchNoteListProxyModel::loadProjectSettings(int projectId)
 {
     QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
@@ -152,7 +152,7 @@ void PLMDeletedNoteListProxyModel::loadProjectSettings(int projectId)
 //--------------------------------------------------------------
 
 
-void PLMDeletedNoteListProxyModel::saveProjectSettings(int projectId)
+void SKRSearchNoteListProxyModel::saveProjectSettings(int projectId)
 {
     if(m_projectIdFilter != projectId){
         return;
@@ -167,7 +167,7 @@ void PLMDeletedNoteListProxyModel::saveProjectSettings(int projectId)
 
 //--------------------------------------------------------------
 
-void PLMDeletedNoteListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
+void SKRSearchNoteListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
 {
     m_forcedCurrentIndex = forcedCurrentIndex;
     emit forcedCurrentIndexChanged(m_forcedCurrentIndex);
@@ -175,7 +175,7 @@ void PLMDeletedNoteListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
 
 //--------------------------------------------------------------
 
-void PLMDeletedNoteListProxyModel::setForcedCurrentIndex(int projectId, int paperId)
+void SKRSearchNoteListProxyModel::setForcedCurrentIndex(int projectId, int paperId)
 {
     int forcedCurrentIndex = this->findVisualIndex(projectId, paperId);
     setForcedCurrentIndex(forcedCurrentIndex);
@@ -183,7 +183,7 @@ void PLMDeletedNoteListProxyModel::setForcedCurrentIndex(int projectId, int pape
 
 //--------------------------------------------------------------
 
-void PLMDeletedNoteListProxyModel::setCurrentPaperId(int projectId, int paperId)
+void SKRSearchNoteListProxyModel::setCurrentPaperId(int projectId, int paperId)
 {
     if(projectId == -2){
         return;
@@ -205,14 +205,14 @@ void PLMDeletedNoteListProxyModel::setCurrentPaperId(int projectId, int paperId)
 
 //--------------------------------------------------------------
 
-bool PLMDeletedNoteListProxyModel::hasChildren(int projectId, int paperId)
+bool SKRSearchNoteListProxyModel::hasChildren(int projectId, int paperId)
 {
     return plmdata->noteHub()->hasChildren(projectId, paperId);
 }
 
 //--------------------------------------------------------------
 
-int PLMDeletedNoteListProxyModel::findVisualIndex(int projectId, int paperId)
+int SKRSearchNoteListProxyModel::findVisualIndex(int projectId, int paperId)
 {
 
     int rowCount = this->rowCount(QModelIndex());
@@ -233,7 +233,7 @@ int PLMDeletedNoteListProxyModel::findVisualIndex(int projectId, int paperId)
 }
 
 //--------------------------------------------------------------
-QString PLMDeletedNoteListProxyModel::getItemName(int projectId, int paperId)
+QString SKRSearchNoteListProxyModel::getItemName(int projectId, int paperId)
 {
     //qDebug() << "getItemName" << projectId << paperId;
     if(projectId == -2 || paperId == -2){

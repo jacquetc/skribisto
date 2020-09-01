@@ -9,6 +9,8 @@ import ".."
 
 RightDockForm {
 
+    property int projectId : -2
+    property int paperId : -2
 
     SkrUserSettings {
         id: skrUserSettings
@@ -82,7 +84,7 @@ RightDockForm {
         //property string dockSplitView: "0"
         property bool dockFolded: false
         property bool editFrameFolded: editFrame.folded ? true : false
-        property bool noteFrameFolded: editFrame.folded ? true : false
+        property bool noteFrameFolded: noteFrame.folded ? true : false
 //        property bool documentFrameFolded: documentFrame.folded ? true : false
         property int width: fixedWidth
     }

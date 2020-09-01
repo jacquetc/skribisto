@@ -12,17 +12,17 @@ NotePageForm {
 
     property string title: {return getTitle()}
 
-        function getTitle(){
-            return plmData.noteHub().getTitle(projectId, paperId)
+    function getTitle(){
+        return plmData.noteHub().getTitle(projectId, paperId)
 
-        }
+    }
 
-        signal onTitleChangedString(string newTitle)
+    signal onTitleChangedString(string newTitle)
 
     //property int textAreaFixedWidth: SkrSettings.writeSettings.textWidth
     property var lastFocused: writingZone
 
-        property string pageType: "note"
+    property string pageType: "note"
 
 
 
@@ -137,9 +137,9 @@ NotePageForm {
                 if (value < 0) {
                     value = 0
                 }
-//                console.debug("writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
-//                console.debug("offset :: ", offset)
-//                console.debug("value :: ", value)
+                //                console.debug("writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
+                //                console.debug("offset :: ", offset)
+                //                console.debug("value :: ", value)
 
             }
             return value
@@ -157,9 +157,9 @@ NotePageForm {
                 if (value < 0) {
                     value = 0
                 }
-//                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
-//                console.debug("right offset :: ", offset)
-//                console.debug("right value :: ", value)
+                //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
+                //                console.debug("right offset :: ", offset)
+                //                console.debug("right value :: ", value)
 
             }
             rightBasePreferredWidth = value
@@ -625,6 +625,12 @@ NotePageForm {
 
     }
 
+
+
+    rightDock.projectId: projectId
+    rightDock.paperId: paperId
+
+    //---------------------------------------------------------
     //---------------------------------------------------------
 
     Connections {
@@ -683,6 +689,9 @@ NotePageForm {
         RightDock {
             id: compactRightDock
             anchors.fill: parent
+
+            projectId: projectId
+            paperId: paperId
 
             editView.italicToolButton.action: italicAction
             editView.boldToolButton.action: boldAction

@@ -145,7 +145,7 @@ QVariant PLMSheetItem::data(int role)
                                                                    "word_count"));
             break;
 
-        case Roles::SynopsysNoteIdRole:
+        case Roles::SynopsisNoteIdRole:
             m_data.insert(role,
                           plmdata->noteHub()->getSynopsisNoteId(projectId, paperId));
             break;

@@ -167,7 +167,7 @@ QVariant PLMSheetListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::SynopsysNoteIdRole) {
+    if (role == PLMSheetItem::Roles::SynopsisNoteIdRole) {
         return item->data(role);
     }
 
@@ -331,7 +331,7 @@ QHash<int, QByteArray>PLMSheetListModel::roleNames() const {
     roles[PLMSheetItem::Roles::DeletedRole]  = "deleted";
     roles[PLMSheetItem::Roles::WordCountRole]  = "wordCount";
     roles[PLMSheetItem::Roles::CharCountRole]  = "charCount";
-    roles[PLMSheetItem::Roles::SynopsysNoteIdRole]  = "synopsysNoteId";
+    roles[PLMSheetItem::Roles::SynopsisNoteIdRole]  = "synopsisNoteId";
     return roles;
 }
 
@@ -696,7 +696,7 @@ void PLMSheetListModel::connectToPLMDataSignals()
                                            [this](int projectId, int sheetId, int noteId) {
         Q_UNUSED(noteId)
         this->exploitSignalFromPLMData(projectId, sheetId,
-                                       PLMSheetItem::Roles::SynopsysNoteIdRole);
+                                       PLMSheetItem::Roles::SynopsisNoteIdRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
@@ -704,7 +704,7 @@ void PLMSheetListModel::connectToPLMDataSignals()
                                            [this](int projectId, int sheetId, int noteId) {
         Q_UNUSED(noteId)
         this->exploitSignalFromPLMData(projectId, sheetId,
-                                       PLMSheetItem::Roles::SynopsysNoteIdRole);
+                                       PLMSheetItem::Roles::SynopsisNoteIdRole);
     }, Qt::UniqueConnection);
 }
 

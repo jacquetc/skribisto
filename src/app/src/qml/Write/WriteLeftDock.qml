@@ -3,7 +3,7 @@ import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import Qt.labs.settings 1.1
 import eu.skribisto.sheetlistproxymodel 1.0
-import eu.skribisto.deletedsheetlistproxymodel 1.0
+import eu.skribisto.searchsheetlistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import ".."
@@ -46,7 +46,7 @@ WriteLeftDockForm {
     navigation.treeListViewProxyModel: proxyModel
 
 
-    PLMDeletedSheetListProxyModel {
+    SKRSearchSheetListProxyModel {
         id: deletedSheetProxyModel
     }
     navigation.deletedListViewProxyModel: deletedSheetProxyModel

@@ -13,6 +13,7 @@ Item {
     property alias goBackToolButton: goBackToolButton
     property alias restoreToolButton: restoreToolButton
     property alias listMenuToolButton: listMenuToolButton
+    property alias trashProjectComboBox: trashProjectComboBox
 
 
     Pane {

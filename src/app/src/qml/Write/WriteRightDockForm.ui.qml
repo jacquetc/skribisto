@@ -12,8 +12,8 @@ Item {
     //    property alias splitView: splitView
     property alias editFrame: editFrame
     property alias editView: editView
-    property alias noteFrame: noteFrame
-    property alias noteView: noteView
+    property alias notePadFrame: notePadFrame
+    property alias notePadView: notePadView
 
     Pane {
         id: rightDockPane
@@ -69,7 +69,7 @@ Item {
                                     }
                                 }
                                 DockFrame {
-                                    id: noteFrame
+                                    id: notePadFrame
                                     folded: true
                                     title: qsTr("Notes")
                                     Layout.fillWidth: true
@@ -81,7 +81,7 @@ Item {
                                     //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
                                     //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
                                     NotePad {
-                                        id: notePad
+                                        id: notePadView
                                         clip: true
                                     }
                                 }

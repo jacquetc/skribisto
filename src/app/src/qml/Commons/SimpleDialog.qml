@@ -8,6 +8,7 @@ Dialog {
     id: dialog
     x:200
     y:200
+    anchors.centerIn: Overlay.overlay
 
     property alias dialogTitle: dialog.title
     property alias text: text.text

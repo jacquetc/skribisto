@@ -26,7 +26,19 @@ PLMNoteHub::PLMNoteHub(QObject *parent) : PLMPaperHub(parent, "tbl_note")
 {
 
 }
+PLMError PLMNoteHub::addNoteRelatedToSheet(int projectId, int sheetId){
+    PLMError error;
+    error = this->addChildPaper(projectId, -1); // add child to project item
 
+
+    IFOK(error){
+        int lastAddedNoteId = this->getLastAddedId();
+        error = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId);
+
+    error.addData(lastAddedNoteId);
+   }
+    return error;
+}
 
 //--------------------------------------------------------------------------------
 
@@ -111,7 +123,7 @@ int PLMNoteHub::getSynopsisNoteId(int projectId, int sheetId) const
 
 //--------------------------------------------------------------------------------
 
-PLMError PLMNoteHub::setSheetNoteRelationship(int projectId, int sheetId, int noteId, bool isSynopsys)
+PLMError PLMNoteHub::setSheetNoteRelationship(int projectId, int sheetId, int noteId, bool isSynopsis)
 {
 
     PLMError error;
@@ -121,12 +133,13 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int projectId, int sheetId, int no
 
     QHash<QString, QVariant> where;
     where.insert("l_sheet_code", sheetId);
+    where.insert("l_note_code", noteId);
 
     PLMSqlQueries queries(projectId, "tbl_sheet_note");
 
 
     // verify if the relationship doesn't yet exist
-    error = queries.getValueByIdsWhere("l_note_code", out, where);
+    error = queries.getValueByIdsWhere("l_sheet_note_id", out, where);
 
     int key = -2;
     IFOK(error) {
@@ -145,7 +158,7 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int projectId, int sheetId, int no
             QHash<QString, QVariant> values;
             values.insert("l_sheet_code", sheetId);
             values.insert("l_note_code", noteId);
-            values.insert("b_synopsis", isSynopsys);
+            values.insert("b_synopsis", isSynopsis);
             error = queries.add(values, newId);
 
             IFOK(error){
@@ -154,19 +167,19 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int projectId, int sheetId, int no
             }
         }
         else {
-            //relationship exists, verifying b_synopsys
+            //relationship exists, verifying b_synopsis
 
             QVariant variantResult;
             error = queries.get(key, "b_synopsis", variantResult);
 
-            if(variantResult.toBool() == isSynopsys){
+            if(variantResult.toBool() == isSynopsis){
                 //nothing to do, quiting
                 return error;
             }
             else {
                 // set b_synopsis:
 
-                    error =  queries.set(key, "b_synopsis", isSynopsys);
+                    error =  queries.set(key, "b_synopsis", isSynopsis);
 
                     IFOK(error){
                 emit sheetNoteRelationshipChanged(projectId, sheetId, noteId);
@@ -228,7 +241,7 @@ PLMError PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int
 
 //--------------------------------------------------------------------------------
 
-PLMError PLMNoteHub::createSynopsys(int projectId, int sheetId){
+PLMError PLMNoteHub::createSynopsis(int projectId, int sheetId){
     PLMError error;
     error = this->addChildPaper(projectId, -1); // add child to project item
 

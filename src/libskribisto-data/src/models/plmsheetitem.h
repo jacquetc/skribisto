@@ -50,7 +50,7 @@ public:
         // specific to sheets:
         CharCountRole = Qt::UserRole + 13,
         WordCountRole = Qt::UserRole + 14,
-        SynopsysNoteIdRole = Qt::UserRole + 15
+        SynopsisNoteIdRole = Qt::UserRole + 15
 
 
     };

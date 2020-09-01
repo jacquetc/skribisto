@@ -136,7 +136,7 @@ ProjectPageForm {
         }
 
         swipeView.currentIndex = 0
-        root_stack.currentIndex = 1
+        //root_stack.currentIndex = 1
         Globals.openSheetCalled(projetId, firstSheetId)
 
         //reset :

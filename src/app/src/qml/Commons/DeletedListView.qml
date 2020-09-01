@@ -2,6 +2,7 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
 import QtQml.Models 2.12
+import eu.skribisto.projecthub 1.0
 
 DeletedListViewForm {
     id: root
@@ -48,9 +49,77 @@ DeletedListViewForm {
         }
     }
 
+    //-----------------------------------------------------------------------------
+    // project comboBox :
+
+
+
+    trashProjectComboBox.model: ListModel {
+        id: projectComboBoxModel
+    }
+
+
+    Connections {
+
+        target: plmData.projectHub()
+        function onProjectLoaded(projectId){
+
+
+            var name =  plmData.projectHub().getProjectName(projectId)
+
+            projectComboBoxModel.append({projectId: projectId, name: name})
+
+            trashProjectComboBox.currentIndex = trashProjectComboBox.count -1
+        }
+    }
+
+    Connections {
+
+        target: plmData.projectHub()
+        function onProjectClosed(projectId){
+
+            populateProjectComboBoxModel()
+
+        }
+    }
+
+    Component.onCompleted: {
+        trashProjectComboBox.textRole = "name"
+        trashProjectComboBox.valueRole = "projectId"
+        populateProjectComboBoxModel()
+    }
+    trashProjectComboBox.displayText: qsTr("Trash: %1").arg(trashProjectComboBox.currentText)
+
+    function populateProjectComboBoxModel(){
+
+        projectComboBoxModel.clear()
+
+        // populate
+
+        var projectList = plmData.projectHub().getProjectIdList()
+
+        var i;
+        for(i = 0 ; i < projectList.length ; i++ ){
+            var projectId = projectList[i]
+
+            var name =  plmData.projectHub().getProjectName(projectId)
+
+            projectComboBoxModel.append({projectId: projectId, name: name})
+
+            // select last :
+            trashProjectComboBox.currentIndex = i;
+            proxyModel.projectIdFilter = trashProjectComboBox.valueAt(i)
+        }
+
+    }
+
+    trashProjectComboBox.onActivated: {
+        proxyModel.projectIdFilter = trashProjectComboBox.currentValue
+
+    }
 
     //-----------------------------------------------------------------------------
-    // go up button :
+    // go back button :
 
     signal goBack()
 
@@ -143,11 +212,6 @@ DeletedListViewForm {
         //enabled: listView.activeFocus
     }
     //-----------------------------------------------------------------------------
-    Component.onCompleted: {
-
-    }
-
-    //-----------------------------------------------------------------------------
     listView.onCurrentIndexChanged: {
         contextMenuItemIndex = listView.currentIndex
     }
@@ -178,16 +242,16 @@ DeletedListViewForm {
     Keys.priority: Keys.AfterItem
 
     Keys.onPressed: {
-          console.log("treeview key pressed")
+        console.log("treeview key pressed")
 
         event.accepted = true
-        }
+    }
 
     // TreeView item :
     Component {
         id: dragDelegate
 
-       Item {
+        Item {
             id: delegateRoot
 
             property int visualIndex: {
@@ -235,12 +299,12 @@ DeletedListViewForm {
 
             Keys.onPressed: {
                 if (event.key === Qt.Key_Return){
-                  console.log("Return key pressed")
+                    console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
                 }
                 if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
-                  console.log("Alt Return key pressed")
+                    console.log("Alt Return key pressed")
                     openDocumentInNewTabAction.trigger()
                     event.accepted = true
                 }
@@ -269,11 +333,11 @@ DeletedListViewForm {
 
                 HoverHandler {
                     id: hoverHandler
-//                    onHoveredChanged: {
-//                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
-//                            listView.currentIndex = model.index
-//                        }
-//                    }
+                    //                    onHoveredChanged: {
+                    //                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
+                    //                            listView.currentIndex = model.index
+                    //                        }
+                    //                    }
                 }
 
                 TapHandler {
@@ -406,7 +470,7 @@ DeletedListViewForm {
                         console.log("model.openedProjectId", openedProjectId)
                         console.log("model.projectId", model.projectId)
                         root.openDocument(openedProjectId, openedPaperId, model.projectId,
-                                                   model.paperId)
+                                          model.paperId)
                     }
                 }
 
@@ -425,7 +489,7 @@ DeletedListViewForm {
                     onTriggered: {
                         console.log("model.projectId", model.projectId)
                         root.openDocumentInNewTab(model.projectId,
-                                                   model.paperId)
+                                                  model.paperId)
 
                     }
                 }
@@ -502,7 +566,7 @@ DeletedListViewForm {
 
                                     onEditingFinished: {
                                         //if (!activeFocus) {
-                                            //accepted()
+                                        //accepted()
                                         //}
                                         console.log("editing finished")
                                         model.name = text
@@ -513,12 +577,12 @@ DeletedListViewForm {
 
                                     Keys.onPressed: {
                                         if (event.key === Qt.Key_Return){
-                                          console.log("Return key pressed title")
+                                            console.log("Return key pressed title")
                                             editingFinished()
                                             event.accepted = true
                                         }
                                         if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
-                                          console.log("Alt Return key pressed title")
+                                            console.log("Alt Return key pressed title")
                                             event.accepted = true
                                         }
                                     }

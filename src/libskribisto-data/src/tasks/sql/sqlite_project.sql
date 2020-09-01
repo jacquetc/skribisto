@@ -28,7 +28,7 @@ CREATE TABLE tbl_sheet (l_sheet_id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTO
 CREATE TABLE tbl_sheet_property (l_property_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, l_sheet_code INTEGER REFERENCES tbl_sheet (l_sheet_id) ON DELETE CASCADE, t_name TEXT DEFAULT NULL, t_value TEXT, dt_created DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP), dt_updated DATETIME DEFAULT (CURRENT_TIMESTAMP) NOT NULL, b_system BOOLEAN DEFAULT (0) NOT NULL);
 
 -- Table: tbl_sheet_note
-CREATE TABLE tbl_sheet_note (l_sheet_note_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, l_sheet_code INTEGER REFERENCES tbl_sheet (l_sheet_id) ON DELETE CASCADE NOT NULL, l_note_code INTEGER REFERENCES tbl_note (l_note_id) ON DELETE CASCADE NOT NULL, b_synopsys BOOLEAN NOT NULL ON CONFLICT ROLLBACK DEFAULT (0));
+CREATE TABLE tbl_sheet_note (l_sheet_note_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, l_sheet_code INTEGER REFERENCES tbl_sheet (l_sheet_id) ON DELETE CASCADE NOT NULL, l_note_code INTEGER REFERENCES tbl_note (l_note_id) ON DELETE CASCADE NOT NULL, b_synopsis BOOLEAN NOT NULL ON CONFLICT ROLLBACK DEFAULT (0));
 
 -- Index: idx1
 CREATE INDEX idx1 ON tbl_sheet (l_sheet_id, l_sort_order ASC, l_indent, t_title, b_deleted);

@@ -1,24 +1,24 @@
-#include "plmdeletedsheetlistproxymodel.h"
+#include "skrsearchsheetlistproxymodel.h"
 #include "plmmodels.h"
 
 #include <QTimer>
 
-PLMDeletedSheetListProxyModel::PLMDeletedSheetListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
+SKRSearchSheetListProxyModel::SKRSearchSheetListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
      m_projectIdFilter(-2)
 {
     this->setSourceModel(plmmodels->sheetListModel());
 
 
 
-    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &PLMDeletedSheetListProxyModel::loadProjectSettings);
-    connect(plmdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &PLMDeletedSheetListProxyModel::saveProjectSettings, Qt::DirectConnection);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &SKRSearchSheetListProxyModel::loadProjectSettings);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &SKRSearchSheetListProxyModel::saveProjectSettings, Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this](){
         this->clearFilters();
 
     });
 }
 
-Qt::ItemFlags PLMDeletedSheetListProxyModel::flags(const QModelIndex& index) const
+Qt::ItemFlags SKRSearchSheetListProxyModel::flags(const QModelIndex& index) const
 {
     Qt::ItemFlags defaultFlags = QSortFilterProxyModel::flags(index);
 
@@ -30,7 +30,7 @@ Qt::ItemFlags PLMDeletedSheetListProxyModel::flags(const QModelIndex& index) con
 // -----------------------------------------------------------------------
 
 
-QVariant PLMDeletedSheetListProxyModel::data(const QModelIndex& index, int role) const
+QVariant SKRSearchSheetListProxyModel::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid()) return QVariant();
 
@@ -48,7 +48,7 @@ QVariant PLMDeletedSheetListProxyModel::data(const QModelIndex& index, int role)
 
 // -----------------------------------------------------------------------
 
-bool PLMDeletedSheetListProxyModel::setData(const QModelIndex& index, const QVariant& value,
+bool SKRSearchSheetListProxyModel::setData(const QModelIndex& index, const QVariant& value,
                                      int role)
 {
     QModelIndex sourceIndex = this->mapToSource(index);
@@ -76,7 +76,7 @@ bool PLMDeletedSheetListProxyModel::setData(const QModelIndex& index, const QVar
 
 
 
-bool PLMDeletedSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+bool SKRSearchSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
     bool result = false;
 
@@ -105,7 +105,7 @@ bool PLMDeletedSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModel
     return result;
 }
 
-void PLMDeletedSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
+void SKRSearchSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
 {
     m_projectIdFilter = projectIdFilter;
     emit projectIdFilterChanged(m_projectIdFilter);
@@ -114,7 +114,7 @@ void PLMDeletedSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
 
 //--------------------------------------------------------------
 
-void PLMDeletedSheetListProxyModel::clearFilters()
+void SKRSearchSheetListProxyModel::clearFilters()
 {
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
@@ -126,7 +126,7 @@ void PLMDeletedSheetListProxyModel::clearFilters()
 
 //--------------------------------------------------------------
 
-PLMSheetItem *PLMDeletedSheetListProxyModel::getItem(int projectId, int paperId)
+PLMSheetItem *SKRSearchSheetListProxyModel::getItem(int projectId, int paperId)
 {
     PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
 
@@ -139,7 +139,7 @@ PLMSheetItem *PLMDeletedSheetListProxyModel::getItem(int projectId, int paperId)
 //--------------------------------------------------------------
 
 
-void PLMDeletedSheetListProxyModel::loadProjectSettings(int projectId)
+void SKRSearchSheetListProxyModel::loadProjectSettings(int projectId)
 {
     QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
@@ -152,7 +152,7 @@ void PLMDeletedSheetListProxyModel::loadProjectSettings(int projectId)
 //--------------------------------------------------------------
 
 
-void PLMDeletedSheetListProxyModel::saveProjectSettings(int projectId)
+void SKRSearchSheetListProxyModel::saveProjectSettings(int projectId)
 {
     if(m_projectIdFilter != projectId){
         return;
@@ -167,7 +167,7 @@ void PLMDeletedSheetListProxyModel::saveProjectSettings(int projectId)
 
 //--------------------------------------------------------------
 
-void PLMDeletedSheetListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
+void SKRSearchSheetListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
 {
     m_forcedCurrentIndex = forcedCurrentIndex;
     emit forcedCurrentIndexChanged(m_forcedCurrentIndex);
@@ -175,7 +175,7 @@ void PLMDeletedSheetListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex
 
 //--------------------------------------------------------------
 
-void PLMDeletedSheetListProxyModel::setForcedCurrentIndex(int projectId, int paperId)
+void SKRSearchSheetListProxyModel::setForcedCurrentIndex(int projectId, int paperId)
 {
     int forcedCurrentIndex = this->findVisualIndex(projectId, paperId);
     setForcedCurrentIndex(forcedCurrentIndex);
@@ -183,7 +183,7 @@ void PLMDeletedSheetListProxyModel::setForcedCurrentIndex(int projectId, int pap
 
 //--------------------------------------------------------------
 
-void PLMDeletedSheetListProxyModel::setCurrentPaperId(int projectId, int paperId)
+void SKRSearchSheetListProxyModel::setCurrentPaperId(int projectId, int paperId)
 {
     if(projectId == -2){
         return;
@@ -205,14 +205,14 @@ void PLMDeletedSheetListProxyModel::setCurrentPaperId(int projectId, int paperId
 
 //--------------------------------------------------------------
 
-bool PLMDeletedSheetListProxyModel::hasChildren(int projectId, int paperId)
+bool SKRSearchSheetListProxyModel::hasChildren(int projectId, int paperId)
 {
     return plmdata->sheetHub()->hasChildren(projectId, paperId);
 }
 
 //--------------------------------------------------------------
 
-int PLMDeletedSheetListProxyModel::findVisualIndex(int projectId, int paperId)
+int SKRSearchSheetListProxyModel::findVisualIndex(int projectId, int paperId)
 {
 
     int rowCount = this->rowCount(QModelIndex());
@@ -233,7 +233,7 @@ int PLMDeletedSheetListProxyModel::findVisualIndex(int projectId, int paperId)
 }
 
 //--------------------------------------------------------------
-QString PLMDeletedSheetListProxyModel::getItemName(int projectId, int paperId)
+QString SKRSearchSheetListProxyModel::getItemName(int projectId, int paperId)
 {
     //qDebug() << "getItemName" << projectId << paperId;
     if(projectId == -2 || paperId == -2){

@@ -4,6 +4,12 @@ import QtQuick.Layouts 1.12
 
 Item {
     id: base
+    property alias noteFlow: noteFlow
+    property alias noteTextArea: noteTextArea
+    property alias openSynopsisToolButton: openSynopsisToolButton
+    property alias openNoteInNewTabToolButton: openNoteInNewTabToolButton
+    property alias addNoteMenuToolButton: addNoteMenuToolButton
+    property alias noteRepeater: noteRepeater
 
     Pane {
         id: pane
@@ -32,22 +38,22 @@ Item {
                     anchors.fill: parent
 
                     ToolButton {
-                        id: goBackToolButton
+                        id: openNoteInNewTabToolButton
+                        text: qsTr("Open note")
                         flat: true
                         display: AbstractButton.IconOnly
                     }
 
                     ToolButton {
-                        id: restoreToolButton
+                        id: openSynopsisToolButton
                         flat: true
-                        text: qsTr("Restore a document")
+                        text: qsTr("Show synopsis")
                         display: AbstractButton.IconOnly
                     }
 
                     ToolButton {
-                        id: listMenuToolButton
+                        id: addNoteMenuToolButton
                         flat: true
-                        text: qsTr("Deleted menu")
                         display: AbstractButton.IconOnly
                     }
                 }
@@ -55,50 +61,48 @@ Item {
 
             ScrollView {
                 id: scrollView
+                Layout.maximumHeight: 100
+                Layout.minimumHeight: 40
                 focusPolicy: Qt.StrongFocus
                 Layout.fillWidth: true
-                Layout.fillHeight: true
                 clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ScrollBar.vertical.policy: scrollBarVerticalPolicy
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                Flow {
-                    id: noteFlow
-                    anchors.fill: parent
-                    spacing: 15
-                    padding: 0
-                    antialiasing: true
-                    clip: true
+                Flickable {
+                    boundsBehavior: Flickable.StopAtBounds
+                    contentWidth: scrollView.width
+                    contentHeight: noteFlow.height
+                    //contentHeight: leftDockColumnLayout.height
+                    Flow {
+                        id: noteFlow
+                        width: scrollView.width
+                        //                    width: parent.width
+                        //                    anchors.left: parent.left
+                        //                    anchors.top: parent.top
+                        //                    anchors.topMargin: 0
+                        //                    anchors.leftMargin: 0
+                        spacing: 20
+                        padding: 0
+                        antialiasing: true
+                        clip: true
 
-                    Text {
-                        text: "Text"
-                        font.pixelSize: 40
-                    }
-                    Text {
-                        text: "items"
-                        font.pixelSize: 40
-                    }
-                    Text {
-                        text: "flowing"
-                        font.pixelSize: 40
-                    }
-                    Text {
-                        text: "inside"
-                        font.pixelSize: 40
-                    }
-                    Text {
-                        text: "a"
-                        font.pixelSize: 40
-                    }
-                    Text {
-                        text: "Flow"
-                        font.pixelSize: 40
-                    }
-                    Text {
-                        text: "item"
-                        font.pixelSize: 40
+                        Repeater {
+                            id: noteRepeater
+
+                            delegate: noteFlowComponent
+
+
+                        }
+
                     }
                 }
+            }
+
+            TextArea {
+                id: noteTextArea
+                Layout.fillWidth: true
+                Layout.fillHeight: true
             }
         }
     }
@@ -109,3 +113,4 @@ Designer {
     D{i:0;autoSize:true;height:480;width:300}
 }
 ##^##*/
+

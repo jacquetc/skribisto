@@ -9,6 +9,8 @@ import ".."
 
 WriteRightDockForm {
 
+    property int projectId : -2
+    property int paperId : -2
 
     SkrUserSettings {
         id: skrUserSettings
@@ -82,14 +84,18 @@ WriteRightDockForm {
         //property string dockSplitView: "0"
         property bool dockFolded: false
         property bool editFrameFolded: editFrame.folded ? true : false
-        property bool noteFrameFolded: editFrame.folded ? true : false
+        property bool notePadFrameFolded: notePadFrame.folded ? true : false
 //        property bool documentFrameFolded: documentFrame.folded ? true : false
         property int width: fixedWidth
     }
 
 
-
-
+    onProjectIdChanged: {
+        notePadView.projectId = projectId
+    }
+    onPaperIdChanged: {
+        notePadView.sheetId = paperId
+    }
     //    PropertyAnimation {
     //        target: writeTreeViewFrame
     //        property: "SplitView.preferredHeight"
@@ -100,7 +106,7 @@ WriteRightDockForm {
         folded ? fold() : unfold()
 
         editFrame.folded = settings.editFrameFolded
-        noteFrame.folded = settings.noteFrameFolded
+        notePadFrame.folded = settings.notePadFrameFolded
 
         //        splitView.restoreState(settings.dockSplitView)
         //treeView.onOpenDocument.connect(Globals.openSheetCalled)

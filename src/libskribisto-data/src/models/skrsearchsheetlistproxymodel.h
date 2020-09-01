@@ -6,14 +6,14 @@
 #include "plmsheetitem.h"
 #include "./skribisto_data_global.h"
 
-class EXPORT PLMDeletedSheetListProxyModel : public QSortFilterProxyModel {
+class EXPORT SKRSearchSheetListProxyModel : public QSortFilterProxyModel {
 
     Q_OBJECT
     Q_PROPERTY(int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)
     Q_PROPERTY(int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
 public:
 
-   explicit PLMDeletedSheetListProxyModel(QObject *parent = nullptr);
+   explicit SKRSearchSheetListProxyModel(QObject *parent = nullptr);
 
     Qt::ItemFlags flags(const QModelIndex& index) const;
 
