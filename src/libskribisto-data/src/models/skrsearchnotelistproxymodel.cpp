@@ -4,7 +4,8 @@
 #include <QTimer>
 
 SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
-     m_projectIdFilter(-2)
+    m_showDeletedFilter(true), m_showNotDeletedFilter(true), m_textFilter(""), m_projectIdFilter(-2)
+
 {
     this->setSourceModel(plmmodels->noteListModel());
 
@@ -49,7 +50,7 @@ QVariant SKRSearchNoteListProxyModel::data(const QModelIndex& index, int role) c
 // -----------------------------------------------------------------------
 
 bool SKRSearchNoteListProxyModel::setData(const QModelIndex& index, const QVariant& value,
-                                     int role)
+                                          int role)
 {
     QModelIndex sourceIndex = this->mapToSource(index);
 
@@ -78,25 +79,43 @@ bool SKRSearchNoteListProxyModel::setData(const QModelIndex& index, const QVaria
 
 bool SKRSearchNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    bool result = false;
+    bool result = true;
 
     QModelIndex index = this->sourceModel()->index(sourceRow, 0, sourceParent);
     if (!index.isValid()){
         return false;
     }
-    PLMSheetItem *item = static_cast<PLMSheetItem *>(index.internalPointer());
-    PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
-
-    // deleted filtering :
-    if(item->data(PLMSheetItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter
-            && item->data(PLMSheetItem::Roles::DeletedRole).toBool() == true){
-        QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
-        qDebug() << "deleted : " << string;
-        result = true;
-    }
+    PLMNoteItem *item = static_cast<PLMNoteItem *>(index.internalPointer());
+    PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
 
     // avoid project item
-    if (result && item->data(PLMSheetItem::Roles::PaperIdRole).toInt() == -1){
+    if (item->data(PLMNoteItem::Roles::PaperIdRole).toInt() == -1){
+        result = false;
+    }
+
+    // project filtering :
+    if(result && item->data(PLMNoteItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter){
+        result = true;
+    }
+    else {
+        result = false;
+    }
+
+    // deleted filtering :
+    if(result && item->data(PLMNoteItem::Roles::DeletedRole).toBool() == true){
+        result = m_showDeletedFilter;
+    }
+
+    // 'not deleted' filtering :
+    if(result && item->data(PLMNoteItem::Roles::DeletedRole).toBool() == false){
+        result = m_showNotDeletedFilter;
+    }
+
+
+    if(result && item->data(PLMNoteItem::Roles::NameRole).toString().contains(m_textFilter, Qt::CaseInsensitive)){
+        result = true;
+    }
+    else {
         result = false;
     }
 
@@ -118,6 +137,14 @@ void SKRSearchNoteListProxyModel::clearFilters()
 {
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
+    m_showDeletedFilter = true;
+    emit showDeletedFilterChanged(m_showDeletedFilter);
+    m_showNotDeletedFilter = true;
+    emit showNotDeletedFilterChanged(m_showNotDeletedFilter);
+    m_textFilter = "";
+    emit textFilterChanged(m_textFilter);
+
+
     this->invalidate();
 
 }
@@ -144,8 +171,8 @@ void SKRSearchNoteListProxyModel::loadProjectSettings(int projectId)
     QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
     settings.beginGroup("project_" + unique_identifier);
-//    int writeCurrentParent = settings.value("noteCurrentParent", 0).toInt();
-//    this->setParentFilter(projectId, noteCurrentParent);
+    //    int writeCurrentParent = settings.value("noteCurrentParent", 0).toInt();
+    //    this->setParentFilter(projectId, noteCurrentParent);
     settings.endGroup();
 
 }
@@ -161,7 +188,7 @@ void SKRSearchNoteListProxyModel::saveProjectSettings(int projectId)
     QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
     settings.beginGroup("project_" + unique_identifier);
-//    settings.setValue("noteCurrentParent", m_parentIdFilter);
+    //    settings.setValue("noteCurrentParent", m_parentIdFilter);
     settings.endGroup();
 }
 
@@ -202,6 +229,30 @@ void SKRSearchNoteListProxyModel::setCurrentPaperId(int projectId, int paperId)
 
     this->setForcedCurrentIndex(projectId, paperId);
 }
+
+void SKRSearchNoteListProxyModel::setTextFilter(const QString &value)
+{
+    m_textFilter = value;
+    emit textFilterChanged(value);
+    this->invalidate();
+}
+
+void SKRSearchNoteListProxyModel::setShowNotDeletedFilter(bool showNotDeletedFilter)
+{
+    m_showNotDeletedFilter = showNotDeletedFilter;
+
+    emit showNotDeletedFilterChanged(showNotDeletedFilter);
+    this->invalidate();
+}
+
+void SKRSearchNoteListProxyModel::setShowDeletedFilter(bool showDeletedFilter)
+{
+    m_showDeletedFilter = showDeletedFilter;
+
+    emit showDeletedFilterChanged(showDeletedFilter);
+    this->invalidate();
+}
+
 
 //--------------------------------------------------------------
 

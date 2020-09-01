@@ -10,6 +10,9 @@ class EXPORT SKRSearchSheetListProxyModel : public QSortFilterProxyModel {
 
     Q_OBJECT
     Q_PROPERTY(int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)
+    Q_PROPERTY(bool showDeletedFilter MEMBER m_showDeletedFilter WRITE setShowDeletedFilter NOTIFY showDeletedFilterChanged)
+    Q_PROPERTY(bool showNotDeletedFilter MEMBER m_showNotDeletedFilter WRITE setShowNotDeletedFilter NOTIFY showNotDeletedFilterChanged)
+    Q_PROPERTY(QString textFilter MEMBER m_textFilter WRITE setTextFilter NOTIFY textFilterChanged)
     Q_PROPERTY(int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
 public:
 
@@ -33,8 +36,17 @@ public:
     Q_INVOKABLE int findVisualIndex(int projectId, int paperId);
 
     Q_INVOKABLE void setCurrentPaperId(int projectId, int paperId);
+    void setShowDeletedFilter(bool showDeletedFilter);
+
+    void setShowNotDeletedFilter(bool showNotDeletedFilter);
+
+    void setTextFilter(const QString &value);
+
 signals:
     void projectIdFilterChanged(int projectIdFilter);
+    void textFilterChanged(const QString &value);
+    void showDeletedFilterChanged(bool value);
+    void showNotDeletedFilterChanged(bool value);
     Q_INVOKABLE void forcedCurrentIndexChanged(int forcedCurrentIndex);
 
 
@@ -50,6 +62,8 @@ private slots:
     void saveProjectSettings(int projectId);
 private:
     bool m_showDeletedFilter;
+    bool m_showNotDeletedFilter;
+    QString m_textFilter;
     int m_projectIdFilter;
     int m_forcedCurrentIndex;
 };

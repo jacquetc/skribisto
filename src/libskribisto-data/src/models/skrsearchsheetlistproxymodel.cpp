@@ -4,7 +4,7 @@
 #include <QTimer>
 
 SKRSearchSheetListProxyModel::SKRSearchSheetListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
-     m_projectIdFilter(-2)
+      m_showDeletedFilter(true), m_showNotDeletedFilter(true), m_textFilter(""), m_projectIdFilter(-2)
 {
     this->setSourceModel(plmmodels->sheetListModel());
 
@@ -87,19 +87,38 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelI
     PLMSheetItem *item = static_cast<PLMSheetItem *>(index.internalPointer());
     PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
 
-    // deleted filtering :
-    if(item->data(PLMSheetItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter
-            && item->data(PLMSheetItem::Roles::DeletedRole).toBool() == true){
-        QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
-        qDebug() << "deleted : " << string;
-        result = true;
-    }
-
     // avoid project item
-    if (result && item->data(PLMSheetItem::Roles::PaperIdRole).toInt() == -1){
+    if (item->data(PLMSheetItem::Roles::PaperIdRole).toInt() == -1){
         result = false;
     }
 
+    // project filtering :
+    if(result && item->data(PLMSheetItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter){
+       result = true;
+    }
+    else {
+        result = false;
+    }
+
+    // deleted filtering :
+    if(result && item->data(PLMSheetItem::Roles::DeletedRole).toBool() == true){
+            QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
+            result = m_showDeletedFilter;
+        }
+
+    // 'not deleted' filtering :
+    if(result && item->data(PLMSheetItem::Roles::DeletedRole).toBool() == false){
+            QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
+            result = m_showNotDeletedFilter;
+        }
+
+
+    if(result && item->data(PLMSheetItem::Roles::NameRole).toString().contains(m_textFilter, Qt::CaseInsensitive)){
+        result = true;
+    }
+    else {
+        result = false;
+    }
 
 
     return result;
@@ -118,6 +137,12 @@ void SKRSearchSheetListProxyModel::clearFilters()
 {
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
+    m_showDeletedFilter = true;
+    emit showDeletedFilterChanged(m_showDeletedFilter);
+    m_showNotDeletedFilter = true;
+    emit showNotDeletedFilterChanged(m_showNotDeletedFilter);
+    m_textFilter = "";
+    emit textFilterChanged(m_textFilter);
     this->invalidate();
 
 }
@@ -163,6 +188,32 @@ void SKRSearchSheetListProxyModel::saveProjectSettings(int projectId)
     settings.beginGroup("project_" + unique_identifier);
 //    settings.setValue("sheetCurrentParent", m_parentIdFilter);
     settings.endGroup();
+}
+
+void SKRSearchSheetListProxyModel::setTextFilter(const QString &value)
+{
+    m_textFilter = value;
+    emit textFilterChanged(value);
+    this->invalidate();
+
+}
+
+void SKRSearchSheetListProxyModel::setShowNotDeletedFilter(bool showNotDeletedFilter)
+{
+    m_showNotDeletedFilter = showNotDeletedFilter;
+
+    emit showNotDeletedFilterChanged(showNotDeletedFilter);
+    this->invalidate();
+
+}
+
+void SKRSearchSheetListProxyModel::setShowDeletedFilter(bool showDeletedFilter)
+{
+    m_showDeletedFilter = showDeletedFilter;
+
+    emit showDeletedFilterChanged(showDeletedFilter);
+    this->invalidate();
+
 }
 
 //--------------------------------------------------------------

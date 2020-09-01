@@ -47,6 +47,8 @@ LeftDockForm {
 
     SKRSearchNoteListProxyModel {
         id: deletedNoteProxyModel
+        showDeletedFilter: true
+        showNotDeletedFilter: false
     }
     navigation.deletedListViewProxyModel: deletedNoteProxyModel
 

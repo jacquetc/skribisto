@@ -48,7 +48,9 @@ LeftDockForm {
 
     SKRSearchSheetListProxyModel {
         id: deletedSheetProxyModel
-        //projectIdFilter: 1 // for test
+        showDeletedFilter: true
+        showNotDeletedFilter: false
+
     }
     navigation.deletedListViewProxyModel: deletedSheetProxyModel
 

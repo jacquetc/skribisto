@@ -1,6 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
+import eu.skribisto.searchnotelistproxymodel 1.0
 
 NotePadForm {
     id: root
@@ -15,6 +16,7 @@ NotePadForm {
     onSheetIdChanged: {
         populateNoteListModel()
     }
+
 
     ListModel {
         id: noteListModel
@@ -87,6 +89,16 @@ NotePadForm {
     addNoteMenuToolButton.action: addNoteAction
 
 
+    //proxy model for search :
+
+    SKRSearchNoteListProxyModel {
+        id: searchProxyModel
+        showDeletedFilter: false
+        showNotDeletedFilter: true
+        projectIdFilter: projectId
+    }
+
+
 
 
     Popup {
@@ -103,6 +115,7 @@ NotePadForm {
             anchors.fill: parent
             TextField {
                 id: titleTextField
+                Layout.fillWidth: true
 
                 selectByMouse: true
 
@@ -140,7 +153,7 @@ NotePadForm {
                 }
 
                 onTextChanged: {
-
+                    searchProxyModel.textFilter = text
                 }
 
 
@@ -148,8 +161,12 @@ NotePadForm {
 
             ListView {
                 id: searchResultList
-
-
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                model: searchProxyModel
+                delegate: Text {
+                    text: model.name
+                }
             }
         }
 

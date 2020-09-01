@@ -48,6 +48,8 @@ WriteLeftDockForm {
 
     SKRSearchSheetListProxyModel {
         id: deletedSheetProxyModel
+        showDeletedFilter: true
+        showNotDeletedFilter: false
     }
     navigation.deletedListViewProxyModel: deletedSheetProxyModel
 
