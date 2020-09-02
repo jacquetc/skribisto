@@ -28,22 +28,58 @@ NotePadForm {
         id: noteFlowComponent
         Rectangle {
             id: itemBase
-            height: 40
-            width: 40
+            width: childrenRect.width + 10
+            height: childrenRect.height + 10
+            color: "lightskyblue"
+            radius : height / 2
             property int projectId: itemProjectId
             property int sheetId: itemSheetId
             property int noteId: itemNoteId
             property int isSynopsis: -2
 
 
+            TapHandler {
+                id: tapHandler
+                onSingleTapped: {
+
+
+                }
+            }
+
+
+            Keys.onPressed: {
+                if (event.key === Qt.Key_Delete){
+                    console.log("Delete key pressed ")
+                    // remove
+                    plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+
+                }
+                if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Delete){
+                    console.log("Shift delete key pressed ")
+                    // remove completely the note
+
+                    //TODO: ask confirmation before erasing
+
+                    //plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+
+                }
+
+            }
 
             RowLayout{
-                anchors.fill: parent
+                id: noteLayout
+                anchors.left: parent.left
+                anchors.top: parent.top
 
+                anchors.margins : 5
 
                 Text{
                     id: noteTitle
                     text: model.title
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignHCenter
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                 }
@@ -73,6 +109,33 @@ NotePadForm {
 
     }
 
+//--------------------------------------------
+//---------- set title------------------------
+//--------------------------------------------
+
+    Connections{
+        target: plmData.noteHub()
+        function onTitleChanged(projectId, noteId, newTitle){
+            if(projectId !== root.projectId){
+                return
+            }
+
+            var i;
+            for(i=0; i < noteListModel.count; i++){
+                var item = noteListModel.get(i)
+
+                if (item.itemNoteId === noteId){
+                    console.log("removing " + i)
+                    noteListModel.setProperty(i, "title", newTitle)
+                    break
+                }
+
+            }
+
+
+        }
+
+    }
     //--------------------------------------------
     //---------- Add Note------------------------
     //--------------------------------------------
@@ -88,6 +151,20 @@ NotePadForm {
     }
     addNoteMenuToolButton.action: addNoteAction
 
+
+    Connections{
+        target: plmData.noteHub()
+        function onSheetNoteRelationshipAdded(projectId, sheetId, noteId){
+            if(sheetId !== root.sheetId){
+                return
+            }
+
+            var title = plmData.noteHub().getTitle(projectId, noteId)
+            noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
+
+        }
+
+    }
 
     //proxy model for search :
 
@@ -145,9 +222,8 @@ NotePadForm {
                     var title = titleTextField.text
                     plmData.noteHub().setTitle(projectId, noteId, title)
 
-
                     // add to model
-                    noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
+                    //noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
 
                     titleEditPopup.close()
                 }
@@ -159,24 +235,188 @@ NotePadForm {
 
             }
 
-            ListView {
-                id: searchResultList
+            ScrollView {
+                id: searchListScrollView
+                focusPolicy: Qt.StrongFocus
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                model: searchProxyModel
-                delegate: Text {
-                    text: model.name
+                clip: true
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                ListView {
+                    id: searchResultList
+                    anchors.fill: parent
+                    clip: true
+                    smooth: true
+                    focus: true
+                    boundsBehavior: Flickable.StopAtBounds
+
+
+                    model: searchProxyModel
+                    interactive: true
+                    spacing: 1
+                    delegate: Component {
+                        id: itemDelegate
+
+                        Item {
+                            id: delegateRoot
+                            height: 30
+
+
+                            anchors {
+                                left: Qt.isQtObject(parent) ? parent.left : undefined
+                                right: Qt.isQtObject(parent) ? parent.right : undefined
+                                leftMargin: 5
+                                rightMargin: 5
+                            }
+
+                            TapHandler {
+                                id: tapHandler
+                                onSingleTapped: {
+                                    listView.currentIndex = model.index
+                                    delegateRoot.forceActiveFocus()
+                                    eventPoint.accepted = true
+                                }
+                            }
+
+                            //                        Shortcut {
+                            //                            sequences: ["Return", "Space"]
+                            //                            onActivated: {
+
+                            //                                //create relationship with note
+
+                            //                                var noteId = model.paperId
+                            //                                var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+
+                            //                                if (!error.success){
+                            //                                    //TODO: add notification
+                            //                                    return
+                            //                                }
+
+                            //                                titleEditPopup.close()
+
+                            //                            }
+
+                            //                            //enabled: listView.activeFocus
+                            //                        }
+
+                            Keys.priority: Keys.AfterItem
+
+                            Keys.onPressed: {
+                                if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
+                                    console.log("Return key pressed title")
+
+                                    //create relationship with note
+
+                                    var noteId = model.paperId
+                                    var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+
+                                    if (!error.success){
+                                        //TODO: add notification
+                                        return
+                                    }
+
+                                    titleEditPopup.close()
+
+
+                                }
+
+                            }
+                            Text {
+                                text: model.name
+                                anchors.fill: parent
+                                horizontalAlignment: Qt.AlignLeft
+                                verticalAlignment: Qt.AlignVCenter
+                            }
+                        }
+                    }
+
+                    highlight:  Component {
+                        id: highlight
+                        Rectangle {
+                            //                            x: 0
+                            //                            y: searchResultList.currentItem.y + 1
+                            //                            width: searchResultList.width
+                            //                            height: searchResultList.currentItem.height - 1
+                            //                            color: "transparent"
+                            radius: 5
+                            border.color:  "lightsteelblue"
+                            border.width: 2
+                            visible: searchResultList.focus
+                            Behavior on y {
+                                SpringAnimation {
+                                    spring: 3
+                                    damping: 0.2
+                                }
+                            }
+                        }
+                    }
+
+
+                    section.property: "projectId"
+                    section.criteria: ViewSection.FullString
+                    section.labelPositioning: ViewSection.CurrentLabelAtStart |
+                                              ViewSection.InlineLabels
+                    section.delegate: sectionHeading
+
+                    // The delegate for each section header
+                    Component {
+                        id: sectionHeading
+                        Rectangle {
+                            width: searchResultList.width
+                            height: childrenRect.height
+                            color: "lightsteelblue"
+
+                            required property string section
+
+                            Text {
+                                text: qsTr("Existing")
+                                font.bold: true
+                                //font.pixelSize: 20
+                            }
+                        }
+                    }
                 }
             }
         }
-
     }
 
 
+    //--------------------------------------------
+    //------- Remove Note relationship with sheet
+    //--------------------------------------------
 
+    Connections{
+        target: plmData.noteHub()
+        function onSheetNoteRelationshipRemoved(projectId, sheetId, noteId){
+            if(sheetId !== root.sheetId){
+                return
+            }
+            console.log("removing")
+            var i;
+            for(i=0; i < noteListModel.count; i++){
+                var item = noteListModel.get(i)
 
+                console.log("r " + i)
+                if (item.itemNoteId === noteId){
+                    console.log("removing " + i)
+                    noteListModel.remove(i)
+                    break
+                }
 
+            }
 
+        }
 
-
+    }
 }
+
+
+
+
+
+
+
+
+

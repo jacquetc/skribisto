@@ -32,7 +32,23 @@ RootPageForm {
     //    }
 
 
+//    Shortcut {
+//        enabled: true
+//        sequence: "Esc"
+//        onActivated: {
+//            console.log("activated 1")
+//            if(fullscreenAction.checked === true){
+//            fullscreenAction.checked = false
 
+//            }
+//            else{
+//                console.log("pressed")
+//            }
+
+
+
+//        }
+//    }
     SkrUserSettings {
         id: skrUserSettings
     }

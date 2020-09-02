@@ -513,7 +513,7 @@ DeletedListViewForm {
                         }
                         Rectangle {
                             id: currentItemIndicator
-                            color: "#cccccc"
+                            color: "lightsteelblue"
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
                             visible: listView.currentIndex === model.index
@@ -581,8 +581,8 @@ DeletedListViewForm {
                                             editingFinished()
                                             event.accepted = true
                                         }
-                                        if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
-                                            console.log("Alt Return key pressed title")
+                                        if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                            console.log("Ctrl Return key pressed title")
                                             event.accepted = true
                                         }
                                     }

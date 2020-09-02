@@ -1,5 +1,6 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
+import QtQml 2.15
 import eu.skribisto.documenthandler 1.0
 
 WritingZoneForm {
@@ -37,13 +38,47 @@ WritingZoneForm {
     }
 
     //quit fullscreen :
-    Shortcut {
-        enabled: textArea.activeFocus
-        sequence: "Esc"
-        onActivated: fullscreenAction.checked = false
+
+//    Shortcut {
+//        enabled: textArea.activeFocus
+//        sequence: "Esc"
+//        onActivatedAmbiguously: {
+//            console.log("activated 2")
+//            if(fullscreenAction.checked === true){
+//            fullscreenAction.checked = false
+
+//            }
+
+//        }
+//    }
+
+//    Keys.priority: Keys.BeforeItem
+
+//    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
+//    Keys.onPressed: {
+//        console.log("escape in WritingZone z")
+//        if (event.key === Qt.Key_Escape){
+//            console.log("escape in WritingZone a")
+//            if (textArea.activeFocus){
+//                     if(fullscreenAction.checked === true){
+//                         console.log("escape in WritingZone b")
+//                            fullscreenAction.checked = false
+//                         event.accepted = true
+//                     }
+//                     else
+//                     {
+//                         event.accepted = false
+//                     }
+//            }
+//            event.accepted = false
+
+
+//        }
+//        if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Ke){
+
+//        }
+
     }
-
-
 
 
 

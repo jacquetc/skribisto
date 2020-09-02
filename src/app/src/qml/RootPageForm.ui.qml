@@ -8,7 +8,7 @@ import "Welcome"
 import "NoteOverview"
 import "Gallery"
 import "Projects"
-//import "Write"
+import "Write"
 
 //import QtGraphicalEffects 1.0
 Item {
@@ -141,10 +141,10 @@ Item {
 
                         }
 
-//                        WritePage {
-//                            id: writePage
+                        WritePage {
+                            id: writePage
 
-//                        }
+                        }
 
                     }
                     //        PageIndicator {
