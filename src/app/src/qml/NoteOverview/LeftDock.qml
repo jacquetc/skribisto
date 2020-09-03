@@ -113,7 +113,7 @@ LeftDockForm {
 
     Connections {
         target: navigation
-        onOpenDocument: function (openedProjectId, openedPaperId, _projectId, _paperId) {
+        function onOpenDocument(openedProjectId, openedPaperId, _projectId, _paperId) {
             Globals.openNoteInNewTabCalled(_projectId, _paperId)
         }
         }

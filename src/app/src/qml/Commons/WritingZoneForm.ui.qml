@@ -20,10 +20,14 @@ Item {
     property alias leftScrollMouseArea: leftScrollMouseArea
     property alias rightScrollMouseArea: rightScrollMouseArea
     property alias rightScrollTouchArea: rightScrollTouchArea
+    property alias placeholderText: textArea.placeholderText
+
+    property alias leftScrollItemVisible: leftScrollItem.visible
 
     Pane {
         id: pane
         anchors.fill: parent
+        padding: 0
 
         //padding: 0
         ColumnLayout {

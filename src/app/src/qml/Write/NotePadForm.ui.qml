@@ -1,11 +1,12 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
+import "../Commons"
 
 Item {
     id: base
     property alias noteFlow: noteFlow
-    property alias noteTextArea: noteTextArea
+    property alias noteWritingZone: noteWritingZone
     property alias openSynopsisToolButton: openSynopsisToolButton
     property alias openNoteInNewTabToolButton: openNoteInNewTabToolButton
     property alias addNoteMenuToolButton: addNoteMenuToolButton
@@ -86,6 +87,7 @@ Item {
                         padding: 0
                         antialiasing: true
                         clip: true
+                        focus: true
 
                         Repeater {
                             id: noteRepeater
@@ -95,14 +97,21 @@ Item {
 
                         }
 
+                        Accessible.role: Accessible.List
+                        Accessible.name: qsTr("Notes list")
+                        Accessible.description: "Empty list of related notes"
                     }
                 }
             }
 
-            TextArea {
-                id: noteTextArea
+            WritingZone {
+                id: noteWritingZone
+                placeholderText: "Type you note here..."
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                stretch: true
+                minimapVisibility: false
+                leftScrollItemVisible: false
             }
         }
     }

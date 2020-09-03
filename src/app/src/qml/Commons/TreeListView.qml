@@ -113,7 +113,7 @@ TreeListViewForm {
         determineIfGoUpButtonEnabled()
 
 
-        if (currentParent != -2 & currentProject != -2) {
+        if (currentParent !== -2 & currentProject !== -2) {
             currentParentToolButton.text = proxyModel.getItemName(
                         currentProject, currentParent)
             //console.log("onCurrentParentChanged")
@@ -124,7 +124,7 @@ TreeListViewForm {
         }
     }
     onCurrentProjectChanged: {
-        if (currentParent != -2 & currentProject != -2) {
+        if (currentParent !== -2 & currentProject !== -2) {
             currentParentToolButton.text = proxyModel.getItemName(
                         currentProject, currentParent)
             //console.log("onCurrentProjectChanged")

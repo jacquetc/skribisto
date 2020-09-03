@@ -42,7 +42,7 @@ RightDockForm {
 
     Connections {
         target: Globals
-        onOpenNoteCalled: function (projectId, paperId) {
+        function onOpenNoteCalled(projectId, paperId) {
 
 
 

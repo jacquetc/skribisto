@@ -7,7 +7,7 @@ TabForm {
     property string pageType : "undefined"
     property int projectId : -2
     property int paperId : -2
-    readonly property string tabId: {return pageType + "_" +  projectId + "_" + paperId}
+    readonly property string tabId: {return pageType + "_" +  projectId + "_" + paperId }
 
     function setTitle(newTitle) {
 

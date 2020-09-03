@@ -48,6 +48,9 @@ QtObject {
     //FullScreen
     signal fullScreenCalled(bool value)
 
+    //Focus
+    signal forceFocusOnEscapePressed()
+
 
     Component.onCompleted: {
         plmData.projectHub().onProjectLoaded.connect(setMultipleProject)

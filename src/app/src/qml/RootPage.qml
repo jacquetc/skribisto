@@ -32,23 +32,15 @@ RootPageForm {
     //    }
 
 
-//    Shortcut {
-//        enabled: true
-//        sequence: "Esc"
-//        onActivated: {
-//            console.log("activated 1")
-//            if(fullscreenAction.checked === true){
-//            fullscreenAction.checked = false
+    Shortcut {
+        sequence: "Esc"
+        onActivated: {
 
-//            }
-//            else{
-//                console.log("pressed")
-//            }
+            Globals.forceFocusOnEscapePressed()
+        }
+    }
 
 
-
-//        }
-//    }
     SkrUserSettings {
         id: skrUserSettings
     }
@@ -223,7 +215,7 @@ RootPageForm {
 
     Connections {
         target: plmData.projectHub()
-        onProjectLoaded: function (projectId) {
+        function onProjectLoaded(projectId) {
 
             // get last sheet id from settings or get top sheet id
             var topPaperId = plmData.sheetHub().getTopPaperId(projectId)
@@ -344,14 +336,16 @@ RootPageForm {
     projectTab.action: projectWindowAction
 
     //---------------------------------------------------------
+    //------------Open Sheet-----------------------------
+    //---------------------------------------------------------
 
-    property int insertionIndex: 0
+
     // openDocument :
     Connections {
         target: Globals
-        onOpenSheetCalled: function (openedProjectId, openedPaperId, projectId, paperId) {
+        function onOpenSheetCalled(openedProjectId, openedPaperId, projectId, paperId) {
             var pageType = "write"
-
+console.debug("a")
             // verify if project/sheetId not already opened
             var tabId = pageType + "_" +  projectId + "_" + paperId
             var i;
@@ -359,7 +353,8 @@ RootPageForm {
                 if (rootTabBar.itemAt(i).tabId === tabId){
 
                     rootTabBar.setCurrentIndex(i)
-         break
+  console.debug("b")
+                    break
                 }
             }
 
@@ -368,14 +363,19 @@ RootPageForm {
 
 
             var senderTabId = pageType + "_" +  openedProjectId + "_" + openedPaperId
+            console.debug("c", senderTabId)
             var j;
             for (j = 0; j < rootTabBar.count; j++) {
+                console.debug("c")
+                console.log(rootTabBar.itemAt(j).tabId)
                 if (rootTabBar.itemAt(j).tabId === senderTabId){
 
+                    console.debug("d")
                     rootSwipeView.itemAt(j).openDocument(projectId, paperId)
                     rootTabBar.itemAt(j).setTitle(plmData.sheetHub().getTitle(projectId, paperId))
                     rootTabBar.itemAt(j).projectId = projectId
                     rootTabBar.itemAt(j).paperId = paperId
+
                     break
                 }
             }
@@ -387,7 +387,7 @@ RootPageForm {
     //---------------------------------------------------------
     Connections {
         target: Globals
-        onOpenSheetInNewTabCalled: function (projectId, paperId) {
+        function onOpenSheetInNewTabCalled(projectId, paperId) {
             var pageType = "write"
             // verify if project/sheetId not already opened
             var tabId = pageType + "_" +  projectId + "_" + paperId
@@ -402,7 +402,7 @@ RootPageForm {
 
             //
 
-            insertionIndex = rootSwipeView.count
+            var insertionIndex = rootSwipeView.count
             // create WritePage tab
             var component = Qt.createComponent("Write/WritePage.qml");
             var incubator = component.incubateObject(rootSwipeView, {pageType: pageType,projectId: projectId, paperId: paperId });
@@ -411,8 +411,8 @@ RootPageForm {
                     if (status === Component.Ready) {
 
                         addTab(incubator, insertionIndex, pageType, projectId, paperId)
-                        console.debug("paprer 1 : ",paperId)
-                        console.debug("count 1 : ",rootSwipeView.count)
+//                        console.debug("paprer 1 : ",paperId)
+//                        console.debug("count 1 : ",rootSwipeView.count)
                         openSheetTimer.start()
                     }
                 }
@@ -423,8 +423,8 @@ RootPageForm {
 
             }
 
-            console.debug("paprer : ",paperId)
-            console.debug("count : ",rootSwipeView.count)
+//            console.debug("paper : ",paperId)
+//            console.debug("count : ",rootSwipeView.count)
 
         }
     }
@@ -434,6 +434,108 @@ RootPageForm {
         interval: 10
         onTriggered: rootTabBar.setCurrentIndex(insertionIndex)
     }
+
+    //---------------------------------------------------------
+    //------------Open Note-----------------------------
+    //---------------------------------------------------------
+
+
+    // openDocument :
+    Connections {
+        target: Globals
+        function onOpenNoteCalled(openedProjectId, openedPaperId, projectId, paperId) {
+            var pageType = "note"
+
+            // verify if project/noteId not already opened
+            var tabId = pageType + "_" +  projectId + "_" + paperId
+            var i;
+            for (i = 0; i < rootTabBar.count; i++) {
+                if (rootTabBar.itemAt(i).tabId === tabId){
+                    rootTabBar.setCurrentIndex(i)
+                    break
+                }
+            }
+
+
+            // determine from which page the call comes from
+
+
+            var senderTabId = pageType + "_" +  openedProjectId + "_" + openedPaperId
+            var j;
+            for (j = 0; j < rootTabBar.count; j++) {
+                if (rootTabBar.itemAt(j).tabId === senderTabId){
+
+                    rootSwipeView.itemAt(j).openDocument(projectId, paperId)
+                    rootTabBar.itemAt(j).setTitle(plmData.noteHub().getTitle(projectId, paperId))
+                    rootTabBar.itemAt(j).projectId = projectId
+                    rootTabBar.itemAt(j).paperId = paperId
+
+                    break
+                }
+            }
+
+
+        }
+    }
+
+    //---------------------------------------------------------
+    Connections {
+        target: Globals
+        function onOpenNoteInNewTabCalled(projectId, paperId) {
+            var pageType = "write"
+            // verify if project/noteId not already opened
+            var tabId = pageType + "_" +  projectId + "_" + paperId
+            var i;
+            for (i = 0; i < rootTabBar.count; i++) {
+                if (rootTabBar.itemAt(i).tabId === tabId){
+
+                    rootTabBar.setCurrentIndex(i)
+                    return
+                }
+            }
+
+            //
+
+            var insertionIndex = rootSwipeView.count
+            // create NotePage tab
+            var component = Qt.createComponent("Note/NotePage.qml");
+            var incubator = component.incubateObject(rootSwipeView, {pageType: pageType,projectId: projectId, paperId: paperId });
+            if (incubator.status !== Component.Ready) {
+                incubator.onStatusChanged = function(status) {
+                    if (status === Component.Ready) {
+
+                        addTab(incubator, insertionIndex, pageType, projectId, paperId)
+//                        console.debug("paper 1 : ",paperId)
+//                        console.debug("count 1 : ",rootSwipeView.count)
+                        openNoteTimer.start()
+                    }
+                }
+            } else {
+
+                addTab(incubator, insertionIndex,  pageType, projectId, paperId)
+                openNoteTimer.start()
+
+            }
+
+//            console.debug("paper : ",paperId)
+//            console.debug("count : ",rootSwipeView.count)
+
+        }
+    }
+    Timer{
+        id: openNoteTimer
+        repeat: false
+        interval: 10
+        onTriggered: rootTabBar.setCurrentIndex(insertionIndex)
+    }
+
+
+
+    //---------------------------------------------------------
+
+    //---------------------------------------------------------
+
+    //---------------------------------------------------------
 
     //---------------------------------------------------------
     Component.onCompleted: {

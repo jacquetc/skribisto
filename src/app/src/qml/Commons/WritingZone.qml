@@ -7,6 +7,7 @@ WritingZoneForm {
     id: root
     stretch: true
     minimapVisibility: true
+    leftScrollItemVisible: true
     property string name: ""
     readonly property int wantedCenteredTextAreaLeftPos: rootPageBase.width / 2 - textAreaWidth / 2
     readonly property int wantedCenteredTextAreaRightPos: rootPageBase.width / 2 + textAreaWidth / 2
@@ -36,6 +37,8 @@ WritingZoneForm {
         //console.log("bbbb")
         documentHandler.topMarginEverywhere = textTopMargin
     }
+
+
 
     //quit fullscreen :
 
@@ -78,7 +81,7 @@ WritingZoneForm {
 
 //        }
 
-    }
+//    }
 
 
 

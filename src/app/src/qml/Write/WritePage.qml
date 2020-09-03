@@ -43,7 +43,7 @@ WritePageForm {
 
     Connections {
         target: plmData.projectHub()
-        onProjectCountChanged: function (count){
+        function onProjectCountChanged(count){
             if(count === 0){
                 writingZone.enabled = false
             }
@@ -53,7 +53,14 @@ WritePageForm {
 
         }
     }
-
+// focus
+    Connections {
+        enabled: writingZone.visible
+        target: Globals
+        function onForceFocusOnEscapePressed(){
+            writingZone.forceActiveFocus()
+        }
+    }
 
     //---------------------------------------------------------
 
@@ -98,7 +105,7 @@ WritePageForm {
     }
 
     Component.onDestruction: {
-
+runActionsBedoreDestruction()
     }
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
@@ -372,6 +379,11 @@ WritePageForm {
     }
 
     function openDocument(_projectId, _paperId) {
+        // save current
+        if(projectId !== -2 && paperId !== -2 ){
+            saveContent()
+            saveCurrentPaperCursorPositionAndY()
+        }
 
         console.log("opening sheet :", _projectId, _paperId)
         writingZone.text = plmData.sheetHub().getContent(_projectId, _paperId)
@@ -736,7 +748,7 @@ WritePageForm {
     // project to be closed :
     Connections{
         target: plmData.projectHub()
-        onProjectToBeClosed: function (projectId) {
+        function onProjectToBeClosed(projectId) {
 
             if (projectId === this.projectId){
                 // save
@@ -780,7 +792,7 @@ WritePageForm {
     // fullscreen :
     Connections {
         target: Globals
-        onFullScreenCalled: function (value) {
+        function onFullScreenCalled(value) {
             if(value){
                 //save previous conf
                 fullscreen_left_dock_folded = leftDock.folded

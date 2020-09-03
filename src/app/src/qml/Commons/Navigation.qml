@@ -21,7 +21,7 @@ NavigationForm {
             id: treeListView
             proxyModel: root.treeListViewProxyModel
             model: root.treeListViewProxyModel
-            openedProjectId: root.openedPaperId
+            openedProjectId: root.openedProjectId
             openedPaperId: root.openedPaperId
 
             Component.onCompleted: {

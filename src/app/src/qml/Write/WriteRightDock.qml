@@ -40,15 +40,7 @@ WriteRightDockForm {
     //-----------------------------------------------------------
 
 
-    Connections {
-        target: Globals
-        onOpenSheetCalled: function (projectId, paperId) {
 
-
-
-
-        }
-    }
 
 
 

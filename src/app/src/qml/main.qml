@@ -85,7 +85,7 @@ ApplicationWindow {
 
     Connections {
         target: plmData.projectHub()
-        onProjectNotSavedAnymore: function (projectId){
+        function onProjectNotSavedAnymore(projectId){
             if (projectId === plmData.projectHub().getDefaultProject()){
                 saveAction.enabled = true
             }
@@ -95,7 +95,7 @@ ApplicationWindow {
 
     Connections {
         target: plmData.projectHub()
-        onProjectSaved: function (projectId){
+        function onProjectSaved(projectId){
             if (projectId === plmData.projectHub().getDefaultProject()){
                 saveAction.enabled = false
             }
@@ -140,7 +140,7 @@ ApplicationWindow {
 
     Connections {
         target: plmData.projectHub()
-        onIsThereAnyLoadedProjectChanged: function (value){
+       function onIsThereAnyLoadedProjectChanged(value){
             saveAction.enabled = value
             saveAsAction.enabled = value
             saveAllAction.enabled = value
@@ -371,7 +371,7 @@ ApplicationWindow {
 
     Connections {
         target: Globals
-        onFullScreenCalled: function (value) {
+        function onFullScreenCalled(value) {
             console.log("fullscreen")
             if(value){
                 visibility = Window.FullScreen

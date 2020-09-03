@@ -44,7 +44,7 @@ NotePageForm {
 
     Connections {
         target: plmData.projectHub()
-        onProjectCountChanged: function (count){
+        function onProjectCountChanged(count){
             if(count === 0){
                 writingZone.enabled = false
             }
@@ -97,7 +97,7 @@ NotePageForm {
     }
 
     Component.onDestruction: {
-
+        runActionsBedoreDestruction()
     }
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
@@ -371,6 +371,11 @@ NotePageForm {
     }
 
     function openDocument(_projectId, _paperId) {
+        // save current
+        if(projectId !== -2 && paperId !== -2 ){
+            saveContent()
+            saveCurrentPaperCursorPositionAndY()
+        }
 
         console.log("opening note :", _projectId, _paperId)
         writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
@@ -729,7 +734,7 @@ NotePageForm {
     // project to be closed :
     Connections{
         target: plmData.projectHub()
-        onProjectToBeClosed: function (projectId) {
+        function onProjectToBeClosed(projectId) {
 
             if (projectId === this.projectId){
                 // save
@@ -773,7 +778,7 @@ NotePageForm {
     // fullscreen :
     Connections {
         target: Globals
-        onFullScreenCalled: function (value) {
+        function onFullScreenCalled(value) {
             if(value){
                 //save previous conf
                 fullscreen_left_dock_folded = leftDock.folded

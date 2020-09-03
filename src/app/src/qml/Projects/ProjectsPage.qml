@@ -7,7 +7,7 @@ ProjectsPageForm {
     // hide tabbar
     Connections {
         target: plmData.projectHub()
-        onProjectCountChanged: function (count){
+        function onProjectCountChanged(count){
             if(count <= 1){
                 tabBar.visible = false
             }

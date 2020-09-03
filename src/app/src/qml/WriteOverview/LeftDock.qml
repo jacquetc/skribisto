@@ -116,7 +116,7 @@ LeftDockForm {
 
     Connections {
         target: navigation
-        onOpenDocument: function (openedProjectId, openedPaperId, _projectId, _paperId) {
+        function onOpenDocument(openedProjectId, openedPaperId, _projectId, _paperId) {
             Globals.openSheetInNewTabCalled(_projectId, _paperId)
         }
         }
