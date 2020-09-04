@@ -220,8 +220,10 @@ NotePadForm {
     }
 
     function saveContent(){
-        console.log("saving note")
-        plmData.noteHub().setContent(projectId, currentNoteId, noteWritingZone.text)
+        if(projectId !== -2 && currentNoteId !== -2){
+            console.log("saving note in notepad")
+            plmData.noteHub().setContent(projectId, currentNoteId, noteWritingZone.text)
+        }
     }
 
     // project to be closed :
@@ -328,7 +330,7 @@ NotePadForm {
                 var item = noteListModel.get(i)
                 
                 if (item.itemNoteId === noteId){
-                    console.log("removing " + i)
+
                     noteListModel.setProperty(i, "title", newTitle)
                     break
                 }
@@ -413,7 +415,7 @@ NotePadForm {
                     
                     //create basic note
                     var error = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
-                    
+                    console.log("A")
                     if (!error.success){
                         //TODO: add notification
                         return

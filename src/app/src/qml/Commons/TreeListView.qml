@@ -339,7 +339,7 @@ TreeListViewForm {
                     goToChildAction.trigger()
                     event.accepted = true
                 }
-                if (event.key === Qt.Key_Return){
+                if (event.key === Qt.Key_Return && delegateRoot.state !== "edit_name"){
                   console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
@@ -635,7 +635,13 @@ TreeListViewForm {
                                             //accepted()
                                         //}
                                         console.log("editing finished")
-                                        model.name = text
+                                        if(model.indent === -1){ //project item
+                                            model.projectName = text
+                                        }
+                                        else {
+                                            model.name = text
+                                        }
+
                                         delegateRoot.state = ""
                                     }
 
@@ -659,7 +665,7 @@ TreeListViewForm {
                                     id: tagLabel
 
                                     //                                text: model.tag
-                                    text:  model.tag
+                                    text:  model.tag === undefined ? "" : model.tag
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter

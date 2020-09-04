@@ -326,6 +326,31 @@ RootPageForm {
     }
 
 
+    //---------------------------------------------------------
+
+    function closeTabsByProject(projectId) {
+
+        var i;
+        for(i = 0; i < rootTabBar.count; i++){
+
+            if(rootTabBar.itemAt(i).projectId === projectId){
+
+                rootSwipeView.itemAt(i).runActionsBedoreDestruction()
+                rootSwipeView.removeItem(rootSwipeView.itemAt(i))
+                rootTabBar.removeItem(rootTabBar.itemAt(i))
+            }
+        }
+
+    }
+
+
+    // close all tabs :
+    Connections {
+        target:plmData.projectHub()
+        function onProjectToBeClosed(_projectId) {
+            closeTabsByProject(_projectId)
+        }
+    }
 
     //---------------------------------------------------------
 
@@ -339,13 +364,13 @@ RootPageForm {
     //------------Open Sheet-----------------------------
     //---------------------------------------------------------
 
-
+    property int insertionIndex: 0
     // openDocument :
     Connections {
         target: Globals
         function onOpenSheetCalled(openedProjectId, openedPaperId, projectId, paperId) {
             var pageType = "write"
-console.debug("a")
+
             // verify if project/sheetId not already opened
             var tabId = pageType + "_" +  projectId + "_" + paperId
             var i;
@@ -353,7 +378,7 @@ console.debug("a")
                 if (rootTabBar.itemAt(i).tabId === tabId){
 
                     rootTabBar.setCurrentIndex(i)
-  console.debug("b")
+
                     break
                 }
             }
@@ -370,7 +395,6 @@ console.debug("a")
                 console.log(rootTabBar.itemAt(j).tabId)
                 if (rootTabBar.itemAt(j).tabId === senderTabId){
 
-                    console.debug("d")
                     rootSwipeView.itemAt(j).openDocument(projectId, paperId)
                     rootTabBar.itemAt(j).setTitle(plmData.sheetHub().getTitle(projectId, paperId))
                     rootTabBar.itemAt(j).projectId = projectId
@@ -402,34 +426,34 @@ console.debug("a")
 
             //
 
-            var insertionIndex = rootSwipeView.count
+            insertionIndex = rootSwipeView.count
             // create WritePage tab
             var component = Qt.createComponent("Write/WritePage.qml");
-            var incubator = component.incubateObject(rootSwipeView, {pageType: pageType,projectId: projectId, paperId: paperId });
+            var incubator = component.incubateObject(rootSwipeView, {pageType: pageType, projectId: projectId, paperId: paperId });
             if (incubator.status !== Component.Ready) {
                 incubator.onStatusChanged = function(status) {
                     if (status === Component.Ready) {
 
                         addTab(incubator, insertionIndex, pageType, projectId, paperId)
-//                        console.debug("paprer 1 : ",paperId)
-//                        console.debug("count 1 : ",rootSwipeView.count)
-                        openSheetTimer.start()
+                        //                        console.debug("paprer 1 : ",paperId)
+                        //                        console.debug("count 1 : ",rootSwipeView.count)
+                        openTabTimer.start()
                     }
                 }
             } else {
 
                 addTab(incubator, insertionIndex,  pageType, projectId, paperId)
-                openSheetTimer.start()
+                openTabTimer.start()
 
             }
 
-//            console.debug("paper : ",paperId)
-//            console.debug("count : ",rootSwipeView.count)
+            //            console.debug("paper : ",paperId)
+            //            console.debug("count : ",rootSwipeView.count)
 
         }
     }
     Timer{
-        id: openSheetTimer
+        id: openTabTimer
         repeat: false
         interval: 10
         onTriggered: rootTabBar.setCurrentIndex(insertionIndex)
@@ -496,7 +520,7 @@ console.debug("a")
 
             //
 
-            var insertionIndex = rootSwipeView.count
+            insertionIndex = rootSwipeView.count
             // create NotePage tab
             var component = Qt.createComponent("Note/NotePage.qml");
             var incubator = component.incubateObject(rootSwipeView, {pageType: pageType,projectId: projectId, paperId: paperId });
@@ -505,29 +529,23 @@ console.debug("a")
                     if (status === Component.Ready) {
 
                         addTab(incubator, insertionIndex, pageType, projectId, paperId)
-//                        console.debug("paper 1 : ",paperId)
-//                        console.debug("count 1 : ",rootSwipeView.count)
-                        openNoteTimer.start()
+                        //                        console.debug("paper 1 : ",paperId)
+                        //                        console.debug("count 1 : ",rootSwipeView.count)
+                        openTabTimer.start()
                     }
                 }
             } else {
 
                 addTab(incubator, insertionIndex,  pageType, projectId, paperId)
-                openNoteTimer.start()
+                openTabTimer.start()
 
             }
 
-//            console.debug("paper : ",paperId)
-//            console.debug("count : ",rootSwipeView.count)
+            //            console.debug("paper : ",paperId)
+            //            console.debug("count : ",rootSwipeView.count)
 
         }
     }
-    Timer{
-        id: openNoteTimer
-        repeat: false
-        interval: 10
-        onTriggered: rootTabBar.setCurrentIndex(insertionIndex)
-    }
 
 
 
@@ -536,6 +554,8 @@ console.debug("a")
     //---------------------------------------------------------
 
     //---------------------------------------------------------
+
+
 
     //---------------------------------------------------------
     Component.onCompleted: {

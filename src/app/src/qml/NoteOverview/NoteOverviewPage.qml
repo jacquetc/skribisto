@@ -6,6 +6,7 @@ import ".."
 
 
 NoteOverviewPageForm {
+    id: root
     property string pageType: "noteOverview"
 
     Component.onCompleted: {

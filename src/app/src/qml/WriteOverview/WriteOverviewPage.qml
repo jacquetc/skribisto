@@ -6,6 +6,7 @@ import ".."
 
 
 WriteOverviewPageForm {
+    id: root
     property string pageType: "writeOverview"
 
 

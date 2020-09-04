@@ -6,8 +6,7 @@ import QtQuick.Controls 2.12
 
 Dialog {
     id: dialog
-    x:200
-    y:200
+
     anchors.centerIn: Overlay.overlay
 
     property alias dialogTitle: dialog.title

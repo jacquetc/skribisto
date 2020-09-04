@@ -175,7 +175,6 @@ backupFile = backupFile + "." + type;
 PLMError PLMProjectHub::closeProject(int projectId)
 {
     PLMError error;
-
     emit projectToBeClosed(projectId);
     error = plmProjectManager->closeProject(projectId);
     IFOK(error) {

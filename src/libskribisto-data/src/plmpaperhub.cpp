@@ -438,7 +438,7 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
     QList<int> idList;
     IFOKDO(error, queries.getSortedIds(idList));
 
-    if (paperId == -1 && idList.isEmpty()){// project item with nothing else
+    if (idList.isEmpty()){// project item with nothing else
         return false;
     }
     if(paperId == idList.last()){

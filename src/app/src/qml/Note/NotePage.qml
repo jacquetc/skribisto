@@ -372,10 +372,11 @@ NotePageForm {
 
     function openDocument(_projectId, _paperId) {
         // save current
-        if(projectId !== -2 && paperId !== -2 ){
+        if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
             saveContent()
             saveCurrentPaperCursorPositionAndY()
         }
+
 
         console.log("opening note :", _projectId, _paperId)
         writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
@@ -420,9 +421,9 @@ NotePageForm {
             //save cursor position of current document :
 
             var previousCursorPosition = writingZone.cursorPosition
-            console.log("previousCursorPosition", previousCursorPosition)
+            //console.log("previousCursorPosition", previousCursorPosition)
             var previousY = writingZone.flickable.contentY
-            console.log("previousContentY", previousY)
+            //console.log("previousContentY", previousY)
             skrUserSettings.insertInProjectSettingHash(
                         projectId, "notePositionHash", paperId,
                         previousCursorPosition)

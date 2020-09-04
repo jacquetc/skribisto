@@ -193,8 +193,8 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
             break;
 
         case PLMNoteItem::Roles::NameRole:
-            error = plmdata->noteHub()->setTitle(projectId, paperId, value.toString());
-            break;
+                error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
+
 
         case PLMNoteItem::Roles::TagRole:
             error = plmdata->notePropertyHub()->setProperty(projectId, paperId,

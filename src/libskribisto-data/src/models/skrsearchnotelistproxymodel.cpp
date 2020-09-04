@@ -97,7 +97,7 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelIn
     if(result && item->data(PLMNoteItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter){
         result = true;
     }
-    else {
+    else if(result){
         result = false;
     }
 
@@ -115,7 +115,7 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int sourceRow, const QModelIn
     if(result && item->data(PLMNoteItem::Roles::NameRole).toString().contains(m_textFilter, Qt::CaseInsensitive)){
         result = true;
     }
-    else {
+    else if(result){
         result = false;
     }
 

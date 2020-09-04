@@ -53,7 +53,7 @@ WritePageForm {
 
         }
     }
-// focus
+    // focus
     Connections {
         enabled: writingZone.visible
         target: Globals
@@ -99,14 +99,13 @@ WritePageForm {
 
     function runActionsBedoreDestruction() {
 
+        console.log("runActionsBedoreDestruction")
         saveCurrentPaperCursorPositionAndY()
         contentSaveTimer.stop()
         saveContent()
     }
 
-    Component.onDestruction: {
-runActionsBedoreDestruction()
-    }
+
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------
@@ -380,7 +379,7 @@ runActionsBedoreDestruction()
 
     function openDocument(_projectId, _paperId) {
         // save current
-        if(projectId !== -2 && paperId !== -2 ){
+        if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
             saveContent()
             saveCurrentPaperCursorPositionAndY()
         }
@@ -428,9 +427,9 @@ runActionsBedoreDestruction()
             //save cursor position of current document :
 
             var previousCursorPosition = writingZone.cursorPosition
-            console.log("previousCursorPosition", previousCursorPosition)
+            //console.log("previousCursorPosition", previousCursorPosition)
             var previousY = writingZone.flickable.contentY
-            console.log("previousContentY", previousY)
+            //console.log("previousContentY", previousY)
             skrUserSettings.insertInProjectSettingHash(
                         projectId, "writeSheetPositionHash", paperId,
                         previousCursorPosition)
@@ -739,25 +738,32 @@ runActionsBedoreDestruction()
 
     function saveContent(){
         console.log("saving sheet")
-        plmData.sheetHub().setContent(projectId, paperId, writingZone.text)
-    }
+        var error = plmData.sheetHub().setContent(projectId, paperId, writingZone.text)
+        if (!error.success){
+            console.log("saving sheet failed", projectId, paperId)
+        }
+        else {
+            console.log("saving sheet success", projectId, paperId)
 
-
-
-
-    // project to be closed :
-    Connections{
-        target: plmData.projectHub()
-        function onProjectToBeClosed(projectId) {
-
-            if (projectId === this.projectId){
-                // save
-                saveContent()
-                saveCurrentPaperCursorPositionAndY()
-
-            }
         }
     }
+
+
+
+
+//    // project to be closed :
+//    Connections{
+//        target: plmData.projectHub()
+//        function onProjectToBeClosed(projectId) {
+
+//            if (projectId === this.projectId){
+//                // save
+//                saveContent()
+//                saveCurrentPaperCursorPositionAndY()
+
+//            }
+//        }
+//    }
 
     //    // projectClosed :
     //    Connections {

@@ -78,7 +78,7 @@ bool SKRSearchSheetListProxyModel::setData(const QModelIndex& index, const QVari
 
 bool SKRSearchSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    bool result = false;
+    bool result = true;
 
     QModelIndex index = this->sourceModel()->index(sourceRow, 0, sourceParent);
     if (!index.isValid()){
@@ -96,7 +96,7 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelI
     if(result && item->data(PLMSheetItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter){
        result = true;
     }
-    else {
+    else  if(result){
         result = false;
     }
 
@@ -116,9 +116,10 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelI
     if(result && item->data(PLMSheetItem::Roles::NameRole).toString().contains(m_textFilter, Qt::CaseInsensitive)){
         result = true;
     }
-    else {
+    else  if(result){
         result = false;
     }
+
 
 
     return result;

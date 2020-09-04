@@ -1,5 +1,5 @@
 import QtQuick 2.12
-import QtQuick.Controls 2.12
+import QtQuick.Controls 2.14
 import QtQuick.Layouts 1.12
 import QtQml.Models 2.12
 import eu.skribisto.projecthub 1.0
@@ -105,18 +105,38 @@ DeletedListViewForm {
             var name =  plmData.projectHub().getProjectName(projectId)
 
             projectComboBoxModel.append({projectId: projectId, name: name})
+            console.log("projectList")
 
-            // select last :
-            trashProjectComboBox.currentIndex = i;
-            proxyModel.projectIdFilter = trashProjectComboBox.valueAt(i)
         }
 
+        // select last :
+        if (projectList.length > 0){
+            trashProjectComboBox.currentIndex = projectList.length - 1;
+            var _projectId = trashProjectComboBox.valueAt(projectList.length - 1)
+            proxyModel.projectIdFilter = _projectId
+            currentProject = _projectId
+        }
+    }
+    trashProjectComboBox.onCurrentIndexChanged: {
+        console.log("onCurrentIndexChanged")
+
+        if(trashProjectComboBox.currentValue === undefined){
+
+            var projectList = plmData.projectHub().getProjectIdList()
+            trashProjectComboBox.currentIndex = projectList.length - 1;
+            var _projectId = trashProjectComboBox.valueAt(projectList.length - 1)
+            proxyModel.projectIdFilter = _projectId
+            currentProject = _projectId
+        }
+        else {
+            proxyModel.projectIdFilter = trashProjectComboBox.currentValue
+            currentProject = trashProjectComboBox.currentValue
+
+        }
+
+
     }
 
-    trashProjectComboBox.onActivated: {
-        proxyModel.projectIdFilter = trashProjectComboBox.currentValue
-
-    }
 
     //-----------------------------------------------------------------------------
     // go back button :

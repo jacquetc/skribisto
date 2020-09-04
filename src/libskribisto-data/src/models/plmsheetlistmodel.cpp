@@ -206,7 +206,8 @@ bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value,
             break;
 
         case PLMSheetItem::Roles::NameRole:
-            error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
+
+                error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
             break;
 
         case PLMSheetItem::Roles::TagRole:

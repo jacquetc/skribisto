@@ -106,7 +106,7 @@ Item {
 
             WritingZone {
                 id: noteWritingZone
-                placeholderText: "Type you note here..."
+                placeholderText: "Type your note here..."
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 stretch: true
