@@ -1,5 +1,5 @@
 pragma Singleton
-import QtQuick 2.12
+import QtQuick 2.15
 import Qt.labs.settings 1.1
 
 QtObject {
@@ -16,6 +16,15 @@ QtObject {
     property Settings backupSettings: Settings{
         category: "backup"
         property string paths: ""
+        property bool backUpEveryCheckBoxChecked: false
+        property int backUpEveryHours: 10
+
+    }
+
+    property Settings accessibilitySettings: Settings{
+        category: "accessibility"
+        property bool disallowSwipeBetweenTabsCheckBoxChecked: false
+        property bool showMenuBar: false
 
     }
 

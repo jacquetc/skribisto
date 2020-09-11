@@ -1,6 +1,6 @@
 pragma Singleton
 
-import QtQuick 2.12
+import QtQuick 2.15
 
 
 QtObject {
@@ -51,6 +51,15 @@ QtObject {
     //Focus
     signal forceFocusOnEscapePressed()
 
+
+    signal showMenuBarCalled()
+
+
+
+    signal showNewProjectWizard()
+    signal showProjectPage()
+    signal showWelcomePage()
+    signal showOpenProjectDialog()
 
     Component.onCompleted: {
         plmData.projectHub().onProjectLoaded.connect(setMultipleProject)

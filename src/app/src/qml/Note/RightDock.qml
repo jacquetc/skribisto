@@ -1,6 +1,6 @@
-import QtQuick 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.notelistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0

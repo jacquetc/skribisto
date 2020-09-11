@@ -1,7 +1,7 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import QtQml.Models 2.12
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
+import QtQml.Models 2.15
 
 TreeListViewForm {
     id: root
@@ -266,17 +266,31 @@ TreeListViewForm {
 
     Keys.priority: Keys.AfterItem
 
-    Keys.onPressed: {
-          console.log("treeview key pressed")
-
-        event.accepted = true
+    Keys.onReleased: {
+        if(event.key === Qt.Key_Alt){
+            console.log("treeview alt key released")
+            event.accepted = false
+            return
         }
+        event.accepted = true
+    }
+    Keys.onPressed: {
+        console.log("treeview key pressed")
+        if(event.key === Qt.Key_Alt){
+            console.log("treeview alt key pressed")
+            event.accepted = false
+            return
+        }
+        event.accepted = true
+    }
+
+
 
     // TreeView item :
     Component {
         id: dragDelegate
 
-       DropArea {
+        DropArea {
             id: delegateRoot
 
             onEntered: {
@@ -335,17 +349,17 @@ TreeListViewForm {
 
             Keys.onPressed: {
                 if (event.key === Qt.Key_Right){
-                  console.log("Right key pressed")
+                    console.log("Right key pressed")
                     goToChildAction.trigger()
                     event.accepted = true
                 }
                 if (event.key === Qt.Key_Return && delegateRoot.state !== "edit_name"){
-                  console.log("Return key pressed")
+                    console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
                 }
                 if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
-                  console.log("Alt Return key pressed")
+                    console.log("Alt Return key pressed")
                     openDocumentInNewTabAction.trigger()
                     event.accepted = true
                 }
@@ -395,11 +409,11 @@ TreeListViewForm {
 
                 HoverHandler {
                     id: hoverHandler
-//                    onHoveredChanged: {
-//                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
-//                            listView.currentIndex = model.index
-//                        }
-//                    }
+                    //                    onHoveredChanged: {
+                    //                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
+                    //                            listView.currentIndex = model.index
+                    //                        }
+                    //                    }
                 }
 
                 TapHandler {
@@ -521,6 +535,7 @@ TreeListViewForm {
 
                             // edit it :
                             _listView.itemAtIndex(0).editName()
+                            //_listView.itemAt(0, 0).editName()
 
 
                         }
@@ -543,7 +558,7 @@ TreeListViewForm {
                         console.log("model.openedProjectId", openedProjectId)
                         console.log("model.projectId", model.projectId)
                         root.openDocument(openedProjectId, openedPaperId, model.projectId,
-                                                   model.paperId)
+                                          model.paperId)
                     }
                 }
 
@@ -562,7 +577,7 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("model.projectId", model.projectId)
                         root.openDocumentInNewTab(model.projectId,
-                                                   model.paperId)
+                                                  model.paperId)
 
                     }
                 }
@@ -632,7 +647,7 @@ TreeListViewForm {
 
                                     onEditingFinished: {
                                         //if (!activeFocus) {
-                                            //accepted()
+                                        //accepted()
                                         //}
                                         console.log("editing finished")
                                         if(model.indent === -1){ //project item
@@ -649,12 +664,12 @@ TreeListViewForm {
 
                                     Keys.onPressed: {
                                         if (event.key === Qt.Key_Return){
-                                          console.log("Return key pressed title")
+                                            console.log("Return key pressed title")
                                             editingFinished()
                                             event.accepted = true
                                         }
                                         if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
-                                          console.log("Ctrl Return key pressed title")
+                                            console.log("Ctrl Return key pressed title")
                                             event.accepted = true
                                         }
                                     }

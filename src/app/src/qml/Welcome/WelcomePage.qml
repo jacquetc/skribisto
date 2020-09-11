@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.15
 import eu.skribisto.projecthub 1.0
 import ".."
 
@@ -26,6 +26,19 @@ WelcomePageForm {
     tabBar.visible: Globals.compactSize
     mainButtonsPane.visible: !Globals.compactSize
     separator.visible: !Globals.compactSize
+
+
+
+    Connections {
+        target: Globals
+        function onProjectPage() {
+            stackLayout.currentIndex = 0
+        }
+    }
+
+
+
+
 
     function init() {
         //leftBase.onBaseWidthChanged.connect(changeLeftBaseWidth)

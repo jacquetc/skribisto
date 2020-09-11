@@ -1,6 +1,6 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
 import ".."
 import "../Commons"
 
@@ -61,6 +61,7 @@ Item {
                                     Layout.preferredHeight: dynamicHeight
                                     contentHeight: 400
                                     Layout.minimumWidth: 100
+
 
                                     Navigation {
                                         id: navigation

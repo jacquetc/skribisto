@@ -38,11 +38,11 @@ public:
     Q_INVOKABLE PLMError createNewEmptyProject(const QString& path);
     Q_INVOKABLE PLMError             saveProject(int projectId);
     Q_INVOKABLE PLMError             saveProjectAs(int            projectId,
-                                       const QString& type,
-                                       const QString& path);
+                                                   const QString& type,
+                                                   const QString& path);
     Q_INVOKABLE PLMError             saveAProjectCopy(int            projectId,
-                                       const QString& type,
-                                       const QString& path);
+                                                      const QString& type,
+                                                      const QString& path);
     Q_INVOKABLE PLMError backupAProject(int projectId, const QString &type, const QString &folderPath);
     Q_INVOKABLE PLMError             closeProject(int projectId);
     Q_INVOKABLE PLMError             closeAllProjects();
@@ -56,16 +56,18 @@ public:
     Q_INVOKABLE bool                 isThereAnyLoadedProject();
 
     Q_INVOKABLE int                  getDefaultProject();
-    void                 setDefaultProject(int defaultProject);
+    Q_INVOKABLE void                 setDefaultProject(int defaultProject);
 
 
     Q_INVOKABLE QList<int>           projectsNotSaved();
-    Q_INVOKABLE QList<int>           projectsNotYetSavedOnce();
+    Q_INVOKABLE bool                 isProjectSaved(int projectId);
+    Q_INVOKABLE QList<int>           projectsNotModifiedOnce();
+    Q_INVOKABLE bool                 isProjectNotModifiedOnce(int projectId);
 
 
     Q_INVOKABLE QString              getProjectName(int projectId) const;
     Q_INVOKABLE PLMError             setProjectName(int            projectId,
-                                        const QString& projectName);
+                                                    const QString& projectName);
 
     QString              getProjectUniqueId(int projectId) const;
 
@@ -89,11 +91,12 @@ signals:
     Q_INVOKABLE void             allProjectsClosed();
     Q_INVOKABLE void  isThereAnyLoadedProjectChanged(bool value);
     Q_INVOKABLE void             projectTypeChanged(int            projectId,
-                                        const QString& newType);
+                                                    const QString& newType);
+    Q_INVOKABLE void             defaultProjectChanged(int            projectId);
     Q_INVOKABLE void             projectPathChanged(int            projectId,
-                                        const QString& newPath);
+                                                    const QString& newPath);
     Q_INVOKABLE void             projectNameChanged(int            projectId,
-                                        const QString& newProjectName);
+                                                    const QString& newProjectName);
     Q_INVOKABLE void             projectSaved(int projectId);
     Q_INVOKABLE void             projectNotSavedAnymore(int projectId);
     Q_INVOKABLE void             projectCountChanged(int count);
@@ -108,7 +111,7 @@ private slots:
 private:
 
     PLMError m_error;
-    QList<int>m_projectsNotYetSavedOnceList, m_projectsNotSavedList;
+    QList<int>m_projectsNotModifiedOnceList, m_projectsNotSavedList;
     QString m_tableName;
     int m_defaultProject;
 };

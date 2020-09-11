@@ -1,6 +1,6 @@
-import QtQuick 2.12
-import QtQml 2.12
-import QtQuick.Controls 2.12
+import QtQuick 2.15
+import QtQml 2.15
+import QtQuick.Controls 2.15
 import eu.skribisto.notehub 1.0
 import eu.skribisto.skrusersettings 1.0
 import ".."
@@ -712,6 +712,12 @@ NotePageForm {
 
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
+        //avoid first text change, when blank HTML is inserted
+        if(writingZone.textArea.length === 0
+                && plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+            return
+        }
+
         if(contentSaveTimer.running){
             contentSaveTimer.stop()
         }

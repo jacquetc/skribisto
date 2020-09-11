@@ -136,6 +136,12 @@ RootPageForm {
         }
     }
 
+    Connections {
+        target: Globals
+        function onShowWelcomePage() {
+            rootSwipeView.currentIndex = 0
+        }
+    }
 
     //------------------------------------------------
     // notification :
@@ -278,7 +284,7 @@ RootPageForm {
         target: rootSwipeView
         property: "currentIndex"
         value: rootTabBar.currentIndex
-        restoreMode: Binding.RestoreBindingOrValue
+        //restoreMode: Binding.RestoreBindingOrValue
     }
 
     function addTab(incubator, insertionIndex, pageType, projectId, paperId) {

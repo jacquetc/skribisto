@@ -1,6 +1,6 @@
-import QtQuick 2.12
-import QtQml 2.12
-import QtQuick.Controls 2.12
+import QtQuick 2.15
+import QtQml 2.15
+import QtQuick.Controls 2.15
 import eu.skribisto.sheethub 1.0
 import eu.skribisto.skrusersettings 1.0
 import ".."
@@ -25,6 +25,21 @@ WritePageForm {
 
 
 
+
+    //--------------------------------------------------------
+    //---Accessibility-----------------------------------------
+    //--------------------------------------------------------
+
+
+
+//    Keys.onReleased: {
+//        if(event.key === Qt.Key_Alt){
+//            console.log("alt")
+//            Globals.showMenuBarCalled()
+
+//            event.accepted = true
+//        }
+//    }
 
     //--------------------------------------------------------
     //---Writing Zone-----------------------------------------
@@ -724,6 +739,16 @@ WritePageForm {
 
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
+
+        //avoid first text change, when blank HTML is inserted
+        if(writingZone.textArea.length === 0
+                && plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+            return
+        }
+
+
+
+
         if(contentSaveTimer.running){
             contentSaveTimer.stop()
         }
@@ -751,19 +776,19 @@ WritePageForm {
 
 
 
-//    // project to be closed :
-//    Connections{
-//        target: plmData.projectHub()
-//        function onProjectToBeClosed(projectId) {
+    //    // project to be closed :
+    //    Connections{
+    //        target: plmData.projectHub()
+    //        function onProjectToBeClosed(projectId) {
 
-//            if (projectId === this.projectId){
-//                // save
-//                saveContent()
-//                saveCurrentPaperCursorPositionAndY()
+    //            if (projectId === this.projectId){
+    //                // save
+    //                saveContent()
+    //                saveCurrentPaperCursorPositionAndY()
 
-//            }
-//        }
-//    }
+    //            }
+    //        }
+    //    }
 
     //    // projectClosed :
     //    Connections {

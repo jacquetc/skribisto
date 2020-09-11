@@ -1,10 +1,10 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
+import QtQuick 2.15
+import QtQuick.Controls 2.15
 import QtQuick.Window 2.3
-import QtQml 2.12
+import QtQml 2.15
 //import QtQuick.Dialogs 1.3
 import Qt.labs.settings 1.1
-import Qt.labs.platform 1.1
+import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.plmerror 1.0
 import eu.skribisto.projecthub 1.0
 import "Commons"
@@ -35,6 +35,10 @@ ApplicationWindow {
         property int visibility: Window.Maximized
     }
 
+    //------------------------------------------------------------------
+    //---------Fullscreen---------
+    //------------------------------------------------------------------
+
 
     Action {
 
@@ -54,6 +58,55 @@ ApplicationWindow {
     }
 
 
+    //------------------------------------------------------------------
+    //---------New project---------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: newProjectAction
+        text: qsTr("&New Project")
+        icon {
+            name: "document-new"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.New
+        onTriggered: {
+            console.log("New Project")
+            Globals.showWelcomePage()
+            Globals.showProjectPage()
+            Globals.showNewProjectWizard()
+        }
+
+
+
+    }
+    //------------------------------------------------------------------
+    //---------Open project---------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: openProjectAction
+        text: qsTr("&Open Project")
+        icon {
+            name: "document-open"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.Open
+        onTriggered: {
+            console.log("Open Project")
+            Globals.showOpenProjectDialog()
+
+        }
+
+
+
+    }
 
     //------------------------------------------------------------------
     //---------Save---------
@@ -140,7 +193,7 @@ ApplicationWindow {
 
     Connections {
         target: plmData.projectHub()
-       function onIsThereAnyLoadedProjectChanged(value){
+        function onIsThereAnyLoadedProjectChanged(value){
             saveAction.enabled = value
             saveAsAction.enabled = value
             saveAllAction.enabled = value
@@ -180,15 +233,15 @@ ApplicationWindow {
 
         }
     }
-    FileDialog{
+    LabPlatform.FileDialog{
         property int projectId: -2
         property string projectName: ""
 
         id: saveAsFileDialog
         title: qsTr("Save the \"%1\" project as ...").arg(projectName)
         modality: Qt.ApplicationModal
-        folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
-        fileMode: FileDialog.SaveFile
+        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
         nameFilters: ["Skribisto file (*.skrib)"]
         onAccepted: {
@@ -261,15 +314,15 @@ ApplicationWindow {
         }
     }
 
-    FileDialog{
+    LabPlatform.FileDialog{
         property int projectId: -2
         property string projectName: ""
 
         id: saveACopyFileDialog
         title: qsTr("Save a copy of the \"%1\" project as ...").arg(projectName)
         modality: Qt.ApplicationModal
-        folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
-        fileMode: FileDialog.SaveFile
+        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
         nameFilters: ["Skribisto file (*.skrib)"]
         onAccepted: {
@@ -457,8 +510,163 @@ ApplicationWindow {
     }
 
     //------------------------------------------------------------
+    //------------Close current project-----------------------------------
+    //------------------------------------------------------------
+
+    property string defaultProjectName: ""
+    Action {
+        id: closeCurrentProjectAction
+        text: qsTr("&Close \"%1\" project").arg(defaultProjectName)
+        icon {
+            name: "document-close"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.New
+        onTriggered: {
+            console.log("Close Project")
+            var defaultProjectId = plmData.projectHub().getDefaultProject()
+            var savedBool = plmData.projectHub().isProjectSaved(defaultProjectId)
+            if(savedBool || plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                plmData.projectHub().closeProject(defaultProjectId)
+            }
+            else{
+                saveOrNotBeforeClosingProjectDialog.projectId = defaultProjectId
+                saveOrNotBeforeClosingProjectDialog.projectName = plmData.projectHub().getProjectName(defaultProjectId)
+                saveOrNotBeforeClosingProjectDialog.open()
+            }
+        }
+
+    }
+
+    SimpleDialog {
+        property int projectId: -2
+        property string projectName: ""
+
+        id: saveOrNotBeforeClosingProjectDialog
+        title: "Warning"
+        text: qsTr("The project %1 is not saved. Do you want to save it before quiting ?").arg(projectName)
+        standardButtons: Dialog.Save  | Dialog.Discard | Dialog.Cancel
+
+        onRejected: {
+            saveOrNotBeforeClosingProjectDialog.close()
+
+        }
+
+        onDiscarded: {
+            plmData.projectHub().closeProject(projectId)
+            saveOrNotBeforeClosingProjectDialog.close()
+
+        }
+
+        onAccepted: {
+
+
+            var error = plmData.projectHub().saveProject(projectId)
+            if (error.getErrorCode() === "E_PROJECT_no_path"){
+                var errorProjectId = error.getDataList()[0];
+                saveAsBeforeClosingProjectFileDialog.projectId = errorProjectId
+                saveAsBeforeClosingProjectFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                saveAsBeforeClosingProjectFileDialog.open()
+            }
+            else {
+                plmData.projectHub().closeProject(projectId)
+            }
+            saveOrNotBeforeClosingProjectDialog.close()
+
+
+
+
+
+        }
+
+
+
+
+    }
+
+    LabPlatform.FileDialog{
+        property int projectId: -2
+        property string projectName: ""
+
+        id: saveAsBeforeClosingProjectFileDialog
+        title: qsTr("Save the %1 project as ...").arg(projectName)
+        modality: Qt.ApplicationModal
+        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        fileMode: LabPlatform.FileDialog.SaveFile
+        selectedNameFilter.index: 0
+        nameFilters: ["Skribisto file (*.skrib)"]
+        onAccepted: {
+
+            var file = saveAsFileDialog.file.toString()
+            file = file.replace(/^(file:\/{2})/,"");
+
+            if(file.indexOf(".skrib") === -1){ // not found
+                file = file + ".skrib"
+            }
+            if(projectId == -2){
+                projectId = plmData.projectHub().getDefaultProject()
+            }
+            console.log("FileDialog :" , projectId)
+
+            if(projectName == ""){
+                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+            }
+
+            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", file)
+
+            if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+                // Dialog:
+                pathIsReadOnlydialog.open()
+
+            }
+            else{
+                plmData.projectHub().closeProject(projectId)
+                saveOrNotBeforeClosingProjectDialog.close()
+            }
+        }
+        onRejected: {
+            plmData.projectHub().closeProject(projectId)
+            saveOrNotBeforeClosingProjectDialog.close()
+        }
+    }
+
+
+
+    Connections{
+        target: plmData.projectHub()
+        function onDefaultProjectChanged(){
+            defaultProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+        }
+    }
+    Connections{
+        target: plmData.projectHub()
+        function onProjectNameChanged(){
+            defaultProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+        }
+    }
+
+    //------------------------------------------------------------
     //------------Close logic-----------------------------------
     //------------------------------------------------------------
+
+    Action {
+        id: quitAction
+        text: qsTr("&Quit")
+        icon {
+            name: "window-close"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.Quit
+        onTriggered: {
+            console.log("Quit")
+
+        }
+    }
+
     onClosing: {
         console.log("quiting")
 
@@ -470,11 +678,17 @@ ApplicationWindow {
         var i;
         for (i = 0; i < projectsNotSavedList.length ; i++ ){
             var projectId = projectsNotSavedList[i]
-            saveOrNotBeforeClosingDialog.projectId = projectId
-            saveOrNotBeforeClosingDialog.projectName = plmData.projectHub().getProjectName(projectId)
-            saveOrNotBeforeClosingDialog.open()
 
-            close.accepted = false
+            if(plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                continue
+            }
+            else {
+                saveOrNotBeforeClosingDialog.projectId = projectId
+                saveOrNotBeforeClosingDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                saveOrNotBeforeClosingDialog.open()
+                close.accepted = false
+            }
+
         }
         if(projectsNotSavedList.length === 0){
 
@@ -537,15 +751,15 @@ ApplicationWindow {
 
     }
 
-    FileDialog{
+    LabPlatform.FileDialog{
         property int projectId: -2
         property string projectName: ""
 
         id: saveAsBeforeQuitingFileDialog
         title: qsTr("Save the %1 project as ...").arg(projectName)
         modality: Qt.ApplicationModal
-        folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
-        fileMode: FileDialog.SaveFile
+        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
         nameFilters: ["Skribisto file (*.skrib)"]
         onAccepted: {
@@ -582,11 +796,98 @@ ApplicationWindow {
     }
 
 
+
+
     //------------------------------------------------------------
     //----------------------------------------------
     //------------------------------------------------------------
 
+    //    Keys.onReleased: {
+    //        if(event.key === Qt.Key_Alt){
+    //            console.log("alt")
+    //            Globals.showMenuBarCalled()
+    //            event.accepted = true
+    //        }
+    //    }
+//    Shortcut{
+//        enabled: true
+//        sequence: "Alt+X"
+//        onActivated: {console.log("alt x")}
 
+//    }
+//    Keys.onShortcutOverride: event.accepted = ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F)
+
+//    Keys.onPressed: {
+//        if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F){
+//            menuBar.visible = true
+
+//        }
+//        i
+
+//    }
+
+//    Keys.onReleased: {
+//        if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F){
+//            menuBar.visible = true
+
+//        }
+
+//        //        if(event.key === Qt.Key_Alt){
+//        //            console.log("alt")
+//        //            Globals.showMenuBarCalled()
+
+//        //            event.accepted = true
+//        //        }
+//    }
+
+
+
+
+    menuBar: MenuBar {
+        id: menuBar
+        visible: SkrSettings.accessibilitySettings.showMenuBar
+
+        Menu {
+            id: fileMenu
+            title: qsTr("&File")
+            MenuItem{
+                action: newProjectAction
+            }
+            MenuItem{
+                action: openProjectAction
+            }
+            MenuItem{
+                action: saveAction
+            }
+            MenuItem{
+                action: saveAsAction
+            }
+            MenuItem{
+                action: saveACopyAction
+            }
+            MenuItem{
+                action: saveAllAction
+            }
+
+            MenuSeparator { }
+            MenuItem{
+                action: closeCurrentProjectAction
+            }
+            MenuItem{
+                action: quitAction
+            }
+        }
+        Menu {
+            title: qsTr("&Edit")
+            Action { text: qsTr("Cu&t") }
+            Action { text: qsTr("&Copy") }
+            Action { text: qsTr("&Paste") }
+        }
+        Menu {
+            title: qsTr("&Help")
+            Action { text: qsTr("&About") }
+        }
+    }
 
 
 

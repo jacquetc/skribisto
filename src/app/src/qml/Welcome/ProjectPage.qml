@@ -1,8 +1,8 @@
-import QtQuick 2.12
+import QtQuick 2.15
 import Qt.labs.platform 1.1
 import ".."
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
 import eu.skribisto.recentprojectlistmodel 1.0
 import eu.skribisto.plmerror 1.0
 
@@ -28,11 +28,25 @@ ProjectPageForm {
     }
 
     
-    newProjectButton.onClicked: {
-        swipeView.currentIndex = 1
-    }
+  newProjectButton.action: newProjectAction
 
-    openProjectButton.onClicked: openFileDialog.open()
+  Connections {
+      target: Globals
+      function onShowNewProjectWizard() {
+          swipeView.currentIndex = 1
+      }
+  }
+
+
+    openProjectButton.action: openProjectAction
+
+    Connections {
+        target: Globals
+        function onShowOpenProjectDialog() {
+
+            openFileDialog.open()
+        }
+    }
 
 
     //-----------------------------------------------------------
@@ -137,7 +151,7 @@ ProjectPageForm {
 
         swipeView.currentIndex = 0
         //root_stack.currentIndex = 1
-        Globals.openSheetCalled(projetId, firstSheetId)
+        Globals.openSheetOnNewTabCalled(projetId, firstSheetId)
 
         //reset :
         projectTitleTextField.text = ""

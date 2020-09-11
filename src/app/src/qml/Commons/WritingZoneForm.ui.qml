@@ -1,6 +1,6 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
 
 Item {
     id: base
@@ -83,7 +83,7 @@ Item {
                             id: internalScrollBar
                             parent: flickable.parent
                         }
-                        TextArea.flickable: TextArea {
+                        TextArea.flickable: SKRTextArea {
                             id: textArea
 //                            renderType: Text.NativeRendering
                             font.preferShaping: false
@@ -93,6 +93,8 @@ Item {
                             focus: true
                             selectByMouse: true
                             wrapMode: TextEdit.WordWrap
+
+
 
                             //                        background: Rectangle {
                             //                            border.color: "transparent"

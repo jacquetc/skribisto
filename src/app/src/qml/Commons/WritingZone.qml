@@ -1,5 +1,5 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
+import QtQuick 2.15
+import QtQuick.Controls 2.15
 import QtQml 2.15
 import eu.skribisto.documenthandler 1.0
 
@@ -55,10 +55,9 @@ WritingZoneForm {
 //        }
 //    }
 
-//    Keys.priority: Keys.BeforeItem
 
 //    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
-//    Keys.onPressed: {
+
 //        console.log("escape in WritingZone z")
 //        if (event.key === Qt.Key_Escape){
 //            console.log("escape in WritingZone a")

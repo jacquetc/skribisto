@@ -25,12 +25,11 @@ PLMError PLMProjectHub::loadProject(const QString& path)
 
     // qDebug() << "projectId : " << QString::number(projectId);
     IFOK(error) {
-        m_projectsNotYetSavedOnceList.append(projectId);
-        m_projectsNotSavedList.append(projectId);
+        m_projectsNotModifiedOnceList.append(projectId);
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
         emit isThereAnyLoadedProjectChanged(true);
-        this->setProjectNotSavedAnymore(projectId);
+        this->setDefaultProject(projectId);
     }
 
 
@@ -45,12 +44,12 @@ PLMError PLMProjectHub::createNewEmptyProject(const QString &path)
 
 
     IFOK(error) {
-        m_projectsNotYetSavedOnceList.append(projectId);
-        m_projectsNotSavedList.append(projectId);
+        m_projectsNotModifiedOnceList.append(projectId);
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
         emit isThereAnyLoadedProjectChanged(true);
         this->setProjectNotSavedAnymore(projectId);
+        this->setDefaultProject(projectId);
     }
 
 
@@ -63,7 +62,7 @@ PLMError PLMProjectHub::saveProject(int projectId)
 
     error = plmProjectManager->saveProject(projectId);
     IFOK(error) {
-        m_projectsNotYetSavedOnceList.removeAll(projectId);
+        m_projectsNotModifiedOnceList.removeAll(projectId);
         m_projectsNotSavedList.removeAll(projectId);
         emit projectSaved(projectId);
     }
@@ -74,12 +73,28 @@ void PLMProjectHub::setProjectNotSavedAnymore(int projectId)
 {
     if(!m_projectsNotSavedList.contains(projectId)){
         m_projectsNotSavedList.append(projectId);
+        m_projectsNotModifiedOnceList.removeAll(projectId);
         emit projectNotSavedAnymore(projectId);
+
     }
+
+
 }
 
-QList<int>PLMProjectHub::projectsNotYetSavedOnce() {
-    return m_projectsNotYetSavedOnceList;
+QList<int>PLMProjectHub::projectsNotModifiedOnce() {
+    return m_projectsNotModifiedOnceList;
+}
+
+bool PLMProjectHub::isProjectNotModifiedOnce(int projectId)
+{
+    return m_projectsNotModifiedOnceList.contains(projectId);
+
+}
+
+bool PLMProjectHub::isProjectSaved(int projectId)
+{
+    return !m_projectsNotSavedList.contains(projectId);
+
 }
 
 QList<int>PLMProjectHub::projectsNotSaved() {
@@ -94,7 +109,7 @@ PLMError PLMProjectHub::saveProjectAs(int            projectId,
 
     error = plmProjectManager->saveProjectAs(projectId, type, path);
     IFOK(error) {
-        m_projectsNotYetSavedOnceList.removeAll(projectId);
+        m_projectsNotModifiedOnceList.removeAll(projectId);
         m_projectsNotSavedList.removeAll(projectId);
         emit projectSaved(projectId);
     }
@@ -186,7 +201,7 @@ PLMError PLMProjectHub::closeProject(int projectId)
         else{
             emit isThereAnyLoadedProjectChanged(false);
         }
-        m_projectsNotYetSavedOnceList.removeAll(projectId);
+        m_projectsNotModifiedOnceList.removeAll(projectId);
         m_projectsNotSavedList.removeAll(projectId);
     }
     return error;
@@ -287,11 +302,17 @@ bool PLMProjectHub::isThereAnyLoadedProject()
 void PLMProjectHub::setDefaultProject(int defaultProject)
 {
     m_defaultProject = defaultProject;
+
+    emit defaultProjectChanged(m_defaultProject);
 }
 
 int PLMProjectHub::getDefaultProject()
 {
-    if (!this->getProjectIdList().contains(m_defaultProject)) {
+
+    if (this->getProjectIdList().isEmpty()) {
+        m_defaultProject = -2;
+    }
+    else if (!this->getProjectIdList().contains(m_defaultProject)) {
         m_defaultProject = this->getProjectIdList().first();
     }
 
@@ -314,6 +335,7 @@ PLMError PLMProjectHub::setProjectName(int projectId, const QString& projectName
     PLMError error = this->set(projectId, "t_project_name", projectName, true);
     IFOK(error) {
         emit projectNameChanged(projectId, projectName);
+        this->projectNotSavedAnymore(projectId);
     }
     IFKO(error) {
         emit errorSent(error);
