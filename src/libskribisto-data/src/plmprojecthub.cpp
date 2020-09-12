@@ -68,7 +68,10 @@ PLMError PLMProjectHub::saveProject(int projectId)
     }
     return error;
 }
-
+///
+/// \brief PLMProjectHub::setProjectNotSavedAnymore
+/// \param projectId
+/// called every modification
 void PLMProjectHub::setProjectNotSavedAnymore(int projectId)
 {
     if(!m_projectsNotSavedList.contains(projectId)){

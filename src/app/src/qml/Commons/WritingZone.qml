@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQml 2.15
+import ".."
 import eu.skribisto.documenthandler 1.0
 
 WritingZoneForm {
@@ -92,13 +93,14 @@ WritingZoneForm {
 
 
             // deselect if outside selection :
-            var startY = textArea.positionToRectangle(textArea.selectionStart).y
-            var endY = textArea.positionToRectangle(textArea.selectionEnd).y
-            var pointY = event.y
+            var selectStart = textArea.selectionStart
+            var selectEnd = textArea.selectionEnd
+            var eventCursorPosition = textArea.positionAt(event.x, event.y)
 
-            if(textArea.selectedText != "" & (pointY < startY | pointY > endY)){
+            if(textArea.selectedText != "" & (eventCursorPosition < selectStart | eventCursorPosition > selectEnd)){
                 textArea.cursorPosition = textArea.positionAt(event.x, event.y)
                 menu.popup(textArea, event.x, event.y)
+                console.log("deselect")
                 return
             }
             else{
@@ -108,66 +110,94 @@ WritingZoneForm {
 
 
 
-
         }
     }
 
+    textArea.onActiveFocusChanged: {
+        if(textArea.activeFocus){
+            console.log("activeFocus = true")
+
+
+            console.log("disconnect", skrEditMenuSignalHub.clearCutConnections())
+            skrEditMenuSignalHub.clearCopyConnections()
+            skrEditMenuSignalHub.clearPasteConnections()
+            skrEditMenuSignalHub.subscribe(textArea.objectName)
+            skrEditMenuSignalHub.cutActionTriggered.connect(cut)
+            skrEditMenuSignalHub.copyActionTriggered.connect(copy)
+            skrEditMenuSignalHub.pasteActionTriggered.connect(paste)
+
+        }
+    }
+//    Binding{
+//        target: cutAction
+//        property: "enabled"
+//        value: textArea.selectedText !== "" ? true : false
+//        when: textArea.activeFocus
+//        restoreMode: Binding.RestoreBindingOrValue
+//    }
+
+    Component.onDestruction: {
+        skrEditMenuSignalHub.unsubscribe(textArea.objectName)
+
+    }
+
+    function cut(){
+
+        console.log("cut action text", textArea.selectedText)
+        textArea.cut()
+
+    }
+    function copy(){
+
+        console.log("copy action text", textArea.selectedText)
+        textArea.copy()
+
+    }
+    function paste(){
+
+        console.log("paste action text")
+        textArea.paste()
+
+    }
 
 
     //menu :
     Menu {
         id: menu
-
-        onOpened: {
-        }
-
+        objectName: "editMenu"
 
 
 
         MenuSeparator {}
-        Action {
 
-            text: qsTr("Copy")
-            shortcut: StandardKey.Copy
-            icon {
-                name: "edit-copy"
-            }
+        MenuItem{
+            action: cutAction
+            objectName: "cutItem"
+            enabled: textArea.selectedText !== ""
+        }
+
+        MenuItem {
+
+            action: copyAction
+            objectName: "copyItem"
             enabled: textArea.selectedText !== ""
 
-            onTriggered: {
-                console.log("copy action text", textArea.selectedText)
-                textArea.copy()
-            }
         }
-        Action {
+        MenuItem {
+            objectName: "pasteItem"
+            action: pasteAction
 
-            text: qsTr("Cut")
-            shortcut: StandardKey.Cut
-            icon {
-                name: "edit-cut"
-            }
-            enabled: textArea.selectedText !== ""
-
-            onTriggered: {
-                console.log("cut action text", textArea.selectedText)
-                textArea.cut()
-
-            }
-        }
-        Action {
-
-            text: qsTr("Paste")
-            shortcut: StandardKey.Cut
-            icon {
-                name: "edit-paste"
-            }
-
-            onTriggered: {
-                console.log("paste action text")
-                textArea.paste()
-            }
         }
         MenuSeparator {}
+
+
+
+        Component.onCompleted:{
+            skrEditMenuSignalHub.subscribe(menu.objectName)
+            skrEditMenuSignalHub.subscribe(cutItem.objectName)
+            skrEditMenuSignalHub.subscribe(copyItem.objectName)
+            skrEditMenuSignalHub.subscribe(pasteItem.objectName)
+        }
     }
 
     //property int visibleAreaY: 0

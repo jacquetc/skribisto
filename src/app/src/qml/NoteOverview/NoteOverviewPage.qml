@@ -95,20 +95,17 @@ NoteOverviewPageForm {
 
     Connections {
         target: Globals
-        onCompactSizeChanged: {
+        function onCompactSizeChanged() {
             leftDockShowButton.enabled = Globals.compactSize
             leftDockMenuButton.enabled = Globals.compactSize
             leftDockMenuGroup.enabled = Globals.compactSize
 
             if (Globals.compactSize === true) {
                 leftDrawer.interactive = true
-                rightDrawer.interactive = true
 
             } else {
                 leftDrawer.close()
-                rightDrawer.close()
                 leftDrawer.interactive = false
-                rightDrawer.interactive = false
             }
 
         }

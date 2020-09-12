@@ -95,7 +95,7 @@ WriteOverviewPageForm {
 
     Connections {
         target: Globals
-        onCompactSizeChanged: {
+        function onCompactSizeChanged() {
             leftDockShowButton.enabled = Globals.compactSize
             leftDockMenuButton.enabled = Globals.compactSize
             leftDockMenuGroup.enabled = Globals.compactSize

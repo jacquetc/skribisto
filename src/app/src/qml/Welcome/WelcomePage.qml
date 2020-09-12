@@ -31,7 +31,7 @@ WelcomePageForm {
 
     Connections {
         target: Globals
-        function onProjectPage() {
+        function onShowProjectPage() {
             stackLayout.currentIndex = 0
         }
     }

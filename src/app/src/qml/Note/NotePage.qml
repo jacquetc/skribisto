@@ -726,7 +726,7 @@ NotePageForm {
     Timer{
         id: contentSaveTimer
         repeat: false
-        interval: 1000
+        interval: 100
         onTriggered: saveContent()
     }
 

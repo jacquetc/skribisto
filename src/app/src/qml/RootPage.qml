@@ -178,7 +178,7 @@ RootPageForm {
 
     Connections {
         target: Globals
-        onCompactSizeChanged: {
+        function onCompactSizeChanged() {
             if (Globals.compactSize === true) {
                 leftDrawer.interactive = true
 

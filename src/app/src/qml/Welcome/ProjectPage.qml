@@ -49,6 +49,32 @@ ProjectPageForm {
     }
 
 
+    printButton.action: printAction
+
+    Connections {
+        target: Globals
+        function onShowPrintWizard() {
+            swipeView.currentIndex = 2
+        }
+    }
+
+    importButton.action: importAction
+
+    Connections {
+        target: Globals
+        function onShowImportWizard() {
+            swipeView.currentIndex = 3
+        }
+    }
+
+    exportButton.action: exportAction
+
+    Connections {
+        target: Globals
+        function onShowExportWizard() {
+            swipeView.currentIndex = 4
+        }
+    }
     //-----------------------------------------------------------
     //--New project page-----------------------------------------
     //-----------------------------------------------------------

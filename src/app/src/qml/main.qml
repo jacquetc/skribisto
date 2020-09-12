@@ -12,6 +12,7 @@ import "Commons"
 ApplicationWindow {
 
     id: rootWindow
+    objectName: "rootWindow"
     //visible: true
     minimumHeight: 500
     minimumWidth: 600
@@ -136,10 +137,25 @@ ApplicationWindow {
         }
     }
 
+
+    Connections {
+        target: plmData.projectHub()
+        function onDefaultProjectChanged(projectId){
+            if (!plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                saveAction.enabled = true
+            }
+            else{
+                saveAction.enabled = false
+            }
+        }
+
+    }
+
     Connections {
         target: plmData.projectHub()
         function onProjectNotSavedAnymore(projectId){
-            if (projectId === plmData.projectHub().getDefaultProject()){
+            if (projectId === plmData.projectHub().getDefaultProject()
+                    && !plmData.projectHub().isProjectNotModifiedOnce(projectId)){
                 saveAction.enabled = true
             }
         }
@@ -500,11 +516,71 @@ ApplicationWindow {
 
                     if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
 
-
                     }
 
                 }
             }
+
+        }
+    }
+
+    //------------------------------------------------------------
+    //------------Print project-----------------------------------
+    //------------------------------------------------------------
+    Action {
+        id: printAction
+        text: qsTr("&Print")
+        icon {
+            name: "document-print"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.Print
+        onTriggered: {
+            Globals.showWelcomePage()
+            Globals.showProjectPage()
+            Globals.showPrintWizard()
+
+        }
+    }
+    //------------------------------------------------------------
+    //------------Import project-----------------------------------
+    //------------------------------------------------------------
+    Action {
+        id: importAction
+        text: qsTr("&Import")
+        icon {
+            name: "document-import"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey
+        onTriggered: {
+            Globals.showWelcomePage()
+            Globals.showProjectPage()
+            Globals.showImportWizard()
+
+        }
+    }
+    //------------------------------------------------------------
+    //------------Export project-----------------------------------
+    //------------------------------------------------------------
+    Action {
+        id: exportAction
+        text: qsTr("&Export")
+        icon {
+            name: "document-export"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.New
+        onTriggered: {
+            Globals.showWelcomePage()
+            Globals.showProjectPage()
+            Globals.showExportWizard()
 
         }
     }
@@ -801,6 +877,133 @@ ApplicationWindow {
     //------------------------------------------------------------
     //----------------------------------------------
     //------------------------------------------------------------
+    property var lastFocusedItem: undefined
+    onActiveFocusItemChanged: {
+        if(!activeFocusItem){
+            return
+        }
+        var item = activeFocusItem
+
+        if(skrEditMenuSignalHub.isSubscribed(activeFocusItem.objectName)){
+            console.log("activeFocusItem", activeFocusItem.objectName)
+            cutAction.enabled = true
+            copyAction.enabled = true
+            pasteAction.enabled = true
+            lastFocusedItem = item
+            return
+        }
+
+
+        // determine if menuBar is an ancestor
+        if(item.parent){
+            if(item.parent.objectName === "menuBar" || item.parent.objectName === "editMenu" ){
+                //console.log("menuBar is ancestor")
+                return
+            }
+            if(item.parent.parent){
+                if(item.parent.parent.objectName === "menuBar" ||item.parent.parent.objectName === "editMenu"){
+                    //console.log("menuBar is ancestor")
+                    return
+
+                }
+                if(item.parent.parent.parent){
+                    if(item.parent.parent.parent.objectName === "menuBar" ||item.parent.parent.parent.objectName === "editMenu"){
+                        //console.log("menuBar is ancestor")
+                        return
+
+                    }
+                    if(item.parent.parent.parent.parent){
+                        if(item.parent.parent.parent.parent.objectName === "menuBar" || item.parent.parent.parent.parent.objectName === "editMenu"){
+                            //console.log("menuBar is ancestor")
+                            return
+
+                        }
+                        if(item.parent.parent.parent.parent.parent){
+                            if(item.parent.parent.parent.parent.parent.objectName === "menuBar" || item.parent.parent.parent.parent.parent.objectName === "editMenu"){
+                                //console.log("menuBar is ancestor")
+                                return
+
+                            }
+
+                        }
+                    }
+
+                }
+
+
+            }
+
+
+        }
+        var itemString = item.toString()
+        if(itemString.slice(0, 15) === "QQuickPopupItem"){
+            //console.log("item is QQuickPopupItem")
+            return
+
+        }
+
+
+
+
+        //        console.log("item", activeFocusItem)
+        //        console.log("objectName", activeFocusItem.objectName)
+        if(!lastFocusedItem){
+            lastFocusedItem = item
+        }
+        if(skrEditMenuSignalHub.isSubscribed(lastFocusedItem.objectName)){
+            //console.log("lastFocusedItem", lastFocusedItem.objectName)
+            cutAction.enabled = true
+            copyAction.enabled = true
+            pasteAction.enabled = true
+        }
+        else {
+            cutAction.enabled = false
+            copyAction.enabled = false
+            pasteAction.enabled = false
+
+        }
+        lastFocusedItem = item
+
+
+    }
+
+    Action {
+        id: cutAction
+        text: qsTr("Cut")
+        shortcut: StandardKey.Cut
+        icon {
+            name: "edit-cut"
+        }
+
+        onTriggered: {
+            skrEditMenuSignalHub.cutActionTriggered()
+        }
+    }
+    Action {
+        id: copyAction
+        text: qsTr("Copy")
+        shortcut: StandardKey.Copy
+        icon {
+            name: "edit-copy"
+        }
+
+        onTriggered: {
+            skrEditMenuSignalHub.copyActionTriggered()
+        }
+    }
+    Action {
+        id: pasteAction
+        text: qsTr("Paste")
+        shortcut: StandardKey.Paste
+        icon {
+            name: "edit-paste"
+        }
+
+        onTriggered: {
+            skrEditMenuSignalHub.pasteActionTriggered()
+        }
+    }
+
 
     //    Keys.onReleased: {
     //        if(event.key === Qt.Key_Alt){
@@ -809,36 +1012,36 @@ ApplicationWindow {
     //            event.accepted = true
     //        }
     //    }
-//    Shortcut{
-//        enabled: true
-//        sequence: "Alt+X"
-//        onActivated: {console.log("alt x")}
+    //    Shortcut{
+    //        enabled: true
+    //        sequence: "Alt+X"
+    //        onActivated: {console.log("alt x")}
 
-//    }
-//    Keys.onShortcutOverride: event.accepted = ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F)
+    //    }
+    //    Keys.onShortcutOverride: event.accepted = ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F)
 
-//    Keys.onPressed: {
-//        if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F){
-//            menuBar.visible = true
+    //    Keys.onPressed: {
+    //        if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F){
+    //            menuBar.visible = true
 
-//        }
-//        i
+    //        }
+    //        i
 
-//    }
+    //    }
 
-//    Keys.onReleased: {
-//        if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F){
-//            menuBar.visible = true
+    //    Keys.onReleased: {
+    //        if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F){
+    //            menuBar.visible = true
 
-//        }
+    //        }
 
-//        //        if(event.key === Qt.Key_Alt){
-//        //            console.log("alt")
-//        //            Globals.showMenuBarCalled()
+    //        //        if(event.key === Qt.Key_Alt){
+    //        //            console.log("alt")
+    //        //            Globals.showMenuBarCalled()
 
-//        //            event.accepted = true
-//        //        }
-//    }
+    //        //            event.accepted = true
+    //        //        }
+    //    }
 
 
 
@@ -846,6 +1049,11 @@ ApplicationWindow {
     menuBar: MenuBar {
         id: menuBar
         visible: SkrSettings.accessibilitySettings.showMenuBar
+
+        objectName: "menuBar"
+        Component.onCompleted:{
+            skrEditMenuSignalHub.subscribe(menuBar.objectName)
+        }
 
         Menu {
             id: fileMenu
@@ -856,6 +1064,18 @@ ApplicationWindow {
             MenuItem{
                 action: openProjectAction
             }
+            MenuSeparator { }
+            MenuItem{
+                action: printAction
+            }
+            MenuItem{
+                action: importAction
+            }
+            MenuItem{
+                action: exportAction
+            }
+
+            MenuSeparator { }
             MenuItem{
                 action: saveAction
             }
@@ -878,15 +1098,41 @@ ApplicationWindow {
             }
         }
         Menu {
+            id: editMenu
+            objectName: "editMenu"
             title: qsTr("&Edit")
-            Action { text: qsTr("Cu&t") }
-            Action { text: qsTr("&Copy") }
-            Action { text: qsTr("&Paste") }
+
+
+            MenuItem{
+                id: cutItem
+                objectName: "cutItem"
+                action: cutAction
+            }
+            MenuItem{
+                id: copyItem
+                objectName: "copyItem"
+                action: copyAction
+            }
+            MenuItem{
+                id: pasteItem
+                objectName: "pasteItem"
+                action: pasteAction
+            }
+
+            Component.onCompleted:{
+                skrEditMenuSignalHub.subscribe(editMenu.objectName)
+                skrEditMenuSignalHub.subscribe(cutItem.objectName)
+                skrEditMenuSignalHub.subscribe(copyItem.objectName)
+                skrEditMenuSignalHub.subscribe(pasteItem.objectName)
+            }
+
         }
         Menu {
             title: qsTr("&Help")
             Action { text: qsTr("&About") }
         }
+
+
     }
 
 

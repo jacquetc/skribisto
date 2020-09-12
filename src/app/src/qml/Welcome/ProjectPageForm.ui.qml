@@ -5,6 +5,9 @@ import QtQuick.Layouts 1.15
 Item {
     width: 400
     height: 400
+    property alias printButton: printButton
+    property alias importButton: importButton
+    property alias exportButton: exportButton
     property alias projectFileTextField: projectFileTextField
     property alias createNewProjectButton: createNewProjectButton
     property alias partSpinBox: partSpinBox
@@ -46,70 +49,21 @@ Item {
                 GridLayout {
                     id: gridLayout
                     anchors.fill: parent
-                    flow: GridLayout.TopToBottom
+                    columns: gridLayout.width / 500
 
-                    GroupBox {
-                        id: groupBox2
-                        title: qsTr("Group Box")
-
-                        ColumnLayout {
-                            id: columnLayout2
-                            anchors.fill: parent
-
-                            RowLayout {
-                                id: rowLayout1
-                                width: 100
-                                height: 100
-
-                                Button {
-                                    id: saveButton
-                                    text: qsTr("Save")
-                                    icon {
-                                        name: "document-save"
-                                    }
-                                }
-
-                                Button {
-                                    id: saveAsButton
-                                    text: qsTr("Save as")
-                                    icon {
-                                        name: "document-save-as"
-                                    }
-                                }
-                                Button {
-                                    id: saveACopyButton
-                                    text: qsTr("Save a copy")
-                                    icon {
-                                        name: "document-save-as-template"
-                                    }
-                                }
-                                Button {
-                                    id: backUpButton
-                                    text: qsTr("Back up")
-                                    icon {
-                                        name: "tools-media-optical-burn-image"
-                                    }
-                                }
-                                Button {
-                                    id: saveAllButton
-                                    text: qsTr("Save all")
-                                    icon {
-                                        name: "document-save-all"
-                                    }
-                                }
-                            }
-                        }
-                    }
 
                     GroupBox {
                         id: groupBox1
                         width: 200
                         height: 200
+                        topPadding: 12
+                        padding: 12
                         title: qsTr("Projects")
 
                         ColumnLayout {
                             id: columnLayout
                             anchors.fill: parent
+                            anchors.topMargin: 5
 
                             RowLayout {
                                 id: rowLayout
@@ -167,6 +121,60 @@ Item {
                     }
 
                     GroupBox {
+                        id: groupBox2
+                        title: qsTr("Save")
+
+                        ColumnLayout {
+                            id: columnLayout2
+                            anchors.fill: parent
+                            anchors.topMargin: 5
+
+                            RowLayout {
+                                id: rowLayout1
+                                width: 100
+                                height: 100
+
+                                Button {
+                                    id: saveButton
+                                    text: qsTr("Save")
+                                    icon {
+                                        name: "document-save"
+                                    }
+                                }
+
+                                Button {
+                                    id: saveAsButton
+                                    text: qsTr("Save as")
+                                    icon {
+                                        name: "document-save-as"
+                                    }
+                                }
+                                Button {
+                                    id: saveACopyButton
+                                    text: qsTr("Save a copy")
+                                    icon {
+                                        name: "document-save-as-template"
+                                    }
+                                }
+                                Button {
+                                    id: backUpButton
+                                    text: qsTr("Back up")
+                                    icon {
+                                        name: "tools-media-optical-burn-image"
+                                    }
+                                }
+                                Button {
+                                    id: saveAllButton
+                                    text: qsTr("Save all")
+                                    icon {
+                                        name: "document-save-all"
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    GroupBox {
                         id: groupBox
                         width: 200
                         height: 200
@@ -188,11 +196,12 @@ Item {
                         id: groupBox3
                         width: 200
                         height: 200
-                        title: qsTr("Group Box")
+                        title: qsTr("")
 
                         ColumnLayout {
                             id: columnLayout4
                             anchors.fill: parent
+                            anchors.topMargin: 5
 
                             RowLayout {
                                 id: rowLayout5
@@ -205,9 +214,15 @@ Item {
                                 }
 
                                 Button {
+                                    id: importButton
+                                    text: qsTr("Import")
+                                }
+
+                                Button {
                                     id: exportButton
                                     text: qsTr("Export")
                                 }
+
                             }
                         }
                     }
@@ -354,7 +369,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;height:800;width:800}D{i:11}D{i:2}
+    D{i:0;height:800;width:800}
 }
 ##^##*/
 

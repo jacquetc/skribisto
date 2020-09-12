@@ -70,7 +70,7 @@ Item {
                     padding: 2
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                     ScrollBar.vertical.policy: scrollBarVerticalPolicy
-                    clip: true
+                    //clip: true
 
                     //contentWidth: scrollView.width
                     Flickable {
@@ -78,7 +78,7 @@ Item {
                         flickableDirection: Flickable.VerticalFlick
                         boundsBehavior: Flickable.StopAtBounds
                         interactive: true
-                        clip: true
+                        //clip: true
                         ScrollBar.vertical: ScrollBar {
                             id: internalScrollBar
                             parent: flickable.parent
@@ -88,7 +88,7 @@ Item {
 //                            renderType: Text.NativeRendering
                             font.preferShaping: false
                             font.kerning: false
-                            clip: true
+                            //clip: true
                             textFormat: Text.RichText
                             focus: true
                             selectByMouse: true

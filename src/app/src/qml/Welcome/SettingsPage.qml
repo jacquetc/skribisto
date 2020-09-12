@@ -95,9 +95,11 @@ SettingsPageForm {
     backupHoursDial.value: SkrSettings.backupSettings.backUpEveryHours
     backupHoursSpinBox.value: SkrSettings.backupSettings.backUpEveryHours
     Binding {
+        delayed: true
         target: SkrSettings.backupSettings
         property: "backUpEveryHours"
         value: backupHoursDial.value
+
     }
 
 }

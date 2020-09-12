@@ -35,6 +35,7 @@ using namespace std;
 #include "skrrecentprojectlistmodel.h"
 #include "skrusersettings.h"
 #include "skrfonts.h"
+#include "skreditmenusignalhub.h"
 
 #ifdef QT_DEBUG
 #include <QQmlDebuggingEnabler>
@@ -198,6 +199,7 @@ int main(int argc, char *argv[])
    PLMData *data     = new PLMData(qApp);
    PLMModels *models = new PLMModels(qApp);
    SKRFonts *skrFonts = new SKRFonts(qApp);
+   SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(qApp);
 
 
     qmlRegisterUncreatableType<PLMError>("eu.skribisto.plmerror", 1, 0, "PLMError", "Can't instantiate PLMError");
@@ -275,6 +277,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("plmData", data);
     engine.rootContext()->setContextProperty("plmModels", models);
     engine.rootContext()->setContextProperty("skrFonts", skrFonts);
+    engine.rootContext()->setContextProperty("skrEditMenuSignalHub", skrEditMenuSignalHub);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {
