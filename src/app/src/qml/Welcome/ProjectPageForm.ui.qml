@@ -44,18 +44,23 @@ Item {
             interactive: false
             clip: true
 
-            Item {
+            ScrollView {
+                id: scrollView
+                clip: true
+
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                contentWidth: gridLayout.width
+                contentHeight: gridLayout.height
 
                 GridLayout {
                     id: gridLayout
-                    anchors.fill: parent
-                    columns: gridLayout.width / 500
+                    width: scrollView.width
+                    columns: gridLayout.width / groupBox2.width
 
 
                     GroupBox {
                         id: groupBox1
-                        width: 200
-                        height: 200
                         topPadding: 12
                         padding: 12
                         title: qsTr("Projects")
@@ -176,8 +181,6 @@ Item {
 
                     GroupBox {
                         id: groupBox
-                        width: 200
-                        height: 200
                         title: qsTr("")
 
                         ColumnLayout {
@@ -194,8 +197,6 @@ Item {
 
                     GroupBox {
                         id: groupBox3
-                        width: 200
-                        height: 200
                         title: qsTr("")
 
                         ColumnLayout {

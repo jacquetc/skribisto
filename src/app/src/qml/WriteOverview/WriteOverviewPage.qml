@@ -102,13 +102,10 @@ WriteOverviewPageForm {
 
             if (Globals.compactSize === true) {
                 leftDrawer.interactive = true
-                rightDrawer.interactive = true
 
             } else {
                 leftDrawer.close()
-                rightDrawer.close()
                 leftDrawer.interactive = false
-                rightDrawer.interactive = false
             }
 
         }

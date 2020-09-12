@@ -6,7 +6,7 @@ Item {
 
     property alias saveDial: saveDial
     property alias saveSpinBox: saveSpinBox
-    property alias saveCheckBox: saveCheckBox
+    property alias saveEveryCheckBox: saveEveryCheckBox
     property alias backUpEveryCheckBox: backUpEveryCheckBox
     property alias backupHoursSpinBox: backupHoursSpinBox
     property alias backupHoursDial: backupHoursDial
@@ -164,7 +164,7 @@ Item {
                             Layout.fillWidth: true
 
                             CheckBox {
-                                id: saveCheckBox
+                                id: saveEveryCheckBox
                                 text: qsTr("Save every")
                             }
 
@@ -174,6 +174,9 @@ Item {
 
                             Dial {
                                 id: saveDial
+                                to: 60
+                                from: 1
+                                wheelEnabled: true
                             }
                         }
                     }

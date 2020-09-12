@@ -21,6 +21,13 @@ QtObject {
 
     }
 
+    property Settings saveSettings: Settings{
+        category: "save"
+        property string paths: ""
+        property bool saveEveryCheckBoxChecked: false
+        property int saveEveryMinutes: 10
+
+    }
     property Settings accessibilitySettings: Settings{
         category: "accessibility"
         property bool disallowSwipeBetweenTabsCheckBoxChecked: false

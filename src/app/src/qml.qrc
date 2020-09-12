@@ -9,7 +9,6 @@
         <file>qml/qmldir</file>
         <file>qml/RootPage.qml</file>
         <file>qml/RootPageForm.ui.qml</file>
-        <file>qml/settings.js</file>
         <file>qml/DockHeader.qml</file>
         <file>qml/DockHeaderForm.ui.qml</file>
         <file>qml/SkrSettings.qml</file>

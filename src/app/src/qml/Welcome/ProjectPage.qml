@@ -11,8 +11,6 @@ ProjectPageForm {
 
     swipeView.currentIndex: 0
 
-    //compact mode :
-    gridLayout.columns: Globals.compactSize ? 1 : 3
 
     saveButton.action: saveAction
     saveAsButton.action: saveAsAction

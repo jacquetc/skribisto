@@ -176,18 +176,7 @@ RootPageForm {
 
     //---------------------------------------------------------
 
-    Connections {
-        target: Globals
-        function onCompactSizeChanged() {
-            if (Globals.compactSize === true) {
-                leftDrawer.interactive = true
 
-            } else {
-                leftDrawer.close()
-                leftDrawer.interactive = false
-            }
-        }
-    }
 
 
     //---------------------------------------------------------

@@ -7,6 +7,7 @@ SettingsPageForm {
 
     Component.onCompleted: {
         checkOnBackUpEveryCheckBox()
+        checkOnSaveEveryCheckBox()
     }
 
 
@@ -102,4 +103,41 @@ SettingsPageForm {
 
     }
 
+    // --------------------------------------------
+    // ---- save --------------------------------
+    // --------------------------------------------
+
+
+    saveEveryCheckBox.checked: SkrSettings.saveSettings.saveEveryCheckBoxChecked
+    Binding {
+        target: SkrSettings.saveSettings
+        property: "saveEveryCheckBoxChecked"
+        value: saveEveryCheckBox.checked
+    }
+
+    saveEveryCheckBox.onCheckedChanged:{
+        checkOnSaveEveryCheckBox()
+    }
+
+    function checkOnSaveEveryCheckBox(){
+        saveDial.enabled = saveEveryCheckBox.checked
+    saveSpinBox.enabled = saveEveryCheckBox.checked
+
+    }
+
+    //dials :
+
+    saveDial.onMoved: saveSpinBox.value = saveDial.value
+    saveSpinBox.onValueModified: saveDial.value = saveSpinBox.value
+
+
+    saveDial.value: SkrSettings.saveSettings.saveEveryMinutes
+    saveSpinBox.value: SkrSettings.saveSettings.saveEveryMinutes
+    Binding {
+        delayed: true
+        target: SkrSettings.saveSettings
+        property: "saveEveryMinutes"
+        value: saveDial.value
+
+    }
 }
