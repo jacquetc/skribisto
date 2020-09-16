@@ -1,21 +1,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import "../Commons"
 
-FocusScope {
+Item {
     id: base
-    property alias noteFlow: noteFlow
-    property alias noteWritingZone: noteWritingZone
-    property alias openSynopsisToolButton: openSynopsisToolButton
-    property alias openNoteInNewTabToolButton: openNoteInNewTabToolButton
-    property alias addNoteMenuToolButton: addNoteMenuToolButton
-    property alias noteRepeater: noteRepeater
-
-
-    x: pane.x; y: pane.y
-    width: pane.width; height: pane.height
-
+    property alias tagFlow: tagFlow
+    property alias addTagMenuToolButton: addTagMenuToolButton
+    property alias tagRepeater: tagRepeater
+    
     Pane {
         id: pane
         clip: true
@@ -43,21 +35,7 @@ FocusScope {
                     anchors.fill: parent
 
                     ToolButton {
-                        id: openNoteInNewTabToolButton
-                        text: qsTr("Open note")
-                        flat: true
-                        display: AbstractButton.IconOnly
-                    }
-
-                    ToolButton {
-                        id: openSynopsisToolButton
-                        flat: true
-                        text: qsTr("Show synopsis")
-                        display: AbstractButton.IconOnly
-                    }
-
-                    ToolButton {
-                        id: addNoteMenuToolButton
+                        id: addTagMenuToolButton
                         flat: true
                         display: AbstractButton.IconOnly
                     }
@@ -77,10 +55,10 @@ FocusScope {
                 Flickable {
                     boundsBehavior: Flickable.StopAtBounds
                     contentWidth: scrollView.width
-                    contentHeight: noteFlow.height
+                    contentHeight: tagFlow.height
                     //contentHeight: leftDockColumnLayout.height
                     Flow {
-                        id: noteFlow
+                        id: tagFlow
                         width: scrollView.width
                         //                    width: parent.width
                         //                    anchors.left: parent.left
@@ -94,36 +72,19 @@ FocusScope {
                         focus: true
 
                         Repeater {
-                            id: noteRepeater
+                            id: tagRepeater
 
-                            delegate: noteFlowComponent
+                            delegate: tagFlowComponent
 
 
                         }
 
                         Accessible.role: Accessible.List
-                        Accessible.name: qsTr("Notes list")
-                        Accessible.description: "Empty list of related notes"
+                        Accessible.name: qsTr("Tags list")
+                        Accessible.description: "Empty list of tags"
                     }
                 }
-            }
-
-            WritingZone {
-                id: noteWritingZone
-                placeholderText: "Type your note here..."
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                stretch: true
-                minimapVisibility: false
-                leftScrollItemVisible: false
             }
         }
     }
 }
-
-/*##^##
-Designer {
-    D{i:0;autoSize:true;height:480;width:300}
-}
-##^##*/
-

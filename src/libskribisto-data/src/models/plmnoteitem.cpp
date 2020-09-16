@@ -100,10 +100,10 @@ QVariant PLMNoteItem::data(int role)
             m_data.insert(role, plmdata->noteHub()->getTitle(projectId, paperId));
             break;
 
-        case Roles::TagRole:
+        case Roles::LabelRole:
             m_data.insert(role,
                           plmdata->notePropertyHub()->getProperty(projectId, paperId,
-                                                                   "tag"));
+                                                                   "label"));
             break;
 
         case Roles::IndentRole:

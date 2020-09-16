@@ -128,7 +128,7 @@ void SKRSearchNoteListProxyModel::setProjectIdFilter(int projectIdFilter)
 {
     m_projectIdFilter = projectIdFilter;
     emit projectIdFilterChanged(m_projectIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 //--------------------------------------------------------------
@@ -145,7 +145,7 @@ void SKRSearchNoteListProxyModel::clearFilters()
     emit textFilterChanged(m_textFilter);
 
 
-    this->invalidate();
+    this->invalidateFilter();
 
 }
 
@@ -234,7 +234,7 @@ void SKRSearchNoteListProxyModel::setTextFilter(const QString &value)
 {
     m_textFilter = value;
     emit textFilterChanged(value);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 void SKRSearchNoteListProxyModel::setShowNotDeletedFilter(bool showNotDeletedFilter)
@@ -242,7 +242,7 @@ void SKRSearchNoteListProxyModel::setShowNotDeletedFilter(bool showNotDeletedFil
     m_showNotDeletedFilter = showNotDeletedFilter;
 
     emit showNotDeletedFilterChanged(showNotDeletedFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 void SKRSearchNoteListProxyModel::setShowDeletedFilter(bool showDeletedFilter)
@@ -250,7 +250,7 @@ void SKRSearchNoteListProxyModel::setShowDeletedFilter(bool showDeletedFilter)
     m_showDeletedFilter = showDeletedFilter;
 
     emit showDeletedFilterChanged(showDeletedFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 

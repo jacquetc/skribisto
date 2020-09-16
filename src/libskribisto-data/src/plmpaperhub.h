@@ -188,7 +188,7 @@ private slots:
 signals:
 
     void errorSent(const PLMError& error) const;
-    void projectModified(int projectId);
+    void projectModified(int projectId); // for save
     void paperIdChanged(int projectId,
                         int paperId,
                         int newId);

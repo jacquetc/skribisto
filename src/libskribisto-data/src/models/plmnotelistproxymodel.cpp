@@ -100,7 +100,7 @@ void PLMNoteListProxyModel::setParentFilter(int projectId, int parentId)
     m_parentIdFilter = parentId;
     emit parentIdFilterChanged(m_parentIdFilter);
     emit projectIdFilterChanged(m_projectIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 //--------------------------------------------------------------
 
@@ -109,7 +109,7 @@ void PLMNoteListProxyModel::setShowDeletedFilter(bool showDeleted)
 {
     m_showDeletedFilter = showDeleted;
     emit showDeletedFilterChanged(m_showDeletedFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 //--------------------------------------------------------------
@@ -168,14 +168,14 @@ void PLMNoteListProxyModel::setParentIdFilter(int parentIdFilter)
 {
     m_parentIdFilter = parentIdFilter;
     emit parentIdFilterChanged(m_parentIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 void PLMNoteListProxyModel::setProjectIdFilter(int projectIdFilter)
 {
     m_projectIdFilter = projectIdFilter;
     emit projectIdFilterChanged(m_projectIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 //--------------------------------------------------------------
@@ -186,7 +186,7 @@ void PLMNoteListProxyModel::clearFilters()
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
     emit parentIdFilterChanged(m_parentIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 
 }
 
@@ -510,7 +510,7 @@ void PLMNoteListProxyModel::addItemAtEnd(int projectId, int parentPaperId, int v
 
     PLMError error = plmdata->noteHub()->addChildPaper(projectId, parentPaperId);
 
-    this->invalidate();
+    this->invalidateFilter();
     this->setForcedCurrentIndex(visualIndex);
 
 }

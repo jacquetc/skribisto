@@ -100,7 +100,7 @@ void PLMSheetListProxyModel::setParentFilter(int projectId, int parentId)
     m_parentIdFilter = parentId;
     emit parentIdFilterChanged(m_parentIdFilter);
     emit projectIdFilterChanged(m_projectIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 //--------------------------------------------------------------
 
@@ -109,7 +109,7 @@ void PLMSheetListProxyModel::setShowDeletedFilter(bool showDeleted)
 {
     m_showDeletedFilter = showDeleted;
     emit showDeletedFilterChanged(m_showDeletedFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 //--------------------------------------------------------------
@@ -170,7 +170,7 @@ void PLMSheetListProxyModel::setParentIdFilter(int parentIdFilter)
 {
     m_parentIdFilter = parentIdFilter;
     emit parentIdFilterChanged(m_parentIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 
@@ -180,7 +180,7 @@ void PLMSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
 {
     m_projectIdFilter = projectIdFilter;
     emit projectIdFilterChanged(m_projectIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 //--------------------------------------------------------------
@@ -191,7 +191,7 @@ void PLMSheetListProxyModel::clearFilters()
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
     emit parentIdFilterChanged(m_parentIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 
 }
 
@@ -516,7 +516,7 @@ void PLMSheetListProxyModel::addItemAtEnd(int projectId, int parentPaperId, int 
 
     PLMError error = plmdata->sheetHub()->addChildPaper(projectId, parentPaperId);
 
-    this->invalidate();
+    this->invalidateFilter();
     this->setForcedCurrentIndex(visualIndex);
 
 }

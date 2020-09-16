@@ -1,5 +1,5 @@
 import QtQuick 2.9
-import QtQuick.Layouts 1.3
+import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 
@@ -9,6 +9,7 @@ import "NoteOverview"
 import "Gallery"
 import "Projects"
 //import "Write"
+//import "Note"
 
 //import QtGraphicalEffects 1.0
 Item {
@@ -40,31 +41,31 @@ Item {
             Layout.preferredHeight: 30
             Layout.minimumHeight: 30
             Layout.fillWidth: true
-                        Tab {
-                            id: welcomeTab
-                            closable: false
+            Tab {
+                id: welcomeTab
+                closable: false
 
-                        }
-                        Tab {
-                            id: writeOverviewTab
-                            closable: false
+            }
+            Tab {
+                id: writeOverviewTab
+                closable: false
 
-                        }
-                        Tab {
-                            id: noteOverviewTab
-                            closable: false
+            }
+            Tab {
+                id: noteOverviewTab
+                closable: false
 
-                        }
-                        Tab {
-                            id: galleryTab
-                            closable: false
+            }
+            Tab {
+                id: galleryTab
+                closable: false
 
-                        }
-                        Tab {
-                            id: projectTab
-                            closable: false
+            }
+            Tab {
+                id: projectTab
+                closable: false
 
-                       }
+            }
         }
 
         RowLayout {
@@ -82,33 +83,33 @@ Item {
                     z: 0
                     anchors.fill: parent
 
-//                            TabBar {
-//                                id: bar
-//                                position: TabBar.Header
-//                                wheelEnabled: true
-//                                Layout.fillHeight: false
-//                                Layout.fillWidth: true
-//                                TabButton {
-//                                    text: qsTr("Welcome")
-//                                    width: implicitWidth
-//                                }
-//                                TabButton {
-//                                    text: qsTr("Write")
-//                                    width: implicitWidth
-//                                }
-//                                TabButton {
-//                                    text: qsTr("Note")
-//                                    width: implicitWidth
-//                                }
-//                                TabButton {
-//                                    text: qsTr("Gallery")
-//                                    width: implicitWidth
-//                                }
-//                                TabButton {
-//                                    text: qsTr("Informations")
-//                                    width: implicitWidth
-//                                }
-//                            }
+                    //                            TabBar {
+                    //                                id: bar
+                    //                                position: TabBar.Header
+                    //                                wheelEnabled: true
+                    //                                Layout.fillHeight: false
+                    //                                Layout.fillWidth: true
+                    //                                TabButton {
+                    //                                    text: qsTr("Welcome")
+                    //                                    width: implicitWidth
+                    //                                }
+                    //                                TabButton {
+                    //                                    text: qsTr("Write")
+                    //                                    width: implicitWidth
+                    //                                }
+                    //                                TabButton {
+                    //                                    text: qsTr("Note")
+                    //                                    width: implicitWidth
+                    //                                }
+                    //                                TabButton {
+                    //                                    text: qsTr("Gallery")
+                    //                                    width: implicitWidth
+                    //                                }
+                    //                                TabButton {
+                    //                                    text: qsTr("Informations")
+                    //                                    width: implicitWidth
+                    //                                }
+                    //                            }
 
                     SwipeView {
                         id: rootSwipeView
@@ -143,9 +144,12 @@ Item {
 
 //                        WritePage {
 //                            id: writePage
-
 //                        }
 
+                        //                        NotePage {
+                        //                            id: notePage
+
+                        //                        }
                     }
                     //        PageIndicator {
                     //            id: indicator

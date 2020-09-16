@@ -112,7 +112,7 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelI
             result = m_showNotDeletedFilter;
         }
 
-
+    // text filtering :
     if(result && item->data(PLMSheetItem::Roles::NameRole).toString().contains(m_textFilter, Qt::CaseInsensitive)){
         result = true;
     }
@@ -129,7 +129,7 @@ void SKRSearchSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
 {
     m_projectIdFilter = projectIdFilter;
     emit projectIdFilterChanged(m_projectIdFilter);
-    this->invalidate();
+    this->invalidateFilter();
 }
 
 //--------------------------------------------------------------
@@ -144,7 +144,7 @@ void SKRSearchSheetListProxyModel::clearFilters()
     emit showNotDeletedFilterChanged(m_showNotDeletedFilter);
     m_textFilter = "";
     emit textFilterChanged(m_textFilter);
-    this->invalidate();
+    this->invalidateFilter();
 
 }
 
@@ -195,7 +195,7 @@ void SKRSearchSheetListProxyModel::setTextFilter(const QString &value)
 {
     m_textFilter = value;
     emit textFilterChanged(value);
-    this->invalidate();
+    this->invalidateFilter();
 
 }
 
@@ -204,7 +204,7 @@ void SKRSearchSheetListProxyModel::setShowNotDeletedFilter(bool showNotDeletedFi
     m_showNotDeletedFilter = showNotDeletedFilter;
 
     emit showNotDeletedFilterChanged(showNotDeletedFilter);
-    this->invalidate();
+    this->invalidateFilter();
 
 }
 
@@ -213,7 +213,7 @@ void SKRSearchSheetListProxyModel::setShowDeletedFilter(bool showDeletedFilter)
     m_showDeletedFilter = showDeletedFilter;
 
     emit showDeletedFilterChanged(showDeletedFilter);
-    this->invalidate();
+    this->invalidateFilter();
 
 }
 
@@ -249,7 +249,6 @@ void SKRSearchSheetListProxyModel::setCurrentPaperId(int projectId, int paperId)
     PLMSheetItem *item = this->getItem(projectId, paperId);
     if(!item){
         paperId = plmdata->sheetHub()->getTopPaperId(projectId);
-        item = this->getItem(projectId, paperId);
     }
 
     this->setForcedCurrentIndex(projectId, paperId);

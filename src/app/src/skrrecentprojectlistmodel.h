@@ -23,11 +23,10 @@
 
 #include <QAbstractListModel>
 #include <QDateTime>
-#include "./skribisto_data_global.h"
 
 
 
-struct EXPORT PLMProjectItem {
+struct PLMProjectItem {
     Q_GADGET
 
 public:
@@ -50,7 +49,7 @@ public:
 
 };
 
-class EXPORT SKRRecentProjectListModel : public QAbstractListModel
+class SKRRecentProjectListModel : public QAbstractListModel
 {
     Q_OBJECT
 

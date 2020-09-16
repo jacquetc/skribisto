@@ -169,8 +169,8 @@ QHash<int, int>PLMPaperHub::getAllSortOrders(int projectId) const
 /// \param paperId
 /// \param newId
 /// \return
-/// Change de id. No date updated. Be careful since ids must be unique (sql
-// constraint)
+/// Change the id. No date updated. Be careful since ids must be unique (sql
+/// constraint)
 PLMError PLMPaperHub::setId(int projectId, int paperId, int newId)
 {
     PLMError error;

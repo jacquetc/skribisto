@@ -30,7 +30,7 @@ NotePadForm {
     // force focus on first child
     noteFlow.activeFocusOnTab: true
     noteFlow.onActiveFocusChanged: {
-        if(noteFlow.children.length !== 0){
+        if(noteFlow.children.length > 1){ // means there is no children
             var first = noteFlow.children[0]
             first.forceActiveFocus()
             first.isSelected = true
@@ -404,7 +404,6 @@ NotePadForm {
                 
                 onVisibleChanged: {
                     if (visible){
-                        console.log("visible !")
                         titleTextField.text = "test"
                         titleTextField.forceActiveFocus()
                         titleTextField.selectAll()
@@ -467,6 +466,7 @@ NotePadForm {
                         Item {
                             id: delegateRoot
                             height: 30
+                            focus: true
                             
                             
                             anchors {
@@ -506,6 +506,7 @@ NotePadForm {
                             //                            //enabled: listView.activeFocus
                             //                        }
                             
+                            //Keys.shortcutOverride: event.accepted = (event.key === Qt.Key_Return || event.key === Qt.Key_Space)
                             Keys.priority: Keys.AfterItem
                             
                             Keys.onPressed: {

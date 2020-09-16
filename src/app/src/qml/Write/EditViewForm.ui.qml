@@ -3,7 +3,7 @@ import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
 
-Item {
+FocusScope {
     property alias swipeView: swipeView
     property alias italicToolButton: italicToolButton
     property alias boldToolButton: boldToolButton
@@ -22,7 +22,11 @@ Item {
     property alias backroundColorTextField: backroundColorTextField
     property alias backgroundColorToolButton: backgroundColorToolButton
 
-    SwipeView {
+
+     x: swipeView.x; y: swipeView.y
+     width: swipeView.width; height: swipeView.height
+
+     SwipeView {
         id: swipeView
         interactive: false
         anchors.fill: parent
@@ -41,7 +45,7 @@ Item {
 
                     GridLayout {
                         id: gridLayout
-                        columns: groupBox.contentItem.width / italicToolButton.width - 1
+                        columns: gridLayout.width / italicToolButton.width - 1
                         anchors.left: parent.left
                         anchors.right: parent.right
                         columnSpacing: 5
@@ -84,7 +88,7 @@ Item {
                         id: gridLayout2
                         columnSpacing: 5
                         rowSpacing: 5
-                        columns: groupBox2.contentItem.width / fullScreenToolButton.width - 1
+                        columns: gridLayout2.width / fullScreenToolButton.width - 1
                         anchors.left: parent.left
                         anchors.right: parent.right
 
@@ -237,7 +241,8 @@ Item {
             }
         }
     }
-}
+ }
+
 
 /*##^##
 Designer {

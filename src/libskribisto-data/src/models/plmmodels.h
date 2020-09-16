@@ -25,6 +25,7 @@
 #include "plmsheetmodel.h"
 #include "plmsheetlistmodel.h"
 #include "plmnotelistmodel.h"
+#include "skrtaglistmodel.h"
 #include "./skribisto_data_global.h"
 
 #include <QObject>
@@ -49,6 +50,8 @@ public:
 
     PLMSheetListModel *sheetListModel();
     PLMNoteListModel *noteListModel();
+    SKRTagListModel *tagListModel();
+
 signals:
 
 public slots:
@@ -60,6 +63,7 @@ private:
     PLMSheetModel *m_sheetModel;
     PLMSheetListModel *m_sheetListModel;
     PLMNoteListModel *m_noteListModel;
+    SKRTagListModel *m_tagListModel;
 
     PLMWriteDocumentListModel *m_writeDocumentListModel;
 };

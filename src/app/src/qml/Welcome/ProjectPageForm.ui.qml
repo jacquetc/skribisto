@@ -56,7 +56,7 @@ Item {
                 GridLayout {
                     id: gridLayout
                     width: scrollView.width
-                    columns: gridLayout.width / groupBox2.width
+                    columns: gridLayout.width / 500
 
 
                     GroupBox {
@@ -230,6 +230,7 @@ Item {
 
                     Item {
                         id: stretcher1
+                        Layout.columnSpan: 1
                         Layout.fillHeight: true
                         Layout.fillWidth: true
                     }

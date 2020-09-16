@@ -23,14 +23,17 @@ using namespace std;
 #include "plmdata.h"
 #include "plmsheethub.h"
 #include "plmnotehub.h"
+#include "skrtaghub.h"
 #include "plmerror.h"
 #include "plmprojecthub.h"
 #include "documenthandler.h"
 #include "plmutils.h"
 #include "models/plmsheetlistproxymodel.h"
 #include "models/plmnotelistproxymodel.h"
+#include "models/skrtaglistmodel.h"
 #include "models/skrsearchsheetlistproxymodel.h"
 #include "models/skrsearchnotelistproxymodel.h"
+#include "models/skrsearchtaglistproxymodel.h"
 #include "models/plmmodels.h"
 #include "skrrecentprojectlistmodel.h"
 #include "skrusersettings.h"
@@ -222,6 +225,12 @@ int main(int argc, char *argv[])
                                             "PLMSheetHub",
                                             "Can't instantiate PLMSheetHub");
 
+    qmlRegisterUncreatableType<SKRTagHub>("eu.skribisto.taghub",
+                                            1,
+                                            0,
+                                            "SKRTagHub",
+                                            "Can't instantiate SKRTagHub");
+
     qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
                                             1,
                                             0,
@@ -255,6 +264,11 @@ int main(int argc, char *argv[])
                                        1,
                                        0,
                                        "SKRSearchSheetListProxyModel");
+
+    qmlRegisterType<SKRSearchTagListProxyModel>("eu.skribisto.searchtaglistproxymodel",
+                                       1,
+                                       0,
+                                       "SKRSearchTagListProxyModel");
 
     qmlRegisterType<SKRRecentProjectListModel>("eu.skribisto.recentprojectlistmodel",
                                        1,

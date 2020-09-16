@@ -177,7 +177,7 @@ QVariant PLMSheetModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::TagRole) {
+    if (role == PLMSheetItem::Roles::LabelRole) {
         return item->data(role);
     }
 
@@ -241,9 +241,9 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
             error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
             break;
 
-        case PLMSheetItem::Roles::TagRole:
+        case PLMSheetItem::Roles::LabelRole:
             error = plmdata->sheetPropertyHub()->setProperty(projectId, paperId,
-                                                             "tag", value.toString());
+                                                             "label", value.toString());
             break;
 
         case PLMSheetItem::Roles::IndentRole:
@@ -360,7 +360,7 @@ QHash<int, QByteArray>PLMSheetModel::roleNames() const {
     roles[PLMSheetItem::Roles::PaperIdRole]      = "paperId";
     roles[PLMSheetItem::Roles::ProjectIdRole]    = "projectId";
     roles[PLMSheetItem::Roles::NameRole]         = "name";
-    roles[PLMSheetItem::Roles::TagRole]          = "tag";
+    roles[PLMSheetItem::Roles::LabelRole]          = "label";
     roles[PLMSheetItem::Roles::IndentRole]       = "indent";
     roles[PLMSheetItem::Roles::SortOrderRole]    = "sortOrder";
     roles[PLMSheetItem::Roles::CreationDateRole] = "creationDate";
@@ -573,8 +573,8 @@ void PLMSheetModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "tag") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                          PLMSheetItem::Roles::TagRole);
+        if (name == "label") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                          PLMSheetItem::Roles::LabelRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->sheetHub(),

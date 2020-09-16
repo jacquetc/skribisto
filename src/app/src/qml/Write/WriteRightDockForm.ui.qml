@@ -14,6 +14,8 @@ Item {
     property alias editView: editView
     property alias notePadFrame: notePadFrame
     property alias notePadView: notePadView
+    property alias tagPadFrame: tagPadFrame
+    property alias tagPadView: tagPadView
 
     Pane {
         id: rightDockPane
@@ -68,6 +70,25 @@ Item {
                                         clip: true
                                     }
                                 }
+                                DockFrame {
+
+                                    id: tagPadFrame
+                                    folded: true
+                                    title: qsTr("Tags")
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: dynamicHeight
+                                    contentHeight: 300
+                                    //                                    Layout.preferredHeight: dynamicHeight
+                                    //                                    contentHeight: 400
+                                    //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
+                                    //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
+                                    //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
+                                    TagPad {
+                                        id: tagPadView
+                                        clip: true
+                                    }
+                                }
+
                                 DockFrame {
                                     id: notePadFrame
                                     folded: true

@@ -26,6 +26,7 @@ PLMModels::PLMModels(QObject *parent) : QObject(parent)
     m_sheetModel      = new PLMSheetModel(this);
     m_sheetListModel = new PLMSheetListModel(this);
     m_noteListModel = new PLMNoteListModel(this);
+    m_tagListModel = new SKRTagListModel(this);
 
     m_writeDocumentListModel = new PLMWriteDocumentListModel(this);
 }
@@ -51,6 +52,12 @@ PLMNoteListModel * PLMModels::noteListModel()
 {
     return m_noteListModel;
 }
+
+SKRTagListModel * PLMModels::tagListModel()
+{
+    return m_tagListModel;
+}
+
 PLMWriteDocumentListModel *PLMModels::writeDocumentListModel()
 {
     return m_writeDocumentListModel;

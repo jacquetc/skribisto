@@ -67,5 +67,7 @@
         <file>qml/Write/NotePad.qml</file>
         <file>qml/Write/NotePadForm.ui.qml</file>
         <file>qml/Commons/SKRTextArea.qml</file>
+        <file>qml/Commons/TagPad.qml</file>
+        <file>qml/Commons/TagPadForm.ui.qml</file>
     </qresource>
 </RCC>

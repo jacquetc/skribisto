@@ -610,10 +610,10 @@ DeletedListViewForm {
                                 }
 
                                 Label {
-                                    id: tagLabel
+                                    id: labelLabel
 
-                                    //                                text: model.tag
-                                    text:  model.tag
+                                    //                                text: model.label
+                                    text:  model.label
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -755,7 +755,7 @@ DeletedListViewForm {
                         visible: false
                     }
                     PropertyChanges {
-                        target: tagLabel
+                        target: labelLabel
                         visible: false
                     }
                     PropertyChanges {
@@ -788,13 +788,13 @@ DeletedListViewForm {
                 Action {
                     id: openPaperAction
                     text: qsTr("Open")
-                    shortcut: "Return"
+                    //shortcut: "Return"
                     icon {
                         name: "document-edit"
                     }
                     enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true
                     onTriggered: {
-                        console.log("open paper action", model.projectId,
+                        console.log("from deleted: open paper action", model.projectId,
                                     model.paperId)
                         openDocumentAction.trigger()
                     }
@@ -803,13 +803,13 @@ DeletedListViewForm {
                 Action {
                     id: openPaperInNewTabAction
                     text: qsTr("Open in new tab")
-                    shortcut: "Alt+Return"
+                    //shortcut: "Alt+Return"
                     icon {
                         name: "tab-new"
                     }
                     enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true
                     onTriggered: {
-                        console.log("open paper in new tab action", model.projectId,
+                        console.log("from deleted: open paper in new tab action", model.projectId,
                                     model.paperId)
                         openDocumentInNewTabAction.trigger()
                     }
@@ -826,7 +826,7 @@ DeletedListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index && listView.focus === true
                     onTriggered: {
-                        console.log("rename action", model.projectId,
+                        console.log("from deleted: rename action", model.projectId,
                                     model.paperId)
                         delegateRoot.editName()
                     }
@@ -844,7 +844,7 @@ DeletedListViewForm {
                     enabled: contextMenuItemIndex === model.index && listView.focus === true
 
                     onTriggered: {
-                        console.log("copy action", model.projectId,
+                        console.log("from deleted: copy action", model.projectId,
                                     model.paperId)
                         proxyModel.copy(model.projectId, model.paperId)
                     }
@@ -859,7 +859,7 @@ DeletedListViewForm {
                     enabled: contextMenuItemIndex === model.index && listView.focus === true
 
                     onTriggered: {
-                        console.log("cut action", model.projectId,
+                        console.log("from deleted: cut action", model.projectId,
                                     model.paperId)
                         proxyModel.cut(model.projectId, model.paperId, -2)
                     }
@@ -876,7 +876,7 @@ DeletedListViewForm {
                     enabled: contextMenuItemIndex === model.index && listView.focus === true
                     onTriggered: {
                         //TODO: fill that
-                        console.log("add before action", model.projectId,
+                        console.log("from deleted: add before action", model.projectId,
                                     model.paperId)
                     }
                 }
@@ -891,7 +891,7 @@ DeletedListViewForm {
                     enabled: contextMenuItemIndex === model.index && listView.focus === true
                     onTriggered: {
                         //TODO: fill that
-                        console.log("add after action", model.projectId,
+                        console.log("from deleted: add after action", model.projectId,
                                     model.paperId)
                     }
                 }
@@ -908,7 +908,7 @@ DeletedListViewForm {
                     enabled: contextMenuItemIndex === model.index && listView.focus === true
                              && model.index !== 0
                     onTriggered: {
-                        console.log("move up action", model.projectId,
+                        console.log("from deleted: move up action", model.projectId,
                                     model.paperId)
                         proxyModel.moveUp(model.projectId, model.paperId,
                                           model.index)
@@ -926,7 +926,7 @@ DeletedListViewForm {
                              && model.index !== visualModel.items.count - 1
 
                     onTriggered: {
-                        console.log("move down action", model.projectId,
+                        console.log("from deleted: move down action", model.projectId,
                                     model.paperId)
                         proxyModel.moveDown(model.projectId, model.paperId,
                                             model.index)
@@ -941,7 +941,7 @@ DeletedListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index && listView.focus === true && model.indent !== -1
                     onTriggered: {
-                        console.log("delete action", model.projectId,
+                        console.log("from deleted: delete action", model.projectId,
                                     model.paperId)
                         model.deleted = true
 
@@ -968,6 +968,8 @@ DeletedListViewForm {
                     value: false
                 }
             }
+
+            //----------------------------------------------------------
 
             ListView.onAdd: SequentialAnimation {
                 PropertyAction {

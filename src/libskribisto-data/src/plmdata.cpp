@@ -18,6 +18,8 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
     m_notePropertyHub = new PLMPropertyHub(this,
                                            "tbl_note_property",
                                            "l_note_code");
+
+    m_tagHub         = new SKRTagHub(this);
     m_pluginHub = new PLMPluginHub(this);
 
 
@@ -27,6 +29,7 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
     connect(m_sheetPropertyHub, &PLMPropertyHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
     connect(m_noteHub, &PLMNoteHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
     connect(m_notePropertyHub, &PLMPropertyHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
+    connect(m_tagHub, &SKRTagHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
 
 }
 
@@ -99,3 +102,8 @@ PLMPluginHub * PLMData::pluginHub()
 }
 
 // -----------------------------------------------------------------------------
+
+SKRTagHub * PLMData::tagHub()
+{
+    return m_tagHub;
+}

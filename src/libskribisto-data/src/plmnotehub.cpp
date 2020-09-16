@@ -164,6 +164,7 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int projectId, int sheetId, int no
             IFOK(error){
             emit sheetNoteRelationshipAdded(projectId, sheetId, noteId);
             emit sheetNoteRelationshipChanged(projectId, sheetId, noteId);
+                emit projectModified(projectId);
             }
         }
         else {
@@ -183,6 +184,7 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int projectId, int sheetId, int no
 
                     IFOK(error){
                 emit sheetNoteRelationshipChanged(projectId, sheetId, noteId);
+                        emit projectModified(projectId);
                 }
             }
 
@@ -222,6 +224,8 @@ PLMError PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int
         }
 
         if(result.isEmpty() || key == -2 || key == 0){
+            error.setSuccess(false);
+            error.setErrorCode("E_TAG_no_note_sheet_relationship_to_remove");
             return error;
         }
 
@@ -234,6 +238,7 @@ PLMError PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int
     }
     IFOK(error) {
         emit sheetNoteRelationshipRemoved(projectId, sheetId, noteId);
+        emit projectModified(projectId);
     }
 
     return error;

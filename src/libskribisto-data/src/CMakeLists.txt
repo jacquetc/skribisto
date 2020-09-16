@@ -22,6 +22,7 @@ set(data_SRCS
     plmpluginloader.cpp
     plmprojecthub.cpp
     plmpropertyhub.cpp
+    skrtaghub.cpp
     plmsheethub.cpp
     plmutils.cpp
     tasks/plmprojectmanager.cpp
@@ -55,8 +56,10 @@ set(data_SRCS
     models/plmmodels.cpp
     models/skrsearchsheetlistproxymodel.cpp
     models/skrsearchnotelistproxymodel.cpp
-
-    )
+    models/skrtagitem.cpp
+    models/skrtaglistmodel.cpp
+    models/skrsearchtaglistproxymodel.cpp
+)
 set(data_HDR
     plmcoreinterface.h
     plmcoreplugins.h
@@ -69,6 +72,7 @@ set(data_HDR
     plmpluginloader.h
     plmprojecthub.h
     plmpropertyhub.h
+    skrtaghub.h
     plmsheethub.h
     plmsignalhub.h
     plmutils.h
@@ -107,7 +111,10 @@ set(data_HDR
     models/plmmodels.h
     models/skrsearchsheetlistproxymodel.h
     models/skrsearchnotelistproxymodel.h
-    )
+    models/skrtagitem.h
+    models/skrtaglistmodel.h
+    models/skrsearchtaglistproxymodel.h
+)
 
 set(QRC
     tasks/sql/sql.qrc

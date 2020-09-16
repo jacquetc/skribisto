@@ -41,7 +41,7 @@ Item {
 
                     GridLayout {
                         id: gridLayout
-                        columns: groupBox.contentItem.width / italicToolButton.width - 1
+                        columns: gridLayout.width / italicToolButton.width - 1
                         anchors.left: parent.left
                         anchors.right: parent.right
                         columnSpacing: 5
@@ -84,7 +84,7 @@ Item {
                         id: gridLayout2
                         columnSpacing: 5
                         rowSpacing: 5
-                        columns: groupBox2.contentItem.width / fullScreenToolButton.width - 1
+                        columns: gridLayout.width / fullScreenToolButton.width - 1
                         anchors.left: parent.left
                         anchors.right: parent.right
 

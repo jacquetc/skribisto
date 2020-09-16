@@ -31,9 +31,11 @@ PLMSqlQueries::PLMSqlQueries(int            projectId,
     m_tableName(tableName)
 {
     qRegisterMetaType<DBType>("DBType");
+
     PLMProject *project = plmProjectManager->project(m_projectId);
 
     if (!project) {
+        qDebug() << "PLMSqlQueries: error project" << project;
         return;
     }
 
@@ -94,6 +96,7 @@ PLMError PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
 {
     PLMError error;
     {
+        result.clear();
         QSqlQuery query(m_sqlDB);
         QString   valuesStr;
 
@@ -140,6 +143,7 @@ PLMError PLMSqlQueries::getSortedIds(QList<int>& result) const
 {
     PLMError error;
     {
+        result.clear();
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "SELECT " + m_idName
                              + " FROM " + m_tableName
@@ -164,6 +168,7 @@ PLMError PLMSqlQueries::getIds(QList<int>& result) const
 {
     PLMError error;
     {
+        result.clear();
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "SELECT " + m_idName
                              + " FROM " + m_tableName
@@ -214,8 +219,10 @@ PLMError PLMSqlQueries::getValueByIds(const QString& valueName,
                                       const QVariant& whereValue,
                                       bool sorted) const
 {
+    result.clear();
     PLMError error;
     {
+        result.clear();
         QSqlQuery query(m_sqlDB);
         QString   whereStr;
         QString   wh = where;
@@ -265,6 +272,7 @@ PLMError PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
 {
     PLMError error;
     {
+        result.clear();
         QSqlQuery query(m_sqlDB);
         QHash<QString, QVariant> finalWhereHash;
         QString whereStr                           = " WHERE ";

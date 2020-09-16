@@ -501,7 +501,7 @@ RootPageForm {
     Connections {
         target: Globals
         function onOpenNoteInNewTabCalled(projectId, paperId) {
-            var pageType = "write"
+            var pageType = "note"
             // verify if project/noteId not already opened
             var tabId = pageType + "_" +  projectId + "_" + paperId
             var i;

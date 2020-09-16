@@ -128,7 +128,7 @@ QVariant PLMNoteListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-    if (role == PLMNoteItem::Roles::TagRole) {
+    if (role == PLMNoteItem::Roles::LabelRole) {
         return item->data(role);
     }
 
@@ -196,9 +196,9 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
                 error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
 
 
-        case PLMNoteItem::Roles::TagRole:
+        case PLMNoteItem::Roles::LabelRole:
             error = plmdata->notePropertyHub()->setProperty(projectId, paperId,
-                                                             "tag", value.toString());
+                                                             "label", value.toString());
             break;
 
         case PLMNoteItem::Roles::IndentRole:
@@ -306,7 +306,7 @@ QHash<int, QByteArray>PLMNoteListModel::roleNames() const {
     roles[PLMNoteItem::Roles::PaperIdRole]      = "paperId";
     roles[PLMNoteItem::Roles::ProjectIdRole]    = "projectId";
     roles[PLMNoteItem::Roles::NameRole]         = "name";
-    roles[PLMNoteItem::Roles::TagRole]          = "tag";
+    roles[PLMNoteItem::Roles::LabelRole]          = "label";
     roles[PLMNoteItem::Roles::IndentRole]       = "indent";
     roles[PLMNoteItem::Roles::SortOrderRole]    = "sortOrder";
     roles[PLMNoteItem::Roles::CreationDateRole] = "creationDate";
@@ -567,8 +567,8 @@ void PLMNoteListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "tag") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                          PLMNoteItem::Roles::TagRole);
+        if (name == "label") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                          PLMNoteItem::Roles::LabelRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->noteHub(),

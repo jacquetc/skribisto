@@ -677,10 +677,10 @@ TreeListViewForm {
                                 }
 
                                 Label {
-                                    id: tagLabel
+                                    id: labelLabel
 
-                                    //                                text: model.tag
-                                    text:  model.tag === undefined ? "" : model.tag
+                                    //                                text: model.label
+                                    text:  model.label === undefined ? "" : model.label
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -831,7 +831,7 @@ TreeListViewForm {
                         visible: false
                     }
                     PropertyChanges {
-                        target: tagLabel
+                        target: labelLabel
                         visible: false
                     }
                     PropertyChanges {
@@ -864,7 +864,7 @@ TreeListViewForm {
                 Action {
                     id: openPaperAction
                     text: qsTr("Open")
-                    shortcut: "Return"
+                    //shortcut: "Return"
                     icon {
                         name: "document-edit"
                     }
@@ -879,7 +879,7 @@ TreeListViewForm {
                 Action {
                     id: openPaperInNewTabAction
                     text: qsTr("Open in new tab")
-                    shortcut: "Alt+Return"
+                    //shortcut: "Alt+Return"
                     icon {
                         name: "tab-new"
                     }
@@ -1025,6 +1025,8 @@ TreeListViewForm {
                 }
                 MenuSeparator {}
             }
+
+            //----------------------------------------------------------
 
             ListView.onRemove: SequentialAnimation {
                 PropertyAction {

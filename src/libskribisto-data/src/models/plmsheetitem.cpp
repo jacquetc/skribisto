@@ -99,10 +99,10 @@ QVariant PLMSheetItem::data(int role)
             m_data.insert(role, plmdata->sheetHub()->getTitle(projectId, paperId));
             break;
 
-        case Roles::TagRole:
+        case Roles::LabelRole:
             m_data.insert(role,
                           plmdata->sheetPropertyHub()->getProperty(projectId, paperId,
-                                                                   "tag", ""));
+                                                                   "label", ""));
             break;
 
         case Roles::IndentRole:

@@ -58,9 +58,9 @@ private Q_SLOTS:
     void property();
     void property_replace();
 
-    //tag
-    void getSheetTag();
-    void setSheetTag();
+    //label
+    void getSheetLabel();
+    void setSheetLabel();
 
 
 private:
@@ -418,16 +418,16 @@ void WriteCase::property_replace()
     QCOMPARE(arguments.at(1).toInt(), id);
 }
 
-void WriteCase::getSheetTag()
+void WriteCase::getSheetLabel()
 {
-    QString value = plmdata->sheetPropertyHub()->getProperty(m_currentProjectId, 1, "tag");
-    QCOMPARE(value, "this is a tag");
+    QString value = plmdata->sheetPropertyHub()->getProperty(m_currentProjectId, 1, "label");
+    QCOMPARE(value, "this is a label");
 }
 
-void WriteCase::setSheetTag()
+void WriteCase::setSheetLabel()
 {
-   plmdata->sheetPropertyHub()->setProperty(m_currentProjectId, 1, "tag", "new");
-    QString value = plmdata->sheetPropertyHub()->getProperty(m_currentProjectId, 1, "tag");
+   plmdata->sheetPropertyHub()->setProperty(m_currentProjectId, 1, "label", "new");
+    QString value = plmdata->sheetPropertyHub()->getProperty(m_currentProjectId, 1, "label");
     QCOMPARE(value, "new");
 
 

@@ -62,13 +62,13 @@ EditViewForm {
         }
 
     }
-    //    Shortcut{
-    //        id: goBackShortcut
-    //        sequences: ["Backspace"]
-    //        onActivated: {
-    //            console.log("goBackShortcut")
-    //            goBackAction.trigger()}
-    //    }
+        Shortcut{
+            id: goBackShortcut
+            sequences: ["Backspace"]
+            onActivated: {
+                console.log("goBackShortcut")
+                goBackAction.trigger()}
+        }
 
     goBackToolButton.action: goBackAction
     goBack2ToolButton.action: goBackAction
@@ -99,7 +99,7 @@ EditViewForm {
     }
 
     // Font family combo :
-    //fontFamilyComboBox.model: skrFonts.getModel()
+    fontFamilyComboBox.model: skrFonts.getModel()
 
     Binding {
         target: SkrSettings.writeSettings

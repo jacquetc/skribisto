@@ -38,7 +38,7 @@ public:
         ProjectIdRole    = Qt::UserRole + 1,
         PaperIdRole      = Qt::UserRole + 2,
         NameRole         = Qt::UserRole + 3,
-        TagRole          = Qt::UserRole + 4,
+        LabelRole          = Qt::UserRole + 4,
         IndentRole       = Qt::UserRole + 5,
         SortOrderRole    = Qt::UserRole + 6,
         DeletedRole      = Qt::UserRole + 7,

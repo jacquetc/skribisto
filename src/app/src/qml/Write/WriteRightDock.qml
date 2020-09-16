@@ -5,6 +5,8 @@ import Qt.labs.settings 1.1
 import eu.skribisto.sheetlistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
+import eu.skribisto.searchtaglistproxymodel 1.0
+import eu.skribisto.taghub 1.0
 import ".."
 
 WriteRightDockForm {
@@ -50,14 +52,53 @@ WriteRightDockForm {
 
 
     //-----------------------------------------------------------
-
-    //Document List :
+    //---------------Tags :---------------------------------------------
     //-----------------------------------------------------------
 
-    //-----------------------------------------------------------
+
+    //proxy model for tag list :
+
+    SKRSearchTagListProxyModel {
+        id: tagProxyModel
+        projectIdFilter: projectId
+        sheetIdFilter: paperId
+    }
+    tagPadView.tagListModel: tagProxyModel
+
+    Connections{
+        target: tagPadView
+        function onCallRemoveTagRelationship(projectId, itemId, tagId){
+            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Sheet , itemId, tagId)
+        }
+    }
+
+    Connections{
+        target: tagPadView
+        function onCallAddTagRelationship(projectId, itemId, tagName){
+            console.log("aaaaaaa")
+            var error;
+            // verify if name doesn't already exist :
+            var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
+
+            if(tagId === -2){
+                //if not, create tag
+                error = plmData.tagHub().addTag(projectId, tagName)
+                tagId = plmData.tagHub().getLastAddedId()
+            }
+
+            // set relationship
+            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Sheet, itemId, tagId)
+            if (!error.success){
+                console.log("error onCallAddTagRelationship")
+                //TODO: add notification
+                return
+            }
+        }
+    }
+
 
     //-----------------------------------------------------------
-
+    //-----------------------------------------------------------
     //-----------------------------------------------------------
     transitions: [
         Transition {
@@ -77,16 +118,19 @@ WriteRightDockForm {
         property bool dockFolded: false
         property bool editFrameFolded: editFrame.folded ? true : false
         property bool notePadFrameFolded: notePadFrame.folded ? true : false
-//        property bool documentFrameFolded: documentFrame.folded ? true : false
+        property bool tagPadFrameFolded: tagPadFrame.folded ? true : false
+        //        property bool documentFrameFolded: documentFrame.folded ? true : false
         property int width: fixedWidth
     }
 
 
     onProjectIdChanged: {
         notePadView.projectId = projectId
+        tagPadView.projectId = projectId
     }
     onPaperIdChanged: {
         notePadView.sheetId = paperId
+        tagPadView.itemId = paperId
     }
     //    PropertyAnimation {
     //        target: writeTreeViewFrame
@@ -99,6 +143,7 @@ WriteRightDockForm {
 
         editFrame.folded = settings.editFrameFolded
         notePadFrame.folded = settings.notePadFrameFolded
+        tagPadFrame.folded = settings.tagPadFrameFolded
 
         //        splitView.restoreState(settings.dockSplitView)
         //treeView.onOpenDocument.connect(Globals.openSheetCalled)
