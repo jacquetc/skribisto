@@ -8,7 +8,6 @@ Item {
     property bool stretch: stretch
     property int textAreaWidth
     property int maximumTextAreaWidth
-    property bool minimapVisibility: minimapVisibility
     property alias scrollView: scrollView
     property alias textArea: textArea
     property alias flickable: flickable

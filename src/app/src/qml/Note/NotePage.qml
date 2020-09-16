@@ -38,9 +38,8 @@ NotePageForm {
     writingZone.textTopMargin: SkrSettings.writeSettings.textTopMargin
 
     writingZone.stretch: Globals.compactSize
-    writingZone.minimapVisibility: false
     writingZone.name: "write-0" //useful ?
-    minimap.visible: false
+
 
     Connections {
         target: plmData.projectHub()
@@ -455,18 +454,35 @@ NotePageForm {
 
 
 
-    // minimap:
+
+    //------------------------------------------------------------------------
+    //-----minimap------------------------------------------------------------
+    //------------------------------------------------------------------------
+
+    property bool minimapVisibility: false
+    minimap.visible: minimapVisibility
+
     Binding on minimap.text {
+        when: minimapVisibility
         value: writingZone.textArea.text
         delayed: true
     }
 
     //Scrolling minimap
-    writingZone.internalScrollBar.position: minimap.position
-    minimap.position: writingZone.internalScrollBar.position
+    Binding on writingZone.internalScrollBar.position {
+        when: minimapVisibility
+        value: minimap.position
+        delayed: true
+    }
+    Binding on  minimap.position {
+        when: minimapVisibility
+        value: writingZone.internalScrollBar.position
+        delayed: true
+    }
 
     // ScrollBar invisible while minimap is on
-    writingZone.scrollBarVerticalPolicy: writingZone.minimapVisibility ? ScrollBar.AlwaysOff : ScrollBar.AsNeeded
+    writingZone.scrollBarVerticalPolicy: minimapVisibility ? ScrollBar.AlwaysOff : ScrollBar.AsNeeded
+
 
     //minimap width depends on writingZone width
     //minimapFlickable.width: 300

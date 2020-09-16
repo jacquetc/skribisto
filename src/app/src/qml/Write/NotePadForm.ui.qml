@@ -114,7 +114,6 @@ FocusScope {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 stretch: true
-                minimapVisibility: false
                 leftScrollItemVisible: false
             }
         }
