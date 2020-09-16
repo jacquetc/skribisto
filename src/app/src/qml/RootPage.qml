@@ -187,22 +187,54 @@ RootPageForm {
 
     // fullscreen :
 
-    //    property bool fullscreen_left_dock_folded: false
-    //    Connections {
-    //        target: Globals
-    //        onFullScreenCalled: function (value) {
-    //            if(value){
-    //                //save previous conf
-    //                fullscreen_left_dock_folded = rootLeftDock.folded
-    //                rootLeftDock.fold()
-    //            }
-    //            else{
-    //                rootLeftDock.folded = fullscreen_left_dock_folded
-    //            }
+    property bool fullScreen: false
+        Connections {
+            target: Globals
+            function onFullScreenCalled(value) {
+                if(value){
+                    fullScreen = true
 
-    //        }
-    //    }
+                    tabBarRevealer.visible = true
+                    rootTabBar.visible = false
+                }
+                else{
+                    fullScreen = false
+                    tabBarRevealer.visible = false
+                    rootTabBar.visible = true
 
+                }
+
+            }
+        }
+//        HoverHandler{
+//            target: rootTabBar
+//            enabled: fullScreen
+//            onHoveredChanged: {
+//                console.log("hovered", hovered)
+//                if(fullScreen && !hovered){
+//                rootTabBar.visible = false
+//                }
+//            }
+//        }
+
+        HoverHandler{
+            target: tabBarRevealer
+            enabled: fullScreen
+            onHoveredChanged: {
+                if(hovered){
+                rootTabBar.visible = true
+                }
+            }
+        }
+        TapHandler{
+            target: tabBarRevealer
+            enabled: fullScreen
+            onTapped: {
+                if(pressed){
+                rootTabBar.visible = true
+                }
+            }
+        }
     //---------------------------------------------------------
     // projectLoaded :
     property int projectIdForProjectLoading: 0
@@ -262,6 +294,17 @@ RootPageForm {
     //---------------------------------------------------------
     //---------Tab bar ------------------------------------------
     //---------------------------------------------------------
+
+
+    Shortcut{
+        id: tabBarShortcut
+        sequence: "F4"
+        onActivated: {
+            rootTabBar.currentItem.forceActiveFocus()
+        }
+    }
+
+
 
     //rootSwipeView.currentIndex: rootTabBar.currentIndex
 

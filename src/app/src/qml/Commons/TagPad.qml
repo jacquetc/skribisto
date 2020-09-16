@@ -157,6 +157,46 @@ TagPadForm {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                 }
+
+                RoundButton {
+                    id: removeRelationshipButton
+                    Layout.preferredWidth: 0
+                    Layout.maximumHeight: tagTitle.height
+                    padding:1
+                    icon.name: "list-remove"
+                    onReleased:{
+                     callRemoveTagRelationship(projectId, itemId, tagId)
+                    }
+
+                }
+
+
+                HoverHandler {
+                    id: hoverHandler
+
+                }
+                state: hoverHandler.hovered ? "visible_removeRelationshipButton": ""
+
+                states:[
+                    State {
+                        name: "visible_removeRelationshipButton"
+                        PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: tagTitle.height}
+                    }
+                ]
+
+                transitions: [
+                    Transition {
+                        from: ""
+                        to: "visible_removeRelationshipButton"
+                        NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 300; easing.type: Easing.OutCubic }
+                    },
+                    Transition {
+                        from: "visible_removeRelationshipButton"
+                        to: ""
+                        NumberAnimation { target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 300; easing.type: Easing.OutCubic }
+
+                    }
+                ]
             }
 
         }
@@ -226,9 +266,7 @@ TagPadForm {
                     //create basic tag
                     //var error = plmData.tagHub().addTagRelationship(projectId, itemId)
 
-                    console.log("a")
                     callAddTagRelationship(projectId, itemId, titleTextField.text)
-                    console.log("b")
 
                     // add to model
                     //tagListModel.append({title: title, itemProjectId: projectId, itemPaperId: paperId, itemTagId: tagId})

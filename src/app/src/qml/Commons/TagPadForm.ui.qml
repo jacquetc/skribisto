@@ -34,11 +34,18 @@ Item {
                     spacing: 1
                     anchors.fill: parent
 
+                    Item {
+                        id: stretcher
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                    }
+
                     ToolButton {
                         id: addTagMenuToolButton
                         flat: true
                         display: AbstractButton.IconOnly
                     }
+
                 }
             }
 

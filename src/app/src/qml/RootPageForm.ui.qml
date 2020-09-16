@@ -30,17 +30,21 @@ Item {
     property alias projectsPage: projectsPage
     property alias writeOverviewPage: writeOverviewPage
     property alias saveButton: saveButton
+    property alias tabBarRevealer: tabBarRevealer
 
     ColumnLayout {
         id: columnLayout
         spacing: 1
         anchors.fill: parent
 
+
+
         TabBar {
             id: rootTabBar
             Layout.preferredHeight: 30
             Layout.minimumHeight: 30
             Layout.fillWidth: true
+
             Tab {
                 id: welcomeTab
                 closable: false
@@ -66,6 +70,15 @@ Item {
                 closable: false
 
             }
+        }
+
+
+        Item {
+            id: tabBarRevealer
+            visible: false
+            Layout.minimumHeight: 5
+            Layout.preferredHeight: 5
+            Layout.fillWidth: true
         }
 
         RowLayout {
@@ -225,6 +238,7 @@ Item {
                 }
             }
         }
+
 
     }
     states: [

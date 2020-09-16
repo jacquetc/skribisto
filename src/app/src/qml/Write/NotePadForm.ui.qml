@@ -42,12 +42,19 @@ FocusScope {
                     spacing: 1
                     anchors.fill: parent
 
+                    Item {
+                        id: element
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                    }
+
                     ToolButton {
                         id: openNoteInNewTabToolButton
                         text: qsTr("Open note")
                         flat: true
                         display: AbstractButton.IconOnly
                     }
+
 
                     ToolButton {
                         id: openSynopsisToolButton
@@ -56,11 +63,13 @@ FocusScope {
                         display: AbstractButton.IconOnly
                     }
 
+
                     ToolButton {
                         id: addNoteMenuToolButton
                         flat: true
                         display: AbstractButton.IconOnly
                     }
+
                 }
             }
 

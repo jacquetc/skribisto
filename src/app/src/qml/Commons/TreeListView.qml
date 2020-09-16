@@ -250,9 +250,9 @@ TreeListViewForm {
     //----------------------------------------------------------------------------
 
     // focus :
-    onActiveFocusChanged: {
+    listView.onActiveFocusChanged: {
         if (activeFocus) {
-            listView.forceActiveFocus()
+            listView.currentItem.forceActiveFocus()
         }
     }
 

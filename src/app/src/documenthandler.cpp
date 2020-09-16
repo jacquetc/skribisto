@@ -6,6 +6,8 @@
 #include <QTextObject>
 #include <QTextCharFormat>
 #include <QTextList>
+#include <QImageReader>
+#include <QTextDocumentWriter>
 //#include "plmdata.h"
 
 DocumentHandler::DocumentHandler(QObject *parent) :
@@ -39,9 +41,12 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 this,
                 &DocumentHandler::canRedoChanged);
         m_textCursor =
-            textDocument->textDocument()->rootFrame()->firstCursorPosition();
+                textDocument->textDocument()->rootFrame()->firstCursorPosition();
         m_selectionCursor =
-            textDocument->textDocument()->rootFrame()->firstCursorPosition();
+                textDocument->textDocument()->rootFrame()->firstCursorPosition();
+
+
+
     } else {
         m_textCursor.setPosition(0);
     }
@@ -172,6 +177,30 @@ void DocumentHandler::setItalic(bool italic)
         QTextCharFormat f = m_selectionCursor.charFormat();
         f.setFontItalic(italic);
         m_selectionCursor.setCharFormat(f);
+
+// for test purpose:
+//        QUrl uri ("mydata://skibisto.svg"  );
+//        QImage image = QImageReader (":/pics/skribisto.svg").read();
+//        m_textDoc->textDocument()->addResource( QTextDocument::ImageResource, uri, QVariant ( image ) );
+//        QTextImageFormat imageFormat;
+//        imageFormat.setName(uri.toString());
+//        imageFormat.setHeight(200);
+//        imageFormat.setWidth(200);
+//        imageFormat.setAnchor(true);
+//        imageFormat.setAnchorHref("http://qt.io");
+
+
+//        if(imageFormat.isValid()){
+//            m_textCursor.insertImage(imageFormat);
+//        }
+
+//        QTextDocumentWriter writer;
+//        writer.setFileName("/home/cyril/Documents/rrrrr.odt");
+//        writer.setFormat("odf");
+//        writer.write(m_textDoc->textDocument());
+
+
+
     }
     emit formatChanged();
 }
@@ -303,7 +332,7 @@ void DocumentHandler::setAlignment(Qt::Alignment alignment)
 bool DocumentHandler::bulletList() const
 {
     return m_textCursor.currentList() &&
-           m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
+            m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
 }
 
 void DocumentHandler::setBulletList(bool bulletList)
@@ -324,7 +353,7 @@ void DocumentHandler::setBulletList(bool bulletList)
 bool DocumentHandler::numberedList() const
 {
     return m_textCursor.currentList() &&
-           m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
+            m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
 }
 
 void DocumentHandler::setNumberedList(bool numberedList)
@@ -355,10 +384,10 @@ void DocumentHandler::setId(const int projectId, const int paperId)
     m_projectId = projectId;
     m_paperId   = paperId;
 
-//    QString text = plmdata->sheetHub()->getContent(projectId, paperId);
+    //    QString text = plmdata->sheetHub()->getContent(projectId, paperId);
 
     m_selectionCursor.select(QTextCursor::Document);
-//    m_selectionCursor.insertHtml(text);
+    //    m_selectionCursor.insertHtml(text);
 
     emit formatChanged();
     emit idChanged();

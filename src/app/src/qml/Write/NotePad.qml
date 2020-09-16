@@ -49,15 +49,17 @@ NotePadForm {
             border.color: isSelected ? "blue" : "lightskyblue"
             border.width: 1
             radius : height / 2
-            property int projectId: itemProjectId
-            property int sheetId: itemSheetId
-            property int noteId: itemNoteId
+            property int projectId: model.itemProjectId
+            property int sheetId: model.itemSheetId
+            property int noteId: model.itemNoteId
             property int isSynopsis: -2
             property bool isSelected: false
             property bool isOpened: false
 
 
             focus: true
+
+
 
             TapHandler {
                 id: tapHandler
@@ -171,9 +173,48 @@ NotePadForm {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                 }
+
+                RoundButton {
+                    id: removeRelationshipButton
+                    Layout.preferredWidth: 0
+                    Layout.maximumHeight: noteTitle.height
+                    padding:1
+                    icon.name: "list-remove"
+                    onReleased:{
+                        plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                    }
+
+                }
             }
             
+            HoverHandler {
+                id: hoverHandler
+
+            }
+            state: hoverHandler.hovered ? "visible_removeRelationshipButton": ""
+
+            states:[
+                State {
+                    name: "visible_removeRelationshipButton"
+                    PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: noteTitle.height}
+                }
+            ]
+
+            transitions: [
+                Transition {
+                    from: ""
+                    to: "visible_removeRelationshipButton"
+                    NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 300; easing.type: Easing.OutCubic }
+                },
+                Transition {
+                    from: "visible_removeRelationshipButton"
+                    to: ""
+                    NumberAnimation { target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 300; easing.type: Easing.OutCubic }
+
+                }
+            ]
         }
+
     }
     
     function populateNoteListModel(){
@@ -382,7 +423,32 @@ NotePadForm {
     
     
     
-    
+    //---------------------------------------------
+    property int noteIdToOpen: -2
+    Timer{
+        id: openDocumentAfterClosingPopupTimer
+        repeat: false
+        interval: 0
+        onTriggered: {
+            //reset other notes :
+            var i;
+            for(i = 0; i < noteRepeater.count; i++) {
+                var item = noteRepeater.itemAt(i)
+                if(item.noteId === noteIdToOpen){
+
+                    item.isOpened = true
+                }
+                else{
+
+                    item.isOpened = false
+                }
+            }
+
+            root.openDocument(item.projectId, noteIdToOpen)
+        }
+
+    }
+    //---------------------------------------------
     Popup {
         id: titleEditPopup
         x: addNoteMenuToolButton.x - 200
@@ -392,7 +458,8 @@ NotePadForm {
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
         padding: 0
-        
+
+
         ColumnLayout {
             anchors.fill: parent
             TextField {
@@ -414,7 +481,6 @@ NotePadForm {
                     
                     //create basic note
                     var error = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
-                    console.log("A")
                     if (!error.success){
                         //TODO: add notification
                         return
@@ -429,6 +495,10 @@ NotePadForm {
                     // add to model
                     //noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
                     
+                    noteIdToOpen = noteId
+                    openDocumentAfterClosingPopupTimer.start()
+
+
                     titleEditPopup.close()
                 }
                 
@@ -523,12 +593,24 @@ NotePadForm {
                                         return
                                     }
                                     
+                                    noteIdToOpen = noteId
+
+                                    openDocumentAfterClosingPopupTimer.start()
+
                                     titleEditPopup.close()
-                                    
+
+
                                     
                                 }
-                                
+
+
+
+
                             }
+
+
+
+
                             Text {
                                 text: model.name
                                 anchors.fill: parent

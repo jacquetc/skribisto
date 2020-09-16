@@ -88,7 +88,7 @@ Item {
                             font.preferShaping: false
                             font.kerning: false
                             //clip: true
-                            textFormat: Text.RichText
+                            textFormat: Text.MarkdownText
                             focus: true
                             selectByMouse: true
                             wrapMode: TextEdit.WordWrap
