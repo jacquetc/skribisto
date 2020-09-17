@@ -1,6 +1,7 @@
 #include "plmprojecthub.h"
 #include <QDateTime>
 #include <QDebug>
+#include <QDir>
 #include <QFileInfo>
 #include <QVariant>
 #include "tasks/plmprojectmanager.h"
@@ -141,28 +142,28 @@ PLMError PLMProjectHub::backupAProject(int projectId, const QString &type, const
     QString projectPath = this->getPath(projectId);
     if (projectPath == ""){
         error.addData(projectId);
-            error.setSuccess(false);
-            error.setErrorCode("E_PROJECT_no_path");
-}
+        error.setSuccess(false);
+        error.setErrorCode("E_PROJECT_no_path");
+    }
     IFOK(error){
         // verify backup path
         QFileInfo folderInfo(folderPath);
         if(!folderInfo.exists()){
             error.addData(projectId);
-                error.setSuccess(false);
-                error.setErrorCode("E_PROJECT_path_dont_exist");
+            error.setSuccess(false);
+            error.setErrorCode("E_PROJECT_path_dont_exist");
 
         }
         if(!folderInfo.isDir()){
             error.addData(projectId);
-                error.setSuccess(false);
-                error.setErrorCode("E_PROJECT_path_not_a_directory");
+            error.setSuccess(false);
+            error.setErrorCode("E_PROJECT_path_not_a_directory");
 
         }
         if(!folderInfo.isWritable()){
             error.addData(projectId);
-                error.setSuccess(false);
-                error.setErrorCode("E_PROJECT_path_not_writable");
+            error.setSuccess(false);
+            error.setErrorCode("E_PROJECT_path_not_writable");
 
         }
     }
@@ -170,17 +171,17 @@ PLMError PLMProjectHub::backupAProject(int projectId, const QString &type, const
 
     // determine file base
     QFileInfo info(projectPath);
-      QString  backupFile = info.canonicalPath() + "/" + info.completeBaseName();
+    QString  backupFile = info.canonicalPath() + "/" + info.completeBaseName();
 
-      // add date and time :
-      QDateTime now = QDateTime::currentDateTime();
-      QString nowText = now.toString("_yyyy-MM-dd-HHmmss");
-      backupFile = backupFile + nowText;
+    // add date and time :
+    QDateTime now = QDateTime::currentDateTime();
+    QString nowText = now.toString("_yyyy-MM-dd-HHmmss");
+    backupFile = backupFile + nowText;
 
-      //add suffix :
-backupFile = backupFile + "." + type;
+    //add suffix :
+    backupFile = backupFile + "." + type;
 
-      // firstly, save the project
+    // firstly, save the project
     IFOKDO(error, this->saveProjectAs(projectId, type, backupFile));
     // then create a copy
     IFOK(error) {
@@ -189,6 +190,71 @@ backupFile = backupFile + "." + type;
     return error;
 
 }
+
+
+bool PLMProjectHub::doesBackupOfTheDayExistAtPath(int projectId, const QString &folderPath){
+
+    PLMError error;
+
+    QString projectPath = this->getPath(projectId);
+    if (projectPath == ""){
+        error.addData(projectId);
+        error.setSuccess(false);
+        error.setErrorCode("E_PROJECT_no_path");
+    }
+    IFOK(error){
+        // verify backup path
+        QFileInfo folderInfo(folderPath);
+        if(!folderInfo.exists()){
+            error.addData(projectId);
+            error.setSuccess(false);
+            error.setErrorCode("E_PROJECT_path_dont_exist");
+
+        }
+        if(!folderInfo.isDir()){
+            error.addData(projectId);
+            error.setSuccess(false);
+            error.setErrorCode("E_PROJECT_path_not_a_directory");
+
+        }
+        if(!folderInfo.isWritable()){
+            error.addData(projectId);
+            error.setSuccess(false);
+            error.setErrorCode("E_PROJECT_path_not_writable");
+
+        }
+    }
+    IFKO(error){
+
+        emit errorSent(error);
+        return true;
+    }
+
+
+
+    // determine file base
+    QFileInfo info(projectPath);
+    QString  backupFileOfTheDay = info.completeBaseName();
+
+    // add date and time :
+    QDateTime now = QDateTime::currentDateTime();
+    QString nowText = now.toString("_yyyy-MM-dd");
+    backupFileOfTheDay = backupFileOfTheDay + nowText + "*";
+
+    //find file begining with backupFileOfTheDay
+
+    QDir dir(folderPath);
+    QStringList nameFilters;
+    nameFilters << backupFileOfTheDay;
+    QStringList entries = dir.entryList(nameFilters);
+
+    if(entries.isEmpty()){
+        return false;
+    }
+    return true;
+
+}
+
 
 PLMError PLMProjectHub::closeProject(int projectId)
 {
@@ -269,7 +335,7 @@ PLMError PLMProjectHub::setPath(int projectId, const QString& newPath)
     }
 
     IFOKDO(error, project->setPath(newPath))
-    IFOK(error) {
+            IFOK(error) {
         emit projectPathChanged(projectId, newPath);
     }
     return error;

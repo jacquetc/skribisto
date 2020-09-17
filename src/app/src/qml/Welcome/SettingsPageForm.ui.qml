@@ -14,6 +14,7 @@ Item {
     property alias menuButtonsInStatusBarSwitch: menuButtonsInStatusBarSwitch
     property alias disallowSwipeBetweenTabsCheckBox: disallowSwipeBetweenTabsCheckBox
     property alias showMenuBarCheckBox: showMenuBarCheckBox
+    property alias backUpOnceADayCheckBox: backUpOnceADayCheckBox
 
     Pane {
         id: pane2
@@ -69,7 +70,6 @@ Item {
 
                         GroupBox {
                             id: groupBox1
-                            topPadding: 20
                             title: qsTr("Backup paths :")
 
                             ColumnLayout {
@@ -143,7 +143,7 @@ Item {
                         }
 
                         CheckBox {
-                            id: backUpOneADayCheckBox
+                            id: backUpOnceADayCheckBox
                             text: qsTr("Back up once a day")
                         }
                     }
@@ -190,7 +190,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;height:800;width:1000}
+    D{i:0;height:1500;width:1000}
 }
 ##^##*/
 

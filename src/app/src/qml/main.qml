@@ -475,24 +475,24 @@ ApplicationWindow {
             var backupPaths = SkrSettings.backupSettings.paths
             var backupPathList = backupPaths.split(";")
 
+            //no backup path set
+            if (backupPaths === ""){
+                //TODO: send notification, backup not configured
 
+                return
+            }
 
             var projectIdList = plmData.projectHub().getProjectIdList()
-            var projectCobackUpButtonunt = plmData.projectHub().getProjectCount()
-            console.log("z")
+            var projectCount = plmData.projectHub().getProjectCount()
+
 
             // all projects :
             var i;
             for (i = 0; i < projectCount ; i++ ){
                 var projectId = projectIdList[i]
 
-                //no backup path set
-                if (backupPaths === ""){
-                    //TODO: send notification, backup not configured
 
-                    break
-                }
-                //no backup path set
+                //no project path
                 if (plmData.projectHub().getPath(projectId) === ""){
                     //TODO: send notification, project not yet saved once
 
@@ -503,13 +503,13 @@ ApplicationWindow {
                 var j;
                 for (j = 0; j < backupPathList.length ; j++ ){
                     var path = backupPathList[j]
-                    console.log("b")
+
 
                     if (path === ""){
                         //TODO: send notification
                         continue
                     }
-                    console.log("c")
+
 
 
                     var error = plmData.projectHub().backupAProject(projectId, "skrib", path)

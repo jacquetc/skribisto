@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQml 2.15
 import QtQuick.Controls 2.15
+import eu.skribisto.projecthub 1.0
 import ".."
 
 SettingsPageForm {
@@ -8,33 +9,34 @@ SettingsPageForm {
     Component.onCompleted: {
         checkOnBackUpEveryCheckBox()
         checkOnSaveEveryCheckBox()
+        backUpOnceADayIfNeeded()
     }
 
 
-//    // scrollview :
-//    Component.onCompleted: scroll.contentItem = contener
-//	function scrollChange(){
-//                if ((width > 600) && (height > 600)){
-//                        if(scroll.contentItem != itemNull) scroll.contentItem = itemNull
-//                        contener.width = width
-//                        contener.height = height
-//                } else if ((width < 600) && (height < 600)){
-//                        if(scroll.contentItem != contener) scroll.contentItem = contener
-//                        contener.width = 600
-//                        contener.height = 600
-//                } else if ((width < 600)){
-//                        if(scroll.contentItem != contener) scroll.contentItem = contener
-//                        contener.width = 600
-//                        contener.height = height
-//                } else {
-//                        if(scroll.contentItem != contener) scroll.contentItem = contener
-//                        contener.height = 600
-//                        contener.width = width
-//                }
-//        }
+    //    // scrollview :
+    //    Component.onCompleted: scroll.contentItem = contener
+    //	function scrollChange(){
+    //                if ((width > 600) && (height > 600)){
+    //                        if(scroll.contentItem != itemNull) scroll.contentItem = itemNull
+    //                        contener.width = width
+    //                        contener.height = height
+    //                } else if ((width < 600) && (height < 600)){
+    //                        if(scroll.contentItem != contener) scroll.contentItem = contener
+    //                        contener.width = 600
+    //                        contener.height = 600
+    //                } else if ((width < 600)){
+    //                        if(scroll.contentItem != contener) scroll.contentItem = contener
+    //                        contener.width = 600
+    //                        contener.height = height
+    //                } else {
+    //                        if(scroll.contentItem != contener) scroll.contentItem = contener
+    //                        contener.height = 600
+    //                        contener.width = width
+    //                }
+    //        }
 
-//	onWidthChanged: scrollChange()
-//	onHeightChanged: scrollChange()
+    //	onWidthChanged: scrollChange()
+    //	onHeightChanged: scrollChange()
 
 
 
@@ -44,6 +46,7 @@ SettingsPageForm {
         target: SkrSettings.interfaceSettings
         property: "menuButtonsInStatusBar"
         value: menuButtonsInStatusBarSwitch.checked
+        restoreMode: Qt.Binding.RestoreBindingOrValue
     }
 
 
@@ -56,6 +59,7 @@ SettingsPageForm {
         target: SkrSettings.accessibilitySettings
         property: "disallowSwipeBetweenTabsCheckBoxChecked"
         value: disallowSwipeBetweenTabsCheckBox.checked
+        restoreMode: Qt.Binding.RestoreBindingOrValue
     }
 
     showMenuBarCheckBox.checked: SkrSettings.accessibilitySettings.showMenuBar
@@ -63,6 +67,7 @@ SettingsPageForm {
         target: SkrSettings.accessibilitySettings
         property: "showMenuBar"
         value: showMenuBarCheckBox.checked
+        restoreMode: Qt.Binding.RestoreBindingOrValue
     }
 
     // --------------------------------------------
@@ -75,6 +80,7 @@ SettingsPageForm {
         target: SkrSettings.backupSettings
         property: "backUpEveryCheckBoxChecked"
         value: backUpEveryCheckBox.checked
+        restoreMode: Qt.Binding.RestoreBindingOrValue
     }
 
     backUpEveryCheckBox.onCheckedChanged:{
@@ -83,8 +89,23 @@ SettingsPageForm {
 
     function checkOnBackUpEveryCheckBox(){
         backupHoursDial.enabled = backUpEveryCheckBox.checked
-    backupHoursSpinBox.enabled = backUpEveryCheckBox.checked
+        backupHoursSpinBox.enabled = backUpEveryCheckBox.checked
 
+    }
+
+    //backUp Once A Day CheckBox
+    backUpOnceADayCheckBox.checked: SkrSettings.backupSettings.backUpOnceADay
+    Binding {
+        target: SkrSettings.backupSettings
+        property: "backUpOnceADay"
+        value: backUpOnceADayCheckBox.checked
+        restoreMode: Qt.Binding.RestoreBindingOrValue
+    }
+
+    backUpOnceADayCheckBox.onCheckedChanged:{
+        if(backUpOnceADayCheckBox.checked){
+            backUpOnceADayIfNeeded()
+        }
     }
 
     //dials :
@@ -100,8 +121,91 @@ SettingsPageForm {
         target: SkrSettings.backupSettings
         property: "backUpEveryHours"
         value: backupHoursDial.value
+        restoreMode: Qt.Binding.RestoreBindingOrValue
 
     }
+
+    // -------------------------
+    // backup action
+
+
+    Timer{
+        id: backupTimer
+        repeat: true
+        running: backUpEveryCheckBox.checked
+        interval: backupHoursSpinBox.value * 60 * 60 * 1000
+        onTriggered: {
+            backUpAction.trigger()
+        }
+    }
+
+
+
+    // once a day :
+    function backUpOnceADayIfNeeded(){
+        if(!backUpOnceADayCheckBox.checked){
+            return
+        }
+        var backupPaths = SkrSettings.backupSettings.paths
+        var backupPathList = backupPaths.split(";")
+
+        //no backup path set
+        if (backupPaths === ""){
+            //TODO: send notification, backup not configured
+
+            return
+        }
+
+        var projectIdList = plmData.projectHub().getProjectIdList()
+        var projectCount = plmData.projectHub().getProjectCount()
+
+
+        // all projects :
+        var i;
+        for (i = 0; i < projectCount ; i++ ){
+            var projectId = projectIdList[i]
+
+
+            //no project path
+            if (plmData.projectHub().getPath(projectId) === ""){
+                //TODO: send notification, project not yet saved once
+
+                break
+            }
+
+            // in all backup paths :
+            var j;
+            for (j = 0; j < backupPathList.length ; j++ ){
+                var path = backupPathList[j]
+
+
+                if (path === ""){
+                    //TODO: send notification
+                    continue
+                }
+
+
+
+                // check if wanted backup exists already at paths
+                var isBackupThere = plmData.projectHub().doesBackupOfTheDayExistAtPath(projectId, path)
+
+                if(isBackupThere){
+                    break
+                }
+
+                // back up :
+
+                var error = plmData.projectHub().backupAProject(projectId, "skrib", path)
+
+                if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+
+                }
+
+            }
+        }
+    }
+
+
 
     // --------------------------------------------
     // ---- save --------------------------------
@@ -121,7 +225,7 @@ SettingsPageForm {
 
     function checkOnSaveEveryCheckBox(){
         saveDial.enabled = saveEveryCheckBox.checked
-    saveSpinBox.enabled = saveEveryCheckBox.checked
+        saveSpinBox.enabled = saveEveryCheckBox.checked
 
     }
 
@@ -138,6 +242,24 @@ SettingsPageForm {
         target: SkrSettings.saveSettings
         property: "saveEveryMinutes"
         value: saveDial.value
+        restoreMode: Qt.Binding.RestoreBindingOrValue
 
     }
+
+
+    // -------------------------
+    // save action
+
+
+    Timer{
+        id: saveTimer
+        repeat: true
+        running: saveEveryCheckBox.checked
+        interval: saveSpinBox.value * 60 * 1000
+        onTriggered: {
+            saveAction.trigger()
+        }
+    }
+
+
 }

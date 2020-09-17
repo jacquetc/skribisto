@@ -18,6 +18,7 @@ QtObject {
         property string paths: ""
         property bool backUpEveryCheckBoxChecked: false
         property int backUpEveryHours: 10
+        property bool backUpOnceADay: false
 
     }
 
