@@ -91,10 +91,12 @@ Item {
         if(minimumContentHeight > 0 && contentHeight < minimumContentHeight){
 
             container.height = minimumContentHeight - 25
+            dynamicHeight =  minimumContentHeight
         }
         else if(maximumContentHeight > 0 && contentHeight > maximumContentHeight){
 
             container.height = maximumContentHeight - 25
+            dynamicHeight =  maximumContentHeight
         }
         else{
 
