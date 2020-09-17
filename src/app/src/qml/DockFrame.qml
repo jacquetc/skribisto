@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
+import QtQml 2.15
 
 Item {
     id: base
@@ -8,6 +9,7 @@ Item {
     default property alias contents : container.data
     //property alias contentParent: container
     property int contentHeight: 100
+    property int contentHeightAfterBinding: 100
     property int minimumContentHeight: -1
     property int maximumContentHeight: -1
     property int minimumContainerHeight: -1
@@ -22,6 +24,14 @@ Item {
     }
     //    implicitWidth: folded ? 0x0 : 30
     //    implicitHeight: folded ? 30 : contentHeight
+
+    Binding{
+        target: base
+        property: "contentHeightAfterBinding"
+        value: contentHeight
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
 
 
     GridLayout {
@@ -86,21 +96,21 @@ Item {
 
 
     }
-    onContentHeightChanged: {
+    onContentHeightAfterBindingChanged: {
 
-        if(minimumContentHeight > 0 && contentHeight < minimumContentHeight){
+        if(minimumContentHeight > 0 && contentHeightAfterBinding < minimumContentHeight){
 
             container.height = minimumContentHeight - 25
-            dynamicHeight =  minimumContentHeight
+            dynamicHeight =  minimumContentHeight - 25
         }
-        else if(maximumContentHeight > 0 && contentHeight > maximumContentHeight){
+        else if(maximumContentHeight > 0 && contentHeightAfterBinding > maximumContentHeight){
 
             container.height = maximumContentHeight - 25
-            dynamicHeight =  maximumContentHeight
+            dynamicHeight =  maximumContentHeight - 25
         }
         else{
 
-            container.height = contentHeight - 25
+            container.height = contentHeightAfterBinding - 25
         }
 
 
@@ -173,11 +183,11 @@ Item {
             PropertyChanges {
                 target: base
                 implicitWidth: 30
-                implicitHeight: contentHeight
+                implicitHeight: contentHeightAfterBinding
             }
             PropertyChanges {
                 target: base
-                dynamicHeight: contentHeight
+                dynamicHeight: contentHeightAfterBinding
                 dynamicWidth: 40
             }
         }

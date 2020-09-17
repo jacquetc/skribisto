@@ -507,7 +507,15 @@ NotePadForm {
                     searchProxyModel.textFilter = text
                 }
                 
-                
+                Keys.priority: Keys.BeforeItem
+                Keys.onPressed: {
+                    if (event.key === Qt.Key_Down){
+                        if(searchResultList.count > 0){
+                            searchResultList.itemAtIndex(0).forceActiveFocus()
+                        }
+                    }
+
+                }
             }
             
             ScrollView {
@@ -550,9 +558,25 @@ NotePadForm {
                             TapHandler {
                                 id: tapHandler
                                 onSingleTapped: {
-                                    listView.currentIndex = model.index
+                                    searchResultList.currentIndex = model.index
                                     delegateRoot.forceActiveFocus()
                                     eventPoint.accepted = true
+                                }
+                                onDoubleTapped: {
+                                    //create relationship with note
+
+                                    var noteId = model.paperId
+                                    var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+
+                                    if (!error.success){
+                                        //TODO: add notification
+                                        return
+                                    }
+
+                                    noteIdToOpen = noteId
+                                    openDocumentAfterClosingPopupTimer.start()
+                                    titleEditPopup.close()
+
                                 }
                             }
                             
@@ -595,9 +619,7 @@ NotePadForm {
                                     }
                                     
                                     noteIdToOpen = noteId
-
                                     openDocumentAfterClosingPopupTimer.start()
-
                                     titleEditPopup.close()
 
 
@@ -632,7 +654,7 @@ NotePadForm {
                             radius: 5
                             border.color:  "lightsteelblue"
                             border.width: 2
-                            visible: searchResultList.focus
+                            visible: searchResultList.activeFocus
                             Behavior on y {
                                 SpringAnimation {
                                     spring: 3

@@ -3,7 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../Commons"
 
-FocusScope {
+Item {
     id: base
     property alias noteFlow: noteFlow
     property alias noteWritingZone: noteWritingZone
@@ -12,9 +12,6 @@ FocusScope {
     property alias addNoteMenuToolButton: addNoteMenuToolButton
     property alias noteRepeater: noteRepeater
 
-
-    x: pane.x; y: pane.y
-    width: pane.width; height: pane.height
 
     Pane {
         id: pane

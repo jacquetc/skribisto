@@ -3,7 +3,7 @@ import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
 
-FocusScope {
+Item {
     property alias swipeView: swipeView
     property alias italicToolButton: italicToolButton
     property alias boldToolButton: boldToolButton
@@ -22,9 +22,6 @@ FocusScope {
     property alias backroundColorTextField: backroundColorTextField
     property alias backgroundColorToolButton: backgroundColorToolButton
 
-
-     x: swipeView.x; y: swipeView.y
-     width: swipeView.width; height: swipeView.height
 
      SwipeView {
         id: swipeView

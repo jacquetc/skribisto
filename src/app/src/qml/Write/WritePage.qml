@@ -434,6 +434,10 @@ WritePageForm {
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)
 
+
+        compactLeftDock.setCurrentPaperId(projectId, paperId)
+        compactLeftDock.setOpenedPaperId(projectId, paperId)
+
     }
 
     function saveCurrentPaperCursorPositionAndY(){

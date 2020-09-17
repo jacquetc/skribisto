@@ -166,7 +166,7 @@ TagPadForm {
                     padding:1
                     icon.name: "list-remove"
                     onReleased:{
-                     callRemoveTagRelationship(projectId, itemId, tagId)
+                        callRemoveTagRelationship(projectId, itemId, tagId)
                     }
 
                 }
@@ -280,6 +280,18 @@ TagPadForm {
                 }
 
 
+                Keys.priority: Keys.BeforeItem
+
+                Keys.onPressed: {
+                    if (event.key === Qt.Key_Down){
+                        if(searchResultList.count > 0){
+                            searchResultList.itemAtIndex(0).forceActiveFocus()
+                        }
+                    }
+
+                }
+
+
             }
 
             ScrollView {
@@ -321,9 +333,15 @@ TagPadForm {
                             TapHandler {
                                 id: tapHandler
                                 onSingleTapped: {
-                                    listView.currentIndex = model.index
+                                    searchResultList.currentIndex = model.index
                                     delegateRoot.forceActiveFocus()
                                     eventPoint.accepted = true
+                                }
+                                onDoubleTapped: {
+
+                                    //create relationship with tag
+                                    callAddTagRelationship(model.projectId, itemId, model.name)
+                                    titleEditPopup.close()
                                 }
                             }
 
@@ -355,10 +373,7 @@ TagPadForm {
                                     console.log("Return key pressed title")
 
                                     //create relationship with tag
-
                                     callAddTagRelationship(model.projectId, itemId, model.name)
-
-
                                     titleEditPopup.close()
 
 
@@ -385,7 +400,7 @@ TagPadForm {
                             radius: 5
                             border.color:  "lightsteelblue"
                             border.width: 2
-                            visible: searchResultList.focus
+                            visible: searchResultList.activeFocus
                             Behavior on y {
                                 SpringAnimation {
                                     spring: 3

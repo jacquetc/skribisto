@@ -62,7 +62,15 @@ PLMError SKRTagHub::addTag(int projectId, const QString &tagName)
 
     PLMSqlQueries queries(projectId, "tbl_tag");
     error = queries.add(values, newId);
-
+    IFKO(error) {
+        queries.rollback();
+    }
+    IFOK(error) {
+        queries.commit();
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
 
     IFOK(error){
         m_last_added_id = newId;
@@ -86,7 +94,15 @@ PLMError SKRTagHub::removeTag(int projectId, int tagId)
 
     PLMSqlQueries queries(projectId, "tbl_tag");
     error = queries.remove(tagId);
-
+    IFKO(error) {
+        queries.rollback();
+    }
+    IFOK(error) {
+        queries.commit();
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
 
     IFOK(error){
         emit tagAdded(projectId, newId);
@@ -106,13 +122,13 @@ int SKRTagHub::getTagIdWithName(int projectId, const QString &tagName)
 
     error = queries.getValueByIds("l_tag_id", out, "t_name", tagName);
     IFOK(error) {
-            QHash<int, QVariant>::const_iterator i = out.constBegin();
-            while (i != out.constEnd()) {
-                if(!i.value().isNull()){
-                    result = i.key();
-                }
-                ++i;
+        QHash<int, QVariant>::const_iterator i = out.constBegin();
+        while (i != out.constEnd()) {
+            if(!i.value().isNull()){
+                result = i.key();
             }
+            ++i;
+        }
     }
     IFKO(error) {
         emit errorSent(error);
@@ -200,7 +216,7 @@ PLMError SKRTagHub::setTagColor(int projectId, int tagId, const QString &color)
 // ------------------------------------------------------------
 
 PLMError SKRTagHub::setCreationDate(int projectId, int tagId,
-                                      const QDateTime& newDate)
+                                    const QDateTime& newDate)
 {
     PLMError error = set(projectId, tagId, "dt_created", newDate);
 
@@ -396,7 +412,7 @@ QList<int> SKRTagHub::getTagsFromItemId(int projectId, SKRTagHub::ItemType itemT
 
     PLMSqlQueries queries(projectId, "tbl_tag_relationship");
 
-    error = queries.getValueByIdsWhere("l_tag_relationship_id", out, where);
+    error = queries.getValueByIdsWhere("l_tag_code", out, where);
 
     IFOK(error) {
 
@@ -404,7 +420,7 @@ QList<int> SKRTagHub::getTagsFromItemId(int projectId, SKRTagHub::ItemType itemT
         QHash<int, QVariant>::const_iterator i = out.constBegin();
         while (i != out.constEnd()) {
             if(!i.value().isNull()){
-                result.append(i.key());
+                result.append(i.value().toInt());
             }
             ++i;
         }
@@ -481,6 +497,15 @@ PLMError SKRTagHub::setTagRelationship(int projectId, SKRTagHub::ItemType itemTy
             values.insert("l_tag_code", tagId);
 
             error = queries.add(values, newId);
+            IFKO(error) {
+                queries.rollback();
+            }
+            IFOK(error) {
+                queries.commit();
+            }
+            IFKO(error) {
+                emit errorSent(error);
+            }
 
             IFOK(error){
                 emit tagRelationshipAdded(projectId, itemType, itemId, tagId);
@@ -550,6 +575,17 @@ PLMError SKRTagHub::removeTagRelationship(int projectId, SKRTagHub::ItemType ite
 
     IFOK(error) {
         error = queries.remove(key);
+        IFKO(error) {
+            queries.rollback();
+        }
+        IFOK(error) {
+            queries.commit();
+        }
+        IFKO(error) {
+            emit errorSent(error);
+        }
+
+
     }
     IFOK(error) {
         emit tagRelationshipRemoved(projectId, itemType, itemId, tagId);
