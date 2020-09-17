@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.15
 
 DocumentListViewForm {
     id: root
+    property int minimumHeight: 300
 
     property var documentModel
     property var model

@@ -96,9 +96,7 @@ NoteOverviewPageForm {
     Connections {
         target: Globals
         function onCompactSizeChanged() {
-            leftDockShowButton.enabled = Globals.compactSize
-            leftDockMenuButton.enabled = Globals.compactSize
-            leftDockMenuGroup.enabled = Globals.compactSize
+
 
             if (Globals.compactSize === true) {
                 leftDrawer.interactive = true
@@ -129,6 +127,8 @@ NoteOverviewPageForm {
         LeftDock {
             id: compactLeftDock
             anchors.fill: parent
+
+            settings.category: settings.category + "-drawer"
         }
     }
 }

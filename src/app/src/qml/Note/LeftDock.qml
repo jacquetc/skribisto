@@ -30,11 +30,18 @@ LeftDockForm {
         folded = false
     }
 
-    //    splitView.handle: Rectangle {
-    //        implicitWidth: 4
-    //        implicitHeight: 4
-    //    }
-
+    splitView.handle: Item {
+        implicitHeight: 8
+        RowLayout {
+            anchors.fill: parent
+            Rectangle {
+                Layout.preferredWidth: 20
+                Layout.preferredHeight: 5
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                color: "lightgrey"
+            }
+        }
+    }
 
     //Navigation List :
     //-----------------------------------------------------------
@@ -93,10 +100,12 @@ LeftDockForm {
         }
     ]
 
+    property alias settings: settings
+
     Settings {
         id: settings
         category: "noteLeftDock"
-        //property string dockSplitView: "0"
+        property var dockSplitView
         property bool dockFolded: false
         property bool navigationFrameFolded: navigationFrame.folded ? true : false
         property bool documentFrameFolded: documentFrame.folded ? true : false
@@ -118,13 +127,18 @@ LeftDockForm {
     //        duration: 500
     //        easing.type: Easing.InOutQuad
     //    }
-    Component.onCompleted: {
-        folded ? fold() : unfold()
+
+    function init(){
+        if(folded){
+            fold()
+        }
+        else{
+            unfold()
+        }
 
         navigationFrame.folded = settings.navigationFrameFolded
         documentFrame.folded = settings.documentFrameFolded
 
-        //        splitView.restoreState(settings.dockSplitView
         // navigation :
         navigation.onOpenDocument.connect(Globals.openNoteCalled)
         navigation.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
@@ -132,11 +146,27 @@ LeftDockForm {
         //
 
         fixedWidth = settings.width
+        splitView.restoreState(settings.dockSplitView)
 
 
     }
+
+    Component.onCompleted: {
+
+        init()
+
+    }
+
     Component.onDestruction: {
-        //        settings.dockSplitView = splitView.saveState()
-        settings.dockFolded = folded
+
+        settings.dockSplitView = splitView.saveState()
+            settings.dockFolded = folded
+
+    }
+
+    onEnabledChanged: {
+        if(enabled){
+
+        }
     }
 }

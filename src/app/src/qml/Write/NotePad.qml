@@ -7,7 +7,8 @@ import ".."
 
 NotePadForm {
     id: root
-    
+    property int minimumHeight: 300
+
     
     property int projectId: -2
     property int sheetId: -2

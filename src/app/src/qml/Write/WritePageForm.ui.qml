@@ -290,10 +290,15 @@ Item {
                         sourceWidth: writingZone.textArea.width
                         sourcePointSize: writingZone.textArea.font.pointSize
                     }
-                    WriteRightDock {
+
+                        id: rightDockContainer
+                        WriteRightDock {
                         id: rightDock
                         Layout.fillHeight: true
                     }
+
+
+
                 }
             }
         }

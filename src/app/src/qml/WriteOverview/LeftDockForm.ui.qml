@@ -9,7 +9,7 @@ Item {
     //implicitWidth: 300
     property int fixedWidth: 300
     //property alias dockPane: dockPane
-    //    property alias splitView: splitView
+    property alias splitView: splitView
     property alias navigationFrame: navigationFrame
     property alias navigation: navigation
 
@@ -36,28 +36,32 @@ Item {
                         anchors.fill: parent
                         Flickable {
                             boundsBehavior: Flickable.StopAtBounds
-                            contentWidth: leftDockColumnLayout.width
-                            contentHeight: leftDockColumnLayout.height
+                            contentWidth: splitView.width
+                            contentHeight: splitView.height
 
-                            //                            SplitView {
-                            //                                id: splitView
-                            //                                orientation: Qt.Vertical
-                            //                                implicitWidth: scrollView.width
-                            //                                implicitHeight: 1000
-                            ColumnLayout {
-                                id: leftDockColumnLayout
+                            SplitView {
+                                id: splitView
+                                orientation: Qt.Vertical
+                                implicitWidth: scrollView.width
+                                implicitHeight: base.height > 1000 ?  base.height : 1000
+
+                                //                            ColumnLayout {
+                                //                                id: leftDockColumnLayout
 
                                 width: scrollView.width
 
                                 DockFrame {
                                     id: navigationFrame
-                                    folded: true
+                                    folded: false
                                     title: qsTr("Navigation")
-                                    //                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
-                                    //                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: dynamicHeight
-                                    contentHeight: 400
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
+
+
+                                    minimumContentHeight: SplitView.minimumHeight
+                                    contentHeight: SplitView.preferredHeight
+                                    maximumContentHeight: SplitView.maximumHeight
+
                                     Layout.minimumWidth: 100
 
                                     Navigation {
@@ -65,23 +69,23 @@ Item {
                                         clip: true
                                     }
                                 }
-//                                DockFrame {
-//                                    id: documentFrame
-//                                    folded: true
-//                                    title: qsTr("Opened documents")
-//                                    Layout.fillWidth: true
-//                                    Layout.preferredHeight: dynamicHeight
-//                                    contentHeight: 300
-//                                    //                                    Layout.preferredHeight: dynamicHeight
-//                                    //                                    contentHeight: 400
-//                                    //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
-//                                    //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
-//                                    //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
-//                                    DocumentListView {
-//                                        id: documentView
-//                                        clip: true
-//                                    }
-//                                }
+                                //                                DockFrame {
+                                //                                    id: documentFrame
+                                //                                    folded: true
+                                //                                    title: qsTr("Opened documents")
+                                //                                    Layout.fillWidth: true
+                                //                                    Layout.preferredHeight: dynamicHeight
+                                //                                    contentHeight: 300
+                                //                                    //                                    Layout.preferredHeight: dynamicHeight
+                                //                                    //                                    contentHeight: 400
+                                //                                    //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
+                                //                                    //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
+                                //                                    //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
+                                //                                    DocumentListView {
+                                //                                        id: documentView
+                                //                                        clip: true
+                                //                                    }
+                                //                                }
 
                                 //                            Loader{
                                 //                                id: writeTreeViewHeader

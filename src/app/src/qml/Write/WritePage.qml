@@ -91,8 +91,8 @@ WritePageForm {
             leftDrawer.interactive = false
             rightDrawer.close()
             rightDrawer.interactive = false
-        }
 
+        }
 
 
         openDocument(projectId, paperId)
@@ -241,6 +241,8 @@ WritePageForm {
     //--------------------------------------------------------
     //---Right Scroll Area-----------------------------------------
     //--------------------------------------------------------
+
+
 
 
     rightPaneScrollTouchArea.onUpdated: {
@@ -592,6 +594,9 @@ WritePageForm {
     //-------------------------------------------------------------
     //-------Right Dock------------------------------------------
     //-------------------------------------------------------------
+
+
+
     rightDock.enabled: !Globals.compactSize
     rightDock.onFoldedChanged: {
         if (rightDock.folded) {
@@ -674,16 +679,15 @@ WritePageForm {
 
     //---------------------------------------------------------
     //---------------------------------------------------------
+
+
     Connections {
         target: Globals
-        onCompactSizeChanged: {
-            leftDrawer.enabled = Globals.compactSize
-            rightDrawer = Globals.compactSize
+        function onCompactSizeChanged() {
 
             if (Globals.compactSize === true) {
                 leftDrawer.interactive = true
                 rightDrawer.interactive = true
-
 
             } else {
                 leftDrawer.close()
@@ -712,6 +716,9 @@ WritePageForm {
         WriteLeftDock {
             id: compactLeftDock
             anchors.fill: parent
+
+            settings.category: settings.category + "-drawer"
+
         }
     }
 
@@ -734,6 +741,8 @@ WritePageForm {
         WriteRightDock {
             id: compactRightDock
             anchors.fill: parent
+
+            settings.category: settings.category + "-drawer"
 
             projectId: projectId
             paperId: paperId

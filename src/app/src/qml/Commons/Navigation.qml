@@ -5,6 +5,8 @@ import ".."
 
 NavigationForm {
     id: root
+    property int minimumHeight: 300
+
     property var treeListViewProxyModel
     property var deletedListViewProxyModel
     property int openedProjectId

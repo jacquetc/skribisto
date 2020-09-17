@@ -192,7 +192,7 @@ TreeListViewForm {
         id: addPaperAction
         text: qsTr("Add")
         shortcut: "Ctrl+T"
-        enabled: listView.focus === true
+        //enabled: listView.focus === true
         icon{
             name: "document-new"
             height: 100
@@ -224,10 +224,13 @@ TreeListViewForm {
 
     //    }
     Shortcut {
+        id: goUpShortcut
         sequences: ["Left", "Backspace"]
         onActivated: goUpAction.trigger()
         enabled: listView.activeFocus
+
     }
+
     //-----------------------------------------------------------------------------
     Component.onCompleted: {
 
@@ -263,27 +266,6 @@ TreeListViewForm {
 
     //used to differenciante tapCount between ItemSelectionModel
     property int tapCountIndex: -2
-
-    Keys.priority: Keys.AfterItem
-
-    Keys.onReleased: {
-        if(event.key === Qt.Key_Alt){
-            console.log("treeview alt key released")
-            event.accepted = false
-            return
-        }
-        event.accepted = true
-    }
-    Keys.onPressed: {
-        console.log("treeview key pressed")
-        if(event.key === Qt.Key_Alt){
-            console.log("treeview alt key pressed")
-            event.accepted = false
-            return
-        }
-        event.accepted = true
-    }
-
 
 
     // TreeView item :
@@ -467,7 +449,9 @@ TreeListViewForm {
                     acceptedButtons: Qt.RightButton
                     onTapped: {
                         listView.currentIndex = model.index
+                        delegateRoot.forceActiveFocus()
                         menu.open()
+                        eventPoint.accepted = true
                     }
                 }
                 TapHandler {
@@ -475,7 +459,9 @@ TreeListViewForm {
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
                         listView.currentIndex = model.index
+                        delegateRoot.forceActiveFocus()
                         openDocumentInNewTabAction.trigger()
+                        eventPoint.accepted = true
 
                     }
                 }
@@ -701,6 +687,8 @@ TreeListViewForm {
                             focusPolicy: Qt.NoFocus
 
                             onClicked: {
+                                listView.currentIndex = model.index
+                                delegateRoot.forceActiveFocus()
                                 menu.open()
                             }
 

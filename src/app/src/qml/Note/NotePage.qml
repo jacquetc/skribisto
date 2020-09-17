@@ -689,6 +689,8 @@ NotePageForm {
         LeftDock {
             id: compactLeftDock
             anchors.fill: parent
+
+            settings.category: settings.category + "-drawer"
         }
     }
 
@@ -711,6 +713,8 @@ NotePageForm {
         RightDock {
             id: compactRightDock
             anchors.fill: parent
+
+            settings.category: settings.category + "-drawer"
 
             projectId: projectId
             paperId: paperId

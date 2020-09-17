@@ -5,6 +5,7 @@ import Qt.labs.settings 1.1
 import '..'
 
 EditViewForm {
+    property int minimumHeight: 500
 
     swipeView.currentIndex: 0
 

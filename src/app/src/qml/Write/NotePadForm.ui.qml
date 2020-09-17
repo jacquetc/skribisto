@@ -79,7 +79,7 @@ FocusScope {
                 Layout.minimumHeight: 40
                 focusPolicy: Qt.StrongFocus
                 Layout.fillWidth: true
-                //clip: true
+                clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
 

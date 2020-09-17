@@ -51,11 +51,11 @@ Item {
 
             ScrollView {
                 id: scrollView
-                Layout.maximumHeight: 100
+                Layout.fillHeight: true
                 Layout.minimumHeight: 40
                 focusPolicy: Qt.StrongFocus
                 Layout.fillWidth: true
-                //clip: true
+                clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
@@ -95,3 +95,9 @@ Item {
         }
     }
 }
+
+/*##^##
+Designer {
+    D{i:0;autoSize:true;height:480;width:640}
+}
+##^##*/

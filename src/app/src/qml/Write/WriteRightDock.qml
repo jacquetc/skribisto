@@ -33,10 +33,18 @@ WriteRightDockForm {
         folded = false
     }
 
-    //    splitView.handle: Rectangle {
-    //        implicitWidth: 4
-    //        implicitHeight: 4
-    //    }
+    splitView.handle: Item {
+        implicitHeight: 8
+        RowLayout {
+            anchors.fill: parent
+            Rectangle {
+                Layout.preferredWidth: 20
+                Layout.preferredHeight: 5
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                color: "lightgrey"
+            }
+        }
+    }
 
 
     //-----------------------------------------------------------
@@ -75,7 +83,7 @@ WriteRightDockForm {
     Connections{
         target: tagPadView
         function onCallAddTagRelationship(projectId, itemId, tagName){
-            console.log("aaaaaaa")
+
             var error;
             // verify if name doesn't already exist :
             var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
@@ -111,10 +119,13 @@ WriteRightDockForm {
         }
     ]
 
+
+    property alias settings: settings
+
     Settings {
         id: settings
         category: "writeRightDock"
-        //property string dockSplitView: "0"
+        property var dockSplitView
         property bool dockFolded: false
         property bool editFrameFolded: editFrame.folded ? true : false
         property bool notePadFrameFolded: notePadFrame.folded ? true : false
@@ -132,25 +143,56 @@ WriteRightDockForm {
         notePadView.sheetId = paperId
         tagPadView.itemId = paperId
     }
-    //    PropertyAnimation {
-    //        target: writeTreeViewFrame
-    //        property: "SplitView.preferredHeight"
-    //        duration: 500
-    //        easing.type: Easing.InOutQuad
-    //    }
-    Component.onCompleted: {
-        folded ? fold() : unfold()
 
+
+    PropertyAnimation {
+        target: editFrame
+        property: "SplitView.preferredHeight"
+        duration: 500
+        easing.type: Easing.InOutQuad
+    }
+    PropertyAnimation {
+        target: notePadFrame
+        property: "SplitView.preferredHeight"
+        duration: 500
+        easing.type: Easing.InOutQuad
+    }
+    PropertyAnimation {
+        target: tagPadFrame
+        property: "SplitView.preferredHeight"
+        duration: 500
+        easing.type: Easing.InOutQuad
+    }
+
+    function init(){
+        if(folded){
+            fold()
+        }
+        else{
+            unfold()
+        }
         editFrame.folded = settings.editFrameFolded
         notePadFrame.folded = settings.notePadFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
-
-        //        splitView.restoreState(settings.dockSplitView)
-        //treeView.onOpenDocument.connect(Globals.openSheetCalled)
         fixedWidth = settings.width
+
+        var result = splitView.restoreState(settings.dockSplitView)
+
     }
+
+    Component.onCompleted: {
+            init()
+    }
+
     Component.onDestruction: {
-        //        settings.dockSplitView = splitView.saveState()
-        settings.dockFolded = folded
+            settings.dockSplitView = splitView.saveState()
+            settings.dockFolded = folded
+
+    }
+
+    onEnabledChanged: {
+        if(enabled){
+
+        }
     }
 }

@@ -8,6 +8,7 @@ import eu.skribisto.searchtaglistproxymodel 1.0
 
 TagPadForm {
     id: root
+    property int minimumHeight: 300
 
 
     property int projectId: -2

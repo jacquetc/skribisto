@@ -8,8 +8,8 @@ Item {
     id: base
     //implicitWidth: 300
     property int fixedWidth: 300
-//    property alias dockPane: rightDockPane
-    //    property alias splitView: splitView
+    //    property alias dockPane: rightDockPane
+    property alias splitView: splitView
     property alias editFrame: editFrame
     property alias editView: editView
     property alias notePadFrame: notePadFrame
@@ -40,29 +40,33 @@ Item {
                         anchors.fill: parent
                         Flickable {
                             boundsBehavior: Flickable.StopAtBounds
-                            contentWidth: leftDockColumnLayout.width
-                            contentHeight: leftDockColumnLayout.height
+                            contentWidth: splitView.width
+                            contentHeight: splitView.height
 
-                            //                            SplitView {
-                            //                                id: splitView
-                            //                                orientation: Qt.Vertical
-                            //                                implicitWidth: scrollView.width
-                            //                                implicitHeight: 1000
-                            ColumnLayout {
-                                id: leftDockColumnLayout
+                            SplitView {
+                                id: splitView
+                                orientation: Qt.Vertical
+                                implicitWidth: scrollView.width
+                                implicitHeight: base.height > 1000 ?  base.height - 25 : 1000
+                                //                            ColumnLayout {
+                                //                                id: leftDockColumnLayout
 
                                 width: scrollView.width
 
                                 DockFrame {
                                     id: editFrame
-                                    folded: true
+                                    folded: false
                                     title: qsTr("Edit")
-                                    //                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
-                                    //                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: dynamicHeight
-                                    contentHeight: 400
-                                    Layout.minimumWidth: 100
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 400
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 300
+                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
+
+
+                                    minimumContentHeight: SplitView.minimumHeight
+                                    contentHeight: SplitView.preferredHeight
+                                    maximumContentHeight: SplitView.maximumHeight
+
+
 
 
                                     EditView {
@@ -75,14 +79,16 @@ Item {
                                     id: tagPadFrame
                                     folded: true
                                     title: qsTr("Tags")
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: dynamicHeight
-                                    contentHeight: 300
-                                    //                                    Layout.preferredHeight: dynamicHeight
-                                    //                                    contentHeight: 400
-                                    //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
-                                    //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                    //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
+
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 200
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
+                                    SplitView.maximumHeight : folded ? dynamicHeight : 400
+
+
+                                    minimumContentHeight: SplitView.minimumHeight
+                                    contentHeight: SplitView.preferredHeight
+                                    maximumContentHeight: SplitView.maximumHeight
+
                                     TagPad {
                                         id: tagPadView
                                         clip: true
@@ -93,14 +99,17 @@ Item {
                                     id: notePadFrame
                                     folded: true
                                     title: qsTr("Notes")
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: dynamicHeight
-                                    contentHeight: 300
-                                    //                                    Layout.preferredHeight: dynamicHeight
-                                    //                                    contentHeight: 400
-                                    //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
-                                    //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                    //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
+
+
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 400
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
+                                    SplitView.maximumHeight : folded ? dynamicHeight : 800
+
+
+                                    minimumContentHeight: SplitView.minimumHeight
+                                    contentHeight: SplitView.preferredHeight
+                                    maximumContentHeight: SplitView.maximumHeight
+
                                     NotePad {
                                         id: notePadView
                                         clip: true
