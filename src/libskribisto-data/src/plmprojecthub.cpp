@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QRegularExpression>
 #include <QVariant>
 #include "tasks/plmprojectmanager.h"
 #include "tasks/plmsqlqueries.h"
@@ -111,10 +112,20 @@ PLMError PLMProjectHub::saveProjectAs(int            projectId,
 {
     PLMError error;
 
+    // determine if this is a backup project
+    bool isThisABackup = isThisProjectABackup(projectId);
+
+
+// save
     error = plmProjectManager->saveProjectAs(projectId, type, path);
     IFOK(error) {
         m_projectsNotModifiedOnceList.removeAll(projectId);
         m_projectsNotSavedList.removeAll(projectId);
+
+        if(isThisABackup){
+            emit projectIsBackupChanged(projectId, false);
+        }
+
         emit projectSaved(projectId);
     }
     return error;
@@ -366,6 +377,20 @@ bool PLMProjectHub::isThereAnyLoadedProject()
         return false;
     }
     return true;
+}
+
+bool PLMProjectHub::isThisProjectABackup(int projectId)
+{
+
+    if(this->getPath(projectId) == ""){
+        return false;
+    }
+
+    if(this->getPath(projectId).contains(QRegularExpression("_\\d\\d\\d\\d-\\d\\d-\\d\\d-\\d\\d\\d\\d\\d\\d"))){
+        return true;
+    }
+    return false;
+
 }
 
 void PLMProjectHub::setDefaultProject(int defaultProject)

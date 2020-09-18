@@ -48,6 +48,7 @@ public:
     PLMSheetItem *getParentSheetItem(PLMSheetItem *chidItem);
     PLMSheetItem *getItem(int projectId, int paperId);
 
+protected:
 private slots:
     void populate();
     void clear();
@@ -58,6 +59,7 @@ private slots:
                                   int                 paperId);
     void refreshAfterDataMove(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId);
     void refreshAfterDeletedStateChanged(int projectId, int paperId, bool newDeletedState);
+    void refreshAfterProjectIsBackupChanged(int projectId, bool isProjectABackup);
 
 private:
 

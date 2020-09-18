@@ -145,6 +145,11 @@ QVariant PLMNoteItem::data(int role)
                           plmdata->notePropertyHub()->getProperty(projectId, paperId,
                                                                    "word_count"));
             break;
+
+
+        case Roles::ProjectIsBackupRole:
+            m_data.insert(role, plmdata->projectHub()->isThisProjectABackup(projectId));
+            break;
         }
         m_invalidatedRoles.removeAll(role);
     }
@@ -417,6 +422,7 @@ void PLMNoteItem::setIsProjectItem(int projectId)
     // m_data.insert(Roles::NameRole, /*plmdata->infoHub()->*/ );
     this->invalidateData(Roles::ProjectNameRole);
     this->invalidateData(Roles::HasChildrenRole);
+    this->invalidateData(Roles::ProjectIsBackupRole);
 }
 
 int PLMNoteItem::projectId()

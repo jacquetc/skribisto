@@ -47,7 +47,8 @@ public:
         ContentDateRole  = Qt::UserRole + 10,
         HasChildrenRole  = Qt::UserRole + 11,
         CharCountRole = Qt::UserRole + 12,
-        WordCountRole = Qt::UserRole + 13
+        WordCountRole = Qt::UserRole + 13,
+        ProjectIsBackupRole = Qt::UserRole + 14
         // TODO: specific to note:
 
     };

@@ -71,6 +71,7 @@ public:
                                                     const QString& projectName);
 
     QString              getProjectUniqueId(int projectId) const;
+    Q_INVOKABLE bool isThisProjectABackup(int projectId);
 
     PLMError             set(int             projectId,
                              const QString & fieldName,
@@ -101,6 +102,8 @@ signals:
     Q_INVOKABLE void             projectSaved(int projectId);
     Q_INVOKABLE void             projectNotSavedAnymore(int projectId);
     Q_INVOKABLE void             projectCountChanged(int count);
+
+    Q_INVOKABLE void            projectIsBackupChanged(int projectId, bool isThisABackup);
 
 public slots:
     void                 setProjectNotSavedAnymore(int projectId);

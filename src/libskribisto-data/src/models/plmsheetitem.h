@@ -46,6 +46,7 @@ public:
         UpdateDateRole   = Qt::UserRole + 9,
         ContentDateRole  = Qt::UserRole + 10,
         HasChildrenRole  = Qt::UserRole + 11,
+        ProjectIsBackupRole = Qt::UserRole + 12,
 
         // specific to sheets:
         CharCountRole = Qt::UserRole + 13,

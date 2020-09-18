@@ -594,6 +594,37 @@ TreeListViewForm {
                             visible: model.projectId === openedProjectId && model.paperId === openedPaperId
                         }
 
+                        Button {
+                            id: projectIsBackupIndicator
+                            visible: model.projectIsBackup && model.paperId === -1
+                            enabled: true
+                            focusPolicy: Qt.NoFocus
+                            implicitHeight: 32
+                            implicitWidth: 32
+                            Layout.maximumHeight: 30
+                            padding: 0
+                            rightPadding: 0
+                            bottomPadding: 0
+                            leftPadding: 2
+                            topPadding: 0
+                            flat: true
+                            onDownChanged: down = false
+
+
+                            icon {
+                                name: "tools-media-optical-burn-image"
+                                height: 32
+                                width: 32
+                            }
+
+
+                            hoverEnabled: true
+                            ToolTip.delay: 1000
+                            ToolTip.timeout: 5000
+                            ToolTip.visible: hovered
+                            ToolTip.text: qsTr("This project is a backup")
+                        }
+
                         Rectangle {
                             color: "transparent"
                             //border.width: 1

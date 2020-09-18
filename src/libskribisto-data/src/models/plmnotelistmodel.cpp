@@ -32,6 +32,11 @@ PLMNoteListModel::PLMNoteListModel(QObject *parent)
             this,
             &PLMNoteListModel::refreshAfterDeletedStateChanged);
 
+    connect(plmdata->projectHub(),
+            &PLMProjectHub::projectIsBackupChanged,
+            this,
+            &PLMNoteListModel::refreshAfterProjectIsBackupChanged);
+
 
     this->connectToPLMDataSignals();
 }
@@ -157,6 +162,10 @@ QVariant PLMNoteListModel::data(const QModelIndex& index, int role) const
     }
 
     if (role == PLMNoteItem::Roles::DeletedRole) {
+        return item->data(role);
+    }
+
+    if (role == PLMNoteItem::Roles::ProjectIsBackupRole) {
         return item->data(role);
     }
     return QVariant();
@@ -316,6 +325,7 @@ QHash<int, QByteArray>PLMNoteListModel::roleNames() const {
     roles[PLMNoteItem::Roles::DeletedRole]  = "deleted";
     roles[PLMNoteItem::Roles::WordCountRole]  = "wordCount";
     roles[PLMNoteItem::Roles::CharCountRole]  = "charCount";
+    roles[PLMNoteItem::Roles::ProjectIsBackupRole] = "projectIsBackup";
     return roles;
 }
 
@@ -547,7 +557,18 @@ void PLMNoteListModel::refreshAfterDeletedStateChanged(int projectId, int paperI
 
 //--------------------------------------------------------------------
 
+void PLMNoteListModel::refreshAfterProjectIsBackupChanged(int projectId, bool isProjectABackup)
+{
+    Q_UNUSED(projectId)
+    Q_UNUSED(isProjectABackup)
 
+    for(PLMNoteItem *item : m_allNoteItems){
+        item->invalidateData(PLMNoteItem::Roles::ProjectIsBackupRole);
+    }
+
+}
+
+//--------------------------------------------------------------------
 void PLMNoteListModel::connectToPLMDataSignals()
 {
     m_dataConnectionsList << this->connect(plmdata->noteHub(),

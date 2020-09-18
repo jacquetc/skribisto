@@ -149,6 +149,10 @@ QVariant PLMSheetItem::data(int role)
             m_data.insert(role,
                           plmdata->noteHub()->getSynopsisNoteId(projectId, paperId));
             break;
+
+        case Roles::ProjectIsBackupRole:
+            m_data.insert(role, plmdata->projectHub()->isThisProjectABackup(projectId));
+            break;
         }
         m_invalidatedRoles.removeAll(role);
     }
@@ -422,6 +426,7 @@ void PLMSheetItem::setIsProjectItem(int projectId)
     // m_data.insert(Roles::NameRole, /*plmdata->infoHub()->*/ );
     this->invalidateData(Roles::ProjectNameRole);
     this->invalidateData(Roles::HasChildrenRole);
+    this->invalidateData(Roles::ProjectIsBackupRole);
 }
 
 int PLMSheetItem::projectId()

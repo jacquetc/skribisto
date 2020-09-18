@@ -33,6 +33,10 @@ PLMSheetListModel::PLMSheetListModel(QObject *parent)
             this,
             &PLMSheetListModel::refreshAfterDeletedStateChanged);
 
+    connect(plmdata->projectHub(),
+            &PLMProjectHub::projectIsBackupChanged,
+            this,
+            &PLMSheetListModel::refreshAfterProjectIsBackupChanged);
 
     this->connectToPLMDataSignals();
 }
@@ -171,7 +175,9 @@ QVariant PLMSheetListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-
+    if (role == PLMSheetItem::Roles::ProjectIsBackupRole) {
+        return item->data(role);
+    }
     return QVariant();
 }
 
@@ -333,6 +339,7 @@ QHash<int, QByteArray>PLMSheetListModel::roleNames() const {
     roles[PLMSheetItem::Roles::WordCountRole]  = "wordCount";
     roles[PLMSheetItem::Roles::CharCountRole]  = "charCount";
     roles[PLMSheetItem::Roles::SynopsisNoteIdRole]  = "synopsisNoteId";
+    roles[PLMSheetItem::Roles::ProjectIsBackupRole] = "projectIsBackup";
     return roles;
 }
 
@@ -563,6 +570,17 @@ void PLMSheetListModel::refreshAfterDeletedStateChanged(int projectId, int paper
 }
 
 //--------------------------------------------------------------------
+
+void PLMSheetListModel::refreshAfterProjectIsBackupChanged(int projectId, bool isProjectABackup)
+{
+    Q_UNUSED(projectId)
+    Q_UNUSED(isProjectABackup)
+
+    for(PLMSheetItem *item : m_allSheetItems){
+        item->invalidateData(PLMSheetItem::Roles::ProjectIsBackupRole);
+    }
+
+}
 
 //void PLMSheetListModel::movePaper(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId)
 //{

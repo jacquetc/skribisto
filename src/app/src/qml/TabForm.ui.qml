@@ -18,7 +18,7 @@ TabButton {
 
         Button {
             id: image
-            enabled: false
+            enabled: true
             implicitHeight: 24
             implicitWidth: 24
             Layout.maximumHeight: 30
@@ -35,6 +35,8 @@ TabButton {
                 height: 24
                 width: 24
             }
+            onDownChanged: down = false
+
         }
 
         Text {

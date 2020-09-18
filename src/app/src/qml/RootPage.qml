@@ -72,6 +72,7 @@ RootPageForm {
             text: qsTr("Write")
             icon {
                 name: "story-editor"
+                color: "transparent"
                 height: 100
                 width: 100
             }
@@ -106,6 +107,7 @@ RootPageForm {
             text: qsTr("Gallery")
             icon {
                 name: "view-preview"
+                color: "transparent"
                 height: 100
                 width: 100
             }
@@ -123,6 +125,7 @@ RootPageForm {
             text: qsTr("Project")
             icon {
                 name: "configure"
+                color: "transparent"
                 height: 100
                 width: 100
             }
