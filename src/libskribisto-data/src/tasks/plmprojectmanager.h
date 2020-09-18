@@ -20,9 +20,9 @@ public:
         return m_instance;
     }
     PLMError createNewEmptyDatabase(int &projectId);
-    PLMError loadProject(const QString &fileName, int &projectId);
+    PLMError loadProject(const QUrl &fileName, int &projectId);
     PLMError saveProject(int projectId);
-    PLMError saveProjectAs(int projectId, const QString &type, const QString &path, bool isCopy=false);
+    PLMError saveProjectAs(int projectId, const QString &type, const QUrl &path, bool isCopy=false);
     PLMProject *project(int projectId);
     QList<int> projectIdList();
     PLMError closeProject(int projectId);

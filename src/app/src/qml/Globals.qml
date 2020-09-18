@@ -59,7 +59,6 @@ QtObject {
     signal showNewProjectWizard()
     signal showProjectPage()
     signal showWelcomePage()
-    signal showOpenProjectDialog()
     signal showPrintWizard()
     signal showImportWizard()
     signal showExportWizard()

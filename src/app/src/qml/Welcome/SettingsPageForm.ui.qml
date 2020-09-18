@@ -15,6 +15,9 @@ Item {
     property alias disallowSwipeBetweenTabsCheckBox: disallowSwipeBetweenTabsCheckBox
     property alias showMenuBarCheckBox: showMenuBarCheckBox
     property alias backUpOnceADayCheckBox: backUpOnceADayCheckBox
+    property alias backupPathListView: backupPathListView
+    property alias removeBackupPathButton: removeBackupPathButton
+    property alias addBackupPathButton: addBackupPathButton
 
     Pane {
         id: pane2
@@ -32,8 +35,8 @@ Item {
 
             GridLayout {
                 id: gridLayout1
-                 width: scrollView.width
-                 columns:  width/ 500
+                width: scrollView.width
+                columns:  width/ 500
                 Switch {
                     id: menuButtonsInStatusBarSwitch
                     text: qsTr("Set main menu in status bar")
@@ -62,6 +65,7 @@ Item {
 
                 GroupBox {
                     id: backupGroupBox
+                    focusPolicy: Qt.TabFocus
                     title: qsTr("Backup")
 
                     ColumnLayout {
@@ -71,40 +75,61 @@ Item {
                         GroupBox {
                             id: groupBox1
                             title: qsTr("Backup paths :")
+                            focusPolicy: Qt.TabFocus
 
                             ColumnLayout {
                                 id: columnLayout1
                                 anchors.fill: parent
 
-                                ListView {
-                                    id: listView
-                                    width: 110
-                                    height: 160
+                                ToolBar{
+                                    Layout.fillWidth: true
+                                    RowLayout {
+                                        id: rowLayout1
+                                        spacing: 1
+                                        anchors.fill: parent
+
+                                        Item {
+                                            id: stretcher
+                                            Layout.fillHeight: true
+                                            Layout.fillWidth: true
+                                        }
+                                        ToolButton{
+                                            id: removeBackupPathButton
+                                            flat: true
+                                            display: AbstractButton.IconOnly
+                                        }
+
+                                        ToolButton{
+                                            id: addBackupPathButton
+                                            flat: true
+                                            display: AbstractButton.IconOnly
+                                        }
+                                    }
+                                }
+
+
+                                ScrollView {
+                                    id: backupPathScrollView
+                                    focusPolicy: Qt.StrongFocus
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
                                     Layout.preferredHeight: 200
                                     Layout.preferredWidth: 300
                                     clip: true
-                                    delegate: Item {
-                                        x: 5
-                                        width: 80
-                                        height: 40
-                                        Row {
-                                            id: row1
-                                            spacing: 10
-                                            Rectangle {
-                                                width: 40
-                                                height: 40
-                                                color: colorCode
-                                            }
+                                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                                            Text {
-                                                text: name
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                font.bold: true
-                                            }
-                                        }
-                                    }
-                                    model: ListModel {
-                                        id: listModel
+                                    ListView {
+                                        id: backupPathListView
+                                        width: 110
+                                        height: 160
+                                        Layout.preferredHeight: 200
+                                        Layout.preferredWidth: 300
+                                        clip: true
+                                        focus: true
+                                        smooth: true
+                                        boundsBehavior: Flickable.StopAtBounds
+
 
                                     }
                                 }
@@ -159,7 +184,7 @@ Item {
                         anchors.fill: parent
 
                         RowLayout {
-                            id: rowLayout1
+                            id: rowLayout2
                             Layout.fillHeight: true
                             Layout.fillWidth: true
 

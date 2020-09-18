@@ -392,11 +392,7 @@ TagPadForm {
                     highlight:  Component {
                         id: highlight
                         Rectangle {
-                            //                            x: 0
-                            //                            y: searchResultList.currentItem.y + 1
-                            //                            width: searchResultList.width
-                            //                            height: searchResultList.currentItem.height - 1
-                            //                            color: "transparent"
+
                             radius: 5
                             border.color:  "lightsteelblue"
                             border.width: 2

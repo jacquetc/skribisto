@@ -34,24 +34,24 @@ class EXPORT PLMProjectHub : public QObject {
 public:
 
     explicit PLMProjectHub(QObject *parent);
-    Q_INVOKABLE PLMError loadProject(const QString& path);
-    Q_INVOKABLE PLMError createNewEmptyProject(const QString& path);
+    Q_INVOKABLE PLMError loadProject(const QUrl& urlFilePath);
+    Q_INVOKABLE PLMError createNewEmptyProject(const QUrl &path);
     Q_INVOKABLE PLMError             saveProject(int projectId);
     Q_INVOKABLE PLMError             saveProjectAs(int            projectId,
                                                    const QString& type,
-                                                   const QString& path);
+                                                   const QUrl &path);
     Q_INVOKABLE PLMError             saveAProjectCopy(int            projectId,
                                                       const QString& type,
-                                                      const QString& path);
-    Q_INVOKABLE PLMError backupAProject(int projectId, const QString &type, const QString &folderPath);
-    Q_INVOKABLE bool doesBackupOfTheDayExistAtPath(int projectId, const QString &folderPath);
+                                                      const QUrl& path);
+    Q_INVOKABLE PLMError backupAProject(int projectId, const QString &type, const QUrl &folderPath);
+    Q_INVOKABLE bool doesBackupOfTheDayExistAtPath(int projectId, const QUrl &folderPath);
     Q_INVOKABLE PLMError             closeProject(int projectId);
     Q_INVOKABLE PLMError             closeAllProjects();
     Q_INVOKABLE QList<int>           getProjectIdList();
     Q_INVOKABLE int      getProjectCount();
-    Q_INVOKABLE QString              getPath(int projectId) const;
+    Q_INVOKABLE QUrl              getPath(int projectId) const;
     PLMError             setPath(int            projectId,
-                                 const QString& newPath);
+                                 const QUrl &newUrlPath);
     Q_INVOKABLE int                  getLastLoaded() const;
     PLMError             getError();
     Q_INVOKABLE bool                 isThereAnyLoadedProject();
@@ -96,7 +96,7 @@ signals:
                                                     const QString& newType);
     Q_INVOKABLE void             defaultProjectChanged(int            projectId);
     Q_INVOKABLE void             projectPathChanged(int            projectId,
-                                                    const QString& newPath);
+                                                    const QUrl& newUrlPath);
     Q_INVOKABLE void             projectNameChanged(int            projectId,
                                                     const QString& newProjectName);
     Q_INVOKABLE void             projectSaved(int projectId);

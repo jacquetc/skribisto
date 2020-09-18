@@ -64,7 +64,7 @@ public:
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
-    Q_INVOKABLE void insertInRecentProjects(const QString &title, const QString &fileName);
+    Q_INVOKABLE void insertInRecentProjects(const QString &title, const QUrl &fileName);
 
 private slots:
     void insertInRecentProjectsFromAnId(int projectId);

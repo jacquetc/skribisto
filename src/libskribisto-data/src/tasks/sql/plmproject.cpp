@@ -32,7 +32,7 @@
 #include <QFileInfo>
 #include <QTimer>
 
-PLMProject::PLMProject(QObject *parent, int projectId, const QString& fileName) :
+PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
     QObject(parent)
 {
     qRegisterMetaType<PLMProject::DBType>("PLMProject::DBType");
@@ -40,7 +40,14 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString& fileName) 
     PLMError error;
 
     if (!fileName.isEmpty()) {
-        QFileInfo info(fileName);
+        QFileInfo info;
+        if(fileName.scheme() == "qrc"){
+            info.setFile(fileName.toString().replace("qrc:", ":"));
+        }
+        else{
+            info.setFile(fileName.toLocalFile());
+
+        }
 
         if (!info.exists()) {
             error.setSuccess(false);
@@ -57,7 +64,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QString& fileName) 
     IFOK(error) {
         PLMImporter importer;
 
-        if (fileName == "") { // virgin project
+        if (fileName.isEmpty()) { // virgin project
             m_sqlDb = importer.createEmptySQLiteProject(projectId, error);
 
             IFKO(error) {
@@ -192,12 +199,12 @@ int PLMProject::id() const
     return m_projectId;
 }
 
-QString PLMProject::getPath() const
+QUrl PLMProject::getPath() const
 {
     return m_path;
 }
 
-PLMError PLMProject::setPath(const QString& value)
+PLMError PLMProject::setPath(const QUrl& value)
 {
     PLMError error;
 

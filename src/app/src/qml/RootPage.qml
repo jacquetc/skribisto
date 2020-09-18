@@ -607,7 +607,7 @@ RootPageForm {
 
     }
 
-    property string testProjectFileName: ":/testfiles/skribisto_test_project.sqlite"
+    property url testProjectFileName: "qrc:/testfiles/skribisto_test_project.sqlite"
     function openArgument(){
 
 
@@ -628,7 +628,7 @@ RootPageForm {
                 var error = plmData.projectHub().loadProject(
                             testProjectFileName)
                 console.log("project loaded : " + error.success)
-                console.log("projectFileName :", testProjectFileName, "\n")
+                console.log("projectFileName :", testProjectFileName.toString(), "\n")
 
                 //show Write window
                 //                writeWindowAction.trigger()

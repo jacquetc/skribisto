@@ -1,6 +1,7 @@
 #include <QString>
 #include <QtTest>
 #include <QDebug>
+#include <QUrl>
 
 #include "plmdata.h"
 
@@ -136,8 +137,8 @@ void OpenProjectCase::getPath()
         return;
     }
 
-    QString value = plmdata->projectHub()->getPath(idList.first());
-    QCOMPARE(value, QString(m_testProjectPath));
+    QUrl value = plmdata->projectHub()->getPath(idList.first());
+    QCOMPARE(value, QUrl(m_testProjectPath));
 }
 
 void OpenProjectCase::getProjectIdList()
@@ -177,7 +178,7 @@ void OpenProjectCase::saveTwoProjects()
 void OpenProjectCase::openEmptyProject()
 {
     QSignalSpy spy(plmdata->projectHub(), SIGNAL(projectLoaded(int)));
-    plmdata->projectHub()->loadProject("");
+    plmdata->projectHub()->loadProject(QUrl(""));
     QCOMPARE(spy.count(), 1);
 }
 

@@ -1,6 +1,8 @@
 import QtQuick 2.15
 import QtQml 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
+import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.projecthub 1.0
 import ".."
 
@@ -8,8 +10,11 @@ SettingsPageForm {
 
     Component.onCompleted: {
         checkOnBackUpEveryCheckBox()
+        populateBackupPathListView()
+
         checkOnSaveEveryCheckBox()
         backUpOnceADayIfNeeded()
+
     }
 
 
@@ -73,7 +78,285 @@ SettingsPageForm {
     // --------------------------------------------
     // ---- backup --------------------------------
     // --------------------------------------------
+    // backup paths :
 
+    ListModel{
+        id: backupPathListModel
+    }
+    backupPathListView.model: backupPathListModel
+
+    function populateBackupPathListView(){
+
+
+        var backupPaths = SkrSettings.backupSettings.paths
+        var backupPathList = backupPaths.split(";")
+
+        //no backup path set
+        if (backupPaths === ""){
+            //TODO: send notification, backup not configured
+
+            return
+        }
+
+        var j;
+        for (j = 0; j < backupPathList.length ; j++ ){
+            var path = backupPathList[j]
+            if(path === ""){
+                break
+            }
+
+            backupPathListModel.append({"path": Qt.resolvedUrl(path), "localPath": skrQMLTools.translateURLToLocalFile(Qt.resolvedUrl(path))})
+
+        }
+
+    }
+
+
+
+    function addBackupPath(pathUrl){
+
+        backupPathListModel.append({"path": pathUrl.toString(), "localPath": skrQMLTools.translateURLToLocalFile(pathUrl)})
+        saveBackupPathsToSettings()
+
+    }
+
+    function removeBackupPath(index){
+
+        backupPathListModel.remove(index)
+        saveBackupPathsToSettings()
+
+    }
+
+    function saveBackupPathsToSettings(){
+
+        var backupPathList = [];
+        var j;
+        for (j = 0; j < backupPathListModel.count ; j++ ){
+
+            backupPathList.push(backupPathListModel.get(j).path)
+        }
+
+        var backupPaths = backupPathList.join(";")
+        SkrSettings.backupSettings.paths = backupPaths
+    }
+
+    LabPlatform.FolderDialog{
+        id: addBackupFolderDialog
+        onAccepted: {
+            //                    var path = folderDialog.folder.toString()
+            //                    path = path.replace(/^(file:\/{2})/,"");
+            //                    model.path = path
+            var path = addBackupFolderDialog.folder
+
+            addBackupPath(path)
+            backupPathListView.currentIndex = backupPathListView.count -1
+
+        }
+        onRejected: {
+
+        }
+
+
+
+    }
+
+    Action {
+        id: addBackupPathAction
+        text: qsTr("Add backup path")
+        icon.name: "list-add"
+        onTriggered: {
+
+
+            addBackupFolderDialog.open()
+            addBackupFolderDialog.currentFolder = LabPlatform.StandardPaths.standardLocations(LabPlatform.StandardPaths.DocumentsLocation)[0]
+        }
+    }
+    addBackupPathButton.action: addBackupPathAction
+
+
+
+    Action {
+        id: removeBackupPathAction
+        text: qsTr("Remove backup path")
+        icon.name: "list-remove"
+        onTriggered: {
+
+            removeBackupPath(backupPathListView.currentIndex)
+        }
+    }
+    removeBackupPathButton.action: removeBackupPathAction
+
+
+
+
+    backupPathListView.delegate: Component {
+        id: itemDelegate
+
+        Item {
+            id: delegateRoot
+            height: 30
+
+
+            anchors {
+                left: Qt.isQtObject(parent) ? parent.left : undefined
+                right: Qt.isQtObject(parent) ? parent.right : undefined
+                leftMargin: 5
+                rightMargin: 5
+            }
+
+            TapHandler {
+                id: tapHandler
+                onSingleTapped: {
+                    backupPathListView.currentIndex = model.index
+                    delegateRoot.forceActiveFocus()
+                    eventPoint.accepted = true
+                }
+                onDoubleTapped: {
+
+                    // path editor :
+                    //backupPathListView.currentIndex = model.index
+                    editName()
+
+
+                    eventPoint.accepted = true
+                }
+            }
+
+            function editName() {
+                state = "edit_path"
+                editPathTextField.forceActiveFocus()
+                editPathTextField.selectAll()
+            }
+
+
+
+            LabPlatform.FolderDialog{
+                id: backupFolderDialog
+
+                onAccepted: {
+
+                    model.path = folderDialog.folder
+                    model.localPath = skrQMLTools.translateURLToLocalFile(folderDialog.folder)
+                }
+                onRejected: {
+
+                }
+
+
+
+            }
+
+            RowLayout{
+                anchors.fill: parent
+
+                Label {
+                    id: pathLabel
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    text: model.localPath
+                    horizontalAlignment: Qt.AlignLeft
+                    verticalAlignment: Qt.AlignVCenter
+                }
+                Button {
+                    id: selectFolderButton
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: 30
+                    flat: true
+                    icon.name: "document-open-folder"
+
+                    onClicked: {
+                        backupFolderDialog.open()
+                        backupFolderDialog.currentFolder = model.path
+                    }
+
+
+                }
+
+                TextField {
+                    id: editPathTextField
+                    visible: false
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    text: model.path
+                    horizontalAlignment: Qt.AlignLeft
+                    verticalAlignment: Qt.AlignVCenter
+
+
+                    placeholderText: qsTr("Enter a path to back up to")
+
+
+                    onEditingFinished: {
+                        //if (!activeFocus) {
+                        //accepted()
+                        //}
+                        console.log("editing finished")
+
+                        model.path = text
+
+                        saveBackupPathsToSettings()
+
+
+                        delegateRoot.state = ""
+                    }
+
+                    //Keys.priority: Keys.AfterItem
+
+                    Keys.onPressed: {
+                        if (event.key === Qt.Key_Return){
+                            console.log("Return key pressed path")
+                            editingFinished()
+                            event.accepted = true
+                        }
+                        if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                            console.log("Ctrl Return key pressed title")
+                            event.accepted = true
+                        }
+                    }
+
+                }
+            }
+
+
+            states: [
+                State {
+                    name: "edit_path"
+                    PropertyChanges {
+                        target: pathLabel
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: editPathTextField
+                        visible: true
+                    }
+                }
+            ]
+
+
+        }
+    }
+
+    backupPathListView.highlight:  Component {
+        id: highlight
+        Rectangle {
+
+            radius: 5
+            border.color:  "lightsteelblue"
+            border.width: 2
+            visible: backupPathListView.activeFocus
+            Behavior on y {
+                SpringAnimation {
+                    spring: 3
+                    damping: 0.2
+                }
+            }
+        }
+    }
+
+
+
+
+
+    // backup every :
 
     backUpEveryCheckBox.checked: SkrSettings.backupSettings.backUpEveryCheckBoxChecked
     Binding {

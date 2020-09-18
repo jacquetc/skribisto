@@ -111,7 +111,7 @@ QHash<int, QByteArray>SKRRecentProjectListModel::roleNames() const {
 
 //----------------------------------------------------------
 
-void SKRRecentProjectListModel::insertInRecentProjects(const QString &title, const QString &fileName)
+void SKRRecentProjectListModel::insertInRecentProjects(const QString &title, const QUrl &fileName)
 {
     bool alreadyHere = false;
     int alreadyHereIndex = -1;
@@ -124,7 +124,7 @@ void SKRRecentProjectListModel::insertInRecentProjects(const QString &title, con
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
 
-       QString settingFileName = settings.value("fileName").toString();
+       QUrl settingFileName = settings.value("fileName").toUrl();
        if(settingFileName == fileName){
            alreadyHere = true;
            alreadyHereIndex = i;
@@ -161,7 +161,7 @@ void SKRRecentProjectListModel::insertInRecentProjects(const QString &title, con
 void SKRRecentProjectListModel::insertInRecentProjectsFromAnId(int projectId)
 {
     QString title = plmdata->projectHub()->getProjectName(projectId);
-    QString fileName = plmdata->projectHub()->getPath(projectId);
+    QUrl fileName = plmdata->projectHub()->getPath(projectId);
 
     this->insertInRecentProjects(title, fileName);
 }
@@ -200,7 +200,7 @@ void SKRRecentProjectListModel::populate()
         m_allRecentProjects.append(projectItem);
         for(int projectId : plmdata->projectHub()->getProjectIdList()){
             QString projectName = plmdata->projectHub()->getProjectName(projectId);
-            QString projectPath = plmdata->projectHub()->getPath(projectId);
+            QUrl projectPath = plmdata->projectHub()->getPath(projectId);
 
             if(projectName == projectItem->title && projectPath == projectItem->fileName){
                 projectItem->isOpened = true;

@@ -25,6 +25,7 @@
 #include <QObject>
 #include <QHash>
 #include <QtSql/QSqlDatabase>
+#include <QUrl>
 
 #include "plmproperty.h"
 #include "tree/plmtree.h"
@@ -43,7 +44,7 @@ public:
 
     explicit PLMProject(QObject       *parent,
                         int            projectId,
-                        const QString& fileName);
+                        const QUrl &fileName);
     ~PLMProject();
     PLMProperty * getProperty(const QString& tableName);
     PLMTree     * getTree(const QString& tableName);
@@ -55,8 +56,8 @@ public:
 
     QString       getTempFileName() const;
 
-    QString       getPath() const;
-    PLMError      setPath(const QString& value);
+    QUrl       getPath() const;
+    PLMError      setPath(const QUrl& value);
 
 
     QSqlDatabase  getSqlDb() const;
@@ -74,7 +75,8 @@ private:
     int m_projectId;
     PLMSheetTree *m_sheetTree;
     PLMNoteTree *m_noteTree;
-    QString m_type, m_path;
+    QString m_type;
+    QUrl m_path;
 };
 
 #endif // PLMDATABASE_H

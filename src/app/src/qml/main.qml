@@ -101,7 +101,7 @@ ApplicationWindow {
         shortcut: StandardKey.Open
         onTriggered: {
             console.log("Open Project")
-            Globals.showOpenProjectDialog()
+            openFileDialog.open()
 
         }
 
@@ -109,6 +109,27 @@ ApplicationWindow {
 
     }
 
+    LabPlatform.FileDialog{
+
+
+        id: openFileDialog
+        title: qsTr("Open an existing project")
+        modality: Qt.ApplicationModal
+        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        fileMode: FileDialog.OpenFile
+        selectedNameFilter.index: 0
+        nameFilters: ["Skribisto file (*.skrib)"]
+        onAccepted: {
+
+            var file = openFileDialog.file
+            var error = plmData.projectHub().loadProject(file)
+
+
+        }
+        onRejected: {
+
+        }
+    }
     //------------------------------------------------------------------
     //---------Save---------
     //------------------------------------------------------------------
@@ -241,6 +262,13 @@ ApplicationWindow {
             saveAsFileDialog.open()
 
 
+            if(!plmData.projectHub().getPath(projectId)){
+                saveAsFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
+            }
+            else {
+                saveAsFileDialog.currentFile = skrQMLTools.translateURLToLocalFile(plmData.projectHub().getPath(projectId))
+            }
+
 
 
 
@@ -263,7 +291,6 @@ ApplicationWindow {
         onAccepted: {
 
             var file = saveAsFileDialog.file.toString()
-            file = file.replace(/^(file:\/{2})/,"");
 
             if(file.indexOf(".skrib") === -1){ // not found
                 file = file + ".skrib"
@@ -271,13 +298,13 @@ ApplicationWindow {
             if(projectId == -2){
                 projectId = plmData.projectHub().getDefaultProject()
             }
-            console.log("FileDialog :" , projectId)
+
 
             if(projectName == ""){
                 projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
             }
 
-            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", file)
+            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
             if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
                 // Dialog:
@@ -344,7 +371,7 @@ ApplicationWindow {
         onAccepted: {
 
             var file = saveACopyFileDialog.file.toString()
-            file = file.replace(/^(file:\/{2})/,"");
+
 
             if(file.indexOf(".skrib") === -1){ // not found
                 file = file + ".skrib"
@@ -358,7 +385,7 @@ ApplicationWindow {
                 projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
             }
 
-            var error = plmData.projectHub().saveAProjectCopy(projectId, "skrib", file)
+            var error = plmData.projectHub().saveAProjectCopy(projectId, "skrib", Qt.resolvedUrl(file))
 
             if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
                 // Dialog:
@@ -493,7 +520,7 @@ ApplicationWindow {
 
 
                 //no project path
-                if (plmData.projectHub().getPath(projectId) === ""){
+                if (!plmData.projectHub().getPath(projectId)){
                     //TODO: send notification, project not yet saved once
 
                     break
@@ -502,11 +529,12 @@ ApplicationWindow {
                 // in all backup paths :
                 var j;
                 for (j = 0; j < backupPathList.length ; j++ ){
-                    var path = backupPathList[j]
+                    var path = Qt.resolvedUrl(backupPathList[j])
 
 
-                    if (path === ""){
+                    if (!path){
                         //TODO: send notification
+                        console.log("backup path empty")
                         continue
                     }
 
@@ -611,6 +639,7 @@ ApplicationWindow {
                 saveOrNotBeforeClosingProjectDialog.projectId = defaultProjectId
                 saveOrNotBeforeClosingProjectDialog.projectName = plmData.projectHub().getProjectName(defaultProjectId)
                 saveOrNotBeforeClosingProjectDialog.open()
+                saveOrNotBeforeClosingProjectDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
             }
         }
 
@@ -645,6 +674,7 @@ ApplicationWindow {
                 saveAsBeforeClosingProjectFileDialog.projectId = errorProjectId
                 saveAsBeforeClosingProjectFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
                 saveAsBeforeClosingProjectFileDialog.open()
+                saveAsBeforeClosingProjectFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
             }
             else {
                 plmData.projectHub().closeProject(projectId)
@@ -676,7 +706,6 @@ ApplicationWindow {
         onAccepted: {
 
             var file = saveAsFileDialog.file.toString()
-            file = file.replace(/^(file:\/{2})/,"");
 
             if(file.indexOf(".skrib") === -1){ // not found
                 file = file + ".skrib"
@@ -690,7 +719,7 @@ ApplicationWindow {
                 projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
             }
 
-            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", file)
+            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
             if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
                 // Dialog:
@@ -762,6 +791,7 @@ ApplicationWindow {
                 saveOrNotBeforeClosingDialog.projectId = projectId
                 saveOrNotBeforeClosingDialog.projectName = plmData.projectHub().getProjectName(projectId)
                 saveOrNotBeforeClosingDialog.open()
+                saveOrNotBeforeClosingDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
                 close.accepted = false
             }
 
@@ -812,6 +842,7 @@ ApplicationWindow {
                 saveAsBeforeQuitingFileDialog.projectId = errorProjectId
                 saveAsBeforeQuitingFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
                 saveAsBeforeQuitingFileDialog.open()
+                saveAsBeforeQuitingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
             }
             else {
                 rootWindow.close()
@@ -841,7 +872,6 @@ ApplicationWindow {
         onAccepted: {
 
             var file = saveAsFileDialog.file.toString()
-            file = file.replace(/^(file:\/{2})/,"");
 
             if(file.indexOf(".skrib") === -1){ // not found
                 file = file + ".skrib"
@@ -855,7 +885,7 @@ ApplicationWindow {
                 projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
             }
 
-            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", file)
+            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
             if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
                 // Dialog:

@@ -25,6 +25,7 @@
 #include <QFile>
 #include <QObject>
 #include <QtSql/QSqlDatabase>
+#include <QUrl>
 
 #include "plmerror.h"
 
@@ -36,7 +37,7 @@ public:
     explicit PLMImporter(QObject *parent = 0);
 
     QSqlDatabase createSQLiteDbFrom(const QString& type,
-                                    const QString& fileName,
+                                    const QUrl &fileName,
                                     int            projectId,
                                     PLMError     & error);
     QSqlDatabase createEmptySQLiteProject(int       projectId,
@@ -50,7 +51,7 @@ private:
 
     //    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
     // projectId, PLMError &error);
-    PLMError executeSQLFile(const QString& fileName,
+    PLMError executeSQLFile(const QUrl& fileName,
                             QSqlDatabase & sqlDB);
     PLMError executeSQLString(const QString& sqlString,
                             QSqlDatabase & sqlDB);

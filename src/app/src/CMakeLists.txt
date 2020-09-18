@@ -36,7 +36,7 @@ set(app_SRCS
     skrfonts.cpp
     skreditmenusignalhub.h
     skreditmenusignalhub.cpp
-
+    skrqmltools.h
     )
 
 set(QML qml.qrc

@@ -14,7 +14,7 @@ PLMProjectManager::PLMProjectManager(QObject *parent) : QObject(parent)
 
 PLMError PLMProjectManager::createNewEmptyDatabase(int& projectId)
 {
-    return loadProject("", projectId);
+    return loadProject(QUrl(), projectId);
 }
 
 // -----------------------------------------------------------------------------
@@ -24,7 +24,7 @@ PLMProjectManager *PLMProjectManager::m_instance = 0;
 // -----------------------------------------------------------------------------
 
 
-PLMError PLMProjectManager::loadProject(const QString& fileName, int& projectId)
+PLMError PLMProjectManager::loadProject(const QUrl& fileName, int& projectId)
 {
     PLMError error;
 
@@ -59,7 +59,7 @@ PLMError PLMProjectManager::saveProject(int projectId)
 
 PLMError PLMProjectManager::saveProjectAs(int            projectId,
                                           const QString& type,
-                                          const QString& path, bool isCopy)
+                                          const QUrl& path, bool isCopy)
 {
     PLMError error;
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
@@ -73,7 +73,7 @@ PLMError PLMProjectManager::saveProjectAs(int            projectId,
         return error;
     }
 
-    if (path == "") {
+    if (path.isEmpty()) {
         // emit plmTaskError->errorSent("E_PROJECT_NOPATH", Q_FUNC_INFO, "No
         // project path set");
         error.setErrorCode("E_PROJECT_no_path");

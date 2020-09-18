@@ -26,7 +26,7 @@ PLMExporter::PLMExporter(QObject *parent) : QObject(parent)
 
 PLMError PLMExporter::exportSQLiteDbTo(PLMProject    *db,
                                        const QString& type,
-                                       const QString& fileName)
+                                       const QUrl &fileName)
 {
     PLMError error;
     QString finalType = type;
@@ -47,17 +47,17 @@ PLMError PLMExporter::exportSQLiteDbTo(PLMProject    *db,
 
         // copy db temp to file
         QFile tempFile(databaseTempFileName);
-        QFile file(fileName);
+        QFile file(fileName.toLocalFile());
 
         if (!tempFile.open(QIODevice::ReadOnly)) {
-            qWarning() << fileName + " can't be opened";
+            qWarning() << fileName.toLocalFile() + " can't be opened";
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_tempfile_cant_be_opened");
             return error;
         }
 
         if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            qWarning() << fileName + " can't be opened";
+            qWarning() << fileName.toLocalFile() + " can't be opened";
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_is_readonly");
             return error;

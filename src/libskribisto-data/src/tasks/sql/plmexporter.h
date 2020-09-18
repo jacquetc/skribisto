@@ -41,7 +41,7 @@ public:
     explicit PLMExporter(QObject *parent = 0);
     PLMError exportSQLiteDbTo(PLMProject    *db,
                               const QString& type,
-                              const QString& fileName);
+                              const QUrl& fileName);
 
 signals:
 

@@ -23,6 +23,7 @@
 
 #include <QAbstractListModel>
 #include <QDateTime>
+#include <QUrl>
 #include "./skribisto_data_global.h"
 
 
@@ -40,7 +41,7 @@ public:
         isOpened = false;
     }
     QString title;
-    QString fileName;
+    QUrl fileName;
     QDateTime lastModification;
     bool writable;
     bool exists;

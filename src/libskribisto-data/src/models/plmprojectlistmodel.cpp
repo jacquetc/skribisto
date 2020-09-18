@@ -159,7 +159,7 @@ void PLMProjectListModel::populate()
         projectItem->fileName = settings.value("fileName").toString();
 
         // exists ?
-        QFileInfo info(projectItem->fileName);
+        QFileInfo info(projectItem->fileName.toLocalFile());
         projectItem->exists = info.exists();
 
         // writable ?
@@ -173,7 +173,7 @@ void PLMProjectListModel::populate()
         m_allRecentProjects.append(projectItem);
         for(int projectId : plmdata->projectHub()->getProjectIdList()){
             QString projectName = plmdata->projectHub()->getProjectName(projectId);
-            QString projectPath = plmdata->projectHub()->getPath(projectId);
+            QUrl projectPath = plmdata->projectHub()->getPath(projectId);
 
             if(projectName == projectItem->title && projectPath == projectItem->fileName){
                 projectItem->isOpened = true;
