@@ -19,8 +19,7 @@ NoteOverviewPageForm {
     //-------------------------------------------------------------
 
 
-    leftDockMenuGroup.visible: !Globals.compactSize
-    leftDockMenuButton.checked: !Globals.compactSize
+    leftDockMenuGroup.visible: !Globals.compactSize && leftDockMenuButton.checked
     leftDockMenuButton.visible: !Globals.compactSize
 
 
@@ -32,7 +31,6 @@ NoteOverviewPageForm {
         width: 50
     }
 
-    leftDockMenuButton.onCheckedChanged: leftDockMenuButton.checked ? leftDockMenuGroup.visible = true : leftDockMenuGroup.visible = false
     leftDockMenuButton.icon {
         name: "overflow-menu"
         height: 50

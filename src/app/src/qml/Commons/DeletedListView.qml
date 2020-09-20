@@ -259,13 +259,13 @@ DeletedListViewForm {
     //used to differenciante tapCount between ItemSelectionModel
     property int tapCountIndex: -2
 
-    Keys.priority: Keys.AfterItem
+//    Keys.priority: Keys.AfterItem
 
-    Keys.onPressed: {
-        console.log("treeview key pressed")
+//    Keys.onPressed: {
+//        console.log("treeview key pressed")
 
-        event.accepted = true
-    }
+//        event.accepted = true
+//    }
 
     // TreeView item :
     Component {

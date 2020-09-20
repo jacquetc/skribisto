@@ -1,6 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Window 2.3
+import QtQuick.Window 2.15
 import QtQml 2.15
 //import QtQuick.Dialogs 1.3
 import Qt.labs.settings 1.1
@@ -411,12 +411,12 @@ ApplicationWindow {
 
     //    }
 
-    Shortcut {
-        sequence: StandardKey.Quit
-        context: Qt.ApplicationShortcut
-        onActivated: Qt.quit()
+//    Shortcut {
+//        sequence: StandardKey.Quit
+//        context: Qt.ApplicationShortcut
+//        onActivated: Qt.quit()
 
-    }
+//    }
 
     // style :
     //palette.window: "white"
@@ -627,7 +627,7 @@ ApplicationWindow {
             width: 50
         }
 
-        shortcut: StandardKey.New
+        //shortcut: StandardKey.New
         onTriggered: {
             console.log("Close Project")
             var activeProjectId = plmData.projectHub().getActiveProject()

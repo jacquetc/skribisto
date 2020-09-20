@@ -51,7 +51,7 @@ SettingsPageForm {
         target: SkrSettings.interfaceSettings
         property: "menuButtonsInStatusBar"
         value: menuButtonsInStatusBarSwitch.checked
-        restoreMode: Qt.Binding.RestoreBindingOrValue
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
 
@@ -64,7 +64,7 @@ SettingsPageForm {
         target: SkrSettings.accessibilitySettings
         property: "disallowSwipeBetweenTabsCheckBoxChecked"
         value: disallowSwipeBetweenTabsCheckBox.checked
-        restoreMode: Qt.Binding.RestoreBindingOrValue
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     showMenuBarCheckBox.checked: SkrSettings.accessibilitySettings.showMenuBar
@@ -72,7 +72,7 @@ SettingsPageForm {
         target: SkrSettings.accessibilitySettings
         property: "showMenuBar"
         value: showMenuBarCheckBox.checked
-        restoreMode: Qt.Binding.RestoreBindingOrValue
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     // --------------------------------------------
@@ -142,7 +142,7 @@ SettingsPageForm {
 
     LabPlatform.FolderDialog{
         id: addBackupFolderDialog
-        folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         onAccepted: {
             //                    var path = folderDialog.folder.toString()
             //                    path = path.replace(/^(file:\/{2})/,"");
@@ -309,6 +309,9 @@ SettingsPageForm {
                         }
                         if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
                             console.log("Ctrl Return key pressed title")
+
+                            backupFolderDialog.open()
+                            backupFolderDialog.currentFolder = model.path
                             event.accepted = true
                         }
                     }
@@ -363,7 +366,7 @@ SettingsPageForm {
         target: SkrSettings.backupSettings
         property: "backUpEveryCheckBoxChecked"
         value: backUpEveryCheckBox.checked
-        restoreMode: Qt.Binding.RestoreBindingOrValue
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     backUpEveryCheckBox.onCheckedChanged:{
@@ -382,7 +385,7 @@ SettingsPageForm {
         target: SkrSettings.backupSettings
         property: "backUpOnceADay"
         value: backUpOnceADayCheckBox.checked
-        restoreMode: Qt.Binding.RestoreBindingOrValue
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     backUpOnceADayCheckBox.onCheckedChanged:{
@@ -404,7 +407,7 @@ SettingsPageForm {
         target: SkrSettings.backupSettings
         property: "backUpEveryHours"
         value: backupHoursDial.value
-        restoreMode: Qt.Binding.RestoreBindingOrValue
+        restoreMode: Binding.RestoreBindingOrValue
 
     }
 
@@ -525,7 +528,7 @@ SettingsPageForm {
         target: SkrSettings.saveSettings
         property: "saveEveryMinutes"
         value: saveDial.value
-        restoreMode: Qt.Binding.RestoreBindingOrValue
+        restoreMode: Binding.RestoreBindingOrValue
 
     }
 

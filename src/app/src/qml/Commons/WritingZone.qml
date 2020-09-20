@@ -117,7 +117,7 @@ WritingZoneForm {
             console.log("activeFocus = true")
 
 
-            console.log("disconnect", skrEditMenuSignalHub.clearCutConnections())
+            //console.log("disconnect", skrEditMenuSignalHub.clearCutConnections())
             skrEditMenuSignalHub.clearCopyConnections()
             skrEditMenuSignalHub.clearPasteConnections()
             skrEditMenuSignalHub.subscribe(textArea.objectName)

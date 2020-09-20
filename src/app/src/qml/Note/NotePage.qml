@@ -492,8 +492,7 @@ NotePageForm {
     //-------------------------------------------------------------
 
 
-    leftDockMenuGroup.visible: !Globals.compactSize
-    leftDockMenuButton.checked: !Globals.compactSize
+    leftDockMenuGroup.visible: !Globals.compactSize && leftDockMenuButton.checked
     leftDockMenuButton.visible: !Globals.compactSize
 
 
@@ -505,7 +504,6 @@ NotePageForm {
         width: 50
     }
 
-    leftDockMenuButton.onCheckedChanged: leftDockMenuButton.checked ? leftDockMenuGroup.visible = true : leftDockMenuGroup.visible = false
     leftDockMenuButton.icon {
         name: "overflow-menu"
         height: 50
@@ -578,8 +576,7 @@ NotePageForm {
     //-------------------------------------------------------------
 
 
-    rightDockMenuGroup.visible: !Globals.compactSize
-    rightDockMenuButton.checked: !Globals.compactSize
+    rightDockMenuGroup.visible: !Globals.compactSize && rightDockMenuButton.checked
     rightDockMenuButton.visible: !Globals.compactSize
 
     rightDockShowButton.onClicked: rightDrawer.visible ? rightDrawer.visible = false : rightDrawer.visible = true
@@ -590,7 +587,6 @@ NotePageForm {
         width: 50
     }
 
-    rightDockMenuButton.onCheckedChanged: rightDockMenuButton.checked ? rightDockMenuGroup.visible = true : rightDockMenuGroup.visible = false
     rightDockMenuButton.icon {
         name: "overflow-menu"
         height: 50
@@ -746,7 +742,7 @@ NotePageForm {
 
     function saveContent(){
         console.log("saving note")
-        plmData.noteHub().setContent(projectId, paperId, writingZone.text)
+        var error = plmData.noteHub().setContent(projectId, paperId, writingZone.text)
         if (!error.success){
             console.log("saving note failed", projectId, paperId)
         }

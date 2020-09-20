@@ -191,53 +191,53 @@ RootPageForm {
     // fullscreen :
 
     property bool fullScreen: false
-        Connections {
-            target: Globals
-            function onFullScreenCalled(value) {
-                if(value){
-                    fullScreen = true
+    Connections {
+        target: Globals
+        function onFullScreenCalled(value) {
+            if(value){
+                fullScreen = true
 
-                    tabBarRevealer.visible = true
-                    rootTabBar.visible = false
-                }
-                else{
-                    fullScreen = false
-                    tabBarRevealer.visible = false
-                    rootTabBar.visible = true
-
-                }
-
+                tabBarRevealer.visible = true
+                rootTabBar.visible = false
             }
-        }
-//        HoverHandler{
-//            target: rootTabBar
-//            enabled: fullScreen
-//            onHoveredChanged: {
-//                console.log("hovered", hovered)
-//                if(fullScreen && !hovered){
-//                rootTabBar.visible = false
-//                }
-//            }
-//        }
-
-        HoverHandler{
-            target: tabBarRevealer
-            enabled: fullScreen
-            onHoveredChanged: {
-                if(hovered){
+            else{
+                fullScreen = false
+                tabBarRevealer.visible = false
                 rootTabBar.visible = true
-                }
+
             }
+
         }
-        TapHandler{
-            target: tabBarRevealer
-            enabled: fullScreen
-            onTapped: {
-                if(pressed){
+    }
+    //        HoverHandler{
+    //            target: rootTabBar
+    //            enabled: fullScreen
+    //            onHoveredChanged: {
+    //                console.log("hovered", hovered)
+    //                if(fullScreen && !hovered){
+    //                rootTabBar.visible = false
+    //                }
+    //            }
+    //        }
+
+    HoverHandler{
+        target: tabBarRevealer
+        enabled: fullScreen
+        onHoveredChanged: {
+            if(hovered){
                 rootTabBar.visible = true
-                }
             }
         }
+    }
+    TapHandler{
+        target: tabBarRevealer
+        enabled: fullScreen
+        onTapped: {
+            if(pressed){
+                rootTabBar.visible = true
+            }
+        }
+    }
     //---------------------------------------------------------
     // projectLoaded :
     property int projectIdForProjectLoading: 0
@@ -308,6 +308,26 @@ RootPageForm {
     }
 
 
+    Shortcut{
+        id: tabBarNextTabShortcut
+        sequence: StandardKey.NextChild
+        onActivated: {
+            console.log("tabBarNextTabShortcut")
+            rootTabBar.incrementCurrentIndex()
+        }
+    }
+
+
+
+    Shortcut{
+        id: tabBarPreviousTabShortcut
+        sequence: StandardKey.PreviousChild
+        onActivated: {
+            //console.log("tabBarPreviousTabShortcut")
+            rootTabBar.decrementCurrentIndex()
+        }
+    }
+
 
     //rootSwipeView.currentIndex: rootTabBar.currentIndex
 
@@ -319,8 +339,22 @@ RootPageForm {
         target: rootSwipeView
         property: "currentIndex"
         value: rootTabBar.currentIndex
-        //restoreMode: Binding.RestoreBindingOrValue
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
     }
+
+    rootSwipeView.onCurrentItemChanged: {
+        var i;
+        for(i = 0; i < rootSwipeView.count; i++ ){
+
+            var item = rootSwipeView.itemAt(i)
+            item.enabled = (item === rootSwipeView.currentItem)
+        }
+
+
+
+    }
+
 
     function addTab(incubator, insertionIndex, pageType, projectId, paperId) {
         var title = incubator.object.title
@@ -413,7 +447,7 @@ RootPageForm {
 
             if(paperId === -1){
                 return
-        }
+            }
 
             var pageType = "write"
 
@@ -461,7 +495,7 @@ RootPageForm {
 
             if(paperId === -1){
                 return
-        }
+            }
 
             var pageType = "write"
             // verify if project/sheetId not already opened
@@ -522,7 +556,7 @@ RootPageForm {
 
             if(paperId === -1){
                 return
-        }
+            }
 
             var pageType = "note"
 
@@ -565,7 +599,7 @@ RootPageForm {
 
             if(paperId === -1){
                 return
-        }
+            }
 
             var pageType = "note"
             // verify if project/noteId not already opened
