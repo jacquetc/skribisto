@@ -59,6 +59,7 @@ private slots:
     void refreshAfterDataMove(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId);
     void refreshAfterDeletedStateChanged(int projectId, int paperId, bool newDeletedState);
     void refreshAfterProjectIsBackupChanged(int projectId, bool isProjectABackup);
+    void refreshAfterProjectIsActiveChanged(int projectId);
 
 private:
 

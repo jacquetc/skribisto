@@ -28,11 +28,12 @@ PLMError PLMProjectHub::loadProject(const QUrl& urlFilePath)
 
     // qDebug() << "projectId : " << QString::number(projectId);
     IFOK(error) {
+        this->setActiveProject(projectId);
         m_projectsNotModifiedOnceList.append(projectId);
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
         emit isThereAnyLoadedProjectChanged(true);
-        this->setDefaultProject(projectId);
+        this->setActiveProject(projectId);
     }
 
 
@@ -47,12 +48,13 @@ PLMError PLMProjectHub::createNewEmptyProject(const QUrl &path)
 
 
     IFOK(error) {
+        this->setActiveProject(projectId);
         m_projectsNotModifiedOnceList.append(projectId);
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
         emit isThereAnyLoadedProjectChanged(true);
         this->setProjectNotSavedAnymore(projectId);
-        this->setDefaultProject(projectId);
+        this->setActiveProject(projectId);
     }
 
 
@@ -402,33 +404,49 @@ bool PLMProjectHub::isThisProjectABackup(int projectId)
 
 }
 
-void PLMProjectHub::setDefaultProject(int defaultProject)
+void PLMProjectHub::setActiveProject(int activeProject)
 {
-    m_defaultProject = defaultProject;
+    m_activeProject = activeProject;
 
-    emit defaultProjectChanged(m_defaultProject);
+    emit activeProjectChanged(m_activeProject);
 }
 
-int PLMProjectHub::getDefaultProject()
+
+//----------------------------------------------------------------------------
+
+bool PLMProjectHub::isThisProjectActive(int projectId)
+{
+    return this->getActiveProject() == projectId;
+}
+
+//----------------------------------------------------------------------------
+
+int PLMProjectHub::getActiveProject()
 {
 
     if (this->getProjectIdList().isEmpty()) {
-        m_defaultProject = -2;
+        m_activeProject = -2;
     }
-    else if (!this->getProjectIdList().contains(m_defaultProject)) {
-        m_defaultProject = this->getProjectIdList().first();
+    else if (!this->getProjectIdList().contains(m_activeProject)) {
+        m_activeProject = this->getProjectIdList().first();
     }
 
     if (this->getProjectIdList().count() == 1) {
-        m_defaultProject = this->getProjectIdList().first();
+        m_activeProject = this->getProjectIdList().first();
     }
-    return m_defaultProject;
+    return m_activeProject;
 }
+
+
+//----------------------------------------------------------------------------
 
 void PLMProjectHub::setError(const PLMError& error)
 {
     m_error = error;
 }
+
+
+//----------------------------------------------------------------------------
 
 QString PLMProjectHub::getProjectName(int projectId) const {
     return get(projectId, "t_project_name").toString();
@@ -447,10 +465,16 @@ PLMError PLMProjectHub::setProjectName(int projectId, const QString& projectName
     return error;
 }
 
+
+//----------------------------------------------------------------------------
+
 QString PLMProjectHub::getProjectUniqueId(int projectId) const
 {
     return get(projectId, "t_project_unique_identifier").toString();
 }
+
+
+//----------------------------------------------------------------------------
 
 PLMError PLMProjectHub::set(int             projectId,
                             const QString & fieldName,

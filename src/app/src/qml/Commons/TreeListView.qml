@@ -52,7 +52,8 @@ TreeListViewForm {
     //-----------------------------------------------------------------------------
     // go up button :
     property bool goUpButtonEnabled: true
-
+    property bool goUpActionToBeTriggered :false
+    property int goUpActionCurrentParent: -2
     goUpToolButton.action: goUpAction
 
     Action {
@@ -64,26 +65,28 @@ TreeListViewForm {
         }
         //enabled:
         onTriggered: {
+            goUpActionToBeTriggered = true
+            goUpActionCurrentParent = currentParent
+
             currentParent = proxyModel.goUp()
             listView.currentIndex = proxyModel.getLastOfHistory(currentProject)
             proxyModel.removeLastOfHistory(currentProject)
 
+            goUpActionToBeTriggered = false
+            goUpActionCurrentParent = -2
+
         }
     }
     function determineIfGoUpButtonEnabled() {
-        var currentIndent = proxyModel.getItemIndent(currentProject, currentParent) + 1
-        //console.log("determineIfGoUpButtonEnabled", currentIndent)
+
         if(!root.visible){
             goUpAction.enabled = false
             return
         }
-        if(currentIndent <= -1){
-            goUpAction.enabled = false
 
-        }
-        else {
-            goUpAction.enabled = true
-        }
+        goUpAction.enabled = (currentParent !== -2)
+
+
     }
 
     onVisibleChanged: {
@@ -191,6 +194,7 @@ TreeListViewForm {
     Action {
         id: addPaperAction
         text: qsTr("Add")
+        enabled: currentParent !== -2
         shortcut: "Ctrl+T"
         //enabled: listView.focus === true
         icon{
@@ -268,12 +272,20 @@ TreeListViewForm {
     property int tapCountIndex: -2
 
 
+    property bool goToChildActionToBeTriggered :false
+    property int goToChildActionCurrentIndent: -2
+    property bool newPaperAdded :false
+
     // TreeView item :
     Component {
         id: dragDelegate
 
         DropArea {
             id: delegateRoot
+            property int indent: model.indent
+
+
+
 
             onEntered: {
 
@@ -477,6 +489,7 @@ TreeListViewForm {
                 }
 
 
+
                 Action {
                     id: goToChildAction
                     //shortcut: "Right"
@@ -496,6 +509,10 @@ TreeListViewForm {
                     text: model.hasChildren ? ">" : "+"
                     onTriggered: {
                         console.log("goToChildAction triggered")
+
+                        goToChildActionToBeTriggered = true
+                        goToChildActionCurrentIndent =  model.indent
+
                         //var _delegateRoot = delegateRoot
                         //                        var _titleTextField = titleTextField
                         var _proxyModel = proxyModel
@@ -516,6 +533,7 @@ TreeListViewForm {
                         // create a child if none present
                         if (!_proxyModel.hasChildren(_currentProject,
                                                      _currentParent)) {
+                            newPaperAdded = true
                             _proxyModel.addItemAtEnd(_currentProject,
                                                      _currentParent, 0)
 
@@ -525,6 +543,8 @@ TreeListViewForm {
 
 
                         }
+
+
 
                     }
                 }
@@ -645,7 +665,7 @@ TreeListViewForm {
                                     Layout.topMargin: 2
                                     Layout.leftMargin: 4
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-
+                                    font.bold: model.projectIsActive && model.indent === -1 ? true : false
                                     text: model.indent === -1 ? model.projectName : model.name
                                 }
 
@@ -857,6 +877,16 @@ TreeListViewForm {
                         target: titleTextField
                         visible: true
                     }
+                },
+
+                State {
+                    name: "unset_anchors"
+                    AnchorChanges {
+                        target: delegateRoot
+                        anchors.left: undefined
+                        anchors.right: undefined
+
+                    }
                 }
             ]
 
@@ -879,36 +909,60 @@ TreeListViewForm {
                     hoveringChangingTheCurrentItemAllowed = true
 
                 }
+                MenuItem {
+                    visible: model.paperId !== -1
+                    height: model.paperId === -1 ? 0 : undefined
+                    action: Action {
+                        id: openPaperAction
+                        text: qsTr("Open")
+                        //shortcut: "Return"
+                        icon {
+                            name: "document-edit"
+                        }
 
-                Action {
-                    id: openPaperAction
-                    text: qsTr("Open")
-                    //shortcut: "Return"
-                    icon {
-                        name: "document-edit"
+                        enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true &&  model.paperId !== -1
+                        onTriggered: {
+                            console.log("open paper action", model.projectId,
+                                        model.paperId)
+                            openDocumentAction.trigger()
+                        }
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true
-                    onTriggered: {
-                        console.log("open paper action", model.projectId,
-                                    model.paperId)
-                        openDocumentAction.trigger()
+                }
+                MenuItem {
+                    visible: model.paperId !== -1
+                    height: model.paperId === -1 ? 0 : undefined
+
+                    action: Action {
+                        id: openPaperInNewTabAction
+                        text: qsTr("Open in new tab")
+                        //shortcut: "Alt+Return"
+                        icon {
+                            name: "tab-new"
+                        }
+                        enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true &&  model.paperId !== -1
+                        onTriggered: {
+                            console.log("open paper in new tab action", model.projectId,
+                                        model.paperId)
+                            openDocumentInNewTabAction.trigger()
+                        }
                     }
                 }
 
-                Action {
-                    id: openPaperInNewTabAction
-                    text: qsTr("Open in new tab")
-                    //shortcut: "Alt+Return"
+
+                MenuItem {
+                    height: model.paperId === -1 ? undefined : 0
+                    visible: model.paperId === -1
+                    enabled: contextMenuItemIndex === model.index && model.projectIsActive === false &&  model.paperId === -1
+                    text: qsTr("Set as active project")
                     icon {
                         name: "tab-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true
                     onTriggered: {
-                        console.log("open paper in new tab action", model.projectId,
-                                    model.paperId)
-                        openDocumentInNewTabAction.trigger()
+                        console.log("set active project", model.projectId)
+                        plmData.projectHub().setActiveProject(model.projectId)
                     }
                 }
+
 
                 MenuSeparator {}
 
@@ -1047,7 +1101,214 @@ TreeListViewForm {
 
             //----------------------------------------------------------
 
-            ListView.onRemove: SequentialAnimation {
+            property int animationDuration: 150
+
+            ListView.onRemove: {
+                console.log("onRemove")
+
+
+                var goUpActionCurrentParentIndent = proxyModel.getItemIndent(currentProject, goUpActionCurrentParent)
+
+                if(goUpActionToBeTriggered && goUpActionCurrentParentIndent + 1 === delegateRoot.indent){
+                    paperGoesRightAnimation.start()
+                }
+
+
+                if(goToChildActionToBeTriggered && goToChildActionCurrentIndent === delegateRoot.indent){
+                    paperGoesLeftAnimation.start()
+
+                }
+            }
+
+            //goUpActionToBeTriggered
+            ListView.onAdd: {
+                console.log("onAdd")
+
+                var goUpActionCurrentParentIndent = proxyModel.getItemIndent(currentProject, goUpActionCurrentParent)
+
+                if(goUpActionToBeTriggered && goUpActionCurrentParentIndent === model.indent){
+                    paperAppearsFromLeftAnimation.start()
+                }
+
+
+
+                if(goToChildActionToBeTriggered && goToChildActionCurrentIndent + 1 === delegateRoot.indent){
+                    paperAppearsFromRightAnimation.start()
+                }
+            }
+            SequentialAnimation {
+                id: paperAppearsFromLeftAnimation
+                PropertyAction {
+                    target: delegateRoot
+                    property: "ListView.delayRemove"
+                    value: true
+                }
+                PropertyAction {
+                    target: delegateRoot
+                    property: "visible"
+                    value: false
+                }
+                PauseAnimation {
+                    duration: animationDuration
+                }
+                PropertyAction {
+                    target: delegateRoot
+                    property: "visible"
+                    value: true
+                }
+
+                ScriptAction {
+                    script: delegateRoot.state = "unset_anchors"
+                }
+
+                PropertyAction {
+                    target: delegateRoot
+                    property: "x"
+                    value: - delegateRoot.width
+                }
+                NumberAnimation {
+                    target: delegateRoot
+                    property: "x"
+                    to: 0
+                    duration: animationDuration
+                    easing.type: Easing.InOutQuad
+                }
+                PropertyAction {
+                    target: delegateRoot
+                    property: "ListView.delayRemove"
+                    value: false
+                }
+
+                ScriptAction {
+                    script: delegateRoot.state = ""
+                }
+
+            }
+
+            SequentialAnimation {
+                id: paperAppearsFromRightAnimation
+                PropertyAction {
+                    target: delegateRoot
+                    property: "ListView.delayRemove"
+                    value: true
+                }
+                PropertyAction {
+                    target: delegateRoot
+                    property: "visible"
+                    value: false
+                }
+                PauseAnimation {
+                    duration: animationDuration
+                }
+                PropertyAction {
+                    target: delegateRoot
+                    property: "visible"
+                    value: true
+                }
+                ScriptAction {
+                    script: delegateRoot.state = "unset_anchors"
+                }
+
+                PropertyAction {
+                    target: delegateRoot
+                    property: "x"
+                    value: delegateRoot.width
+                }
+                NumberAnimation {
+                    target: delegateRoot
+                    property: "x"
+                    to: 0
+                    duration: animationDuration
+                    easing.type: Easing.InOutQuad
+                }
+                PropertyAction {
+                    target: delegateRoot
+                    property: "ListView.delayRemove"
+                    value: false
+                }
+
+                ScriptAction {
+                    script: delegateRoot.state = ""
+                }
+
+
+                ScriptAction {
+                    script: if(newPaperAdded === true){
+                                listView.itemAtIndex(0).editName()
+                                newPaperAdded = false
+                            }
+                }
+
+                ScriptAction {
+                    script: {
+                        goToChildActionToBeTriggered = false
+                        goToChildActionCurrentIndent =  -2
+                    }
+
+                }
+            }
+
+            SequentialAnimation {
+                id: paperGoesLeftAnimation
+                PropertyAction {
+                    target: delegateRoot
+                    property: "ListView.delayRemove"
+                    value: true
+                }
+                ScriptAction {
+                    script: delegateRoot.state = "unset_anchors"
+                }
+
+                NumberAnimation {
+                    target: delegateRoot
+                    property: "x"
+                    to: - delegateRoot.width
+                    duration: animationDuration
+                    easing.type: Easing.InOutQuad
+                }
+                PropertyAction {
+                    target: delegateRoot
+                    property: "ListView.delayRemove"
+                    value: false
+                }
+
+                ScriptAction {
+                    script: delegateRoot.state = ""
+                }
+            }
+
+            SequentialAnimation {
+                id: paperGoesRightAnimation
+                PropertyAction {
+                    target: delegateRoot
+                    property: "ListView.delayRemove"
+                    value: true
+                }
+
+                ScriptAction {
+                    script: delegateRoot.state = "unset_anchors"
+                }
+
+                NumberAnimation {
+                    target: delegateRoot
+                    property: "x"
+                    to: delegateRoot.width
+                    duration: animationDuration
+                    easing.type: Easing.InOutQuad
+                }
+                PropertyAction {
+                    target: delegateRoot
+                    property: "ListView.delayRemove"
+                    value: false
+                }
+
+                ScriptAction {
+                    script: delegateRoot.state = ""
+                }
+            }
+
+            SequentialAnimation {
+                id: removePaperAtEndAnimation
                 PropertyAction {
                     target: delegateRoot
                     property: "ListView.delayRemove"
@@ -1057,6 +1318,7 @@ TreeListViewForm {
                     target: delegateRoot
                     property: "height"
                     to: 0
+                    duration: 250
                     easing.type: Easing.InOutQuad
                 }
                 PropertyAction {
@@ -1065,8 +1327,9 @@ TreeListViewForm {
                     value: false
                 }
             }
+            SequentialAnimation {
+                id: addPaperAtEndAnimation
 
-            ListView.onAdd: SequentialAnimation {
                 PropertyAction {
                     target: delegateRoot
                     property: "height"
@@ -1075,13 +1338,14 @@ TreeListViewForm {
                 NumberAnimation {
                     target: delegateRoot
                     property: "height"
-                    to: 80
+                    to: delegateRoot.height
                     duration: 250
                     easing.type: Easing.InOutQuad
                 }
             }
-
             // move :
         }
     }
+
+
 }

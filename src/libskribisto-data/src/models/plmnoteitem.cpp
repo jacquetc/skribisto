@@ -150,7 +150,13 @@ QVariant PLMNoteItem::data(int role)
         case Roles::ProjectIsBackupRole:
             m_data.insert(role, plmdata->projectHub()->isThisProjectABackup(projectId));
             break;
+
+
+        case Roles::ProjectIsActiveRole:
+            m_data.insert(role, plmdata->projectHub()->isThisProjectActive(projectId));
+            break;
         }
+
         m_invalidatedRoles.removeAll(role);
     }
     return m_data.value(role);
@@ -423,6 +429,7 @@ void PLMNoteItem::setIsProjectItem(int projectId)
     this->invalidateData(Roles::ProjectNameRole);
     this->invalidateData(Roles::HasChildrenRole);
     this->invalidateData(Roles::ProjectIsBackupRole);
+    this->invalidateData(Roles::ProjectIsActiveRole);
 }
 
 int PLMNoteItem::projectId()

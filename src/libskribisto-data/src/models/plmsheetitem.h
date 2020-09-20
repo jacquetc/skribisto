@@ -47,11 +47,12 @@ public:
         ContentDateRole  = Qt::UserRole + 10,
         HasChildrenRole  = Qt::UserRole + 11,
         ProjectIsBackupRole = Qt::UserRole + 12,
+        ProjectIsActiveRole = Qt::UserRole + 13,
 
         // specific to sheets:
-        CharCountRole = Qt::UserRole + 13,
-        WordCountRole = Qt::UserRole + 14,
-        SynopsisNoteIdRole = Qt::UserRole + 15
+        CharCountRole = Qt::UserRole + 14,
+        WordCountRole = Qt::UserRole + 15,
+        SynopsisNoteIdRole = Qt::UserRole + 16
 
 
     };

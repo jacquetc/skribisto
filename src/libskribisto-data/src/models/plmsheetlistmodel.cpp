@@ -38,6 +38,11 @@ PLMSheetListModel::PLMSheetListModel(QObject *parent)
             this,
             &PLMSheetListModel::refreshAfterProjectIsBackupChanged);
 
+    connect(plmdata->projectHub(),
+            &PLMProjectHub::activeProjectChanged,
+            this,
+            &PLMSheetListModel::refreshAfterProjectIsActiveChanged);
+
     this->connectToPLMDataSignals();
 }
 
@@ -178,6 +183,11 @@ QVariant PLMSheetListModel::data(const QModelIndex& index, int role) const
     if (role == PLMSheetItem::Roles::ProjectIsBackupRole) {
         return item->data(role);
     }
+
+    if (role == PLMSheetItem::Roles::ProjectIsActiveRole) {
+        return item->data(role);
+    }
+
     return QVariant();
 }
 
@@ -213,7 +223,7 @@ bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value,
 
         case PLMSheetItem::Roles::NameRole:
 
-                error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
+            error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
             break;
 
         case PLMSheetItem::Roles::LabelRole:
@@ -278,6 +288,11 @@ bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value,
                                                              QString::number(
                                                                  value.toInt()));
             break;
+
+        case PLMSheetItem::Roles::ProjectIsActiveRole:
+
+            plmdata->projectHub()->setActiveProject(projectId);
+            break;
         }
 
 
@@ -340,6 +355,7 @@ QHash<int, QByteArray>PLMSheetListModel::roleNames() const {
     roles[PLMSheetItem::Roles::CharCountRole]  = "charCount";
     roles[PLMSheetItem::Roles::SynopsisNoteIdRole]  = "synopsisNoteId";
     roles[PLMSheetItem::Roles::ProjectIsBackupRole] = "projectIsBackup";
+    roles[PLMSheetItem::Roles::ProjectIsActiveRole] = "projectIsActive";
     return roles;
 }
 
@@ -567,6 +583,7 @@ void PLMSheetListModel::refreshAfterDeletedStateChanged(int projectId, int paper
         item->invalidateData(PLMSheetItem::Roles::HasChildrenRole); // needed to refresh the parent item when no child anymore
     }
 
+
 }
 
 //--------------------------------------------------------------------
@@ -581,6 +598,19 @@ void PLMSheetListModel::refreshAfterProjectIsBackupChanged(int projectId, bool i
     }
 
 }
+
+//--------------------------------------------------------------------
+
+void PLMSheetListModel::refreshAfterProjectIsActiveChanged(int projectId)
+{
+    Q_UNUSED(projectId)
+
+    for(PLMSheetItem *item : m_allSheetItems){
+        item->invalidateData(PLMSheetItem::Roles::ProjectIsActiveRole);
+    }
+
+}
+
 
 
 //void PLMSheetListModel::movePaper(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId)
@@ -637,7 +667,7 @@ void PLMSheetListModel::connectToPLMDataSignals()
         Q_UNUSED(propertyId)
 
         if (name == "label") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                          PLMSheetItem::Roles::LabelRole);
+                                                            PLMSheetItem::Roles::LabelRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->sheetHub(),
@@ -736,6 +766,16 @@ void PLMSheetListModel::connectToPLMDataSignals()
         this->exploitSignalFromPLMData(projectId, sheetId,
                                        PLMSheetItem::Roles::SynopsisNoteIdRole);
     }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(plmdata->projectHub(),
+                                           &PLMProjectHub::activeProjectChanged, this,
+                                           [this](int projectId) {
+        Q_UNUSED(projectId)
+        for(int projectId : plmdata->projectHub()->getProjectIdList()){
+            this->exploitSignalFromPLMData(projectId, -1, PLMSheetItem::Roles::ProjectIsActiveRole);
+        }
+    }, Qt::UniqueConnection);
+
 }
 
 void PLMSheetListModel::disconnectFromPLMDataSignals()

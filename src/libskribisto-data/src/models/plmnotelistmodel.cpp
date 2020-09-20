@@ -37,11 +37,16 @@ PLMNoteListModel::PLMNoteListModel(QObject *parent)
             this,
             &PLMNoteListModel::refreshAfterProjectIsBackupChanged);
 
+    connect(plmdata->projectHub(),
+            &PLMProjectHub::activeProjectChanged,
+            this,
+            &PLMNoteListModel::refreshAfterProjectIsActiveChanged);
+
     this->connectToPLMDataSignals();
 }
 
 QVariant PLMNoteListModel::headerData(int section, Qt::Orientation orientation,
-                                       int role) const
+                                      int role) const
 {
     Q_UNUSED(section)
     Q_UNUSED(orientation)
@@ -51,9 +56,9 @@ QVariant PLMNoteListModel::headerData(int section, Qt::Orientation orientation,
 }
 
 bool PLMNoteListModel::setHeaderData(int             section,
-                                      Qt::Orientation orientation,
-                                      const QVariant& value,
-                                      int             role)
+                                     Qt::Orientation orientation,
+                                     const QVariant& value,
+                                     int             role)
 {
     if (value != headerData(section, orientation, role)) {
         m_headerData = value;
@@ -167,6 +172,11 @@ QVariant PLMNoteListModel::data(const QModelIndex& index, int role) const
     if (role == PLMNoteItem::Roles::ProjectIsBackupRole) {
         return item->data(role);
     }
+
+    if (role == PLMNoteItem::Roles::ProjectIsActiveRole) {
+        return item->data(role);
+    }
+
     return QVariant();
 }
 
@@ -201,12 +211,12 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
             break;
 
         case PLMNoteItem::Roles::NameRole:
-                error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
+            error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
 
 
         case PLMNoteItem::Roles::LabelRole:
             error = plmdata->notePropertyHub()->setProperty(projectId, paperId,
-                                                             "label", value.toString());
+                                                            "label", value.toString());
             break;
 
         case PLMNoteItem::Roles::IndentRole:
@@ -214,7 +224,7 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
             break;
 
         case PLMNoteItem::Roles::SortOrderRole:
-            error = plmdata->noteHub()->setSortOrder(projectId, paperId, value.toInt());            
+            error = plmdata->noteHub()->setSortOrder(projectId, paperId, value.toInt());
             IFOKDO(error, plmdata->noteHub()->renumberSortOrders(projectId));
             for(PLMNoteItem *item : m_allNoteItems){
                 item->invalidateData(role);
@@ -229,20 +239,20 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
 
         case PLMNoteItem::Roles::CreationDateRole:
             error = plmdata->noteHub()->setCreationDate(projectId,
-                                                         paperId,
-                                                         value.toDateTime());
+                                                        paperId,
+                                                        value.toDateTime());
             break;
 
         case PLMNoteItem::Roles::UpdateDateRole:
             error = plmdata->noteHub()->setUpdateDate(projectId,
-                                                       paperId,
-                                                       value.toDateTime());
+                                                      paperId,
+                                                      value.toDateTime());
             break;
 
         case PLMNoteItem::Roles::ContentDateRole:
             error = plmdata->noteHub()->setContentDate(projectId,
-                                                        paperId,
-                                                        value.toDateTime());
+                                                       paperId,
+                                                       value.toDateTime());
             break;
 
         case PLMNoteItem::Roles::HasChildrenRole:
@@ -251,19 +261,24 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
 
         case PLMNoteItem::Roles::CharCountRole:
             error = plmdata->notePropertyHub()->setProperty(projectId,
-                                                             paperId,
-                                                             "char_count",
-                                                             QString::number(
-                                                                 value.toInt()));
+                                                            paperId,
+                                                            "char_count",
+                                                            QString::number(
+                                                                value.toInt()));
             break;
 
         case PLMNoteItem::Roles::WordCountRole:
 
             error = plmdata->notePropertyHub()->setProperty(projectId,
-                                                             paperId,
-                                                             "word_count",
-                                                             QString::number(
-                                                                 value.toInt()));
+                                                            paperId,
+                                                            "word_count",
+                                                            QString::number(
+                                                                value.toInt()));
+            break;
+
+        case PLMNoteItem::Roles::ProjectIsActiveRole:
+
+            plmdata->projectHub()->setActiveProject(projectId);
             break;
         }
 
@@ -325,6 +340,7 @@ QHash<int, QByteArray>PLMNoteListModel::roleNames() const {
     roles[PLMNoteItem::Roles::WordCountRole]  = "wordCount";
     roles[PLMNoteItem::Roles::CharCountRole]  = "charCount";
     roles[PLMNoteItem::Roles::ProjectIsBackupRole] = "projectIsBackup";
+    roles[PLMNoteItem::Roles::ProjectIsActiveRole] = "projectIsActive";
     return roles;
 }
 
@@ -335,9 +351,9 @@ void PLMNoteListModel::populate()
     m_allNoteItems.clear();
 
     for(int projectId : plmdata->projectHub()->getProjectIdList()) {
-            PLMNoteItem *projectItem = new PLMNoteItem();
-            projectItem->setIsProjectItem(projectId);
-            m_allNoteItems.append(projectItem);
+        PLMNoteItem *projectItem = new PLMNoteItem();
+        projectItem->setIsProjectItem(projectId);
+        m_allNoteItems.append(projectItem);
 
 
         auto idList         = plmdata->noteHub()->getAllIds(projectId);
@@ -346,8 +362,8 @@ void PLMNoteListModel::populate()
 
         for(int sheetId : idList) {
             m_allNoteItems.append(new PLMNoteItem(projectId, sheetId,
-                                                    indentsHash.value(sheetId),
-                                                    sortOrdersHash.value(sheetId)));
+                                                  indentsHash.value(sheetId),
+                                                  sortOrdersHash.value(sheetId)));
         }
     }
     this->endResetModel();
@@ -361,8 +377,8 @@ void PLMNoteListModel::clear()
 }
 
 void PLMNoteListModel::exploitSignalFromPLMData(int                 projectId,
-                                             int                 paperId,
-                                             PLMNoteItem::Roles role)
+                                                int                 paperId,
+                                                PLMNoteItem::Roles role)
 {
     PLMNoteItem *item = this->getItem(projectId, paperId);
 
@@ -472,8 +488,8 @@ void PLMNoteListModel::refreshAfterDataAddition(int projectId, int paperId)
     beginInsertRows(QModelIndex(), row, row);
 
     m_allNoteItems.insert(itemIndex, new PLMNoteItem(projectId, paperId,
-                                                       indentsHash.value(paperId),
-                                                       sortOrdersHash.value(paperId)));
+                                                     indentsHash.value(paperId),
+                                                     sortOrdersHash.value(paperId)));
     this->index(row, 0, QModelIndex());
     endInsertRows();
 }
@@ -568,6 +584,17 @@ void PLMNoteListModel::refreshAfterProjectIsBackupChanged(int projectId, bool is
 }
 
 //--------------------------------------------------------------------
+
+void PLMNoteListModel::refreshAfterProjectIsActiveChanged(int projectId)
+{
+    Q_UNUSED(projectId)
+
+    for(PLMNoteItem *item : m_allNoteItems){
+        item->invalidateData(PLMNoteItem::Roles::ProjectIsActiveRole);
+    }
+
+}
+//--------------------------------------------------------------------
 void PLMNoteListModel::connectToPLMDataSignals()
 {
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
@@ -596,7 +623,7 @@ void PLMNoteListModel::connectToPLMDataSignals()
         Q_UNUSED(propertyId)
 
         if (name == "label") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                          PLMNoteItem::Roles::LabelRole);
+                                                            PLMNoteItem::Roles::LabelRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
@@ -675,6 +702,18 @@ void PLMNoteListModel::connectToPLMDataSignals()
         if (name == "word_count") this->exploitSignalFromPLMData(projectId, paperCode,
                                                                  PLMNoteItem::Roles::
                                                                  WordCountRole);
+    }, Qt::UniqueConnection);
+
+
+
+    m_dataConnectionsList << this->connect(plmdata->projectHub(),
+                                           &PLMProjectHub::activeProjectChanged, this,
+                                           [this](int projectId) {
+        Q_UNUSED(projectId)
+        for(int projectId : plmdata->projectHub()->getProjectIdList()){
+
+            this->exploitSignalFromPLMData(projectId, -1, PLMNoteItem::Roles::ProjectIsActiveRole);
+        }
     }, Qt::UniqueConnection);
 }
 

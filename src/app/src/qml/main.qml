@@ -146,7 +146,7 @@ ApplicationWindow {
 
         shortcut: StandardKey.Save
         onTriggered: {
-            var projectId = plmData.projectHub().getDefaultProject()
+            var projectId = plmData.projectHub().getActiveProject()
             var error = plmData.projectHub().saveProject(projectId)
 
             if (error.getErrorCode() === "E_PROJECT_no_path"){
@@ -161,7 +161,7 @@ ApplicationWindow {
 
     Connections {
         target: plmData.projectHub()
-        function onDefaultProjectChanged(projectId){
+        function onActiveProjectChanged(projectId){
             if (!plmData.projectHub().isProjectNotModifiedOnce(projectId)){
                 saveAction.enabled = true
             }
@@ -175,7 +175,7 @@ ApplicationWindow {
     Connections {
         target: plmData.projectHub()
         function onProjectNotSavedAnymore(projectId){
-            if (projectId === plmData.projectHub().getDefaultProject()
+            if (projectId === plmData.projectHub().getActiveProject()
                     && !plmData.projectHub().isProjectNotModifiedOnce(projectId)){
                 saveAction.enabled = true
             }
@@ -186,7 +186,7 @@ ApplicationWindow {
     Connections {
         target: plmData.projectHub()
         function onProjectSaved(projectId){
-            if (projectId === plmData.projectHub().getDefaultProject()){
+            if (projectId === plmData.projectHub().getActiveProject()){
                 saveAction.enabled = false
             }
         }
@@ -256,7 +256,7 @@ ApplicationWindow {
 
         shortcut: StandardKey.SaveAs
         onTriggered: {
-            var projectId = plmData.projectHub().getDefaultProject()
+            var projectId = plmData.projectHub().getActiveProject()
             saveACopyFileDialog.projectId = projectId
             saveACopyFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
             saveAsFileDialog.open()
@@ -296,12 +296,12 @@ ApplicationWindow {
                 file = file + ".skrib"
             }
             if(projectId == -2){
-                projectId = plmData.projectHub().getDefaultProject()
+                projectId = plmData.projectHub().getActiveProject()
             }
 
 
             if(projectName == ""){
-                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
             }
 
             var error = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
@@ -342,7 +342,7 @@ ApplicationWindow {
 
         //shortcut: StandardKey.SaveAs
         onTriggered: {
-            var projectId = plmData.projectHub().getDefaultProject()
+            var projectId = plmData.projectHub().getActiveProject()
             saveACopyFileDialog.projectId = projectId
             saveACopyFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
             saveACopyFileDialog.open()
@@ -377,12 +377,12 @@ ApplicationWindow {
                 file = file + ".skrib"
             }
             if(projectId == -2){
-                projectId = plmData.projectHub().getDefaultProject()
+                projectId = plmData.projectHub().getActiveProject()
             }
             console.log("FileDialog :" , projectId)
 
             if(projectName == ""){
-                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
             }
 
             var error = plmData.projectHub().saveAProjectCopy(projectId, "skrib", Qt.resolvedUrl(file))
@@ -617,10 +617,10 @@ ApplicationWindow {
     //------------Close current project-----------------------------------
     //------------------------------------------------------------
 
-    property string defaultProjectName: ""
+    property string activeProjectName: ""
     Action {
         id: closeCurrentProjectAction
-        text: qsTr("&Close \"%1\" project").arg(defaultProjectName)
+        text: qsTr("&Close \"%1\" project").arg(activeProjectName)
         icon {
             name: "document-close"
             height: 50
@@ -630,14 +630,14 @@ ApplicationWindow {
         shortcut: StandardKey.New
         onTriggered: {
             console.log("Close Project")
-            var defaultProjectId = plmData.projectHub().getDefaultProject()
-            var savedBool = plmData.projectHub().isProjectSaved(defaultProjectId)
+            var activeProjectId = plmData.projectHub().getActiveProject()
+            var savedBool = plmData.projectHub().isProjectSaved(activeProjectId)
             if(savedBool || plmData.projectHub().isProjectNotModifiedOnce(projectId)){
-                plmData.projectHub().closeProject(defaultProjectId)
+                plmData.projectHub().closeProject(activeProjectId)
             }
             else{
-                saveOrNotBeforeClosingProjectDialog.projectId = defaultProjectId
-                saveOrNotBeforeClosingProjectDialog.projectName = plmData.projectHub().getProjectName(defaultProjectId)
+                saveOrNotBeforeClosingProjectDialog.projectId = activeProjectId
+                saveOrNotBeforeClosingProjectDialog.projectName = plmData.projectHub().getProjectName(activeProjectId)
                 saveOrNotBeforeClosingProjectDialog.open()
                 saveOrNotBeforeClosingProjectDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
             }
@@ -711,12 +711,12 @@ ApplicationWindow {
                 file = file + ".skrib"
             }
             if(projectId == -2){
-                projectId = plmData.projectHub().getDefaultProject()
+                projectId = plmData.projectHub().getActiveProject()
             }
             console.log("FileDialog :" , projectId)
 
             if(projectName == ""){
-                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
             }
 
             var error = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
@@ -741,14 +741,14 @@ ApplicationWindow {
 
     Connections{
         target: plmData.projectHub()
-        function onDefaultProjectChanged(){
-            defaultProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+        function onActiveProjectChanged(){
+            activeProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
         }
     }
     Connections{
         target: plmData.projectHub()
         function onProjectNameChanged(){
-            defaultProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+            activeProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
         }
     }
 
@@ -877,12 +877,12 @@ ApplicationWindow {
                 file = file + ".skrib"
             }
             if(projectId == -2){
-                projectId = plmData.projectHub().getDefaultProject()
+                projectId = plmData.projectHub().getActiveProject()
             }
             console.log("FileDialog :" , projectId)
 
             if(projectName == ""){
-                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getDefaultProject())
+                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
             }
 
             var error = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))

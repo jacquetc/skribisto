@@ -56,8 +56,9 @@ public:
     PLMError             getError();
     Q_INVOKABLE bool                 isThereAnyLoadedProject();
 
-    Q_INVOKABLE int                  getDefaultProject();
-    Q_INVOKABLE void                 setDefaultProject(int defaultProject);
+    Q_INVOKABLE int                  getActiveProject();
+    Q_INVOKABLE void                 setActiveProject(int activeProject);
+    Q_INVOKABLE bool                 isThisProjectActive(int projectId);
 
 
     Q_INVOKABLE QList<int>           projectsNotSaved();
@@ -94,7 +95,7 @@ signals:
     Q_INVOKABLE void  isThereAnyLoadedProjectChanged(bool value);
     Q_INVOKABLE void             projectTypeChanged(int            projectId,
                                                     const QString& newType);
-    Q_INVOKABLE void             defaultProjectChanged(int            projectId);
+    Q_INVOKABLE void             activeProjectChanged(int            projectId);
     Q_INVOKABLE void             projectPathChanged(int            projectId,
                                                     const QUrl& newUrlPath);
     Q_INVOKABLE void             projectNameChanged(int            projectId,
@@ -117,7 +118,7 @@ private:
     PLMError m_error;
     QList<int>m_projectsNotModifiedOnceList, m_projectsNotSavedList;
     QString m_tableName;
-    int m_defaultProject;
+    int m_activeProject;
 };
 
 #endif // PLMPROJECTHUB_H
