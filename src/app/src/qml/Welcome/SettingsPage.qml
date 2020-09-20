@@ -142,6 +142,7 @@ SettingsPageForm {
 
     LabPlatform.FolderDialog{
         id: addBackupFolderDialog
+        folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
         onAccepted: {
             //                    var path = folderDialog.folder.toString()
             //                    path = path.replace(/^(file:\/{2})/,"");
@@ -168,7 +169,6 @@ SettingsPageForm {
 
 
             addBackupFolderDialog.open()
-            addBackupFolderDialog.currentFolder = LabPlatform.StandardPaths.standardLocations(LabPlatform.StandardPaths.DocumentsLocation)[0]
         }
     }
     addBackupPathButton.action: addBackupPathAction

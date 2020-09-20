@@ -12,7 +12,6 @@ Item {
     property alias leftDockMenuGroup: leftDockMenuGroup
     property alias leftDockResizeButton: leftDockResizeButton
     property alias leftDockMenuButton: leftDockMenuButton
-    property alias leftDock: leftDock
     property alias leftDockShowButton: leftDockShowButton
     property alias middleBase: middleBase
     property alias overview: overview
@@ -25,6 +24,7 @@ Item {
         clip: false
         spacing: 0
         anchors.fill: parent
+        anchors.leftMargin: Globals.compactSize ? undefined : leftDrawer.width * leftDrawer.position
 
         Pane {
             id: compactHeaderPane
@@ -74,11 +74,6 @@ Item {
                     spacing: 0
                     anchors.fill: parent
 
-                    LeftDock {
-                        id: leftDock
-                        z: 1
-                        Layout.fillHeight: true
-                    }
                     Pane {
                         id: leftPane
                         Layout.fillHeight: true

@@ -15,20 +15,6 @@ LeftDockForm {
         id: skrUserSettings
     }
 
-    // fold :
-    property bool folded: settings.dockFolded
-    onFoldedChanged: folded ? fold() : unfold()
-
-    function fold() {
-        state = "dockFolded"
-        settings.dockFolded = true
-        folded = true
-    }
-    function unfold() {
-        state = "dockUnfolded"
-        settings.dockFolded = false
-        folded = false
-    }
 
     splitView.handle: Item {
         implicitHeight: 8
@@ -106,7 +92,6 @@ LeftDockForm {
         id: settings
         category: "noteLeftDock"
         property var dockSplitView
-        property bool dockFolded: false
         property bool navigationFrameFolded: navigationFrame.folded ? true : false
         property bool documentFrameFolded: documentFrame.folded ? true : false
         property int width: fixedWidth
@@ -129,12 +114,7 @@ LeftDockForm {
     //    }
 
     function init(){
-        if(folded){
-            fold()
-        }
-        else{
-            unfold()
-        }
+
 
         navigationFrame.folded = settings.navigationFrameFolded
         documentFrame.folded = settings.documentFrameFolded
@@ -160,7 +140,6 @@ LeftDockForm {
     Component.onDestruction: {
 
         settings.dockSplitView = splitView.saveState()
-            settings.dockFolded = folded
 
     }
 

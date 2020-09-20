@@ -51,7 +51,7 @@ private:
 
     //    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
     // projectId, PLMError &error);
-    PLMError executeSQLFile(const QUrl& fileName,
+    PLMError executeSQLFile(const QString &fileName,
                             QSqlDatabase & sqlDB);
     PLMError executeSQLString(const QString& sqlString,
                             QSqlDatabase & sqlDB);

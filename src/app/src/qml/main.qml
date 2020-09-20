@@ -116,7 +116,7 @@ ApplicationWindow {
         title: qsTr("Open an existing project")
         modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
-        fileMode: FileDialog.OpenFile
+        fileMode: LabPlatform.FileDialog.OpenFile
         selectedNameFilter.index: 0
         nameFilters: ["Skribisto file (*.skrib)"]
         onAccepted: {
@@ -262,8 +262,8 @@ ApplicationWindow {
             saveAsFileDialog.open()
 
 
-            if(!plmData.projectHub().getPath(projectId)){
-                saveAsFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
+            if(!plmData.projectHub().getPath(projectId) && skrQMLTools.isURLSchemeQRC(plmData.projectHub().getPath(projectId))){
+                saveAsFileDialog.folder = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
             }
             else {
                 saveAsFileDialog.currentFile = skrQMLTools.translateURLToLocalFile(plmData.projectHub().getPath(projectId))
@@ -639,7 +639,7 @@ ApplicationWindow {
                 saveOrNotBeforeClosingProjectDialog.projectId = defaultProjectId
                 saveOrNotBeforeClosingProjectDialog.projectName = plmData.projectHub().getProjectName(defaultProjectId)
                 saveOrNotBeforeClosingProjectDialog.open()
-                saveOrNotBeforeClosingProjectDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
+                saveOrNotBeforeClosingProjectDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
             }
         }
 
@@ -788,10 +788,11 @@ ApplicationWindow {
                 continue
             }
             else {
-                saveOrNotBeforeClosingDialog.projectId = projectId
-                saveOrNotBeforeClosingDialog.projectName = plmData.projectHub().getProjectName(projectId)
-                saveOrNotBeforeClosingDialog.open()
-                saveOrNotBeforeClosingDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
+
+                saveOrNotBeforeQuitingDialog.projectId = projectId
+                saveOrNotBeforeQuitingDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                saveOrNotBeforeQuitingDialog.open()
+                //saveAsBeforeQuitingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
                 close.accepted = false
             }
 
@@ -818,7 +819,7 @@ ApplicationWindow {
         property int projectId: -2
         property string projectName: ""
 
-        id: saveOrNotBeforeClosingDialog
+        id: saveOrNotBeforeQuitingDialog
         title: "Warning"
         text: qsTr("The project %1 is not saved. Do you want to save it before quiting ?").arg(projectName)
         standardButtons: Dialog.Save  | Dialog.Discard | Dialog.Cancel
@@ -842,7 +843,6 @@ ApplicationWindow {
                 saveAsBeforeQuitingFileDialog.projectId = errorProjectId
                 saveAsBeforeQuitingFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
                 saveAsBeforeQuitingFileDialog.open()
-                saveAsBeforeQuitingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
             }
             else {
                 rootWindow.close()

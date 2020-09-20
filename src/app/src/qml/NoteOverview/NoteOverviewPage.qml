@@ -10,46 +10,35 @@ NoteOverviewPageForm {
     property string pageType: "noteOverview"
 
     Component.onCompleted: {
-        if(!Globals.compactSize){
-            leftDrawer.close()
-            leftDrawer.interactive = false
-        }
+
+
     }
 
     //-------------------------------------------------------------
     //-------Left Dock------------------------------------------
     //-------------------------------------------------------------
-    leftDock.enabled: !Globals.compactSize
 
-    leftDock.onFoldedChanged: {
-        if (leftDock.folded) {
-            leftDockMenuGroup.visible = false
-            leftDockMenuButton.checked = false
-            leftDockMenuButton.visible = false
-        } else {
-            leftDockMenuButton.visible = true
-        }
-    }
 
-    leftDockShowButton.onClicked: leftDock.folded ? leftDock.unfold(
-                                                        ) : leftDock.fold()
+    leftDockMenuGroup.visible: !Globals.compactSize
+    leftDockMenuButton.checked: !Globals.compactSize
+    leftDockMenuButton.visible: !Globals.compactSize
+
+
+    leftDockShowButton.onClicked: leftDrawer.visible ? leftDrawer.visible = false : leftDrawer.visible = true
+
     leftDockShowButton.icon {
-        name: leftDock.folded ? "go-next" : "go-previous"
+        name: leftDrawer.visible ? "go-previous" : "go-next"
         height: 50
         width: 50
     }
 
     leftDockMenuButton.onCheckedChanged: leftDockMenuButton.checked ? leftDockMenuGroup.visible = true : leftDockMenuGroup.visible = false
-    leftDockMenuButton.checked: false
     leftDockMenuButton.icon {
         name: "overflow-menu"
         height: 50
         width: 50
     }
 
-    //leftDockResizeButton.onVisibleChanged: leftDock.folded = false
-    //leftDockResizeButton.onClicked:
-    leftDockMenuGroup.visible: false
     leftDockResizeButton.icon {
         name: "resizecol"
         height: 50
@@ -72,9 +61,11 @@ NoteOverviewPageForm {
     property int leftDockResizeButtonFirstPressX: 0
     leftDockResizeButton.onReleased: {
         leftDockResizeButtonFirstPressX = 0
+        rootSwipeView.interactive = true
     }
 
     leftDockResizeButton.onPressXChanged: {
+
         if(leftDockResizeButtonFirstPressX === 0){
             leftDockResizeButtonFirstPressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
         }
@@ -90,45 +81,72 @@ NoteOverviewPageForm {
         if(leftDock.fixedWidth > 600){
             leftDock.fixedWidth = 600
         }
+
+
+
+    }
+
+    leftDockResizeButton.onPressed: {
+
+        rootSwipeView.interactive = false
+
+    }
+
+    leftDockResizeButton.onCanceled: {
+
+        rootSwipeView.interactive = true
+        leftDockResizeButtonFirstPressX = 0
+
     }
     //---------------------------------------------------------
 
+
+
+    property alias leftDock: leftDock
+    Drawer {
+        id: leftDrawer
+        parent: base
+
+        width: Globals.compactSize ? 400 : leftDock.fixedWidth
+        height: base.height
+        modal: false
+        interactive: Globals.compactSize
+        position: Globals.compactSize ? 0 : (leftDrawer.visible ? 1 : 0)
+        visible: !Globals.compactSize
+        edge: Qt.LeftEdge
+
+
+        LeftDock {
+            id: leftDock
+            anchors.fill: parent
+
+
+        }
+    }
+
+
+    // fullscreen :
+
+
+    property bool fullscreen_left_drawer_visible: false
+
     Connections {
         target: Globals
-        function onCompactSizeChanged() {
+        function onFullScreenCalled(value) {
+            if(value){
+                //save previous conf
+                fullscreen_left_drawer_visible = leftDrawer.visible
 
+                leftDrawer.visible = false
 
-            if (Globals.compactSize === true) {
-                leftDrawer.interactive = true
+            }
+            else{
+                leftDrawer.visible = fullscreen_left_drawer_visible
 
-            } else {
-                leftDrawer.close()
-                leftDrawer.interactive = false
             }
 
         }
     }
 
-    Drawer {
-        id: leftDrawer
-        enabled: Globals.compactSize
-        width: if (base.width * 0.6 > 400) {
-                   return 400
-               } else {
-                   return base.width * 0.6
-               }
-        height: base.height
-        modal: Globals.compactSize ? true : false
-        edge: Qt.LeftEdge
 
-        //        interactive: Globals.compactSize ? true : false
-        //        visible:true
-        //        position: Globals.compactSize ? 0 : 1
-        LeftDock {
-            id: compactLeftDock
-            anchors.fill: parent
-
-            settings.category: settings.category + "-drawer"
-        }
-    }
 }

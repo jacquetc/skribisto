@@ -1,8 +1,9 @@
 import QtQuick 2.15
-import Qt.labs.platform 1.1
 import ".."
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
+import Qt.labs.platform 1.1 as LabPlatform
+import QtQml 2.15
 import eu.skribisto.recentprojectlistmodel 1.0
 import eu.skribisto.plmerror 1.0
 
@@ -69,6 +70,8 @@ ProjectPageForm {
     //--New project page-----------------------------------------
     //-----------------------------------------------------------
 
+    property string fileName: fileName
+    property url folderNameURL
 
 
     goBackToolButton.onClicked: {
@@ -77,18 +80,19 @@ ProjectPageForm {
 
     selectProjectPathToolButton.onClicked: {
         folderDialog.open()
+        folderDialog.currentFolder = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+
 
     }
 
 
-    FolderDialog{
+    LabPlatform.FolderDialog{
         id: folderDialog
-        currentFolder: StandardPaths.standardLocations(StandardPaths.DocumentsLocation)[0]
+        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
 
         onAccepted: {
-            var path = folderDialog.folder.toString()
-            path = path.replace(/^(file:\/{2})/,"");
-            projectPathTextField.text = path
+            folderNameURL = folderDialog.folder
+            projectPathTextField.text = skrQMLTools.translateURLToLocalFile(folderNameURL)
         }
         onRejected: {
 
@@ -119,7 +123,7 @@ ProjectPageForm {
         var file = projectPathTextField.text + "/" + projectFileTextField.text + ".skrib"
 
 
-        fileName = file
+        fileName = skrQMLTools.setURLScheme(Qt.resolvedUrl(file), "file")
     }
     projectFileTextField.onTextEdited: {
         projectFileTextFiledEdited = true
@@ -127,9 +131,9 @@ ProjectPageForm {
 
     // path :
     projectPathTextField.text: {
-        //TODO : avoid empty writableLocation
-        var path = ""
-//                StandardPaths.writableLocation(StandardPaths.DocumentsLocation)[0].toString()
+
+        var path = skrQMLTools.translateURLToLocalFile(LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation))
+//
 //        path = path.replace(/^(file:\/{2})/,"")
 
         return path
@@ -138,13 +142,26 @@ ProjectPageForm {
     }
     projectPathTextField.onTextChanged: {
 
-        fileName = projectPathTextField.text + "/" + projectFileTextField.text + ".skrib"
+        folderNameURL = skrQMLTools.setURLScheme(Qt.resolvedUrl(projectPathTextField.text), "file")
+
+        var result = Qt.resolvedUrl(folderNameURL + "/" + projectFileTextField.text + ".skrib")
+        //result.protocol = "file"
+        fileName = result
     }
+
+
+    onFileNameChanged: {
+        console.log("onFileNameChanged",fileName.toString() )
+        projectDetailPathLabel.text = skrQMLTools.translateURLToLocalFile(fileName)
+    }
+
+
 
     // create :
 
     createNewProjectButton.onClicked: {
         //TODO: test fileName
+
 
         plmData.projectHub().createNewEmptyProject(fileName)
 
@@ -167,13 +184,13 @@ ProjectPageForm {
 
         swipeView.currentIndex = 0
         //root_stack.currentIndex = 1
-        Globals.openSheetOnNewTabCalled(projetId, firstSheetId)
+        Globals.openSheetInNewTabCalled(projetId, firstSheetId)
 
         //reset :
         projectTitleTextField.text = ""
         projectFileTextField.text = ""
         projectFileTextFiledEdited = false
-        projectPathTextField.text = ""
+        projectPathTextField.text = skrQMLTools.translateURLToLocalFile(LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation))
     }
 
 

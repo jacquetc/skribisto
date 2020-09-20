@@ -187,7 +187,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     }
 
     // new project :
-    IFOKDO(error, this->executeSQLFile(QUrl("qrc:/sql/sqlite_project.sql"), sqlDb));
+    IFOKDO(error, this->executeSQLFile(":/sql/sqlite_project.sql", sqlDb));
     QString sqlString = "INSERT INTO tbl_project (l_skribisto_maj_version, l_skribisto_min_version, l_db_maj_version, l_db_min_version) VALUES (2, 0, 1, 0)";
     IFOKDO(error, this->executeSQLString(sqlString, sqlDb));
 
@@ -317,9 +317,9 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 //    return destDB;
 // }
 
-PLMError PLMImporter::executeSQLFile(const QUrl& fileName, QSqlDatabase& sqlDB) {
+PLMError PLMImporter::executeSQLFile(const QString& fileName, QSqlDatabase& sqlDB) {
     PLMError  error;
-    QFile     file(fileName.toLocalFile());
+    QFile     file(fileName);
 
     // Read query file content
     file.open(QIODevice::ReadOnly);

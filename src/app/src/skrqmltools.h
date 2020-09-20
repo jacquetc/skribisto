@@ -48,7 +48,21 @@ Q_INVOKABLE QUrl getFolderPathURLFromURL(const QUrl &url) const{
 
     }
 
+    Q_INVOKABLE bool isURLSchemeQRC(const QUrl &url) const{
 
+        if(url.scheme() == "qrc"){
+            return true;
+    }
+        return false;
+    }
+
+
+    Q_INVOKABLE QUrl setURLScheme(const QUrl &url, const QString &scheme) const{
+        QUrl newUrl(url);
+        newUrl.setScheme(scheme);
+
+        return newUrl;
+    }
 
 };
 

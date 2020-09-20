@@ -37,7 +37,6 @@ PLMNoteListModel::PLMNoteListModel(QObject *parent)
             this,
             &PLMNoteListModel::refreshAfterProjectIsBackupChanged);
 
-
     this->connectToPLMDataSignals();
 }
 
@@ -577,6 +576,14 @@ void PLMNoteListModel::connectToPLMDataSignals()
                                            const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId, PLMNoteItem::Roles::NameRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(plmdata->projectHub(),
+                                           &PLMProjectHub::projectNameChanged, this,
+                                           [this](int projectId,
+                                           const QString& value) {
+        Q_UNUSED(value)
+        this->exploitSignalFromPLMData(projectId, -1, PLMNoteItem::Roles::ProjectNameRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->notePropertyHub(),

@@ -112,7 +112,7 @@ bool SKRSearchTagListProxyModel::setData(const QModelIndex &index, const QVarian
 
 QString SKRSearchTagListProxyModel::getItemName(int projectId, int paperId)
 {
-
+//TODO: to fill
 }
 
 

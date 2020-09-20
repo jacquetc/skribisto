@@ -159,10 +159,10 @@ Item {
 //                            id: writePage
 //                        }
 
-                        //                        NotePage {
-                        //                            id: notePage
+//                                                NotePage {
+//                                                    id: notePage
 
-                        //                        }
+//                                                }
                     }
                     //        PageIndicator {
                     //            id: indicator

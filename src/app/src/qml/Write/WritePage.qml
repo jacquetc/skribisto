@@ -86,13 +86,6 @@ WritePageForm {
     //---------------------------------------------------------
 
     Component.onCompleted: {
-        if(!Globals.compactSize){
-            leftDrawer.close()
-            leftDrawer.interactive = false
-            rightDrawer.close()
-            rightDrawer.interactive = false
-
-        }
 
 
         openDocument(projectId, paperId)
@@ -112,7 +105,6 @@ WritePageForm {
 
     function runActionsBedoreDestruction() {
 
-        console.log("runActionsBedoreDestruction")
         saveCurrentPaperCursorPositionAndY()
         contentSaveTimer.stop()
         saveContent()
@@ -165,26 +157,26 @@ WritePageForm {
             return value
         }
     }
-    Binding on rightBasePreferredWidth {
-        value:  {
-            var value = 0
-            if (Globals.compactSize === true){
-                value = -1;
-            }
-            else {
+//    Binding on rightBasePreferredWidth {
+//        value:  {
+//            var value = 0
+//            if (Globals.compactSize === true){
+//                value = -1;
+//            }
+//            else {
 
-                value = 400 + offset
-                if (value < 0) {
-                    value = 0
-                }
-                //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
-                //                console.debug("right offset :: ", offset)
-                //                console.debug("right value :: ", value)
+//                value = 400 + offset
+//                if (value < 0) {
+//                    value = 0
+//                }
+//                //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
+//                //                console.debug("right offset :: ", offset)
+//                //                console.debug("right value :: ", value)
 
-            }
-            rightBasePreferredWidth = value
-        }
-    }
+//            }
+//            rightBasePreferredWidth = value
+//        }
+//    }
     //    Binding on leftBaseMaximumWidth {
     //        when: SkrSettings.rootSettings.onLeftDockWidthChanged || Globals.onCompactSizeChanged || writingZone.onWidthChanged
     //            value:  {
@@ -282,8 +274,8 @@ WritePageForm {
     //------Actions----------------------------------------
     //---------------------------------------------------------
 
-    // fullscreen :
-    rightDock.editView.fullScreenToolButton.action: fullscreenAction
+
+
 
     Action {
 
@@ -308,7 +300,7 @@ WritePageForm {
             }
         }
     }
-    rightDock.editView.italicToolButton.action: italicAction
+
 
     Action {
 
@@ -333,7 +325,6 @@ WritePageForm {
             }
         }
     }
-    rightDock.editView.boldToolButton.action: boldAction
 
     Action {
 
@@ -358,7 +349,7 @@ WritePageForm {
             }
         }
     }
-    rightDock.editView.strikeToolButton.action: strikeAction
+
 
 
     Action {
@@ -384,7 +375,8 @@ WritePageForm {
             }
         }
     }
-    rightDock.editView.underlineToolButton.action: underlineAction
+
+
     //---------------------------------------------------------
 
 
@@ -434,10 +426,6 @@ WritePageForm {
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)
 
-
-        compactLeftDock.setCurrentPaperId(projectId, paperId)
-        compactLeftDock.setOpenedPaperId(projectId, paperId)
-
     }
 
     function saveCurrentPaperCursorPositionAndY(){
@@ -468,12 +456,12 @@ WritePageForm {
 
     //needed to adapt width to a shrinking window
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactSize && middleBase.width < writingZone.maximumTextAreaWidth
-        value: middleBase.width
+        when: !Globals.compactSize && middleBase.width - 200 < writingZone.maximumTextAreaWidth
+        value: middleBase.width - 200
 
     }
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactSize && middleBase.width >= writingZone.maximumTextAreaWidth
+        when: !Globals.compactSize && middleBase.width - 200 >= writingZone.maximumTextAreaWidth
         value: writingZone.maximumTextAreaWidth
 
     }
@@ -522,37 +510,29 @@ WritePageForm {
     //-------------------------------------------------------------
     //-------Left Dock------------------------------------------
     //-------------------------------------------------------------
-    leftDock.enabled: !Globals.compactSize
 
-    leftDock.onFoldedChanged: {
-        if (leftDock.folded) {
-            leftDockMenuGroup.visible = false
-            leftDockMenuButton.checked = false
-            leftDockMenuButton.visible = false
-        } else {
-            leftDockMenuButton.visible = true
-        }
-    }
 
-    leftDockShowButton.onClicked: leftDock.folded ? leftDock.unfold(
-                                                        ) : leftDock.fold()
+
+    leftDockMenuGroup.visible: !Globals.compactSize
+    leftDockMenuButton.checked: !Globals.compactSize
+    leftDockMenuButton.visible: !Globals.compactSize
+
+
+    leftDockShowButton.onClicked: leftDrawer.visible ? leftDrawer.visible = false : leftDrawer.visible = true
+
     leftDockShowButton.icon {
-        name: leftDock.folded ? "go-next" : "go-previous"
+        name: leftDrawer.visible ? "go-previous" : "go-next"
         height: 50
         width: 50
     }
 
     leftDockMenuButton.onCheckedChanged: leftDockMenuButton.checked ? leftDockMenuGroup.visible = true : leftDockMenuGroup.visible = false
-    leftDockMenuButton.checked: false
     leftDockMenuButton.icon {
         name: "overflow-menu"
         height: 50
         width: 50
     }
 
-    //leftDockResizeButton.onVisibleChanged: leftDock.folded = false
-    //leftDockResizeButton.onClicked:
-    leftDockMenuGroup.visible: false
     leftDockResizeButton.icon {
         name: "resizecol"
         height: 50
@@ -575,9 +555,11 @@ WritePageForm {
     property int leftDockResizeButtonFirstPressX: 0
     leftDockResizeButton.onReleased: {
         leftDockResizeButtonFirstPressX = 0
+        rootSwipeView.interactive = true
     }
 
     leftDockResizeButton.onPressXChanged: {
+
         if(leftDockResizeButtonFirstPressX === 0){
             leftDockResizeButtonFirstPressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
         }
@@ -593,6 +575,23 @@ WritePageForm {
         if(leftDock.fixedWidth > 600){
             leftDock.fixedWidth = 600
         }
+
+
+
+    }
+
+    leftDockResizeButton.onPressed: {
+
+        rootSwipeView.interactive = false
+
+    }
+
+    leftDockResizeButton.onCanceled: {
+
+        rootSwipeView.interactive = true
+        leftDockResizeButtonFirstPressX = 0
+
+
     }
 
     //-------------------------------------------------------------
@@ -601,36 +600,26 @@ WritePageForm {
 
 
 
-    rightDock.enabled: !Globals.compactSize
-    rightDock.onFoldedChanged: {
-        if (rightDock.folded) {
-            rightDockMenuGroup.visible = false
-            rightDockMenuButton.checked = false
-            rightDockMenuButton.visible = false
-        } else {
-            rightDockMenuButton.visible = true
-        }
-    }
 
-    rightDockShowButton.onClicked: rightDock.folded ? rightDock.unfold(
-                                                          ) : rightDock.fold()
+    rightDockMenuGroup.visible: !Globals.compactSize
+    rightDockMenuButton.checked: !Globals.compactSize
+    rightDockMenuButton.visible: !Globals.compactSize
+
+    rightDockShowButton.onClicked: rightDrawer.visible ? rightDrawer.visible = false : rightDrawer.visible = true
+
     rightDockShowButton.icon {
-        name: rightDock.folded ? "go-previous" : "go-next"
+        name: rightDock.visible ? "go-next" : "go-previous"
         height: 50
         width: 50
     }
 
     rightDockMenuButton.onCheckedChanged: rightDockMenuButton.checked ? rightDockMenuGroup.visible = true : rightDockMenuGroup.visible = false
-    rightDockMenuButton.checked: false
     rightDockMenuButton.icon {
         name: "overflow-menu"
         height: 50
         width: 50
     }
 
-    //rightDockResizeButton.onVisibleChanged: rightDock.folded = false
-    //rightDockResizeButton.onClicked:
-    rightDockMenuGroup.visible: false
     rightDockResizeButton.icon {
         name: "resizecol"
         height: 50
@@ -651,6 +640,7 @@ WritePageForm {
     property int rightDockResizeButtonFirstPressX: 0
     rightDockResizeButton.onReleased: {
         rightDockResizeButtonFirstPressX = 0
+        rootSwipeView.interactive = true
     }
 
     rightDockResizeButton.onPressXChanged: {
@@ -673,89 +663,82 @@ WritePageForm {
 
     }
 
+    rightDockResizeButton.onPressed: {
 
+            rootSwipeView.interactive = false
 
-
-
-    rightDock.projectId: projectId
-    rightDock.paperId: paperId
-
-
-    //---------------------------------------------------------
-    //---------------------------------------------------------
-
-
-    Connections {
-        target: Globals
-        function onCompactSizeChanged() {
-
-            if (Globals.compactSize === true) {
-                leftDrawer.interactive = true
-                rightDrawer.interactive = true
-
-            } else {
-                leftDrawer.close()
-                rightDrawer.close()
-                leftDrawer.interactive = false
-                rightDrawer.interactive = false
-            }
-        }
     }
+
+    rightDockResizeButton.onCanceled: {
+
+            rootSwipeView.interactive = true
+            rightDockResizeButtonFirstPressX = 0
+
+}
+
+
+
+
+
+    //---------------------------------------------------------
+    //---------------------------------------------------------
+
+
+    property alias leftDock: leftDock
+
+//    rightDock.projectId: projectId
+//    rightDock.paperId: paperId
+
 
     Drawer {
         id: leftDrawer
-        enabled: Globals.compactSize
-        width: if (base.width * 0.6 > 400) {
-                   return 400
-               } else {
-                   return base.width * 0.6
-               }
+        parent: base
+
+        width: Globals.compactSize ? 400 : leftDock.fixedWidth
         height: base.height
-        modal: Globals.compactSize ? true : false
+        modal: false
+        interactive: Globals.compactSize
+        position: Globals.compactSize ? 0 : (leftDrawer.visible ? 1 : 0)
+        visible: !Globals.compactSize
         edge: Qt.LeftEdge
 
-        //        interactive: Globals.compactSize ? true : false
-        //        visible:true
-        //        position: Globals.compactSize ? 0 : 1
-        WriteLeftDock {
-            id: compactLeftDock
-            anchors.fill: parent
 
-            settings.category: settings.category + "-drawer"
+        WriteLeftDock {
+            id: leftDock
+            anchors.fill: parent
 
         }
     }
 
+    property alias rightDock: rightDock
     Drawer {
         id: rightDrawer
-        enabled: Globals.compactSize
-        width: if (base.width * 0.6 > 400) {
-                   return 400
-               } else {
-                   return base.width * 0.6
-               }
+        parent: base
+        width:  Globals.compactSize ? 400 : rightDock.fixedWidth
         height: base.height
-        modal: Globals.compactSize ? true : false
+        modal: false
+        interactive: Globals.compactSize
+        position: Globals.compactSize ? 0 : (rightDrawer.visible ? 1 : 0)
+        visible: !Globals.compactSize
         edge: Qt.RightEdge
 
-        //        interactive: Globals.compactSize ? true : false
-        //        visible:true
-        //        position: Globals.compactSize ? 0 : 1
 
         WriteRightDock {
-            id: compactRightDock
+            id: rightDock
             anchors.fill: parent
 
-            settings.category: settings.category + "-drawer"
+            projectId: root.projectId
+            paperId: root.paperId
 
-            projectId: projectId
-            paperId: paperId
+
+            // fullscreen :
+            editView.fullScreenToolButton.action: fullscreenAction
 
             editView.italicToolButton.action: italicAction
             editView.boldToolButton.action: boldAction
             editView.strikeToolButton.action: strikeAction
             editView.underlineToolButton.action: underlineAction
-            editView.fullScreenToolButton.action: fullscreenAction
+
         }
     }
 
@@ -842,22 +825,24 @@ WritePageForm {
     //    }
 
 
-    property bool fullscreen_left_dock_folded: false
-    property bool fullscreen_right_dock_folded: false
+
     // fullscreen :
+
+    property bool fullscreen_left_drawer_visible: false
+    property bool fullscreen_right_drawer_visible: false
     Connections {
         target: Globals
         function onFullScreenCalled(value) {
             if(value){
                 //save previous conf
-                fullscreen_left_dock_folded = leftDock.folded
-                fullscreen_right_dock_folded = rightDock.folded
-                leftDock.fold()
-                rightDock.fold()
+                fullscreen_left_drawer_visible = leftDrawer.visible
+                fullscreen_right_drawer_visible = rightDrawer.visible
+                leftDrawer.visible = false
+                rightDrawer.visible = false
             }
             else{
-                leftDock.folded = fullscreen_left_dock_folded
-                rightDock.folded = fullscreen_right_dock_folded
+                leftDrawer.visible = fullscreen_left_drawer_visible
+                rightDrawer.visible = fullscreen_right_drawer_visible
             }
 
         }

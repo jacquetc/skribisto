@@ -31,7 +31,6 @@ Item {
     property alias recentListView: recentListView
     property alias newProjectButton: newProjectButton
     property alias folderDialogLoader: folderDialogLoader
-    property string fileName: fileName
 
     Pane {
         id: pane1
@@ -321,7 +320,6 @@ Item {
                             }
                             Label {
                                 id: projectDetailPathLabel
-                                text: fileName
                             }
                         }
                         RowLayout {

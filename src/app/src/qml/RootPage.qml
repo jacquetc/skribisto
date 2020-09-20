@@ -410,6 +410,11 @@ RootPageForm {
     Connections {
         target: Globals
         function onOpenSheetCalled(openedProjectId, openedPaperId, projectId, paperId) {
+
+            if(paperId === -1){
+                return
+        }
+
             var pageType = "write"
 
             // verify if project/sheetId not already opened
@@ -453,6 +458,11 @@ RootPageForm {
     Connections {
         target: Globals
         function onOpenSheetInNewTabCalled(projectId, paperId) {
+
+            if(paperId === -1){
+                return
+        }
+
             var pageType = "write"
             // verify if project/sheetId not already opened
             var tabId = pageType + "_" +  projectId + "_" + paperId
@@ -509,6 +519,11 @@ RootPageForm {
     Connections {
         target: Globals
         function onOpenNoteCalled(openedProjectId, openedPaperId, projectId, paperId) {
+
+            if(paperId === -1){
+                return
+        }
+
             var pageType = "note"
 
             // verify if project/noteId not already opened
@@ -547,6 +562,11 @@ RootPageForm {
     Connections {
         target: Globals
         function onOpenNoteInNewTabCalled(projectId, paperId) {
+
+            if(paperId === -1){
+                return
+        }
+
             var pageType = "note"
             // verify if project/noteId not already opened
             var tabId = pageType + "_" +  projectId + "_" + paperId

@@ -18,21 +18,6 @@ RightDockForm {
         id: skrUserSettings
     }
 
-    // fold :
-    property bool folded: settings.dockFolded
-    onFoldedChanged: folded ? fold() : unfold()
-
-    function fold() {
-        state = "dockFolded"
-        settings.dockFolded = true
-        folded = true
-    }
-    function unfold() {
-        state = "dockUnfolded"
-        settings.dockFolded = false
-        folded = false
-    }
-
     splitView.handle: Item {
         implicitHeight: 8
         RowLayout {
@@ -136,7 +121,6 @@ RightDockForm {
         id: settings
         category: "noteRightDock"
         property var dockSplitView
-        property bool dockFolded: false
         property bool editFrameFolded: editFrame.folded ? true : false
         property bool tagPadFrameFolded: tagPadFrame.folded ? true : false
         //        property bool documentFrameFolded: documentFrame.folded ? true : false
@@ -160,12 +144,6 @@ RightDockForm {
     }
 
     function init(){
-        if(folded){
-            fold()
-        }
-        else{
-            unfold()
-        }
 
         editFrame.folded = settings.editFrameFolded
         noteFrame.folded = settings.noteFrameFolded
@@ -183,7 +161,6 @@ RightDockForm {
 
     Component.onDestruction: {
             settings.dockSplitView = splitView.saveState()
-            settings.dockFolded = folded
     }
 
     onEnabledChanged: {

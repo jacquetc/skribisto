@@ -582,6 +582,7 @@ void PLMSheetListModel::refreshAfterProjectIsBackupChanged(int projectId, bool i
 
 }
 
+
 //void PLMSheetListModel::movePaper(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId)
 //{
 
@@ -616,6 +617,14 @@ void PLMSheetListModel::connectToPLMDataSignals()
                                            const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId, PLMSheetItem::Roles::NameRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(plmdata->projectHub(),
+                                           &PLMProjectHub::projectNameChanged, this,
+                                           [this](int projectId,
+                                           const QString& value) {
+        Q_UNUSED(value)
+        this->exploitSignalFromPLMData(projectId, -1, PLMSheetItem::Roles::ProjectNameRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->sheetPropertyHub(),

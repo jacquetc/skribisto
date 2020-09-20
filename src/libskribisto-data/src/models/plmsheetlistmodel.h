@@ -48,7 +48,6 @@ public:
     PLMSheetItem *getParentSheetItem(PLMSheetItem *chidItem);
     PLMSheetItem *getItem(int projectId, int paperId);
 
-protected:
 private slots:
     void populate();
     void clear();

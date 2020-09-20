@@ -19,8 +19,6 @@ Item {
     property alias rightDockResizeButton: rightDockResizeButton
     property alias leftDockMenuButton: leftDockMenuButton
     property alias rightDockMenuButton: rightDockMenuButton
-    property alias leftDock: leftDock
-    property alias rightDock: rightDock
     property alias leftDockShowButton: leftDockShowButton
     property alias rightDockShowButton: rightDockShowButton
     property alias minimap: minimap
@@ -39,6 +37,8 @@ Item {
         clip: false
         spacing: 0
         anchors.fill: parent
+        anchors.leftMargin: Globals.compactSize ? undefined : leftDrawer.width * leftDrawer.position + 10
+        anchors.rightMargin: Globals.compactSize ? undefined : rightDrawer.width * rightDrawer.position + 10
 
         Pane {
             id: compactHeaderPane
@@ -100,11 +100,6 @@ Item {
                     spacing: 0
                     anchors.fill: parent
 
-                    WriteLeftDock {
-                        id: leftDock
-                        z: 1
-                        Layout.fillHeight: true
-                    }
                     Pane {
                         id: leftPane
                         Layout.fillHeight: true
@@ -291,11 +286,6 @@ Item {
                         sourcePointSize: writingZone.textArea.font.pointSize
                     }
 
-                        id: rightDockContainer
-                        WriteRightDock {
-                        id: rightDock
-                        Layout.fillHeight: true
-                    }
 
 
 

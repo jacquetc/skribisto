@@ -4,7 +4,6 @@ import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.notelistproxymodel 1.0
 import eu.skribisto.searchnotelistproxymodel 1.0
-//import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import ".."
 
@@ -13,21 +12,6 @@ LeftDockForm {
 
     SkrUserSettings {
         id: skrUserSettings
-    }
-
-    // fold :
-    property bool folded: settings.dockFolded
-    onFoldedChanged: folded ? fold() : unfold()
-
-    function fold() {
-        state = "dockFolded"
-        settings.dockFolded = true
-        folded = true
-    }
-    function unfold() {
-        state = "dockUnfolded"
-        settings.dockFolded = false
-        folded = false
     }
 
     splitView.handle: Item {
@@ -104,7 +88,6 @@ LeftDockForm {
         id: settings
         category: "noteOverviewLeftDock"
         property var dockSplitView
-        property bool dockFolded: false
         property bool navigationFrameFolded: navigationFrame.folded ? true : false
         property int width: fixedWidth
     }
@@ -131,12 +114,7 @@ LeftDockForm {
 
 
     function init(){
-        if(folded){
-            fold()
-        }
-        else{
-            unfold()
-        }
+
         navigationFrame.folded = settings.navigationFrameFolded
 
 
@@ -154,7 +132,6 @@ LeftDockForm {
 
     Component.onDestruction: {
             settings.dockSplitView = splitView.saveState()
-            settings.dockFolded = folded
     }
 
     onEnabledChanged: {
