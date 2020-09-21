@@ -3,6 +3,7 @@ import QtQml 2.15
 import QtQuick.Controls 2.15
 import eu.skribisto.notehub 1.0
 import eu.skribisto.skrusersettings 1.0
+import "../Commons"
 import ".."
 
 NotePageForm {
@@ -434,10 +435,10 @@ NotePageForm {
     leftDockMenuButton.visible: !Globals.compactSize
 
 
-    leftDockShowButton.onClicked: leftDrawer.visible ? leftDrawer.visible = false : leftDrawer.visible = true
+    leftDockShowButton.onClicked: leftDrawer.isVisible ? leftDrawer.isVisible = false : leftDrawer.isVisible = true
 
     leftDockShowButton.icon {
-        name: leftDrawer.visible ? "go-previous" : "go-next"
+        name: leftDrawer.isVisible ? "go-previous" : "go-next"
         height: 50
         width: 50
     }
@@ -481,14 +482,14 @@ NotePageForm {
 
         var pressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
         var displacement = leftDockResizeButtonFirstPressX - pressX
-        leftDock.fixedWidth = leftDock.fixedWidth - displacement
+        leftDockFixedWidth = leftDockFixedWidth - displacement
         leftDockResizeButtonFirstPressX = pressX
 
-        if(leftDock.fixedWidth < 300){
-            leftDock.fixedWidth = 300
+        if(leftDockFixedWidth < 300){
+            leftDockFixedWidth = 300
         }
-        if(leftDock.fixedWidth > 600){
-            leftDock.fixedWidth = 600
+        if(leftDockFixedWidth > 600){
+            leftDockFixedWidth = 600
         }
 
 
@@ -517,10 +518,10 @@ NotePageForm {
     rightDockMenuGroup.visible: !Globals.compactSize && rightDockMenuButton.checked
     rightDockMenuButton.visible: !Globals.compactSize
 
-    rightDockShowButton.onClicked: rightDrawer.visible ? rightDrawer.visible = false : rightDrawer.visible = true
+    rightDockShowButton.onClicked: rightDrawer.isVisible ? rightDrawer.isVisible = false : rightDrawer.isVisible = true
 
     rightDockShowButton.icon {
-        name: rightDock.visible ? "go-next" : "go-previous"
+        name: rightDrawer.isVisible ? "go-next" : "go-previous"
         height: 50
         width: 50
     }
@@ -561,14 +562,14 @@ NotePageForm {
 
         var pressX = root.mapFromItem(rightDockResizeButton, rightDockResizeButton.pressX, 0).x
         var displacement = rightDockResizeButtonFirstPressX - pressX
-        rightDock.fixedWidth = rightDock.fixedWidth + displacement
+        rightDockFixedWidth = rightDockFixedWidth + displacement
         rightDockResizeButtonFirstPressX = pressX
 
-        if(rightDock.fixedWidth < 200){
-            rightDock.fixedWidth = 200
+        if(rightDockFixedWidth < 200){
+            rightDockFixedWidth = 200
         }
-        if(rightDock.fixedWidth > 350){
-            rightDock.fixedWidth = 350
+        if(rightDockFixedWidth > 350){
+            rightDockFixedWidth = 350
         }
 
 
@@ -597,17 +598,17 @@ NotePageForm {
 
 
     property alias leftDock: leftDock
-    Drawer {
+    property int leftDockFixedWidth: 400
+    Dock {
         id: leftDrawer
         parent: base
         enabled: base.enabled
 
-        width: Globals.compactSize ? 400 : leftDock.fixedWidth
+        width: Globals.compactSize ? 400 : leftDockFixedWidth
         height: base.height
-        modal: false
         interactive: Globals.compactSize
-        position: Globals.compactSize ? 0 : (leftDrawer.visible ? 1 : 0)
-        visible: !Globals.compactSize
+        position: Globals.compactSize ? 0 : (leftDrawer.isVisible ? 1 : 0)
+        isVisible: !Globals.compactSize
         edge: Qt.LeftEdge
 
 
@@ -621,19 +622,16 @@ NotePageForm {
 
 
     property alias rightDock: rightDock
-//    rightDock.projectId: projectId
-//    rightDock.paperId: paperId
-
-    Drawer {
+    property int rightDockFixedWidth: 400
+    Dock {
         id: rightDrawer
         parent: base
         enabled: base.enabled
-        width:  Globals.compactSize ? 400 : rightDock.fixedWidth
+        width:  Globals.compactSize ? 400 : rightDockFixedWidth
         height: base.height
-        modal: false
         interactive: Globals.compactSize
-        position: Globals.compactSize ? 0 : (rightDrawer.visible ? 1 : 0)
-        visible: !Globals.compactSize
+        position: Globals.compactSize ? 0 : (rightDrawer.isVisible ? 1 : 0)
+        isVisible: !Globals.compactSize
         edge: Qt.RightEdge
 
 

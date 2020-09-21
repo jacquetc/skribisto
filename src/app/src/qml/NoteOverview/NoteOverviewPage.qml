@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../Commons"
 import ".."
 
 
@@ -23,10 +24,10 @@ NoteOverviewPageForm {
     leftDockMenuButton.visible: !Globals.compactSize
 
 
-    leftDockShowButton.onClicked: leftDrawer.visible ? leftDrawer.visible = false : leftDrawer.visible = true
+    leftDockShowButton.onClicked: leftDrawer.isVisible ? leftDrawer.isVisible = false : leftDrawer.isVisible = true
 
     leftDockShowButton.icon {
-        name: leftDrawer.visible ? "go-previous" : "go-next"
+        name: leftDrawer.isVisible ? "go-previous" : "go-next"
         height: 50
         width: 50
     }
@@ -70,14 +71,14 @@ NoteOverviewPageForm {
 
         var pressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
         var displacement = leftDockResizeButtonFirstPressX - pressX
-        leftDock.fixedWidth = leftDock.fixedWidth - displacement
+        leftDockFixedWidth = leftDockFixedWidth - displacement
         leftDockResizeButtonFirstPressX = pressX
 
-        if(leftDock.fixedWidth < 300){
-            leftDock.fixedWidth = 300
+        if(leftDockFixedWidth < 300){
+            leftDockFixedWidth = 300
         }
-        if(leftDock.fixedWidth > 600){
-            leftDock.fixedWidth = 600
+        if(leftDockFixedWidth > 600){
+            leftDockFixedWidth = 600
         }
 
 
@@ -101,17 +102,17 @@ NoteOverviewPageForm {
 
 
     property alias leftDock: leftDock
-    Drawer {
+    property int leftDockFixedWidth: 400
+    Dock {
         id: leftDrawer
         parent: base
         enabled: base.enabled
 
-        width: Globals.compactSize ? 400 : leftDock.fixedWidth
+        width: Globals.compactSize ? 400 : leftDockFixedWidth
         height: base.height
-        modal: false
         interactive: Globals.compactSize
-        position: Globals.compactSize ? 0 : (leftDrawer.visible ? 1 : 0)
-        visible: !Globals.compactSize
+        position: Globals.compactSize ? 0 : (leftDrawer.isVisible ? 1 : 0)
+        isVisible: !Globals.compactSize
         edge: Qt.LeftEdge
 
 
