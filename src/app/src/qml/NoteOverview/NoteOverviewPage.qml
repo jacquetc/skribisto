@@ -104,6 +104,7 @@ NoteOverviewPageForm {
     Drawer {
         id: leftDrawer
         parent: base
+        enabled: base.enabled
 
         width: Globals.compactSize ? 400 : leftDock.fixedWidth
         height: base.height

@@ -146,7 +146,6 @@ RightDockForm {
     function init(){
 
         editFrame.folded = settings.editFrameFolded
-        noteFrame.folded = settings.noteFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
 
         fixedWidth = settings.width

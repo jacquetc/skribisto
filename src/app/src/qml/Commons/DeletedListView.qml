@@ -227,6 +227,7 @@ DeletedListViewForm {
 
     //    }
     Shortcut {
+        enabled: listView.enabled
         sequences: ["Left", "Backspace"]
         onActivated: goBackAction.trigger()
         //enabled: listView.activeFocus
@@ -830,7 +831,7 @@ DeletedListViewForm {
                     icon {
                         name: "document-edit"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled
                     onTriggered: {
                         console.log("from deleted: open paper action", model.projectId,
                                     model.paperId)
@@ -845,7 +846,7 @@ DeletedListViewForm {
                     icon {
                         name: "tab-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.focus === true
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled
                     onTriggered: {
                         console.log("from deleted: open paper in new tab action", model.projectId,
                                     model.paperId)
@@ -862,7 +863,7 @@ DeletedListViewForm {
                     icon {
                         name: "edit-rename"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.focus === true
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled
                     onTriggered: {
                         console.log("from deleted: rename action", model.projectId,
                                     model.paperId)
@@ -879,7 +880,7 @@ DeletedListViewForm {
                     icon {
                         name: "edit-copy"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.focus === true
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled
 
                     onTriggered: {
                         console.log("from deleted: copy action", model.projectId,
@@ -894,7 +895,7 @@ DeletedListViewForm {
                     icon {
                         name: "edit-cut"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.focus === true
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled
 
                     onTriggered: {
                         console.log("from deleted: cut action", model.projectId,
@@ -911,7 +912,7 @@ DeletedListViewForm {
                     icon {
                         name: "document-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.focus === true
+                    enabled: contextMenuItemIndex === model.index && listView.enabled
                     onTriggered: {
                         //TODO: fill that
                         console.log("from deleted: add before action", model.projectId,
@@ -926,7 +927,7 @@ DeletedListViewForm {
                     icon {
                         name: "document-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.focus === true
+                    enabled: contextMenuItemIndex === model.index && listView.enabled
                     onTriggered: {
                         //TODO: fill that
                         console.log("from deleted: add after action", model.projectId,
@@ -943,7 +944,7 @@ DeletedListViewForm {
                     icon {
                         name: "object-order-raise"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.focus === true
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled
                              && model.index !== 0
                     onTriggered: {
                         console.log("from deleted: move up action", model.projectId,
@@ -960,7 +961,7 @@ DeletedListViewForm {
                     icon {
                         name: "object-order-lower"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.focus === true
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled
                              && model.index !== visualModel.items.count - 1
 
                     onTriggered: {
@@ -977,7 +978,7 @@ DeletedListViewForm {
                     icon {
                         name: "edit-delete"
                     }
-                    enabled: contextMenuItemIndex === model.index && listView.focus === true && model.indent !== -1
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
                     onTriggered: {
                         console.log("from deleted: delete action", model.projectId,
                                     model.paperId)

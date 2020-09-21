@@ -8,7 +8,6 @@ import ".."
 WritePageForm {
     id: root
 
-
     property string title: {return getTitle()}
 
     function getTitle(){
@@ -156,6 +155,7 @@ WritePageForm {
             }
             return value
         }
+        restoreMode: Binding.RestoreBindingOrValue
     }
 //    Binding on rightBasePreferredWidth {
 //        value:  {
@@ -277,104 +277,29 @@ WritePageForm {
 
 
 
-    Action {
+    Connections {
+        target: italicAction
+        onTriggered: closeRightDrawer()
+    }
+    Connections {
+        target: boldAction
+        onTriggered: closeRightDrawer()
+    }
+    Connections {
+        target: strikeAction
+        onTriggered: closeRightDrawer()
+    }
+    Connections {
+        target: underlineAction
+        onTriggered: closeRightDrawer()
+    }
 
-        id: italicAction
-        text: qsTr("Italic")
-        icon {
-            name: "format-text-italic"
-            height: 50
-            width: 50
-        }
-
-        shortcut: StandardKey.Italic
-        checkable: true
-
-        onCheckedChanged: {
-            writingZone.documentHandler.italic = italicAction.checked
-            if(!lastFocused.activeFocus){
-                writingZone.forceActiveFocus()
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-            }
+    function closeRightDrawer(){
+        if(Globals.compactSize){
+            rightDrawer.close()
         }
     }
 
-
-    Action {
-
-        id: boldAction
-        text: qsTr("Bold")
-        icon {
-            name: "format-text-bold"
-            height: 50
-            width: 50
-        }
-
-        shortcut: StandardKey.Bold
-        checkable: true
-
-        onCheckedChanged: {
-            writingZone.documentHandler.bold = boldAction.checked
-            if(!lastFocused.activeFocus){
-                writingZone.forceActiveFocus()
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-            }
-        }
-    }
-
-    Action {
-
-        id: strikeAction
-        text: qsTr("Strike")
-        icon {
-            name: "format-text-strikethrough"
-            height: 50
-            width: 50
-        }
-
-        //shortcut: StandardKey
-        checkable: true
-
-        onCheckedChanged: {
-            writingZone.documentHandler.strikeout = strikeAction.checked
-            if(!lastFocused.activeFocus){
-                writingZone.forceActiveFocus()
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-            }
-        }
-    }
-
-
-
-    Action {
-
-        id: underlineAction
-        text: qsTr("Underline")
-        icon {
-            name: "format-text-underline"
-            height: 50
-            width: 50
-        }
-
-        shortcut: StandardKey.Underline
-        checkable: true
-
-        onCheckedChanged: {
-            writingZone.documentHandler.underline = underlineAction.checked
-            if(!lastFocused.activeFocus){
-                writingZone.forceActiveFocus()
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-            }
-        }
-    }
 
 
     //---------------------------------------------------------
@@ -458,11 +383,13 @@ WritePageForm {
     Binding on writingZone.textAreaWidth {
         when: !Globals.compactSize && middleBase.width - 200 < writingZone.maximumTextAreaWidth
         value: middleBase.width - 200
+        restoreMode: Binding.RestoreBindingOrValue
 
     }
     Binding on writingZone.textAreaWidth {
         when: !Globals.compactSize && middleBase.width - 200 >= writingZone.maximumTextAreaWidth
         value: writingZone.maximumTextAreaWidth
+        restoreMode: Binding.RestoreBindingOrValue
 
     }
 
@@ -477,6 +404,7 @@ WritePageForm {
     Binding on minimap.text {
         when: minimapVisibility
         value: writingZone.textArea.text
+        restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
 
@@ -484,11 +412,13 @@ WritePageForm {
     Binding on writingZone.internalScrollBar.position {
         when: minimapVisibility
         value: minimap.position
+        restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
     Binding on  minimap.position {
         when: minimapVisibility
         value: writingZone.internalScrollBar.position
+        restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
 
@@ -683,12 +613,9 @@ WritePageForm {
 
     property alias leftDock: leftDock
 
-//    rightDock.projectId: projectId
-//    rightDock.paperId: paperId
-
-
     Drawer {
         id: leftDrawer
+        enabled: base.enabled
         parent: base
 
         width: Globals.compactSize ? 400 : leftDock.fixedWidth
@@ -710,6 +637,7 @@ WritePageForm {
     property alias rightDock: rightDock
     Drawer {
         id: rightDrawer
+        enabled: base.enabled
         parent: base
         width:  Globals.compactSize ? 400 : rightDock.fixedWidth
         height: base.height
@@ -728,18 +656,12 @@ WritePageForm {
             paperId: root.paperId
 
 
-            // fullscreen :
-            editView.fullScreenToolButton.action: fullscreenAction
-
-            editView.italicToolButton.action: italicAction
-            editView.boldToolButton.action: boldAction
-            editView.strikeToolButton.action: strikeAction
-            editView.underlineToolButton.action: underlineAction
 
         }
+
+
+
     }
-
-
 
 
     // save content once after writing:

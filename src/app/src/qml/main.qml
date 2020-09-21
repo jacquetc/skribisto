@@ -51,13 +51,18 @@ ApplicationWindow {
             width: 50
         }
 
-        shortcut: StandardKey.FullScreen
+        //shortcut: StandardKey.FullScreen
         checkable: true
         onCheckedChanged: {
             Globals.fullScreenCalled(fullscreenAction.checked)
         }
     }
 
+    Shortcut {
+        sequence:  StandardKey.FullScreen
+        context: Qt.ApplicationShortcut
+        onActivated: fullscreenAction.trigger()
+    }
 
     //------------------------------------------------------------------
     //---------New project---------
@@ -73,7 +78,7 @@ ApplicationWindow {
             width: 50
         }
 
-        shortcut: StandardKey.New
+        //shortcut: StandardKey.New
         onTriggered: {
             console.log("New Project")
             Globals.showWelcomePage()
@@ -82,8 +87,13 @@ ApplicationWindow {
         }
 
 
-
     }
+    Shortcut {
+        sequence:  StandardKey.New
+        context: Qt.ApplicationShortcut
+        onActivated: newProjectAction.trigger()
+    }
+
     //------------------------------------------------------------------
     //---------Open project---------
     //------------------------------------------------------------------
@@ -144,7 +154,7 @@ ApplicationWindow {
             width: 50
         }
 
-        shortcut: StandardKey.Save
+        //shortcut: StandardKey.Save
         onTriggered: {
             var projectId = plmData.projectHub().getActiveProject()
             var error = plmData.projectHub().saveProject(projectId)
@@ -157,7 +167,12 @@ ApplicationWindow {
 
         }
     }
+    Shortcut {
+        sequence: StandardKey.Save
+        context: Qt.ApplicationShortcut
+        onActivated: saveAction.trigger()
 
+    }
 
     Connections {
         target: plmData.projectHub()
@@ -209,7 +224,7 @@ ApplicationWindow {
             width: 50
         }
 
-        shortcut: "Ctrl+Shift+S"
+        //shortcut: "Ctrl+Shift+S"
         onTriggered: {
             var projectIdList = plmData.projectHub().getProjectIdList()
             var projectCount = plmData.projectHub().getProjectCount()
@@ -226,6 +241,12 @@ ApplicationWindow {
                 }
             }
         }
+    }
+    Shortcut {
+        sequence: qsTr("Ctrl+Shift+S")
+        context: Qt.ApplicationShortcut
+        onActivated: saveAllAction.trigger()
+
     }
 
     Connections {
@@ -254,7 +275,7 @@ ApplicationWindow {
             width: 50
         }
 
-        shortcut: StandardKey.SaveAs
+        //shortcut: StandardKey.SaveAs
         onTriggered: {
             var projectId = plmData.projectHub().getActiveProject()
             saveACopyFileDialog.projectId = projectId
@@ -269,14 +290,16 @@ ApplicationWindow {
                 saveAsFileDialog.currentFile = skrQMLTools.translateURLToLocalFile(plmData.projectHub().getPath(projectId))
             }
 
-
-
-
-
-
-
         }
     }
+
+    Shortcut {
+        sequence: StandardKey.SaveAs
+        context: Qt.ApplicationShortcut
+        onActivated: saveAsAction.trigger()
+
+    }
+
     LabPlatform.FileDialog{
         property int projectId: -2
         property string projectName: ""
@@ -411,12 +434,12 @@ ApplicationWindow {
 
     //    }
 
-//    Shortcut {
-//        sequence: StandardKey.Quit
-//        context: Qt.ApplicationShortcut
-//        onActivated: Qt.quit()
+    //    Shortcut {
+    //        sequence: StandardKey.Quit
+    //        context: Qt.ApplicationShortcut
+    //        onActivated: Qt.quit()
 
-//    }
+    //    }
 
     // style :
     //palette.window: "white"
@@ -571,6 +594,12 @@ ApplicationWindow {
             Globals.showPrintWizard()
 
         }
+    }
+
+    Shortcut {
+        sequence: StandardKey.Print
+        context: Qt.ApplicationShortcut
+        onActivated: printAction.trigger()
     }
     //------------------------------------------------------------
     //------------Import project-----------------------------------
@@ -765,9 +794,9 @@ ApplicationWindow {
             width: 50
         }
 
-        shortcut: StandardKey.Quit
+        //        shortcut: StandardKey.Quit
         onTriggered: {
-            console.log("Quit")
+            rootWindow.close()
 
         }
     }
@@ -812,6 +841,12 @@ ApplicationWindow {
             close.accepted = true
         }
 
+    }
+
+    Shortcut {
+        sequence: StandardKey.Quit
+        context: Qt.ApplicationShortcut
+        onActivated: quitAction.trigger()
     }
 
 
@@ -1000,7 +1035,7 @@ ApplicationWindow {
     Action {
         id: cutAction
         text: qsTr("Cut")
-        shortcut: StandardKey.Cut
+        //shortcut: StandardKey.Cut
         icon {
             name: "edit-cut"
         }
@@ -1009,10 +1044,16 @@ ApplicationWindow {
             skrEditMenuSignalHub.cutActionTriggered()
         }
     }
+    Shortcut{
+        sequence: StandardKey.Cut
+        context: Qt.ApplicationShortcut
+        onActivated: cutAction.trigger()
+    }
+
     Action {
         id: copyAction
         text: qsTr("Copy")
-        shortcut: StandardKey.Copy
+        //shortcut: StandardKey.Copy
         icon {
             name: "edit-copy"
         }
@@ -1021,10 +1062,16 @@ ApplicationWindow {
             skrEditMenuSignalHub.copyActionTriggered()
         }
     }
+    Shortcut{
+        sequence: StandardKey.Copy
+        context: Qt.ApplicationShortcut
+        onActivated: copyAction.trigger()
+    }
+
     Action {
         id: pasteAction
         text: qsTr("Paste")
-        shortcut: StandardKey.Paste
+        //shortcut: StandardKey.Paste
         icon {
             name: "edit-paste"
         }
@@ -1033,8 +1080,133 @@ ApplicationWindow {
             skrEditMenuSignalHub.pasteActionTriggered()
         }
     }
+    Shortcut{
+        sequence: StandardKey.Paste
+        context: Qt.ApplicationShortcut
+        onActivated: pasteAction.trigger()
+    }
 
 
+
+    Action {
+        property bool preventTriggger: false
+
+        id: italicAction
+        text: qsTr("Italic")
+        icon {
+            name: "format-text-italic"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.Italic
+        checkable: true
+
+        onCheckedChanged: {
+            if(preventTriggger){
+                preventTriggger = false
+                return
+            }
+            skrEditMenuSignalHub.italicActionTriggered(italicAction.checked)
+
+        }
+    }
+    Shortcut{
+        sequence: StandardKey.Italic
+        context: Qt.ApplicationShortcut
+        onActivated: italicAction.trigger()
+    }
+
+
+    Action {
+        property bool preventTriggger: false
+
+        id: boldAction
+        text: qsTr("Bold")
+        icon {
+            name: "format-text-bold"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.Bold
+        checkable: true
+
+        onCheckedChanged: {
+            if(preventTriggger){
+                preventTriggger = false
+                return
+            }
+            skrEditMenuSignalHub.boldActionTriggered(boldAction.checked)
+
+        }
+    }
+    Shortcut{
+        sequence: StandardKey.Bold
+        context: Qt.ApplicationShortcut
+        onActivated: boldAction.trigger()
+    }
+
+
+    Action {
+        property bool preventTriggger: false
+
+        id: strikeAction
+        text: qsTr("Strike")
+        icon {
+            name: "format-text-strikethrough"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey
+        checkable: true
+
+        onCheckedChanged: {
+            if(preventTriggger){
+                preventTriggger = false
+                return
+            }
+            skrEditMenuSignalHub.strikeActionTriggered(strikeAction.checked)
+
+        }
+    }
+    //        Shortcut{
+    //            sequence:
+    //            context: Qt.ApplicationShortcut
+    //            onActivated: strikeAction.trigger()
+    //        }
+
+
+
+    Action {
+        property bool preventTriggger: false
+
+        id: underlineAction
+        text: qsTr("Underline")
+        icon {
+            name: "format-text-underline"
+            height: 50
+            width: 50
+        }
+
+        shortcut: StandardKey.Underline
+        checkable: true
+
+        onCheckedChanged: {
+            if(preventTriggger){
+                preventTriggger = false
+                return
+            }
+            skrEditMenuSignalHub.underlineActionTriggered(underlineAction.checked)
+
+        }
+    }
+    Shortcut{
+        sequence: StandardKey.Underline
+        context: Qt.ApplicationShortcut
+        onActivated: underlineAction.trigger()
+    }
     //    Keys.onReleased: {
     //        if(event.key === Qt.Key_Alt){
     //            console.log("alt")

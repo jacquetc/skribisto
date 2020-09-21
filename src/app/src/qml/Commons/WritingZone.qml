@@ -42,45 +42,45 @@ WritingZoneForm {
 
     //quit fullscreen :
 
-//    Shortcut {
-//        enabled: textArea.activeFocus
-//        sequence: "Esc"
-//        onActivatedAmbiguously: {
-//            console.log("activated 2")
-//            if(fullscreenAction.checked === true){
-//            fullscreenAction.checked = false
+    //    Shortcut {
+    //        enabled: textArea.activeFocus
+    //        sequence: "Esc"
+    //        onActivatedAmbiguously: {
+    //            console.log("activated 2")
+    //            if(fullscreenAction.checked === true){
+    //            fullscreenAction.checked = false
 
-//            }
+    //            }
 
-//        }
-//    }
-
-
-//    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
-
-//        console.log("escape in WritingZone z")
-//        if (event.key === Qt.Key_Escape){
-//            console.log("escape in WritingZone a")
-//            if (textArea.activeFocus){
-//                     if(fullscreenAction.checked === true){
-//                         console.log("escape in WritingZone b")
-//                            fullscreenAction.checked = false
-//                         event.accepted = true
-//                     }
-//                     else
-//                     {
-//                         event.accepted = false
-//                     }
-//            }
-//            event.accepted = false
+    //        }
+    //    }
 
 
-//        }
-//        if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Ke){
+    //    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
 
-//        }
+    //        console.log("escape in WritingZone z")
+    //        if (event.key === Qt.Key_Escape){
+    //            console.log("escape in WritingZone a")
+    //            if (textArea.activeFocus){
+    //                     if(fullscreenAction.checked === true){
+    //                         console.log("escape in WritingZone b")
+    //                            fullscreenAction.checked = false
+    //                         event.accepted = true
+    //                     }
+    //                     else
+    //                     {
+    //                         event.accepted = false
+    //                     }
+    //            }
+    //            event.accepted = false
 
-//    }
+
+    //        }
+    //        if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Ke){
+
+    //        }
+
+    //    }
 
 
 
@@ -118,6 +118,7 @@ WritingZoneForm {
 
 
             //console.log("disconnect", skrEditMenuSignalHub.clearCutConnections())
+            skrEditMenuSignalHub.clearCutConnections()
             skrEditMenuSignalHub.clearCopyConnections()
             skrEditMenuSignalHub.clearPasteConnections()
             skrEditMenuSignalHub.subscribe(textArea.objectName)
@@ -125,15 +126,27 @@ WritingZoneForm {
             skrEditMenuSignalHub.copyActionTriggered.connect(copy)
             skrEditMenuSignalHub.pasteActionTriggered.connect(paste)
 
+            italicAction.checked = documentHandler.italic
+            skrEditMenuSignalHub.italicActionTriggered.connect(italic)
+
+            boldAction.checked = documentHandler.bold
+            skrEditMenuSignalHub.boldActionTriggered.connect(bold)
+
+            strikeAction.checked = documentHandler.strikeout
+            skrEditMenuSignalHub.strikeActionTriggered.connect(strike)
+
+            underlineAction.checked = documentHandler.underline
+            skrEditMenuSignalHub.underlineActionTriggered.connect(underline)
+
         }
     }
-//    Binding{
-//        target: cutAction
-//        property: "enabled"
-//        value: textArea.selectedText !== "" ? true : false
-//        when: textArea.activeFocus
-//        restoreMode: Binding.RestoreBindingOrValue
-//    }
+    //    Binding{
+    //        target: cutAction
+    //        property: "enabled"
+    //        value: textArea.selectedText !== "" ? true : false
+    //        when: textArea.activeFocus
+    //        restoreMode: Binding.RestoreBindingOrValue
+    //    }
 
     Component.onDestruction: {
         skrEditMenuSignalHub.unsubscribe(textArea.objectName)
@@ -144,28 +157,80 @@ WritingZoneForm {
 
         console.log("cut action text", textArea.selectedText)
         textArea.cut()
+        textArea.forceActiveFocus()
 
     }
     function copy(){
 
         console.log("copy action text", textArea.selectedText)
         textArea.copy()
+        textArea.forceActiveFocus()
 
     }
     function paste(){
 
         console.log("paste action text")
         textArea.paste()
+        textArea.forceActiveFocus()
 
     }
 
+    function italic(checked){
 
+        console.log("italic action text")
+        documentHandler.italic = checked
+        textArea.forceActiveFocus()
+    }
+
+    function bold(checked){
+
+        console.log("bold action text")
+        documentHandler.bold = checked
+        textArea.forceActiveFocus()
+    }
+    function strike(checked){
+
+        console.log("strike action text")
+        documentHandler.strikeout = checked
+        textArea.forceActiveFocus()
+    }
+    function underline(checked){
+
+        console.log("underline action text")
+        documentHandler.underline = checked
+        textArea.forceActiveFocus()
+    }
     //menu :
     Menu {
         id: menu
         objectName: "editMenu"
 
 
+        MenuItem{
+            action: italicAction
+            objectName: "italicItem"
+        }
+
+        MenuItem {
+
+            action: boldAction
+            objectName: "boldItem"
+
+        }
+
+        MenuItem {
+            action: strikeAction
+            objectName: "strikeItem"
+
+
+        }
+
+        MenuItem {
+            action: underlineAction
+            objectName: "undelineItem"
+
+
+        }
 
         MenuSeparator {}
 
@@ -183,8 +248,8 @@ WritingZoneForm {
 
         }
         MenuItem {
-            objectName: "pasteItem"
             action: pasteAction
+            objectName: "pasteItem"
 
         }
         MenuSeparator {}
@@ -251,12 +316,19 @@ WritingZoneForm {
     //        selectionEnd = textArea.selectionEnd
     //    }
 
-    //    textArea.onCursorPositionChanged: {
-    //        if(textArea.activeFocus){
-    //        cursorPosition = textArea.cursorPosition
-    //        documentHandler.cursorPosition = textArea.cursorPosition
-    //        }
-    //    }
+    textArea.onCursorPositionChanged: {
+        if(textArea.activeFocus){
+            italicAction.preventTriggger = true
+            italicAction.checked = documentHandler.italic
+            boldAction.preventTriggger = true
+            boldAction.checked = documentHandler.bold
+            strikeAction.preventTriggger = true
+            strikeAction.checked = documentHandler.strikeout
+            underlineAction.preventTriggger = true
+            underlineAction.checked = documentHandler.underline
+
+        }
+    }
 
     //    property int cursorPosition: 0
     //    onCursorPositionChanged: {

@@ -255,102 +255,31 @@ NotePageForm {
     //---------------------------------------------------------
 
 
-    Action {
 
-        id: italicAction
-        text: qsTr("Italic")
-        icon {
-            name: "format-text-italic"
-            height: 50
-            width: 50
-        }
 
-        shortcut: StandardKey.Italic
-        checkable: true
+    Connections {
+        target: italicAction
+        onTriggered: closeRightDrawer()
+    }
+    Connections {
+        target: boldAction
+        onTriggered: closeRightDrawer()
+    }
+    Connections {
+        target: strikeAction
+        onTriggered: closeRightDrawer()
+    }
+    Connections {
+        target: underlineAction
+        onTriggered: closeRightDrawer()
+    }
 
-        onCheckedChanged: {
-            writingZone.documentHandler.italic = italicAction.checked
-            if(!lastFocused.activeFocus){
-                writingZone.forceActiveFocus()
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-            }
+    function closeRightDrawer(){
+        if(Globals.compactSize){
+            rightDrawer.close()
         }
     }
 
-    Action {
-
-        id: boldAction
-        text: qsTr("Bold")
-        icon {
-            name: "format-text-bold"
-            height: 50
-            width: 50
-        }
-
-        shortcut: StandardKey.Bold
-        checkable: true
-
-        onCheckedChanged: {
-            writingZone.documentHandler.bold = boldAction.checked
-            if(!lastFocused.activeFocus){
-                writingZone.forceActiveFocus()
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-            }
-        }
-    }
-
-    Action {
-
-        id: strikeAction
-        text: qsTr("Strike")
-        icon {
-            name: "format-text-strikethrough"
-            height: 50
-            width: 50
-        }
-
-        //shortcut: StandardKey
-        checkable: true
-
-        onCheckedChanged: {
-            writingZone.documentHandler.strikeout = strikeAction.checked
-            if(!lastFocused.activeFocus){
-                writingZone.forceActiveFocus()
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-            }
-        }
-    }
-
-
-    Action {
-
-        id: underlineAction
-        text: qsTr("Underline")
-        icon {
-            name: "format-text-underline"
-            height: 50
-            width: 50
-        }
-
-        shortcut: StandardKey.Underline
-        checkable: true
-
-        onCheckedChanged: {
-            writingZone.documentHandler.underline = underlineAction.checked
-            if(!lastFocused.activeFocus){
-                writingZone.forceActiveFocus()
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-            }
-        }
-    }
 
     //---------------------------------------------------------
 
@@ -662,6 +591,7 @@ NotePageForm {
     Drawer {
         id: leftDrawer
         parent: base
+        enabled: base.enabled
 
         width: Globals.compactSize ? 400 : leftDock.fixedWidth
         height: base.height
@@ -688,6 +618,7 @@ NotePageForm {
     Drawer {
         id: rightDrawer
         parent: base
+        enabled: base.enabled
         width:  Globals.compactSize ? 400 : rightDock.fixedWidth
         height: base.height
         modal: false
@@ -700,19 +631,14 @@ NotePageForm {
         RightDock {
             id: rightDock
             anchors.fill: parent
-
             projectId: root.projectId
             paperId: root.paperId
 
 
-            // fullscreen :
-            editView.fullScreenToolButton.action: fullscreenAction
-
-            editView.italicToolButton.action: italicAction
-            editView.boldToolButton.action: boldAction
-            editView.strikeToolButton.action: strikeAction
-            editView.underlineToolButton.action: underlineAction
         }
+
+
+
     }
 
 

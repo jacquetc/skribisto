@@ -163,7 +163,20 @@ bool DocumentHandler::italic() const
         }
         return m_textCursor.charFormat().fontItalic();
     } else {
-        return m_selectionCursor.charFormat().fontItalic();
+        int start = m_selectionCursor.anchor() + 1;
+        int end = m_selectionCursor.position();
+
+        bool result = true;
+        QTextCursor cursor(m_textDoc->textDocument());
+        for(int i = start; i <= end ; i++){
+            cursor.setPosition(i);
+            result = cursor.charFormat().fontItalic();
+            if(!result){
+                break;
+            }
+        }
+
+        return result;
     }
 }
 
@@ -213,7 +226,20 @@ bool DocumentHandler::bold() const
         }
         return m_textCursor.charFormat().fontWeight() >= QFont::Bold;
     } else {
-        return m_selectionCursor.charFormat().fontWeight() >= QFont::Bold;
+        int start = m_selectionCursor.anchor() + 1;
+        int end = m_selectionCursor.position();
+
+        bool result = true;
+        QTextCursor cursor(m_textDoc->textDocument());
+        for(int i = start; i <= end ; i++){
+            cursor.setPosition(i);
+            result = cursor.charFormat().fontWeight() >= QFont::Bold;
+            if(!result){
+                break;
+            }
+        }
+
+        return result;
     }
 }
 
@@ -238,7 +264,20 @@ bool DocumentHandler::underline() const
         }
         return m_textCursor.charFormat().fontUnderline();
     } else {
-        return m_selectionCursor.charFormat().fontUnderline();
+        int start = m_selectionCursor.anchor() + 1;
+        int end = m_selectionCursor.position();
+
+        bool result = true;
+        QTextCursor cursor(m_textDoc->textDocument());
+        for(int i = start; i <= end ; i++){
+            cursor.setPosition(i);
+            result = cursor.charFormat().fontUnderline();
+            if(!result){
+                break;
+            }
+        }
+
+        return result;
     }
 }
 
@@ -263,7 +302,20 @@ bool DocumentHandler::strikeout() const
         }
         return m_textCursor.charFormat().fontStrikeOut();
     } else {
-        return m_selectionCursor.charFormat().fontStrikeOut();
+        int start = m_selectionCursor.anchor() + 1;
+        int end = m_selectionCursor.position();
+
+        bool result = true;
+        QTextCursor cursor(m_textDoc->textDocument());
+        for(int i = start; i <= end ; i++){
+            cursor.setPosition(i);
+            result = cursor.charFormat().fontStrikeOut();
+            if(!result){
+                break;
+            }
+        }
+
+        return result;
     }
 }
 

@@ -972,6 +972,7 @@ TreeListViewForm {
                         name: "edit-rename"
                     }
                     enabled: contextMenuItemIndex === model.index && listView.enabled
+
                     onTriggered: {
                         console.log("rename action", model.projectId,
                                     model.paperId)

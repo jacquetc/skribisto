@@ -22,6 +22,30 @@ bool SKREditMenuSignalHub::clearPasteConnections()
 
 }
 
+bool SKREditMenuSignalHub::clearItalicConnections()
+{
+    return this->disconnect(SIGNAL(italicActionTriggered()));
+
+}
+
+bool SKREditMenuSignalHub::clearBoldConnections()
+{
+    return this->disconnect(SIGNAL(boldActionTriggered()));
+
+}
+
+bool SKREditMenuSignalHub::clearStrikeConnections()
+{
+    return this->disconnect(SIGNAL(strikeActionTriggered()));
+
+}
+
+bool SKREditMenuSignalHub::clearUnderlineConnections()
+{
+    return this->disconnect(SIGNAL(underlineActionTriggered()));
+
+}
+
 void SKREditMenuSignalHub::subscribe(const QString &objectName)
 {
     if(!m_subscribedList.contains(objectName)){

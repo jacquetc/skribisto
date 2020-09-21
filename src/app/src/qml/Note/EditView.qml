@@ -10,6 +10,18 @@ EditViewForm {
     swipeView.currentIndex: 0
 
 
+
+    italicToolButton.action: italicAction
+    boldToolButton.action: boldAction
+    strikeToolButton.action: strikeAction
+    underlineToolButton.action: underlineAction
+
+    // fullscreen :
+    fullScreenToolButton.action: fullscreenAction
+
+
+
+
     Action{
         id: sizeAction
         text: qsTr("Sizes")
@@ -63,13 +75,6 @@ EditViewForm {
         }
 
     }
-    //    Shortcut{
-    //        id: goBackShortcut
-    //        sequences: ["Backspace"]
-    //        onActivated: {
-    //            console.log("goBackShortcut")
-    //            goBackAction.trigger()}
-    //    }
 
     goBackToolButton.action: goBackAction
     goBack2ToolButton.action: goBackAction
@@ -85,6 +90,7 @@ EditViewForm {
         property: "textWidth"
         value: textWidthSlider.value
         delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     // textPointSizeSlider :
@@ -97,6 +103,7 @@ EditViewForm {
         property: "textPointSize"
         value: textPointSizeSlider.value
         delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     // Font family combo :
@@ -107,6 +114,7 @@ EditViewForm {
         property: "textFontFamily"
         value: fontFamilyComboBox.currentText
         delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     // needed because the SkrSettings won't work for FontFamily
@@ -138,6 +146,7 @@ EditViewForm {
         property: "textIndent"
         value: textIndentSlider.value
         delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     // Margins :
@@ -148,6 +157,7 @@ EditViewForm {
         property: "textTopMargin"
         value: textTopMarginSlider.value
         delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
 
