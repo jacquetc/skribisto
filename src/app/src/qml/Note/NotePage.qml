@@ -54,6 +54,15 @@ NotePageForm {
         }
     }
 
+    // focus
+    Connections {
+        enabled: writingZone.enabled
+        target: Globals
+        function onForceFocusOnEscapePressed(){
+            writingZone.forceActiveFocus()
+        }
+    }
+
 
     //---------------------------------------------------------
 

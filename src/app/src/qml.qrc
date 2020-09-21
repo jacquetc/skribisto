@@ -1,7 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>qtquickcontrols2.conf</file>
-        <file>qml/DockFrame.qml</file>
+        <file>qml/ToolFrame.qml</file>
         <file>qml/Globals.qml</file>
         <file>qml/main.qml</file>
         <file>qml/ProjectListItem.qml</file>
@@ -9,8 +9,8 @@
         <file>qml/qmldir</file>
         <file>qml/RootPage.qml</file>
         <file>qml/RootPageForm.ui.qml</file>
-        <file>qml/DockHeader.qml</file>
-        <file>qml/DockHeaderForm.ui.qml</file>
+        <file>qml/ToolHeader.qml</file>
+        <file>qml/ToolHeaderForm.ui.qml</file>
         <file>qml/SkrSettings.qml</file>
         <file>qml/Welcome/WelcomePage.qml</file>
         <file>qml/Welcome/WelcomePageForm.ui.qml</file>

@@ -15,8 +15,8 @@ Item {
     property int minimumContainerHeight: -1
     property int dynamicHeight
     property int dynamicWidth
-    property alias folded: dockHeader.folded
-    property alias title: dockHeader.title
+    property alias folded: toolHeader.folded
+    property alias title: toolHeader.title
     property int scrollBarVerticalPolicy: ScrollBar.AlwaysOff
 
     onFoldedChanged: {
@@ -38,8 +38,8 @@ Item {
         id: gridLayout
         anchors.fill: parent
 
-        DockHeader {
-            id: dockHeader
+        ToolHeader {
+            id: toolHeader
             Layout.minimumHeight: 30
             Layout.minimumWidth: 30
             Layout.preferredHeight: dynamicHeight
@@ -147,14 +147,14 @@ Item {
     states: [
         State {
             name: "folded"
-            when: dockHeader.folded === true
+            when: toolHeader.folded === true
 
             PropertyChanges {
                 target: scrollView
                 visible: false
             }
             PropertyChanges {
-                target: dockHeader
+                target: toolHeader
                 Layout.fillWidth: true
             }
             PropertyChanges {
@@ -169,7 +169,7 @@ Item {
             }
         },State {
             name: "unfolded"
-            when: dockHeader.folded === false
+            when: toolHeader.folded === false
 
             PropertyChanges {
                 target: scrollView
@@ -177,7 +177,7 @@ Item {
 
             }
             PropertyChanges {
-                target: dockHeader
+                target: toolHeader
                 Layout.fillWidth: false
             }
             PropertyChanges {

@@ -1257,85 +1257,133 @@ ApplicationWindow {
             skrEditMenuSignalHub.subscribe(menuBar.objectName)
         }
 
+
+        //        Shortcut {
+        //            sequence: StandardKey.Cancel
+        //            context: Qt.ApplicationShortcut
+        //            onActivated: {
+        //                var menus = menuBar.menus
+        //                console.log("Cancel")
+        //                var i;
+        //                for(i = 0 ; i < menus.length ; i++){
+        //                    console.log(i)
+        //                    menus[i].close()
+        //                }
+
+        //                Globals.forceFocusOnEscapePressed()
+        //            }
+        //        }
+
+
         Menu {
             id: fileMenu
             title: qsTr("&File")
-            MenuItem{
-                action: newProjectAction
-            }
-            MenuItem{
-                action: openProjectAction
-            }
-            MenuSeparator { }
-            MenuItem{
-                action: printAction
-            }
-            MenuItem{
-                action: importAction
-            }
-            MenuItem{
-                action: exportAction
-            }
 
-            MenuSeparator { }
-            MenuItem{
-                action: saveAction
-            }
-            MenuItem{
-                action: saveAsAction
-            }
-            MenuItem{
-                action: saveACopyAction
-            }
-            MenuItem{
-                action: saveAllAction
-            }
 
-            MenuSeparator { }
-            MenuItem{
-                action: closeCurrentProjectAction
-            }
-            MenuItem{
-                action: quitAction
-            }
+//            Shortcut {
+//                sequence: skrQMLTools.mnemonic(fileMenu.title)
+//                context: Qt.ApplicationShortcut
+//                onActivated: {
+//                    console.log("fileMenu")
+//                    menuBar.setCurrentIndex(0)
+//                    menuBar.contentData[0].down = true
+//                    menuBar.contentData[0].forceActiveFocus()
+
+//                    //                    fileMenu.open()
+////                    fileMenu.currentIndex = 0
+//                }
+//            }
+
+//            Keys.priority: Keys.BeforeItem
+//                        Keys.onEscapePressed: {
+//                            var menus = menuBar.menus
+//                            console.log("Cancel")
+//                            var i;
+//                            for(i = 0 ; i < menus.length ; i++){
+//                                console.log(i)
+//                                menus[i].dismiss()
+//                            }
+
+//                            Globals.forceFocusOnEscapePressed()
+//                        }
+
+
+        MenuItem{
+            action: newProjectAction
         }
-        Menu {
-            id: editMenu
-            objectName: "editMenu"
-            title: qsTr("&Edit")
-
-
-            MenuItem{
-                id: cutItem
-                objectName: "cutItem"
-                action: cutAction
-            }
-            MenuItem{
-                id: copyItem
-                objectName: "copyItem"
-                action: copyAction
-            }
-            MenuItem{
-                id: pasteItem
-                objectName: "pasteItem"
-                action: pasteAction
-            }
-
-            Component.onCompleted:{
-                skrEditMenuSignalHub.subscribe(editMenu.objectName)
-                skrEditMenuSignalHub.subscribe(cutItem.objectName)
-                skrEditMenuSignalHub.subscribe(copyItem.objectName)
-                skrEditMenuSignalHub.subscribe(pasteItem.objectName)
-            }
-
+        MenuItem{
+            action: openProjectAction
         }
-        Menu {
-            title: qsTr("&Help")
-            Action { text: qsTr("&About") }
+        MenuSeparator { }
+        MenuItem{
+            action: printAction
+        }
+        MenuItem{
+            action: importAction
+        }
+        MenuItem{
+            action: exportAction
         }
 
+        MenuSeparator { }
+        MenuItem{
+            action: saveAction
+        }
+        MenuItem{
+            action: saveAsAction
+        }
+        MenuItem{
+            action: saveACopyAction
+        }
+        MenuItem{
+            action: saveAllAction
+        }
+
+        MenuSeparator { }
+        MenuItem{
+            action: closeCurrentProjectAction
+        }
+        MenuItem{
+            action: quitAction
+        }
+    }
+    Menu {
+        id: editMenu
+        objectName: "editMenu"
+        title: qsTr("&Edit")
+
+
+        MenuItem{
+            id: cutItem
+            objectName: "cutItem"
+            action: cutAction
+        }
+        MenuItem{
+            id: copyItem
+            objectName: "copyItem"
+            action: copyAction
+        }
+        MenuItem{
+            id: pasteItem
+            objectName: "pasteItem"
+            action: pasteAction
+        }
+
+        Component.onCompleted:{
+            skrEditMenuSignalHub.subscribe(editMenu.objectName)
+            skrEditMenuSignalHub.subscribe(cutItem.objectName)
+            skrEditMenuSignalHub.subscribe(copyItem.objectName)
+            skrEditMenuSignalHub.subscribe(pasteItem.objectName)
+        }
 
     }
+    Menu {
+        title: qsTr("&Help")
+        Action { text: qsTr("&About") }
+    }
+
+
+}
 
 
 

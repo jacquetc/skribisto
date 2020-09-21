@@ -67,7 +67,7 @@ WritePageForm {
     }
     // focus
     Connections {
-        enabled: writingZone.visible
+        enabled: writingZone.enabled
         target: Globals
         function onForceFocusOnEscapePressed(){
             writingZone.forceActiveFocus()

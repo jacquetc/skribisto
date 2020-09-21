@@ -23,6 +23,7 @@
 
 
 #include <QFileInfo>
+#include <QKeySequence>
 #include <QObject>
 #include <QUrl>
 
@@ -62,6 +63,9 @@ Q_INVOKABLE QUrl getFolderPathURLFromURL(const QUrl &url) const{
         newUrl.setScheme(scheme);
 
         return newUrl;
+    }
+    Q_INVOKABLE QString mnemonic(const QString &text){
+        return QKeySequence::mnemonic(text).toString();
     }
 
 };

@@ -53,7 +53,7 @@ Item {
 
                                 width: scrollView.width
 
-                                DockFrame {
+                                ToolFrame {
                                     id: editFrame
                                     folded: false
                                     title: qsTr("Edit")
@@ -74,7 +74,7 @@ Item {
                                         clip: true
                                     }
                                 }
-                                DockFrame {
+                                ToolFrame {
 
                                     id: tagPadFrame
                                     folded: true
@@ -95,7 +95,7 @@ Item {
                                     }
                                 }
 
-                                DockFrame {
+                                ToolFrame {
                                     id: notePadFrame
                                     folded: true
                                     title: qsTr("Notes")
@@ -118,7 +118,7 @@ Item {
 
                                 //                            Loader{
                                 //                                id: writeTreeViewHeader
-                                //                                sourceComponent: dockHeaderComp
+                                //                                sourceComponent: toolHeaderComp
                                 //                                width: scrollview.contentWidth
                                 //                                property string headerText: qsTr("Navigation")
 
@@ -131,7 +131,7 @@ Item {
                                 //                            }
                                 //                            Loader{
                                 //                                id: toolsHeader
-                                //                                sourceComponent: dockHeaderComp
+                                //                                sourceComponent: toolHeaderComp
                                 //                                width: scrollview.contentWidth
                                 //                                property string headerText: qsTr("Tools")
 
@@ -165,7 +165,7 @@ Item {
                             //                        //width: scrollview.contentWidth
 
                             //                        Component{
-                            //                            id: dockHeaderComp
+                            //                            id: toolHeaderComp
                             //                            RowLayout {
 
                             //                                Text{
@@ -177,7 +177,7 @@ Item {
                             //                        }
                             //                        Loader{
                             //                            id: writeTreeViewHeader
-                            //                            sourceComponent: dockHeaderComp
+                            //                            sourceComponent: toolHeaderComp
                             //                            //Layout.fillWidth: true
                             //                            property string headerText: qsTr("Navigation")
 
