@@ -92,7 +92,6 @@ LeftDockForm {
         category: "writeOverviewLeftDock"
         property var dockSplitView
         property bool navigationFrameFolded: navigationFrame.folded ? true : false
-        property int width: fixedWidth
     }
 
 
@@ -124,7 +123,6 @@ LeftDockForm {
 
         navigation.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
 
-        fixedWidth = settings.width
         splitView.restoreState(settings.dockSplitView)
     }
 

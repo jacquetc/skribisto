@@ -94,7 +94,6 @@ LeftDockForm {
         property var dockSplitView
         property bool navigationFrameFolded: navigationFrame.folded ? true : false
         property bool documentFrameFolded: documentFrame.folded ? true : false
-        property int width: fixedWidth
     }
 
     function setCurrentPaperId(projectId, paperId) {
@@ -125,7 +124,6 @@ LeftDockForm {
 
         //
 
-        fixedWidth = settings.width
         splitView.restoreState(settings.dockSplitView)
 
 

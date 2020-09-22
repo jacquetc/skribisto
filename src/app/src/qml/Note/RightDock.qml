@@ -124,7 +124,6 @@ RightDockForm {
         property bool editFrameFolded: editFrame.folded ? true : false
         property bool tagPadFrameFolded: tagPadFrame.folded ? true : false
         //        property bool documentFrameFolded: documentFrame.folded ? true : false
-        property int width: fixedWidth
     }
 
 
@@ -148,7 +147,6 @@ RightDockForm {
         editFrame.folded = settings.editFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
 
-        fixedWidth = settings.width
         splitView.restoreState(settings.dockSplitView)
 
     }

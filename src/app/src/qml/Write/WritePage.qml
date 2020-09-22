@@ -3,6 +3,7 @@ import QtQml 2.15
 import QtQuick.Controls 2.15
 import eu.skribisto.sheethub 1.0
 import eu.skribisto.skrusersettings 1.0
+import Qt.labs.settings 1.1
 import "../Commons"
 import ".."
 
@@ -633,6 +634,20 @@ WritePageForm {
             anchors.fill: parent
 
         }
+
+
+
+        Component.onCompleted: {
+            leftDockFixedWidth = leftSettings.width
+        }
+
+
+        Settings {
+            id: leftSettings
+            category: "writeLeftDock"
+            property int width: leftDockFixedWidth
+        }
+
     }
 
     property alias rightDock: rightDock
@@ -661,6 +676,16 @@ WritePageForm {
         }
 
 
+        Component.onCompleted: {
+            rightDockFixedWidth = rightSettings.width
+        }
+
+
+        Settings {
+            id: rightSettings
+            category: "writeRightDock"
+            property int width: rightDockFixedWidth
+        }
 
     }
 

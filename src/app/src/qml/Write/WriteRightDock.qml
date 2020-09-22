@@ -116,7 +116,6 @@ WriteRightDockForm {
         property bool notePadFrameFolded: notePadFrame.folded ? true : false
         property bool tagPadFrameFolded: tagPadFrame.folded ? true : false
         //        property bool documentFrameFolded: documentFrame.folded ? true : false
-        property int width: fixedWidth
     }
 
 
@@ -154,7 +153,6 @@ WriteRightDockForm {
         editFrame.folded = settings.editFrameFolded
         notePadFrame.folded = settings.notePadFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
-        fixedWidth = settings.width
 
         var result = splitView.restoreState(settings.dockSplitView)
 
