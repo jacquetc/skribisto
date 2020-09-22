@@ -249,11 +249,62 @@ NotePadForm {
     noteWritingZone.textTopMargin: SkrSettings.notePadSettings.textTopMargin
     // save content once after writing:
     noteWritingZone.textArea.onTextChanged: {
+
+        // create if nothing opened
+        if(currentNoteId === -2 && noteWritingZone.textArea.length === 1){
+
+            notePadPrivateObject.newText = noteWritingZone.text
+
+            //create basic note
+            var error = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
+            if (!error.success){
+                //TODO: add notification
+                return
+            }
+
+            var noteId = error.getDataList()[0]
+
+            // set title
+            var title = titleTextField.text
+            plmData.noteHub().setTitle(projectId, noteId, qsTr("New note"))
+
+
+
+            noteIdToOpen = noteId
+            openDocumentAfterClosingPopupTimer.start()
+            newOnTheFlyNotePositionAndTextTimer.start()
+        }
+
+
+
+
         if(contentSaveTimer.running){
             contentSaveTimer.stop()
         }
         contentSaveTimer.start()
     }
+
+    QtObject{
+        id: notePadPrivateObject
+        property string newText: ""
+
+    }
+
+    Timer{
+        id: newOnTheFlyNotePositionAndTextTimer
+        repeat: false
+        interval: 0
+        onTriggered: {
+
+            plmData.noteHub().setContent(projectId, noteIdToOpen, notePadPrivateObject.newText)
+            noteWritingZone.textArea.cursorPosition = 1
+        }
+    }
+
+
+
+
+
     Timer{
         id: contentSaveTimer
         repeat: false
@@ -267,6 +318,13 @@ NotePadForm {
             plmData.noteHub().setContent(projectId, currentNoteId, noteWritingZone.text)
         }
     }
+
+
+//    noteWritingZone.onActiveFocusChanged: {
+//            noteWritingZone.text = plmData.sheetHub().getContent(projectId, currentNoteId)
+//            restoreCurrentPaperCursorPositionAndY()
+//}
+
 
     // project to be closed :
     Connections{
@@ -302,18 +360,11 @@ NotePadForm {
         noteWritingZone.documentHandler.topMarginEverywhere = SkrSettings.notePadSettings.textTopMargin
 
 
-        //get cursor position
-        var position = skrUserSettings.getFromProjectSettingHash(
-                    _projectId, "notePadPositionHash", _noteId, 0)
-        //get Y
-        var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
-                    _projectId, "notePadYHash", _noteId, 0)
-        // set positions :
-        noteWritingZone.setCursorPosition(position)
-        noteWritingZone.flickable.contentY = visibleAreaY
+
         currentNoteId = _noteId
         projectId = _projectId
 
+        restoreCurrentPaperCursorPositionAndY()
 
         noteWritingZone.forceActiveFocus()
         //save :
@@ -323,6 +374,22 @@ NotePadForm {
         if(!saveCurrentPaperCursorPositionAndYTimer.running){
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
+
+    }
+
+    function restoreCurrentPaperCursorPositionAndY(){
+
+        //get cursor position
+        var position = skrUserSettings.getFromProjectSettingHash(
+                    projectId, "notePadPositionHash", currentNoteId, 0)
+        //get Y
+        var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
+                    projectId, "notePadYHash", currentNoteId, 0)
+        console.log("newCursorPosition", position)
+
+        // set positions :
+        writingZone.setCursorPosition(position)
+        writingZone.flickable.contentY = visibleAreaY
 
     }
 
@@ -352,7 +419,6 @@ NotePadForm {
         interval: 10000
         onTriggered: saveCurrentPaperCursorPositionAndY()
     }
-
 
 
 
@@ -709,10 +775,18 @@ NotePadForm {
             for(i=0; i < noteListModel.count; i++){
                 var item = noteListModel.get(i)
                 
-                console.log("r " + i)
                 if (item.itemNoteId === noteId){
                     console.log("removing " + i)
                     noteListModel.remove(i)
+
+                    // clear:
+                    if(currentNoteId === noteId){
+
+                        contentSaveTimer.stop()
+                        currentNoteId = -2
+                        noteWritingZone.clear()
+                    }
+
                     break
                 }
                 

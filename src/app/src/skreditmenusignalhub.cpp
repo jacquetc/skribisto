@@ -24,25 +24,25 @@ bool SKREditMenuSignalHub::clearPasteConnections()
 
 bool SKREditMenuSignalHub::clearItalicConnections()
 {
-    return this->disconnect(SIGNAL(italicActionTriggered()));
+    return this->disconnect(SIGNAL(italicActionTriggered(bool)));
 
 }
 
 bool SKREditMenuSignalHub::clearBoldConnections()
 {
-    return this->disconnect(SIGNAL(boldActionTriggered()));
+    return this->disconnect(SIGNAL(boldActionTriggered(bool)));
 
 }
 
 bool SKREditMenuSignalHub::clearStrikeConnections()
 {
-    return this->disconnect(SIGNAL(strikeActionTriggered()));
+    return this->disconnect(SIGNAL(strikeActionTriggered(bool)));
 
 }
 
 bool SKREditMenuSignalHub::clearUnderlineConnections()
 {
-    return this->disconnect(SIGNAL(underlineActionTriggered()));
+    return this->disconnect(SIGNAL(underlineActionTriggered(bool)));
 
 }
 

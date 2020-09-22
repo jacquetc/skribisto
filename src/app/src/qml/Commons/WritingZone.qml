@@ -40,6 +40,10 @@ WritingZoneForm {
 
 
 
+    function clear(){
+        textArea.clear()
+    }
+
     //quit fullscreen :
 
     //    Shortcut {

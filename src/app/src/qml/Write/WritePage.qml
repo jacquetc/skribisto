@@ -319,6 +319,11 @@ WritePageForm {
             saveCurrentPaperCursorPositionAndY()
         }
 
+
+        paperId = _paperId
+        projectId = _projectId
+
+
         console.log("opening sheet :", _projectId, _paperId)
         writingZone.text = plmData.sheetHub().getContent(_projectId, _paperId)
         title = plmData.sheetHub().getTitle(_projectId, _paperId)
@@ -327,20 +332,7 @@ WritePageForm {
         writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent
         writingZone.documentHandler.topMarginEverywhere = SkrSettings.writeSettings.textTopMargin
 
-
-        //get cursor position
-        var position = skrUserSettings.getFromProjectSettingHash(
-                    _projectId, "writeSheetPositionHash", _paperId, 0)
-        //get Y
-        var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
-                    _projectId, "writeSheetYHash", _paperId, 0)
-        console.log("newCursorPosition", position)
-
-        // set positions :
-        writingZone.setCursorPosition(position)
-        writingZone.flickable.contentY = visibleAreaY
-        paperId = _paperId
-        projectId = _projectId
+        restoreCurrentPaperCursorPositionAndY()
 
         writingZone.forceActiveFocus()
         //save :
@@ -355,6 +347,23 @@ WritePageForm {
         leftDock.setOpenedPaperId(projectId, paperId)
 
     }
+
+    function restoreCurrentPaperCursorPositionAndY(){
+
+        //get cursor position
+        var position = skrUserSettings.getFromProjectSettingHash(
+                    projectId, "writeSheetPositionHash", paperId, 0)
+        //get Y
+        var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
+                    projectId, "writeSheetYHash", paperId, 0)
+        console.log("newCursorPosition", position)
+
+        // set positions :
+        writingZone.setCursorPosition(position)
+        writingZone.flickable.contentY = visibleAreaY
+
+    }
+
 
     function saveCurrentPaperCursorPositionAndY(){
 
@@ -697,7 +706,9 @@ WritePageForm {
         }
     }
 
-
+    //------------------------------------------------------------
+    //------------------------------------------------------------
+    //------------------------------------------------------------
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
 
@@ -733,7 +744,10 @@ WritePageForm {
         }
     }
 
-
+    writingZone.onActiveFocusChanged: {
+            writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
+            restoreCurrentPaperCursorPositionAndY()
+}
 
 
     //    // project to be closed :

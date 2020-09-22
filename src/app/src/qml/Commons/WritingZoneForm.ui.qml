@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
-Item {
+FocusScope {
     id: base
     property alias text: textArea.text
     property bool stretch: stretch
@@ -22,6 +22,7 @@ Item {
     property alias placeholderText: textArea.placeholderText
 
     property alias leftScrollItemVisible: leftScrollItem.visible
+
 
     Pane {
         id: pane
