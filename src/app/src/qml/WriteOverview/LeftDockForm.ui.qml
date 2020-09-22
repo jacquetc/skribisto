@@ -10,6 +10,8 @@ Item {
     property int fixedWidth: 300
     //property alias dockPane: dockPane
     property alias splitView: splitView
+    property alias documentFrame: documentFrame
+    property alias documentView: documentView
     property alias navigationFrame: navigationFrame
     property alias navigation: navigation
 

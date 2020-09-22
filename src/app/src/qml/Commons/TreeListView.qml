@@ -14,6 +14,7 @@ TreeListViewForm {
 
     signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openDocumentInNewTab(int projectId, int paperId)
+    signal openDocumentInNewWindow(int projectId, int paperId)
     signal showDeletedList()
 
     property int currentParent: -2
@@ -496,7 +497,7 @@ TreeListViewForm {
                             return false
                         }
 
-                        if (listView.focus === true && listView.currentIndex === model.index) {
+                        if (listView.enabled && listView.currentIndex === model.index) {
                             return true
                         } else if (hoverHandler.hovered) {
                             return true
@@ -550,14 +551,14 @@ TreeListViewForm {
                     id: openDocumentAction
                     //shortcut: "Return"
                     enabled: {
-                        if (listView.focus === true && titleTextField.visible === false
+                        if (listView.enabled && titleTextField.visible === false
                                 && listView.currentIndex === model.index) {
                             return true
                         } else
                             return false
                     }
 
-                    text: "Open document"
+                    text: qsTr("Open document")
                     onTriggered: {
                         console.log("model.openedProjectId", openedProjectId)
                         console.log("model.projectId", model.projectId)
@@ -570,21 +571,41 @@ TreeListViewForm {
                     id: openDocumentInNewTabAction
                     //shortcut: "Alt+Return"
                     enabled: {
-                        if (listView.focus === true && titleTextField.visible === false
+                        if (listView.enabled && titleTextField.visible === false
                                 && listView.currentIndex === model.index) {
                             return true
                         } else
                             return false
                     }
 
-                    text: "Open document in a new tab"
+                    text: qsTr("Open document in a new tab")
                     onTriggered: {
-                        console.log("model.projectId", model.projectId)
                         root.openDocumentInNewTab(model.projectId,
                                                   model.paperId)
 
                     }
                 }
+
+
+                Action {
+                    id: openDocumentInNewWindowAction
+                    //shortcut: "Alt+Return"
+                    enabled: {
+                        if (listView.enabled && titleTextField.visible === false
+                                && listView.currentIndex === model.index) {
+                            return true
+                        } else
+                            return false
+                    }
+
+                    text: qsTr("Open document in a window")
+                    onTriggered: {
+                        root.openDocumentInNewWindow(model.projectId,
+                                                  model.paperId)
+
+                    }
+                }
+
                 ColumnLayout{
                     id: columnLayout3
                     anchors.fill: parent
@@ -946,6 +967,26 @@ TreeListViewForm {
                     }
                 }
 
+
+                MenuItem {
+                    visible: model.paperId !== -1
+                    height: model.paperId === -1 ? 0 : undefined
+
+                    action: Action {
+                        id: openPaperInNewWindowAction
+                        text: qsTr("Open in new window")
+                        //shortcut: "Alt+Return"
+                        icon {
+                            name: "window-new"
+                        }
+                        enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
+                        onTriggered: {
+                            console.log("open paper in new window action", model.projectId,
+                                        model.paperId)
+                            openDocumentInNewWindowAction.trigger()
+                        }
+                    }
+                }
 
                 MenuItem {
                     height: model.paperId === -1 ? undefined : 0

@@ -40,11 +40,13 @@ QtObject {
     //Write :
     signal openSheetCalled(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openSheetInNewTabCalled(int projectId, int paperId)
+    signal openSheetInNewWindowCalled(int projectId, int paperId)
 
 
-    //Write :
+    //Note :
     signal openNoteCalled(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openNoteInNewTabCalled(int projectId, int paperId)
+    signal openNoteInNewWindowCalled(int projectId, int paperId)
 
     //FullScreen
     signal fullScreenCalled(bool value)

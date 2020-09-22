@@ -10,6 +10,8 @@ Item {
     property int fixedWidth: 300
     //property alias dockPane: dockPane
     property alias splitView: splitView
+    property alias documentFrame: documentFrame
+    property alias documentView: documentView
     property alias navigationFrame: navigationFrame
     property alias navigation: navigation
 
@@ -68,23 +70,25 @@ Item {
                                         clip: true
                                     }
                                 }
-                                //                                ToolFrame {
-                                //                                    id: documentFrame
-                                //                                    folded: true
-                                //                                    title: qsTr("Opened documents")
-                                //                                    Layout.fillWidth: true
-                                //                                    Layout.preferredHeight: dynamicHeight
-                                //                                    contentHeight: 300
-                                //                                    //                                    Layout.preferredHeight: dynamicHeight
-                                //                                    //                                    contentHeight: 400
-                                //                                    //                                    SplitView.preferredHeight: folded ? dynamicHeight : 300
-                                //                                    //                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                //                                    //                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
-                                //                                    DocumentListView {
-                                //                                        id: documentView
-                                //                                        clip: true
-                                //                                    }
-                                //                                }
+                                                                ToolFrame {
+                                                                    id: documentFrame
+                                                                    folded: true
+                                                                    title: qsTr("Opened documents")
+                                                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
+                                                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
+
+
+                                                                    minimumContentHeight: SplitView.minimumHeight
+                                                                    contentHeight: SplitView.preferredHeight
+                                                                    maximumContentHeight: SplitView.maximumHeight
+
+                                                                    Layout.minimumWidth: 100
+
+                                                                    DocumentListView {
+                                                                        id: documentView
+                                                                        clip: true
+                                                                    }
+                                                                }
 
                                 //                            Loader{
                                 //                                id: writeTreeViewHeader

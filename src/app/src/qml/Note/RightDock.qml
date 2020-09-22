@@ -109,8 +109,8 @@ RightDockForm {
         id: settings
         category: "noteRightDock"
         property var dockSplitView
-        property bool editFrameFolded: editFrame.folded ? true : false
-        property bool tagPadFrameFolded: tagPadFrame.folded ? true : false
+        property bool editFrameFolded: editFrame.folded
+        property bool tagPadFrameFolded: tagPadFrame.folded
         //        property bool documentFrameFolded: documentFrame.folded ? true : false
     }
 

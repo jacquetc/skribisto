@@ -130,6 +130,7 @@ LeftDockForm {
     Component.onCompleted: {
             loadConf()
         navigation.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+        navigation.openDocumentInNewWindow.connect(Globals.openNoteInNewWindowCalled)
         Globals.resetDockConfCalled.connect(resetConf)
     }
 

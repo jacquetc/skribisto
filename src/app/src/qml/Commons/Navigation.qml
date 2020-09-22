@@ -15,6 +15,7 @@ NavigationForm {
 
     signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openDocumentInNewTab(int projectId, int paperId)
+    signal openDocumentInNewWindow(int projectId, int paperId)
 
     Component {
         id: treeListViewComponent
@@ -29,9 +30,11 @@ NavigationForm {
             Component.onCompleted: {
                 treeListView.openDocument.connect(root.openDocument)
                 treeListView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
+                treeListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
                 treeListView.showDeletedList.connect(root.pushDeletedListView)
 
             }
+
         }
     }
 
@@ -58,6 +61,7 @@ NavigationForm {
             Component.onCompleted: {
                 deletedListView.openDocument.connect(root.openDocument)
                 deletedListView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
+                deletedListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
                 deletedListView.goBack.connect(root.popDeletedListView)
 
             }

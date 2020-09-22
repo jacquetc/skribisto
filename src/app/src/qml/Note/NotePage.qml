@@ -270,19 +270,19 @@ NotePageForm {
 
     Connections {
         target: italicAction
-        onTriggered: closeRightDrawer()
+        function onTriggered() {closeRightDrawer()}
     }
     Connections {
         target: boldAction
-        onTriggered: closeRightDrawer()
+        function onTriggered() {closeRightDrawer()}
     }
     Connections {
         target: strikeAction
-        onTriggered: closeRightDrawer()
+        function onTriggered() {closeRightDrawer()}
     }
     Connections {
         target: underlineAction
-        onTriggered: closeRightDrawer()
+        function onTriggered() {closeRightDrawer()}
     }
 
     function closeRightDrawer(){

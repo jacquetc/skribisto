@@ -487,12 +487,7 @@ ApplicationWindow {
             Component.onCompleted: splash.visible = true
         }
 
-        Loader {
-            id: loader
-            asynchronous: true
-            sourceComponent: rootPage
-    //        onLoaded: splash.visible = false
-        }
+
 
     //    Component{
     //        id: rootPage

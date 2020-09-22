@@ -92,8 +92,8 @@ LeftDockForm {
         id: settings
         category: "noteLeftDock"
         property var dockSplitView
-        property bool navigationFrameFolded: navigationFrame.folded ? true : false
-        property bool documentFrameFolded: documentFrame.folded ? true : false
+        property bool navigationFrameFolded: navigationFrame.folded
+        property bool documentFrameFolded: documentFrame.folded
     }
 
     function setCurrentPaperId(projectId, paperId) {
@@ -128,8 +128,9 @@ LeftDockForm {
     Component.onCompleted: {
 
         loadConf()
-        navigation.onOpenDocument.connect(Globals.openNoteCalled)
-        navigation.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+        navigation.openDocument.connect(Globals.openNoteCalled)
+        navigation.openDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+        navigation.openDocumentInNewWindow.connect(Globals.openNoteInNewWindowCalled)
         Globals.resetDockConfCalled.connect(resetConf)
 
     }

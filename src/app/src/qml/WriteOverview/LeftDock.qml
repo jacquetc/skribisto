@@ -132,6 +132,7 @@ LeftDockForm {
 
         loadConf()
         navigation.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
+        navigation.openDocumentInNewWindow.connect(Globals.openSheetInNewWindowCalled)
         Globals.resetDockConfCalled.connect(resetConf)
 
 

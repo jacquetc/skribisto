@@ -424,6 +424,7 @@ RootPageForm {
         target:plmData.projectHub()
         function onProjectToBeClosed(_projectId) {
             closeTabsByProject(_projectId)
+            closeProjectSubWindows(_projectId)
         }
     }
 
@@ -468,10 +469,10 @@ RootPageForm {
 
 
             var senderTabId = pageType + "_" +  openedProjectId + "_" + openedPaperId
-            console.debug("c", senderTabId)
+
             var j;
             for (j = 0; j < rootTabBar.count; j++) {
-                console.debug("c")
+
                 console.log(rootTabBar.itemAt(j).tabId)
                 if (rootTabBar.itemAt(j).tabId === senderTabId){
 
@@ -601,6 +602,7 @@ RootPageForm {
                 return
             }
 
+
             var pageType = "note"
             // verify if project/noteId not already opened
             var tabId = pageType + "_" +  projectId + "_" + paperId
@@ -640,8 +642,193 @@ RootPageForm {
             //            console.debug("count : ",rootSwipeView.count)
 
         }
+
     }
 
+
+    //---------------------------------------------------------
+
+    QtObject {
+        id: privateObject
+        property var subscribedSubWindows: []
+    }
+
+
+
+    function getSubWindow(paperType, projectId, paperId){
+
+        var i
+        for(i = 0 ; i < privateObject.subscribedSubWindows.length ; i++){
+            var window = privateObject.subscribedSubWindows[i]
+
+            if(window.windowId === paperType + "_" +  projectId + "_" + paperId  ){
+                return window
+            }
+        }
+    }
+
+    //---------------------------------------------------------
+
+    function closeSubWindow(){
+
+    }
+
+//--------------------------------------------------------------------------
+
+    function closeProjectSubWindows(projectId){
+        var newListToClose = []
+
+        var i
+        for(i = 0 ; i < privateObject.subscribedSubWindows.length ; i++){
+            var window = privateObject.subscribedSubWindows[i]
+            if(window.projectId === projectId){
+                newListToClose.push(window)
+            }
+        }
+
+        var j
+        for(j = 0 ; j < newListToClose.length ; j++){
+            newListToClose[j].close()
+        }
+
+    }
+
+//--------------------------------------------------------------------------
+
+    function suscribeSubWindow(subWindow){
+
+        privateObject.subscribedSubWindows.push(subWindow)
+    }
+
+    //--------------------------------------------------------------------------
+
+    function unsuscribeSubWindow(subWindow){
+        var newList = []
+        console.log("subscribedSubWindows before", privateObject.subscribedSubWindows)
+
+        var i
+        for(i = 0 ; i < privateObject.subscribedSubWindows.length ; i++){
+            var window = privateObject.subscribedSubWindows[i]
+
+            if(window.windowId !== subWindow.windowId){
+                newList.push(window)
+            }
+        }
+
+        privateObject.subscribedSubWindows = newList
+    }
+
+//--------------------------------------------------------------------------
+
+    function addNoteSubWindow(projectId, paperId){
+
+        var incubator = noteWindowComponent.incubateObject(rootPage, {projectId: projectId, paperId: paperId})
+        if (incubator.status !== Component.Ready) {
+            incubator.onStatusChanged = function(status) {
+                if (status === Component.Ready) {
+                    incubator.object.show()
+                    suscribeSubWindow(incubator.object)
+                }
+            }
+        } else {
+            incubator.object.show()
+            suscribeSubWindow(incubator.object)
+        }
+    }
+
+
+    Connections {
+        target: Globals
+        function onOpenNoteInNewWindowCalled(projectId, paperId) {
+
+            addNoteSubWindow(projectId, paperId)
+
+        }
+    }
+
+    Component {
+        id: noteWindowComponent
+        ApplicationWindow{
+            id: subWindow
+            x: 0
+            y:0
+            width: 800
+            height: 800
+
+            readonly property string windowId: {return pageType + "_" +  projectId + "_" + paperId }
+
+            property int projectId: -2
+            property int paperId: -2
+            property string pageType: page.pageType
+
+            NotePage{
+                id: page
+                anchors.fill: parent
+                projectId: subWindow.projectId
+                paperId: subWindow.paperId
+
+            }
+
+            onClosing: {
+                unsuscribeSubWindow(subWindow)
+            }
+        }
+    }
+
+    //------------------------------------------------------
+
+    function addSheetSubWindow(projectId, paperId){
+
+        var incubator = writeWindowComponent.incubateObject(rootPage, {projectId: projectId, paperId: paperId})
+        if (incubator.status !== Component.Ready) {
+            incubator.onStatusChanged = function(status) {
+                if (status === Component.Ready) {
+                    incubator.object.show()
+                    suscribeSubWindow(incubator.object)
+                }
+            }
+        } else {
+            incubator.object.show()
+            suscribeSubWindow(incubator.object)
+        }
+    }
+
+    Connections {
+        target: Globals
+        function onOpenSheetInNewWindowCalled(projectId, paperId) {
+
+            addSheetSubWindow(projectId, paperId)
+
+        }
+    }
+
+    Component {
+        id: writeWindowComponent
+        ApplicationWindow{
+            id: subWindow
+            x: 0
+            y:0
+            width: 800
+            height: 800
+            readonly property string windowId: {return pageType + "_" +  projectId + "_" + paperId }
+
+            property int projectId: -2
+            property int paperId: -2
+            property string pageType: page.pageType
+
+            WritePage{
+                id: page
+                anchors.fill: parent
+                projectId: subWindow.projectId
+                paperId: subWindow.paperId
+
+            }
+
+            onClosing: {
+                unsuscribeSubWindow(subWindow)
+            }
+        }
+    }
 
 
     //---------------------------------------------------------
