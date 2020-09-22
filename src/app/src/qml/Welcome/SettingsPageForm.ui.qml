@@ -18,6 +18,8 @@ Item {
     property alias backupPathListView: backupPathListView
     property alias removeBackupPathButton: removeBackupPathButton
     property alias addBackupPathButton: addBackupPathButton
+    property alias showPropertiesCheckBox: showPropertiesCheckBox
+    property alias resetDockConfButton: resetDockConfButton
 
     Pane {
         id: pane2
@@ -207,6 +209,36 @@ Item {
                     }
                 }
 
+                GroupBox {
+                    id: advancedGroupBox
+                    width: 200
+                    height: 200
+                    title: qsTr("Advanced")
+
+                    RowLayout {
+                        id: rowLayout3
+                        anchors.fill: parent
+
+                        ColumnLayout {
+                            id: columnLayout4
+                            width: 100
+                            height: 100
+
+                            CheckBox {
+                                id: showPropertiesCheckBox
+                                text: qsTr("Show properties tool box")
+                            }
+
+                            Button {
+                                id: resetDockConfButton
+                                text: qsTr("Reset dock configuration")
+                            }
+
+                        }
+                    }
+
+                }
+
             }
         }
 
@@ -215,7 +247,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;height:1500;width:1000}
+    D{i:0;height:1500;width:1000}D{i:33}
 }
 ##^##*/
 

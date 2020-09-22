@@ -88,7 +88,8 @@ LeftDockForm {
         id: settings
         category: "noteOverviewLeftDock"
         property var dockSplitView
-        property bool navigationFrameFolded: navigationFrame.folded ? true : false
+        property bool navigationFrameFolded: navigationFrame.folded
+        property bool documentFrameFolded: documentFrame.folded
     }
 
 
@@ -112,20 +113,24 @@ LeftDockForm {
         }
 
 
-    function init(){
+    function loadConf(){
 
         navigationFrame.folded = settings.navigationFrameFolded
-
-
-        // navigation :
-
-        navigation.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
-
+        documentFrame.folded = settings.documentFrameFolded
         splitView.restoreState(settings.dockSplitView)
     }
 
+    function resetConf(){
+        navigationFrame.folded = false
+        documentFrame.folded = false
+        splitView.restoreState("")
+
+    }
+
     Component.onCompleted: {
-            init()
+            loadConf()
+        navigation.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+        Globals.resetDockConfCalled.connect(resetConf)
     }
 
     Component.onDestruction: {

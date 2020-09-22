@@ -28,7 +28,6 @@ Item {
     property alias leftPaneScrollMouseArea: leftPaneScrollMouseArea
     property alias leftPaneScrollTouchArea: leftPaneScrollTouchArea
     property int leftBasePreferredWidth: 0
-    //property int leftBaseMaximumWidth: 0
     property int rightBasePreferredWidth: 0
 
 

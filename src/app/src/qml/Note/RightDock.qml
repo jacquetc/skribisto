@@ -34,18 +34,6 @@ RightDockForm {
     //-----------------------------------------------------------
 
 
-    Connections {
-        target: Globals
-        function onOpenNoteCalled(projectId, paperId) {
-
-
-
-
-        }
-    }
-
-
-
 
 
 
@@ -60,7 +48,7 @@ RightDockForm {
     SKRSearchTagListProxyModel {
         id: tagProxyModel
         projectIdFilter: projectId
-        sheetIdFilter: paperId
+        noteIdFilter: paperId
     }
     tagPadView.tagListModel: tagProxyModel
 
@@ -128,7 +116,6 @@ RightDockForm {
 
 
 
-
     PropertyAnimation {
         target: editFrame
         property: "SplitView.preferredHeight"
@@ -142,7 +129,7 @@ RightDockForm {
         easing.type: Easing.InOutQuad
     }
 
-    function init(){
+    function loadConf(){
 
         editFrame.folded = settings.editFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
@@ -151,13 +138,20 @@ RightDockForm {
 
     }
 
+    function resetConf(){
+        editFrame.folded = false
+        tagPadFrame.folded = false
+        splitView.restoreState("")
+
+    }
 
     Component.onCompleted: {
-            init()
+        loadConf()
+        Globals.resetDockConfCalled.connect(resetConf)
     }
 
     Component.onDestruction: {
-            settings.dockSplitView = splitView.saveState()
+        settings.dockSplitView = splitView.saveState()
     }
 
     onEnabledChanged: {

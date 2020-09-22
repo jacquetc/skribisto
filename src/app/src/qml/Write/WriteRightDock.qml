@@ -41,10 +41,6 @@ WriteRightDockForm {
 
 
 
-
-
-
-
     //-----------------------------------------------------------
     //---------------Tags :---------------------------------------------
     //-----------------------------------------------------------
@@ -148,7 +144,7 @@ WriteRightDockForm {
         easing.type: Easing.InOutQuad
     }
 
-    function init(){
+    function loadConf(){
 
         editFrame.folded = settings.editFrameFolded
         notePadFrame.folded = settings.notePadFrameFolded
@@ -158,12 +154,21 @@ WriteRightDockForm {
 
     }
 
+    function resetConf(){
+        editFrame.folded = false
+        notePadFrame.folded = false
+        tagPadFrame.folded = false
+        splitView.restoreState("")
+
+    }
+
     Component.onCompleted: {
-            init()
+        loadConf()
+        Globals.resetDockConfCalled.connect(resetConf)
     }
 
     Component.onDestruction: {
-            settings.dockSplitView = splitView.saveState()
+        settings.dockSplitView = splitView.saveState()
 
     }
 

@@ -639,6 +639,7 @@ WritePageForm {
 
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
+            Globals.resetDockConfCalled.connect(resetConf)
         }
 
 
@@ -646,6 +647,10 @@ WritePageForm {
             id: leftSettings
             category: "writeLeftDock"
             property int width: leftDockFixedWidth
+        }
+
+        function resetConf(){
+            leftDockFixedWidth = 300
         }
 
     }
@@ -671,13 +676,12 @@ WritePageForm {
             projectId: root.projectId
             paperId: root.paperId
 
-
-
         }
 
 
         Component.onCompleted: {
             rightDockFixedWidth = rightSettings.width
+            Globals.resetDockConfCalled.connect(resetConf)
         }
 
 
@@ -687,6 +691,9 @@ WritePageForm {
             property int width: rightDockFixedWidth
         }
 
+        function resetConf(){
+            rightDockFixedWidth = 300
+        }
     }
 
 

@@ -4,6 +4,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.projecthub 1.0
+import Qt.labs.settings 1.1
 import ".."
 
 SettingsPageForm {
@@ -545,6 +546,38 @@ SettingsPageForm {
         onTriggered: {
             saveAction.trigger()
         }
+    }
+
+
+    // --------------------------------------------
+    // ---- advanced --------------------------------
+    // --------------------------------------------
+
+    Settings {
+        id: leftDockSettings
+        category : "writeLeftDock"
+        property var dockSplitView
+        property bool navigationFrameFolded
+        property int width
+    }
+
+
+    Settings {
+        id: rightDockSettings
+        category: "writeRightDock"
+        property var dockSplitView
+        property bool editFrameFolded
+        property bool notePadFrameFolded
+        property bool tagPadFrameFolded
+        property int width
+        //        property bool documentFrameFolded: documentFrame.folded ? true : false
+    }
+
+
+    resetDockConfButton.onClicked: {
+
+       Globals.resetDockConfCalled()
+
     }
 
 

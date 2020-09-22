@@ -120,14 +120,13 @@ NoteOverviewPageForm {
         LeftDock {
             id: leftDock
             anchors.fill: parent
-
-
         }
 
 
 
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
+            Globals.resetDockConfCalled.connect(resetConf)
         }
 
 
@@ -136,6 +135,11 @@ NoteOverviewPageForm {
             category: "noteOverviewLeftDock"
             property int width: leftDockFixedWidth
         }
+
+        function resetConf(){
+            leftDockFixedWidth = 300
+        }
+
     }
 
 

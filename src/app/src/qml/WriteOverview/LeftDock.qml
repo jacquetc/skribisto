@@ -91,7 +91,8 @@ LeftDockForm {
         id: settings
         category: "writeOverviewLeftDock"
         property var dockSplitView
-        property bool navigationFrameFolded: navigationFrame.folded ? true : false
+        property bool navigationFrameFolded: navigationFrame.folded
+        property bool documentFrameFolded: documentFrame.folded
     }
 
 
@@ -100,42 +101,44 @@ LeftDockForm {
     }
 
 
-        PropertyAnimation {
-            target: navigationFrame
-            property: "SplitView.preferredHeight"
-            duration: 500
-            easing.type: Easing.InOutQuad
-        }
+    PropertyAnimation {
+        target: navigationFrame
+        property: "SplitView.preferredHeight"
+        duration: 500
+        easing.type: Easing.InOutQuad
+    }
 
     Connections {
         target: navigation
         function onOpenDocument(openedProjectId, openedPaperId, _projectId, _paperId) {
             Globals.openSheetInNewTabCalled(_projectId, _paperId)
         }
-        }
+    }
 
-    function init(){
-
-        navigationFrame.folded = settings.navigationFrameFolded
-
-
-        // navigation :
-
-        navigation.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
-
+    function loadConf(){
+         navigationFrame.folded = settings.navigationFrameFolded
+        documentFrame.folded = settings.documentFrameFolded
         splitView.restoreState(settings.dockSplitView)
+    }
+
+    function resetConf(){
+        navigationFrame.folded = false
+        documentFrame.folded = false
+        splitView.restoreState("")
+
     }
 
     Component.onCompleted: {
 
+        loadConf()
+        navigation.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
+        Globals.resetDockConfCalled.connect(resetConf)
 
 
-            init()
-
-        }
+    }
 
     Component.onDestruction: {
-            settings.dockSplitView = splitView.saveState()
+        settings.dockSplitView = splitView.saveState()
 
     }
 

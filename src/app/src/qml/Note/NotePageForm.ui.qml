@@ -28,7 +28,6 @@ Item {
     property alias leftPaneScrollMouseArea: leftPaneScrollMouseArea
     property alias leftPaneScrollTouchArea: leftPaneScrollTouchArea
     property int leftBasePreferredWidth: 0
-    //property int leftBaseMaximumWidth: 0
     property int rightBasePreferredWidth: 0
 
 
@@ -37,8 +36,8 @@ Item {
         clip: false
         spacing: 0
         anchors.fill: parent
-        anchors.leftMargin: Globals.compactSize ? undefined : leftDrawer.width * leftDrawer.position
-        anchors.rightMargin: Globals.compactSize ? undefined : rightDrawer.width * rightDrawer.position
+        anchors.leftMargin: Globals.compactSize ? undefined : leftDrawer.width * leftDrawer.position + 10
+        anchors.rightMargin: Globals.compactSize ? undefined : rightDrawer.width * rightDrawer.position + 10
 
 
         Pane {

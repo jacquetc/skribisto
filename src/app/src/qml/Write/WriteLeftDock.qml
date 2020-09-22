@@ -96,8 +96,8 @@ WriteLeftDockForm {
         id: settings
         category: "writeLeftDock"
         property var dockSplitView
-        property bool navigationFrameFolded: navigationFrame.folded ? true : false
-        property bool documentFrameFolded: documentFrame.folded ? true : false
+        property bool navigationFrameFolded: navigationFrame.folded
+        property bool documentFrameFolded: documentFrame.folded
     }
 
     function setCurrentPaperId(projectId, paperId) {
@@ -117,24 +117,30 @@ WriteLeftDockForm {
         }
 
 
-        function init(){
+        function loadConf(){
 
             navigationFrame.folded = settings.navigationFrameFolded
             documentFrame.folded = settings.documentFrameFolded
-
             splitView.restoreState(settings.dockSplitView)
 
-            // navigation :
-            navigation.onOpenDocument.connect(Globals.openSheetCalled)
-            navigation.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
-
-            //
 
         }
+
+        function resetConf(){
+            navigationFrame.folded = false
+            documentFrame.folded = false
+            splitView.restoreState("")
+
+        }
+
     Component.onCompleted: {
 
 
-        init()
+        loadConf()
+        navigation.onOpenDocument.connect(Globals.openSheetCalled)
+        navigation.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
+        Globals.resetDockConfCalled.connect(resetConf)
+
 
     }
     Component.onDestruction: {

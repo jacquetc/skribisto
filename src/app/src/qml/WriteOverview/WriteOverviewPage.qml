@@ -125,6 +125,7 @@ WriteOverviewPageForm {
         }
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
+            Globals.resetDockConfCalled.connect(resetConf)
         }
 
 
@@ -132,6 +133,10 @@ WriteOverviewPageForm {
             id: leftSettings
             category: "writeOverviewLeftDock"
             property int width: leftDockFixedWidth
+        }
+
+        function resetConf(){
+            leftDockFixedWidth = 300
         }
 
     }

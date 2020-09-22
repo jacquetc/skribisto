@@ -35,6 +35,7 @@ QtObject {
         }
 
 
+    signal resetDockConfCalled()
 
     //Write :
     signal openSheetCalled(int openedProjectId, int openedPaperId, int projectId, int paperId)

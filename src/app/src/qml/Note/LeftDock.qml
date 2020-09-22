@@ -112,26 +112,25 @@ LeftDockForm {
     //        easing.type: Easing.InOutQuad
     //    }
 
-    function init(){
-
-
+    function loadConf(){
         navigationFrame.folded = settings.navigationFrameFolded
         documentFrame.folded = settings.documentFrameFolded
-
-        // navigation :
-        navigation.onOpenDocument.connect(Globals.openNoteCalled)
-        navigation.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
-
-        //
-
         splitView.restoreState(settings.dockSplitView)
+    }
 
+    function resetConf(){
+        navigationFrame.folded = false
+        documentFrame.folded = false
+        splitView.restoreState("")
 
     }
 
     Component.onCompleted: {
 
-        init()
+        loadConf()
+        navigation.onOpenDocument.connect(Globals.openNoteCalled)
+        navigation.onOpenDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+        Globals.resetDockConfCalled.connect(resetConf)
 
     }
 

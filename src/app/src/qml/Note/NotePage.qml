@@ -622,13 +622,19 @@ NotePageForm {
 
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
+            Globals.resetDockConfCalled.connect(resetConf)
         }
 
 
         Settings {
             id: leftSettings
-            category: "writeLeftDock"
+            category: "noteLeftDock"
             property int width: leftDockFixedWidth
+        }
+
+
+        function resetConf(){
+            leftDockFixedWidth = 300
         }
     }
 
@@ -650,22 +656,27 @@ NotePageForm {
         RightDock {
             id: rightDock
             anchors.fill: parent
+
             projectId: root.projectId
             paperId: root.paperId
-
 
         }
 
 
         Component.onCompleted: {
             rightDockFixedWidth = rightSettings.width
+            Globals.resetDockConfCalled.connect(resetConf)
         }
 
 
         Settings {
             id: rightSettings
-            category: "writeRightDock"
+            category: "noteRightDock"
             property int width: rightDockFixedWidth
+        }
+
+        function resetConf(){
+            rightDockFixedWidth = 300
         }
 
 

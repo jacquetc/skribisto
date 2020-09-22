@@ -444,40 +444,55 @@ ApplicationWindow {
     // style :
     //palette.window: "white"
 
-    // Splash screen
-    //    Window {
-    //        id: splash
-    //        color: "transparent"
-    //        title: "Splash Window"
-    //        modality: Qt.ApplicationModal
-    //        flags: Qt.SplashScreen
-    //        property int timeoutInterval: 1000
-    //        signal timeout
-    //        x: (Screen.width - splashImage.width) / 2
-    //        y: (Screen.height - splashImage.height) / 2
-    //        width: splashImage.width
-    //        height: splashImage.height
+     //Splash screen
+        Item {
+            id: splash
+            parent: Overlay.overlay
+            property int timeoutInterval: 1000
+            signal timeout
+            x: (Overlay.overlay.width - splashImage.width) / 2
+            y: (Overlay.overlay.height - splashImage.height) / 2
+            width: splashImage.width
+            height: splashImage.height
 
-    //        Image {
-    //            id: splashImage
-    //            source: "qrc:/pics/skribisto.svg"
-    //        }
-    //        Timer {
-    //            interval: splash.timeoutInterval; running: true; repeat: false
-    //            onTriggered: {
-    //                splash.visible = false
-    //                splash.timeout()
-    //            }
-    //        }
-    //        Component.onCompleted: splash.visible = true
-    //    }
+            Image {
+                id: splashImage
+                source: "qrc:/pics/skribisto.svg"
 
-    //    Loader {
-    //        id: loader
-    //        asynchronous: true
-    //        sourceComponent: rootPage
-    ////        onLoaded: splash.visible = false
-    //    }
+
+
+//                layer.enabled: true
+//                layer.samplerName: "maskSource"
+//                layer.effect: ShaderEffect {
+//                    property variant source: splashImage
+//                    fragmentShader: "
+//                            varying highp vec2 qt_TexCoord0;
+//                            uniform highp float qt_Opacity;
+//                            uniform lowp sampler2D source;
+//                            uniform lowp sampler2D maskSource;
+//                            void main(void) {
+//                                gl_FragColor = texture2D(source, qt_TexCoord0.st) * (1.0-texture2D(maskSource, qt_TexCoord0.st).a) * qt_Opacity;
+//                            }
+//                        "
+//                }
+
+            }
+            Timer {
+                interval: splash.timeoutInterval; running: true; repeat: false
+                onTriggered: {
+                    splash.visible = false
+                    splash.timeout()
+                }
+            }
+            Component.onCompleted: splash.visible = true
+        }
+
+        Loader {
+            id: loader
+            asynchronous: true
+            sourceComponent: rootPage
+    //        onLoaded: splash.visible = false
+        }
 
     //    Component{
     //        id: rootPage
