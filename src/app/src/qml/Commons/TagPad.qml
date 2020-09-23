@@ -168,7 +168,7 @@ TagPadForm {
                     onReleased:{
                         callRemoveTagRelationship(projectId, itemId, tagId)
                     }
-
+                    activeFocusOnTab: false
                 }
 
 

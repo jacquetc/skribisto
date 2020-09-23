@@ -12,7 +12,6 @@ Item {
     property alias addToolButton: addToolButton
     property alias treeMenuToolButton: treeMenuToolButton
 
-
     Pane {
         id: pane
         clip: true
@@ -29,20 +28,15 @@ Item {
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
 
-
-
                 //                Item {
                 //                    id: element
                 //                    Layout.fillHeight: true
                 //                    Layout.fillWidth: true
                 //                }
-
-
                 RowLayout {
                     id: rowLayout
                     spacing: 1
                     anchors.fill: parent
-
 
                     ToolButton {
                         id: goUpToolButton
@@ -72,7 +66,6 @@ Item {
                 }
             }
 
-
             ScrollView {
                 id: scrollView
                 focusPolicy: Qt.StrongFocus
@@ -82,7 +75,6 @@ Item {
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical.policy: scrollBarVerticalPolicy
 
-
                 ListView {
                     id: listView
                     anchors.fill: parent
@@ -90,13 +82,18 @@ Item {
                     clip: true
                     smooth: true
                     boundsBehavior: Flickable.StopAtBounds
+                    focus: true
 
-
+                    Accessible.name: "Navigation list"
+                    Accessible.role: Accessible.List
                 }
-
-
             }
         }
     }
-
 }
+
+/*##^##
+Designer {
+    D{i:0;autoSize:true;height:480;width:640}
+}
+##^##*/

@@ -275,6 +275,14 @@ DeletedListViewForm {
         Item {
             id: delegateRoot
 
+
+
+            Accessible.name: labelLabel.text.length === 0 ? titleLabel.text  +  ( model.hasChildren ? " " +qsTr("has child") :  "" ):
+                                                            titleLabel.text + " " + qsTr("label:") + " " + labelLabel.text + ( model.hasChildren ? " " +qsTr("has child") :  "" )
+            Accessible.role: Accessible.ListItem
+            Accessible.description: qsTr("navigation item")
+
+
             property int visualIndex: {
                 return DelegateModel.itemsIndex
             }

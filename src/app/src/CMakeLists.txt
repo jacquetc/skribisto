@@ -22,6 +22,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # translations :
 set(TS_FILES ${CMAKE_SOURCE_DIR}/src/translations/skribisto_fr_FR.ts)
+set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION "${CMAKE_SOURCE_DIR}/src/translations/")
+qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 
 
 set(app_SRCS 
@@ -80,7 +82,6 @@ endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Tell CMake to create the executable
 
-qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR}/src/translations/ ${TS_FILES})
 if(ANDROID)
     add_library(skribisto ${app_SRCS} ${RESOURCES} ${QRC} ${QM_FILES})
 else()

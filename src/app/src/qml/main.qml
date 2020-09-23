@@ -1320,6 +1320,7 @@ ApplicationWindow {
 
         MenuItem{
             action: newProjectAction
+
         }
         MenuItem{
             action: openProjectAction

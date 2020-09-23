@@ -38,6 +38,9 @@ WriteLeftDockForm {
                 id: navigationDockMenu
                 title: qsTr("&Navigation dock")
 
+                Accessible.name: title
+                Accessible.role: Accessible.MenuItem
+
                 MenuItem {
                     text: qsTr("&Navigation")
                     onTriggered: {

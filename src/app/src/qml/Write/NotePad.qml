@@ -185,6 +185,8 @@ NotePadForm {
                         plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
                     }
 
+                    activeFocusOnTab: false
+
                 }
             }
             

@@ -278,7 +278,10 @@ TreeListViewForm {
             id: delegateRoot
             property int indent: model.indent
 
-
+            Accessible.name: labelLabel.text.length === 0 ? titleLabel.text  +  ( model.hasChildren ? " " +qsTr("has child") :  "" ):
+                                                            titleLabel.text + " " + qsTr("label:") + " " + labelLabel.text + ( model.hasChildren ? " " +qsTr("has child") :  "" )
+            Accessible.role: Accessible.ListItem
+            Accessible.description: qsTr("navigation item")
 
 
             onEntered: {
@@ -740,6 +743,8 @@ TreeListViewForm {
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+
+
                                 }
                             }
                             //                        MouseArea {

@@ -178,8 +178,8 @@ Item {
                     }
 
                     GroupBox {
-                        id: groupBox
-                        title: qsTr("")
+                        id: behaviorGroupBox
+                        title: qsTr("Behavior")
 
                         ColumnLayout {
                             id: columnLayout1
