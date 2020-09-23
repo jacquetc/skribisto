@@ -24,11 +24,7 @@ add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp ${RESOURCES})
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
 
 
-target_link_libraries(${PROJECT_NAME} skribisto-data)
+target_link_libraries(${PROJECT_NAME} skribisto-data Qt5::Test Qt5::Core)
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
-
-
-qt5_use_modules(${PROJECT_NAME} Test Core)
-
 
 

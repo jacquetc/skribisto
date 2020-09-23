@@ -125,4 +125,6 @@ qt5_add_resources(RESOURCES ${QRC})
 # Tell CMake to create the executable
 add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${models_SRCS} ${RESOURCES})
 
-qt5_use_modules(skribisto-data Core Network Sql)
+target_link_libraries(skribisto-data Qt5::Core Qt5::Network Qt5::Sql)
+
+

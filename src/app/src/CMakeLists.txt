@@ -93,10 +93,9 @@ endif()
 target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
-target_link_libraries(skribisto skribisto-data)
+target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg)
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
-qt5_use_modules(skribisto Core Quick Network Gui Widgets LinguistTools Svg Xml)
 
 
 
