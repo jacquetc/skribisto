@@ -65,7 +65,7 @@ private Q_SLOTS:
 
 private:
     PLMData *m_data;
-    QString m_testProjectPath;
+    QUrl m_testProjectPath;
     int m_currentProjectId;
 
 };
@@ -81,7 +81,7 @@ WriteCase::~WriteCase()
 void WriteCase::initTestCase()
 {
     m_data = new PLMData(this);
-    m_testProjectPath = ":/testfiles/skribisto_test_project.sqlite";
+    m_testProjectPath = "qrc:/testfiles/skribisto_test_project.sqlite";
 }
 
 
@@ -253,7 +253,7 @@ void WriteCase::setContent()
 void WriteCase::getContent()
 {
     QString value = plmdata->sheetHub()->getContent(m_currentProjectId, 1);
-    QCOMPARE(value, QString("first content"));
+    QCOMPARE(value, QString("fir**st** *content*\n\n"));
     // lorem ipsum :
     value = plmdata->sheetHub()->getContent(m_currentProjectId, 6);
     QVERIFY(value.size() > 5000);

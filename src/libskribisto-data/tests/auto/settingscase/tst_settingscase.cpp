@@ -27,7 +27,7 @@ private Q_SLOTS:
 //    void getDocVisibleState();
 private:
     PLMData *m_data;
-    QString m_testProjectPath;
+    QUrl m_testProjectPath;
     int m_currentProjectId;
 
 };
@@ -39,7 +39,7 @@ SettingsCase::SettingsCase()
 void SettingsCase::initTestCase()
 {
     m_data = new PLMData(this);
-    m_testProjectPath = ":/testfiles/skribisto_test_project.sqlite";
+    m_testProjectPath = "qrc:/testfiles/skribisto_test_project.sqlite";
 }
 
 void SettingsCase::cleanupTestCase()
