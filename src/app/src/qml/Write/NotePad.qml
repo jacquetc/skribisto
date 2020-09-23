@@ -795,6 +795,14 @@ NotePadForm {
         }
         
     }
+
+
+
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            openSynopsisToolButton.forceActiveFocus()
+        }
+    }
 }
 
 

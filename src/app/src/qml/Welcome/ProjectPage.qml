@@ -12,6 +12,23 @@ ProjectPageForm {
 
     swipeView.currentIndex: 0
 
+    swipeView.onCurrentItemChanged: {
+        var i;
+        for(i = 0; i < rootSwipeView.count; i++ ){
+
+            var item = rootSwipeView.itemAt(i)
+            if(item === rootSwipeView.currentItem){
+                item.enabled = true
+            }
+            else{
+                item.enabled = false
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        swipeView.itemAt(1).enabled = false
+    }
 
     saveButton.action: saveAction
     saveAsButton.action: saveAsAction
@@ -199,8 +216,7 @@ ProjectPageForm {
 
     onActiveFocusChanged: {
         if (activeFocus) {
-
-            recentListView.forceActiveFocus()
+            newProjectButton.forceActiveFocus()
         }
     }
 

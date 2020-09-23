@@ -41,6 +41,10 @@ Item {
         position = 1.0
     }
 
+    function close(){
+        position = 0.0
+    }
+
     Item{
         id: leftFeelingZone
         anchors.top: parent.top

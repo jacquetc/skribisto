@@ -116,36 +116,22 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                Item {
-                    id: projectPage
                     ProjectPage {
-                        anchors.fill: parent
+                        id: projectPage
                     }
-                }
-
-                Item {
-                    id: examplePage
 
                     ExamplePage {
-
+                        id: examplePage
                     }
-                }
-
-                Item {
-                    id: settingsPage
 
                     SettingsPage{
-                        anchors.fill: parent
+                        id: settingsPage
                     }
-                }
-
-                Item {
-                    id: helpPage
 
                     HelpPage {
-                        anchors.fill: parent
+                        id: helpPage
                     }
-                }
+
             }
         }
     }

@@ -437,5 +437,11 @@ TagPadForm {
 
 
 
+
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            addTagMenuToolButton.forceActiveFocus()
+        }
+    }
 }
 

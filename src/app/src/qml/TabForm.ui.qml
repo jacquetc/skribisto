@@ -36,6 +36,7 @@ TabButton {
                 width: 24
             }
             onDownChanged: down = false
+            onClicked: base.checked = true
 
         }
 

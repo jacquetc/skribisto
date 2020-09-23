@@ -33,14 +33,14 @@ WritePageForm {
 
 
 
-//    Keys.onReleased: {
-//        if(event.key === Qt.Key_Alt){
-//            console.log("alt")
-//            Globals.showMenuBarCalled()
+    //    Keys.onReleased: {
+    //        if(event.key === Qt.Key_Alt){
+    //            console.log("alt")
+    //            Globals.showMenuBarCalled()
 
-//            event.accepted = true
-//        }
-//    }
+    //            event.accepted = true
+    //        }
+    //    }
 
     //--------------------------------------------------------
     //---Writing Zone-----------------------------------------
@@ -93,6 +93,9 @@ WritePageForm {
 
         //title = getTitle()
         plmData.sheetHub().titleChanged.connect(changeTitle)
+
+        addMenus()
+
     }
 
     function changeTitle(_projectId, _paperId, newTitle) {
@@ -159,26 +162,26 @@ WritePageForm {
         }
         restoreMode: Binding.RestoreBindingOrValue
     }
-//    Binding on rightBasePreferredWidth {
-//        value:  {
-//            var value = 0
-//            if (Globals.compactSize === true){
-//                value = -1;
-//            }
-//            else {
+    //    Binding on rightBasePreferredWidth {
+    //        value:  {
+    //            var value = 0
+    //            if (Globals.compactSize === true){
+    //                value = -1;
+    //            }
+    //            else {
 
-//                value = 400 + offset
-//                if (value < 0) {
-//                    value = 0
-//                }
-//                //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
-//                //                console.debug("right offset :: ", offset)
-//                //                console.debug("right value :: ", value)
+    //                value = 400 + offset
+    //                if (value < 0) {
+    //                    value = 0
+    //                }
+    //                //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
+    //                //                console.debug("right offset :: ", offset)
+    //                //                console.debug("right value :: ", value)
 
-//            }
-//            rightBasePreferredWidth = value
-//        }
-//    }
+    //            }
+    //            rightBasePreferredWidth = value
+    //        }
+    //    }
     //    Binding on leftBaseMaximumWidth {
     //        when: SkrSettings.rootSettings.onLeftDockWidthChanged || Globals.onCompactSizeChanged || writingZone.onWidthChanged
     //            value:  {
@@ -604,16 +607,16 @@ WritePageForm {
 
     rightDockResizeButton.onPressed: {
 
-            rootSwipeView.interactive = false
+        rootSwipeView.interactive = false
 
     }
 
     rightDockResizeButton.onCanceled: {
 
-            rootSwipeView.interactive = true
-            rightDockResizeButtonFirstPressX = 0
+        rootSwipeView.interactive = true
+        rightDockResizeButtonFirstPressX = 0
 
-}
+    }
 
 
 
@@ -745,9 +748,9 @@ WritePageForm {
     }
 
     writingZone.onActiveFocusChanged: {
-            writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
-            restoreCurrentPaperCursorPositionAndY()
-}
+        writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
+        restoreCurrentPaperCursorPositionAndY()
+    }
 
 
     //    // project to be closed :
@@ -793,6 +796,83 @@ WritePageForm {
 
 
 
+    //------------------------------------------------------------
+    //--------menuBar--------------------------------------------
+    //------------------------------------------------------------
+
+    function addMenus(){
+        var helpMenu
+
+        var menuBar = ApplicationWindow.window.menuBar
+
+        var menuCount = menuBar.count
+
+        // take Help menu
+
+        helpMenu = menuBar.takeMenu(menuCount - 1)
+
+        // add new menus
+        var k
+        for(k = 0 ; k < leftDock.menuComponents.length ; k++){
+            menuBar.addMenu(leftDock.menuComponents[k].createObject(menuBar))
+        }
+        var l
+        for(l = 0 ; l < leftDock.menuComponents.length ; l++){
+            menuBar.addMenu(rightDock.menuComponents[l].createObject(menuBar))
+        }
+
+        //reinsert Help menu
+        menuBar.addMenu(helpMenu)
+
+    }
+
+    function removeMenus(){
+        var helpMenu
+
+        var menuBar = ApplicationWindow.window.menuBar
+
+        var menuCount = menuBar.count
+
+        // take Help menu
+        menuCount = menuBar.count
+        var m;
+        for(m = 0 ; m < menuCount ; m++){
+            var menu = menuBar.menuAt(m)
+            if(menu.title === qsTr("&Help")){
+                helpMenu = menuBar.takeMenu(m)
+            }
+        }
+
+        // remove additional menus
+        menuCount = menuBar.count
+        var i;
+        for(i = menuCount - 1 ; i >= 0  ; i--){
+            var menu1 = menuBar.menuAt(i)
+            console.log(menu1.title)
+            if(menu1.title === qsTr("&Navigation dock")
+                    || menu1.title === qsTr("&Tools dock")){
+
+                menuBar.removeMenu(menu1)
+            }
+        }
+
+
+        //reinsert Help menu
+        menuBar.addMenu(helpMenu)
+
+    }
+
+    onEnabledChanged: {
+
+        if(root.enabled){
+            addMenus()
+        }
+        else{
+            removeMenus()
+        }
+    }
+
+  //------------------------------------------------------------
     // fullscreen :
 
     property bool fullscreen_left_drawer_visible: false

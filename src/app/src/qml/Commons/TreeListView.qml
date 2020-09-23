@@ -1385,5 +1385,9 @@ TreeListViewForm {
         }
     }
 
-
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            listView.forceActiveFocus()
+        }
+    }
 }

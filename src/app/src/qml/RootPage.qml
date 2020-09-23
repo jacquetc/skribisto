@@ -348,11 +348,13 @@ RootPageForm {
         for(i = 0; i < rootSwipeView.count; i++ ){
 
             var item = rootSwipeView.itemAt(i)
-            item.enabled = (item === rootSwipeView.currentItem)
+            if(item === rootSwipeView.currentItem){
+                item.enabled = true
+            }
+            else{
+                item.enabled = false
+            }
         }
-
-
-
     }
 
 

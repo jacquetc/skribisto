@@ -3,7 +3,7 @@ import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import QtQml 2.15
 
-Item {
+FocusScope {
     id: base
 
     default property alias contents : container.data
@@ -56,6 +56,8 @@ Item {
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ScrollBar.vertical.policy: scrollBarVerticalPolicy
             clip: true
+            focusPolicy: Qt.NoFocus
+
 
             Flickable {
                 id: flickable
@@ -90,6 +92,7 @@ Item {
 
         Component.onCompleted: {
             container.children[0].anchors.fill = container
+            container.children[0].focus = true
             minimumContainerHeight = container.children[0].minimumHeight
             container.height = contentHeight - 25
         }
@@ -195,7 +198,11 @@ Item {
     ]
 
 
-
+    onActiveFocusChanged: {
+        if(activeFocus){
+            container.children[0].forceActiveFocus
+        }
+    }
 
 
 }

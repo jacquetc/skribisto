@@ -35,8 +35,53 @@ WriteRightDockForm {
 
     //-----------------------------------------------------------
 
+    //Menu :
+    property list<Component> menuComponents:  [
+        Component{
+        id:  toolMenuComponent
+        Menu {
+            id: toolDockMenu
+            title: qsTr("&Tools dock")
+
+            MenuItem {
+                text: qsTr( "&Edit")
+                onTriggered: {
+
+                    if(Globals.compactSize){
+                        rightDrawer.open()
+                    }
+                    editFrame.folded = false
+                    editView.forceActiveFocus()
+                }
+            }
 
 
+            MenuItem {
+                text: qsTr( "&Tags")
+                onTriggered: {
+
+                    if(Globals.compactSize){
+                        rightDrawer.open()
+                    }
+                    tagPadFrame.folded = false
+                    tagPadView.forceActiveFocus()
+                }
+            }
+
+            MenuItem {
+                text: qsTr( "&Notes")
+                onTriggered: {
+
+                    if(Globals.compactSize){
+                        rightDrawer.open()
+                    }
+                    notePadFrame.folded = false
+                    notePadView.forceActiveFocus()
+                }
+            }
+        }
+    }
+]
 
 
 

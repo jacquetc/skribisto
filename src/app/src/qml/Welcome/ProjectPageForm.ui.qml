@@ -30,7 +30,6 @@ Item {
     property alias openProjectButton: openProjectButton
     property alias recentListView: recentListView
     property alias newProjectButton: newProjectButton
-    property alias folderDialogLoader: folderDialogLoader
 
     Pane {
         id: pane1
@@ -356,13 +355,7 @@ Item {
                     }
                 }
             }
-            Item {
 
-                Loader {
-                    id: folderDialogLoader
-                    anchors.fill: parent
-                }
-            }
         }
     }
 }

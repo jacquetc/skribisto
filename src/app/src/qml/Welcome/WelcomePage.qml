@@ -11,17 +11,48 @@ WelcomePageForm {
     //    }
 
     // pages :
-    projectPageButton.onClicked: stackLayout.currentIndex = 0
-    examplePageButton.onClicked: stackLayout.currentIndex = 1
-    settingsPageButton.onClicked: stackLayout.currentIndex = 2
-    helpPageButton.onClicked: stackLayout.currentIndex = 3
+    projectPageButton.onClicked: {
+        stackLayout.currentIndex = 0
+        stackLayout.itemAt(0).forceActiveFocus()
+
+    }
+    examplePageButton.onClicked: {
+        stackLayout.currentIndex = 1
+        stackLayout.itemAt(1).forceActiveFocus()
+
+    }
+    settingsPageButton.onClicked: {
+        stackLayout.currentIndex = 2
+        stackLayout.itemAt(2).forceActiveFocus()
+
+    }
+    helpPageButton.onClicked: {
+        stackLayout.currentIndex = 3
+        stackLayout.itemAt(3).forceActiveFocus()
+
+    }
 
     //pages with tabbar :
-    projectPageTabButton.onClicked: stackLayout.currentIndex = 0
-    examplePageTabButton.onClicked: stackLayout.currentIndex = 1
-    settingsPageTabButton.onClicked: stackLayout.currentIndex = 2
-    helpPageTabButton.onClicked: stackLayout.currentIndex = 3
+    projectPageTabButton.onClicked: {
+        stackLayout.currentIndex = 0
+        stackLayout.itemAt(0).forceActiveFocus()
 
+    }
+    examplePageTabButton.onClicked: {
+        stackLayout.currentIndex = 1
+        stackLayout.itemAt(1).forceActiveFocus()
+
+    }
+    settingsPageTabButton.onClicked: {
+        stackLayout.currentIndex = 2
+        stackLayout.itemAt(2).forceActiveFocus()
+
+    }
+    helpPageTabButton.onClicked: {
+        stackLayout.currentIndex = 3
+        stackLayout.itemAt(3).forceActiveFocus()
+
+    }
     //compact mode :
     tabBar.visible: Globals.compactSize
     mainButtonsPane.visible: !Globals.compactSize
@@ -33,6 +64,7 @@ WelcomePageForm {
         target: Globals
         function onShowProjectPage() {
             stackLayout.currentIndex = 0
+            stackLayout.itemAt(0).forceActiveFocus()
         }
     }
 

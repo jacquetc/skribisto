@@ -12,6 +12,7 @@ Item {
     property alias underlineToolButton: underlineToolButton
     property alias fullScreenToolButton: fullScreenToolButton
     property alias goBackToolButton: goBackToolButton
+    property alias textWidthLabel: textWidthLabel
     property alias textWidthSlider: textWidthSlider
     property alias textPointSizeSlider: textPointSizeSlider
     property alias fontFamilyComboBox: fontFamilyComboBox
@@ -131,6 +132,7 @@ Item {
                 }
 
                 Label {
+                    id: textWidthLabel
                     text: qsTr("Text width :")
                 }
 

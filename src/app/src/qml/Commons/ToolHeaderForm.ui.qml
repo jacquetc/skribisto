@@ -27,6 +27,7 @@ Item {
             padding: 1
             checked: !folded
             onCheckedChanged: checked ? folded = false : folded = true
+            focusPolicy: Qt.NoFocus
         }
         Label {
             id: dockTitle

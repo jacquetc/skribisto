@@ -9,6 +9,7 @@ import eu.skribisto.skrusersettings 1.0
 import ".."
 
 WriteLeftDockForm {
+    id: root
 
 
     SkrUserSettings {
@@ -28,6 +29,39 @@ WriteLeftDockForm {
         }
     }
 
+
+    //Menu :
+    property list<Component> menuComponents:  [
+        Component{
+            id:  navigationMenuComponent
+            Menu {
+                id: navigationDockMenu
+                title: qsTr("&Navigation dock")
+
+                MenuItem {
+                    text: qsTr("&Navigation")
+                    onTriggered: {
+                        if(Globals.compactSize){
+                            leftDrawer.open()
+                        }
+                        navigationFrame.folded = false
+                        navigation.forceActiveFocus()
+                    }
+                }
+
+                MenuItem {
+                    text: qsTr("&Documents")
+                    onTriggered: {
+                        if(Globals.compactSize){
+                            leftDrawer.open()
+                        }
+                        documentFrame.folded = false
+                        documentView.forceActiveFocus()
+                    }
+                }
+            }
+        }
+    ]
 
     //Navigation List :
     //-----------------------------------------------------------
@@ -109,29 +143,29 @@ WriteLeftDockForm {
     }
 
 
-        PropertyAnimation {
-            target: navigationFrame
-            property: "SplitView.preferredHeight"
-            duration: 500
-            easing.type: Easing.InOutQuad
-        }
+    PropertyAnimation {
+        target: navigationFrame
+        property: "SplitView.preferredHeight"
+        duration: 500
+        easing.type: Easing.InOutQuad
+    }
 
 
-        function loadConf(){
+    function loadConf(){
 
-            navigationFrame.folded = settings.navigationFrameFolded
-            documentFrame.folded = settings.documentFrameFolded
-            splitView.restoreState(settings.dockSplitView)
+        navigationFrame.folded = settings.navigationFrameFolded
+        documentFrame.folded = settings.documentFrameFolded
+        splitView.restoreState(settings.dockSplitView)
 
 
-        }
+    }
 
-        function resetConf(){
-            navigationFrame.folded = false
-            documentFrame.folded = false
-            splitView.restoreState("")
+    function resetConf(){
+        navigationFrame.folded = false
+        documentFrame.folded = false
+        splitView.restoreState("")
 
-        }
+    }
 
     Component.onCompleted: {
 
@@ -148,7 +182,7 @@ WriteLeftDockForm {
 
         settings.dockSplitView = splitView.saveState()
 
-        }
+    }
 
     onEnabledChanged: {
         if(enabled){

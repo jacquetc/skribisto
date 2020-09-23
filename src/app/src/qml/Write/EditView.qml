@@ -82,6 +82,7 @@ EditViewForm {
 
     // textWidthSlider :
 
+    textWidthLabel.visible: !Globals.compactSize
     textWidthSlider.visible: !Globals.compactSize
 
     textWidthSlider.value: SkrSettings.writeSettings.textWidth
@@ -177,4 +178,12 @@ EditViewForm {
         }
     }
 
+
+    //focus
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            //swipeView.currentIndex = 0
+            italicToolButton.forceActiveFocus()
+        }
+    }
 }

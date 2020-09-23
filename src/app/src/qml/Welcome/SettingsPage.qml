@@ -19,6 +19,16 @@ SettingsPageForm {
     }
 
 
+    //--------------------------------------------------
+
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            accessibilityGroupBox.forceActiveFocus()
+        }
+    }
+
+
+
     //    // scrollview :
     //    Component.onCompleted: scroll.contentItem = contener
     //	function scrollChange(){
@@ -579,6 +589,7 @@ SettingsPageForm {
        Globals.resetDockConfCalled()
 
     }
+
 
 
 }

@@ -46,6 +46,13 @@ Item {
                     }
 
                     ToolButton {
+                        id: openSynopsisToolButton
+                        flat: true
+                        text: qsTr("Show synopsis")
+                        display: AbstractButton.IconOnly
+                    }
+
+                    ToolButton {
                         id: openNoteInNewTabToolButton
                         text: qsTr("Open note")
                         flat: true
@@ -53,12 +60,6 @@ Item {
                     }
 
 
-                    ToolButton {
-                        id: openSynopsisToolButton
-                        flat: true
-                        text: qsTr("Show synopsis")
-                        display: AbstractButton.IconOnly
-                    }
 
 
                     ToolButton {

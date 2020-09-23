@@ -11,6 +11,8 @@ Item {
     property alias backupHoursSpinBox: backupHoursSpinBox
     property alias backupHoursDial: backupHoursDial
 
+    property alias accessibilityGroupBox: accessibilityGroupBox
+
     property alias menuButtonsInStatusBarSwitch: menuButtonsInStatusBarSwitch
     property alias disallowSwipeBetweenTabsCheckBox: disallowSwipeBetweenTabsCheckBox
     property alias showMenuBarCheckBox: showMenuBarCheckBox
@@ -39,13 +41,11 @@ Item {
                 id: gridLayout1
                 width: scrollView.width
                 columns:  width/ 500
-                Switch {
-                    id: menuButtonsInStatusBarSwitch
-                    text: qsTr("Set main menu in status bar")
-                }
+
 
                 GroupBox {
                     id: accessibilityGroupBox
+                    focusPolicy: Qt.TabFocus
 
                     title: qsTr("Accessibility")
 
@@ -64,6 +64,27 @@ Item {
                         }
                     }
                 }
+
+
+                GroupBox {
+                    id: appearanceGroupBox
+                    width: 200
+                    height: 200
+                    focusPolicy: Qt.TabFocus
+                    title: qsTr("Appearance")
+
+
+                    ColumnLayout {
+                        id: columnLayout5
+                        anchors.fill: parent
+
+                        Switch {
+                            id: menuButtonsInStatusBarSwitch
+                            text: qsTr("Set main menu in status bar")
+                        }
+                    }
+                }
+
 
                 GroupBox {
                     id: backupGroupBox
@@ -177,8 +198,11 @@ Item {
                 }
 
 
+
+
                 GroupBox {
                     id: saveGroupBox
+                    focusPolicy: Qt.TabFocus
                     title: qsTr("Save")
 
                     ColumnLayout {
@@ -209,10 +233,13 @@ Item {
                     }
                 }
 
+
+
                 GroupBox {
                     id: advancedGroupBox
                     width: 200
                     height: 200
+                    focusPolicy: Qt.TabFocus
                     title: qsTr("Advanced")
 
                     RowLayout {
@@ -238,6 +265,7 @@ Item {
                     }
 
                 }
+
 
             }
         }

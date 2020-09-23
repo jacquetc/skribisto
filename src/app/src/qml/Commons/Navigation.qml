@@ -67,4 +67,16 @@ NavigationForm {
             }
         }
     }
+
+
+
+
+    // focus :
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            stackView.get(0, StackView.DontLoad).forceActiveFocus()
+        }
+    }
+
+
 }

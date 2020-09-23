@@ -81,6 +81,7 @@ EditViewForm {
 
     // textWidthSlider :
 
+    textWidthLabel.visible: !Globals.compactSize
     textWidthSlider.visible: !Globals.compactSize
 
     textWidthSlider.value: SkrSettings.noteSettings.textWidth
