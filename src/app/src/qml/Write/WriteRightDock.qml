@@ -35,13 +35,30 @@ WriteRightDockForm {
 
     //-----------------------------------------------------------
 
+
+    Shortcut {
+        id: toolMenuShortcut
+        enabled: root.enabled
+
+    }
+
     //Menu :
     property list<Component> menuComponents:  [
         Component{
-        id:  toolMenuComponent
+        id:  toolDockMenuComponent
         Menu {
             id: toolDockMenu
+            objectName: "toolDockMenu"
             title: qsTr("&Tools dock")
+
+
+            Component.onCompleted: {
+
+                toolMenuShortcut.sequence = skrQMLTools.mnemonic(title)
+                toolMenuShortcut.activated.connect(function() {
+                    Globals.openSubMenuCalled(toolDockMenu)
+                })
+            }
 
             MenuItem {
                 text: qsTr( "&Edit")

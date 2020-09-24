@@ -252,10 +252,20 @@ NotePadForm {
     // save content once after writing:
     noteWritingZone.textArea.onTextChanged: {
 
+
+
         // create if nothing opened
         if(currentNoteId === -2 && noteWritingZone.textArea.length === 1){
 
+            //cancel if time too short between note creations
+            if(notePadPrivateObject.creationProtectionEnabled){
+                return
+            }
+            notePadPrivateObject.creationProtectionEnabled = true
+            newOnTheFlyNoteCreationProtectionTimer.start()
+
             notePadPrivateObject.newText = noteWritingZone.text
+            console.log("notped :", notePadPrivateObject.newText)
 
             //create basic note
             var error = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
@@ -286,9 +296,19 @@ NotePadForm {
         contentSaveTimer.start()
     }
 
+    Timer{
+        id: newOnTheFlyNoteCreationProtectionTimer
+        repeat: false
+        interval: 500
+        onTriggered: {
+            notePadPrivateObject.creationProtectionEnabled = false
+        }
+    }
+
     QtObject{
         id: notePadPrivateObject
         property string newText: ""
+        property bool creationProtectionEnabled: false
 
     }
 
@@ -297,7 +317,7 @@ NotePadForm {
         repeat: false
         interval: 0
         onTriggered: {
-
+            noteWritingZone.text = notePadPrivateObject.newText
             plmData.noteHub().setContent(projectId, noteIdToOpen, notePadPrivateObject.newText)
             noteWritingZone.textArea.cursorPosition = 1
         }

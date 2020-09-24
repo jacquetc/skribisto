@@ -125,7 +125,7 @@ void DocumentHandler::setFontFamily(const QString& fontFamily)
     } else {
         QTextCharFormat f = m_selectionCursor.charFormat();
         f.setFontFamily(fontFamily);
-        m_selectionCursor.setCharFormat(f);
+        m_selectionCursor.mergeCharFormat(f);
     }
     emit formatChanged();
 }
@@ -150,7 +150,7 @@ void DocumentHandler::setFontSize(qreal fontSize)
     } else {
         QTextCharFormat f = m_selectionCursor.charFormat();
         f.setFontPointSize(fontSize);
-        m_selectionCursor.setCharFormat(f);
+        m_selectionCursor.mergeCharFormat(f);
     }
     emit formatChanged();
 }
@@ -189,7 +189,7 @@ void DocumentHandler::setItalic(bool italic)
     } else {
         QTextCharFormat f = m_selectionCursor.charFormat();
         f.setFontItalic(italic);
-        m_selectionCursor.setCharFormat(f);
+        m_selectionCursor.mergeCharFormat(f);
 
 // for test purpose:
 //        QUrl uri ("mydata://skibisto.svg"  );
@@ -246,12 +246,15 @@ bool DocumentHandler::bold() const
 void DocumentHandler::setBold(bool bold)
 {
     if (m_selectionCursor.selectedText().isEmpty()) {
+        qDebug() << "m_selectionCursor" << m_selectionCursor.selectedText();
+        qDebug() << "m_selectionCursor" << m_selectionCursor.selectionStart();
+        qDebug() << "m_selectionCursor" << m_selectionCursor.selectionEnd();
         m_nextFormat.setFontWeight(bold ? QFont::Bold : QFont::Normal);
         m_formatPosition = m_textCursor.position();
     } else {
         QTextCharFormat f = m_selectionCursor.charFormat();
         f.setFontWeight(bold ? QFont::Bold : QFont::Normal);
-        m_selectionCursor.setCharFormat(f);
+        m_selectionCursor.mergeCharFormat(f);
     }
     emit formatChanged();
 }
@@ -289,7 +292,7 @@ void DocumentHandler::setUnderline(bool underline)
     } else {
         QTextCharFormat f = m_selectionCursor.charFormat();
         f.setFontUnderline(underline);
-        m_selectionCursor.setCharFormat(f);
+        m_selectionCursor.mergeCharFormat(f);
     }
     emit formatChanged();
 }
@@ -327,7 +330,7 @@ void DocumentHandler::setStrikeout(bool strikeout)
     } else {
         QTextCharFormat f = m_selectionCursor.charFormat();
         f.setFontStrikeOut(strikeout);
-        m_selectionCursor.setCharFormat(f);
+        m_selectionCursor.mergeCharFormat(f);
     }
     emit formatChanged();
 }
@@ -352,7 +355,7 @@ void DocumentHandler::setColor(const QColor& color)
     } else {
         QTextCharFormat f = m_selectionCursor.charFormat();
         f.setForeground(QBrush(color));
-        m_selectionCursor.setCharFormat(f);
+        m_selectionCursor.mergeCharFormat(f);
     }
     emit formatChanged();
 }
@@ -377,7 +380,7 @@ void DocumentHandler::setAlignment(Qt::Alignment alignment)
     QTextBlockFormat f = m_textCursor.blockFormat();
 
     f.setAlignment(alignment);
-    m_textCursor.setBlockFormat(f);
+    m_textCursor.mergeBlockFormat(f);
     emit formatChanged();
 }
 
@@ -475,7 +478,7 @@ void DocumentHandler::setTopMarginEverywhere(qreal topMargin)
     QTextBlockFormat f = m_textCursor.blockFormat();
 
     f.setTopMargin(topMargin);
-    m_textCursor.setBlockFormat(f);
+    m_textCursor.mergeBlockFormat(f);
     m_topMarginEverywhere = topMargin;
 
     m_textCursor.setPosition(previousPosition);
@@ -503,7 +506,7 @@ void DocumentHandler::setIndentEverywhere(qreal indent)
     QTextBlockFormat f = m_textCursor.blockFormat();
 
     f.setTextIndent(indent);
-    m_textCursor.setBlockFormat(f);
+    m_textCursor.mergeBlockFormat(f);
     m_indentEverywhere = indent;
 
     m_textCursor.setPosition(previousPosition);

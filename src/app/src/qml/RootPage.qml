@@ -675,7 +675,7 @@ RootPageForm {
 
     }
 
-//--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
     function closeProjectSubWindows(projectId){
         var newListToClose = []
@@ -695,7 +695,7 @@ RootPageForm {
 
     }
 
-//--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
     function suscribeSubWindow(subWindow){
 
@@ -720,7 +720,7 @@ RootPageForm {
         privateObject.subscribedSubWindows = newList
     }
 
-//--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
     function addNoteSubWindow(projectId, paperId){
 
@@ -840,11 +840,201 @@ RootPageForm {
     //---------------------------------------------------------
 
 
+    Connections {
+        target: Globals
+        function onOpenMainMenuCalled(){
+            mainMenuButton.checked = false
+            mainMenuButton.checked = true
+        }
+    }
+    mainMenuButton.objectName: "mainMenuButton"
+    mainMenuButton.icon.name: "application-menu"
+
+    function subscribeMainMenu() {
+        skrEditMenuSignalHub.subscribe(mainMenuButton.objectName)
+    }
+
+    mainMenuButton.onCheckedChanged: {
+        if(mainMenuButton.checked){
+            var coordinates = mainMenuButton.mapToItem(rootPage, mainMenuButton.x, mainMenuButton.y)
+            mainMenu.y = coordinates.y + mainMenuButton.height
+            mainMenu.x = coordinates.x
+            mainMenu.open()
+
+
+        }
+        else {
+            mainMenu.dismiss()
+
+        }
+    }
+
+
+    Shortcut {
+        id: fileMenuShortcut
+        sequence: skrQMLTools.mnemonic(fileMenu.title)
+        onActivated: {
+            Globals.openMainMenuCalled()
+            mainMenu.openSubMenu(fileMenu)
+
+        }
+    }
+
+    Shortcut {
+        id: editMenuShortcut
+        sequence: skrQMLTools.mnemonic(editMenu.title)
+        onActivated: {
+            Globals.openMainMenuCalled()
+            mainMenu.openSubMenu(editMenu)
+
+        }
+    }
+
+    Shortcut {
+        id: helpMenuShortcut
+        sequence: skrQMLTools.mnemonic(helpMenu.title)
+        onActivated: {
+            Globals.openMainMenuCalled()
+            mainMenu.openSubMenu(helpMenu)
+
+        }
+    }
+
+    Connections{
+        target: Globals
+        function onOpenSubMenuCalled(menu) {
+            Globals.openMainMenuCalled()
+            mainMenu.openSubMenu(menu)
+        }
+    }
+
+      Menu {
+            id: mainMenu
+
+            onClosed: {
+                mainMenuButton.checked = false
+            }
+
+
+            function findMenuIndex(menu){
+                var i
+                for(i = 0; i< mainMenu.count ; i++){
+                    if(menu.title === mainMenu.menuAt(i).title){
+
+                        return i
+                    }
+                }
+            }
+
+            function openSubMenu(menu){
+                mainMenu.currentIndex = mainMenu.findMenuIndex(menu)
+                menu.open()
+            }
+
+            Component.onCompleted: {
+                skrEditMenuSignalHub.subscribe(mainMenu.objectName)
+            }
+
+            Menu {
+                id: fileMenu
+                title: qsTr("&File")
+
+
+
+                MenuItem{
+                    action: newProjectAction
+
+                }
+                MenuItem{
+                    action: openProjectAction
+                }
+                MenuSeparator { }
+                MenuItem{
+                    action: printAction
+                }
+                MenuItem{
+                    action: importAction
+                }
+                MenuItem{
+                    action: exportAction
+                }
+
+                MenuSeparator { }
+                MenuItem{
+                    action: saveAction
+                }
+                MenuItem{
+                    action: saveAsAction
+                }
+                MenuItem{
+                    action: saveACopyAction
+                }
+                MenuItem{
+                    action: saveAllAction
+                }
+
+                MenuSeparator { }
+                MenuItem{
+                    action: closeCurrentProjectAction
+                }
+                MenuItem{
+                    action: quitAction
+                }
+            }
+            Menu {
+                id: editMenu
+                objectName: "editMenu"
+                title: qsTr("&Edit")
+
+
+
+                MenuItem{
+                    id: cutItem
+                    objectName: "cutItem"
+                    action: cutAction
+                }
+                MenuItem{
+                    id: copyItem
+                    objectName: "copyItem"
+                    action: copyAction
+                }
+                MenuItem{
+                    id: pasteItem
+                    objectName: "pasteItem"
+                    action: pasteAction
+                }
+
+                Component.onCompleted:{
+                    skrEditMenuSignalHub.subscribe(editMenu.objectName)
+                    skrEditMenuSignalHub.subscribe(cutItem.objectName)
+                    skrEditMenuSignalHub.subscribe(copyItem.objectName)
+                    skrEditMenuSignalHub.subscribe(pasteItem.objectName)
+                }
+
+            }
+            Menu {
+                id: helpMenu
+                objectName: "helpMenu"
+                title: qsTr("&Help")
+
+
+
+                Action { text: qsTr("&About") }
+            }
+
+    }
+
+
+
+
+
+
 
     //---------------------------------------------------------
     Component.onCompleted: {
 
         this.openArgument()
+        this.subscribeMainMenu()
     }
     Component.onDestruction: {
 

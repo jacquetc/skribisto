@@ -31,6 +31,7 @@ Item {
     property alias writeOverviewPage: writeOverviewPage
     property alias saveButton: saveButton
     property alias tabBarRevealer: tabBarRevealer
+    property alias mainMenuButton: mainMenuButton
 
     ColumnLayout {
         id: columnLayout
@@ -39,38 +40,60 @@ Item {
 
 
 
-        TabBar {
-            id: rootTabBar
+        RowLayout {
+            id: rowLayout2
+            width: 100
+            height: 100
+            spacing: 0
             Layout.preferredHeight: 30
-            Layout.minimumHeight: 30
             Layout.fillWidth: true
 
-            Tab {
-                id: welcomeTab
-                closable: false
+            TabBar {
+                id: rootTabBar
+                Layout.preferredHeight: 30
+                Layout.minimumHeight: 30
+                Layout.fillWidth: true
 
+                Tab {
+                    id: welcomeTab
+                    closable: false
+
+                }
+                Tab {
+                    id: writeOverviewTab
+                    closable: false
+
+                }
+                Tab {
+                    id: noteOverviewTab
+                    closable: false
+
+                }
+                Tab {
+                    id: galleryTab
+                    closable: false
+
+                }
+                Tab {
+                    id: projectTab
+                    closable: false
+
+                }
             }
-            Tab {
-                id: writeOverviewTab
-                closable: false
 
-            }
-            Tab {
-                id: noteOverviewTab
-                closable: false
-
-            }
-            Tab {
-                id: galleryTab
-                closable: false
-
-            }
-            Tab {
-                id: projectTab
-                closable: false
-
+            Button {
+                id: mainMenuButton
+                text: qsTr("Main menu")
+                focusPolicy: Qt.NoFocus
+                padding: 2
+                display: AbstractButton.IconOnly
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 30
+                checkable: true
+                flat: true
             }
         }
+
 
 
         Item {
@@ -80,6 +103,7 @@ Item {
             Layout.preferredHeight: 5
             Layout.fillWidth: true
         }
+
 
         RowLayout {
             id: rowLayout
@@ -155,14 +179,14 @@ Item {
 
                         }
 
-//                        WritePage {
-//                            id: writePage
-//                        }
+                        //                        WritePage {
+                        //                            id: writePage
+                        //                        }
 
-//                                                NotePage {
-//                                                    id: notePage
+                        //                                                NotePage {
+                        //                                                    id: notePage
 
-//                                                }
+                        //                                                }
                     }
                     //        PageIndicator {
                     //            id: indicator
@@ -182,6 +206,7 @@ Item {
             //        anchors.fill: parent
             //    }
         }
+
 
 
         Pane {
@@ -240,6 +265,7 @@ Item {
         }
 
 
+
     }
     states: [
         State {
@@ -255,7 +281,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;autoSize:true;height:480;width:640}D{i:9}
+    D{i:0;autoSize:true;height:480;width:640}
 }
 ##^##*/
 

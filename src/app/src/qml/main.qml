@@ -444,48 +444,48 @@ ApplicationWindow {
     // style :
     //palette.window: "white"
 
-     //Splash screen
-        Item {
-            id: splash
-            parent: Overlay.overlay
-            property int timeoutInterval: 1000
-            signal timeout
-            x: (Overlay.overlay.width - splashImage.width) / 2
-            y: (Overlay.overlay.height - splashImage.height) / 2
-            width: splashImage.width
-            height: splashImage.height
+    //Splash screen
+    Item {
+        id: splash
+        parent: Overlay.overlay
+        property int timeoutInterval: 1000
+        signal timeout
+        x: (Overlay.overlay.width - splashImage.width) / 2
+        y: (Overlay.overlay.height - splashImage.height) / 2
+        width: splashImage.width
+        height: splashImage.height
 
-            Image {
-                id: splashImage
-                source: "qrc:/pics/skribisto.svg"
+        Image {
+            id: splashImage
+            source: "qrc:/pics/skribisto.svg"
 
 
 
-//                layer.enabled: true
-//                layer.samplerName: "maskSource"
-//                layer.effect: ShaderEffect {
-//                    property variant source: splashImage
-//                    fragmentShader: "
-//                            varying highp vec2 qt_TexCoord0;
-//                            uniform highp float qt_Opacity;
-//                            uniform lowp sampler2D source;
-//                            uniform lowp sampler2D maskSource;
-//                            void main(void) {
-//                                gl_FragColor = texture2D(source, qt_TexCoord0.st) * (1.0-texture2D(maskSource, qt_TexCoord0.st).a) * qt_Opacity;
-//                            }
-//                        "
-//                }
+            //                layer.enabled: true
+            //                layer.samplerName: "maskSource"
+            //                layer.effect: ShaderEffect {
+            //                    property variant source: splashImage
+            //                    fragmentShader: "
+            //                            varying highp vec2 qt_TexCoord0;
+            //                            uniform highp float qt_Opacity;
+            //                            uniform lowp sampler2D source;
+            //                            uniform lowp sampler2D maskSource;
+            //                            void main(void) {
+            //                                gl_FragColor = texture2D(source, qt_TexCoord0.st) * (1.0-texture2D(maskSource, qt_TexCoord0.st).a) * qt_Opacity;
+            //                            }
+            //                        "
+            //                }
 
-            }
-            Timer {
-                interval: splash.timeoutInterval; running: true; repeat: false
-                onTriggered: {
-                    splash.visible = false
-                    splash.timeout()
-                }
-            }
-            Component.onCompleted: splash.visible = true
         }
+        Timer {
+            interval: splash.timeoutInterval; running: true; repeat: false
+            onTriggered: {
+                splash.visible = false
+                splash.timeout()
+            }
+        }
+        Component.onCompleted: splash.visible = true
+    }
 
 
 
@@ -1045,7 +1045,7 @@ ApplicationWindow {
     Action {
         id: cutAction
         text: qsTr("Cut")
-        //shortcut: StandardKey.Cut
+        shortcut: StandardKey.Cut
         icon {
             name: "edit-cut"
         }
@@ -1054,16 +1054,16 @@ ApplicationWindow {
             skrEditMenuSignalHub.cutActionTriggered()
         }
     }
-    Shortcut{
-        sequence: StandardKey.Cut
-        context: Qt.ApplicationShortcut
-        onActivated: cutAction.trigger()
-    }
+    //    Shortcut{
+    //        sequence: StandardKey.Cut
+    //        context: Qt.ApplicationShortcut
+    //        onActivated: cutAction.trigger()
+    //    }
 
     Action {
         id: copyAction
         text: qsTr("Copy")
-        //shortcut: StandardKey.Copy
+        shortcut: StandardKey.Copy
         icon {
             name: "edit-copy"
         }
@@ -1072,16 +1072,16 @@ ApplicationWindow {
             skrEditMenuSignalHub.copyActionTriggered()
         }
     }
-    Shortcut{
-        sequence: StandardKey.Copy
-        context: Qt.ApplicationShortcut
-        onActivated: copyAction.trigger()
-    }
+    //    Shortcut{
+    //        sequence: StandardKey.Copy
+    //        context: Qt.ApplicationShortcut
+    //        onActivated: copyAction.trigger()
+    //    }
 
     Action {
         id: pasteAction
         text: qsTr("Paste")
-        //shortcut: StandardKey.Paste
+        shortcut: StandardKey.Paste
         icon {
             name: "edit-paste"
         }
@@ -1090,16 +1090,17 @@ ApplicationWindow {
             skrEditMenuSignalHub.pasteActionTriggered()
         }
     }
-    Shortcut{
-        sequence: StandardKey.Paste
-        context: Qt.ApplicationShortcut
-        onActivated: pasteAction.trigger()
-    }
+    //    Shortcut{
+    //        sequence: StandardKey.Paste
+    //        context: Qt.ApplicationShortcut
+    //        onActivated: pasteAction.trigger()
+    //    }
 
 
 
     Action {
-        property bool preventTriggger: false
+        property bool preventTrigger: false
+        property bool actionTriggeredVolontarily: false
 
         id: italicAction
         text: qsTr("Italic")
@@ -1109,27 +1110,29 @@ ApplicationWindow {
             width: 50
         }
 
-        //shortcut: StandardKey.Italic
+        shortcut: StandardKey.Italic
         checkable: true
 
         onCheckedChanged: {
-            if(preventTriggger){
-                preventTriggger = false
+            console.log("preventTrigger", preventTrigger)
+            if(preventTrigger){
                 return
             }
-            skrEditMenuSignalHub.italicActionTriggered(italicAction.checked)
+                skrEditMenuSignalHub.italicActionTriggered(italicAction.checked)
+
+
 
         }
     }
-    Shortcut{
-        sequence: StandardKey.Italic
-        context: Qt.ApplicationShortcut
-        onActivated: italicAction.trigger()
-    }
+    //    Shortcut{
+    //        sequence: StandardKey.Italic
+    //        context: Qt.ApplicationShortcut
+    //        onActivated: italicAction.trigger()
+    //    }
 
 
     Action {
-        property bool preventTriggger: false
+        property bool preventTrigger: false
 
         id: boldAction
         text: qsTr("Bold")
@@ -1143,23 +1146,24 @@ ApplicationWindow {
         checkable: true
 
         onCheckedChanged: {
-            if(preventTriggger){
-                preventTriggger = false
+
+            if(preventTrigger){
                 return
             }
-            skrEditMenuSignalHub.boldActionTriggered(boldAction.checked)
+                skrEditMenuSignalHub.boldActionTriggered(boldAction.checked)
+
 
         }
     }
-    Shortcut{
-        sequence: StandardKey.Bold
-        context: Qt.ApplicationShortcut
-        onActivated: boldAction.trigger()
-    }
+    //    Shortcut{
+    //        sequence: StandardKey.Bold
+    //        context: Qt.ApplicationShortcut
+    //        onActivated: boldAction.trigger()
+    //    }
 
 
     Action {
-        property bool preventTriggger: false
+        property bool preventTrigger: false
 
         id: strikeAction
         text: qsTr("Strike")
@@ -1173,11 +1177,10 @@ ApplicationWindow {
         checkable: true
 
         onCheckedChanged: {
-            if(preventTriggger){
-                preventTriggger = false
+            if(preventTrigger){
                 return
             }
-            skrEditMenuSignalHub.strikeActionTriggered(strikeAction.checked)
+                skrEditMenuSignalHub.strikeActionTriggered(strikeAction.checked)
 
         }
     }
@@ -1190,7 +1193,7 @@ ApplicationWindow {
 
 
     Action {
-        property bool preventTriggger: false
+        property bool preventTrigger: false
 
         id: underlineAction
         text: qsTr("Underline")
@@ -1204,19 +1207,18 @@ ApplicationWindow {
         checkable: true
 
         onCheckedChanged: {
-            if(preventTriggger){
-                preventTriggger = false
+            if(preventTrigger){
                 return
             }
-            skrEditMenuSignalHub.underlineActionTriggered(underlineAction.checked)
+                skrEditMenuSignalHub.underlineActionTriggered(underlineAction.checked)
 
         }
     }
-    Shortcut{
-        sequence: StandardKey.Underline
-        context: Qt.ApplicationShortcut
-        onActivated: underlineAction.trigger()
-    }
+    //    Shortcut{
+    //        sequence: StandardKey.Underline
+    //        context: Qt.ApplicationShortcut
+    //        onActivated: underlineAction.trigger()
+    //    }
     //    Keys.onReleased: {
     //        if(event.key === Qt.Key_Alt){
     //            console.log("alt")
@@ -1258,143 +1260,8 @@ ApplicationWindow {
 
 
 
-    menuBar: MenuBar {
-        id: menuBar
-        visible: SkrSettings.accessibilitySettings.showMenuBar
-
-        objectName: "menuBar"
-        Component.onCompleted:{
-            skrEditMenuSignalHub.subscribe(menuBar.objectName)
-        }
 
 
-        //        Shortcut {
-        //            sequence: StandardKey.Cancel
-        //            context: Qt.ApplicationShortcut
-        //            onActivated: {
-        //                var menus = menuBar.menus
-        //                console.log("Cancel")
-        //                var i;
-        //                for(i = 0 ; i < menus.length ; i++){
-        //                    console.log(i)
-        //                    menus[i].close()
-        //                }
-
-        //                Globals.forceFocusOnEscapePressed()
-        //            }
-        //        }
-
-
-        Menu {
-            id: fileMenu
-            title: qsTr("&File")
-
-
-//            Shortcut {
-//                sequence: skrQMLTools.mnemonic(fileMenu.title)
-//                context: Qt.ApplicationShortcut
-//                onActivated: {
-//                    console.log("fileMenu")
-//                    menuBar.setCurrentIndex(0)
-//                    menuBar.contentData[0].down = true
-//                    menuBar.contentData[0].forceActiveFocus()
-
-//                    //                    fileMenu.open()
-////                    fileMenu.currentIndex = 0
-//                }
-//            }
-
-//            Keys.priority: Keys.BeforeItem
-//                        Keys.onEscapePressed: {
-//                            var menus = menuBar.menus
-//                            console.log("Cancel")
-//                            var i;
-//                            for(i = 0 ; i < menus.length ; i++){
-//                                console.log(i)
-//                                menus[i].dismiss()
-//                            }
-
-//                            Globals.forceFocusOnEscapePressed()
-//                        }
-
-
-        MenuItem{
-            action: newProjectAction
-
-        }
-        MenuItem{
-            action: openProjectAction
-        }
-        MenuSeparator { }
-        MenuItem{
-            action: printAction
-        }
-        MenuItem{
-            action: importAction
-        }
-        MenuItem{
-            action: exportAction
-        }
-
-        MenuSeparator { }
-        MenuItem{
-            action: saveAction
-        }
-        MenuItem{
-            action: saveAsAction
-        }
-        MenuItem{
-            action: saveACopyAction
-        }
-        MenuItem{
-            action: saveAllAction
-        }
-
-        MenuSeparator { }
-        MenuItem{
-            action: closeCurrentProjectAction
-        }
-        MenuItem{
-            action: quitAction
-        }
-    }
-    Menu {
-        id: editMenu
-        objectName: "editMenu"
-        title: qsTr("&Edit")
-
-
-        MenuItem{
-            id: cutItem
-            objectName: "cutItem"
-            action: cutAction
-        }
-        MenuItem{
-            id: copyItem
-            objectName: "copyItem"
-            action: copyAction
-        }
-        MenuItem{
-            id: pasteItem
-            objectName: "pasteItem"
-            action: pasteAction
-        }
-
-        Component.onCompleted:{
-            skrEditMenuSignalHub.subscribe(editMenu.objectName)
-            skrEditMenuSignalHub.subscribe(cutItem.objectName)
-            skrEditMenuSignalHub.subscribe(copyItem.objectName)
-            skrEditMenuSignalHub.subscribe(pasteItem.objectName)
-        }
-
-    }
-    Menu {
-        title: qsTr("&Help")
-        Action { text: qsTr("&About") }
-    }
-
-
-}
 
 
 

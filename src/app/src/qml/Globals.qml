@@ -37,6 +37,9 @@ QtObject {
 
     signal resetDockConfCalled()
 
+    signal openMainMenuCalled()
+    signal openSubMenuCalled(var menu)
+
     //Write :
     signal openSheetCalled(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openSheetInNewTabCalled(int projectId, int paperId)

@@ -30,16 +30,31 @@ WriteLeftDockForm {
     }
 
 
+    Shortcut {
+        id: navigationMenuShortcut
+        enabled: root.enabled
+
+    }
+
+
+
     //Menu :
     property list<Component> menuComponents:  [
         Component{
-            id:  navigationMenuComponent
+            id:  navigationDockMenuComponent
             Menu {
                 id: navigationDockMenu
+                objectName: "navigationDockMenu"
                 title: qsTr("&Navigation dock")
 
-                Accessible.name: title
-                Accessible.role: Accessible.MenuItem
+                Component.onCompleted: {
+
+                    navigationMenuShortcut.sequence = skrQMLTools.mnemonic(title)
+                    navigationMenuShortcut.activated.connect(function() {
+                        Globals.openSubMenuCalled(navigationDockMenu)
+                    })
+                }
+
 
                 MenuItem {
                     text: qsTr("&Navigation")

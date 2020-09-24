@@ -125,23 +125,37 @@ WritingZoneForm {
             skrEditMenuSignalHub.clearCutConnections()
             skrEditMenuSignalHub.clearCopyConnections()
             skrEditMenuSignalHub.clearPasteConnections()
+            skrEditMenuSignalHub.clearItalicConnections()
+            skrEditMenuSignalHub.clearBoldConnections()
+            skrEditMenuSignalHub.clearStrikeConnections()
+            skrEditMenuSignalHub.clearUnderlineConnections()
+
             skrEditMenuSignalHub.subscribe(textArea.objectName)
+
             skrEditMenuSignalHub.cutActionTriggered.connect(cut)
             skrEditMenuSignalHub.copyActionTriggered.connect(copy)
             skrEditMenuSignalHub.pasteActionTriggered.connect(paste)
 
-            italicAction.checked = documentHandler.italic
             skrEditMenuSignalHub.italicActionTriggered.connect(italic)
-
-            boldAction.checked = documentHandler.bold
             skrEditMenuSignalHub.boldActionTriggered.connect(bold)
-
-            strikeAction.checked = documentHandler.strikeout
             skrEditMenuSignalHub.strikeActionTriggered.connect(strike)
-
-            underlineAction.checked = documentHandler.underline
             skrEditMenuSignalHub.underlineActionTriggered.connect(underline)
 
+            italicAction.preventTrigger = true
+            italicAction.checked = documentHandler.italic
+            italicAction.preventTrigger = false
+
+            boldAction.preventTrigger = true
+            boldAction.checked = documentHandler.bold
+            boldAction.preventTrigger = false
+
+            strikeAction.preventTrigger = true
+            strikeAction.checked = documentHandler.strikeout
+            strikeAction.preventTrigger = false
+
+            underlineAction.preventTrigger = true
+            underlineAction.checked = documentHandler.underline
+            underlineAction.preventTrigger = false
         }
     }
     //    Binding{
@@ -160,49 +174,55 @@ WritingZoneForm {
     function cut(){
 
         console.log("cut action text", textArea.selectedText)
-        textArea.cut()
         textArea.forceActiveFocus()
+        textArea.cut()
 
     }
     function copy(){
 
         console.log("copy action text", textArea.selectedText)
-        textArea.copy()
         textArea.forceActiveFocus()
+        textArea.copy()
 
     }
     function paste(){
 
         console.log("paste action text")
-        textArea.paste()
         textArea.forceActiveFocus()
+        textArea.paste()
 
     }
 
     function italic(checked){
 
         console.log("italic action text")
-        documentHandler.italic = checked
         textArea.forceActiveFocus()
+
+        documentHandler.italic = checked
+
     }
+
 
     function bold(checked){
 
-        console.log("bold action text")
-        documentHandler.bold = checked
+        console.log("bold action text", checked)
         textArea.forceActiveFocus()
+
+        documentHandler.bold = checked
     }
     function strike(checked){
 
         console.log("strike action text")
-        documentHandler.strikeout = checked
         textArea.forceActiveFocus()
+
+        documentHandler.strikeout = checked
     }
     function underline(checked){
 
         console.log("underline action text")
-        documentHandler.underline = checked
         textArea.forceActiveFocus()
+
+        documentHandler.underline = checked
     }
     //menu :
     Menu {
@@ -211,18 +231,20 @@ WritingZoneForm {
 
 
         MenuItem{
+            id: italicItem
             action: italicAction
             objectName: "italicItem"
         }
 
         MenuItem {
-
+            id: boldItem
             action: boldAction
             objectName: "boldItem"
 
         }
 
         MenuItem {
+            id: strikeItem
             action: strikeAction
             objectName: "strikeItem"
 
@@ -230,8 +252,9 @@ WritingZoneForm {
         }
 
         MenuItem {
+            id: underlineItem
             action: underlineAction
-            objectName: "undelineItem"
+            objectName: "underlineItem"
 
 
         }
@@ -239,19 +262,21 @@ WritingZoneForm {
         MenuSeparator {}
 
         MenuItem{
+            id: cutItem
             action: cutAction
             objectName: "cutItem"
             enabled: textArea.selectedText !== ""
         }
 
         MenuItem {
-
+            id: copyItem
             action: copyAction
             objectName: "copyItem"
             enabled: textArea.selectedText !== ""
 
         }
         MenuItem {
+            id: pasteItem
             action: pasteAction
             objectName: "pasteItem"
 
@@ -262,6 +287,10 @@ WritingZoneForm {
 
         Component.onCompleted:{
             skrEditMenuSignalHub.subscribe(menu.objectName)
+            skrEditMenuSignalHub.subscribe(italicItem.objectName)
+            skrEditMenuSignalHub.subscribe(boldItem.objectName)
+            skrEditMenuSignalHub.subscribe(strikeItem.objectName)
+            skrEditMenuSignalHub.subscribe(underlineItem.objectName)
             skrEditMenuSignalHub.subscribe(cutItem.objectName)
             skrEditMenuSignalHub.subscribe(copyItem.objectName)
             skrEditMenuSignalHub.subscribe(pasteItem.objectName)
@@ -295,7 +324,7 @@ WritingZoneForm {
     //        }
     //    }
 
-    property int cursorPosition: textArea.cursorPosition
+    //property int cursorPosition: textArea.cursorPosition
 
 
     function setCursorPosition(cursorPosition){
@@ -322,14 +351,23 @@ WritingZoneForm {
 
     textArea.onCursorPositionChanged: {
         if(textArea.activeFocus){
-            italicAction.preventTriggger = true
+
+            italicAction.preventTrigger = true
             italicAction.checked = documentHandler.italic
-            boldAction.preventTriggger = true
+            italicAction.preventTrigger = false
+
+            boldAction.preventTrigger = true
             boldAction.checked = documentHandler.bold
-            strikeAction.preventTriggger = true
+            boldAction.preventTrigger = false
+
+            strikeAction.preventTrigger = true
             strikeAction.checked = documentHandler.strikeout
-            underlineAction.preventTriggger = true
+            strikeAction.preventTrigger = false
+
+            underlineAction.preventTrigger = true
             underlineAction.checked = documentHandler.underline
+            underlineAction.preventTrigger = false
+
 
         }
     }

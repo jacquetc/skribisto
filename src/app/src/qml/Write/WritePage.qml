@@ -749,7 +749,7 @@ WritePageForm {
 
     writingZone.onActiveFocusChanged: {
         writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
-        restoreCurrentPaperCursorPositionAndY()
+//        restoreCurrentPaperCursorPositionAndY()
     }
 
 
@@ -803,62 +803,72 @@ WritePageForm {
     function addMenus(){
         var helpMenu
 
-        var menuBar = ApplicationWindow.window.menuBar
-
-        var menuCount = menuBar.count
+        var menuCount = mainMenu.count
 
         // take Help menu
-
-        helpMenu = menuBar.takeMenu(menuCount - 1)
+        menuCount = mainMenu.count
+        var m;
+        for(m = 0 ; m < menuCount ; m++){
+            var menu = mainMenu.menuAt(m)
+            if(menu.objectName === "helpMenu"){
+                helpMenu = mainMenu.takeMenu(m)
+            }
+        }
 
         // add new menus
         var k
         for(k = 0 ; k < leftDock.menuComponents.length ; k++){
-            menuBar.addMenu(leftDock.menuComponents[k].createObject(menuBar))
+
+            var newMenu = leftDock.menuComponents[k].createObject(mainMenu)
+            mainMenu.addMenu(newMenu)
+
         }
         var l
         for(l = 0 ; l < leftDock.menuComponents.length ; l++){
-            menuBar.addMenu(rightDock.menuComponents[l].createObject(menuBar))
+            var newMenu2 = rightDock.menuComponents[l].createObject(mainMenu)
+            mainMenu.addMenu(newMenu2)
         }
 
+        // shortcuts:
+
+
         //reinsert Help menu
-        menuBar.addMenu(helpMenu)
+        mainMenu.addMenu(helpMenu)
 
     }
 
     function removeMenus(){
         var helpMenu
 
-        var menuBar = ApplicationWindow.window.menuBar
-
-        var menuCount = menuBar.count
+        var menuCount = mainMenu.count
 
         // take Help menu
-        menuCount = menuBar.count
+        menuCount = mainMenu.count
         var m;
         for(m = 0 ; m < menuCount ; m++){
-            var menu = menuBar.menuAt(m)
-            if(menu.title === qsTr("&Help")){
-                helpMenu = menuBar.takeMenu(m)
+            var menu = mainMenu.menuAt(m)
+            if(menu.objectName === "helpMenu"){
+                helpMenu = mainMenu.takeMenu(m)
             }
         }
 
         // remove additional menus
-        menuCount = menuBar.count
+        menuCount = mainMenu.count
         var i;
         for(i = menuCount - 1 ; i >= 0  ; i--){
-            var menu1 = menuBar.menuAt(i)
-            console.log(menu1.title)
-            if(menu1.title === qsTr("&Navigation dock")
-                    || menu1.title === qsTr("&Tools dock")){
+            var menu1 = mainMenu.menuAt(i)
 
-                menuBar.removeMenu(menu1)
+            if(menu1.objectName === "navigationDockMenu"
+                    || menu1.objectName === "toolDockMenu"){
+
+                mainMenu.removeMenu(menu1)
+
             }
         }
 
 
         //reinsert Help menu
-        menuBar.addMenu(helpMenu)
+        mainMenu.addMenu(helpMenu)
 
     }
 
