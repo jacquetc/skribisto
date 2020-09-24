@@ -22,6 +22,7 @@
 #define SKRQMLTOOLS_H
 
 
+#include <QAccessibleEvent>
 #include <QFileInfo>
 #include <QKeySequence>
 #include <QObject>
@@ -66,6 +67,12 @@ Q_INVOKABLE QUrl getFolderPathURLFromURL(const QUrl &url) const{
     }
     Q_INVOKABLE QString mnemonic(const QString &text){
         return QKeySequence::mnemonic(text).toString();
+    }
+
+    Q_INVOKABLE void updateAccessibility(QObject *object){
+        QAccessible::Event event = QAccessible::Focus;
+        QAccessibleEvent accessibleEvent(object, event);
+        QAccessible::updateAccessibility(&accessibleEvent);
     }
 
 };

@@ -14,6 +14,8 @@ DeletedListViewForm {
     }
     signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openDocumentInNewTab(int projectId, int paperId)
+    signal openDocumentInNewWindow(int projectId, int paperId)
+    //TODO: implement it in context menu
 
 
 

@@ -47,6 +47,7 @@ NavigationForm {
     }
 
     function popDeletedListView() {
+        console.log("popDeletedListView")
         stackView.pop()
     }
 

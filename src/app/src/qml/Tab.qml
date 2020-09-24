@@ -14,6 +14,9 @@ TabForm {
         root.text = newTitle
     }
 
+    Accessible.name: root.text === "" ? action.text : root.text
+
+
     signal onCloseCalled(int index)
     closeButton.onClicked:  onCloseCalled(TabBar.index)
 

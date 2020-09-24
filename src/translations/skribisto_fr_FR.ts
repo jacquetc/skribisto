@@ -392,6 +392,22 @@
         <source>Project</source>
         <translation>Projet</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <translation type="unfinished">&amp;Fichier</translation>
+    </message>
+    <message>
+        <source>&amp;Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Help</source>
+        <translation type="unfinished">&amp;Aide</translation>
+    </message>
+    <message>
+        <source>&amp;About</source>
+        <translation type="unfinished">&amp;A propos</translation>
+    </message>
 </context>
 <context>
     <name>RootPageForm.ui</name>
@@ -402,6 +418,10 @@
     <message>
         <source>Label</source>
         <translation>Libelé</translation>
+    </message>
+    <message>
+        <source>Main menu</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -675,15 +695,15 @@
     <name>WritePage</name>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Aide</translation>
+        <translation type="vanished">&amp;Aide</translation>
     </message>
     <message>
         <source>&amp;Navigation dock</source>
-        <translation>dock de &amp;navigation</translation>
+        <translation type="vanished">dock de &amp;navigation</translation>
     </message>
     <message>
         <source>&amp;Tools dock</source>
-        <translation>Dock d&apos;&amp;outils</translation>
+        <translation type="vanished">Dock d&apos;&amp;outils</translation>
     </message>
 </context>
 <context>
@@ -832,19 +852,19 @@
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;Fichier</translation>
+        <translation type="vanished">&amp;Fichier</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation>&amp;Editer</translation>
+        <translation type="vanished">&amp;Editer</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Aide</translation>
+        <translation type="vanished">&amp;Aide</translation>
     </message>
     <message>
         <source>&amp;About</source>
-        <translation>&amp;A propos</translation>
+        <translation type="vanished">&amp;A propos</translation>
     </message>
 </context>
 </TS>

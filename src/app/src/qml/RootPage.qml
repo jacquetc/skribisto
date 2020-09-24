@@ -310,10 +310,10 @@ RootPageForm {
 
     Shortcut{
         id: tabBarNextTabShortcut
-        sequence: StandardKey.NextChild
+        sequence: "Ctrl+Tab"
         onActivated: {
-            console.log("tabBarNextTabShortcut")
             rootTabBar.incrementCurrentIndex()
+            skrQMLTools.updateAccessibility(rootTabBar.currentItem)
         }
     }
 
@@ -321,9 +321,8 @@ RootPageForm {
 
     Shortcut{
         id: tabBarPreviousTabShortcut
-        sequence: StandardKey.PreviousChild
+        sequence: "Ctrl+Shift+Tab"
         onActivated: {
-            //console.log("tabBarPreviousTabShortcut")
             rootTabBar.decrementCurrentIndex()
         }
     }
@@ -915,7 +914,6 @@ RootPageForm {
                 mainMenuButton.checked = false
             }
 
-
             function findMenuIndex(menu){
                 var i
                 for(i = 0; i< mainMenu.count ; i++){
@@ -929,6 +927,7 @@ RootPageForm {
             function openSubMenu(menu){
                 mainMenu.currentIndex = mainMenu.findMenuIndex(menu)
                 menu.open()
+                menu.currentIndex = 0
             }
 
             Component.onCompleted: {
@@ -938,8 +937,6 @@ RootPageForm {
             Menu {
                 id: fileMenu
                 title: qsTr("&File")
-
-
 
                 MenuItem{
                     action: newProjectAction

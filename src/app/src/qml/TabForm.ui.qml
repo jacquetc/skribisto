@@ -41,7 +41,7 @@ TabButton {
         }
 
         Text {
-            text: base.text === "" ? base.action.text : base.text
+            text: base.text === "" ? action.text : base.text
             font.weight: isCurrent ? Font.Bold : Font.Normal
             font.family: base.font.family
             font.pointSize: base.font.pointSize
