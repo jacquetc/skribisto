@@ -18,6 +18,7 @@ TabButton {
 
         Button {
             id: image
+            focusPolicy: Qt.NoFocus
             enabled: true
             implicitHeight: 24
             implicitWidth: 24
@@ -57,6 +58,7 @@ TabButton {
             id: closeButton
             visible: isCurrent | hoverHandler.hovered ? closable : false
             text: "x"
+            focusPolicy: Qt.NoFocus
             flat: true
             implicitHeight: 20
             implicitWidth: 20

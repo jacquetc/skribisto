@@ -313,7 +313,8 @@ RootPageForm {
         sequence: "Ctrl+Tab"
         onActivated: {
             rootTabBar.incrementCurrentIndex()
-            skrQMLTools.updateAccessibility(rootTabBar.currentItem)
+            rootTabBar.currentItem.forceActiveFocus()
+
         }
     }
 
@@ -324,6 +325,7 @@ RootPageForm {
         sequence: "Ctrl+Shift+Tab"
         onActivated: {
             rootTabBar.decrementCurrentIndex()
+            rootTabBar.currentItem.forceActiveFocus()
         }
     }
 
