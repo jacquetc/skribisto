@@ -39,6 +39,6 @@ modules:
       - -DCMAKE_BUILD_TYPE=RelWithDebInfo
       - -DCMAKE_BUILD_TYPE=Release
     sources:
-      - type: archive
-        url: https://github.com/jacquetc/skribisto/archive/v1.8.1-alpha.tar.gz
-        sha256: 5c4ff319bfc911c1236707f6ff8ffd5e3767b3e02f963f10f54e243c929143ac
+      - type: git
+        url: https://github.com/jacquetc/skribisto.git
+        branch: develop

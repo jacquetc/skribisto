@@ -21,6 +21,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH} ${
 #include(GNUInstallDirs)
 #include(FeatureSummary)
 include(KDEInstallDirs)
+include(ECMInstallIcons)
 
 
 #add_compile_definitions(VERSIONSTR=1.6 FORCEQML=1)
@@ -41,6 +42,7 @@ set(CMAKE_CXX_STANDARD 14)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 #set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fsanitize=address,undefined -O0")
 
+add_subdirectory(resources/unix/icons)
 
 add_subdirectory(src/libskribisto-data/src)
 #add_subdirectory(src/plugins)

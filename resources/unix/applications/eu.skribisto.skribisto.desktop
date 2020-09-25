@@ -1,12 +1,12 @@
 [Desktop Entry]
-Name=Plume Creator
+Name=Skribisto
 GenericName=Writing software
 GenericName[fr]=Logiciel d'écriture
-Comment=Write your fiction here ! Manage your writing projects
-Comment[fr]=Ecrivez ici votre fiction ! Organisez avec vos projets d'écriture.
-Icon=plume-creator
-Exec=plume-creator
+Comment=Manage your writing projects
+Comment[fr]=Organisez avec vos projets d'écriture.
+Icon=eu.skribisto.skribisto
+Exec=skribisto
 Terminal=false
 Type=Application
 Categories=Qt;Office;
-MimeType=application/x-plume;application/x-plume-backup;
+MimeType=application/x-skribisto;application/x-skribisto-backup;
