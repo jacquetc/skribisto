@@ -53,7 +53,7 @@ add_subdirectory(src/libskribisto-data/tests)
 add_subdirectory(src/app/tests)
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-install(PROGRAMS resources/unix/applications/skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})
 
 #install(TARGETS skribisto skribisto-data
 #        RUNTIME DESTINATION ${BINDIR}
