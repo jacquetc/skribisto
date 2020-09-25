@@ -110,5 +110,4 @@ include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 install(TARGETS skribisto RUNTIME DESTINATION ${KDE_INSTALL_BINDIR})
 
-
 #set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/data/Info.plist)
