@@ -7,7 +7,7 @@
   <name>Skribisto</name>
   <summary>Software for writers</summary>
   <description>
-    <p xml:lang="en-GB">Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or write hundreds of notes. The tools are designed to be most unobstrusive, so you can write, write and write a bit more without too much distraction.</p>
+      <p>Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or write hundreds of notes. The tools are designed to be most unobstrusive, so you can write, write and write a bit more without too much distraction.</p>
     <p xml:lang="en-GB">Touch-friendly and dynamic, the user can create and organize text papers (called "sheets"). Exactly the same is possible with the notes. Sheets can link to a synopsis and multiple notes, or create them on the fly while writing.</p>
   </description>
   <releases>
