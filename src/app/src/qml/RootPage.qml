@@ -320,6 +320,8 @@ RootPageForm {
 
 
 
+    //---------------------------------------------------------
+
     Shortcut{
         id: tabBarPreviousTabShortcut
         sequence: "Ctrl+Shift+Tab"
@@ -329,10 +331,14 @@ RootPageForm {
         }
     }
 
+    //---------------------------------------------------------
+
 
     //rootSwipeView.currentIndex: rootTabBar.currentIndex
 
     rootTabBar.currentIndex: rootSwipeView.currentIndex
+
+    //---------------------------------------------------------
 
     Binding {
         //when: rootTabBar.currentIndex !== rootSwipeView.currentIndex
@@ -343,6 +349,8 @@ RootPageForm {
         delayed: true
         restoreMode: Binding.RestoreBindingOrValue
     }
+
+    //---------------------------------------------------------
 
     rootSwipeView.onCurrentItemChanged: {
         var i;
@@ -357,6 +365,8 @@ RootPageForm {
             }
         }
     }
+
+    //---------------------------------------------------------
 
 
     function addTab(incubator, insertionIndex, pageType, projectId, paperId) {

@@ -34,6 +34,79 @@ RightDockForm {
     //-----------------------------------------------------------
 
 
+    Shortcut {
+        id: toolMenuShortcut
+        enabled: root.enabled
+
+    }
+
+
+    //-----------------------------------------------------------
+
+
+    //Menu :
+    property list<Component> menuComponents:  [
+        Component{
+        id:  toolDockMenuComponent
+        Menu {
+            id: toolDockMenu
+            objectName: "toolDockMenu"
+            title: qsTr("&Tools dock")
+
+
+            Component.onCompleted: {
+
+                toolMenuShortcut.sequence = skrQMLTools.mnemonic(title)
+                toolMenuShortcut.activated.connect(function() {
+                    Globals.openSubMenuCalled(toolDockMenu)
+                })
+            }
+
+            MenuItem {
+                text: qsTr( "&Edit")
+                onTriggered: {
+
+                    if(Globals.compactSize){
+                        rightDrawer.open()
+                    }
+                    editFrame.folded = false
+                    editView.forceActiveFocus()
+                }
+            }
+
+
+            MenuItem {
+                text: qsTr( "&Tags")
+                onTriggered: {
+
+                    if(Globals.compactSize){
+                        rightDrawer.open()
+                    }
+                    tagPadFrame.folded = false
+                    tagPadView.forceActiveFocus()
+                }
+            }
+
+            MenuItem {
+                text: qsTr( "&Notes")
+                onTriggered: {
+
+                    if(Globals.compactSize){
+                        rightDrawer.open()
+                    }
+                    notePadFrame.folded = false
+                    notePadView.forceActiveFocus()
+                }
+            }
+        }
+    }
+]
+
+
+
+    //-----------------------------------------------------------
+
+
 
 
 

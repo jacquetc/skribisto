@@ -13,6 +13,12 @@ WriteOverviewPageForm {
 
 
 
+
+    Component.onCompleted: {
+        enabled = false
+
+    }
+
     //-------------------------------------------------------------
     //-------Left Dock------------------------------------------
     //-------------------------------------------------------------
@@ -143,10 +149,102 @@ WriteOverviewPageForm {
 
 
 
+    //------------------------------------------------------------
+    //--------menus--------------------------------------------
+    //------------------------------------------------------------
 
+    QtObject{
+        id: privateMenuObject
+        property string dockUniqueId: ""
+    }
+
+    function addMenus(){
+        //create dockUniqueId:
+        privateMenuObject.dockUniqueId = Qt.formatDateTime(new Date(), "yyyyMMddhhmmsszzz")
+
+        var helpMenu
+
+        var menuCount = mainMenu.count
+
+        // take Help menu
+        menuCount = mainMenu.count
+        var m;
+        for(m = 0 ; m < menuCount ; m++){
+            var menu = mainMenu.menuAt(m)
+            if(menu.objectName === "helpMenu"){
+                helpMenu = mainMenu.takeMenu(m)
+            }
+        }
+
+        // add new menus
+        var k
+        for(k = 0 ; k < leftDock.menuComponents.length ; k++){
+
+            var newMenu = leftDock.menuComponents[k].createObject(mainMenu)
+            newMenu.objectName = newMenu.objectName + "-" + privateMenuObject.dockUniqueId
+            mainMenu.addMenu(newMenu)
+
+        }
+
+        // shortcuts:
+
+
+        //reinsert Help menu
+        mainMenu.addMenu(helpMenu)
+
+    }
+
+    function removeMenus(){
+        var helpMenu
+
+        var menuCount = mainMenu.count
+
+        // take Help menu
+        menuCount = mainMenu.count
+        var m;
+        for(m = 0 ; m < menuCount ; m++){
+            var menu = mainMenu.menuAt(m)
+            if(menu.objectName === "helpMenu"){
+                helpMenu = mainMenu.takeMenu(m)
+            }
+        }
+
+        // remove additional menus
+        menuCount = mainMenu.count
+        var i;
+        for(i = menuCount - 1 ; i >= 0  ; i--){
+            var menu1 = mainMenu.menuAt(i)
+
+            if(menu1.objectName === "navigationDockMenu-" + privateMenuObject.dockUniqueId
+                    || menu1.objectName === "toolDockMenu-" + privateMenuObject.dockUniqueId){
+
+                mainMenu.removeMenu(menu1)
+
+            }
+        }
+
+
+        //reinsert Help menu
+        mainMenu.addMenu(helpMenu)
+
+        privateMenuObject.dockUniqueId = ""
+
+    }
+
+    onEnabledChanged: {
+
+        if(root.enabled){
+            addMenus()
+        }
+        else{
+            removeMenus()
+        }
+    }
+
+
+    //------------------------------------------------------------
     // fullscreen :
-
-
+    //------------------------------------------------------------
     property bool fullscreen_left_drawer_visible: false
 
     Connections {

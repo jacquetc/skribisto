@@ -30,12 +30,16 @@ WriteLeftDockForm {
     }
 
 
+    //-----------------------------------------------------------
+
     Shortcut {
         id: navigationMenuShortcut
         enabled: root.enabled
 
     }
 
+
+    //-----------------------------------------------------------
 
 
     //Menu :

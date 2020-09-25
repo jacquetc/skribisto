@@ -94,9 +94,10 @@ WritePageForm {
         //title = getTitle()
         plmData.sheetHub().titleChanged.connect(changeTitle)
 
-        addMenus()
-
+        enabled = false
     }
+
+    //---------------------------------------------------------
 
     function changeTitle(_projectId, _paperId, newTitle) {
         if (_projectId === projectId && _paperId === paperId ){
@@ -749,7 +750,7 @@ WritePageForm {
 
     writingZone.onActiveFocusChanged: {
         writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
-//        restoreCurrentPaperCursorPositionAndY()
+        //        restoreCurrentPaperCursorPositionAndY()
     }
 
 
@@ -797,10 +798,19 @@ WritePageForm {
 
 
     //------------------------------------------------------------
-    //--------menuBar--------------------------------------------
+    //--------menus--------------------------------------------
     //------------------------------------------------------------
 
+    QtObject{
+        id: privateMenuObject
+        property string dockUniqueId: ""
+    }
+
     function addMenus(){
+        //create dockUniqueId:
+        privateMenuObject.dockUniqueId = Qt.formatDateTime(new Date(), "yyyyMMddhhmmsszzz")
+
+
         var helpMenu
 
         var menuCount = mainMenu.count
@@ -820,12 +830,14 @@ WritePageForm {
         for(k = 0 ; k < leftDock.menuComponents.length ; k++){
 
             var newMenu = leftDock.menuComponents[k].createObject(mainMenu)
+            newMenu.objectName = newMenu.objectName + "-" + privateMenuObject.dockUniqueId
             mainMenu.addMenu(newMenu)
 
         }
         var l
-        for(l = 0 ; l < leftDock.menuComponents.length ; l++){
+        for(l = 0 ; l < rightDock.menuComponents.length ; l++){
             var newMenu2 = rightDock.menuComponents[l].createObject(mainMenu)
+            newMenu2.objectName = newMenu2.objectName + "-" + privateMenuObject.dockUniqueId
             mainMenu.addMenu(newMenu2)
         }
 
@@ -858,8 +870,8 @@ WritePageForm {
         for(i = menuCount - 1 ; i >= 0  ; i--){
             var menu1 = mainMenu.menuAt(i)
 
-            if(menu1.objectName === "navigationDockMenu"
-                    || menu1.objectName === "toolDockMenu"){
+            if(menu1.objectName === "navigationDockMenu-" + privateMenuObject.dockUniqueId
+                    || menu1.objectName === "toolDockMenu-" + privateMenuObject.dockUniqueId){
 
                 mainMenu.removeMenu(menu1)
 
@@ -869,6 +881,8 @@ WritePageForm {
 
         //reinsert Help menu
         mainMenu.addMenu(helpMenu)
+
+        privateMenuObject.dockUniqueId = ""
 
     }
 
@@ -882,8 +896,9 @@ WritePageForm {
         }
     }
 
-  //------------------------------------------------------------
+    //------------------------------------------------------------
     // fullscreen :
+    //------------------------------------------------------------
 
     property bool fullscreen_left_drawer_visible: false
     property bool fullscreen_right_drawer_visible: false

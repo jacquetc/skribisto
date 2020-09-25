@@ -29,6 +29,66 @@ LeftDockForm {
 
 
 
+    //-----------------------------------------------------------
+
+
+
+    Shortcut {
+        id: navigationMenuShortcut
+        enabled: root.enabled
+
+    }
+
+
+    //-----------------------------------------------------------
+
+
+
+
+    //Menu :
+    property list<Component> menuComponents:  [
+        Component{
+            id:  navigationDockMenuComponent
+            Menu {
+                id: navigationDockMenu
+                objectName: "navigationDockMenu"
+                title: qsTr("&Navigation dock")
+
+                Component.onCompleted: {
+
+                    navigationMenuShortcut.sequence = skrQMLTools.mnemonic(title)
+                    navigationMenuShortcut.activated.connect(function() {
+                        Globals.openSubMenuCalled(navigationDockMenu)
+                    })
+                }
+
+
+                MenuItem {
+                    text: qsTr("&Navigation")
+                    onTriggered: {
+                        if(Globals.compactSize){
+                            leftDrawer.open()
+                        }
+                        navigationFrame.folded = false
+                        navigation.forceActiveFocus()
+                    }
+                }
+
+                MenuItem {
+                    text: qsTr("&Documents")
+                    onTriggered: {
+                        if(Globals.compactSize){
+                            leftDrawer.open()
+                        }
+                        documentFrame.folded = false
+                        documentView.forceActiveFocus()
+                    }
+                }
+            }
+        }
+    ]
+
+
     //Navigation List :
     //-----------------------------------------------------------
 
