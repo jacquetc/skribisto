@@ -97,3 +97,9 @@ CMakeLists.txt.user.*
 #kdevelop
 .kdev4/
 .kdev4 
+
+#flatpak
+.flatpak-builder
+.flatpak-builder/
+build-dir
+build-dir/

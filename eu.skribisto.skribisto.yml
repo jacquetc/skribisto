@@ -1,4 +1,4 @@
-app-id: eu.flatpak.flatpak
+app-id: eu.skribisto.skribisto
 runtime: org.kde.Platform
 runtime-version: '5.15'
 sdk: org.kde.Sdk
@@ -41,4 +41,4 @@ modules:
     sources:
       - type: archive
         url: https://github.com/jacquetc/skribisto/archive/v1.8.1-alpha.tar.gz
-        sha256: 5499865445ff67917467b2d6b5538f5f2dd13db7705fe7b48afdd5159546d095
+        sha256: 5c4ff319bfc911c1236707f6ff8ffd5e3767b3e02f963f10f54e243c929143ac
