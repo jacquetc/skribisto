@@ -3,13 +3,8 @@
     <mime-type type="application/x-skribisto">
 	<comment xml:lang="en">Skribisto Project</comment>
 	<comment xml:lang="fr">Projet Skribisto</comment>
-	<generic-icon name="skribisto" />
+	<generic-icon name="eu.skribisto.skribisto" />
 	<glob pattern="*.skrib" />
     </mime-type>
-    <mime-type type="application/x-skribisto-backup">
-	<comment xml:lang="en">Skribisto Project Backup</comment>
-	<comment xml:lang="fr">Projet Skribisto Backup</comment>
-	<generic-icon name="skrib-backup" />
-	<glob pattern="*.skribisto_backup" />
     </mime-type>
 </mime-info>
