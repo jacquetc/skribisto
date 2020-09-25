@@ -65,7 +65,6 @@ QHash<int, int>convertToIntInt(const QHash<int, QVariant>& hash)
 
 Q_DECL_UNUSED QHash<int, bool>convertToIntBool(const QHash<int, QVariant>& hash)
 {
-
     QHash<int, bool> newHash;
 
     // converting
@@ -81,7 +80,6 @@ Q_DECL_UNUSED QHash<int, bool>convertToIntBool(const QHash<int, QVariant>& hash)
 
 Q_DECL_UNUSED QHash<int, QString>convertToIntQString(const QHash<int, QVariant>& hash)
 {
-
     QHash<int, QString> newHash;
 
     // converting
@@ -99,7 +97,8 @@ Q_DECL_UNUSED QHash<int, QString>convertToIntQString(const QHash<int, QVariant>&
 namespace ListQVariantConverter {
 Q_DECL_UNUSED QList<int>convertToInt(const QList<QVariant>& list) {
     QList<int> intList;
-    foreach(const QVariant &variant, list) {
+
+    foreach(const QVariant& variant, list) {
         intList.append(variant.toInt());
     }
     return intList;

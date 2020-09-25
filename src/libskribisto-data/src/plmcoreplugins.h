@@ -5,19 +5,16 @@
 #include "plmpluginloader.h"
 #include "plmcoreinterface.h"
 
-namespace PLMCorePlugins
-{
-
+namespace PLMCorePlugins {
 void addCorePlugins()
 {
     PLMPluginLoader *loader = PLMPluginLoader::instance();
+
     loader->addPluginType<PLMBaseInterface>();
-    //loader->addPluginType<PLMSideMainBarIconInterface>();
 
+    // loader->addPluginType<PLMSideMainBarIconInterface>();
 }
-
 }
-
 
 
 #endif // PLMGUIPLUGINS_H

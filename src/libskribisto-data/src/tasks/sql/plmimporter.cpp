@@ -42,7 +42,7 @@ PLMImporter::PLMImporter(QObject *parent) :
 {}
 
 QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
-                                             const QUrl& fileName,
+                                             const QUrl   & fileName,
                                              int            projectId,
                                              PLMError     & error)
 {
@@ -55,7 +55,8 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
 
         // copy db file to temp
         QString fileNameString;
-        if(fileName.scheme() == "qrc"){
+
+        if (fileName.scheme() == "qrc") {
             fileNameString = fileName.toString(QUrl::RemoveScheme);
             fileNameString = ":" + fileNameString;
         }
@@ -83,7 +84,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
 
         // open temp file
         QSqlDatabase sqlDb =
-                QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
+            QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
         sqlDb.setHostName("localhost");
         sqlDb.setDatabaseName(tempFileName);
 
@@ -118,7 +119,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
                      << QStringLiteral("PRAGMA recursive_triggers=true");
         sqlDb.transaction();
 
-        foreach(const QString &string, optimization) {
+        foreach(const QString& string, optimization) {
             QSqlQuery query(sqlDb);
 
             query.prepare(string);
@@ -148,11 +149,13 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     tempFile.open();
     tempFile.setAutoRemove(false);
     QString tempFileName = tempFile.fileName();
+
     qDebug() << "tempFileName :" << tempFileName;
 
     // open temp file
 
     QSqlDatabase sqlDb = QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
+
     sqlDb.setHostName("localhost");
     sqlDb.setDatabaseName(tempFileName);
     bool ok = sqlDb.open();
@@ -171,6 +174,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 
     // optimization :
     QStringList optimization;
+
     optimization << QStringLiteral("PRAGMA case_sensitive_like=true")
                  << QStringLiteral("PRAGMA journal_mode=MEMORY")
                  << QStringLiteral("PRAGMA temp_store=MEMORY")
@@ -179,7 +183,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
                  << QStringLiteral("PRAGMA recursive_triggers=true");
     sqlDb.transaction();
 
-    foreach(const QString &string, optimization) {
+    foreach(const QString& string, optimization) {
         QSqlQuery query(sqlDb);
 
         query.prepare(string);
@@ -188,50 +192,57 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 
     // new project :
     IFOKDO(error, this->executeSQLFile(":/sql/sqlite_project.sql", sqlDb));
-    QString sqlString = "INSERT INTO tbl_project (l_skribisto_maj_version, l_skribisto_min_version, l_db_maj_version, l_db_min_version) VALUES (2, 0, 1, 0)";
+    QString sqlString =
+        "INSERT INTO tbl_project (l_skribisto_maj_version, l_skribisto_min_version, l_db_maj_version, l_db_min_version) VALUES (2, 0, 1, 0)";
+
     IFOKDO(error, this->executeSQLString(sqlString, sqlDb));
 
 
-    IFOK(error){
-        //create unique identifier
+    IFOK(error) {
+        // create unique identifier
 
 
         QString randomString;
+
         {
-            const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+            const QString possibleCharacters(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
             const int randomStringLength = 12;
 
-            for(int i=0; i<randomStringLength; ++i)
+            for (int i = 0; i < randomStringLength; ++i)
             {
                 quint32 generatedNumber = QRandomGenerator::system()->generate();
-                int index = generatedNumber % possibleCharacters.length();
-                QChar nextChar = possibleCharacters.at(index);
+                int     index           = generatedNumber % possibleCharacters.length();
+                QChar   nextChar        = possibleCharacters.at(index);
                 randomString.append(nextChar);
             }
         }
         qDebug() << "randomString" << randomString;
 
 
-        QString value = randomString;
-        int id = 1;
+        QString   value = randomString;
+        int       id    = 1;
         QSqlQuery query(sqlDb);
         QString   queryStr = "UPDATE tbl_project SET t_project_unique_identifier = :value"
                              " WHERE l_project_id = :id"
-                ;
+        ;
+
         query.prepare(queryStr);
         query.bindValue(":value", value);
-        query.bindValue(":id", id);
+        query.bindValue(":id",    id);
         query.exec();
     }
-    IFOK(error){
+    IFOK(error) {
         sqlDb.commit();
     }
 
     // clean-up :
     sqlDb.transaction();
     PLMSqlQueries sheetQueries(sqlDb, "tbl_sheet", "l_sheet_id");
+
     IFOKDO(error, sheetQueries.renumberSortOrder());
     PLMSqlQueries noteQueries(sqlDb, "tbl_note", "l_note_id");
+
     IFOKDO(error, noteQueries.renumberSortOrder());
     sqlDb.commit();
 
@@ -318,8 +329,8 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 // }
 
 PLMError PLMImporter::executeSQLFile(const QString& fileName, QSqlDatabase& sqlDB) {
-    PLMError  error;
-    QFile     file(fileName);
+    PLMError error;
+    QFile    file(fileName);
 
     // Read query file content
     file.open(QIODevice::ReadOnly);
@@ -327,12 +338,11 @@ PLMError PLMImporter::executeSQLFile(const QString& fileName, QSqlDatabase& sqlD
     file.close();
 
     return error;
-
 }
 
-PLMError PLMImporter::executeSQLString(const QString &sqlString, QSqlDatabase &sqlDB)
+PLMError PLMImporter::executeSQLString(const QString& sqlString, QSqlDatabase& sqlDB)
 {
-    PLMError  error;
+    PLMError error;
 
     QSqlQuery query(sqlDB);
 
@@ -343,10 +353,10 @@ PLMError PLMImporter::executeSQLString(const QString &sqlString, QSqlDatabase &s
     if (sqlDB.driver()->hasFeature(QSqlDriver::Transactions)) {
         // Replace comments and tabs and new lines with space
         queryStr =
-                queryStr.replace(QRegularExpression("(\\/\\*(.)*?\\*\\/|^--.*\\n|\\t)",
-                                                    QRegularExpression::CaseInsensitiveOption
-                                                    | QRegularExpression::MultilineOption),
-                                 " ");
+            queryStr.replace(QRegularExpression("(\\/\\*(.)*?\\*\\/|^--.*\\n|\\t)",
+                                                QRegularExpression::CaseInsensitiveOption
+                                                | QRegularExpression::MultilineOption),
+                             " ");
         queryStr = queryStr.trimmed();
 
 
@@ -361,16 +371,18 @@ PLMError PLMImporter::executeSQLString(const QString &sqlString, QSqlDatabase &s
 
         // Check if query file is already wrapped with a transaction
         bool isStartedWithTransaction = false;
-        if(qList.size() > 1){
+
+        if (qList.size() > 1) {
             isStartedWithTransaction = qMax(re_transaction.match(qList.at(0)).hasMatch(),
                                             re_transaction.match(qList.at(1)).hasMatch());
         }
+
         if (!isStartedWithTransaction) sqlDB.transaction();
 
         // Execute each individual queries
         bool success = true;
 
-        for(const QString &s : qList) {
+        for (const QString& s : qList) {
             if (re_transaction.match(s).hasMatch()) sqlDB.transaction();
             else if (re_commit.match(s).hasMatch()) sqlDB.commit();
             else {
@@ -399,16 +411,16 @@ PLMError PLMImporter::executeSQLString(const QString &sqlString, QSqlDatabase &s
         // ...so we need to remove special queries (`begin transaction` and
         // `commit`)
         queryStr =
-                queryStr.replace(QRegularExpression(
-                                     "(\\bbegin.transaction.*;|\\bcommit.*;|\\/\\*(.|\\n)*?\\*\\/|^--.*\\n|\\t|\\n)",
-                                     QRegularExpression::CaseInsensitiveOption
-                                     | QRegularExpression::MultilineOption),
-                                 " ");
+            queryStr.replace(QRegularExpression(
+                                 "(\\bbegin.transaction.*;|\\bcommit.*;|\\/\\*(.|\\n)*?\\*\\/|^--.*\\n|\\t|\\n)",
+                                 QRegularExpression::CaseInsensitiveOption
+                                 | QRegularExpression::MultilineOption),
+                             " ");
         queryStr = queryStr.trimmed();
 
         // Execute each individual queries
         QStringList qList = queryStr.split(';', QString::SkipEmptyParts);
-        foreach(const QString &s, qList) {
+        foreach(const QString& s, qList) {
             query.exec(s);
 
             if (query.lastError().type() != QSqlError::NoError) {

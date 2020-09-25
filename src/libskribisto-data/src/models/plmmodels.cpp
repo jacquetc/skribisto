@@ -22,11 +22,11 @@
 
 PLMModels::PLMModels(QObject *parent) : QObject(parent)
 {
-    m_instance        = this;
-    m_sheetModel      = new PLMSheetModel(this);
+    m_instance       = this;
+    m_sheetModel     = new PLMSheetModel(this);
     m_sheetListModel = new PLMSheetListModel(this);
-    m_noteListModel = new PLMNoteListModel(this);
-    m_tagListModel = new SKRTagListModel(this);
+    m_noteListModel  = new PLMNoteListModel(this);
+    m_tagListModel   = new SKRTagListModel(this);
 
     m_writeDocumentListModel = new PLMWriteDocumentListModel(this);
 }
@@ -36,7 +36,7 @@ PLMModels::~PLMModels()
 
 PLMModels *PLMModels::m_instance = nullptr;
 
-//TODO: remove that, useless
+// TODO: remove that, useless
 PLMSheetModel * PLMModels::sheetModel()
 {
     return m_sheetModel;
@@ -46,7 +46,6 @@ PLMSheetListModel * PLMModels::sheetListModel()
 {
     return m_sheetListModel;
 }
-
 
 PLMNoteListModel * PLMModels::noteListModel()
 {
@@ -58,7 +57,7 @@ SKRTagListModel * PLMModels::tagListModel()
     return m_tagListModel;
 }
 
-PLMWriteDocumentListModel *PLMModels::writeDocumentListModel()
+PLMWriteDocumentListModel * PLMModels::writeDocumentListModel()
 {
     return m_writeDocumentListModel;
 }

@@ -1,23 +1,24 @@
 /***************************************************************************
- *   Copyright (C) 2020 by Cyril Jacquet                                 *
- *   cyril.jacquet@skribisto.eu                                        *
- *                                                                         *
- *  Filename: skrtaglistmodel.cpp                                                   *
- *  This file is part of Skribisto.                                    *
- *                                                                         *
- *  Skribisto is free software: you can redistribute it and/or modify  *
- *  it under the terms of the GNU General Public License as published by   *
- *  the Free Software Foundation, either version 3 of the License, or      *
- *  (at your option) any later version.                                    *
- *                                                                         *
- *  Skribisto is distributed in the hope that it will be useful,       *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
- *  GNU General Public License for more details.                           *
- *                                                                         *
- *  You should have received a copy of the GNU General Public License      *
- *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
- ***************************************************************************/
+*   Copyright (C) 2020 by Cyril Jacquet                                 *
+*   cyril.jacquet@skribisto.eu                                        *
+*                                                                         *
+*  Filename: skrtaglistmodel.cpp
+*                                                  *
+*  This file is part of Skribisto.                                    *
+*                                                                         *
+*  Skribisto is free software: you can redistribute it and/or modify  *
+*  it under the terms of the GNU General Public License as published by   *
+*  the Free Software Foundation, either version 3 of the License, or      *
+*  (at your option) any later version.                                    *
+*                                                                         *
+*  Skribisto is distributed in the hope that it will be useful,       *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+*  GNU General Public License for more details.                           *
+*                                                                         *
+*  You should have received a copy of the GNU General Public License      *
+*  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
+***************************************************************************/
 #include "skrtaglistmodel.h"
 
 SKRTagListModel::SKRTagListModel(QObject *parent)
@@ -42,19 +43,17 @@ SKRTagListModel::SKRTagListModel(QObject *parent)
             &SKRTagListModel::refreshAfterDataAddition);
 
 
-
-
     connect(plmdata->tagHub(),
             &SKRTagHub::tagRemoved,
             this,
             &SKRTagListModel::populate);
 
 
-
     this->connectToPLMDataSignals();
 }
 
-QVariant SKRTagListModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant SKRTagListModel::headerData(int section, Qt::Orientation orientation,
+                                     int role) const
 {
     Q_UNUSED(section)
     Q_UNUSED(orientation)
@@ -63,7 +62,10 @@ QVariant SKRTagListModel::headerData(int section, Qt::Orientation orientation, i
     return m_headerData;
 }
 
-bool SKRTagListModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
+bool SKRTagListModel::setHeaderData(int             section,
+                                    Qt::Orientation orientation,
+                                    const QVariant& value,
+                                    int             role)
 {
     if (value != headerData(section, orientation, role)) {
         m_headerData = value;
@@ -73,13 +75,16 @@ bool SKRTagListModel::setHeaderData(int section, Qt::Orientation orientation, co
     return false;
 }
 
-QModelIndex SKRTagListModel::index(int row, int column, const QModelIndex &parent) const
+QModelIndex SKRTagListModel::index(int row, int column, const QModelIndex& parent) const
 {
     if (column != 0) return QModelIndex();
+
     SKRTagItem *parentItem;
+
     if (!parent.isValid()) parentItem = m_rootItem;
 
     SKRTagItem *childItem = m_allTagItems.at(row);
+
     if (childItem) {
         QModelIndex index = createIndex(row, column, childItem);
         return index;
@@ -87,14 +92,14 @@ QModelIndex SKRTagListModel::index(int row, int column, const QModelIndex &paren
     return QModelIndex();
 }
 
-int SKRTagListModel::rowCount(const QModelIndex &parent) const
+int SKRTagListModel::rowCount(const QModelIndex& parent) const
 {
     if (parent.isValid()) return 0;
 
     return m_allTagItems.count();
 }
 
-QVariant SKRTagListModel::data(const QModelIndex &index, int role) const
+QVariant SKRTagListModel::data(const QModelIndex& index, int role) const
 {
     Q_ASSERT(checkIndex(index,
                         QAbstractItemModel::CheckIndexOption::IndexIsValid
@@ -105,39 +110,39 @@ QVariant SKRTagListModel::data(const QModelIndex &index, int role) const
     SKRTagItem *item = static_cast<SKRTagItem *>(index.internalPointer());
 
 
-     if (role == Qt::DisplayRole) {
+    if (role == Qt::DisplayRole) {
         return item->data(SKRTagItem::Roles::NameRole);
     }
 
-     if (role == SKRTagItem::Roles::NameRole) {
-         return item->data(role);
-     }
+    if (role == SKRTagItem::Roles::NameRole) {
+        return item->data(role);
+    }
 
-     if (role == SKRTagItem::Roles::TagIdRole) {
-         return item->data(role);
-     }
+    if (role == SKRTagItem::Roles::TagIdRole) {
+        return item->data(role);
+    }
 
-     if (role == SKRTagItem::Roles::ProjectIdRole) {
-         return item->data(role);
-     }
+    if (role == SKRTagItem::Roles::ProjectIdRole) {
+        return item->data(role);
+    }
 
-     if (role == SKRTagItem::Roles::ColorRole) {
-         return item->data(role);
-     }
+    if (role == SKRTagItem::Roles::ColorRole) {
+        return item->data(role);
+    }
 
-     if (role == SKRTagItem::Roles::CreationDateRole) {
-         return item->data(role);
-     }
+    if (role == SKRTagItem::Roles::CreationDateRole) {
+        return item->data(role);
+    }
 
-     if (role == SKRTagItem::Roles::UpdateDateRole) {
-         return item->data(role);
-     }
+    if (role == SKRTagItem::Roles::UpdateDateRole) {
+        return item->data(role);
+    }
 
 
-     return QVariant();
+    return QVariant();
 }
 
-bool SKRTagListModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool SKRTagListModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
     Q_ASSERT(checkIndex(index,
                         QAbstractItemModel::CheckIndexOption::IndexIsValid |
@@ -146,14 +151,13 @@ bool SKRTagListModel::setData(const QModelIndex &index, const QVariant &value, i
 
     if (data(index, role) != value) {
         SKRTagItem *item = static_cast<SKRTagItem *>(index.internalPointer());
-        int projectId      = item->projectId();
+        int projectId    = item->projectId();
         int tagId        = item->tagId();
         PLMError error;
 
         this->disconnectFromPLMDataSignals();
 
         switch (role) {
-
         case SKRTagItem::Roles::ProjectIdRole:
 
             // useless
@@ -166,41 +170,41 @@ bool SKRTagListModel::setData(const QModelIndex &index, const QVariant &value, i
 
         case SKRTagItem::Roles::NameRole:
 
-                error = plmdata->tagHub()->setTagName(projectId, tagId, value.toString());
+            error = plmdata->tagHub()->setTagName(projectId, tagId, value.toString());
             break;
 
         case SKRTagItem::Roles::ColorRole:
 
-                error = plmdata->tagHub()->setTagColor(projectId, tagId, value.toString());
+            error = plmdata->tagHub()->setTagColor(projectId, tagId, value.toString());
             break;
 
         case SKRTagItem::Roles::CreationDateRole:
             error = plmdata->tagHub()->setCreationDate(projectId,
-                                                         tagId,
-                                                         value.toDateTime());
+                                                       tagId,
+                                                       value.toDateTime());
             break;
 
         case SKRTagItem::Roles::UpdateDateRole:
             error = plmdata->tagHub()->setUpdateDate(projectId,
-                                                       tagId,
-                                                       value.toDateTime());
+                                                     tagId,
+                                                     value.toDateTime());
             break;
         }
 
-            this->connectToPLMDataSignals();
+        this->connectToPLMDataSignals();
 
-            if (!error.isSuccess()) {
-                return false;
-            }
-            item->invalidateData(role);
-
-            emit dataChanged(index, index, QVector<int>() << role);
-            return true;
+        if (!error.isSuccess()) {
+            return false;
         }
-        return false;
+        item->invalidateData(role);
+
+        emit dataChanged(index, index, QVector<int>() << role);
+        return true;
+    }
+    return false;
 }
 
-Qt::ItemFlags SKRTagListModel::flags(const QModelIndex &index) const
+Qt::ItemFlags SKRTagListModel::flags(const QModelIndex& index) const
 {
     Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
 
@@ -209,7 +213,7 @@ Qt::ItemFlags SKRTagListModel::flags(const QModelIndex &index) const
     return defaultFlags;
 }
 
-bool SKRTagListModel::insertRows(int row, int count, const QModelIndex &parent)
+bool SKRTagListModel::insertRows(int row, int count, const QModelIndex& parent)
 {
     beginInsertRows(parent, row, row + count - 1);
 
@@ -218,7 +222,7 @@ bool SKRTagListModel::insertRows(int row, int count, const QModelIndex &parent)
     return false;
 }
 
-bool SKRTagListModel::removeRows(int row, int count, const QModelIndex &parent)
+bool SKRTagListModel::removeRows(int row, int count, const QModelIndex& parent)
 {
     beginRemoveRows(parent, row, row + count - 1);
 
@@ -227,14 +231,14 @@ bool SKRTagListModel::removeRows(int row, int count, const QModelIndex &parent)
     return false;
 }
 
-QHash<int, QByteArray> SKRTagListModel::roleNames() const
+QHash<int, QByteArray>SKRTagListModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
 
-    roles[SKRTagItem::Roles::TagIdRole]      = "tagId";
+    roles[SKRTagItem::Roles::TagIdRole]        = "tagId";
     roles[SKRTagItem::Roles::ProjectIdRole]    = "projectId";
     roles[SKRTagItem::Roles::NameRole]         = "name";
-    roles[SKRTagItem::Roles::ColorRole] = "color";
+    roles[SKRTagItem::Roles::ColorRole]        = "color";
     roles[SKRTagItem::Roles::CreationDateRole] = "creationDate";
     roles[SKRTagItem::Roles::UpdateDateRole]   = "updateDate";
     return roles;
@@ -249,11 +253,12 @@ QModelIndexList SKRTagListModel::getModelIndex(int projectId, int tagId)
                                              projectId,
                                              -1,
                                              Qt::MatchFlag::MatchExactly |
-                                             Qt::MatchFlag::MatchWrap | Qt::MatchFlag::MatchRecursive);
+                                             Qt::MatchFlag::MatchWrap |
+                                             Qt::MatchFlag::MatchRecursive);
 
     for (const QModelIndex& modelIndex : modelList) {
-
         int indexTagId = modelIndex.data(SKRTagItem::Roles::TagIdRole).toInt();
+
         if (indexTagId == tagId) {
             list.append(modelIndex);
         }
@@ -262,18 +267,18 @@ QModelIndexList SKRTagListModel::getModelIndex(int projectId, int tagId)
     return list;
 }
 
-SKRTagItem *SKRTagListModel::getItem(int projectId, int tagId)
+SKRTagItem * SKRTagListModel::getItem(int projectId, int tagId)
 {
     SKRTagItem *result_item = nullptr;
 
-    for(SKRTagItem *item : m_allTagItems){
-        if(item->projectId() == projectId && item->tagId() == tagId){
+    for (SKRTagItem *item : m_allTagItems) {
+        if ((item->projectId() == projectId) && (item->tagId() == tagId)) {
             result_item = item;
             break;
         }
     }
 
-    if(!result_item){
+    if (!result_item) {
         qDebug() << "result_item is null";
     }
 
@@ -282,23 +287,18 @@ SKRTagItem *SKRTagListModel::getItem(int projectId, int tagId)
 
 void SKRTagListModel::populate()
 {
-
     this->beginResetModel();
 
     m_allTagItems.clear();
 
-    for(int projectId : plmdata->projectHub()->getProjectIdList()) {
+    for (int projectId : plmdata->projectHub()->getProjectIdList()) {
+        auto idList = plmdata->tagHub()->getAllTagIds(projectId);
 
-
-
-        auto idList         = plmdata->tagHub()->getAllTagIds(projectId);
-
-        for(int tagId : idList) {
+        for (int tagId : idList) {
             m_allTagItems.append(new SKRTagItem(projectId, tagId));
         }
     }
     this->endResetModel();
-
 }
 
 void SKRTagListModel::clear()
@@ -306,10 +306,11 @@ void SKRTagListModel::clear()
     this->beginResetModel();
     qDeleteAll(m_allTagItems);
     this->endResetModel();
-
 }
 
-void SKRTagListModel::exploitSignalFromPLMData(int projectId, int tagId, SKRTagItem::Roles role)
+void SKRTagListModel::exploitSignalFromPLMData(int               projectId,
+                                               int               tagId,
+                                               SKRTagItem::Roles role)
 {
     SKRTagItem *item = this->getItem(projectId, tagId);
 
@@ -358,7 +359,7 @@ void SKRTagListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->tagHub(),
                                            &SKRTagHub::nameChanged, this,
                                            [this](int projectId, int tagId,
-                                           const QString& value) {
+                                                  const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, tagId, SKRTagItem::Roles::NameRole);
     }, Qt::UniqueConnection);
@@ -366,7 +367,7 @@ void SKRTagListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->tagHub(),
                                            &SKRTagHub::colorChanged, this,
                                            [this](int projectId, int tagId,
-                                           const QString& value) {
+                                                  const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, tagId, SKRTagItem::Roles::ColorRole);
     }, Qt::UniqueConnection);
@@ -374,7 +375,7 @@ void SKRTagListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->tagHub(),
                                            &SKRTagHub::updateDateChanged, this,
                                            [this](int projectId, int tagId,
-                                           const QDateTime& value) {
+                                                  const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, tagId,
                                        SKRTagItem::Roles::UpdateDateRole);

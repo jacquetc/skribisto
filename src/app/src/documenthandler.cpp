@@ -8,7 +8,8 @@
 #include <QTextList>
 #include <QImageReader>
 #include <QTextDocumentWriter>
-//#include "plmdata.h"
+
+// #include "plmdata.h"
 
 DocumentHandler::DocumentHandler(QObject *parent) :
     QObject(parent),
@@ -41,12 +42,9 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 this,
                 &DocumentHandler::canRedoChanged);
         m_textCursor =
-                textDocument->textDocument()->rootFrame()->firstCursorPosition();
+            textDocument->textDocument()->rootFrame()->firstCursorPosition();
         m_selectionCursor =
-                textDocument->textDocument()->rootFrame()->firstCursorPosition();
-
-
-
+            textDocument->textDocument()->rootFrame()->firstCursorPosition();
     } else {
         m_textCursor.setPosition(0);
     }
@@ -164,14 +162,16 @@ bool DocumentHandler::italic() const
         return m_textCursor.charFormat().fontItalic();
     } else {
         int start = m_selectionCursor.anchor() + 1;
-        int end = m_selectionCursor.position();
+        int end   = m_selectionCursor.position();
 
         bool result = true;
         QTextCursor cursor(m_textDoc->textDocument());
-        for(int i = start; i <= end ; i++){
+
+        for (int i = start; i <= end; i++) {
             cursor.setPosition(i);
             result = cursor.charFormat().fontItalic();
-            if(!result){
+
+            if (!result) {
                 break;
             }
         }
@@ -183,6 +183,7 @@ bool DocumentHandler::italic() const
 void DocumentHandler::setItalic(bool italic)
 {
     qDebug() << "set italic";
+
     if (m_selectionCursor.selectedText().isEmpty()) {
         m_nextFormat.setFontItalic(italic);
         m_formatPosition = m_textCursor.position();
@@ -191,29 +192,27 @@ void DocumentHandler::setItalic(bool italic)
         f.setFontItalic(italic);
         m_selectionCursor.mergeCharFormat(f);
 
-// for test purpose:
-//        QUrl uri ("mydata://skibisto.svg"  );
-//        QImage image = QImageReader (":/pics/skribisto.svg").read();
-//        m_textDoc->textDocument()->addResource( QTextDocument::ImageResource, uri, QVariant ( image ) );
-//        QTextImageFormat imageFormat;
-//        imageFormat.setName(uri.toString());
-//        imageFormat.setHeight(200);
-//        imageFormat.setWidth(200);
-//        imageFormat.setAnchor(true);
-//        imageFormat.setAnchorHref("http://qt.io");
+        // for test purpose:
+        //        QUrl uri ("mydata://skibisto.svg"  );
+        //        QImage image = QImageReader (":/pics/skribisto.svg").read();
+        //        m_textDoc->textDocument()->addResource(
+        // QTextDocument::ImageResource, uri, QVariant ( image ) );
+        //        QTextImageFormat imageFormat;
+        //        imageFormat.setName(uri.toString());
+        //        imageFormat.setHeight(200);
+        //        imageFormat.setWidth(200);
+        //        imageFormat.setAnchor(true);
+        //        imageFormat.setAnchorHref("http://qt.io");
 
 
-//        if(imageFormat.isValid()){
-//            m_textCursor.insertImage(imageFormat);
-//        }
+        //        if(imageFormat.isValid()){
+        //            m_textCursor.insertImage(imageFormat);
+        //        }
 
-//        QTextDocumentWriter writer;
-//        writer.setFileName("/home/cyril/Documents/rrrrr.odt");
-//        writer.setFormat("odf");
-//        writer.write(m_textDoc->textDocument());
-
-
-
+        //        QTextDocumentWriter writer;
+        //        writer.setFileName("/home/cyril/Documents/rrrrr.odt");
+        //        writer.setFormat("odf");
+        //        writer.write(m_textDoc->textDocument());
     }
     emit formatChanged();
 }
@@ -227,14 +226,16 @@ bool DocumentHandler::bold() const
         return m_textCursor.charFormat().fontWeight() >= QFont::Bold;
     } else {
         int start = m_selectionCursor.anchor() + 1;
-        int end = m_selectionCursor.position();
+        int end   = m_selectionCursor.position();
 
         bool result = true;
         QTextCursor cursor(m_textDoc->textDocument());
-        for(int i = start; i <= end ; i++){
+
+        for (int i = start; i <= end; i++) {
             cursor.setPosition(i);
             result = cursor.charFormat().fontWeight() >= QFont::Bold;
-            if(!result){
+
+            if (!result) {
                 break;
             }
         }
@@ -268,14 +269,16 @@ bool DocumentHandler::underline() const
         return m_textCursor.charFormat().fontUnderline();
     } else {
         int start = m_selectionCursor.anchor() + 1;
-        int end = m_selectionCursor.position();
+        int end   = m_selectionCursor.position();
 
         bool result = true;
         QTextCursor cursor(m_textDoc->textDocument());
-        for(int i = start; i <= end ; i++){
+
+        for (int i = start; i <= end; i++) {
             cursor.setPosition(i);
             result = cursor.charFormat().fontUnderline();
-            if(!result){
+
+            if (!result) {
                 break;
             }
         }
@@ -306,14 +309,16 @@ bool DocumentHandler::strikeout() const
         return m_textCursor.charFormat().fontStrikeOut();
     } else {
         int start = m_selectionCursor.anchor() + 1;
-        int end = m_selectionCursor.position();
+        int end   = m_selectionCursor.position();
 
         bool result = true;
         QTextCursor cursor(m_textDoc->textDocument());
-        for(int i = start; i <= end ; i++){
+
+        for (int i = start; i <= end; i++) {
             cursor.setPosition(i);
             result = cursor.charFormat().fontStrikeOut();
-            if(!result){
+
+            if (!result) {
                 break;
             }
         }
@@ -387,7 +392,7 @@ void DocumentHandler::setAlignment(Qt::Alignment alignment)
 bool DocumentHandler::bulletList() const
 {
     return m_textCursor.currentList() &&
-            m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
+           m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
 }
 
 void DocumentHandler::setBulletList(bool bulletList)
@@ -408,7 +413,7 @@ void DocumentHandler::setBulletList(bool bulletList)
 bool DocumentHandler::numberedList() const
 {
     return m_textCursor.currentList() &&
-            m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
+           m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
 }
 
 void DocumentHandler::setNumberedList(bool numberedList)
@@ -442,6 +447,7 @@ void DocumentHandler::setId(const int projectId, const int paperId)
     //    QString text = plmdata->sheetHub()->getContent(projectId, paperId);
 
     m_selectionCursor.select(QTextCursor::Document);
+
     //    m_selectionCursor.insertHtml(text);
 
     emit formatChanged();
@@ -465,7 +471,7 @@ qreal DocumentHandler::topMarginEverywhere() const
 
 void DocumentHandler::setTopMarginEverywhere(qreal topMargin)
 {
-    if(!m_textDoc){
+    if (!m_textDoc) {
         return;
     }
 
@@ -473,7 +479,8 @@ void DocumentHandler::setTopMarginEverywhere(qreal topMargin)
 
     m_textCursor.setPosition(0);
     int posMax = m_textDoc->textDocument()->rootFrame()->lastCursorPosition().position();
-    m_textCursor.setPosition(posMax , QTextCursor::KeepAnchor);
+
+    m_textCursor.setPosition(posMax, QTextCursor::KeepAnchor);
 
     QTextBlockFormat f = m_textCursor.blockFormat();
 
@@ -493,7 +500,7 @@ qreal DocumentHandler::indentEverywhere() const
 
 void DocumentHandler::setIndentEverywhere(qreal indent)
 {
-    if(!m_textDoc){
+    if (!m_textDoc) {
         return;
     }
 
@@ -501,6 +508,7 @@ void DocumentHandler::setIndentEverywhere(qreal indent)
 
     m_textCursor.setPosition(0);
     int posMax = m_textDoc->textDocument()->rootFrame()->lastCursorPosition().position();
+
     m_textCursor.setPosition(posMax, QTextCursor::KeepAnchor);
 
     QTextBlockFormat f = m_textCursor.blockFormat();

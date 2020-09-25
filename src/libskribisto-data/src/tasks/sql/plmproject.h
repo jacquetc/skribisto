@@ -42,9 +42,9 @@ public:
     enum DBType { ProjectDB, UserDB };
     Q_ENUM(DBType)
 
-    explicit PLMProject(QObject       *parent,
-                        int            projectId,
-                        const QUrl &fileName);
+    explicit PLMProject(QObject    *parent,
+                        int         projectId,
+                        const QUrl& fileName);
     ~PLMProject();
     PLMProperty * getProperty(const QString& tableName);
     PLMTree     * getTree(const QString& tableName);
@@ -56,7 +56,7 @@ public:
 
     QString       getTempFileName() const;
 
-    QUrl       getPath() const;
+    QUrl          getPath() const;
     PLMError      setPath(const QUrl& value);
 
 

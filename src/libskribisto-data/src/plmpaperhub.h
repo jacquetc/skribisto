@@ -35,17 +35,19 @@ class EXPORT PLMPaperHub : public QObject {
 
 public:
 
-    //TODO: clean all settings
+    // TODO: clean all settings
     // settings
-//    enum Setting { SplitterState, Minimap, Fit, SpellCheck, StackState, WindowState, SettingDate };
-//    Q_ENUM(Setting)
-//    enum Stack { Zero, One };
-//    Q_ENUM(Stack)
+    //    enum Setting { SplitterState, Minimap, Fit, SpellCheck, StackState,
+    // WindowState, SettingDate };
+    //    Q_ENUM(Setting)
+    //    enum Stack { Zero, One };
+    //    Q_ENUM(Stack)
 
-//    // opened docs list
-//    enum OpenedDocSetting { SheetId, StackNumber, Hovering, Visible, HasFocus,
-//                            CursorPosition, HoveringGeometry, Date };
-//    Q_ENUM(OpenedDocSetting)
+    //    // opened docs list
+    //    enum OpenedDocSetting { SheetId, StackNumber, Hovering, Visible,
+    // HasFocus,
+    //                            CursorPosition, HoveringGeometry, Date };
+    //    Q_ENUM(OpenedDocSetting)
 
     explicit PLMPaperHub(QObject       *parent,
                          const QString& tableName);
@@ -54,7 +56,7 @@ public:
     QHash<int, QString>             getAllTitles(int projectId) const;
     QHash<int, int>                 getAllSortOrders(int projectId) const;
     QHash<int, int>                 getAllIndents(int projectId) const;
-    Q_INVOKABLE QList<int>                      getAllIds(int projectId) const;
+    Q_INVOKABLE QList<int>          getAllIds(int projectId) const;
     int                             getOverallSize();
     PLMError                        setId(int projectId,
                                           int paperId,
@@ -62,7 +64,7 @@ public:
     Q_INVOKABLE PLMError            setTitle(int            projectId,
                                              int            paperId,
                                              const QString& newTitle);
-    Q_INVOKABLE QString                         getTitle(int projectId,
+    Q_INVOKABLE QString             getTitle(int projectId,
                                              int paperId) const;
 
     PLMError                        setIndent(int projectId,
@@ -80,10 +82,10 @@ public:
                                                const QString& newContent);
     Q_INVOKABLE QString             getContent(int projectId,
                                                int paperId) const;
-    Q_INVOKABLE PLMError                        setDeleted(int  projectId,
+    Q_INVOKABLE PLMError            setDeleted(int  projectId,
                                                int  paperId,
                                                bool newDeletedState);
-    Q_INVOKABLE bool                            getDeleted(int projectId,
+    Q_INVOKABLE bool                getDeleted(int projectId,
                                                int paperId) const;
     PLMError                        setCreationDate(int              projectId,
                                                     int              paperId,
@@ -100,8 +102,8 @@ public:
                                                    const QDateTime& newDate);
     QDateTime                       getContentDate(int projectId,
                                                    int paperId) const;
-    Q_INVOKABLE bool                            hasChildren(int projectId,
-                                                   int paperId) const;
+    Q_INVOKABLE bool                hasChildren(int projectId,
+                                                int paperId) const;
 
     Q_INVOKABLE int                 getTopPaperId(int projectId) const;
 
@@ -116,38 +118,41 @@ public:
                  const QString& fieldName) const;
 
     Q_INVOKABLE int      getLastAddedId();
-    PLMError addPaper(const QHash<QString, QVariant>& values,
-                      int projectId);
-    PLMError addPaperBelow(int projectId,
-                           int targetId);
+    PLMError             addPaper(const QHash<QString, QVariant>& values,
+                                  int projectId);
+    PLMError             addPaperBelow(int projectId,
+                                       int targetId);
     Q_INVOKABLE PLMError addChildPaper(int projectId,
-                           int targetId);
-    PLMError removePaper(int projectId,
-                         int targetId);
+                                       int targetId);
+    PLMError             removePaper(int projectId,
+                                     int targetId);
 
-    PLMError movePaper(int projectId,
-                       int sourcePaperId,
-                       int targetPaperId, bool after= false);
+    PLMError             movePaper(int  projectId,
+                                   int  sourcePaperId,
+                                   int  targetPaperId,
+                                   bool after = false);
 
-    PLMError movePaperUp(int projectId, int paperId);
-    PLMError movePaperDown(int projectId, int paperId);
+    PLMError movePaperUp(int projectId,
+                         int paperId);
+    PLMError movePaperDown(int projectId,
+                           int paperId);
 
 
-//    // settings :
-//    PLMError settings_setStackSetting(Stack           stack,
-//                                      Setting         setting,
-//                                      const QVariant& value);
-//    QVariant settings_getStackSetting(Stack   stack,
-//                                      Setting setting) const;
+    //    // settings :
+    //    PLMError settings_setStackSetting(Stack           stack,
+    //                                      Setting         setting,
+    //                                      const QVariant& value);
+    //    QVariant settings_getStackSetting(Stack   stack,
+    //                                      Setting setting) const;
 
-//    // opened docs settings :
-//    PLMError settings_setDocSetting(int              projectId,
-//                                    int              paperId,
-//                                    OpenedDocSetting setting,
-//                                    const QVariant & value);
-//    QVariant settings_getDocSetting(int              projectId,
-//                                    int              paperId,
-//                                    OpenedDocSetting setting) const;
+    //    // opened docs settings :
+    //    PLMError settings_setDocSetting(int              projectId,
+    //                                    int              paperId,
+    //                                    OpenedDocSetting setting,
+    //                                    const QVariant & value);
+    //    QVariant settings_getDocSetting(int              projectId,
+    //                                    int              paperId,
+    //                                    OpenedDocSetting setting) const;
 
     //    QList<int>getParentList(int projectId,
     //                            int paperId) const;
@@ -162,24 +167,26 @@ public:
     //                               int parentId) const;
 
     PLMError renumberSortOrders(int projectId);
-    int getValidSortOrderAfterPaper(int projectId, int paperId) const;
+    int      getValidSortOrderAfterPaper(int projectId,
+                                         int paperId) const;
+
 private:
 
-//    PLMError setSetting(int             projectId,
-//                        const QString & fieldName,
-//                        const QVariant& value,
-//                        bool            setCurrentDateBool);
-//    QVariant getSetting(int            projectId,
-//                        const QString& fieldName) const;
+    //    PLMError setSetting(int             projectId,
+    //                        const QString & fieldName,
+    //                        const QVariant& value,
+    //                        bool            setCurrentDateBool);
+    //    QVariant getSetting(int            projectId,
+    //                        const QString& fieldName) const;
 
-//    PLMError setDocSetting(int             projectId,
-//                           int             paperId,
-//                           const QString & fieldName,
-//                           const QVariant& value,
-//                           bool            setCurrentDateBool);
-//    QVariant getDocSetting(int            projectId,
-//                           int            paperId,
-//                           const QString& fieldName) const;
+    //    PLMError setDocSetting(int             projectId,
+    //                           int             paperId,
+    //                           const QString & fieldName,
+    //                           const QVariant& value,
+    //                           bool            setCurrentDateBool);
+    //    QVariant getDocSetting(int            projectId,
+    //                           int            paperId,
+    //                           const QString& fieldName) const;
 
 private slots:
 
@@ -187,50 +194,55 @@ private slots:
 
 signals:
 
-    void errorSent(const PLMError& error) const;
-    void projectModified(int projectId); // for save
-    void paperIdChanged(int projectId,
-                        int paperId,
-                        int newId);
+    void             errorSent(const PLMError& error) const;
+    void             projectModified(int projectId); // for save
+    void             paperIdChanged(int projectId,
+                                    int paperId,
+                                    int newId);
     Q_INVOKABLE void titleChanged(int            projectId,
-                      int            paperId,
-                      const QString& newTitle);
-    void indentChanged(int projectId,
-                       int paperId,
-                       int newIndent);
-    void sortOrderChanged(int projectId,
-                          int paperId,
-                          int newSortOrder);
-    void contentChanged(int            projectId,
-                        int            paperId,
-                        const QString& newContent);
-    void deletedChanged(int  projectId,
-                        int  paperId,
-                        bool newDeletedState);
-    void creationDateChanged(int              projectId,
-                             int              paperId,
-                             const QDateTime& newDate);
-    void updateDateChanged(int              projectId,
-                           int              paperId,
-                           const QDateTime& newDate);
-    void contentDateChanged(int              projectId,
-                            int              paperId,
-                            const QDateTime& newDate);
-    void paperAdded(int projectId,
-                    int paperId);
-    void paperRemoved(int projectId,
-                      int paperId);
-    void paperMoved(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId);
+                                  int            paperId,
+                                  const QString& newTitle);
+    void             indentChanged(int projectId,
+                                   int paperId,
+                                   int newIndent);
+    void             sortOrderChanged(int projectId,
+                                      int paperId,
+                                      int newSortOrder);
+    void             contentChanged(int            projectId,
+                                    int            paperId,
+                                    const QString& newContent);
+    void             deletedChanged(int  projectId,
+                                    int  paperId,
+                                    bool newDeletedState);
+    void             creationDateChanged(int              projectId,
+                                         int              paperId,
+                                         const QDateTime& newDate);
+    void             updateDateChanged(int              projectId,
+                                       int              paperId,
+                                       const QDateTime& newDate);
+    void             contentDateChanged(int              projectId,
+                                        int              paperId,
+                                        const QDateTime& newDate);
+    void             paperAdded(int projectId,
+                                int paperId);
+    void             paperRemoved(int projectId,
+                                  int paperId);
+    void             paperMoved(int sourceProjectId,
+                                int sourcePaperId,
+                                int targetProjectId,
+                                int targetPaperId);
 
 
     // settings :
-//    void settings_settingChanged(PLMPaperHub::Stack   stack,
-//                                 PLMPaperHub::Setting setting,
-//                                 const QVariant     & newValue);
-//    void settings_docSettingChanged(int                           projectId,
-//                                    int                           paperId,
-//                                    PLMPaperHub::OpenedDocSetting setting,
-//                                    const QVariant              & newValue);
+    //    void settings_settingChanged(PLMPaperHub::Stack   stack,
+    //                                 PLMPaperHub::Setting setting,
+    //                                 const QVariant     & newValue);
+    //    void settings_docSettingChanged(int
+    //                           projectId,
+    //                                    int                           paperId,
+    //                                    PLMPaperHub::OpenedDocSetting setting,
+    //                                    const QVariant              &
+    // newValue);
 
 public slots:
 

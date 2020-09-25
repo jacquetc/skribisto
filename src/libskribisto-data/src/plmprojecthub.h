@@ -29,55 +29,59 @@
 
 class EXPORT PLMProjectHub : public QObject {
     Q_OBJECT
-    Q_PROPERTY(bool isThereAnyLoadedProject READ isThereAnyLoadedProject NOTIFY isThereAnyLoadedProjectChanged)
+    Q_PROPERTY(
+        bool isThereAnyLoadedProject READ isThereAnyLoadedProject NOTIFY isThereAnyLoadedProjectChanged)
 
 public:
 
     explicit PLMProjectHub(QObject *parent);
-    Q_INVOKABLE PLMError loadProject(const QUrl& urlFilePath);
-    Q_INVOKABLE PLMError createNewEmptyProject(const QUrl &path);
-    Q_INVOKABLE PLMError             saveProject(int projectId);
-    Q_INVOKABLE PLMError             saveProjectAs(int            projectId,
-                                                   const QString& type,
-                                                   const QUrl &path);
-    Q_INVOKABLE PLMError             saveAProjectCopy(int            projectId,
-                                                      const QString& type,
-                                                      const QUrl& path);
-    Q_INVOKABLE PLMError backupAProject(int projectId, const QString &type, const QUrl &folderPath);
-    Q_INVOKABLE bool doesBackupOfTheDayExistAtPath(int projectId, const QUrl &folderPath);
-    Q_INVOKABLE PLMError             closeProject(int projectId);
-    Q_INVOKABLE PLMError             closeAllProjects();
-    Q_INVOKABLE QList<int>           getProjectIdList();
-    Q_INVOKABLE int      getProjectCount();
-    Q_INVOKABLE QUrl              getPath(int projectId) const;
-    PLMError             setPath(int            projectId,
-                                 const QUrl &newUrlPath);
-    Q_INVOKABLE int                  getLastLoaded() const;
-    PLMError             getError();
-    Q_INVOKABLE bool                 isThereAnyLoadedProject();
+    Q_INVOKABLE PLMError  loadProject(const QUrl& urlFilePath);
+    Q_INVOKABLE PLMError  createNewEmptyProject(const QUrl& path);
+    Q_INVOKABLE PLMError  saveProject(int projectId);
+    Q_INVOKABLE PLMError  saveProjectAs(int            projectId,
+                                        const QString& type,
+                                        const QUrl   & path);
+    Q_INVOKABLE PLMError  saveAProjectCopy(int            projectId,
+                                           const QString& type,
+                                           const QUrl   & path);
+    Q_INVOKABLE PLMError  backupAProject(int            projectId,
+                                         const QString& type,
+                                         const QUrl   & folderPath);
+    Q_INVOKABLE bool      doesBackupOfTheDayExistAtPath(int         projectId,
+                                                        const QUrl& folderPath);
+    Q_INVOKABLE PLMError  closeProject(int projectId);
+    Q_INVOKABLE PLMError  closeAllProjects();
+    Q_INVOKABLE QList<int>getProjectIdList();
+    Q_INVOKABLE int       getProjectCount();
+    Q_INVOKABLE QUrl      getPath(int projectId) const;
+    PLMError              setPath(int         projectId,
+                                  const QUrl& newUrlPath);
+    Q_INVOKABLE int       getLastLoaded() const;
+    PLMError              getError();
+    Q_INVOKABLE bool      isThereAnyLoadedProject();
 
-    Q_INVOKABLE int                  getActiveProject();
-    Q_INVOKABLE void                 setActiveProject(int activeProject);
-    Q_INVOKABLE bool                 isThisProjectActive(int projectId);
-
-
-    Q_INVOKABLE QList<int>           projectsNotSaved();
-    Q_INVOKABLE bool                 isProjectSaved(int projectId);
-    Q_INVOKABLE QList<int>           projectsNotModifiedOnce();
-    Q_INVOKABLE bool                 isProjectNotModifiedOnce(int projectId);
+    Q_INVOKABLE int       getActiveProject();
+    Q_INVOKABLE void      setActiveProject(int activeProject);
+    Q_INVOKABLE bool      isThisProjectActive(int projectId);
 
 
-    Q_INVOKABLE QString              getProjectName(int projectId) const;
-    Q_INVOKABLE PLMError             setProjectName(int            projectId,
-                                                    const QString& projectName);
+    Q_INVOKABLE QList<int>projectsNotSaved();
+    Q_INVOKABLE bool      isProjectSaved(int projectId);
+    Q_INVOKABLE QList<int>projectsNotModifiedOnce();
+    Q_INVOKABLE bool      isProjectNotModifiedOnce(int projectId);
 
-    QString              getProjectUniqueId(int projectId) const;
-    Q_INVOKABLE bool isThisProjectABackup(int projectId);
 
-    PLMError             set(int             projectId,
-                             const QString & fieldName,
-                             const QVariant& value,
-                             bool            setCurrentDateBool = true);
+    Q_INVOKABLE QString   getProjectName(int projectId) const;
+    Q_INVOKABLE PLMError  setProjectName(int            projectId,
+                                         const QString& projectName);
+
+    QString               getProjectUniqueId(int projectId) const;
+    Q_INVOKABLE bool      isThisProjectABackup(int projectId);
+
+    PLMError              set(int             projectId,
+                              const QString & fieldName,
+                              const QVariant& value,
+                              bool            setCurrentDateBool = true);
     QVariant get(int            projectId,
                  const QString& fieldName) const;
 
@@ -85,29 +89,32 @@ signals:
 
     void             errorSent(const PLMError& error) const;
     Q_INVOKABLE void projectLoaded(int projectId);
+
     ///
     /// \brief projectToBeClosed
     /// \param projectId
     /// To be used with a direct connection
     Q_INVOKABLE void projectToBeClosed(int projectId);
     Q_INVOKABLE void projectClosed(int projectId);
-    Q_INVOKABLE void             allProjectsClosed();
-    Q_INVOKABLE void  isThereAnyLoadedProjectChanged(bool value);
-    Q_INVOKABLE void             projectTypeChanged(int            projectId,
-                                                    const QString& newType);
-    Q_INVOKABLE void             activeProjectChanged(int            projectId);
-    Q_INVOKABLE void             projectPathChanged(int            projectId,
-                                                    const QUrl& newUrlPath);
-    Q_INVOKABLE void             projectNameChanged(int            projectId,
-                                                    const QString& newProjectName);
-    Q_INVOKABLE void             projectSaved(int projectId);
-    Q_INVOKABLE void             projectNotSavedAnymore(int projectId);
-    Q_INVOKABLE void             projectCountChanged(int count);
+    Q_INVOKABLE void allProjectsClosed();
+    Q_INVOKABLE void isThereAnyLoadedProjectChanged(bool value);
+    Q_INVOKABLE void projectTypeChanged(int            projectId,
+                                        const QString& newType);
+    Q_INVOKABLE void activeProjectChanged(int projectId);
+    Q_INVOKABLE void projectPathChanged(int         projectId,
+                                        const QUrl& newUrlPath);
+    Q_INVOKABLE void projectNameChanged(int            projectId,
+                                        const QString& newProjectName);
+    Q_INVOKABLE void projectSaved(int projectId);
+    Q_INVOKABLE void projectNotSavedAnymore(int projectId);
+    Q_INVOKABLE void projectCountChanged(int count);
 
-    Q_INVOKABLE void            projectIsBackupChanged(int projectId, bool isThisABackup);
+    Q_INVOKABLE void projectIsBackupChanged(int  projectId,
+                                            bool isThisABackup);
 
 public slots:
-    void                 setProjectNotSavedAnymore(int projectId);
+
+    void setProjectNotSavedAnymore(int projectId);
 
 private slots:
 

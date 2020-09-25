@@ -186,6 +186,21 @@
     </message>
 </context>
 <context>
+    <name>LeftDock</name>
+    <message>
+        <source>&amp;Navigation dock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Navigation</source>
+        <translation type="unfinished">&amp;Navigation</translation>
+    </message>
+    <message>
+        <source>&amp;Documents</source>
+        <translation type="unfinished">&amp;Documents</translation>
+    </message>
+</context>
+<context>
     <name>LeftDockForm.ui</name>
     <message>
         <source>Navigation</source>
@@ -357,6 +372,25 @@
     <message>
         <source>Behavior</source>
         <translation>Comportement</translation>
+    </message>
+</context>
+<context>
+    <name>RightDock</name>
+    <message>
+        <source>&amp;Tools dock</source>
+        <translation type="unfinished">Dock d&apos;&amp;outils</translation>
+    </message>
+    <message>
+        <source>&amp;Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Tags</source>
+        <translation type="unfinished">&amp;Ettiquettes</translation>
+    </message>
+    <message>
+        <source>&amp;Notes</source>
+        <translation type="unfinished">&amp;Notes</translation>
     </message>
 </context>
 <context>

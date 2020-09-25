@@ -69,6 +69,7 @@ void PLMSqlQueries::commit()
 PLMError PLMSqlQueries::get(int id, const QString& valueName, QVariant& result) const
 {
     PLMError error;
+
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "SELECT " + valueName
@@ -95,6 +96,7 @@ PLMError PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
                                           QHash<QString, QVariant>& result) const
 {
     PLMError error;
+
     {
         result.clear();
         QSqlQuery query(m_sqlDB);
@@ -122,7 +124,7 @@ PLMError PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
 
         while (query.next()) {
-            foreach(const QString &valueName, valueList) {
+            foreach(const QString& valueName, valueList) {
                 result.insert(valueName, query.value(valueName));
             }
         }
@@ -142,6 +144,7 @@ PLMError PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
 PLMError PLMSqlQueries::getSortedIds(QList<int>& result) const
 {
     PLMError error;
+
     {
         result.clear();
         QSqlQuery query(m_sqlDB);
@@ -167,6 +170,7 @@ PLMError PLMSqlQueries::getSortedIds(QList<int>& result) const
 PLMError PLMSqlQueries::getIds(QList<int>& result) const
 {
     PLMError error;
+
     {
         result.clear();
         QSqlQuery query(m_sqlDB);
@@ -221,6 +225,7 @@ PLMError PLMSqlQueries::getValueByIds(const QString& valueName,
 {
     result.clear();
     PLMError error;
+
     {
         result.clear();
         QSqlQuery query(m_sqlDB);
@@ -271,6 +276,7 @@ PLMError PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
                                            bool sorted) const
 {
     PLMError error;
+
     {
         result.clear();
         QSqlQuery query(m_sqlDB);
@@ -332,6 +338,7 @@ bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
 {
     PLMError error;
     bool     result;
+
     {
         QSqlQuery query(m_sqlDB);
         QString   whereStr                         = " WHERE ";
@@ -375,6 +382,7 @@ bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
 PLMError PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) const
 {
     PLMError error;
+
     {
         QSqlQuery   query(m_sqlDB);
         QStringList valueNamesStrList;
@@ -415,6 +423,7 @@ PLMError PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) 
 PLMError PLMSqlQueries::removeAll() const
 {
     PLMError error;
+
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "DELETE * FROM " + m_tableName;
@@ -428,6 +437,7 @@ PLMError PLMSqlQueries::removeAll() const
 PLMError PLMSqlQueries::remove(int id) const
 {
     PLMError error;
+
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "DELETE FROM " + m_tableName
@@ -444,6 +454,7 @@ PLMError PLMSqlQueries::remove(int id) const
 PLMError PLMSqlQueries::set(int id, const QString& valueName, const QVariant& value) const
 {
     PLMError error;
+
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "UPDATE " + m_tableName
@@ -462,6 +473,7 @@ PLMError PLMSqlQueries::set(int id, const QString& valueName, const QVariant& va
 PLMError PLMSqlQueries::setId(int id, int newId) const
 {
     PLMError error;
+
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "UPDATE " + m_tableName
@@ -480,6 +492,7 @@ PLMError PLMSqlQueries::setId(int id, int newId) const
 PLMError PLMSqlQueries::injectDirectSql(const QString& sqlString)
 {
     PLMError error;
+
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = sqlString;
@@ -493,6 +506,7 @@ PLMError PLMSqlQueries::injectDirectSql(const QString& sqlString)
 PLMError PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
 {
     PLMError error;
+
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "UPDATE " + m_tableName

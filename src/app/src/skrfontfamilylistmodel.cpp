@@ -3,13 +3,10 @@
 
 SKRFontFamilyListModel::SKRFontFamilyListModel(QObject *parent)
     : QAbstractListModel(parent)
-{
-
-
-}
+{}
 
 QVariant SKRFontFamilyListModel::headerData(int section, Qt::Orientation orientation,
-                                       int role) const
+                                            int role) const
 {
     Q_UNUSED(section)
     Q_UNUSED(orientation)
@@ -19,23 +16,23 @@ QVariant SKRFontFamilyListModel::headerData(int section, Qt::Orientation orienta
 }
 
 bool SKRFontFamilyListModel::setHeaderData(int             section,
-                                      Qt::Orientation orientation,
-                                      const QVariant& value,
-                                      int             role)
+                                           Qt::Orientation orientation,
+                                           const QVariant& value,
+                                           int             role)
 {
     return false;
 }
 
-QModelIndex SKRFontFamilyListModel::index(int row, int column, const QModelIndex &parent) const
+QModelIndex SKRFontFamilyListModel::index(int row, int column,
+                                          const QModelIndex& parent) const
 {
     if (column != 0) return QModelIndex();
 
-        QModelIndex index = createIndex(row, column, nullptr);
-        return index;
+    QModelIndex index = createIndex(row, column, nullptr);
+
+    return index;
 
     return QModelIndex();
-
-
 }
 
 int SKRFontFamilyListModel::rowCount(const QModelIndex& parent) const
@@ -51,7 +48,6 @@ int SKRFontFamilyListModel::rowCount(const QModelIndex& parent) const
 
 QVariant SKRFontFamilyListModel::data(const QModelIndex& index, int role) const
 {
-
     Q_ASSERT(checkIndex(index,
                         QAbstractItemModel::CheckIndexOption::IndexIsValid
                         |  QAbstractItemModel::CheckIndexOption::DoNotUseParent));
@@ -59,14 +55,16 @@ QVariant SKRFontFamilyListModel::data(const QModelIndex& index, int role) const
     if (!index.isValid()) return QVariant();
 
 
-    if (role == Qt::DisplayRole){
+    if (role == Qt::DisplayRole) {
         return m_allFontFamilies.at(index.row());
     }
 
     return QVariant();
 }
 
-bool SKRFontFamilyListModel::setData(const QModelIndex& index, const QVariant& value, int role)
+bool SKRFontFamilyListModel::setData(const QModelIndex& index,
+                                     const QVariant   & value,
+                                     int                role)
 {
     Q_ASSERT(checkIndex(index,
                         QAbstractItemModel::CheckIndexOption::IndexIsValid |
@@ -103,10 +101,10 @@ bool SKRFontFamilyListModel::removeRows(int row, int count, const QModelIndex& p
     return false;
 }
 
-
 QHash<int, QByteArray>SKRFontFamilyListModel::roleNames() const {
     QHash<int, QByteArray> roles;
-    roles[Qt::DisplayRole]  = "fontFamilyName";
+
+    roles[Qt::DisplayRole] = "fontFamilyName";
 
     return roles;
 }
@@ -118,7 +116,5 @@ void SKRFontFamilyListModel::populate()
     m_allFontFamilies.clear();
 
 
-
     this->endResetModel();
 }
-

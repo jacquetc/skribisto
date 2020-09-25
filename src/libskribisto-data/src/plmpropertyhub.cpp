@@ -198,6 +198,7 @@ PLMError PLMPropertyHub::setPropertyById(int            projectId,
         queries.commit();
     }
     QVariant result;
+
     IFOKDO(error, queries.get(propertyId, m_paperCodeFieldName, result));
     IFOK(error) {
         emit propertyChanged(projectId, propertyId, result.toInt(), name, value);
@@ -219,6 +220,7 @@ PLMError PLMPropertyHub::setId(int projectId, int propertyId, int newId)
     queries.beginTransaction();
 
     PLMError error = queries.setId(propertyId, newId);
+
     IFKO(error) {
         queries.rollback();
     }
@@ -244,12 +246,14 @@ PLMError PLMPropertyHub::setValue(int projectId, int propertyId, const QString& 
 
     queries.get(propertyId, "t_name",             result);
     QString name = result.toString();
+
     queries.get(propertyId, m_paperCodeFieldName, result);
     int paperCode = result.toInt();
 
     queries.beginTransaction();
 
     PLMError error = queries.set(propertyId, "t_value", value);
+
     IFKO(error) {
         queries.rollback();
     }
@@ -273,12 +277,14 @@ PLMError PLMPropertyHub::setName(int projectId, int propertyId, const QString& n
 
     queries.get(propertyId, "t_value",            result);
     QString value = result.toString();
+
     queries.get(propertyId, m_paperCodeFieldName, result);
     int paperCode = result.toInt();
 
     queries.beginTransaction();
 
     PLMError error = queries.set(propertyId, "t_name", name);
+
     IFKO(error) {
         queries.rollback();
     }
@@ -322,12 +328,14 @@ PLMError PLMPropertyHub::setPaperCode(int projectId, int propertyId, int paperCo
 
     queries.get(propertyId, "t_value", result);
     QString value = result.toString();
+
     queries.get(propertyId, "t_name",  result);
     QString name = result.toString();
 
     queries.beginTransaction();
 
     PLMError error = queries.set(propertyId, m_paperCodeFieldName, paperCode);
+
     IFKO(error) {
         queries.rollback();
     }
@@ -377,6 +385,7 @@ PLMError PLMPropertyHub::setCreationDate(int              projectId,
     queries.beginTransaction();
 
     PLMError error = queries.set(propertyId, "dt_created", date);
+
     IFKO(error) {
         queries.rollback();
     }
@@ -427,6 +436,7 @@ PLMError PLMPropertyHub::setModificationDate(int              projectId,
     queries.beginTransaction();
 
     PLMError error = queries.set(propertyId, "dt_updated", date);
+
     IFKO(error) {
         queries.rollback();
     }
@@ -473,6 +483,7 @@ PLMError PLMPropertyHub::setSystem(int projectId, int propertyId, bool isSystem)
     queries.beginTransaction();
 
     PLMError error = queries.set(propertyId, "b_system", isSystem);
+
     IFKO(error) {
         queries.rollback();
     }
@@ -518,6 +529,7 @@ QString PLMPropertyHub::getProperty(int projectId, int paperCode,
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
     QHash<QString, QVariant> where;
+
     where.insert(m_paperCodeFieldName, paperCode);
     where.insert("t_name",             name);
     error = queries.getValueByIdsWhere("t_value", out, where);
@@ -585,11 +597,13 @@ PLMError PLMPropertyHub::addProperty(int projectId, int paperCode, int imposedPr
     PLMSqlQueries queries(projectId, m_tableName);
 
     QHash<QString, QVariant> values;
+
     values.insert(m_paperCodeFieldName, paperCode);
 
     if (imposedPropertyId != -1) values.insert("l_property_id", imposedPropertyId);
     int newPropertyId = -1;
     PLMError error    = queries.add(values, newPropertyId);
+
     IFKO(error) {
         queries.rollback();
     }
@@ -630,6 +644,7 @@ bool PLMPropertyHub::propertyExists(int projectId, int paperCode, const QString&
 
 
     QHash<QString, QVariant> where;
+
     where.insert(m_paperCodeFieldName, paperCode);
     where.insert("t_name",             name);
 
@@ -644,6 +659,7 @@ int PLMPropertyHub::findPropertyId(int projectId, int paperCode, const QString& 
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
     QHash<QString, QVariant> where;
+
     where.insert(m_paperCodeFieldName, paperCode);
     where.insert("t_name",             name);
     error = queries.getValueByIdsWhere("l_property_id", out, where);

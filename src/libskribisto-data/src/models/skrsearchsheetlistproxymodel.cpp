@@ -3,18 +3,27 @@
 
 #include <QTimer>
 
-SKRSearchSheetListProxyModel::SKRSearchSheetListProxyModel(QObject *parent) : QSortFilterProxyModel(parent),
-      m_showDeletedFilter(true), m_showNotDeletedFilter(true), m_textFilter(""), m_projectIdFilter(-2)
+SKRSearchSheetListProxyModel::SKRSearchSheetListProxyModel(QObject *parent) :
+    QSortFilterProxyModel(parent),
+    m_showDeletedFilter(true), m_showNotDeletedFilter(true), m_textFilter(""),
+    m_projectIdFilter(-2)
 {
     this->setSourceModel(plmmodels->sheetListModel());
 
 
-
-    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, &SKRSearchSheetListProxyModel::loadProjectSettings);
-    connect(plmdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &SKRSearchSheetListProxyModel::saveProjectSettings, Qt::DirectConnection);
-    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this](){
+    connect(
+        plmdata->projectHub(),
+                                   &PLMProjectHub::projectLoaded,
+                                                                  this,
+                                                                        &SKRSearchSheetListProxyModel::loadProjectSettings);
+    connect(
+        plmdata->projectHub(),
+                                   &PLMProjectHub::projectToBeClosed,
+                                                                  this,
+                                                                        &SKRSearchSheetListProxyModel::saveProjectSettings,
+        Qt::DirectConnection);
+    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->clearFilters();
-
     });
 }
 
@@ -48,13 +57,14 @@ QVariant SKRSearchSheetListProxyModel::data(const QModelIndex& index, int role) 
 
 // -----------------------------------------------------------------------
 
-bool SKRSearchSheetListProxyModel::setData(const QModelIndex& index, const QVariant& value,
-                                     int role)
+bool SKRSearchSheetListProxyModel::setData(const QModelIndex& index,
+                                           const QVariant   & value,
+                                           int                role)
 {
     QModelIndex sourceIndex = this->mapToSource(index);
 
     PLMSheetItem *item =
-            static_cast<PLMSheetItem *>(sourceIndex.internalPointer());
+        static_cast<PLMSheetItem *>(sourceIndex.internalPointer());
 
     if ((role == Qt::EditRole) && (sourceIndex.column() == 0)) {
         if (item->isProjectItem()) {
@@ -71,55 +81,58 @@ bool SKRSearchSheetListProxyModel::setData(const QModelIndex& index, const QVari
     return QSortFilterProxyModel::setData(index, value, role);
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 
-
-
-bool SKRSearchSheetListProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+bool SKRSearchSheetListProxyModel::filterAcceptsRow(int                sourceRow,
+                                                    const QModelIndex& sourceParent) const
 {
     bool result = true;
 
     QModelIndex index = this->sourceModel()->index(sourceRow, 0, sourceParent);
-    if (!index.isValid()){
+
+    if (!index.isValid()) {
         return false;
     }
-    PLMSheetItem *item = static_cast<PLMSheetItem *>(index.internalPointer());
+    PLMSheetItem *item       = static_cast<PLMSheetItem *>(index.internalPointer());
     PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
 
     // avoid project item
-    if (item->data(PLMSheetItem::Roles::PaperIdRole).toInt() == -1){
+    if (item->data(PLMSheetItem::Roles::PaperIdRole).toInt() == -1) {
         result = false;
     }
 
     // project filtering :
-    if(result && item->data(PLMSheetItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter){
-       result = true;
+    if (result &&
+        (item->data(PLMSheetItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter)) {
+        result = true;
     }
-    else  if(result){
+    else if (result) {
         result = false;
     }
 
     // deleted filtering :
-    if(result && item->data(PLMSheetItem::Roles::DeletedRole).toBool() == true){
-            QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
-            result = m_showDeletedFilter;
-        }
+    if (result && (item->data(PLMSheetItem::Roles::DeletedRole).toBool() == true)) {
+        QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
+        result = m_showDeletedFilter;
+    }
 
     // 'not deleted' filtering :
-    if(result && item->data(PLMSheetItem::Roles::DeletedRole).toBool() == false){
-            QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
-            result = m_showNotDeletedFilter;
-        }
+    if (result && (item->data(PLMSheetItem::Roles::DeletedRole).toBool() == false)) {
+        QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
+        result = m_showNotDeletedFilter;
+    }
 
     // text filtering :
-    if(result && item->data(PLMSheetItem::Roles::NameRole).toString().contains(m_textFilter, Qt::CaseInsensitive)){
+    if (result &&
+        item->data(PLMSheetItem::Roles::NameRole).toString().contains(m_textFilter,
+                                                                      Qt::CaseInsensitive))
+    {
         result = true;
     }
-    else  if(result){
+    else if (result) {
         result = false;
     }
-
 
 
     return result;
@@ -129,74 +142,82 @@ void SKRSearchSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
 {
     m_projectIdFilter = projectIdFilter;
     emit projectIdFilterChanged(m_projectIdFilter);
+
     this->invalidateFilter();
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 void SKRSearchSheetListProxyModel::clearFilters()
 {
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
+
     m_showDeletedFilter = true;
     emit showDeletedFilterChanged(m_showDeletedFilter);
+
     m_showNotDeletedFilter = true;
     emit showNotDeletedFilterChanged(m_showNotDeletedFilter);
+
     m_textFilter = "";
     emit textFilterChanged(m_textFilter);
-    this->invalidateFilter();
 
+    this->invalidateFilter();
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
-PLMSheetItem *SKRSearchSheetListProxyModel::getItem(int projectId, int paperId)
+PLMSheetItem * SKRSearchSheetListProxyModel::getItem(int projectId, int paperId)
 {
     PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
 
     PLMSheetItem *item = model->getItem(projectId, paperId);
+
     return item;
 }
 
-
-
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 
 void SKRSearchSheetListProxyModel::loadProjectSettings(int projectId)
 {
-    QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
-    settings.beginGroup("project_" + unique_identifier);
-//    int writeCurrentParent = settings.value("sheetCurrentParent", 0).toInt();
-//    this->setParentFilter(projectId, sheetCurrentParent);
-    settings.endGroup();
 
+    settings.beginGroup("project_" + unique_identifier);
+
+    //    int writeCurrentParent = settings.value("sheetCurrentParent",
+    // 0).toInt();
+    //    this->setParentFilter(projectId, sheetCurrentParent);
+    settings.endGroup();
 }
-//--------------------------------------------------------------
+
+// --------------------------------------------------------------
 
 
 void SKRSearchSheetListProxyModel::saveProjectSettings(int projectId)
 {
-    if(m_projectIdFilter != projectId){
+    if (m_projectIdFilter != projectId) {
         return;
     }
 
-    QString unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
+
     settings.beginGroup("project_" + unique_identifier);
-//    settings.setValue("sheetCurrentParent", m_parentIdFilter);
+
+    //    settings.setValue("sheetCurrentParent", m_parentIdFilter);
     settings.endGroup();
 }
 
-void SKRSearchSheetListProxyModel::setTextFilter(const QString &value)
+void SKRSearchSheetListProxyModel::setTextFilter(const QString& value)
 {
     m_textFilter = value;
     emit textFilterChanged(value);
-    this->invalidateFilter();
 
+    this->invalidateFilter();
 }
 
 void SKRSearchSheetListProxyModel::setShowNotDeletedFilter(bool showNotDeletedFilter)
@@ -204,8 +225,8 @@ void SKRSearchSheetListProxyModel::setShowNotDeletedFilter(bool showNotDeletedFi
     m_showNotDeletedFilter = showNotDeletedFilter;
 
     emit showNotDeletedFilterChanged(showNotDeletedFilter);
-    this->invalidateFilter();
 
+    this->invalidateFilter();
 }
 
 void SKRSearchSheetListProxyModel::setShowDeletedFilter(bool showDeletedFilter)
@@ -213,11 +234,11 @@ void SKRSearchSheetListProxyModel::setShowDeletedFilter(bool showDeletedFilter)
     m_showDeletedFilter = showDeletedFilter;
 
     emit showDeletedFilterChanged(showDeletedFilter);
-    this->invalidateFilter();
 
+    this->invalidateFilter();
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 void SKRSearchSheetListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
 {
@@ -225,78 +246,85 @@ void SKRSearchSheetListProxyModel::setForcedCurrentIndex(int forcedCurrentIndex)
     emit forcedCurrentIndexChanged(m_forcedCurrentIndex);
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 void SKRSearchSheetListProxyModel::setForcedCurrentIndex(int projectId, int paperId)
 {
     int forcedCurrentIndex = this->findVisualIndex(projectId, paperId);
+
     setForcedCurrentIndex(forcedCurrentIndex);
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 void SKRSearchSheetListProxyModel::setCurrentPaperId(int projectId, int paperId)
 {
-    if(projectId == -2){
+    if (projectId == -2) {
         return;
     }
-    if (paperId == -2 && projectId != -2){
+
+    if ((paperId == -2) && (projectId != -2)) {
         return;
     }
 
 
     PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
-    PLMSheetItem *item = this->getItem(projectId, paperId);
-    if(!item){
+    PLMSheetItem *item       = this->getItem(projectId, paperId);
+
+    if (!item) {
         paperId = plmdata->sheetHub()->getTopPaperId(projectId);
     }
 
     this->setForcedCurrentIndex(projectId, paperId);
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 bool SKRSearchSheetListProxyModel::hasChildren(int projectId, int paperId)
 {
     return plmdata->sheetHub()->hasChildren(projectId, paperId);
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 int SKRSearchSheetListProxyModel::findVisualIndex(int projectId, int paperId)
 {
-
     int rowCount = this->rowCount(QModelIndex());
 
     int result = -2;
 
     QModelIndex modelIndex;
-    for(int i = 0; i < rowCount ; ++i){
+
+    for (int i = 0; i < rowCount; ++i) {
         modelIndex = this->index(i, 0);
-        if(this->data(modelIndex, PLMSheetItem::Roles::ProjectIdRole).toInt() == projectId
-                && this->data(modelIndex, PLMSheetItem::Roles::PaperIdRole).toInt() == paperId){
+
+        if ((this->data(modelIndex,
+                        PLMSheetItem::Roles::ProjectIdRole).toInt() == projectId)
+            && (this->data(modelIndex,
+                           PLMSheetItem::Roles::PaperIdRole).toInt() == paperId)) {
             result = i;
             break;
         }
-
     }
     return result;
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 QString SKRSearchSheetListProxyModel::getItemName(int projectId, int paperId)
 {
-    //qDebug() << "getItemName" << projectId << paperId;
-    if(projectId == -2 || paperId == -2){
+    // qDebug() << "getItemName" << projectId << paperId;
+    if ((projectId == -2) || (paperId == -2)) {
         return "";
     }
     QString name = "";
-    if(paperId == 0 && plmdata->projectHub()->getProjectIdList().count() <= 1){
+
+    if ((paperId == 0) && (plmdata->projectHub()->getProjectIdList().count() <= 1)) {
         name = plmdata->projectHub()->getProjectName(projectId);
     }
-    else{
+    else {
         PLMSheetItem *item = this->getItem(projectId, paperId);
-        if(item){
+
+        if (item) {
             name = item->name();
         }
         else {

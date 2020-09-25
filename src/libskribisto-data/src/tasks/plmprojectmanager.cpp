@@ -57,7 +57,7 @@ PLMError PLMProjectManager::saveProject(int projectId)
 
 // -----------------------------------------------------------------------------
 
-PLMError PLMProjectManager::saveProjectAs(int            projectId,
+PLMError PLMProjectManager::saveProjectAs(int projectId,
                                           const QString& type,
                                           const QUrl& path, bool isCopy)
 {
@@ -80,14 +80,14 @@ PLMError PLMProjectManager::saveProjectAs(int            projectId,
         error.addData(projectId);
         error.setSuccess(false);
         return error;
-
     }
 
     PLMExporter exporter(this);
+
     IFOKDO(error, exporter.exportSQLiteDbTo(project, type, path));
     IFOK(error) {
         // if it's a true save and not a copy :
-        if (!isCopy){
+        if (!isCopy) {
             project->setPath(path);
         }
     }
@@ -135,8 +135,8 @@ PLMError PLMProjectManager::closeProject(int projectId)
     // the project deletion is done outside PLMProject() so the QSqlDatabase is
     // out of scope
     {
-    delete project;
-    QSqlDatabase::removeDatabase(QString::number(projectId));
+        delete project;
+        QSqlDatabase::removeDatabase(QString::number(projectId));
     }
     error.setSuccess(true);
     return error;

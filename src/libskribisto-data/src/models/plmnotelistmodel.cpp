@@ -3,7 +3,6 @@
 PLMNoteListModel::PLMNoteListModel(QObject *parent)
     : QAbstractListModel(parent), m_headerData(QVariant())
 {
-
     m_rootItem = new PLMNoteItem();
     m_rootItem->setIsRootItem();
 
@@ -28,7 +27,8 @@ PLMNoteListModel::PLMNoteListModel(QObject *parent)
             &PLMNoteListModel::refreshAfterDataMove);
 
     connect(plmdata->sheetHub(),
-            &PLMNoteHub::deletedChanged, // careful, paper is deleted = true, not a true removal
+            &PLMNoteHub::deletedChanged, // careful, paper is deleted = true,
+                                         // not a true removal
             this,
             &PLMNoteListModel::refreshAfterDeletedStateChanged);
 
@@ -68,21 +68,21 @@ bool PLMNoteListModel::setHeaderData(int             section,
     return false;
 }
 
-
-QModelIndex PLMNoteListModel::index(int row, int column, const QModelIndex &parent) const
+QModelIndex PLMNoteListModel::index(int row, int column, const QModelIndex& parent) const
 {
     if (column != 0) return QModelIndex();
+
     PLMNoteItem *parentItem;
+
     if (!parent.isValid()) parentItem = m_rootItem;
 
     PLMNoteItem *childItem = m_allNoteItems.at(row);
+
     if (childItem) {
         QModelIndex index = createIndex(row, column, childItem);
         return index;
     }
     return QModelIndex();
-
-
 }
 
 int PLMNoteListModel::rowCount(const QModelIndex& parent) const
@@ -189,8 +189,8 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
 
     if (data(index, role) != value) {
         PLMNoteItem *item = static_cast<PLMNoteItem *>(index.internalPointer());
-        int projectId      = item->projectId();
-        int paperId        = item->paperId();
+        int projectId     = item->projectId();
+        int paperId       = item->paperId();
         PLMError error;
 
         this->disconnectFromPLMDataSignals();
@@ -226,7 +226,8 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
         case PLMNoteItem::Roles::SortOrderRole:
             error = plmdata->noteHub()->setSortOrder(projectId, paperId, value.toInt());
             IFOKDO(error, plmdata->noteHub()->renumberSortOrders(projectId));
-            for(PLMNoteItem *item : m_allNoteItems){
+
+            for (PLMNoteItem *item : m_allNoteItems) {
                 item->invalidateData(role);
             }
             this->populate();
@@ -256,7 +257,7 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
             break;
 
         case PLMNoteItem::Roles::HasChildrenRole:
-            //useless
+            // useless
             break;
 
         case PLMNoteItem::Roles::CharCountRole:
@@ -325,20 +326,21 @@ bool PLMNoteListModel::removeRows(int row, int count, const QModelIndex& parent)
 
 QHash<int, QByteArray>PLMNoteListModel::roleNames() const {
     QHash<int, QByteArray> roles;
-    roles[PLMNoteItem::Roles::ProjectNameRole]  = "projectName";
-    roles[PLMNoteItem::Roles::PaperIdRole]      = "paperId";
-    roles[PLMNoteItem::Roles::ProjectIdRole]    = "projectId";
-    roles[PLMNoteItem::Roles::NameRole]         = "name";
-    roles[PLMNoteItem::Roles::LabelRole]          = "label";
-    roles[PLMNoteItem::Roles::IndentRole]       = "indent";
-    roles[PLMNoteItem::Roles::SortOrderRole]    = "sortOrder";
-    roles[PLMNoteItem::Roles::CreationDateRole] = "creationDate";
-    roles[PLMNoteItem::Roles::UpdateDateRole]   = "updateDate";
-    roles[PLMNoteItem::Roles::ContentDateRole]  = "contentDate";
-    roles[PLMNoteItem::Roles::HasChildrenRole]  = "hasChildren";
-    roles[PLMNoteItem::Roles::DeletedRole]  = "deleted";
-    roles[PLMNoteItem::Roles::WordCountRole]  = "wordCount";
-    roles[PLMNoteItem::Roles::CharCountRole]  = "charCount";
+
+    roles[PLMNoteItem::Roles::ProjectNameRole]     = "projectName";
+    roles[PLMNoteItem::Roles::PaperIdRole]         = "paperId";
+    roles[PLMNoteItem::Roles::ProjectIdRole]       = "projectId";
+    roles[PLMNoteItem::Roles::NameRole]            = "name";
+    roles[PLMNoteItem::Roles::LabelRole]           = "label";
+    roles[PLMNoteItem::Roles::IndentRole]          = "indent";
+    roles[PLMNoteItem::Roles::SortOrderRole]       = "sortOrder";
+    roles[PLMNoteItem::Roles::CreationDateRole]    = "creationDate";
+    roles[PLMNoteItem::Roles::UpdateDateRole]      = "updateDate";
+    roles[PLMNoteItem::Roles::ContentDateRole]     = "contentDate";
+    roles[PLMNoteItem::Roles::HasChildrenRole]     = "hasChildren";
+    roles[PLMNoteItem::Roles::DeletedRole]         = "deleted";
+    roles[PLMNoteItem::Roles::WordCountRole]       = "wordCount";
+    roles[PLMNoteItem::Roles::CharCountRole]       = "charCount";
     roles[PLMNoteItem::Roles::ProjectIsBackupRole] = "projectIsBackup";
     roles[PLMNoteItem::Roles::ProjectIsActiveRole] = "projectIsActive";
     return roles;
@@ -350,7 +352,7 @@ void PLMNoteListModel::populate()
 
     m_allNoteItems.clear();
 
-    for(int projectId : plmdata->projectHub()->getProjectIdList()) {
+    for (int projectId : plmdata->projectHub()->getProjectIdList()) {
         PLMNoteItem *projectItem = new PLMNoteItem();
         projectItem->setIsProjectItem(projectId);
         m_allNoteItems.append(projectItem);
@@ -360,7 +362,7 @@ void PLMNoteListModel::populate()
         auto sortOrdersHash = plmdata->noteHub()->getAllSortOrders(projectId);
         auto indentsHash    = plmdata->noteHub()->getAllIndents(projectId);
 
-        for(int sheetId : idList) {
+        for (int sheetId : idList) {
             m_allNoteItems.append(new PLMNoteItem(projectId, sheetId,
                                                   indentsHash.value(sheetId),
                                                   sortOrdersHash.value(sheetId)));
@@ -376,8 +378,8 @@ void PLMNoteListModel::clear()
     this->endResetModel();
 }
 
-void PLMNoteListModel::exploitSignalFromPLMData(int                 projectId,
-                                                int                 paperId,
+void PLMNoteListModel::exploitSignalFromPLMData(int                projectId,
+                                                int                paperId,
                                                 PLMNoteItem::Roles role)
 {
     PLMNoteItem *item = this->getItem(projectId, paperId);
@@ -411,11 +413,11 @@ void PLMNoteListModel::exploitSignalFromPLMData(int                 projectId,
     }
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 void PLMNoteListModel::refreshAfterDataAddition(int projectId, int paperId)
 {
-    //find parentIndex and row
+    // find parentIndex and row
     //    QModelIndex parentIndex;
     int row = 0;
 
@@ -424,65 +426,73 @@ void PLMNoteListModel::refreshAfterDataAddition(int projectId, int paperId)
     auto indentsHash    = plmdata->noteHub()->getAllIndents(projectId);
 
 
-    int paperIndex = idList.indexOf(paperId);
-    int paperIndent = indentsHash.value(paperId);
+    int paperIndex      = idList.indexOf(paperId);
+    int paperIndent     = indentsHash.value(paperId);
     int paperSortOrders = sortOrdersHash.value(paperId);
 
     bool parentFound = false;
 
-    if(paperIndex == 0){ // meaning the parent have to be a project item
+    if (paperIndex == 0) { // meaning the parent have to be a project item
         this->populate();
         return;
     }
 
-    if(!parentFound){
-        for (int i = paperIndex - 1; i >= 0 ; --i ) {
-            int possibleParentId = idList.at(i);
+    if (!parentFound) {
+        for (int i = paperIndex - 1; i >= 0; --i) {
+            int possibleParentId     = idList.at(i);
             int possibleParentIndent = indentsHash.value(possibleParentId);
-            if(paperIndent == possibleParentIndent + 1){
-                //                auto modelIndexList = this->getModelIndex(projectId, possibleParentId);
+
+            if (paperIndent == possibleParentIndent + 1) {
+                //                auto modelIndexList =
+                // this->getModelIndex(projectId, possibleParentId);
                 //                if(modelIndexList.isEmpty()){
-                //                    qWarning() << Q_FUNC_INFO << "if paperIndent == possibleParentIndent => modelIndexList.isEmpty()";
+                //                    qWarning() << Q_FUNC_INFO << "if
+                // paperIndent == possibleParentIndent =>
+                // modelIndexList.isEmpty()";
                 //                    return;
                 //                }
                 //                parentIndex = modelIndexList.first();
-                //int parentPaperId = parentIndex.data(PLMNoteItem::Roles::PaperIdRole).toInt();
-                row = paperIndex - i;
+                // int parentPaperId =
+                // parentIndex.data(PLMNoteItem::Roles::PaperIdRole).toInt();
+                row         = paperIndex - i;
                 parentFound = true;
                 break;
             }
         }
     }
-    if(!parentFound){
+
+    if (!parentFound) {
         qWarning() << Q_FUNC_INFO << "parent not found, failsafe used";
         this->populate();
         return;
     }
 
 
-    // find item just before in m_allNoteItems to determine item index to insert in:
+    // find item just before in m_allNoteItems to determine item index to insert
+    // in:
 
 
-
-    int idBefore = idList.at(paperIndex - 1);
+    int idBefore            = idList.at(paperIndex - 1);
     PLMNoteItem *itemBefore = this->getItem(projectId, idBefore);
+
     // needed because m_allNoteItems can have multiple projects :
     int indexBefore = m_allNoteItems.indexOf(itemBefore);
 
     int itemIndex = indexBefore + 1;
 
-    //        if(itemIndex >= m_allNoteItems.count() && paperIndent == itemBefore->indent() + 1){
-    //            qWarning() << Q_FUNC_INFO << "last in the m_allNoteItems list and child of previous item, so failsafe used";
+    //        if(itemIndex >= m_allNoteItems.count() && paperIndent ==
+    // itemBefore->indent() + 1){
+    //            qWarning() << Q_FUNC_INFO << "last in the m_allNoteItems list
+    // and child of previous item, so failsafe used";
     //            this->populate();
     //            return;
     //        }
 
 
-    for(PLMNoteItem *item : m_allNoteItems){
+    for (PLMNoteItem *item : m_allNoteItems) {
         item->invalidateData(PLMNoteItem::Roles::SortOrderRole);
         item->invalidateData(PLMNoteItem::Roles::HasChildrenRole);
     }
-
 
 
     beginInsertRows(QModelIndex(), row, row);
@@ -494,50 +504,54 @@ void PLMNoteListModel::refreshAfterDataAddition(int projectId, int paperId)
     endInsertRows();
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
-void PLMNoteListModel::refreshAfterDataMove(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId)
+void PLMNoteListModel::refreshAfterDataMove(int sourceProjectId,
+                                            int sourcePaperId,
+                                            int targetProjectId,
+                                            int targetPaperId)
 {
     int sourceIndex = -2;
     int targetIndex = -2;
-    int sourceRow = -2;
-    int targetRow = -2;
+    int sourceRow   = -2;
+    int targetRow   = -2;
 
 
+    PLMNoteItem *sourceItem = this->getItem(sourceProjectId, sourcePaperId);
 
-    PLMNoteItem* sourceItem = this->getItem(sourceProjectId, sourcePaperId);
-
-    if(!sourceItem){
+    if (!sourceItem) {
         qWarning() << "refreshAfterDataMove no sourceItem";
         return;
     }
-    PLMNoteItem* targetItem = this->getItem(targetProjectId, targetPaperId);
-    if(!targetItem){
+    PLMNoteItem *targetItem = this->getItem(targetProjectId, targetPaperId);
+
+    if (!targetItem) {
         qWarning() << "refreshAfterDataMove no targetItem";
         return;
     }
 
     int i = 0;
-    for(PLMNoteItem *item : m_allNoteItems){
-        if(item->paperId() == sourcePaperId){
+
+    for (PLMNoteItem *item : m_allNoteItems) {
+        if (item->paperId() == sourcePaperId) {
             sourceIndex = i;
         }
-        if(item->paperId() == targetPaperId){
+
+        if (item->paperId() == targetPaperId) {
             targetIndex = i;
         }
         i++;
-
     }
-
 
 
     sourceRow = sourceIndex;
     targetRow = targetIndex;
-    if(sourceRow < targetRow){
+
+    if (sourceRow < targetRow) {
         targetRow += 1;
     }
 
-    for(PLMNoteItem *item : m_allNoteItems){
+    for (PLMNoteItem *item : m_allNoteItems) {
         item->invalidateData(PLMNoteItem::Roles::SortOrderRole);
     }
 
@@ -550,57 +564,63 @@ void PLMNoteListModel::refreshAfterDataMove(int sourceProjectId, int sourcePaper
     endMoveRows();
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 ///
 /// \brief PLMNoteListModel::refreshAfterDeletedStateChanged
 /// \param projectId
 /// \param paperId
 /// \param newDeletedState
 /// careful, paper is deleted = true, not a true removal
-void PLMNoteListModel::refreshAfterDeletedStateChanged(int projectId, int paperId, bool newDeletedState)
+void PLMNoteListModel::refreshAfterDeletedStateChanged(int  projectId,
+                                                       int  paperId,
+                                                       bool newDeletedState)
 {
     Q_UNUSED(projectId)
     Q_UNUSED(paperId)
     Q_UNUSED(newDeletedState)
 
-    for(PLMNoteItem *item : m_allNoteItems){
+    for (PLMNoteItem *item : m_allNoteItems) {
         item->invalidateData(PLMNoteItem::Roles::SortOrderRole);
-        item->invalidateData(PLMNoteItem::Roles::HasChildrenRole); // needed to refresh the parent item when no child anymore
+        item->invalidateData(PLMNoteItem::Roles::HasChildrenRole); // needed to
+                                                                   // refresh
+                                                                   // the parent
+                                                                   // item when
+                                                                   // no child
+                                                                   // anymore
     }
-
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
-void PLMNoteListModel::refreshAfterProjectIsBackupChanged(int projectId, bool isProjectABackup)
+void PLMNoteListModel::refreshAfterProjectIsBackupChanged(int  projectId,
+                                                          bool isProjectABackup)
 {
     Q_UNUSED(projectId)
     Q_UNUSED(isProjectABackup)
 
-    for(PLMNoteItem *item : m_allNoteItems){
+    for (PLMNoteItem *item : m_allNoteItems) {
         item->invalidateData(PLMNoteItem::Roles::ProjectIsBackupRole);
     }
-
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 void PLMNoteListModel::refreshAfterProjectIsActiveChanged(int projectId)
 {
     Q_UNUSED(projectId)
 
-    for(PLMNoteItem *item : m_allNoteItems){
+    for (PLMNoteItem *item : m_allNoteItems) {
         item->invalidateData(PLMNoteItem::Roles::ProjectIsActiveRole);
     }
-
 }
-//--------------------------------------------------------------------
+
+// --------------------------------------------------------------------
 void PLMNoteListModel::connectToPLMDataSignals()
 {
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
                                            &PLMNoteHub::titleChanged, this,
                                            [this](int projectId, int paperId,
-                                           const QString& value) {
+                                                  const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId, PLMNoteItem::Roles::NameRole);
     }, Qt::UniqueConnection);
@@ -608,17 +628,18 @@ void PLMNoteListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->projectHub(),
                                            &PLMProjectHub::projectNameChanged, this,
                                            [this](int projectId,
-                                           const QString& value) {
+                                                  const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, -1, PLMNoteItem::Roles::ProjectNameRole);
+        this->exploitSignalFromPLMData(projectId, -1,
+                                       PLMNoteItem::Roles::ProjectNameRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->notePropertyHub(),
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -629,7 +650,7 @@ void PLMNoteListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
                                            &PLMNoteHub::paperIdChanged, this,
                                            [this](int projectId, int paperId,
-                                           int value) {
+                                                  int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        PLMNoteItem::Roles::PaperIdRole);
@@ -638,7 +659,7 @@ void PLMNoteListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
                                            &PLMNoteHub::indentChanged, this,
                                            [this](int projectId, int paperId,
-                                           int value) {
+                                                  int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        PLMNoteItem::Roles::IndentRole);
@@ -647,7 +668,7 @@ void PLMNoteListModel::connectToPLMDataSignals()
     m_dataConnectionsList.append(this->connect(plmdata->noteHub(),
                                                &PLMNoteHub::sortOrderChanged, this,
                                                [this](int projectId, int paperId,
-                                               int value) {
+                                                      int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        PLMNoteItem::Roles::SortOrderRole);
@@ -655,7 +676,7 @@ void PLMNoteListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
                                            &PLMNoteHub::contentDateChanged, this,
                                            [this](int projectId, int paperId,
-                                           const QDateTime& value) {
+                                                  const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        PLMNoteItem::Roles::ContentDateRole);
@@ -664,7 +685,7 @@ void PLMNoteListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
                                            &PLMNoteHub::updateDateChanged, this,
                                            [this](int projectId, int paperId,
-                                           const QDateTime& value) {
+                                                  const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        PLMNoteItem::Roles::UpdateDateRole);
@@ -672,7 +693,7 @@ void PLMNoteListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
                                            &PLMNoteHub::deletedChanged, this,
                                            [this](int projectId, int paperId,
-                                           bool value) {
+                                                  bool value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        PLMNoteItem::Roles::DeletedRole);
@@ -680,9 +701,9 @@ void PLMNoteListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->notePropertyHub(),
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -693,9 +714,9 @@ void PLMNoteListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->notePropertyHub(),
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -705,14 +726,14 @@ void PLMNoteListModel::connectToPLMDataSignals()
     }, Qt::UniqueConnection);
 
 
-
     m_dataConnectionsList << this->connect(plmdata->projectHub(),
                                            &PLMProjectHub::activeProjectChanged, this,
                                            [this](int projectId) {
         Q_UNUSED(projectId)
-        for(int projectId : plmdata->projectHub()->getProjectIdList()){
 
-            this->exploitSignalFromPLMData(projectId, -1, PLMNoteItem::Roles::ProjectIsActiveRole);
+        for (int projectId : plmdata->projectHub()->getProjectIdList()) {
+            this->exploitSignalFromPLMData(projectId, -1,
+                                           PLMNoteItem::Roles::ProjectIsActiveRole);
         }
     }, Qt::UniqueConnection);
 }
@@ -726,7 +747,8 @@ void PLMNoteListModel::disconnectFromPLMDataSignals()
 
     m_dataConnectionsList.clear();
 }
-//-----------------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------------
 
 
 QModelIndexList PLMNoteListModel::getModelIndex(int projectId, int paperId)
@@ -738,11 +760,12 @@ QModelIndexList PLMNoteListModel::getModelIndex(int projectId, int paperId)
                                              projectId,
                                              -1,
                                              Qt::MatchFlag::MatchExactly |
-                                             Qt::MatchFlag::MatchWrap | Qt::MatchFlag::MatchRecursive);
+                                             Qt::MatchFlag::MatchWrap |
+                                             Qt::MatchFlag::MatchRecursive);
 
     for (const QModelIndex& modelIndex : modelList) {
-
         int indexPaperId = modelIndex.data(PLMNoteItem::Roles::PaperIdRole).toInt();
+
         if (indexPaperId == paperId) {
             list.append(modelIndex);
         }
@@ -751,30 +774,30 @@ QModelIndexList PLMNoteListModel::getModelIndex(int projectId, int paperId)
     return list;
 }
 
-//-----------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------
 
-PLMNoteItem *PLMNoteListModel::getParentNoteItem(PLMNoteItem *chidItem)
+PLMNoteItem * PLMNoteListModel::getParentNoteItem(PLMNoteItem *chidItem)
 {
     return chidItem->parent(m_allNoteItems);
 }
-//-----------------------------------------------------------------------------------
-PLMNoteItem *PLMNoteListModel::getItem(int projectId, int paperId)
+
+// -----------------------------------------------------------------------------------
+PLMNoteItem * PLMNoteListModel::getItem(int projectId, int paperId)
 {
     PLMNoteItem *result_item = nullptr;
 
-    for(PLMNoteItem *item : m_allNoteItems){
-        if(item->projectId() == projectId && item->paperId() == paperId){
+    for (PLMNoteItem *item : m_allNoteItems) {
+        if ((item->projectId() == projectId) && (item->paperId() == paperId)) {
             result_item = item;
             break;
         }
     }
 
-    if(!result_item){
+    if (!result_item) {
         qDebug() << "result_item is null";
     }
 
     return result_item;
 }
 
-//-----------------------------------------------------------------------------------
-
+// -----------------------------------------------------------------------------------

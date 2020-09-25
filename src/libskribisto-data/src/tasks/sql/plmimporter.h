@@ -37,7 +37,7 @@ public:
     explicit PLMImporter(QObject *parent = 0);
 
     QSqlDatabase createSQLiteDbFrom(const QString& type,
-                                    const QUrl &fileName,
+                                    const QUrl   & fileName,
                                     int            projectId,
                                     PLMError     & error);
     QSqlDatabase createEmptySQLiteProject(int       projectId,
@@ -51,10 +51,10 @@ private:
 
     //    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
     // projectId, PLMError &error);
-    PLMError executeSQLFile(const QString &fileName,
+    PLMError executeSQLFile(const QString& fileName,
                             QSqlDatabase & sqlDB);
     PLMError executeSQLString(const QString& sqlString,
-                            QSqlDatabase & sqlDB);
+                              QSqlDatabase & sqlDB);
 };
 
 #endif // PLMIMPORTER_H

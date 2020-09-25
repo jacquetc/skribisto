@@ -3,10 +3,8 @@
 
 SKRFonts::SKRFonts(QObject *parent) : QObject(parent)
 {
-     database = new QFontDatabase();
-     families = database->families();
-
-
+    database = new QFontDatabase();
+    families = database->families();
 }
 
 QStringList SKRFonts::fontFamilies()

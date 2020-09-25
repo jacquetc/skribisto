@@ -42,25 +42,26 @@ using namespace std;
 #include "skrqmltools.h"
 
 #ifdef QT_DEBUG
-#include <QQmlDebuggingEnabler>
-#endif //QT_DEBUG
+# include <QQmlDebuggingEnabler>
+#endif // QT_DEBUG
 // -------------------------------------------------------
 void startCore()
 {
-//new PLMPluginLoader(qApp);
+    // new PLMPluginLoader(qApp);
 
-// UTF-8 codec
-QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+    // UTF-8 codec
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 
-// Names for the QSettings
-QCoreApplication::setOrganizationName("skribisto");
-QCoreApplication::setOrganizationDomain("skribisto.eu");
+    // Names for the QSettings
+    QCoreApplication::setOrganizationName("skribisto");
+    QCoreApplication::setOrganizationDomain("skribisto.eu");
 
 
-QCoreApplication::setApplicationVersion(QString::number(VERSIONSTR));
-QString appName = "Skribisto";
-QCoreApplication::setApplicationName(appName);
-QSettings::setDefaultFormat(QSettings::IniFormat);
+    QCoreApplication::setApplicationVersion(QString::number(VERSIONSTR));
+    QString appName = "Skribisto";
+
+    QCoreApplication::setApplicationName(appName);
+    QSettings::setDefaultFormat(QSettings::IniFormat);
 }
 
 // -------------------------------------------------------
@@ -68,8 +69,8 @@ QSettings::setDefaultFormat(QSettings::IniFormat);
 
 //// -------------------------------------------------------
 
-//void openProjectInArgument(PLMData *data)
-//{
+// void openProjectInArgument(PLMData *data)
+// {
 //    // open directly a project if *.skribisto path is the first argument :
 //    // TODO: add ignore --qml
 //    QStringList args = qApp->arguments();
@@ -85,21 +86,20 @@ QSettings::setDefaultFormat(QSettings::IniFormat);
 //        }
 
 //        if (!argument.isEmpty()) {
-//# ifdef Q_OS_WIN32
-//            QTextCodec *codec = QTextCodec::codecForUtfText(argument.toUtf8());
+// # ifdef Q_OS_WIN32
+//            QTextCodec *codec =
+// QTextCodec::codecForUtfText(argument.toUtf8());
 //            argument = codec->toUnicode(argument.toUtf8());
-//# endif // ifdef Q_OS_WIN32
+// # endif // ifdef Q_OS_WIN32
 //            argument = QDir::fromNativeSeparators(argument);
 
 //            data->projectHub()->loadProject(argument);
 //        }
 //    }
-//}
-
+// }
 
 
 // -------------------------------------------------------
-
 
 
 // -------------------------------------------------------
@@ -110,11 +110,12 @@ int main(int argc, char *argv[])
 {
 #ifdef QT_DEBUG
     QQmlDebuggingEnabler enabler;
-    //QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
-#endif //QT_DEBUG
+
+    // QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
+#endif // QT_DEBUG
 
     // Allows qml styling
-    qputenv("QT_STYLE_OVERRIDE",           "");
+    qputenv("QT_STYLE_OVERRIDE", "");
 
 
     QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << ":icons");
@@ -122,28 +123,29 @@ int main(int argc, char *argv[])
     // TODO : add option for UI scale
 
 #if QT_VERSION >= 0x051400
-    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
-#else
-    //qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
+#else // if QT_VERSION >= 0x051400
+
+    // qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
-
-
+#endif // if QT_VERSION >= 0x051400
 
 
     QApplication app(argc, argv);
 
-    //icons :
-    //qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
+    // icons :
+    // qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
 
-    //if Gnome desktop :
-//    if(qgetenv("XDG_CURRENT_DESKTOP") == "GNOME"){
+    // if Gnome desktop :
+    //    if(qgetenv("XDG_CURRENT_DESKTOP") == "GNOME"){
 
-//        QIcon::setThemeName("Adwaita");
-//    }
-//    else {
-        QIcon::setThemeName("breeze");
-//    }
+    //        QIcon::setThemeName("Adwaita");
+    //    }
+    //    else {
+    QIcon::setThemeName("breeze");
+
+    //    }
 
     startCore();
 
@@ -155,7 +157,7 @@ int main(int argc, char *argv[])
     QSettings settings;
 
     qApp->processEvents();
-    QString qtTr    = QString("qt");
+    QString qtTr        = QString("qt");
     QString skribistoTr = QString("skribisto");
     QLocale locale;
 
@@ -181,7 +183,7 @@ int main(int argc, char *argv[])
     }
     app.installTranslator(&skribistoTranslator);
 
-   // PLMUtils::Lang::setUserLang(langCode);
+    // PLMUtils::Lang::setUserLang(langCode);
 
 
     // Qt translation :
@@ -194,20 +196,24 @@ int main(int argc, char *argv[])
     }
 
     // install translation of plugins:
-//    PLMPluginLoader::instance()->installPluginTranslations();
+    //    PLMPluginLoader::instance()->installPluginTranslations();
 
 
     // -----------------------------------------------------------------------
 
 
-   PLMData *data     = new PLMData(qApp);
-   PLMModels *models = new PLMModels(qApp);
-   SKRFonts *skrFonts = new SKRFonts(qApp);
-   SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(qApp);
-   SKRQMLTools *skrQMLTools = new SKRQMLTools(qApp);
+    PLMData   *data                            = new PLMData(qApp);
+    PLMModels *models                          = new PLMModels(qApp);
+    SKRFonts  *skrFonts                        = new SKRFonts(qApp);
+    SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(qApp);
+    SKRQMLTools *skrQMLTools                   = new SKRQMLTools(qApp);
 
 
-    qmlRegisterUncreatableType<PLMError>("eu.skribisto.plmerror", 1, 0, "PLMError", "Can't instantiate PLMError");
+    qmlRegisterUncreatableType<PLMError>("eu.skribisto.plmerror",
+                                         1,
+                                         0,
+                                         "PLMError",
+                                         "Can't instantiate PLMError");
 
 
     qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",
@@ -217,10 +223,10 @@ int main(int argc, char *argv[])
                                               "Can't instantiate PLMProjectHub");
 
     qmlRegisterUncreatableType<PLMNoteHub>("eu.skribisto.notehub",
-                                            1,
-                                            0,
-                                            "PLMNoteHub",
-                                            "Can't instantiate PLMNoteHub");
+                                           1,
+                                           0,
+                                           "PLMNoteHub",
+                                           "Can't instantiate PLMNoteHub");
 
     qmlRegisterUncreatableType<PLMSheetHub>("eu.skribisto.sheethub",
                                             1,
@@ -229,54 +235,56 @@ int main(int argc, char *argv[])
                                             "Can't instantiate PLMSheetHub");
 
     qmlRegisterUncreatableType<SKRTagHub>("eu.skribisto.taghub",
-                                            1,
-                                            0,
-                                            "SKRTagHub",
-                                            "Can't instantiate SKRTagHub");
+                                          1,
+                                          0,
+                                          "SKRTagHub",
+                                          "Can't instantiate SKRTagHub");
 
     qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
-                                            1,
-                                            0,
-                                            "PLMModels",
-                                            "Can't instantiate PLMModels");
+                                          1,
+                                          0,
+                                          "PLMModels",
+                                          "Can't instantiate PLMModels");
 
 
-    qmlRegisterUncreatableType<PLMWriteDocumentListModel>("eu.skribisto.writedocumentlistmodel",
-                                            1,
-                                            0,
-                                            "PLMWriteDocumentListModel",
-                                            "Can't instantiate PLMWriteDocumentListModel");
+    qmlRegisterUncreatableType<PLMWriteDocumentListModel>(
+        "eu.skribisto.writedocumentlistmodel",
+        1,
+        0,
+        "PLMWriteDocumentListModel",
+        "Can't instantiate PLMWriteDocumentListModel");
 
 
     qmlRegisterType<PLMSheetListProxyModel>("eu.skribisto.sheetlistproxymodel",
-                                       1,
-                                       0,
-                                       "PLMSheetListProxyModel");
+                                            1,
+                                            0,
+                                            "PLMSheetListProxyModel");
 
     qmlRegisterType<PLMNoteListProxyModel>("eu.skribisto.notelistproxymodel",
-                                       1,
-                                       0,
-                                       "PLMNoteListProxyModel");
+                                           1,
+                                           0,
+                                           "PLMNoteListProxyModel");
 
     qmlRegisterType<SKRSearchNoteListProxyModel>("eu.skribisto.searchnotelistproxymodel",
-                                       1,
-                                       0,
-                                       "SKRSearchNoteListProxyModel");
+                                                 1,
+                                                 0,
+                                                 "SKRSearchNoteListProxyModel");
 
-    qmlRegisterType<SKRSearchSheetListProxyModel>("eu.skribisto.searchsheetlistproxymodel",
-                                       1,
-                                       0,
-                                       "SKRSearchSheetListProxyModel");
+    qmlRegisterType<SKRSearchSheetListProxyModel>(
+        "eu.skribisto.searchsheetlistproxymodel",
+        1,
+        0,
+        "SKRSearchSheetListProxyModel");
 
     qmlRegisterType<SKRSearchTagListProxyModel>("eu.skribisto.searchtaglistproxymodel",
-                                       1,
-                                       0,
-                                       "SKRSearchTagListProxyModel");
+                                                1,
+                                                0,
+                                                "SKRSearchTagListProxyModel");
 
     qmlRegisterType<SKRRecentProjectListModel>("eu.skribisto.recentprojectlistmodel",
-                                       1,
-                                       0,
-                                       "SKRRecentProjectListModel");
+                                               1,
+                                               0,
+                                               "SKRRecentProjectListModel");
 
     qmlRegisterType<DocumentHandler>("eu.skribisto.documenthandler",
                                      1,
@@ -295,26 +303,25 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("plmModels", models);
     engine.rootContext()->setContextProperty("skrFonts", skrFonts);
     engine.rootContext()->setContextProperty("skrQMLTools", skrQMLTools);
-    engine.rootContext()->setContextProperty("skrEditMenuSignalHub", skrEditMenuSignalHub);
+    engine.rootContext()->setContextProperty("skrEditMenuSignalHub",
+                                             skrEditMenuSignalHub);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-                     &app, [url](QObject *obj, const QUrl &objUrl) {
-        if (!obj && url == objUrl)
-            QCoreApplication::exit(-1);
+                     &app, [url](QObject *obj, const QUrl& objUrl) {
+        if (!obj && (url == objUrl)) QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
 
     engine.load(url);
 
-//            QCoreApplication *app = qApp;
-//            engine->connect(engine, &QQmlApplicationEngine::objectCreated, [app](QObject *object, const QUrl &url){
-//                if(object == nullptr){
-//                    app->quit();
-//                }
-//            });
+    //            QCoreApplication *app = qApp;
+    //            engine->connect(engine, &QQmlApplicationEngine::objectCreated,
+    // [app](QObject *object, const QUrl &url){
+    //                if(object == nullptr){
+    //                    app->quit();
+    //                }
+    //            });
 
     if (engine.rootObjects().isEmpty()) return -1;
-
-
 
 
     return app.exec();

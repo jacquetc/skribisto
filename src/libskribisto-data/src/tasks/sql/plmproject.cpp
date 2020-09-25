@@ -41,12 +41,12 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
 
     if (!fileName.isEmpty()) {
         QFileInfo info;
-        if(fileName.scheme() == "qrc"){
+
+        if (fileName.scheme() == "qrc") {
             info.setFile(fileName.toString().replace("qrc:", ":"));
         }
-        else{
+        else {
             info.setFile(fileName.toLocalFile());
-
         }
 
         if (!info.exists()) {
@@ -90,22 +90,26 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
                                                      "tbl_sheet_property",
                                                      "l_sheet_code",
                                                      m_sqlDb);
+
         m_plmPropertyForTableNameHash.insert("tbl_sheet_property", sheetProperty);
         PLMProperty *noteProperty = new PLMProperty(this,
                                                     "tbl_note_property",
                                                     "l_note_code",
                                                     m_sqlDb);
+
         m_plmPropertyForTableNameHash.insert("tbl_note_property", noteProperty);
         PLMProperty *sheetSystemProperty = new PLMProperty(this,
                                                            "tbl_sheet_property",
                                                            "l_sheet_code",
                                                            m_sqlDb);
+
         m_plmPropertyForTableNameHash.insert("tbl_sheet_system_property",
                                              sheetSystemProperty);
         PLMProperty *noteSystemProperty = new PLMProperty(this,
                                                           "tbl_note_property",
                                                           "l_note_code",
                                                           m_sqlDb);
+
         m_plmPropertyForTableNameHash.insert("tbl_note_system_property",
                                              noteSystemProperty);
     }

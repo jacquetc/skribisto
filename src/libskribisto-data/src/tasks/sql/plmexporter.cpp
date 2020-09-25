@@ -26,12 +26,12 @@ PLMExporter::PLMExporter(QObject *parent) : QObject(parent)
 
 PLMError PLMExporter::exportSQLiteDbTo(PLMProject    *db,
                                        const QString& type,
-                                       const QUrl &fileName)
+                                       const QUrl   & fileName)
 {
     PLMError error;
-    QString finalType = type;
+    QString  finalType = type;
 
-    if (type == "skrib"){
+    if (type == "skrib") {
         finalType = "SQLITE";
     }
 

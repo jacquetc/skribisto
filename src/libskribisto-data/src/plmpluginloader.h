@@ -11,9 +11,10 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include "skribisto_data_global.h"
-//#include <string>
-//#include <cstdlib>
-//#include <cxxabi.h>
+
+// #include <string>
+// #include <cstdlib>
+// #include <cxxabi.h>
 
 struct EXPORT PLMPlugin {
     PLMPlugin() {}
@@ -78,7 +79,7 @@ public:
             }
         }
 
-        foreach(const QString &path, QCoreApplication::libraryPaths()) {
+        foreach(const QString& path, QCoreApplication::libraryPaths()) {
             QList<QObject *> objects = this->pluginObjectsByDir<T>(path);
 
             foreach(QObject * obj, objects) {
@@ -144,7 +145,7 @@ private:
         QList<T *> ls;
         QDir plugDir = QDir(dir);
 
-        foreach(const QString &file, plugDir.entryList(QDir::Files)) {
+        foreach(const QString& file, plugDir.entryList(QDir::Files)) {
             if (T *plugin =
                     PLMPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file))) {
                 ls.push_back(plugin);
@@ -161,10 +162,11 @@ private:
         QList<QObject *> ls;
         QDir plugDir = QDir(dir);
         QStringList filter;
+
         filter << "*.so" << ".dll";
         QDir::Filters filterFlags(QDir::Files& ~QDir::Executable);
 
-        foreach(const QString &file,
+        foreach(const QString& file,
                 plugDir.entryList(filter, filterFlags, QDir::NoSort)) {
             if (T *plugin =
                     PLMPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file)))

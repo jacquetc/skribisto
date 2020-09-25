@@ -80,7 +80,7 @@ bool PLMSheetProxyModel::setData(const QModelIndex& index, const QVariant& value
     return QSortFilterProxyModel::setData(index, value, role);
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 
 void PLMSheetProxyModel::setDeletedFilter(bool showDeleted)
@@ -89,16 +89,18 @@ void PLMSheetProxyModel::setDeletedFilter(bool showDeleted)
     this->invalidate();
 }
 
-bool PLMSheetProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+bool PLMSheetProxyModel::filterAcceptsRow(int                sourceRow,
+                                          const QModelIndex& sourceParent) const
 {
     QModelIndex index = this->sourceModel()->index(sourceRow, 0, sourceParent);
-    if (!index.isValid()){
+
+    if (!index.isValid()) {
         return false;
     }
-    bool indexDeleted = sourceModel()->data(index, PLMSheetItem::Roles::DeletedRole).toBool();
+    bool indexDeleted =
+        sourceModel()->data(index, PLMSheetItem::Roles::DeletedRole).toBool();
 
-    if(indexDeleted == m_showDeleted)
-        return true;
+    if (indexDeleted == m_showDeleted) return true;
 
     return false;
 }

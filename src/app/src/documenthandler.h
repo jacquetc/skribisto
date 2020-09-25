@@ -38,8 +38,10 @@ class DocumentHandler : public QObject {
     Q_PROPERTY(int paperId READ paperId NOTIFY idChanged)
     Q_PROPERTY(int projectId READ projectId NOTIFY idChanged)
 
-    Q_PROPERTY(qreal topMarginEverywhere READ topMarginEverywhere WRITE setTopMarginEverywhere NOTIFY topMarginEverywhereChanged)
-    Q_PROPERTY(qreal indentEverywhere READ indentEverywhere WRITE setIndentEverywhere NOTIFY indentEverywhereChanged)
+    Q_PROPERTY(
+        qreal topMarginEverywhere READ topMarginEverywhere WRITE setTopMarginEverywhere NOTIFY topMarginEverywhereChanged)
+    Q_PROPERTY(
+        qreal indentEverywhere READ indentEverywhere WRITE setIndentEverywhere NOTIFY indentEverywhereChanged)
 
 public:
 
@@ -100,10 +102,10 @@ public:
 
     Q_INVOKABLE int     maxCursorPosition() const;
 
-    qreal topMarginEverywhere() const;
-    void setTopMarginEverywhere(qreal topMargin);
-    qreal indentEverywhere() const;
-    void setIndentEverywhere(qreal indent);
+    qreal               topMarginEverywhere() const;
+    void                setTopMarginEverywhere(qreal topMargin);
+    qreal               indentEverywhere() const;
+    void                setIndentEverywhere(qreal indent);
 
 public slots:
 

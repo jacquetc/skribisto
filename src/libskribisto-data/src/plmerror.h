@@ -30,19 +30,21 @@
  * To facilitate the error management
  */
 #define IFKO(ERROR) \
-        if (Q_UNLIKELY(ERROR))
+    if (Q_UNLIKELY(ERROR))
 
 /**
  * To facilitate the error management
  */
 #define IFOK(ERROR) \
-        if (Q_LIKELY(!ERROR))
+    if (Q_LIKELY(!ERROR))
 
 /**
  * To facilitate the error management
  */
 #define IFOKDO(ERROR, ACTION) \
-        IFOK(ERROR) {ERROR = ACTION; }
+    IFOK(ERROR) {             \
+        ERROR = ACTION;       \
+    }
 
 struct EXPORT PLMError
 {
@@ -51,25 +53,27 @@ struct EXPORT PLMError
     Q_PROPERTY(QString errorCode READ getErrorCode)
 
 public:
+
     explicit PLMError();
-    PLMError(const PLMError &error);
-    Q_INVOKABLE bool operator !() const;
-    Q_INVOKABLE operator bool() const;
-    Q_INVOKABLE PLMError &operator =(const PLMError &iError);
+    PLMError(const PLMError& error);
+    Q_INVOKABLE bool         operator!() const;
+    Q_INVOKABLE              operator bool() const;
+    Q_INVOKABLE PLMError   & operator=(const PLMError& iError);
 
-    Q_INVOKABLE void setSuccess(bool value);
-    Q_INVOKABLE bool isSuccess() const;
+    Q_INVOKABLE void         setSuccess(bool value);
+    Q_INVOKABLE bool         isSuccess() const;
 
-    Q_INVOKABLE QString getErrorCode() const;
-    void setErrorCode(const QString &value);
+    Q_INVOKABLE QString      getErrorCode() const;
+    void                     setErrorCode(const QString& value);
 
     Q_INVOKABLE QVariantList getDataList() const;
-    void setDataList(const QVariantList &dataList);
-    void addData(const QVariant &value);
+    void                     setDataList(const QVariantList& dataList);
+    void                     addData(const QVariant& value);
 
 private:
-    bool m_success;
-    QString m_errorCode;
+
+    bool         m_success;
+    QString      m_errorCode;
     QVariantList m_dataList;
 };
 

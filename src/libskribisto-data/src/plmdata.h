@@ -51,15 +51,15 @@ public:
         return m_instance;
     }
 
-    PLMSignalHub             * signalHub();
-    Q_INVOKABLE PLMErrorHub              * errorHub();
-    Q_INVOKABLE PLMSheetHub  * sheetHub();
-    Q_INVOKABLE PLMPropertyHub           * sheetPropertyHub();
-    Q_INVOKABLE PLMNoteHub               * noteHub();
-    Q_INVOKABLE PLMPropertyHub           * notePropertyHub();
-    Q_INVOKABLE PLMProjectHub* projectHub();
-    Q_INVOKABLE SKRTagHub* tagHub();
-    PLMPluginHub             * pluginHub();
+    PLMSignalHub              * signalHub();
+    Q_INVOKABLE PLMErrorHub   * errorHub();
+    Q_INVOKABLE PLMSheetHub   * sheetHub();
+    Q_INVOKABLE PLMPropertyHub* sheetPropertyHub();
+    Q_INVOKABLE PLMNoteHub    * noteHub();
+    Q_INVOKABLE PLMPropertyHub* notePropertyHub();
+    Q_INVOKABLE PLMProjectHub * projectHub();
+    Q_INVOKABLE SKRTagHub     * tagHub();
+    PLMPluginHub              * pluginHub();
 
 signals:
 

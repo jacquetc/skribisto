@@ -182,12 +182,15 @@ int PLMUtils::ProjectsArrayInSettings::findProjectInSettingArray(QString fileNam
     }
 
     QSettings settings;
+
     settings.beginGroup("Manager/projects");
     QStringList groups = settings.childGroups();
     int size           = groups.size();
+
     settings.setValue("size", size);
     settings.endGroup();
     QString name, path, workPath;
+
     settings.beginReadArray("Manager/projects");
 
     for (int i = 0; i < size; ++i) {
@@ -225,9 +228,11 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
     settings.beginGroup("Manager/projects");
     QStringList groups = settings.childGroups();
     int size           = groups.size();
+
     settings.setValue("size", size);
     settings.endGroup();
     QString name, path, workPath;
+
     settings.beginReadArray("Manager/projects");
 
     for (int i = 0; i < size; ++i) {
@@ -324,8 +329,10 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
 
 
 //        }
-//        else if( ( QFile(projPathI + "/"+ projNameI + ".skribisto").exists() ||
-//                   QFile(projWorkPathI +"/"+  projNameI + ".skribisto").exists() )
+//        else if( ( QFile(projPathI + "/"+ projNameI + ".skribisto").exists()
+// ||
+//                   QFile(projWorkPathI +"/"+  projNameI +
+// ".skribisto").exists() )
 //                 &&
 //                 ( newProjName.keys(projNameI).size() == 0 &&
 // newProjCreationDate.keys(projCreationDateI).size() == 0 )
@@ -392,10 +399,12 @@ QHash<QString,
     settings.beginGroup("Manager/projects");
     QStringList groups = settings.childGroups();
     int size           = groups.size();
+
     settings.setValue("size", size);
     settings.endGroup();
     QString name, path;
     QHash<QString, QString> hash;
+
     settings.beginReadArray("Manager/projects");
 
     for (int i = 0; i < size; ++i) {
@@ -684,7 +693,7 @@ QStringList PLMUtils::Dir::addonsPathsList()
             list.append(dir.path());
 
             QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-            foreach(const QString &pluginDir, dirList) {
+            foreach(const QString& pluginDir, dirList) {
                 list.append(dir.path() + "/" + pluginDir);
             }
         }

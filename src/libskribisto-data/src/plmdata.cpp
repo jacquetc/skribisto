@@ -3,7 +3,7 @@
 
 PLMData::PLMData(QObject *parent) : QObject(parent)
 {
-    m_instance       = this;
+    m_instance = this;
 
     m_signalHub      = new PLMSignalHub(this);
     m_errorHub       = new PLMErrorHub(this);
@@ -19,18 +19,30 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
                                            "tbl_note_property",
                                            "l_note_code");
 
-    m_tagHub         = new SKRTagHub(this);
+    m_tagHub    = new SKRTagHub(this);
     m_pluginHub = new PLMPluginHub(this);
 
 
-
-
-    connect(m_sheetHub, &PLMSheetHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
-    connect(m_sheetPropertyHub, &PLMPropertyHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
-    connect(m_noteHub, &PLMNoteHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
-    connect(m_notePropertyHub, &PLMPropertyHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
-    connect(m_tagHub, &SKRTagHub::projectModified, m_projectHub, &PLMProjectHub::setProjectNotSavedAnymore);
-
+    connect(m_sheetHub,
+            &PLMSheetHub::projectModified,
+            m_projectHub,
+            &PLMProjectHub::setProjectNotSavedAnymore);
+    connect(m_sheetPropertyHub,
+            &PLMPropertyHub::projectModified,
+            m_projectHub,
+            &PLMProjectHub::setProjectNotSavedAnymore);
+    connect(m_noteHub,
+            &PLMNoteHub::projectModified,
+            m_projectHub,
+            &PLMProjectHub::setProjectNotSavedAnymore);
+    connect(m_notePropertyHub,
+            &PLMPropertyHub::projectModified,
+            m_projectHub,
+            &PLMProjectHub::setProjectNotSavedAnymore);
+    connect(m_tagHub,
+            &SKRTagHub::projectModified,
+            m_projectHub,
+            &PLMProjectHub::setProjectNotSavedAnymore);
 }
 
 // -----------------------------------------------------------------------------
@@ -93,7 +105,6 @@ PLMPropertyHub * PLMData::notePropertyHub()
 {
     return m_notePropertyHub;
 }
-
 
 // -----------------------------------------------------------------------------
 PLMPluginHub * PLMData::pluginHub()

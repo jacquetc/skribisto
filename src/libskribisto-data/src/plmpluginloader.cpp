@@ -10,14 +10,14 @@ PLMPluginLoader::PLMPluginLoader(QObject *parent) : QObject(parent)
     qRegisterMetaType<QList<PLMPlugin> >("QList<PLMPlugin>");
     m_instance = this;
 
-    foreach(const QString  &path, PLMUtils::Dir::addonsPathsList()) {
+    foreach(const QString& path, PLMUtils::Dir::addonsPathsList()) {
         QCoreApplication::addLibraryPath(path);
     }
     QCoreApplication::removeLibraryPath(qApp->applicationDirPath());
 
-//    foreach(const QString  &path, QCoreApplication::libraryPaths() ) {
-//    qDebug() << path;
-//    }
+    //    foreach(const QString  &path, QCoreApplication::libraryPaths() ) {
+    //    qDebug() << path;
+    //    }
 
 
     // this->reload();
@@ -36,8 +36,8 @@ PLMPluginLoader *PLMPluginLoader::m_instance = nullptr;
 // ---------------------------------------------------------------------------
 
 
-//void PLMPluginLoader::reload()
-//{
+// void PLMPluginLoader::reload()
+// {
 //    m_pluginsListHash.clear();
 
 //    //    this->addPluginType<ConverterInterface>();
@@ -47,7 +47,8 @@ PLMPluginLoader *PLMPluginLoader::m_instance = nullptr;
 //    //
 //    //
 //    //
-//    //     converterInterfaces.append(this->pluginByDir<ConverterInterface>(path
+//    //
+//     converterInterfaces.append(this->pluginByDir<ConverterInterface>(path
 //    // + "/plugins/convert"));
 //    // //    foreach (ConverterInterface *converterInterface,
 //    // converterInterfaces)
@@ -57,7 +58,8 @@ PLMPluginLoader *PLMPluginLoader::m_instance = nullptr;
 
 //    foreach(const QString  &path, PLMUtils::Dir::addonsPathsList()) {
 //        panelInterfaces.append(PLMPluginLoader::pluginByDir<
-//                                   PLMSideMainBarIconInterface>(path + "/plugins"));
+//                                   PLMSideMainBarIconInterface>(path +
+// "/plugins"));
 //    }
 
 //    foreach(PLMSideMainBarIconInterface * interface, panelInterfaces) {
@@ -72,7 +74,8 @@ PLMPluginLoader *PLMPluginLoader::m_instance = nullptr;
 //    foreach(const QString  &path, PLMUtils::Dir::addonsPathsList()) {
 //        sideBarInterfaces.append(PLMPluginLoader::pluginByDir<
 //                                     PLMSideMainBarIconInterface>(path +
-//                                                                  "/plugins"));
+//
+//                                                                "/plugins"));
 //    }
 
 //    foreach(PLMSideMainBarIconInterface * interface, sideBarInterfaces) {
@@ -89,7 +92,7 @@ PLMPluginLoader *PLMPluginLoader::m_instance = nullptr;
 //        qDebug() << "className : " + className;
 //    }
 
-//}
+// }
 
 // ---------------------------------------------------------------------------
 
@@ -131,15 +134,23 @@ QObject * PLMPluginLoader::pluginObjectByName(const QString& fileName)
     if (!plugin) {
         qDebug() << "loader.instance() FOR : " + fileName;
         qDebug() << "loader.instance() : " + loader.errorString();
-
     } else {
         plugin->setProperty("fileName", fileName);
-        plugin->setProperty("activatedbydefault", loader.metaData().value("MetaData").toObject().value("activatedbydefault").toBool());
-        plugin->setProperty("version", loader.metaData().value("MetaData").toObject().value("version").toString());
-        plugin->setProperty("mandatory", loader.metaData().value("MetaData").toObject().value("mandatory").toString());
-        plugin->setProperty("shortname", loader.metaData().value("MetaData").toObject().value("shortname").toString());
-        plugin->setProperty("longname", loader.metaData().value("MetaData").toObject().value("longname").toString());
-
+        plugin->setProperty("activatedbydefault",
+                            loader.metaData().value("MetaData").toObject().value(
+                                "activatedbydefault").toBool());
+        plugin->setProperty("version",
+                            loader.metaData().value("MetaData").toObject().value(
+                                "version").toString());
+        plugin->setProperty("mandatory",
+                            loader.metaData().value("MetaData").toObject().value(
+                                "mandatory").toString());
+        plugin->setProperty("shortname",
+                            loader.metaData().value("MetaData").toObject().value(
+                                "shortname").toString());
+        plugin->setProperty("longname",
+                            loader.metaData().value("MetaData").toObject().value(
+                                "longname").toString());
     }
 
     return plugin;
@@ -154,11 +165,13 @@ void PLMPluginLoader::installPluginTranslations()
     QHash<QString, PLMPlugin>::const_iterator i = m_pluginsListHash.constBegin();
 
     while (i != m_pluginsListHash.constEnd()) {
-        QString className       = i.value().object->metaObject()->className();
-        //qDebug() << className;
+        QString className = i.value().object->metaObject()->className();
+
+        // qDebug() << className;
         QTranslator *translator = new QTranslator(qApp);
 
-        if (translator->load(QLocale(PLMUtils::Lang::getUserLang()), className.toLower(), "_", ":/translations")) {
+        if (translator->load(QLocale(PLMUtils::Lang::getUserLang()), className.toLower(),
+                             "_", ":/translations")) {
             qApp->installTranslator(translator);
         }
 

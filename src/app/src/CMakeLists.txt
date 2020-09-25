@@ -77,6 +77,7 @@ set(QRC pics.qrc
     icons.qrc
     ${CMAKE_SOURCE_DIR}/src/translations/langs.qrc
     ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc
+    ${CMAKE_SOURCE_DIR}/readme.qrc
 
     )
 
