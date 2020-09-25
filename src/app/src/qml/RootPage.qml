@@ -1052,6 +1052,7 @@ RootPageForm {
         arguments = Qt.application.arguments
         for (arg in arguments) {
             console.log("argument : " , arguments[arg])
+            console.log("argument : " , arguments[arg].slice(-6))
             if(arg === 0 ){
                 continue
             }
@@ -1068,20 +1069,26 @@ RootPageForm {
 
             }
             else {
-                if (arguments[arg][-6] === ".skrib"){
+                if (arguments[arg].slice(-6) === ".skrib"){
+
+
                     oneProjectInArgument = true
-                    projectInArgument = plmData.projectHub().loadProject(
-                                arguments[arg])
+
+                    console.log("argument skrib : " , arguments[arg])
+                    var url = skrQMLTools.getURLFromLocalFile(arguments[arg])
+                    console.log("argument skrib url : " , url)
+
+                    projectInArgument = plmData.projectHub().loadProject(url)
 
                 }
             }
         }
-        if(!isTestProject & oneProjectInArgument){
-            var error = plmData.projectHub().loadProject(
-                        projectInArgument)
-            //show Write window
-            //            writeWindowAction.trigger()
-        }
+//        if(!isTestProject & oneProjectInArgument){
+//            var error = plmData.projectHub().loadProject(
+//                        projectInArgument)
+//            //show Write window
+//            //            writeWindowAction.trigger()
+//        }
 
 
         if (!isTestProject & !oneProjectInArgument & plmData.projectHub().getProjectCount() === 0 & SkrSettings.welcomeSettings.createEmptyProjectAtStart === true) {

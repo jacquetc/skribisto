@@ -53,27 +53,27 @@
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation>Couper</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation type="unfinished">Ajouter avant</translation>
+        <translation>Ajouter avant</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation type="unfinished">Ajouter après</translation>
+        <translation>Ajouter après</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation type="unfinished">Déplacer vers le haut</translation>
+        <translation>Déplacer vers le haut</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation type="unfinished">Déplacer vers le bas</translation>
+        <translation>Déplacer vers le bas</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Supprimer</translation>
+        <translation>Supprimer</translation>
     </message>
 </context>
 <context>
@@ -249,7 +249,7 @@
     </message>
     <message>
         <source>Part </source>
-        <translation type="unfinished"></translation>
+        <translation>Partie </translation>
     </message>
 </context>
 <context>
@@ -356,7 +356,7 @@
     </message>
     <message>
         <source>Behavior</source>
-        <translation type="unfinished"></translation>
+        <translation>Comportement</translation>
     </message>
 </context>
 <context>
@@ -394,19 +394,19 @@
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="unfinished">&amp;Fichier</translation>
+        <translation>&amp;Fichier</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Editer</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Aide</translation>
+        <translation>&amp;Aide</translation>
     </message>
     <message>
         <source>&amp;About</source>
-        <translation type="unfinished">&amp;A propos</translation>
+        <translation>&amp;A propos</translation>
     </message>
 </context>
 <context>
@@ -421,7 +421,7 @@
     </message>
     <message>
         <source>Main menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Menu principal</translation>
     </message>
 </context>
 <context>
@@ -624,11 +624,11 @@
     </message>
     <message>
         <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir un document dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir un document dans une nouvelle fenêtre</translation>
     </message>
 </context>
 <context>
@@ -764,7 +764,7 @@
     </message>
     <message>
         <source>Save All</source>
-        <translation>Enregistrer sous</translation>
+        <translation>Enregistrer tout</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>

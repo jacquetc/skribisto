@@ -22,7 +22,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH} ${
 #include(FeatureSummary)
 include(KDEInstallDirs)
 include(ECMInstallIcons)
-include(ECMPackageConfigHelpers)
+include(CMakePackageConfigHelpers)
 include(ECMOptionalAddSubdirectory)
 
 include_directories(${Qt5Core_PRIVATE_INCLUDE_DIRS})

@@ -32,6 +32,19 @@ modules:
         url: http://sqlite.org/2018/sqlite-autoconf-3230100.tar.gz
         sha256: 92842b283e5e744eff5da29ed3c69391de7368fccc4d0ee6bf62490ce555ef25
         
+  - name: quazip
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    sources:
+      - type: archive
+        url: https://github.com/stachenov/quazip/archive/0.7.6.tar.gz
+        sha256: 4118a830a375a81211956611cc34b1b5b4ddc108c126287b91b40c2493046b70
+      - type: shell
+        commands:
+          - sed -i 's|${CMAKE_ROOT}/Modules|share/cmake|' CMakeLists.txt
+
   - name: skribisto
     buildsystem: cmake
     builddir: true

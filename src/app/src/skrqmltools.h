@@ -42,6 +42,12 @@ public:
         return url.toLocalFile();
 
     }
+
+    Q_INVOKABLE QUrl getURLFromLocalFile(const QString &path) const{
+        return QUrl::fromLocalFile(path);
+
+    }
+
 Q_INVOKABLE QUrl getFolderPathURLFromURL(const QUrl &url) const{
 
         QFileInfo info(url.toLocalFile());
@@ -67,12 +73,6 @@ Q_INVOKABLE QUrl getFolderPathURLFromURL(const QUrl &url) const{
     }
     Q_INVOKABLE QString mnemonic(const QString &text){
         return QKeySequence::mnemonic(text).toString();
-    }
-
-    Q_INVOKABLE void updateAccessibility(QObject *object){
-        QAccessible::Event event = QAccessible::Focus;
-        QAccessibleEvent accessibleEvent(object, event);
-        QAccessible::updateAccessibility(&accessibleEvent);
     }
 
 };

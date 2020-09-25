@@ -14,10 +14,10 @@ ProjectPageForm {
 
     swipeView.onCurrentItemChanged: {
         var i;
-        for(i = 0; i < rootSwipeView.count; i++ ){
+        for(i = 0; i < swipeView.count; i++ ){
 
-            var item = rootSwipeView.itemAt(i)
-            if(item === rootSwipeView.currentItem){
+            var item = swipeView.itemAt(i)
+            if(item === swipeView.currentItem){
                 item.enabled = true
             }
             else{
