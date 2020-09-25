@@ -1,4 +1,4 @@
-    cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.5.0)
 #if (POLICY CMP0063)
 #    cmake_policy(SET CMP0063 NEW)
 #endif()
@@ -6,15 +6,25 @@
 #if (POLICY CMP0071)
 #    cmake_policy(SET CMP0071 NEW)
 #endif()
+set(QT_MIN_VERSION "5.15.0")
 
 project(skribisto LANGUAGES CXX)
 
+find_package(ECM REQUIRED NO_MODULE)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
+
+# Include GNUInstallDirs, which sets sensible defaults for install directories.
+# See https://cmake.org/cmake/help/v3.0/module/GNUInstallDirs.html for further information.
+# These values can be easily overridden if required.
+# Some defaults are set for OpenBSD as well (info and man pages).
+
+#include(GNUInstallDirs)
+#include(FeatureSummary)
+include(KDEInstallDirs)
 
 
 #add_compile_definitions(VERSIONSTR=1.6 FORCEQML=1)
-add_definitions(-DVERSIONSTR=1.6)
-
-find_package(Qt5 COMPONENTS Core REQUIRED)
+add_definitions(-DVERSIONSTR=1.8)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -24,7 +34,6 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
 
 set(BREEZEICONS_DIR ${CMAKE_SOURCE_DIR}/3rdparty/breeze-icons/)
 
@@ -33,13 +42,19 @@ set(CMAKE_CXX_STANDARD 14)
 #set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fsanitize=address,undefined -O0")
 
 
-add_subdirectory(src/libskribisto-data)
-add_subdirectory(src/plugins)
+add_subdirectory(src/libskribisto-data/src)
+#add_subdirectory(src/plugins)
 #add_subdirectory(3rdparty)
-add_subdirectory(src/app)
+add_subdirectory(src/app/src)
 
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+add_subdirectory(src/libskribisto-data/tests)
+add_subdirectory(src/app/tests)
+endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
+install(PROGRAMS resources/unix/applications/skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})
 
-
-
+#install(TARGETS skribisto skribisto-data
+#        RUNTIME DESTINATION ${BINDIR}
+#        LIBRARY DESTINATION ${LIBDIR})

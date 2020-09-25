@@ -20,6 +20,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #  message("Plugin ${plugin} is at location ${_loc}")
 #endforeach()
 
+# Include GNUInstallDirs, which sets sensible defaults for install directories.
+# See https://cmake.org/cmake/help/v3.0/module/GNUInstallDirs.html for further information.
+# These values can be easily overridden if required.
+# Some defaults are set for OpenBSD as well (info and man pages).
+include(GNUInstallDirs)
+include(FeatureSummary)
+
 # translations :
 set(TS_FILES ${CMAKE_SOURCE_DIR}/src/translations/skribisto_fr_FR.ts)
 set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION "${CMAKE_SOURCE_DIR}/src/translations/")
@@ -36,6 +43,9 @@ set(app_SRCS
     skrrecentprojectlistmodel.cpp
     skrfonts.h
     skrfonts.cpp
+    skrfontfamilylistmodel.cpp
+    skrfontfamilylistmodel.h
+    skrfonts.cpp
     skreditmenusignalhub.h
     skreditmenusignalhub.cpp
     skrqmltools.h
@@ -43,7 +53,7 @@ set(app_SRCS
 
 set(QML qml.qrc
     )
-ADD_CUSTOM_TARGET(qml.qrc SOURCES qml.qrc)
+#ADD_CUSTOM_TARGET(qml.qrc SOURCES qml.qrc)
 
 #FILE(GLOB QML_SRC "qml/*.qml")
 # Add QML files to project tree without building/compiling them
@@ -97,7 +107,7 @@ target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 
-
+install(TARGETS skribisto RUNTIME DESTINATION ${KDE_INSTALL_BINDIR})
 
 
 #set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/data/Info.plist)

@@ -33,6 +33,7 @@ PLMError PLMProjectHub::loadProject(const QUrl& urlFilePath)
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
         emit isThereAnyLoadedProjectChanged(true);
+
         this->setActiveProject(projectId);
     }
 
@@ -40,9 +41,8 @@ PLMError PLMProjectHub::loadProject(const QUrl& urlFilePath)
     return error;
 }
 
-PLMError PLMProjectHub::createNewEmptyProject(const QUrl &path)
+PLMError PLMProjectHub::createNewEmptyProject(const QUrl& path)
 {
-
     int projectId  = -1;
     PLMError error = plmProjectManager->createNewEmptyDatabase(projectId);
 
@@ -53,6 +53,7 @@ PLMError PLMProjectHub::createNewEmptyProject(const QUrl &path)
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
         emit isThereAnyLoadedProjectChanged(true);
+
         this->setProjectNotSavedAnymore(projectId);
         this->setActiveProject(projectId);
     }
@@ -73,20 +74,18 @@ PLMError PLMProjectHub::saveProject(int projectId)
     }
     return error;
 }
+
 ///
 /// \brief PLMProjectHub::setProjectNotSavedAnymore
 /// \param projectId
 /// called every modification
 void PLMProjectHub::setProjectNotSavedAnymore(int projectId)
 {
-    if(!m_projectsNotSavedList.contains(projectId)){
+    if (!m_projectsNotSavedList.contains(projectId)) {
         m_projectsNotSavedList.append(projectId);
         m_projectsNotModifiedOnceList.removeAll(projectId);
         emit projectNotSavedAnymore(projectId);
-
     }
-
-
 }
 
 QList<int>PLMProjectHub::projectsNotModifiedOnce() {
@@ -96,13 +95,11 @@ QList<int>PLMProjectHub::projectsNotModifiedOnce() {
 bool PLMProjectHub::isProjectNotModifiedOnce(int projectId)
 {
     return m_projectsNotModifiedOnceList.contains(projectId);
-
 }
 
 bool PLMProjectHub::isProjectSaved(int projectId)
 {
     return !m_projectsNotSavedList.contains(projectId);
-
 }
 
 QList<int>PLMProjectHub::projectsNotSaved() {
@@ -111,7 +108,7 @@ QList<int>PLMProjectHub::projectsNotSaved() {
 
 PLMError PLMProjectHub::saveProjectAs(int            projectId,
                                       const QString& type,
-                                      const QUrl& path)
+                                      const QUrl   & path)
 {
     PLMError error;
 
@@ -119,13 +116,13 @@ PLMError PLMProjectHub::saveProjectAs(int            projectId,
     bool isThisABackup = isThisProjectABackup(projectId);
 
 
-// save
+    // save
     error = plmProjectManager->saveProjectAs(projectId, type, path);
     IFOK(error) {
         m_projectsNotModifiedOnceList.removeAll(projectId);
         m_projectsNotSavedList.removeAll(projectId);
 
-        if(isThisABackup){
+        if (isThisABackup) {
             emit projectIsBackupChanged(projectId, false);
         }
 
@@ -134,12 +131,15 @@ PLMError PLMProjectHub::saveProjectAs(int            projectId,
     return error;
 }
 
-PLMError PLMProjectHub::saveAProjectCopy(int projectId, const QString &type, const QUrl &path)
+PLMError PLMProjectHub::saveAProjectCopy(int            projectId,
+                                         const QString& type,
+                                         const QUrl   & path)
 {
     PLMError error;
 
     // firstly, save the project
     error = this->saveProjectAs(projectId, type, path);
+
     // then create a copy
     IFOK(error) {
         error = plmProjectManager->saveProjectAs(projectId, type, path, true);
@@ -147,45 +147,46 @@ PLMError PLMProjectHub::saveAProjectCopy(int projectId, const QString &type, con
     return error;
 }
 
-
-PLMError PLMProjectHub::backupAProject(int projectId, const QString &type, const QUrl &folderPath){
-
-
+PLMError PLMProjectHub::backupAProject(int            projectId,
+                                       const QString& type,
+                                       const QUrl   & folderPath) {
     PLMError error;
 
     QUrl projectPath = this->getPath(projectId);
-    if (projectPath.isEmpty()){
+
+    if (projectPath.isEmpty()) {
         error.addData(projectId);
         error.setSuccess(false);
         error.setErrorCode("E_PROJECT_no_path");
     }
-    if (projectPath.scheme() == "qrc"){
+
+    if (projectPath.scheme() == "qrc") {
         error.addData(projectId);
         error.setSuccess(false);
         error.setErrorCode("E_PROJECT_qrc_projects_cant_back_up");
     }
 
 
-    IFOK(error){
+    IFOK(error) {
         // verify backup path
         QFileInfo folderInfo(folderPath.toLocalFile());
-        if(!folderInfo.exists()){
+
+        if (!folderInfo.exists()) {
             error.addData(projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_dont_exist");
-
         }
-        if(!folderInfo.isDir()){
+
+        if (!folderInfo.isDir()) {
             error.addData(projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_not_a_directory");
-
         }
-        if(!folderInfo.isWritable()){
+
+        if (!folderInfo.isWritable()) {
             error.addData(projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_not_writable");
-
         }
     }
 
@@ -193,103 +194,108 @@ PLMError PLMProjectHub::backupAProject(int projectId, const QString &type, const
     // determine file base
     QFileInfo info(projectPath.toLocalFile());
     QFileInfo backupFolderInfo(folderPath.toLocalFile());
-    QString  backupFile = backupFolderInfo.filePath() + "/" + info.completeBaseName();
+    QString   backupFile = backupFolderInfo.filePath() + "/" + info.completeBaseName();
 
     // add date and time :
-    QDateTime now = QDateTime::currentDateTime();
-    QString nowText = now.toString("_yyyy-MM-dd-HHmmss");
+    QDateTime now     = QDateTime::currentDateTime();
+    QString   nowText = now.toString("_yyyy-MM-dd-HHmmss");
+
     backupFile = backupFile + nowText;
 
-    //add suffix :
+    // add suffix :
     backupFile = backupFile + "." + type;
 
     // firstly, save the project
     IFOKDO(error, this->saveProject(projectId));
+
     // then create a copy
     IFOK(error) {
-        error = plmProjectManager->saveProjectAs(projectId, type, QUrl::fromLocalFile(backupFile), true);
+        error =
+            plmProjectManager->saveProjectAs(projectId,
+                                             type,
+                                             QUrl::fromLocalFile(backupFile),
+                                             true);
     }
     return error;
-
 }
 
-
-bool PLMProjectHub::doesBackupOfTheDayExistAtPath(int projectId, const QUrl &folderPath){
-
+bool PLMProjectHub::doesBackupOfTheDayExistAtPath(int projectId, const QUrl& folderPath) {
     PLMError error;
 
     QUrl projectPath = this->getPath(projectId);
-    if (projectPath.isEmpty()){
+
+    if (projectPath.isEmpty()) {
         error.addData(projectId);
         error.setSuccess(false);
         error.setErrorCode("E_PROJECT_no_path");
     }
-    IFOK(error){
+    IFOK(error) {
         // verify backup path
         QFileInfo folderInfo(folderPath.toLocalFile());
-        if(!folderInfo.exists()){
+
+        if (!folderInfo.exists()) {
             error.addData(projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_dont_exist");
-
         }
-        if(!folderInfo.isDir()){
+
+        if (!folderInfo.isDir()) {
             error.addData(projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_not_a_directory");
-
         }
-        if(!folderInfo.isWritable()){
+
+        if (!folderInfo.isWritable()) {
             error.addData(projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_not_writable");
-
         }
     }
-    IFKO(error){
-
+    IFKO(error) {
         emit errorSent(error);
+
         return true;
     }
 
 
-
     // determine file base
     QFileInfo info(projectPath.toLocalFile());
-    QString  backupFileOfTheDay = info.completeBaseName();
+    QString   backupFileOfTheDay = info.completeBaseName();
 
     // add date and time :
-    QDateTime now = QDateTime::currentDateTime();
-    QString nowText = now.toString("_yyyy-MM-dd");
+    QDateTime now     = QDateTime::currentDateTime();
+    QString   nowText = now.toString("_yyyy-MM-dd");
+
     backupFileOfTheDay = backupFileOfTheDay + nowText + "*";
 
-    //find file begining with backupFileOfTheDay
+    // find file begining with backupFileOfTheDay
 
     QDir dir(folderPath.toLocalFile());
     QStringList nameFilters;
+
     nameFilters << backupFileOfTheDay;
     QStringList entries = dir.entryList(nameFilters);
 
-    if(entries.isEmpty()){
+    if (entries.isEmpty()) {
         return false;
     }
     return true;
-
 }
-
 
 PLMError PLMProjectHub::closeProject(int projectId)
 {
     PLMError error;
-    emit projectToBeClosed(projectId);
+    emit     projectToBeClosed(projectId);
+
     error = plmProjectManager->closeProject(projectId);
     IFOK(error) {
         emit projectClosed(projectId);
         emit projectCountChanged(this->getProjectCount());
-        if (isThereAnyLoadedProject()){
+
+        if (isThereAnyLoadedProject()) {
             emit isThereAnyLoadedProjectChanged(true);
         }
-        else{
+        else {
             emit isThereAnyLoadedProjectChanged(false);
         }
         m_projectsNotModifiedOnceList.removeAll(projectId);
@@ -304,7 +310,7 @@ PLMError PLMProjectHub::closeAllProjects()
 
     QList<int> idList = plmProjectManager->projectIdList();
 
-    for(int id : idList) {
+    for (int id : idList) {
         IFOKDO(error, closeProject(id));
         IFKO(error) {
             break;
@@ -330,7 +336,7 @@ int PLMProjectHub::getProjectCount()
 QUrl PLMProjectHub::getPath(int projectId) const
 {
     PLMError error;
-    QUrl  result;
+    QUrl     result;
     PLMProject *project = plmProjectManager->project(projectId);
 
     if (!project) {
@@ -357,7 +363,7 @@ PLMError PLMProjectHub::setPath(int projectId, const QUrl& newUrlPath)
     }
 
     IFOKDO(error, project->setPath(newUrlPath))
-            IFOK(error) {
+    IFOK(error) {
         emit projectPathChanged(projectId, newUrlPath);
     }
     return error;
@@ -392,16 +398,16 @@ bool PLMProjectHub::isThereAnyLoadedProject()
 
 bool PLMProjectHub::isThisProjectABackup(int projectId)
 {
-
-    if(this->getPath(projectId).isEmpty()){
+    if (this->getPath(projectId).isEmpty()) {
         return false;
     }
 
-    if(this->getPath(projectId).toLocalFile().contains(QRegularExpression("_\\d\\d\\d\\d-\\d\\d-\\d\\d-\\d\\d\\d\\d\\d\\d"))){
+    if (this->getPath(projectId).toLocalFile().contains(QRegularExpression(
+                                                            "_\\d\\d\\d\\d-\\d\\d-\\d\\d-\\d\\d\\d\\d\\d\\d")))
+    {
         return true;
     }
     return false;
-
 }
 
 void PLMProjectHub::setActiveProject(int activeProject)
@@ -411,19 +417,17 @@ void PLMProjectHub::setActiveProject(int activeProject)
     emit activeProjectChanged(m_activeProject);
 }
 
-
-//----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 bool PLMProjectHub::isThisProjectActive(int projectId)
 {
     return this->getActiveProject() == projectId;
 }
 
-//----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 int PLMProjectHub::getActiveProject()
 {
-
     if (this->getProjectIdList().isEmpty()) {
         m_activeProject = -2;
     }
@@ -437,16 +441,14 @@ int PLMProjectHub::getActiveProject()
     return m_activeProject;
 }
 
-
-//----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 void PLMProjectHub::setError(const PLMError& error)
 {
     m_error = error;
 }
 
-
-//----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 QString PLMProjectHub::getProjectName(int projectId) const {
     return get(projectId, "t_project_name").toString();
@@ -454,27 +456,28 @@ QString PLMProjectHub::getProjectName(int projectId) const {
 
 PLMError PLMProjectHub::setProjectName(int projectId, const QString& projectName) {
     PLMError error = this->set(projectId, "t_project_name", projectName, true);
+
     IFOK(error) {
         emit projectNameChanged(projectId, projectName);
+
         this->projectNotSavedAnymore(projectId);
     }
     IFKO(error) {
         emit errorSent(error);
+
         this->setProjectNotSavedAnymore(projectId);
     }
     return error;
 }
 
-
-//----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 QString PLMProjectHub::getProjectUniqueId(int projectId) const
 {
     return get(projectId, "t_project_unique_identifier").toString();
 }
 
-
-//----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 PLMError PLMProjectHub::set(int             projectId,
                             const QString & fieldName,

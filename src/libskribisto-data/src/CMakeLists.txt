@@ -128,3 +128,4 @@ add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${models_SRCS} ${RESO
 target_link_libraries(skribisto-data Qt5::Core Qt5::Network Qt5::Sql)
 
 
+install(TARGETS skribisto-data LIBRARY DESTINATION ${KDE_INSTALL_LIBDIR})
