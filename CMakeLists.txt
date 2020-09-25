@@ -22,6 +22,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH} ${
 #include(FeatureSummary)
 include(KDEInstallDirs)
 include(ECMInstallIcons)
+include(ECMPackageConfigHelpers)
+include(ECMOptionalAddSubdirectory)
+
+include_directories(${Qt5Core_PRIVATE_INCLUDE_DIRS})
 
 
 #add_compile_definitions(VERSIONSTR=1.6 FORCEQML=1)
@@ -56,7 +60,7 @@ add_subdirectory(src/app/tests)
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})
-install(FILES resources/unix/mime/skribisto.xml DESTINATION ${KDE_INSTALL_MIMEDIR})
+install(PROGRAMS resources/unix/mime/skribisto.xml DESTINATION ${KDE_INSTALL_MIMEDIR})
 
 #install(TARGETS skribisto skribisto-data
 #        RUNTIME DESTINATION ${BINDIR}
