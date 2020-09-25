@@ -6,5 +6,4 @@
 	<generic-icon name="eu.skribisto.skribisto" />
 	<glob pattern="*.skrib" />
     </mime-type>
-    </mime-type>
 </mime-info>
