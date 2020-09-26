@@ -83,7 +83,6 @@ NotePageForm {
 
         //title = getTitle()
         plmData.noteHub().titleChanged.connect(changeTitle)
-        enabled = false
     }
 
     //---------------------------------------------------------
@@ -476,7 +475,7 @@ NotePageForm {
     property int leftDockResizeButtonFirstPressX: 0
     leftDockResizeButton.onReleased: {
         leftDockResizeButtonFirstPressX = 0
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
     }
 
     leftDockResizeButton.onPressXChanged: {
@@ -509,7 +508,7 @@ NotePageForm {
 
     leftDockResizeButton.onCanceled: {
 
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
         leftDockResizeButtonFirstPressX = 0
 
 
@@ -557,7 +556,7 @@ NotePageForm {
     property int rightDockResizeButtonFirstPressX: 0
     rightDockResizeButton.onReleased: {
         rightDockResizeButtonFirstPressX = 0
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
     }
 
     rightDockResizeButton.onPressXChanged: {
@@ -588,7 +587,7 @@ NotePageForm {
 
     rightDockResizeButton.onCanceled: {
 
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
         rightDockResizeButtonFirstPressX = 0
 
     }
@@ -612,10 +611,17 @@ NotePageForm {
         width: Globals.compactSize ? 400 : leftDockFixedWidth
         height: base.height
         interactive: Globals.compactSize
-        position: Globals.compactSize ? 0 : (leftDrawer.isVisible ? 1 : 0)
-        isVisible: !Globals.compactSize
+//        position: Globals.compactSize ? 0 : (leftDrawer.isVisible ? 1 : 0)
+//        isVisible: !Globals.compactSize
         edge: Qt.LeftEdge
 
+
+        Connections {
+            target: Globals
+            function onCompactSizeChanged(){
+                leftDrawer.isVisible = !Globals.compactSize
+            }
+        }
 
         LeftDock {
             id: leftDock
@@ -627,6 +633,9 @@ NotePageForm {
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
             Globals.resetDockConfCalled.connect(resetConf)
+            if(Globals.compactSize){
+                leftDrawer.close()
+            }
         }
 
 
@@ -652,9 +661,16 @@ NotePageForm {
         width:  Globals.compactSize ? 400 : rightDockFixedWidth
         height: base.height
         interactive: Globals.compactSize
-        position: Globals.compactSize ? 0 : (rightDrawer.isVisible ? 1 : 0)
-        isVisible: !Globals.compactSize
+//        position: Globals.compactSize ? 0 : (rightDrawer.isVisible ? 1 : 0)
+//        isVisible: !Globals.compactSize
         edge: Qt.RightEdge
+
+        Connections {
+            target: Globals
+            function onCompactSizeChanged(){
+                rightDrawer.isVisible = !Globals.compactSize
+            }
+        }
 
 
         RightDock {
@@ -670,6 +686,9 @@ NotePageForm {
         Component.onCompleted: {
             rightDockFixedWidth = rightSettings.width
             Globals.resetDockConfCalled.connect(resetConf)
+            if(Globals.compactSize){
+                rightDrawer.close()
+            }
         }
 
 

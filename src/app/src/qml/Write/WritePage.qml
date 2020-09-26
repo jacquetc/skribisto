@@ -94,7 +94,6 @@ WritePageForm {
         //title = getTitle()
         plmData.sheetHub().titleChanged.connect(changeTitle)
 
-        enabled = false
     }
 
     //---------------------------------------------------------
@@ -486,21 +485,21 @@ WritePageForm {
 
 
     // compact mode :
-    compactHeaderPane.visible: Globals.compactSize
+//    compactLeftDockShowButton.visible: Globals.compactSize
 
-    compactLeftDockShowButton.onClicked: leftDrawer.open()
-    compactLeftDockShowButton.icon {
-        name: "go-next"
-        height: 50
-        width: 50
-    }
+//    compactLeftDockShowButton.onClicked: leftDrawer.open()
+//    compactLeftDockShowButton.icon {
+//        name: "go-next"
+//        height: 50
+//        width: 50
+//    }
 
     // resizing with leftDockResizeButton:
 
     property int leftDockResizeButtonFirstPressX: 0
     leftDockResizeButton.onReleased: {
         leftDockResizeButtonFirstPressX = 0
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
     }
 
     leftDockResizeButton.onPressXChanged: {
@@ -533,7 +532,7 @@ WritePageForm {
 
     leftDockResizeButton.onCanceled: {
 
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
         leftDockResizeButtonFirstPressX = 0
 
 
@@ -570,20 +569,21 @@ WritePageForm {
     }
 
     // compact mode :
+//    compactRightDockShowButton.visible: Globals.compactSize
 
-    compactRightDockShowButton.onClicked: rightDrawer.open()
-    compactRightDockShowButton.icon {
-        name: "go-previous"
-        height: 50
-        width: 50
-    }
+//    compactRightDockShowButton.onClicked: rightDrawer.open()
+//    compactRightDockShowButton.icon {
+//        name: "go-previous"
+//        height: 50
+//        width: 50
+//    }
 
     // resizing with rightDockResizeButton:
 
     property int rightDockResizeButtonFirstPressX: 0
     rightDockResizeButton.onReleased: {
         rightDockResizeButtonFirstPressX = 0
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
     }
 
     rightDockResizeButton.onPressXChanged: {
@@ -614,7 +614,7 @@ WritePageForm {
 
     rightDockResizeButton.onCanceled: {
 
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
         rightDockResizeButtonFirstPressX = 0
 
     }
@@ -638,10 +638,16 @@ WritePageForm {
         width: Globals.compactSize ? 400 : leftDockFixedWidth
         height: base.height
         interactive: Globals.compactSize
-        position: Globals.compactSize ? 0 : (leftDrawer.isVisible ? 1 : 0)
-        isVisible: !Globals.compactSize
+        //position: Globals.compactSize ? 0 : 1 (leftDrawer.isVisible ? 1 : 0)
+        //isVisible: !Globals.compactSize
         edge: Qt.LeftEdge
 
+        Connections {
+            target: Globals
+            function onCompactSizeChanged(){
+                leftDrawer.isVisible = !Globals.compactSize
+            }
+        }
 
         WriteLeftDock {
             id: leftDock
@@ -654,6 +660,9 @@ WritePageForm {
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
             Globals.resetDockConfCalled.connect(resetConf)
+            if(Globals.compactSize){
+                leftDrawer.close()
+            }
         }
 
 
@@ -678,9 +687,17 @@ WritePageForm {
         width:  Globals.compactSize ? 400 : rightDockFixedWidth
         height: base.height
         interactive: Globals.compactSize
-        position: Globals.compactSize ? 0 : (rightDrawer.isVisible ? 1 : 0)
-        isVisible: !Globals.compactSize
+        //position: Globals.compactSize ? 0 : (rightDrawer.isVisible ? 1 : 0)
+        //isVisible: !Globals.compactSize
         edge: Qt.RightEdge
+
+        Connections {
+            target: Globals
+            function onCompactSizeChanged(){
+                rightDrawer.isVisible = !Globals.compactSize
+            }
+        }
+
 
 
         WriteRightDock {
@@ -696,6 +713,10 @@ WritePageForm {
         Component.onCompleted: {
             rightDockFixedWidth = rightSettings.width
             Globals.resetDockConfCalled.connect(resetConf)
+
+            if(Globals.compactSize){
+                rightDrawer.close()
+            }
         }
 
 

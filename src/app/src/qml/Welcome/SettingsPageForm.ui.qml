@@ -14,7 +14,6 @@ Item {
     property alias accessibilityGroupBox: accessibilityGroupBox
 
     property alias menuButtonsInStatusBarSwitch: menuButtonsInStatusBarSwitch
-    property alias disallowSwipeBetweenTabsCheckBox: disallowSwipeBetweenTabsCheckBox
     property alias showMenuBarCheckBox: showMenuBarCheckBox
     property alias backUpOnceADayCheckBox: backUpOnceADayCheckBox
     property alias backupPathListView: backupPathListView
@@ -22,6 +21,7 @@ Item {
     property alias addBackupPathButton: addBackupPathButton
     property alias showPropertiesCheckBox: showPropertiesCheckBox
     property alias resetDockConfButton: resetDockConfButton
+    property alias allowSwipeBetweenTabsCheckBox: allowSwipeBetweenTabsCheckBox
 
     Pane {
         id: pane2
@@ -40,8 +40,7 @@ Item {
             GridLayout {
                 id: gridLayout1
                 width: scrollView.width
-                columns:  width/ 500
-
+                columns: width / 500
 
                 GroupBox {
                     id: accessibilityGroupBox
@@ -54,17 +53,17 @@ Item {
                         anchors.fill: parent
 
                         CheckBox {
-                            id: disallowSwipeBetweenTabsCheckBox
-                            text: qsTr("Disallow swipe gesture between tabs")
+                            id: allowSwipeBetweenTabsCheckBox
+                            text: qsTr("Allow swipe gesture between tabs")
                         }
 
                         CheckBox {
                             id: showMenuBarCheckBox
+                            visible: false
                             text: qsTr("Show menu bar")
                         }
                     }
                 }
-
 
                 GroupBox {
                     id: appearanceGroupBox
@@ -72,7 +71,6 @@ Item {
                     height: 200
                     focusPolicy: Qt.TabFocus
                     title: qsTr("Appearance")
-
 
                     ColumnLayout {
                         id: columnLayout5
@@ -84,7 +82,6 @@ Item {
                         }
                     }
                 }
-
 
                 GroupBox {
                     id: backupGroupBox
@@ -104,7 +101,7 @@ Item {
                                 id: columnLayout1
                                 anchors.fill: parent
 
-                                ToolBar{
+                                ToolBar {
                                     Layout.fillWidth: true
                                     RowLayout {
                                         id: rowLayout1
@@ -116,20 +113,19 @@ Item {
                                             Layout.fillHeight: true
                                             Layout.fillWidth: true
                                         }
-                                        ToolButton{
+                                        ToolButton {
                                             id: removeBackupPathButton
                                             flat: true
                                             display: AbstractButton.IconOnly
                                         }
 
-                                        ToolButton{
+                                        ToolButton {
                                             id: addBackupPathButton
                                             flat: true
                                             display: AbstractButton.IconOnly
                                         }
                                     }
                                 }
-
 
                                 ScrollView {
                                     id: backupPathScrollView
@@ -152,8 +148,6 @@ Item {
                                         focus: true
                                         smooth: true
                                         boundsBehavior: Flickable.StopAtBounds
-
-
                                     }
                                 }
                             }
@@ -197,9 +191,6 @@ Item {
                     }
                 }
 
-
-
-
                 GroupBox {
                     id: saveGroupBox
                     focusPolicy: Qt.TabFocus
@@ -233,8 +224,6 @@ Item {
                     }
                 }
 
-
-
                 GroupBox {
                     id: advancedGroupBox
                     width: 200
@@ -260,22 +249,17 @@ Item {
                                 id: resetDockConfButton
                                 text: qsTr("Reset dock configuration")
                             }
-
                         }
                     }
-
                 }
-
-
             }
         }
-
     }
 }
 
 /*##^##
 Designer {
-    D{i:0;height:1500;width:1000}D{i:33}
+    D{i:0;height:1500;width:1000}
 }
 ##^##*/
 

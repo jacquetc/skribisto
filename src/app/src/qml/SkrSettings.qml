@@ -31,7 +31,7 @@ QtObject {
     }
     property Settings accessibilitySettings: Settings{
         category: "accessibility"
-        property bool disallowSwipeBetweenTabsCheckBoxChecked: false
+        property bool allowSwipeBetweenTabs: false
         property bool showMenuBar: false
 
     }

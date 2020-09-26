@@ -893,14 +893,7 @@ ApplicationWindow {
                 rootWindow.close()
             }
 
-
-
-
         }
-
-
-
-
     }
 
     LabPlatform.FileDialog{

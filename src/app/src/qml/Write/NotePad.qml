@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import eu.skribisto.searchnotelistproxymodel 1.0
 import eu.skribisto.skrusersettings 1.0
+import "../Commons"
 import ".."
 
 NotePadForm {
@@ -53,6 +54,7 @@ NotePadForm {
             property int projectId: model.itemProjectId
             property int sheetId: model.itemSheetId
             property int noteId: model.itemNoteId
+            property string noteTitle:  model.title
             property int isSynopsis: -2
             property bool isSelected: false
             property bool isOpened: false
@@ -75,7 +77,7 @@ NotePadForm {
                     //open in noteTextArea
                     openDocument(projectId, noteId)
 
-                    
+
                 }
                 onDoubleTapped: {
                     //reset other notes :
@@ -93,6 +95,76 @@ NotePadForm {
 
 
             TapHandler {
+                id: rightClickHandler
+                acceptedButtons: Qt.RightButton
+                onSingleTapped: {
+                    rightClickMenu.popup()
+
+
+                }
+            }
+
+            Menu{
+                id: rightClickMenu
+
+                MenuItem {
+                    id: renameMenuItem
+                    text: qsTr("Rename")
+
+                    onTriggered: {
+
+                    }
+                }
+
+                MenuItem {
+                    id: dissociateNoteMenu
+                    text: qsTr("Dissociate")
+
+                    onTriggered: {
+                        plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                    }
+                }
+                MenuItem {
+                    id: moveNoteToTrashMenuItem
+                    text: qsTr("Send to trash")
+
+                    onTriggered: {
+                        moveToTrashOrNotDialog.projectId = projectId
+                        moveToTrashOrNotDialog.noteId = model.itemNoteId
+                        moveToTrashOrNotDialog.sheetId = itemBase.sheetId
+                        moveToTrashOrNotDialog.noteName = model.title
+                        moveToTrashOrNotDialog.open()
+                        moveToTrashOrNotDialog.forceActiveFocus()
+                        }
+                }
+
+            }
+
+
+            SimpleDialog {
+                property int projectId: -2
+                property int noteId: -2
+                property int sheetId: -2
+                property string noteName: ""
+
+                id: moveToTrashOrNotDialog
+                title: qsTr("Warning")
+                text: qsTr("Do you want to move the note \"%1\" to the trash ?").arg(noteName)
+                standardButtons: Dialog.Yes  | Dialog.Cancel
+
+                onRejected: {
+
+                }
+
+                onAccepted: {
+
+                    plmData.noteHub().setDeleted(projectId, noteId, true)
+                    plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, noteId)
+
+                }
+            }
+
+            TapHandler {
                 id: shiftTapHandler
                 acceptedModifiers: Qt.ShiftModifier
                 onSingleTapped: {
@@ -108,19 +180,24 @@ NotePadForm {
 
             
             Keys.onPressed: {
-                if (event.key === Qt.Key_Delete){
-                    console.log("Delete key pressed ")
-                    // remove
-                    plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
-                    
-                }
                 if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Delete){
                     console.log("Shift delete key pressed ")
-                    // remove completely the note
-                    
-                    //TODO: ask confirmation before erasing
-                    
-                    //plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                    // move the note to trash
+
+                    moveToTrashOrNotDialog.projectId = projectId
+                    moveToTrashOrNotDialog.noteId = itemBase.noteId
+                    moveToTrashOrNotDialog.sheetId = itemBase.sheetId
+                    moveToTrashOrNotDialog.noteName = itemBase.noteTitle
+                    moveToTrashOrNotDialog.open()
+                    moveToTrashOrNotDialog.forceActiveFocus()
+                    //TODO: fix that and Del Shortcut from Navigation
+
+
+                }
+                else if (event.key === Qt.Key_Delete){
+                    console.log("Delete key pressed: dissociate ")
+                    // dissociate
+                    plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
                     
                 }
 

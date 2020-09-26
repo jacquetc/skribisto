@@ -229,6 +229,26 @@
         <source>Existing notes</source>
         <translation>Notes existantes</translation>
     </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Renommer</translation>
+    </message>
+    <message>
+        <source>Dissociate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to move the note &quot;%1&quot; to the trash ?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
@@ -481,7 +501,7 @@
     </message>
     <message>
         <source>Disallow swipe gesture between tabs</source>
-        <translation>Interdire le geste de balayage entre les onglets</translation>
+        <translation type="vanished">Interdire le geste de balayage entre les onglets</translation>
     </message>
     <message>
         <source>Show menu bar</source>
@@ -534,6 +554,10 @@
     <message>
         <source>Reset dock configuration</source>
         <translation>Réinitialiser la configuration des docks</translation>
+    </message>
+    <message>
+        <source>Allow swipe gesture between tabs</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

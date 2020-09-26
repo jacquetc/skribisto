@@ -179,7 +179,7 @@ RootPageForm {
 
     //---------------------------------------------------------
 
-
+    rootSwipeView.interactive:  SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
 
 
     //---------------------------------------------------------
@@ -197,12 +197,10 @@ RootPageForm {
             if(value){
                 fullScreen = true
 
-                tabBarRevealer.visible = true
                 rootTabBar.visible = false
             }
             else{
                 fullScreen = false
-                tabBarRevealer.visible = false
                 rootTabBar.visible = true
 
             }
@@ -220,24 +218,18 @@ RootPageForm {
     //            }
     //        }
 
-    HoverHandler{
-        target: tabBarRevealer
-        enabled: fullScreen
-        onHoveredChanged: {
-            if(hovered){
-                rootTabBar.visible = true
-            }
+    // compact :
+
+    Connections {
+        target: Globals
+        function onCompactSizeChanged() {
+                rootTabBar.visible = !Globals.compactSize
+
+
         }
     }
-    TapHandler{
-        target: tabBarRevealer
-        enabled: fullScreen
-        onTapped: {
-            if(pressed){
-                rootTabBar.visible = true
-            }
-        }
-    }
+
+
     //---------------------------------------------------------
     // projectLoaded :
     property int projectIdForProjectLoading: 0
@@ -528,7 +520,7 @@ RootPageForm {
             insertionIndex = rootSwipeView.count
             // create WritePage tab
             var component = Qt.createComponent("Write/WritePage.qml");
-            var incubator = component.incubateObject(rootSwipeView, {pageType: pageType, projectId: projectId, paperId: paperId });
+            var incubator = component.incubateObject(rootSwipeView, {pageType: pageType, projectId: projectId, paperId: paperId, enabled: false });
             if (incubator.status !== Component.Ready) {
                 incubator.onStatusChanged = function(status) {
                     if (status === Component.Ready) {
@@ -633,7 +625,7 @@ RootPageForm {
             insertionIndex = rootSwipeView.count
             // create NotePage tab
             var component = Qt.createComponent("Note/NotePage.qml");
-            var incubator = component.incubateObject(rootSwipeView, {pageType: pageType,projectId: projectId, paperId: paperId });
+            var incubator = component.incubateObject(rootSwipeView, {pageType: pageType,projectId: projectId, paperId: paperId, enabled: false });
             if (incubator.status !== Component.Ready) {
                 incubator.onStatusChanged = function(status) {
                     if (status === Component.Ready) {
@@ -1036,6 +1028,15 @@ RootPageForm {
 
 
 
+      //---------------------------------------------------------
+      //------ showTabListButton--------------------------------------------
+      //---------------------------------------------------------
+
+showTabListButton.icon{
+    name: "arrow-down"
+    height: 50
+    width: 50
+}
 
 
 

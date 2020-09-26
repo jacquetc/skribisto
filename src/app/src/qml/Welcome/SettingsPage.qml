@@ -70,11 +70,11 @@ SettingsPageForm {
     // ---- accessibility --------------------------------
     // --------------------------------------------
 
-    disallowSwipeBetweenTabsCheckBox.checked: SkrSettings.accessibilitySettings.disallowSwipeBetweenTabsCheckBoxChecked
+    allowSwipeBetweenTabsCheckBox.checked: SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
     Binding {
         target: SkrSettings.accessibilitySettings
-        property: "disallowSwipeBetweenTabsCheckBoxChecked"
-        value: disallowSwipeBetweenTabsCheckBox.checked
+        property: "allowSwipeBetweenTabs"
+        value: allowSwipeBetweenTabsCheckBox.checked
         restoreMode: Binding.RestoreBindingOrValue
     }
 

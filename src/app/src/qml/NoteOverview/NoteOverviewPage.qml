@@ -13,7 +13,6 @@ NoteOverviewPageForm {
 
 
     Component.onCompleted: {
-        enabled = false
 
     }
 
@@ -62,7 +61,7 @@ NoteOverviewPageForm {
     property int leftDockResizeButtonFirstPressX: 0
     leftDockResizeButton.onReleased: {
         leftDockResizeButtonFirstPressX = 0
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
     }
 
     leftDockResizeButton.onPressXChanged: {
@@ -95,7 +94,7 @@ NoteOverviewPageForm {
 
     leftDockResizeButton.onCanceled: {
 
-        rootSwipeView.interactive = true
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
         leftDockResizeButtonFirstPressX = 0
 
     }
@@ -113,10 +112,17 @@ NoteOverviewPageForm {
         width: Globals.compactSize ? 400 : leftDockFixedWidth
         height: base.height
         interactive: Globals.compactSize
-        position: Globals.compactSize ? 0 : (leftDrawer.isVisible ? 1 : 0)
-        isVisible: !Globals.compactSize
+//        position: Globals.compactSize ? 0 : (leftDrawer.isVisible ? 1 : 0)
+//        isVisible: !Globals.compactSize
         edge: Qt.LeftEdge
 
+
+        Connections {
+            target: Globals
+            function onCompactSizeChanged(){
+                leftDrawer.isVisible = !Globals.compactSize
+            }
+        }
 
         LeftDock {
             id: leftDock
@@ -128,6 +134,9 @@ NoteOverviewPageForm {
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
             Globals.resetDockConfCalled.connect(resetConf)
+            if(Globals.compactSize){
+                leftDrawer.close()
+            }
         }
 
 
@@ -135,6 +144,7 @@ NoteOverviewPageForm {
             id: leftSettings
             category: "noteOverviewLeftDock"
             property int width: leftDockFixedWidth
+
         }
 
         function resetConf(){

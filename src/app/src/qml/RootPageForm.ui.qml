@@ -8,6 +8,7 @@ import "Welcome"
 import "NoteOverview"
 import "Gallery"
 import "Projects"
+
 //import "Write"
 //import "Note"
 
@@ -32,54 +33,22 @@ Item {
     property alias saveButton: saveButton
     property alias tabBarRevealer: tabBarRevealer
     property alias mainMenuButton: mainMenuButton
+    property alias showTabListButton: showTabListButton
+    property alias headerRowLayout: headerRowLayout
 
     ColumnLayout {
         id: columnLayout
         spacing: 1
         anchors.fill: parent
 
-
-
         RowLayout {
-            id: rowLayout2
+            id: headerRowLayout
             width: 100
             height: 100
             spacing: 0
             Layout.preferredHeight: 30
             Layout.fillWidth: true
 
-            TabBar {
-                id: rootTabBar
-                Layout.preferredHeight: 30
-                Layout.minimumHeight: 30
-                Layout.fillWidth: true
-
-                Tab {
-                    id: welcomeTab
-                    closable: false
-
-                }
-                Tab {
-                    id: writeOverviewTab
-                    closable: false
-
-                }
-                Tab {
-                    id: noteOverviewTab
-                    closable: false
-
-                }
-                Tab {
-                    id: galleryTab
-                    closable: false
-
-                }
-                Tab {
-                    id: projectTab
-                    closable: false
-
-                }
-            }
 
             Button {
                 id: mainMenuButton
@@ -92,9 +61,51 @@ Item {
                 checkable: true
                 flat: true
             }
+
+
+
+
+            TabBar {
+                id: rootTabBar
+                Layout.preferredHeight: 30
+                Layout.minimumHeight: 30
+                Layout.fillWidth: true
+
+                Tab {
+                    id: welcomeTab
+                    closable: false
+                }
+                Tab {
+                    id: writeOverviewTab
+                    closable: false
+                }
+                Tab {
+                    id: noteOverviewTab
+                    closable: false
+                }
+                Tab {
+                    id: galleryTab
+                    closable: false
+                }
+                Tab {
+                    id: projectTab
+                    closable: false
+                }
+            }
+
+
+            Button {
+                id: showTabListButton
+                text: qsTr("Button")
+                flat: true
+                checkable: true
+                focusPolicy: Qt.NoFocus
+                padding: 2
+                display: AbstractButton.IconOnly
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 30
+            }
         }
-
-
 
         Item {
             id: tabBarRevealer
@@ -103,7 +114,6 @@ Item {
             Layout.preferredHeight: 5
             Layout.fillWidth: true
         }
-
 
         RowLayout {
             id: rowLayout
@@ -114,7 +124,6 @@ Item {
             Item {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
-
 
                 ColumnLayout {
                     z: 0
@@ -147,7 +156,6 @@ Item {
                     //                                    width: implicitWidth
                     //                                }
                     //                            }
-
                     SwipeView {
                         id: rootSwipeView
                         clip: true
@@ -156,27 +164,26 @@ Item {
 
                         WelcomePage {
                             id: welcomePage
-
                         }
 
                         WriteOverviewPage {
                             id: writeOverviewPage
-
+                            enabled: false
                         }
 
                         NoteOverviewPage {
                             id: noteOverviewPage
-
+                            enabled: false
                         }
 
                         GalleryPage {
                             id: galleryPage
-
+                            enabled: false
                         }
 
                         ProjectsPage {
                             id: projectsPage
-
+                            enabled: false
                         }
 
                         //                        WritePage {
@@ -199,15 +206,12 @@ Item {
                 }
             }
 
-
             //    Rectangle {
             //        color: "transparent"
             //        border.color: "darkorange"
             //        anchors.fill: parent
             //    }
         }
-
-
 
         Pane {
             id: statusBar
@@ -251,21 +255,15 @@ Item {
                     Layout.fillHeight: true
                 }
 
-
-                Button{
+                Button {
                     id: notificationButton
                     flat: true
                     Layout.preferredWidth: 40
                     Layout.fillHeight: true
                     padding: 0
-
-
                 }
             }
         }
-
-
-
     }
     states: [
         State {

@@ -1029,7 +1029,7 @@ DeletedListViewForm {
                 NumberAnimation {
                     target: delegateRoot
                     property: "height"
-                    to: 80
+                    to: delegateRoot.height
                     duration: 250
                     easing.type: Easing.InOutQuad
                 }
