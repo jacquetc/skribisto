@@ -15,7 +15,7 @@ TreeListViewForm {
     signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openDocumentInNewTab(int projectId, int paperId)
     signal openDocumentInNewWindow(int projectId, int paperId)
-    signal showDeletedList()
+    signal showTrashedList()
 
     property int currentParent: -2
     property int currentProject: -2
@@ -185,7 +185,7 @@ TreeListViewForm {
             text: qsTr("Trash")
             //shortcut: StandardKey.Paste
             icon.name: "edit-delete"
-            onTriggered: showDeletedList()
+            onTriggered: showTrashedList()
         }
 
     }
@@ -338,6 +338,24 @@ TreeListViewForm {
             }
             Keys.priority: Keys.AfterItem
 
+            Keys.onShortcutOverride: {
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
+                      event.accepted = true
+                                     }
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
+                      event.accepted = true
+                                     }
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
+                      event.accepted = true
+                                     }
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
+                      event.accepted = true
+                                     }
+                if( event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
+                      event.accepted = true
+                                     }
+            }
+
             Keys.onPressed: {
                 if (event.key === Qt.Key_Right){
                     console.log("Right key pressed")
@@ -349,14 +367,64 @@ TreeListViewForm {
                     goUpAction.trigger()
                     event.accepted = true
                 }
+                if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
+                    console.log("Alt Return key pressed")
+                    openDocumentInNewTabAction.trigger()
+                    event.accepted = true
+                }
                 if (event.key === Qt.Key_Return && delegateRoot.state !== "edit_name"){
                     console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
                 }
-                if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
-                    console.log("Alt Return key pressed")
-                    openDocumentInNewTabAction.trigger()
+                // rename
+
+                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name"){
+                    renameAction.trigger()
+                    event.accepted = true
+                }
+
+
+
+                // cut
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name"){
+                    cutAction.trigger()
+                    event.accepted = true
+                }
+
+                // copy
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name"){
+                    copyAction.trigger()
+                    event.accepted = true
+                }
+
+                // add before
+                if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name"){
+                    addBeforeAction.trigger()
+                    event.accepted = true
+                }
+
+                // add after
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name"){
+                    addAfterAction.trigger()
+                    event.accepted = true
+                }
+
+                // move up
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name"){
+                    moveUpAction.trigger()
+                    event.accepted = true
+                }
+
+                // move down
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name"){
+                    moveDownAction.trigger()
+                    event.accepted = true
+                }
+
+                // send to trash
+                if (event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name"){
+                    sendToTrashAction.trigger()
                     event.accepted = true
                 }
             }
@@ -414,27 +482,7 @@ TreeListViewForm {
 
                 TapHandler {
                     id: tapHandler
-                    onTapCountChanged: {
-                        //                        console.log("tap", tapHandler.tapCount)
-                        //                        console.log("tap", tapCountTimer.running)
 
-
-                        //                        if(tapCount == 2 & tapCountTimer.running & tapCountIndex === model.index){
-                        //                            //tripleTap
-                        //                            console.log("tripletap")
-                        //                            tapCountTimer.stop()
-                        //                            delegateRoot.editName()
-                        //                            return
-                        //                        }
-                        //                        if(tapCount == 1){
-                        //                            tapCountIndex = model.index
-                        //                            tapCountTimer.start()
-                        //                            return
-
-                        //                        }
-
-
-                    }
 
                     onSingleTapped: {
                         listView.currentIndex = model.index
@@ -453,11 +501,7 @@ TreeListViewForm {
                         enabled = false
                     }
                 }
-                Timer{
-                    id: tapCountTimer
-                    interval: 200
-                    repeat: false
-                }
+
                 TapHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
@@ -720,7 +764,7 @@ TreeListViewForm {
                                     }
 
                                     //Keys.priority: Keys.AfterItem
-
+                                    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
                                     Keys.onPressed: {
                                         if (event.key === Qt.Key_Return){
                                             console.log("Return key pressed title")
@@ -729,6 +773,12 @@ TreeListViewForm {
                                         }
                                         if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
                                             console.log("Ctrl Return key pressed title")
+                                            editingFinished()
+                                            event.accepted = true
+                                        }
+                                        if (event.key === Qt.Key_Escape){
+                                            console.log("Escape key pressed title")
+                                            delegateRoot.state = ""
                                             event.accepted = true
                                         }
                                     }
@@ -1013,7 +1063,7 @@ TreeListViewForm {
                 Action {
                     id: renameAction
                     text: qsTr("Rename")
-                    shortcut: "F2"
+                    //shortcut: "F2"
                     icon {
                         name: "edit-rename"
                     }
@@ -1027,26 +1077,10 @@ TreeListViewForm {
                 }
 
                 MenuSeparator {}
-
                 Action {
-
-                    text: qsTr("Copy")
-                    shortcut: StandardKey.Copy
-                    icon {
-                        name: "edit-copy"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-
-                    onTriggered: {
-                        console.log("copy action", model.projectId,
-                                    model.paperId)
-                        proxyModel.copy(model.projectId, model.paperId)
-                    }
-                }
-                Action {
-
+                    id: cutAction
                     text: qsTr("Cut")
-                    shortcut: StandardKey.Cut
+                    //shortcut: StandardKey.Cut
                     icon {
                         name: "edit-cut"
                     }
@@ -1059,11 +1093,28 @@ TreeListViewForm {
                     }
                 }
 
+                Action {
+
+                    id: copyAction
+                    text: qsTr("Copy")
+                    //shortcut: StandardKey.Copy
+                    icon {
+                        name: "edit-copy"
+                    }
+                    enabled: contextMenuItemIndex === model.index && listView.enabled
+
+                    onTriggered: {
+                        console.log("copy action", model.projectId,
+                                    model.paperId)
+                        proxyModel.copy(model.projectId, model.paperId)
+                    }
+                }
+
                 MenuSeparator {}
                 Action {
                     id: addBeforeAction
                     text: qsTr("Add before")
-                    shortcut: "Ctrl+Shift+N"
+                    //shortcut: "Ctrl+Shift+N"
                     icon {
                         name: "document-new"
                     }
@@ -1078,7 +1129,7 @@ TreeListViewForm {
                 Action {
                     id: addAfterAction
                     text: qsTr("Add after")
-                    shortcut: "Ctrl+N"
+                    //shortcut: "Ctrl+N"
                     icon {
                         name: "document-new"
                     }
@@ -1095,7 +1146,7 @@ TreeListViewForm {
                 Action {
                     id: moveUpAction
                     text: qsTr("Move up")
-                    shortcut: "Ctrl+Up"
+                    //shortcut: "Ctrl+Up"
                     icon {
                         name: "object-order-raise"
                     }
@@ -1110,9 +1161,9 @@ TreeListViewForm {
                 }
 
                 Action {
-
+                    id: moveDownAction
                     text: qsTr("Move down")
-                    shortcut: "Ctrl+Down"
+                    //shortcut: "Ctrl+Down"
                     icon {
                         name: "object-order-lower"
                     }
@@ -1128,16 +1179,17 @@ TreeListViewForm {
                 }
                 MenuSeparator {}
                 Action {
-                    text: qsTr("Delete")
-                    shortcut: "Del"
+                    id: sendToTrashAction
+                    text: qsTr("Send to trash")
+                    //shortcut: "Del"
                     icon {
                         name: "edit-delete"
                     }
                     enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
                     onTriggered: {
-                        console.log("delete action", model.projectId,
+                        console.log("sent to trash action", model.projectId,
                                     model.paperId)
-                        model.deleted = true
+                        model.trashed = true
 
                     }
                 }

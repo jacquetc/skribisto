@@ -5,7 +5,7 @@
 
 SKRSearchSheetListProxyModel::SKRSearchSheetListProxyModel(QObject *parent) :
     QSortFilterProxyModel(parent),
-    m_showDeletedFilter(true), m_showNotDeletedFilter(true), m_textFilter(""),
+    m_showTrashedFilter(true), m_showNotTrashedFilter(true), m_textFilter(""),
     m_projectIdFilter(-2)
 {
     this->setSourceModel(plmmodels->sheetListModel());
@@ -111,16 +111,16 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int                sourceRow
         result = false;
     }
 
-    // deleted filtering :
-    if (result && (item->data(PLMSheetItem::Roles::DeletedRole).toBool() == true)) {
+    // trashed filtering :
+    if (result && (item->data(PLMSheetItem::Roles::TrashedRole).toBool() == true)) {
         QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
-        result = m_showDeletedFilter;
+        result = m_showTrashedFilter;
     }
 
-    // 'not deleted' filtering :
-    if (result && (item->data(PLMSheetItem::Roles::DeletedRole).toBool() == false)) {
+    // 'not trashed' filtering :
+    if (result && (item->data(PLMSheetItem::Roles::TrashedRole).toBool() == false)) {
         QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
-        result = m_showNotDeletedFilter;
+        result = m_showNotTrashedFilter;
     }
 
     // text filtering :
@@ -153,11 +153,11 @@ void SKRSearchSheetListProxyModel::clearFilters()
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
 
-    m_showDeletedFilter = true;
-    emit showDeletedFilterChanged(m_showDeletedFilter);
+    m_showTrashedFilter = true;
+    emit showTrashedFilterChanged(m_showTrashedFilter);
 
-    m_showNotDeletedFilter = true;
-    emit showNotDeletedFilterChanged(m_showNotDeletedFilter);
+    m_showNotTrashedFilter = true;
+    emit showNotTrashedFilterChanged(m_showNotTrashedFilter);
 
     m_textFilter = "";
     emit textFilterChanged(m_textFilter);
@@ -220,20 +220,20 @@ void SKRSearchSheetListProxyModel::setTextFilter(const QString& value)
     this->invalidateFilter();
 }
 
-void SKRSearchSheetListProxyModel::setShowNotDeletedFilter(bool showNotDeletedFilter)
+void SKRSearchSheetListProxyModel::setShowNotTrashedFilter(bool showNotTrashedFilter)
 {
-    m_showNotDeletedFilter = showNotDeletedFilter;
+    m_showNotTrashedFilter = showNotTrashedFilter;
 
-    emit showNotDeletedFilterChanged(showNotDeletedFilter);
+    emit showNotTrashedFilterChanged(showNotTrashedFilter);
 
     this->invalidateFilter();
 }
 
-void SKRSearchSheetListProxyModel::setShowDeletedFilter(bool showDeletedFilter)
+void SKRSearchSheetListProxyModel::setShowTrashedFilter(bool showTrashedFilter)
 {
-    m_showDeletedFilter = showDeletedFilter;
+    m_showTrashedFilter = showTrashedFilter;
 
-    emit showDeletedFilterChanged(showDeletedFilter);
+    emit showTrashedFilterChanged(showTrashedFilter);
 
     this->invalidateFilter();
 }

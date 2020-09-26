@@ -42,8 +42,8 @@ public:
     int        moveList(QList<int>idList,
                         int       paperId);
     int        copyList(QList<int>idList);
-    int        deleteList(QList<int>idList);
-    int        undeleteList(QList<int>idList);
+    int        trashList(QList<int>idList);
+    int        untrashList(QList<int>idList);
     int        emptyTrash();
     QList<int> listVisibleId();
     QList<int> listTrash();

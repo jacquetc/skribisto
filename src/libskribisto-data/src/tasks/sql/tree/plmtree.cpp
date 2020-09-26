@@ -67,7 +67,7 @@ QList<QHash<QString, QVariant> >PLMTree::getAll()
     //          << "dt_created"
     //          << "dt_updated"
     //          << "dt_content"
-    //          << "b_deleted"
+    //          << "b_trashed"
     //             ;
     QString queryStr = "SELECT " + names.join(", ")
                        + " FROM " + m_tableName
@@ -312,18 +312,18 @@ void PLMTree::setTitle(int paperId, const QString& value)
     paper.setTitle(value);
 }
 
-bool PLMTree::getDeleted(int paperId)
+bool PLMTree::getTrashed(int paperId)
 {
     PLMDbPaper paper(m_sqlDb, m_tableName, m_idName, paperId, false);
 
-    return paper.getDelete();
+    return paper.getTrashed();
 }
 
-void PLMTree::setDeleted(int paperId, bool value)
+void PLMTree::setTrashed(int paperId, bool value)
 {
     PLMDbPaper paper(m_sqlDb, m_tableName, m_idName, paperId, true);
 
-    paper.setDelete(value);
+    paper.setTrashed(value);
 }
 
 QList<int>PLMTree::getAllIds()

@@ -41,7 +41,7 @@ public:
         LabelRole          = Qt::UserRole + 4,
         IndentRole       = Qt::UserRole + 5,
         SortOrderRole    = Qt::UserRole + 6,
-        DeletedRole      = Qt::UserRole + 7,
+        TrashedRole      = Qt::UserRole + 7,
         CreationDateRole = Qt::UserRole + 8,
         UpdateDateRole   = Qt::UserRole + 9,
         ContentDateRole  = Qt::UserRole + 10,

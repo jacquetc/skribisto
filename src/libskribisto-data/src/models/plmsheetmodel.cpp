@@ -202,7 +202,7 @@ QVariant PLMSheetModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::DeletedRole) {
+    if (role == PLMSheetItem::Roles::TrashedRole) {
         return item->data(role);
     }
     return QVariant();
@@ -255,8 +255,8 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
             error = plmdata->sheetHub()->setSortOrder(projectId, paperId, value.toInt());
             break;
 
-        case PLMSheetItem::Roles::DeletedRole:
-            error = plmdata->sheetHub()->setDeleted(projectId, paperId, value.toBool());
+        case PLMSheetItem::Roles::TrashedRole:
+            error = plmdata->sheetHub()->setTrashed(projectId, paperId, value.toBool());
             break;
 
         case PLMSheetItem::Roles::CreationDateRole:
@@ -368,7 +368,7 @@ QHash<int, QByteArray>PLMSheetModel::roleNames() const {
     roles[PLMSheetItem::Roles::CreationDateRole] = "creationDate";
     roles[PLMSheetItem::Roles::UpdateDateRole]   = "updateDate";
     roles[PLMSheetItem::Roles::ContentDateRole]  = "contentDate";
-    roles[PLMSheetItem::Roles::DeletedRole]      = "deleted";
+    roles[PLMSheetItem::Roles::TrashedRole]      = "trashed";
     return roles;
 }
 
@@ -637,12 +637,12 @@ void PLMSheetModel::connectToPLMDataSignals()
                                        PLMSheetItem::Roles::UpdateDateRole);
     }, Qt::UniqueConnection);
     m_dataConnectionsList << this->connect(plmdata->sheetHub(),
-                                           &PLMSheetHub::deletedChanged, this,
+                                           &PLMSheetHub::trashedChanged, this,
                                            [this](int projectId, int paperId,
                                                   bool value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::DeletedRole);
+                                       PLMSheetItem::Roles::TrashedRole);
     }, Qt::UniqueConnection);
     m_dataConnectionsList << this->connect(plmdata->sheetPropertyHub(),
                                            &PLMPropertyHub::propertyChanged, this,

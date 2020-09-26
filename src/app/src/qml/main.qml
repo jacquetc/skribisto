@@ -953,7 +953,7 @@ ApplicationWindow {
         var item = activeFocusItem
 
         if(skrEditMenuSignalHub.isSubscribed(activeFocusItem.objectName)){
-            console.log("activeFocusItem", activeFocusItem.objectName)
+            //console.log("activeFocusItem", activeFocusItem.objectName)
             cutAction.enabled = true
             copyAction.enabled = true
             pasteAction.enabled = true

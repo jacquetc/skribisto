@@ -114,8 +114,8 @@ QVariant PLMNoteItem::data(int role)
             m_data.insert(role, plmdata->noteHub()->getSortOrder(projectId, paperId));
             break;
 
-        case Roles::DeletedRole:
-            m_data.insert(role, plmdata->noteHub()->getDeleted(projectId, paperId));
+        case Roles::TrashedRole:
+            m_data.insert(role, plmdata->noteHub()->getTrashed(projectId, paperId));
             break;
 
         case Roles::CreationDateRole:

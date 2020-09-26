@@ -82,10 +82,10 @@ public:
                                                const QString& newContent);
     Q_INVOKABLE QString             getContent(int projectId,
                                                int paperId) const;
-    Q_INVOKABLE PLMError            setDeleted(int  projectId,
+    Q_INVOKABLE PLMError            setTrashed(int  projectId,
                                                int  paperId,
-                                               bool newDeletedState);
-    Q_INVOKABLE bool                getDeleted(int projectId,
+                                               bool newTrashedState);
+    Q_INVOKABLE bool                getTrashed(int projectId,
                                                int paperId) const;
     PLMError                        setCreationDate(int              projectId,
                                                     int              paperId,
@@ -211,9 +211,9 @@ signals:
     void             contentChanged(int            projectId,
                                     int            paperId,
                                     const QString& newContent);
-    void             deletedChanged(int  projectId,
+    void             trashedChanged(int  projectId,
                                     int  paperId,
-                                    bool newDeletedState);
+                                    bool newTrashedState);
     void             creationDateChanged(int              projectId,
                                          int              paperId,
                                          const QDateTime& newDate);

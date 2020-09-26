@@ -44,8 +44,8 @@ public:
     void setContent(const QVariant &value);
     QString getTitle() const;
     void setTitle(const QString &value);
-    bool getDelete() const;
-    void setDelete(bool value);
+    bool getTrashed() const;
+    void setTrashed(bool value);
     QDateTime getCreationDate() const;
     void setCreationDate(const QDateTime &value);
     QDateTime getUpdateDate() const;

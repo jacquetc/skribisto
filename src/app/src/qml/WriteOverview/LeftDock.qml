@@ -100,12 +100,12 @@ LeftDockForm {
 
 
     SKRSearchSheetListProxyModel {
-        id: deletedSheetProxyModel
-        showDeletedFilter: true
-        showNotDeletedFilter: false
+        id: trashedSheetProxyModel
+        showTrashedFilter: true
+        showNotTrashedFilter: false
 
     }
-    navigation.deletedListViewProxyModel: deletedSheetProxyModel
+    navigation.trashedListViewProxyModel: trashedSheetProxyModel
 
 
 

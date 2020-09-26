@@ -44,11 +44,11 @@ signals:
 
 public slots:
 
-    void setDeletedFilter(bool showDeleted);
+    void setTrashedFilter(bool showTrashed);
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
 private:
-    bool m_showDeleted;
+    bool m_showTrashed;
 };
 
 #endif // PLMSHEETPROXYMODEL_H

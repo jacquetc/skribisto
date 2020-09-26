@@ -28,10 +28,10 @@ PLMSheetListModel::PLMSheetListModel(QObject *parent)
             &PLMSheetListModel::refreshAfterDataMove);
 
     connect(plmdata->sheetHub(),
-            &PLMSheetHub::deletedChanged, // careful, paper is deleted = true,
+            &PLMSheetHub::trashedChanged, // careful, paper is trashed = true,
                                           // not a true removal
             this,
-            &PLMSheetListModel::refreshAfterDeletedStateChanged);
+            &PLMSheetListModel::refreshAfterTrashedStateChanged);
 
     connect(plmdata->projectHub(),
             &PLMProjectHub::projectIsBackupChanged,
@@ -165,7 +165,7 @@ QVariant PLMSheetListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::DeletedRole) {
+    if (role == PLMSheetItem::Roles::TrashedRole) {
         return item->data(role);
     }
 
@@ -248,8 +248,8 @@ bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value,
 
             break;
 
-        case PLMSheetItem::Roles::DeletedRole:
-            error = plmdata->sheetHub()->setDeleted(projectId, paperId, value.toBool());
+        case PLMSheetItem::Roles::TrashedRole:
+            error = plmdata->sheetHub()->setTrashed(projectId, paperId, value.toBool());
             break;
 
         case PLMSheetItem::Roles::CreationDateRole:
@@ -352,7 +352,7 @@ QHash<int, QByteArray>PLMSheetListModel::roleNames() const {
     roles[PLMSheetItem::Roles::UpdateDateRole]      = "updateDate";
     roles[PLMSheetItem::Roles::ContentDateRole]     = "contentDate";
     roles[PLMSheetItem::Roles::HasChildrenRole]     = "hasChildren";
-    roles[PLMSheetItem::Roles::DeletedRole]         = "deleted";
+    roles[PLMSheetItem::Roles::TrashedRole]         = "trashed";
     roles[PLMSheetItem::Roles::WordCountRole]       = "wordCount";
     roles[PLMSheetItem::Roles::CharCountRole]       = "charCount";
     roles[PLMSheetItem::Roles::SynopsisNoteIdRole]  = "synopsisNoteId";
@@ -581,18 +581,18 @@ void PLMSheetListModel::refreshAfterDataMove(int sourceProjectId,
 
 // --------------------------------------------------------------------
 ///
-/// \brief PLMSheetListModel::refreshAfterDeletedStateChanged
+/// \brief PLMSheetListModel::refreshAfterTrashedStateChanged
 /// \param projectId
 /// \param paperId
-/// \param newDeletedState
-/// careful, paper is deleted = true, not a true removal
-void PLMSheetListModel::refreshAfterDeletedStateChanged(int  projectId,
+/// \param newTrashedState
+/// careful, paper is trashed = true, not a true removal
+void PLMSheetListModel::refreshAfterTrashedStateChanged(int  projectId,
                                                         int  paperId,
-                                                        bool newDeletedState)
+                                                        bool newTrashedState)
 {
     Q_UNUSED(projectId)
     Q_UNUSED(paperId)
-    Q_UNUSED(newDeletedState)
+    Q_UNUSED(newTrashedState)
 
     for (PLMSheetItem *item : m_allSheetItems) {
         item->invalidateData(PLMSheetItem::Roles::SortOrderRole);
@@ -736,12 +736,12 @@ void PLMSheetListModel::connectToPLMDataSignals()
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->sheetHub(),
-                                           &PLMSheetHub::deletedChanged, this,
+                                           &PLMSheetHub::trashedChanged, this,
                                            [this](int projectId, int paperId,
                                                   bool value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::DeletedRole);
+                                       PLMSheetItem::Roles::TrashedRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->sheetPropertyHub(),

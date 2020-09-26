@@ -158,7 +158,7 @@ NotePadForm {
 
                 onAccepted: {
 
-                    plmData.noteHub().setDeleted(projectId, noteId, true)
+                    plmData.noteHub().setTrashed(projectId, noteId, true)
                     plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, noteId)
 
                 }
@@ -582,8 +582,8 @@ NotePadForm {
     
     SKRSearchNoteListProxyModel {
         id: searchProxyModel
-        showDeletedFilter: false
-        showNotDeletedFilter: true
+        showTrashedFilter: false
+        showNotTrashedFilter: true
         projectIdFilter: projectId
     }
     

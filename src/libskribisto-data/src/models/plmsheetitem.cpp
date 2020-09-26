@@ -113,8 +113,8 @@ QVariant PLMSheetItem::data(int role)
             m_data.insert(role, plmdata->sheetHub()->getSortOrder(projectId, paperId));
             break;
 
-        case Roles::DeletedRole:
-            m_data.insert(role, plmdata->sheetHub()->getDeleted(projectId, paperId));
+        case Roles::TrashedRole:
+            m_data.insert(role, plmdata->sheetHub()->getTrashed(projectId, paperId));
             break;
 
         case Roles::CreationDateRole:

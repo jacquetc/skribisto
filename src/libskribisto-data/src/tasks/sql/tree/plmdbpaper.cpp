@@ -152,14 +152,14 @@ void PLMDbPaper::setTitle(const QString& value)
     set("t_title", value);
 }
 
-bool PLMDbPaper::getDelete() const
+bool PLMDbPaper::getTrashed() const
 {
-    return get("b_deleted").toBool();
+    return get("b_trashed").toBool();
 }
 
-void PLMDbPaper::setDelete(bool value)
+void PLMDbPaper::setTrashed(bool value)
 {
-    set("b_deleted", value);
+    set("b_trashed", value);
 }
 
 QDateTime PLMDbPaper::getCreationDate() const
@@ -204,7 +204,7 @@ int PLMDbPaper::add()
                          + "dt_updated,"
                          + "dt_content,"
                          + "l_version,"
-                         + "b_deleted "
+                         + "b_trashed "
                          + " ) "
                          + " VALUES ( "
                          + ":title,"
@@ -231,7 +231,7 @@ QList<int>PLMDbPaper::childIdList()
 {
     QSqlQuery query(m_sqlDb);
     QString   queryStr = "SELECT "
-                         "l_indent, l_sort_order, b_deleted"
+                         "l_indent, l_sort_order, b_trashed"
                          " FROM " + m_tableName
                          + " WHERE " + m_idName + " = " + QString::number(m_paperId)
                          + " ORDER BY l_sort_order"
@@ -240,12 +240,12 @@ QList<int>PLMDbPaper::childIdList()
     query.exec(queryStr);
     int  parentIndent    = -1;
     int  parentSortOrder = -1;
-    bool parentDeleted   = false;
+    bool parentTrashed   = false;
 
     while (query.next()) {
         parentIndent    = query.value(0).toInt();
         parentSortOrder = query.value(1).toInt();
-        parentDeleted   = query.value(3).toBool();
+        parentTrashed   = query.value(3).toBool();
     }
 
     queryStr = "SELECT "
@@ -253,12 +253,12 @@ QList<int>PLMDbPaper::childIdList()
                + " FROM " + m_tableName
                + " WHERE "
                + "l_sort_order > :parent_sort"
-               + " AND b_deleted = :parent_deleted"
+               + " AND b_trashed = :parent_trashed"
                + " ORDER BY l_sort_order"
     ;
     query.prepare(queryStr);
     query.bindValue(":parent_sort",    parentSortOrder);
-    query.bindValue(":parent_deleted", parentDeleted);
+    query.bindValue(":parent_trashed", parentTrashed);
     query.exec();
 
     //      qDebug() << " : " << getLastExecutedQuery(query);

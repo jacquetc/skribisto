@@ -204,6 +204,11 @@ WriteOverviewPageForm {
     }
 
     function removeMenus(){
+        if(mainMenu === null){
+            return
+        }
+
+
         var helpMenu
 
         var menuCount = mainMenu.count

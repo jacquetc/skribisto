@@ -60,8 +60,8 @@ public:
     void                            movePapersBelow(QList<int>paperIdList,
                                                     int       destId);
     QList<int>                      getAllIds();
-    bool                            getDeleted(int paperId);
-    void                            setDeleted(int  paperId,
+    bool                            getTrashed(int paperId);
+    void                            setTrashed(int  paperId,
                                                bool value);
     QDateTime                       getCreationDate(int paperId) const;
     void                            setCreationDate(int              paperId,

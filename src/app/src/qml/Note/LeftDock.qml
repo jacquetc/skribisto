@@ -99,11 +99,11 @@ LeftDockForm {
     navigation.treeListViewProxyModel: proxyModel
 
     SKRSearchNoteListProxyModel {
-        id: deletedNoteProxyModel
-        showDeletedFilter: true
-        showNotDeletedFilter: false
+        id: trashedNoteProxyModel
+        showTrashedFilter: true
+        showNotTrashedFilter: false
     }
-    navigation.deletedListViewProxyModel: deletedNoteProxyModel
+    navigation.trashedListViewProxyModel: trashedNoteProxyModel
 
     //    Connections {
     //        target: Globals

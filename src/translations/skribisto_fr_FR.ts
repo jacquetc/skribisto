@@ -5,86 +5,94 @@
     <name>DeletedListView</name>
     <message>
         <source>Trash: %1</source>
-        <translation>Corbeille: %1</translation>
+        <translation type="vanished">Corbeille: %1</translation>
     </message>
     <message>
         <source>Empty the trash</source>
-        <translation>Vider la corbeille</translation>
+        <translation type="vanished">Vider la corbeille</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation>Restaurer</translation>
+        <translation type="vanished">Restaurer</translation>
     </message>
     <message>
         <source>has child</source>
-        <translation>a des enfants</translation>
+        <translation type="vanished">a des enfants</translation>
     </message>
     <message>
         <source>label:</source>
-        <translation>libelé:</translation>
+        <translation type="vanished">libelé:</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation>élément de navigation</translation>
+        <translation type="vanished">élément de navigation</translation>
     </message>
     <message>
         <source>This project is a backup</source>
-        <translation>Ce projet est une copie de secours</translation>
+        <translation type="vanished">Ce projet est une copie de secours</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation>Entrez un nom</translation>
+        <translation type="vanished">Entrez un nom</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Ouvirr</translation>
+        <translation type="vanished">Ouvrir</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation>Ouvrir dans un nouvel onglet</translation>
+        <translation type="vanished">Ouvrir dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation>Renommer</translation>
+        <translation type="vanished">Renommer</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>Copier</translation>
+        <translation type="vanished">Copier</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation>Couper</translation>
+        <translation type="vanished">Couper</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation>Ajouter avant</translation>
+        <translation type="vanished">Ajouter avant</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation>Ajouter après</translation>
+        <translation type="vanished">Ajouter après</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation>Déplacer vers le haut</translation>
+        <translation type="vanished">Déplacer vers le haut</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation>Déplacer vers le bas</translation>
+        <translation type="vanished">Déplacer vers le bas</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Supprimer</translation>
+        <translation type="vanished">Supprimer</translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="obsolete">Ouvrir un document dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="obsolete">Ouvrir dans une nouvelle fenêtre</translation>
     </message>
 </context>
 <context>
     <name>DeletedListViewForm.ui</name>
     <message>
         <source>Restore a document</source>
-        <translation>Restaurer un document</translation>
+        <translation type="vanished">Restaurer un document</translation>
     </message>
     <message>
         <source>Deleted menu</source>
-        <translation>Menu des supprimés</translation>
+        <translation type="vanished">Menu des supprimés</translation>
     </message>
 </context>
 <context>
@@ -189,26 +197,26 @@
     <name>LeftDock</name>
     <message>
         <source>&amp;Navigation dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dock de &amp;navigation</translation>
     </message>
     <message>
         <source>&amp;Navigation</source>
-        <translation type="unfinished">&amp;Navigation</translation>
+        <translation>&amp;Navigation</translation>
     </message>
     <message>
         <source>&amp;Documents</source>
-        <translation type="unfinished">&amp;Documents</translation>
+        <translation>&amp;Documents</translation>
     </message>
 </context>
 <context>
     <name>LeftDockForm.ui</name>
     <message>
         <source>Navigation</source>
-        <translation type="unfinished">Navigation</translation>
+        <translation>Navigation</translation>
     </message>
     <message>
         <source>Opened documents</source>
-        <translation type="unfinished">Documents ouverts</translation>
+        <translation>Documents ouverts</translation>
     </message>
 </context>
 <context>
@@ -231,22 +239,26 @@
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished">Renommer</translation>
+        <translation>Renommer</translation>
     </message>
     <message>
         <source>Dissociate</source>
-        <translation type="unfinished"></translation>
+        <translation>Dissocier</translation>
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Envoyer à la corbeille</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Information</translation>
     </message>
     <message>
         <source>Do you want to move the note &quot;%1&quot; to the trash ?</source>
+        <translation>Voulez-vous déplaer la note &quot;%1&quot; dans la corbeille ?</translation>
+    </message>
+    <message>
+        <source>Warning</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -398,19 +410,19 @@
     <name>RightDock</name>
     <message>
         <source>&amp;Tools dock</source>
-        <translation type="unfinished">Dock d&apos;&amp;outils</translation>
+        <translation>Dock d&apos;&amp;outils</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Editer</translation>
     </message>
     <message>
         <source>&amp;Tags</source>
-        <translation type="unfinished">&amp;Ettiquettes</translation>
+        <translation>&amp;Ettiquettes</translation>
     </message>
     <message>
         <source>&amp;Notes</source>
-        <translation type="unfinished">&amp;Notes</translation>
+        <translation>&amp;Notes</translation>
     </message>
 </context>
 <context>
@@ -476,6 +488,10 @@
     <message>
         <source>Main menu</source>
         <translation>Menu principal</translation>
+    </message>
+    <message>
+        <source>Button</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -557,6 +573,14 @@
     </message>
     <message>
         <source>Allow swipe gesture between tabs</source>
+        <translation>Autoriser le geste de blayage entre les onglets</translation>
+    </message>
+    <message>
+        <source>Special E-Paper</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set the text cursor unblinking</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -580,6 +604,80 @@
     <message>
         <source>Tags list</source>
         <translation>Liste d&apos;étiquettes</translation>
+    </message>
+</context>
+<context>
+    <name>TrashedListView</name>
+    <message>
+        <source>Trash: %1</source>
+        <translation type="unfinished">Corbeille: %1</translation>
+    </message>
+    <message>
+        <source>Empty the trash</source>
+        <translation type="unfinished">Vider la corbeille</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation type="unfinished">Restaurer</translation>
+    </message>
+    <message>
+        <source>has child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>label:</source>
+        <translation type="unfinished">libelé:</translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished">élément de navigation</translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished">Ouvrir un document dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>This project is a backup</source>
+        <translation type="unfinished">Ce projet est une copie de secours</translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished">Entrez un nom</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished">Ouvrir</translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished">Ouvrir dans un nouvel onglet</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished">Ouvrir dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Renommer</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Copier</translation>
+    </message>
+    <message>
+        <source>Delete definitively</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TrashedListViewForm.ui</name>
+    <message>
+        <source>Restore a document</source>
+        <translation type="unfinished">Restaurer un document</translation>
+    </message>
+    <message>
+        <source>Trashed menu</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -678,7 +776,7 @@
     </message>
     <message>
         <source>Delete</source>
-        <translation>Supprimer</translation>
+        <translation type="vanished">Supprimer</translation>
     </message>
     <message>
         <source>Open document in a new tab</source>
@@ -687,6 +785,10 @@
     <message>
         <source>Open document in a window</source>
         <translation>Ouvrir un document dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished">Envoyer à la corbeille</translation>
     </message>
 </context>
 <context>

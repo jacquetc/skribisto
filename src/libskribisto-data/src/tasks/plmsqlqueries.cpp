@@ -526,7 +526,7 @@ PLMError PLMSqlQueries::renumberSortOrder()
     PLMError error;
     int renumInterval = 1000;
 
-    // Renumber all non-deleted paper in this version. DOES NOT COMMIT - Caller
+    // Renumber all non-trashed paper in this version. DOES NOT COMMIT - Caller
     // should
     QSqlQuery query(m_sqlDB);
     QString   queryStr = "SELECT " + m_idName

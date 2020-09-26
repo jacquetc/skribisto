@@ -68,14 +68,14 @@ bool PLMDbTree::getCommit()
  */
 void PLMDbTree::renumAll()
 {
-    // Renumber all non-deleted paper in this version. DOES NOT COMMIT - Caller
+    // Renumber all non-trashed paper in this version. DOES NOT COMMIT - Caller
     // should
     QSqlQuery query(m_sqlDb);
     QString   queryStr = "SELECT " + m_idName
                          + " FROM " + m_tableName
                          + " WHERE"
 
-//            + " b_deleted = 0"
+//            + " b_trashed = 0"
 //            + " and"
                          + " l_version = :ver"
                          + " ORDER BY l_sort_order"
@@ -230,11 +230,11 @@ int PLMDbTree::copyList(QList<int>idList)
 /// \param idList
 /// \return
 ///
-int PLMDbTree::deleteList(QList<int>idList)
+int PLMDbTree::trashList(QList<int>idList)
 
 //
-// Mark a list of sheets as deleted.
-// This function just sets the deleted flag in the record. Call empty_trash to
+// Mark a list of sheets as trashed.
+// This function just sets the trashed flag in the record. Call empty_trash to
 // really delete the records
 //
 {
@@ -249,7 +249,7 @@ int PLMDbTree::deleteList(QList<int>idList)
                               QString("Sheet (%1) not found").arg(QString::number(id)));
             return PLMDbError::Error;
         }
-        paper.setDelete(true);
+        paper.setTrashed(true);
     }
 
     // Renumber all sheets to restore default spacing
@@ -260,7 +260,7 @@ int PLMDbTree::deleteList(QList<int>idList)
     return PLMDbError::OK;
 }
 
-int PLMDbTree::undeleteList(QList<int>idList)
+int PLMDbTree::untrashList(QList<int>idList)
 {
     if (m_commit) m_sqlDb.transaction();
 
@@ -273,7 +273,7 @@ int PLMDbTree::undeleteList(QList<int>idList)
                               QString("Sheet (%1) not found").arg(QString::number(id)));
             return PLMDbError::Error;
         }
-        paper.setDelete(false);
+        paper.setTrashed(false);
     }
 
     // Renumber all sheets to restore default spacing
@@ -287,7 +287,7 @@ int PLMDbTree::undeleteList(QList<int>idList)
 int PLMDbTree::emptyTrash()
 
 //
-// Permanently remove any deleted sheets for the CURRENT version
+// Permanently remove any trashed sheets for the CURRENT version
 //
 {
     if (m_commit) m_sqlDb.transaction();
@@ -295,7 +295,7 @@ int PLMDbTree::emptyTrash()
     QSqlQuery query(m_sqlDb);
     QString   queryStr = "DELETE FROM "
                          + m_tableName
-                         + " WHERE b_deleted = 1"
+                         + " WHERE b_trashed = 1"
                          + "and l_version = :ver"
     ;
 
@@ -311,7 +311,7 @@ QList<int>PLMDbTree::listVisibleId()
     QSqlQuery query(m_sqlDb);
     QString   queryStr = "SELECT " + m_idName
                          + " FROM " + m_tableName
-                         + " WHERE b_deleted = 0"
+                         + " WHERE b_trashed = 0"
                          + "and l_version = :ver"
                          + " ORDER BY l_sort_order"
     ;
@@ -332,13 +332,13 @@ QList<int>PLMDbTree::listVisibleId()
 QList<int>PLMDbTree::listTrash()
 
 //
-//  Returns a list of deleted sheet ids for the current version
+//  Returns a list of trashed sheet ids for the current version
 //
 {
     QSqlQuery query(m_sqlDb);
     QString   queryStr = "SELECT " + m_idName
                          + " FROM " + m_tableName
-                         + " WHERE b_deleted = 1"
+                         + " WHERE b_trashed = 1"
                          + "and l_version = :ver"
                          + " ORDER BY l_sort_order"
     ;

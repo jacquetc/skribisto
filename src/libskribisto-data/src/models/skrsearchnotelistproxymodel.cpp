@@ -5,7 +5,7 @@
 
 SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel(QObject *parent) :
     QSortFilterProxyModel(parent),
-    m_showDeletedFilter(true), m_showNotDeletedFilter(true), m_textFilter(""),
+    m_showTrashedFilter(true), m_showNotTrashedFilter(true), m_textFilter(""),
     m_projectIdFilter(-2)
 
 {
@@ -111,14 +111,14 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
         result = false;
     }
 
-    // deleted filtering :
-    if (result && (item->data(PLMNoteItem::Roles::DeletedRole).toBool() == true)) {
-        result = m_showDeletedFilter;
+    // trashed filtering :
+    if (result && (item->data(PLMNoteItem::Roles::TrashedRole).toBool() == true)) {
+        result = m_showTrashedFilter;
     }
 
-    // 'not deleted' filtering :
-    if (result && (item->data(PLMNoteItem::Roles::DeletedRole).toBool() == false)) {
-        result = m_showNotDeletedFilter;
+    // 'not trashed' filtering :
+    if (result && (item->data(PLMNoteItem::Roles::TrashedRole).toBool() == false)) {
+        result = m_showNotTrashedFilter;
     }
 
 
@@ -151,11 +151,11 @@ void SKRSearchNoteListProxyModel::clearFilters()
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
 
-    m_showDeletedFilter = true;
-    emit showDeletedFilterChanged(m_showDeletedFilter);
+    m_showTrashedFilter = true;
+    emit showTrashedFilterChanged(m_showTrashedFilter);
 
-    m_showNotDeletedFilter = true;
-    emit showNotDeletedFilterChanged(m_showNotDeletedFilter);
+    m_showNotTrashedFilter = true;
+    emit showNotTrashedFilterChanged(m_showNotTrashedFilter);
 
     m_textFilter = "";
     emit textFilterChanged(m_textFilter);
@@ -260,20 +260,20 @@ void SKRSearchNoteListProxyModel::setTextFilter(const QString& value)
     this->invalidateFilter();
 }
 
-void SKRSearchNoteListProxyModel::setShowNotDeletedFilter(bool showNotDeletedFilter)
+void SKRSearchNoteListProxyModel::setShowNotTrashedFilter(bool showNotTrashedFilter)
 {
-    m_showNotDeletedFilter = showNotDeletedFilter;
+    m_showNotTrashedFilter = showNotTrashedFilter;
 
-    emit showNotDeletedFilterChanged(showNotDeletedFilter);
+    emit showNotTrashedFilterChanged(showNotTrashedFilter);
 
     this->invalidateFilter();
 }
 
-void SKRSearchNoteListProxyModel::setShowDeletedFilter(bool showDeletedFilter)
+void SKRSearchNoteListProxyModel::setShowTrashedFilter(bool showTrashedFilter)
 {
-    m_showDeletedFilter = showDeletedFilter;
+    m_showTrashedFilter = showTrashedFilter;
 
-    emit showDeletedFilterChanged(showDeletedFilter);
+    emit showTrashedFilterChanged(showTrashedFilter);
 
     this->invalidateFilter();
 }

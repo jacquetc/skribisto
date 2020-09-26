@@ -27,7 +27,7 @@
 PLMSheetProxyModel::PLMSheetProxyModel(QObject *parent) : QSortFilterProxyModel(parent)
 {
     this->setSourceModel(plmmodels->sheetModel());
-    this->setDeletedFilter(false);
+    this->setTrashedFilter(false);
 }
 
 Qt::ItemFlags PLMSheetProxyModel::flags(const QModelIndex& index) const
@@ -83,9 +83,9 @@ bool PLMSheetProxyModel::setData(const QModelIndex& index, const QVariant& value
 // --------------------------------------------------------------
 
 
-void PLMSheetProxyModel::setDeletedFilter(bool showDeleted)
+void PLMSheetProxyModel::setTrashedFilter(bool showTrashed)
 {
-    m_showDeleted = showDeleted;
+    m_showTrashed = showTrashed;
     this->invalidate();
 }
 
@@ -97,10 +97,10 @@ bool PLMSheetProxyModel::filterAcceptsRow(int                sourceRow,
     if (!index.isValid()) {
         return false;
     }
-    bool indexDeleted =
-        sourceModel()->data(index, PLMSheetItem::Roles::DeletedRole).toBool();
+    bool indexTrashed =
+        sourceModel()->data(index, PLMSheetItem::Roles::TrashedRole).toBool();
 
-    if (indexDeleted == m_showDeleted) return true;
+    if (indexTrashed == m_showTrashed) return true;
 
     return false;
 }

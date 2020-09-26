@@ -68,7 +68,7 @@ Item {
                     ToolButton {
                         id: listMenuToolButton
                         flat: true
-                        text: qsTr("Deleted menu")
+                        text: qsTr("Trashed menu")
                         display: AbstractButton.IconOnly
                     }
                 }

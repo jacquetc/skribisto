@@ -26,10 +26,10 @@
 
 PLMSheetListProxyModel::PLMSheetListProxyModel(QObject *parent) : QSortFilterProxyModel(
         parent),
-    m_showDeletedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-2)
+    m_showTrashedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-2)
 {
     this->setSourceModel(plmmodels->sheetListModel());
-    this->setShowDeletedFilter(false);
+    this->setShowTrashedFilter(false);
 
 
     connect(
@@ -119,10 +119,10 @@ void PLMSheetListProxyModel::setParentFilter(int projectId, int parentId)
 // --------------------------------------------------------------
 
 
-void PLMSheetListProxyModel::setShowDeletedFilter(bool showDeleted)
+void PLMSheetListProxyModel::setShowTrashedFilter(bool showTrashed)
 {
-    m_showDeletedFilter = showDeleted;
-    emit showDeletedFilterChanged(m_showDeletedFilter);
+    m_showTrashedFilter = showTrashed;
+    emit showTrashedFilterChanged(m_showTrashedFilter);
 
     this->invalidateFilter();
 }
@@ -165,13 +165,13 @@ bool PLMSheetListProxyModel::filterAcceptsRow(int                sourceRow,
         }
     }
 
-    // deleted filtering :
+    // trashed filtering :
 
     if (result &&
-        (item->data(PLMSheetItem::Roles::DeletedRole).toBool() == m_showDeletedFilter)) {
+        (item->data(PLMSheetItem::Roles::TrashedRole).toBool() == m_showTrashedFilter)) {
         QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
 
-        // qDebug() << "deleted : " << string;
+        // qDebug() << "trashed : " << string;
         result = true;
     }
     else {

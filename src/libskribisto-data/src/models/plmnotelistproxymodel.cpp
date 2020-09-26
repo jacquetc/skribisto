@@ -26,10 +26,10 @@
 
 PLMNoteListProxyModel::PLMNoteListProxyModel(QObject *parent) : QSortFilterProxyModel(
         parent),
-    m_showDeletedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-2)
+    m_showTrashedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-2)
 {
     this->setSourceModel(plmmodels->noteListModel());
-    this->setShowDeletedFilter(false);
+    this->setShowTrashedFilter(false);
 
 
     connect(
@@ -119,10 +119,10 @@ void PLMNoteListProxyModel::setParentFilter(int projectId, int parentId)
 // --------------------------------------------------------------
 
 
-void PLMNoteListProxyModel::setShowDeletedFilter(bool showDeleted)
+void PLMNoteListProxyModel::setShowTrashedFilter(bool showTrashed)
 {
-    m_showDeletedFilter = showDeleted;
-    emit showDeletedFilterChanged(m_showDeletedFilter);
+    m_showTrashedFilter = showTrashed;
+    emit showTrashedFilterChanged(m_showTrashedFilter);
 
     this->invalidateFilter();
 }
@@ -165,13 +165,13 @@ bool PLMNoteListProxyModel::filterAcceptsRow(int                sourceRow,
         }
     }
 
-    // deleted filtering :
+    // trashed filtering :
 
     if (result &&
-        (item->data(PLMNoteItem::Roles::DeletedRole).toBool() == m_showDeletedFilter)) {
+        (item->data(PLMNoteItem::Roles::TrashedRole).toBool() == m_showTrashedFilter)) {
         QString string = item->data(PLMNoteItem::Roles::NameRole).toString();
 
-        // qDebug() << "deleted : " << string;
+        // qDebug() << "trashed : " << string;
         result = true;
     }
     else {

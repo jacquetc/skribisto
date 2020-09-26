@@ -22,6 +22,7 @@ Item {
     property alias showPropertiesCheckBox: showPropertiesCheckBox
     property alias resetDockConfButton: resetDockConfButton
     property alias allowSwipeBetweenTabsCheckBox: allowSwipeBetweenTabsCheckBox
+    property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
 
     Pane {
         id: pane2
@@ -223,7 +224,20 @@ Item {
                         }
                     }
                 }
-
+                
+                GroupBox {
+                    id: specialEPaperGroupBox
+                    width: 200
+                    height: 200
+                    focusPolicy: Qt.TabFocus
+                    title: qsTr("Special E-Paper")
+                    
+                    CheckBox {
+                        id: setTextCursorUnblinkingCheckBox
+                        text: qsTr("Set the text cursor unblinking")
+                    }
+                }
+                
                 GroupBox {
                     id: advancedGroupBox
                     width: 200
@@ -252,6 +266,7 @@ Item {
                         }
                     }
                 }
+                
             }
         }
     }

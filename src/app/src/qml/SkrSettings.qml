@@ -36,6 +36,12 @@ QtObject {
 
     }
 
+    property Settings ePaperSettings: Settings{
+        category: "ePaper"
+        property bool textCursorUnblinking: false
+
+    }
+
     property Settings welcomeSettings: Settings{
         category: "welcome"
         property bool createEmptyProjectAtStart: false

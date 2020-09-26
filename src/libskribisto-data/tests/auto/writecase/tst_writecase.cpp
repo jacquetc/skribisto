@@ -37,8 +37,8 @@ private Q_SLOTS:
     void getTitle();
     void setIndent();
     void getIndent();
-    void setDeleted();
-    void getDeleted();
+    void setTrashed();
+    void getTrashed();
     void setContent();
     void getContent();
     void setCreationDate();
@@ -231,27 +231,27 @@ void WriteCase::getIndent()
 
 // ------------------------------------------------------------------------------------
 
-void WriteCase::setDeleted()
+void WriteCase::setTrashed()
 {
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(deletedChanged(int,int,bool)));
+    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(trashedChanged(int,int,bool)));
 
-    plmdata->sheetHub()->setDeleted(m_currentProjectId, 2, true);
+    plmdata->sheetHub()->setTrashed(m_currentProjectId, 2, true);
     QVERIFY(spy.count() > 1);
 
     // make sure the signal was emitted exactly one time
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
 
     QVERIFY(arguments.at(2).toBool() == true);
-    bool value = plmdata->sheetHub()->getDeleted(m_currentProjectId, 2);
+    bool value = plmdata->sheetHub()->getTrashed(m_currentProjectId, 2);
 
     QCOMPARE(value, true);
 }
 
 // ------------------------------------------------------------------------------------
 
-void WriteCase::getDeleted()
+void WriteCase::getTrashed()
 {
-    bool value = plmdata->sheetHub()->getDeleted(m_currentProjectId, 1);
+    bool value = plmdata->sheetHub()->getTrashed(m_currentProjectId, 1);
 
     QCOMPARE(value, false);
 }

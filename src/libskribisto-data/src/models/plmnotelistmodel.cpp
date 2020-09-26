@@ -27,10 +27,10 @@ PLMNoteListModel::PLMNoteListModel(QObject *parent)
             &PLMNoteListModel::refreshAfterDataMove);
 
     connect(plmdata->sheetHub(),
-            &PLMNoteHub::deletedChanged, // careful, paper is deleted = true,
+            &PLMNoteHub::trashedChanged, // careful, paper is trashed = true,
                                          // not a true removal
             this,
-            &PLMNoteListModel::refreshAfterDeletedStateChanged);
+            &PLMNoteListModel::refreshAfterTrashedStateChanged);
 
     connect(plmdata->projectHub(),
             &PLMProjectHub::projectIsBackupChanged,
@@ -165,7 +165,7 @@ QVariant PLMNoteListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-    if (role == PLMNoteItem::Roles::DeletedRole) {
+    if (role == PLMNoteItem::Roles::TrashedRole) {
         return item->data(role);
     }
 
@@ -234,8 +234,8 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
 
             break;
 
-        case PLMNoteItem::Roles::DeletedRole:
-            error = plmdata->noteHub()->setDeleted(projectId, paperId, value.toBool());
+        case PLMNoteItem::Roles::TrashedRole:
+            error = plmdata->noteHub()->setTrashed(projectId, paperId, value.toBool());
             break;
 
         case PLMNoteItem::Roles::CreationDateRole:
@@ -338,7 +338,7 @@ QHash<int, QByteArray>PLMNoteListModel::roleNames() const {
     roles[PLMNoteItem::Roles::UpdateDateRole]      = "updateDate";
     roles[PLMNoteItem::Roles::ContentDateRole]     = "contentDate";
     roles[PLMNoteItem::Roles::HasChildrenRole]     = "hasChildren";
-    roles[PLMNoteItem::Roles::DeletedRole]         = "deleted";
+    roles[PLMNoteItem::Roles::TrashedRole]         = "trashed";
     roles[PLMNoteItem::Roles::WordCountRole]       = "wordCount";
     roles[PLMNoteItem::Roles::CharCountRole]       = "charCount";
     roles[PLMNoteItem::Roles::ProjectIsBackupRole] = "projectIsBackup";
@@ -566,18 +566,18 @@ void PLMNoteListModel::refreshAfterDataMove(int sourceProjectId,
 
 // --------------------------------------------------------------------
 ///
-/// \brief PLMNoteListModel::refreshAfterDeletedStateChanged
+/// \brief PLMNoteListModel::refreshAfterTrashedStateChanged
 /// \param projectId
 /// \param paperId
-/// \param newDeletedState
-/// careful, paper is deleted = true, not a true removal
-void PLMNoteListModel::refreshAfterDeletedStateChanged(int  projectId,
+/// \param newTrashedState
+/// careful, paper is trashed = true, not a true removal
+void PLMNoteListModel::refreshAfterTrashedStateChanged(int  projectId,
                                                        int  paperId,
-                                                       bool newDeletedState)
+                                                       bool newTrashedState)
 {
     Q_UNUSED(projectId)
     Q_UNUSED(paperId)
-    Q_UNUSED(newDeletedState)
+    Q_UNUSED(newTrashedState)
 
     for (PLMNoteItem *item : m_allNoteItems) {
         item->invalidateData(PLMNoteItem::Roles::SortOrderRole);
@@ -691,12 +691,12 @@ void PLMNoteListModel::connectToPLMDataSignals()
                                        PLMNoteItem::Roles::UpdateDateRole);
     }, Qt::UniqueConnection);
     m_dataConnectionsList << this->connect(plmdata->noteHub(),
-                                           &PLMNoteHub::deletedChanged, this,
+                                           &PLMNoteHub::trashedChanged, this,
                                            [this](int projectId, int paperId,
                                                   bool value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMNoteItem::Roles::DeletedRole);
+                                       PLMNoteItem::Roles::TrashedRole);
     }, Qt::UniqueConnection);
     m_dataConnectionsList << this->connect(plmdata->notePropertyHub(),
                                            &PLMPropertyHub::propertyChanged, this,

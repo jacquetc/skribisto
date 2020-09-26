@@ -514,6 +514,7 @@ SettingsPageForm {
         target: SkrSettings.saveSettings
         property: "saveEveryCheckBoxChecked"
         value: saveEveryCheckBox.checked
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
     saveEveryCheckBox.onCheckedChanged:{
@@ -558,7 +559,17 @@ SettingsPageForm {
         }
     }
 
+    // --------------------------------------------
+    // ---- special E-Paper --------------------------------
+    // --------------------------------------------
 
+setTextCursorUnblinkingCheckBox.checked: SkrSettings.ePaperSettings.textCursorUnblinking
+Binding {
+    target: SkrSettings.ePaperSettings
+    property: "textCursorUnblinking"
+    value: setTextCursorUnblinkingCheckBox.checked
+    restoreMode: Binding.RestoreBindingOrValue
+}
     // --------------------------------------------
     // ---- advanced --------------------------------
     // --------------------------------------------

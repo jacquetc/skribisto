@@ -8,7 +8,7 @@ NavigationForm {
     property int minimumHeight: 300
 
     property var treeListViewProxyModel
-    property var deletedListViewProxyModel
+    property var trashedListViewProxyModel
     property int openedProjectId
     property int openedPaperId
 
@@ -31,7 +31,7 @@ NavigationForm {
                 treeListView.openDocument.connect(root.openDocument)
                 treeListView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
                 treeListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
-                treeListView.showDeletedList.connect(root.pushDeletedListView)
+                treeListView.showTrashedList.connect(root.pushTrashedListView)
 
             }
 
@@ -39,31 +39,31 @@ NavigationForm {
     }
 
     //-----------------------------------------------------------------------
-    //------list of deleted items----------------------------------------------------
+    //------list of trashed items----------------------------------------------------
     //-----------------------------------------------------------------------
 
-    function pushDeletedListView() {
-        stackView.push(deletedListViewComponent)
+    function pushTrashedListView() {
+        stackView.push(trashedListViewComponent)
     }
 
-    function popDeletedListView() {
-        console.log("popDeletedListView")
+    function popTrashedListView() {
+        console.log("popTrashedListView")
         stackView.pop()
     }
 
     Component {
-        id:deletedListViewComponent
+        id:trashedListViewComponent
 
-        DeletedListView {
-            id: deletedListView
-            proxyModel: root.deletedListViewProxyModel
-            model: root.deletedListViewProxyModel
+        TrashedListView {
+            id: trashedListView
+            proxyModel: root.trashedListViewProxyModel
+            model: root.trashedListViewProxyModel
 
             Component.onCompleted: {
-                deletedListView.openDocument.connect(root.openDocument)
-                deletedListView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
-                deletedListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
-                deletedListView.goBack.connect(root.popDeletedListView)
+                trashedListView.openDocument.connect(root.openDocument)
+                trashedListView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
+                trashedListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
+                trashedListView.goBack.connect(root.popTrashedListView)
 
             }
         }

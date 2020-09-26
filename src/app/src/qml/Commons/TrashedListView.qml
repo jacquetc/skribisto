@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import eu.skribisto.projecthub 1.0
 
-DeletedListViewForm {
+TrashedListViewForm {
     id: root
 
     property var proxyModel
@@ -15,7 +15,6 @@ DeletedListViewForm {
     signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openDocumentInNewTab(int projectId, int paperId)
     signal openDocumentInNewWindow(int projectId, int paperId)
-    //TODO: implement it in context menu
 
 
 
@@ -182,10 +181,11 @@ DeletedListViewForm {
 
         Action {
             text: qsTr("Empty the trash")
+            enabled: navigationMenu.opened
             shortcut: "Ctrl+Shift+Del"
             icon.name: "edit-delete-shred"
             onTriggered: {
-
+                //TODO: fill that
             }
         }
 
@@ -205,7 +205,8 @@ DeletedListViewForm {
             width: 100
         }
         onTriggered: {
-
+            //TODO: fill that
+            console.log('restore', currentProject, currentPaperId)
 
         }
     }
@@ -262,13 +263,13 @@ DeletedListViewForm {
     //used to differenciante tapCount between ItemSelectionModel
     property int tapCountIndex: -2
 
-//    Keys.priority: Keys.AfterItem
+    //    Keys.priority: Keys.AfterItem
 
-//    Keys.onPressed: {
-//        console.log("treeview key pressed")
+    //    Keys.onPressed: {
+    //        console.log("treeview key pressed")
 
-//        event.accepted = true
-//    }
+    //        event.accepted = true
+    //    }
 
     // TreeView item :
     Component {
@@ -328,6 +329,24 @@ DeletedListViewForm {
             }
             Keys.priority: Keys.AfterItem
 
+            Keys.onShortcutOverride: {
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
+                      event.accepted = true
+                                     }
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
+                      event.accepted = true
+                                     }
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
+                      event.accepted = true
+                                     }
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
+                      event.accepted = true
+                                     }
+                if( event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
+                      event.accepted = true
+                                     }
+            }
+
             Keys.onPressed: {
                 if (event.key === Qt.Key_Return){
                     console.log("Return key pressed")
@@ -355,7 +374,7 @@ DeletedListViewForm {
                 width: delegateRoot.width
                 height: 40
 
-                color: !tapHandler.enabled ? "lightsteelblue" : "white"
+
                 Behavior on color {
                     ColorAnimation {
                         duration: 100
@@ -373,27 +392,8 @@ DeletedListViewForm {
 
                 TapHandler {
                     id: tapHandler
-                    onTapCountChanged: {
-                        //                        console.log("tap", tapHandler.tapCount)
-                        //                        console.log("tap", tapCountTimer.running)
 
 
-                        //                        if(tapCount == 2 & tapCountTimer.running & tapCountIndex === model.index){
-                        //                            //tripleTap
-                        //                            console.log("tripletap")
-                        //                            tapCountTimer.stop()
-                        //                            delegateRoot.editName()
-                        //                            return
-                        //                        }
-                        //                        if(tapCount == 1){
-                        //                            tapCountIndex = model.index
-                        //                            tapCountTimer.start()
-                        //                            return
-
-                        //                        }
-
-
-                    }
 
                     onSingleTapped: {
                         listView.currentIndex = model.index
@@ -408,15 +408,8 @@ DeletedListViewForm {
                         eventPoint.accepted = true
                     }
 
-                    onLongPressed: { // needed to activate the grab handler
-                        enabled = false
-                    }
                 }
-                Timer{
-                    id: tapCountTimer
-                    interval: 200
-                    repeat: false
-                }
+
                 TapHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
@@ -439,56 +432,6 @@ DeletedListViewForm {
                     }
                 }
 
-                Action {
-                    id: goToChildAction
-                    //shortcut: "Right"
-                    enabled: {
-                        if (!listView.enabled){
-                            return false
-                        }
-
-                        if (listView.focus === true && listView.currentIndex === model.index) {
-                            return true
-                        } else if (hoverHandler.hovered) {
-                            return true
-                        } else
-                            return false
-                    }
-
-                    text: model.hasChildren ? ">" : "+"
-                    onTriggered: {
-                        console.log("goToChildAction triggered")
-                        //var _delegateRoot = delegateRoot
-                        //                        var _titleTextField = titleTextField
-                        var _proxyModel = proxyModel
-                        currentProject = model.projectId
-                        currentParent = model.paperId
-                        var _currentProject = currentProject
-                        var _currentParent = currentParent
-                        var _index = model.index
-
-                        var _listView = listView
-
-
-                        // change level
-                        _proxyModel.setParentFilter(_currentProject,
-                                                    _currentParent)
-                        _proxyModel.addHistory(_currentProject, _index)
-
-                        // create a child if none present
-                        if (!_proxyModel.hasChildren(_currentProject,
-                                                     _currentParent)) {
-                            _proxyModel.addItemAtEnd(_currentProject,
-                                                     _currentParent, 0)
-
-                            // edit it :
-                            _listView.itemAtIndex(0).editName()
-
-
-                        }
-
-                    }
-                }
                 Action {
                     id: openDocumentAction
                     //shortcut: "Return"
@@ -528,6 +471,27 @@ DeletedListViewForm {
 
                     }
                 }
+
+
+                Action {
+                    id: openDocumentInNewWindowAction
+                    //shortcut: "Alt+Return"
+                    enabled: {
+                        if (listView.enabled && titleTextField.visible === false
+                                && listView.currentIndex === model.index) {
+                            return true
+                        } else
+                            return false
+                    }
+
+                    text: qsTr("Open document in a window")
+                    onTriggered: {
+                        root.openDocumentInNewWindow(model.projectId,
+                                                     model.paperId)
+
+                    }
+                }
+
                 ColumnLayout{
                     id: columnLayout3
                     anchors.fill: parent
@@ -540,11 +504,11 @@ DeletedListViewForm {
                         Layout.fillWidth: true
 
                         Rectangle {
-                            id: deletedIndicator
+                            id: trashedIndicator
                             color: "#b50003"
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
-                            visible: model.deleted
+                            visible: model.trashed
                         }
                         Rectangle {
                             id: currentItemIndicator
@@ -640,7 +604,7 @@ DeletedListViewForm {
                                     }
 
                                     //Keys.priority: Keys.AfterItem
-
+                                    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
                                     Keys.onPressed: {
                                         if (event.key === Qt.Key_Return){
                                             console.log("Return key pressed title")
@@ -649,6 +613,12 @@ DeletedListViewForm {
                                         }
                                         if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
                                             console.log("Ctrl Return key pressed title")
+                                            editingFinished()
+                                            event.accepted = true
+                                        }
+                                        if (event.key === Qt.Key_Escape){
+                                            console.log("Escape key pressed title")
+                                            delegateRoot.state = ""
                                             event.accepted = true
                                         }
                                     }
@@ -833,6 +803,13 @@ DeletedListViewForm {
                     hoveringChangingTheCurrentItemAllowed = true
 
                 }
+                MenuItem {
+                    id: restoreMenuItem
+                    action: restoreAction
+
+                }
+
+
 
                 Action {
                     id: openPaperAction
@@ -864,12 +841,28 @@ DeletedListViewForm {
                     }
                 }
 
+                Action {
+                    id: openPaperInNewWindowAction
+                    text: qsTr("Open in new window")
+                    //shortcut: "Alt+Return"
+                    icon {
+                        name: "window-new"
+                    }
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
+                    onTriggered: {
+                        console.log("from trash: open paper in new window action", model.projectId,
+                                    model.paperId)
+                        openDocumentInNewWindowAction.trigger()
+                    }
+                }
+
+
                 MenuSeparator {}
 
                 Action {
                     id: renameAction
                     text: qsTr("Rename")
-                    shortcut: "F2"
+                    //shortcut: "F2"
                     icon {
                         name: "edit-rename"
                     }
@@ -886,7 +879,7 @@ DeletedListViewForm {
                 Action {
 
                     text: qsTr("Copy")
-                    shortcut: StandardKey.Copy
+                    //shortcut: StandardKey.Copy
                     icon {
                         name: "edit-copy"
                     }
@@ -898,93 +891,12 @@ DeletedListViewForm {
                         proxyModel.copy(model.projectId, model.paperId)
                     }
                 }
-                Action {
-
-                    text: qsTr("Cut")
-                    shortcut: StandardKey.Cut
-                    icon {
-                        name: "edit-cut"
-                    }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled
-
-                    onTriggered: {
-                        console.log("from deleted: cut action", model.projectId,
-                                    model.paperId)
-                        proxyModel.cut(model.projectId, model.paperId, -2)
-                    }
-                }
-
-                MenuSeparator {}
-                Action {
-                    id: addBeforeAction
-                    text: qsTr("Add before")
-                    shortcut: "Ctrl+Shift+N"
-                    icon {
-                        name: "document-new"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-                    onTriggered: {
-                        //TODO: fill that
-                        console.log("from deleted: add before action", model.projectId,
-                                    model.paperId)
-                    }
-                }
-
-                Action {
-                    id: addAfterAction
-                    text: qsTr("Add after")
-                    shortcut: "Ctrl+N"
-                    icon {
-                        name: "document-new"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-                    onTriggered: {
-                        //TODO: fill that
-                        console.log("from deleted: add after action", model.projectId,
-                                    model.paperId)
-                    }
-                }
 
                 MenuSeparator {}
 
                 Action {
-                    id: moveUpAction
-                    text: qsTr("Move up")
-                    shortcut: "Ctrl+Up"
-                    icon {
-                        name: "object-order-raise"
-                    }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled
-                             && model.index !== 0
-                    onTriggered: {
-                        console.log("from deleted: move up action", model.projectId,
-                                    model.paperId)
-                        proxyModel.moveUp(model.projectId, model.paperId,
-                                          model.index)
-                    }
-                }
-
-                Action {
-
-                    text: qsTr("Move down")
-                    shortcut: "Ctrl+Down"
-                    icon {
-                        name: "object-order-lower"
-                    }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled
-                             && model.index !== visualModel.items.count - 1
-
-                    onTriggered: {
-                        console.log("from deleted: move down action", model.projectId,
-                                    model.paperId)
-                        proxyModel.moveDown(model.projectId, model.paperId,
-                                            model.index)
-                    }
-                }
-                MenuSeparator {}
-                Action {
-                    text: qsTr("Delete")
-                    shortcut: "Del"
+                    text: qsTr("Delete definitively")
+                    //shortcut: "Del"
                     icon {
                         name: "edit-delete"
                     }
@@ -992,7 +904,7 @@ DeletedListViewForm {
                     onTriggered: {
                         console.log("from deleted: delete action", model.projectId,
                                     model.paperId)
-                        model.deleted = true
+
 
                     }
                 }

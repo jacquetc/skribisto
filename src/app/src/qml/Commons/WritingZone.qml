@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
 import QtQml 2.15
 import ".."
 import eu.skribisto.documenthandler 1.0
@@ -87,9 +88,50 @@ WritingZoneForm {
     //    }
 
 
+    //-----------------------------------------------------------
+    //----- special non-blinking cursor : -----------------------
+    //-----------------------------------------------------------
 
-    // context menu :
+    Connections {
+        target: SkrSettings.ePaperSettings
+        function onTextCursorUnblinkingChanged() {
+            determineTextCursorUnblinkingSetting()
+        }
+    }
 
+    //-----------------------------------------------------------
+
+    function determineTextCursorUnblinkingSetting(){
+        if(SkrSettings.ePaperSettings.textCursorUnblinking){
+            textArea.cursorDelegate = unblinkingCursorComponent
+        }
+        else {
+            textArea.cursorDelegate = null
+        }
+    }
+
+    //-----------------------------------------------------------
+
+    Component {
+        id: unblinkingCursorComponent
+        RowLayout {
+            width: 4
+
+            Rectangle {
+                id: rectangle
+                color: textArea.activeFocus ? "#000000" : "transparent"
+                Layout.preferredWidth: 4
+                Layout.fillHeight: true
+            }
+
+
+        }
+    }
+
+
+    //-----------------------------------------------------------
+    // ---------context menu :----------------------------------
+    //-----------------------------------------------------------
 
     textArea.onPressed: {
         if(event.buttons === Qt.RightButton){
@@ -294,6 +336,9 @@ WritingZoneForm {
             skrEditMenuSignalHub.subscribe(cutItem.objectName)
             skrEditMenuSignalHub.subscribe(copyItem.objectName)
             skrEditMenuSignalHub.subscribe(pasteItem.objectName)
+
+
+            determineTextCursorUnblinkingSetting()
         }
     }
 

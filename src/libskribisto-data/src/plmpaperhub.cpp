@@ -288,7 +288,7 @@ QString PLMPaperHub::getContent(int projectId, int paperId) const
 
 // ------------------------------------------------------------
 
-PLMError PLMPaperHub::setDeleted(int projectId, int paperId, bool newDeletedState)
+PLMError PLMPaperHub::setTrashed(int projectId, int paperId, bool newTrashedState)
 {
     int target_sort_order = getSortOrder(projectId, paperId);
     int target_indent     = getIndent(projectId, paperId);
@@ -299,8 +299,8 @@ PLMError PLMPaperHub::setDeleted(int projectId, int paperId, bool newDeletedStat
     where.insert("l_indent >",     target_indent);
     where.insert("l_sort_order >", target_sort_order);
 
-    if (newDeletedState) {
-        where.insert("b_deleted =", 0);
+    if (newTrashedState) {
+        where.insert("b_trashed =", 0);
     }
 
     PLMSqlQueries queries(projectId, m_tableName);
@@ -349,15 +349,15 @@ PLMError PLMPaperHub::setDeleted(int projectId, int paperId, bool newDeletedStat
 
         // children deletion (or recovery)
         for (int& _id : chilrenIdList) {
-            IFOKDO(error, set(projectId, _id, "b_deleted", newDeletedState));
-            emit deletedChanged(projectId, _id, newDeletedState);
+            IFOKDO(error, set(projectId, _id, "b_trashed", newTrashedState));
+            emit trashedChanged(projectId, _id, newTrashedState);
         }
     }
 
     // TODO:  deletion
-    IFOKDO(error, set(projectId, paperId, "b_deleted", newDeletedState));
+    IFOKDO(error, set(projectId, paperId, "b_trashed", newTrashedState));
     IFOK(error) {
-        emit deletedChanged(projectId, paperId, newDeletedState);
+        emit trashedChanged(projectId, paperId, newTrashedState);
         emit projectModified(projectId);
     }
     return error;
@@ -365,10 +365,10 @@ PLMError PLMPaperHub::setDeleted(int projectId, int paperId, bool newDeletedStat
 
 // ------------------------------------------------------------
 
-bool PLMPaperHub::getDeleted(int projectId, int paperId) const
+bool PLMPaperHub::getTrashed(int projectId, int paperId) const
 {
     // TODO: do recursive deletion
-    return get(projectId, paperId, "b_deleted").toBool();
+    return get(projectId, paperId, "b_trashed").toBool();
 }
 
 // ------------------------------------------------------------
@@ -468,8 +468,8 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
 
     // verify indent of child
     if (indent == possibleFirstChildIndent - 1) {
-        // verify if at least one child is not deleted
-        bool haveOneNotDeletedChild = false;
+        // verify if at least one child is not trashed
+        bool haveOneNotTrashedChild = false;
         int  firstChildIndex        = idList.indexOf(possibleFirstChildId);
 
         for (int i = firstChildIndex; i < idList.count(); i++) {
@@ -481,13 +481,13 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
             }
 
             if (indent == possibleFirstChildIndent) {
-                if (getDeleted(projectId, childId) == false) {
-                    haveOneNotDeletedChild = true;
+                if (getTrashed(projectId, childId) == false) {
+                    haveOneNotTrashedChild = true;
                 }
             }
         }
 
-        if (haveOneNotDeletedChild) {
+        if (haveOneNotTrashedChild) {
             return true;
         }
         return false;
@@ -509,7 +509,7 @@ int PLMPaperHub::getTopPaperId(int projectId) const
     QList<int> list = this->getAllIds(projectId);
 
     for (int id : list) {
-        if (!this->getDeleted(projectId, id)) {
+        if (!this->getTrashed(projectId, id)) {
             result = id;
             break;
         }

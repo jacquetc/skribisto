@@ -34,7 +34,7 @@ QHash<QString, QVariant>PLMSheetHub::getSheetData(int projectId, int sheetId) co
 
     fieldNames << "l_sheet_id" << "l_dna" << "l_sort_order" << "l_indent" <<
         "l_version" << "t_title" << "dt_created" << "dt_updated" << "dt_content" <<
-        "b_deleted";
+        "b_trashed";
     PLMSqlQueries queries(projectId, m_tableName);
 
     error = queries.getMultipleValues(sheetId, fieldNames, var);
