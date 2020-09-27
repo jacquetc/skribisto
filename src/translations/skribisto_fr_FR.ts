@@ -2,6 +2,61 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fr_FR">
 <context>
+    <name>CheckableTree</name>
+    <message>
+        <source>Level %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>label: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished">élément de navigation</translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished">Ouvrir un document dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>This project is a backup</source>
+        <translation type="unfinished">Ce projet est une copie de secours</translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished">Entrez un nom</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished">Ouvrir</translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished">Ouvrir dans un nouvel onglet</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished">Ouvrir dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Renommer</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Copier</translation>
+    </message>
+    <message>
+        <source>Delete definitively</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DeletedListView</name>
     <message>
         <source>Trash: %1</source>
@@ -404,6 +459,80 @@
     <message>
         <source>Behavior</source>
         <translation>Comportement</translation>
+    </message>
+</context>
+<context>
+    <name>RestoreListView</name>
+    <message>
+        <source>Trash: %1</source>
+        <translation type="obsolete">Corbeille: %1</translation>
+    </message>
+    <message>
+        <source>Empty the trash</source>
+        <translation type="unfinished">Vider la corbeille</translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>label:</source>
+        <translation type="obsolete">libelé:</translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="obsolete">élément de navigation</translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="obsolete">Ouvrir un document dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>This project is a backup</source>
+        <translation type="obsolete">Ce projet est une copie de secours</translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="obsolete">Entrez un nom</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="obsolete">Ouvrir</translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="obsolete">Ouvrir dans un nouvel onglet</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="obsolete">Ouvrir dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="obsolete">Renommer</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="obsolete">Copier</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation type="unfinished">Restaurer</translation>
+    </message>
+</context>
+<context>
+    <name>RestoreListViewForm.ui</name>
+    <message>
+        <source>Restore a document</source>
+        <translation type="unfinished">Restaurer un document</translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Trashed menu</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

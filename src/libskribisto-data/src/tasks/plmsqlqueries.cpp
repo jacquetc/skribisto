@@ -216,7 +216,7 @@ bool PLMSqlQueries::idExists(int id) const
 /// \param whereValue
 /// \param sorted
 /// \return
-/// You can use "id" as 'where'
+/// You can use "id" as 'where' ; result QHash isn't garantied to keep the same order ! Use getSortedIds to have the sort order
 PLMError PLMSqlQueries::getValueByIds(const QString& valueName,
                                       QHash<int, QVariant>& result,
                                       const QString& where,

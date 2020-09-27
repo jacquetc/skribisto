@@ -58,7 +58,7 @@ QHash<int, QString>PLMPaperHub::getAllTitles(int projectId) const
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getValueByIds("t_title", out);
+    error = queries.getValueByIds("t_title", out, "", QVariant(), true);
     IFOK(error) {
         result = HashIntQVariantConverter::convertToIntQString(out);
     }
@@ -85,7 +85,7 @@ QHash<int, int>PLMPaperHub::getAllIndents(int projectId) const
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getValueByIds("l_indent", out);
+    error = queries.getValueByIds("l_indent", out, "", QVariant(), true);
     IFOK(error) {
         result = HashIntQVariantConverter::convertToIntInt(out);
     }
@@ -158,7 +158,7 @@ QHash<int, int>PLMPaperHub::getAllSortOrders(int projectId) const
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getValueByIds("l_sort_order", out);
+    error = queries.getValueByIds("l_sort_order", out, "", QVariant(), true);
     IFOK(error) {
         result = HashIntQVariantConverter::convertToIntInt(out);
     }
@@ -287,75 +287,61 @@ QString PLMPaperHub::getContent(int projectId, int paperId) const
 }
 
 // ------------------------------------------------------------
+PLMError PLMPaperHub::untrashOnlyOnePaper(int projectId, int paperId) {
+    PLMError error = set(projectId, paperId, "b_trashed", false);
 
-PLMError PLMPaperHub::setTrashed(int projectId, int paperId, bool newTrashedState)
+    IFOKDO(error, this->setTrashedDateToNull(projectId, paperId));
+
+    IFOK(error) {
+        emit trashedChanged(projectId, paperId, false);
+    }
+    return error;
+}
+
+// ------------------------------------------------------------
+PLMError PLMPaperHub::setTrashedWithChildren(int  projectId,
+                                             int  paperId,
+                                             bool newTrashedState)
 {
-    int target_sort_order = getSortOrder(projectId, paperId);
-    int target_indent     = getIndent(projectId, paperId);
+    PLMError error;
 
-    QHash<int, QVariant> result;
-    QHash<QString, QVariant> where;
+    QList<int> childrenIdList = this->getAllChildren(projectId, paperId);
 
-    where.insert("l_indent >",     target_indent);
-    where.insert("l_sort_order >", target_sort_order);
 
-    if (newTrashedState) {
-        where.insert("b_trashed =", 0);
-    }
+    // children deletion (or recovery)
+    for (int& _id : childrenIdList) {
+        IFOKDO(error, set(projectId, _id, "b_trashed", newTrashedState));
 
-    PLMSqlQueries queries(projectId, m_tableName);
-    PLMError error = queries.getValueByIdsWhere("l_sort_order", result, where, true);
-    QHash<int, QVariant> result_same_indent;
-
-    where.clear();
-    where.insert("l_indent =",     target_indent);
-    where.insert("l_sort_order >", target_sort_order);
-    IFOKDO(error,
-           queries.getValueByIdsWhere("l_sort_order", result_same_indent, where, true));
-    int lowestSortSameLevel = 0;
-
-    if (!result_same_indent.isEmpty()) {
-        QHash<int, QVariant>::const_iterator i = result_same_indent.constBegin();
-        lowestSortSameLevel = i.value().toInt();
-
-        while (i != result_same_indent.constEnd()) {
-            int sort = i.value().toInt();
-
-            if (sort < lowestSortSameLevel) {
-                lowestSortSameLevel = sort;
-            }
-
-            ++i;
-        }
-    }
-
-    // filter the children
-    QList<int> chilrenIdList;
-
-    if (!result.isEmpty()) {
-        QHash<int, QVariant>::const_iterator i = result.constBegin();
-
-        // int lowestSort = i.value().toInt();
-
-        while (i != result.constEnd()) {
-            int sort = i.value().toInt();
-
-            if (sort < lowestSortSameLevel) {
-                chilrenIdList.append(i.key());
-            }
-
-            ++i;
-        }
-
-        // children deletion (or recovery)
-        for (int& _id : chilrenIdList) {
-            IFOKDO(error, set(projectId, _id, "b_trashed", newTrashedState));
+        // set date but those already deleted
+        if (newTrashedState && this->getTrashedDate(projectId, _id).isNull()) {
+            error = this->setTrashedDateToNow(projectId, _id);
             emit trashedChanged(projectId, _id, newTrashedState);
         }
+
+        // restore
+        else if (!newTrashedState) {
+            error = this->setTrashedDateToNull(projectId, _id);
+            emit trashedChanged(projectId, _id, newTrashedState);
+        }
+
+        // else ignore those already trashed
     }
 
-    // TODO:  deletion
-    IFOKDO(error, set(projectId, paperId, "b_trashed", newTrashedState));
+
+    // do parent :
+    IFOK(error) {
+        error = set(projectId, paperId, "b_trashed", newTrashedState);
+
+        // set date but those already deleted
+        if (newTrashedState && this->getTrashedDate(projectId, paperId).isNull()) {
+            error = this->setTrashedDateToNow(projectId, paperId);
+        }
+
+        // restore
+        else if (!newTrashedState) {
+            error = this->setTrashedDateToNull(projectId, paperId);
+        }
+    }
     IFOK(error) {
         emit trashedChanged(projectId, paperId, newTrashedState);
         emit projectModified(projectId);
@@ -367,8 +353,28 @@ PLMError PLMPaperHub::setTrashed(int projectId, int paperId, bool newTrashedStat
 
 bool PLMPaperHub::getTrashed(int projectId, int paperId) const
 {
-    // TODO: do recursive deletion
     return get(projectId, paperId, "b_trashed").toBool();
+}
+
+// ------------------------------------------------------------
+
+PLMError PLMPaperHub::setTrashedDateToNow(int projectId, int paperId)
+{
+    return set(projectId, paperId, "dt_trashed", QDateTime::currentDateTime());
+}
+
+// ------------------------------------------------------------
+
+PLMError PLMPaperHub::setTrashedDateToNull(int projectId, int paperId)
+{
+    return set(projectId, paperId, "dt_trashed", "NULL");
+}
+
+// ------------------------------------------------------------
+
+QDateTime PLMPaperHub::getTrashedDate(int projectId, int paperId) const
+{
+    return get(projectId, paperId, "dt_trashed").toDateTime();
 }
 
 // ------------------------------------------------------------
@@ -434,7 +440,7 @@ QDateTime PLMPaperHub::getContentDate(int projectId, int paperId) const
 
 // ------------------------------------------------------------
 
-bool PLMPaperHub::hasChildren(int projectId, int paperId) const
+bool PLMPaperHub::hasChildren(int projectId, int paperId, bool trashedAreIncluded, bool notTrashedAreIncluded) const
 {
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -470,6 +476,7 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
     if (indent == possibleFirstChildIndent - 1) {
         // verify if at least one child is not trashed
         bool haveOneNotTrashedChild = false;
+        bool haveOneTrashedChild = false;
         int  firstChildIndex        = idList.indexOf(possibleFirstChildId);
 
         for (int i = firstChildIndex; i < idList.count(); i++) {
@@ -484,10 +491,16 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId) const
                 if (getTrashed(projectId, childId) == false) {
                     haveOneNotTrashedChild = true;
                 }
+                else {
+                    haveOneTrashedChild = true;
+                }
             }
         }
+        if(haveOneTrashedChild && trashedAreIncluded){
+            return true;
+        }
 
-        if (haveOneNotTrashedChild) {
+        if (haveOneNotTrashedChild && notTrashedAreIncluded) {
             return true;
         }
         return false;
@@ -1092,6 +1105,171 @@ int PLMPaperHub::getValidSortOrderAfterPaper(int projectId, int paperId) const
     }
 
     return finalSortOrder;
+}
+
+// -----------------------------------------------------------------------------
+
+///
+/// \brief PLMPaperHub::getAllChildren
+/// \param projectId
+/// \param paperId
+/// \return
+/// get all children, trashed or not
+QList<int>PLMPaperHub::getAllChildren(int projectId, int paperId) {
+    QList<int> childrenList;
+
+    // get indents
+    QHash<int, int> indentList = getAllIndents(projectId);
+    QList<int> sortedIdList    = getAllIds(projectId);
+
+
+    // determine children
+
+    int  parentIndent = indentList.value(paperId);
+    bool parentPassed = false;
+
+    for (int id : sortedIdList) {
+        if (id == paperId) {
+            parentPassed = true;
+            continue;
+        }
+
+        if (parentPassed) {
+            int idIndent = indentList.value(id);
+
+            if (idIndent > parentIndent) {
+                childrenList.append(id);
+            }
+
+            if (idIndent <= parentIndent) {
+                break;
+            }
+        }
+    }
+
+    return childrenList;
+}
+
+// -----------------------------------------------------------------------------
+
+QList<int>PLMPaperHub::getAllAncestors(int projectId, int paperId) {
+    QList<int> ancestorsList;
+
+    // get indents
+    QHash<int, int> indentList = getAllIndents(projectId);
+    QList<int> sortedIdList    = getAllIds(projectId);
+
+
+    // determine ancestors
+
+    int indent      = indentList.value(paperId);
+
+
+    for (int i = sortedIdList.indexOf(paperId); i >= 0; i--) {
+        int id = sortedIdList.at(i);
+
+//        if (id == paperId) {
+//            continue;
+//        }
+
+        int idIndent = indentList.value(id);
+
+        if (idIndent == indent - 1) {
+            if (indent == -1) {
+                break;
+            }
+
+            ancestorsList.append(id);
+
+            indent = idIndent;
+        }
+    }
+
+    return ancestorsList;
+}
+
+// -----------------------------------------------------------------------------
+
+QList<int>PLMPaperHub::getAllSiblings(int projectId, int paperId) {
+
+    QList<int> siblingsList;
+
+    // get indents
+    QHash<int, int> indentList = getAllIndents(projectId);
+    QList<int> sortedIdList    = getAllIds(projectId);
+    int paperSortedIdIndex = sortedIdList.indexOf(paperId);
+
+
+    // determine siblings
+
+    int indent      = indentList.value(paperId);
+
+    //min sibling index
+    int minSiblingIndex = paperSortedIdIndex;
+    for (int i = paperSortedIdIndex; i >= 0; i--) {
+        int id = sortedIdList.at(i);
+
+//        if (id == paperId) {
+//            continue;
+//        }
+
+        int idIndent = indentList.value(id);
+
+        if (idIndent == indent - 1 || indent == -1) {
+                break;
+
+
+        }
+        minSiblingIndex = i;
+    }
+
+    //min sibling index
+    int maxSiblingIndex = paperSortedIdIndex;
+    for (int i = paperSortedIdIndex; i < sortedIdList.count(); i++) {
+        int id = sortedIdList.at(i);
+
+//        if (id == paperId) {
+//            continue;
+//        }
+
+        int idIndent = indentList.value(id);
+
+        if (idIndent == indent - 1 || indent == -1) {
+            break;
+
+        }
+        maxSiblingIndex = i;
+
+    }
+
+    // alone, so no siblings
+    if(minSiblingIndex == paperSortedIdIndex && maxSiblingIndex == paperSortedIdIndex){
+        return siblingsList;
+    }
+
+    //same level
+
+    for (int i = minSiblingIndex; i <= maxSiblingIndex; i++) {
+        int id = sortedIdList.at(i);
+
+//        if (id == paperId) {
+//            continue;
+//        }
+
+        int idIndent = indentList.value(id);
+
+        if (idIndent == indent) {
+
+            siblingsList.append(id);
+
+
+        }
+    }
+
+    siblingsList.removeAll(paperId);
+
+
+    return siblingsList;
 }
 
 // -----------------------------------------------------------------------------

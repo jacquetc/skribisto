@@ -103,17 +103,34 @@ WriteLeftDockForm {
     navigation.trashedListViewProxyModel: trashedSheetProxyModel
 
 
+    SKRSearchSheetListProxyModel {
+        id: restoreSheetProxyModel
+        showTrashedFilter: true
+        showNotTrashedFilter: false
+    }
+    navigation.restoreListViewProxyModel: restoreSheetProxyModel
 
 
-    //    Connections {
-    //        target: Globals
-    //        onOpenSheetCalled: function (projectId, paperId) {
-
-    //           proxyModel.setCurrentPaperId(projectId, paperId)
 
 
-    //        }
-    //    }
+
+
+    function restoreSheetList(projectId, sheetIdList){
+        // restore is difficult to explain : a restored parent will restore its children, even those trashed years before. To avoid that,
+        // children trashed at the same minute will be checked to allow restore. The older ones will stay unchecked by default.
+        // All that is done in RestoreView.qml
+
+        var i
+        for(i = 0 ; i < sheetIdList.length ; i++){
+            plmData.sheetHub().untrashOnlyOnePaper(projectId, sheetIdList[i])
+        }
+
+
+       console.log("restored: sheet:", sheetIdList)
+    }
+
+
+
 
 
 
@@ -196,6 +213,7 @@ WriteLeftDockForm {
         navigation.openDocument.connect(Globals.openSheetCalled)
         navigation.openDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
         navigation.openDocumentInNewWindow.connect(Globals.openSheetInNewWindowCalled)
+        navigation.restoreDocumentList.connect(root.restoreSheetList)
         Globals.resetDockConfCalled.connect(resetConf)
 
 

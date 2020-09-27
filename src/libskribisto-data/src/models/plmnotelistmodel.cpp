@@ -26,7 +26,7 @@ PLMNoteListModel::PLMNoteListModel(QObject *parent)
             this,
             &PLMNoteListModel::refreshAfterDataMove);
 
-    connect(plmdata->sheetHub(),
+    connect(plmdata->noteHub(),
             &PLMNoteHub::trashedChanged, // careful, paper is trashed = true,
                                          // not a true removal
             this,
@@ -235,7 +235,7 @@ bool PLMNoteListModel::setData(const QModelIndex& index, const QVariant& value, 
             break;
 
         case PLMNoteItem::Roles::TrashedRole:
-            error = plmdata->noteHub()->setTrashed(projectId, paperId, value.toBool());
+            error = plmdata->noteHub()->setTrashedWithChildren(projectId, paperId, value.toBool());
             break;
 
         case PLMNoteItem::Roles::CreationDateRole:
@@ -362,10 +362,10 @@ void PLMNoteListModel::populate()
         auto sortOrdersHash = plmdata->noteHub()->getAllSortOrders(projectId);
         auto indentsHash    = plmdata->noteHub()->getAllIndents(projectId);
 
-        for (int sheetId : idList) {
-            m_allNoteItems.append(new PLMNoteItem(projectId, sheetId,
-                                                  indentsHash.value(sheetId),
-                                                  sortOrdersHash.value(sheetId)));
+        for (int noteId : idList) {
+            m_allNoteItems.append(new PLMNoteItem(projectId, noteId,
+                                                  indentsHash.value(noteId),
+                                                  sortOrdersHash.value(noteId)));
         }
     }
     this->endResetModel();
@@ -580,7 +580,7 @@ void PLMNoteListModel::refreshAfterTrashedStateChanged(int  projectId,
     Q_UNUSED(newTrashedState)
 
     for (PLMNoteItem *item : m_allNoteItems) {
-        item->invalidateData(PLMNoteItem::Roles::SortOrderRole);
+        item->invalidateData(PLMNoteItem::Roles::TrashedRole);
         item->invalidateData(PLMNoteItem::Roles::HasChildrenRole); // needed to
                                                                    // refresh
                                                                    // the parent

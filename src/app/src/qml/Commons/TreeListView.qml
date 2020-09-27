@@ -240,7 +240,6 @@ TreeListViewForm {
     }
 
     property int contextMenuItemIndex: -2
-    property int itemButtonsIndex: -2
 
     Binding {
         target: listView
@@ -312,6 +311,13 @@ TreeListViewForm {
             }
 
             height: content.height
+
+            onActiveFocusChanged: {
+                if(listView.currentIndex === model.index){
+                    root.currentPaperId = model.paperId
+                }
+            }
+
 
             //            drag.target: held ? content : undefined
             //            drag.axis: Drag.YAxis

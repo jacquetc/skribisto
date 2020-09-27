@@ -249,7 +249,7 @@ bool PLMSheetListModel::setData(const QModelIndex& index, const QVariant& value,
             break;
 
         case PLMSheetItem::Roles::TrashedRole:
-            error = plmdata->sheetHub()->setTrashed(projectId, paperId, value.toBool());
+            error = plmdata->sheetHub()->setTrashedWithChildren(projectId, paperId, value.toBool());
             break;
 
         case PLMSheetItem::Roles::CreationDateRole:
@@ -595,7 +595,7 @@ void PLMSheetListModel::refreshAfterTrashedStateChanged(int  projectId,
     Q_UNUSED(newTrashedState)
 
     for (PLMSheetItem *item : m_allSheetItems) {
-        item->invalidateData(PLMSheetItem::Roles::SortOrderRole);
+        item->invalidateData(PLMSheetItem::Roles::TrashedRole);
         item->invalidateData(PLMSheetItem::Roles::HasChildrenRole); // needed to
                                                                     // refresh
                                                                     // the

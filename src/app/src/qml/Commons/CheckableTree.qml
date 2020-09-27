@@ -2,257 +2,61 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
+import QtQml 2.15
 import eu.skribisto.projecthub 1.0
 
-TrashedListViewForm {
+ListView {
     id: root
 
-    property var proxyModel
-    property var model
-    onModelChanged: {
-        visualModel.model = model
-    }
+
+
+
     signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openDocumentInNewTab(int projectId, int paperId)
     signal openDocumentInNewWindow(int projectId, int paperId)
-    signal restoreDocument(int projectId, int paperId)
 
 
+    signal copyCalled(int projectId, int paperId)
 
-
-    property int currentProjectId: -2
     property int currentPaperId: -2
-    property int currentIndex: listView.currentIndex
+    property int currentProjectId: -2
     property int openedProjectId: -2
     property int openedPaperId: -2
     property bool hoveringChangingTheCurrentItemAllowed: true
-    listView.model: visualModel
+
+    property alias visualModel: visualModel
+    property var proxyModel
+
+
     DelegateModel {
         id: visualModel
 
         delegate: dragDelegate
     }
+    model: visualModel
 
-
-    // scrollBar interactivity :
-
-    listView.onContentHeightChanged: {
-        //fix scrollbar visible at start
-        if(scrollView.height === 0){
-            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
-            return
-        }
-
-        if(listView.contentHeight > scrollView.height){
-            scrollBarVerticalPolicy = ScrollBar.AlwaysOn
-        }
-        else {
-            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
-        }
-    }
-
-    //-----------------------------------------------------------------------------
-    // project comboBox :
-
-
-
-    trashProjectComboBox.model: ListModel {
-        id: projectComboBoxModel
-    }
-
-
-    Connections {
-
-        target: plmData.projectHub()
-        function onProjectLoaded(projectId){
-
-
-            var name =  plmData.projectHub().getProjectName(projectId)
-
-            projectComboBoxModel.append({projectId: projectId, name: name})
-
-            trashProjectComboBox.currentIndex = trashProjectComboBox.count -1
-        }
-    }
-
-    Connections {
-
-        target: plmData.projectHub()
-        function onProjectClosed(projectId){
-
-            populateProjectComboBoxModel()
-
-        }
-    }
-
-    Component.onCompleted: {
-        trashProjectComboBox.textRole = "name"
-        trashProjectComboBox.valueRole = "projectId"
-        populateProjectComboBoxModel()
-    }
-    trashProjectComboBox.displayText: qsTr("Trash: %1").arg(trashProjectComboBox.currentText)
-
-    function populateProjectComboBoxModel(){
-
-        projectComboBoxModel.clear()
-
-        // populate
-
-        var projectList = plmData.projectHub().getProjectIdList()
-
-        var i;
-        for(i = 0 ; i < projectList.length ; i++ ){
-            var projectId = projectList[i]
-
-            var name =  plmData.projectHub().getProjectName(projectId)
-
-            projectComboBoxModel.append({projectId: projectId, name: name})
-            console.log("projectList")
-
-        }
-
-        // select last :
-        if (projectList.length > 0){
-            trashProjectComboBox.currentIndex = projectList.length - 1;
-            var _projectId = trashProjectComboBox.valueAt(projectList.length - 1)
-            proxyModel.projectIdFilter = _projectId
-            currentProjectId = _projectId
-        }
-    }
-    trashProjectComboBox.onCurrentIndexChanged: {
-        console.log("onCurrentIndexChanged")
-
-        if(trashProjectComboBox.currentValue === undefined){
-
-            var projectList = plmData.projectHub().getProjectIdList()
-            trashProjectComboBox.currentIndex = projectList.length - 1;
-            var _projectId = trashProjectComboBox.valueAt(projectList.length - 1)
-            proxyModel.projectIdFilter = _projectId
-            currentProjectId = _projectId
-        }
-        else {
-            proxyModel.projectIdFilter = trashProjectComboBox.currentValue
-            currentProjectId = trashProjectComboBox.currentValue
-
-        }
-
-
-    }
-
-
-    //-----------------------------------------------------------------------------
-    // go back button :
-
-    signal goBack()
-
-    goBackToolButton.action: Action {
-        id: goBackAction
-        text: "<"
-        icon.name: "go-previous"
-        onTriggered:{
-            goBack()
-        }
-    }
-
-
-
-
-
-
-    //----------------------------------------------------------------------------
-
-
-    //----------------------------------------------------------------------------
-    listMenuToolButton.icon.name: "overflow-menu"
-    listMenuToolButton.onClicked: navigationMenu.open()
-
-    Menu {
-        id: navigationMenu
-        y: listMenuToolButton.height
-
-        //        Action {
-        //            text: qsTr("Rename")
-        //        }
-
-        //        MenuSeparator {}
-        //        Action {
-        //            text: qsTr("Remove")
-        //        }
-        //        MenuSeparator {}
-
-        Action {
-            text: qsTr("Empty the trash")
-            enabled: navigationMenu.opened
-            //shortcut: "Ctrl+Shift+Del"
-            icon.name: "edit-delete-shred"
-            onTriggered: {
-                //TODO: fill that
-            }
-        }
-
-    }
-
-    //----------------------------------------------------------------------------
-    // restore button :
-
-    Action {
-        id: restoreAction
-        text: qsTr("Restore")
-        //shortcut: ""
-        enabled: listView.focus === true
-        icon{
-            name: "edit-undo"
-            height: 100
-            width: 100
-        }
-        onTriggered: {
-
-            console.log('restore', currentProjectId, currentPaperId)
-            restoreDocument(currentProjectId, currentPaperId)
-
-        }
-    }
-
-    restoreToolButton.action: restoreAction
-
-    //----------------------------------------------------------------------------
-
-    // shortcuts
-
-
-
-    Shortcut {
-        enabled: listView.enabled
-        sequences: ["Left", "Backspace"]
-        onActivated: goBackAction.trigger()
-        //enabled: listView.activeFocus
-    }
-    //-----------------------------------------------------------------------------
-    listView.onCurrentIndexChanged: {
-        contextMenuItemIndex = listView.currentIndex
-    }
 
     property int contextMenuItemIndex: -2
-
-    Binding {
-        target: listView
-        property: "currentIndex"
-        value: proxyModel.forcedCurrentIndex
+    onCurrentIndexChanged: {
+        contextMenuItemIndex = root.currentIndex
     }
 
-    //----------------------------------------------------------------------------
 
-    // focus :
-    onActiveFocusChanged: {
-        if (activeFocus) {
-            listView.forceActiveFocus()
-        }
-    }
+    // options :
+    property bool treelikeIndentsVisible: false
+    property bool checkButtonsVisible: false
 
-    //----------------------------------------------------------------------------
+
+    //tree-like onTreelikeIndents
+    property int treeIndentOffset: 0
+    property int treeIndentMultiplier: 10
+
+    // checkButtons :
+    readonly property var checkedPaperIdList: proxyModel.checkedIdsList
+
 
     // TreeView item :
-    Component {
+    delegate:     Component {
         id: dragDelegate
 
         Item {
@@ -260,8 +64,29 @@ TrashedListViewForm {
 
 
 
-            Accessible.name: labelLabel.text.length === 0 ? titleLabel.text  +  ( model.hasChildren ? " " +qsTr("has child") :  "" ):
-                                                            titleLabel.text + " " + qsTr("label:") + " " + labelLabel.text + ( model.hasChildren ? " " +qsTr("has child") :  "" )
+            Accessible.name: {
+
+                var levelText
+                if(treelikeIndentsVisible){
+                    levelText = qsTr("Level %1").arg(model.indent)
+                }
+
+                var titleText = titleLabel.text
+
+
+                var labelText = ""
+                if(labelLabel.text.length > 0){
+                    labelText = qsTr("label: %1").arg(labelLabel.text)
+                }
+
+                var hasChildrenText = ""
+                if(model.hasChildren){
+                    hasChildrenText = qsTr("has children")
+                }
+
+                return levelText + " " + titleText + " " + labelText + " " + hasChildrenText
+
+            }
             Accessible.role: Accessible.ListItem
             Accessible.description: qsTr("navigation item")
 
@@ -280,13 +105,16 @@ TrashedListViewForm {
                 left: Qt.isQtObject(parent) ? parent.left : undefined
                 right: Qt.isQtObject(parent) ? parent.right : undefined
                 rightMargin: 5
+                leftMargin: treelikeIndentsVisible ? model.indent * root.treeIndentMultiplier - root.treeIndentOffset * root.treeIndentMultiplier : undefined
             }
+
+
 
             height: content.height
 
 
             onActiveFocusChanged: {
-                if(listView.currentIndex === model.index){
+                if(root.currentIndex === model.index){
                     root.currentPaperId = model.paperId
                 }
             }
@@ -318,20 +146,20 @@ TrashedListViewForm {
 
             Keys.onShortcutOverride: {
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if( event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
             }
 
             Keys.onPressed: {
@@ -352,7 +180,7 @@ TrashedListViewForm {
                 property int visualIndex: 0
                 property int sourceIndex: -2
 
-                property bool isCurrent: model.index === listView.currentIndex ? true : false
+                property bool isCurrent: model.index === root.currentIndex ? true : false
 
                 anchors {
                     horizontalCenter: parent.horizontalCenter
@@ -372,7 +200,7 @@ TrashedListViewForm {
                     id: hoverHandler
                     //                    onHoveredChanged: {
                     //                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
-                    //                            listView.currentIndex = model.index
+                    //                            root.currentIndex = model.index
                     //                        }
                     //                    }
                 }
@@ -383,14 +211,14 @@ TrashedListViewForm {
 
 
                     onSingleTapped: {
-                        listView.currentIndex = model.index
+                        root.currentIndex = model.index
                         delegateRoot.forceActiveFocus()
                         eventPoint.accepted = true
                     }
 
                     onDoubleTapped: {
                         console.log("double tapped")
-                        listView.currentIndex = model.index
+                        root.currentIndex = model.index
                         openDocumentAction.trigger()
                         eventPoint.accepted = true
                     }
@@ -401,7 +229,7 @@ TrashedListViewForm {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
                     onTapped: {
-                        listView.currentIndex = model.index
+                        root.currentIndex = model.index
                         delegateRoot.forceActiveFocus()
                         menu.open()
                         eventPoint.accepted = true
@@ -411,7 +239,7 @@ TrashedListViewForm {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
-                        listView.currentIndex = model.index
+                        root.currentIndex = model.index
                         delegateRoot.forceActiveFocus()
                         openDocumentInNewTabAction.trigger()
                         eventPoint.accepted = true
@@ -423,8 +251,8 @@ TrashedListViewForm {
                     id: openDocumentAction
                     //shortcut: "Return"
                     enabled: {
-                        if (listView.focus === true && titleTextField.visible === false
-                                && listView.currentIndex === model.index) {
+                        if (root.focus === true && titleTextField.visible === false
+                                && root.currentIndex === model.index) {
                             return true
                         } else
                             return false
@@ -443,8 +271,8 @@ TrashedListViewForm {
                     id: openDocumentInNewTabAction
                     //shortcut: "Alt+Return"
                     enabled: {
-                        if (listView.focus === true && titleTextField.visible === false
-                                && listView.currentIndex === model.index) {
+                        if (root.focus === true && titleTextField.visible === false
+                                && root.currentIndex === model.index) {
                             return true
                         } else
                             return false
@@ -464,8 +292,8 @@ TrashedListViewForm {
                     id: openDocumentInNewWindowAction
                     //shortcut: "Alt+Return"
                     enabled: {
-                        if (listView.enabled && titleTextField.visible === false
-                                && listView.currentIndex === model.index) {
+                        if (root.enabled && titleTextField.visible === false
+                                && root.currentIndex === model.index) {
                             return true
                         } else
                             return false
@@ -490,6 +318,46 @@ TrashedListViewForm {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
+
+                        CheckBox{
+                            id: selectionCheckBox
+                            //Layout.fillHeight: true
+                            //Layout.preferredWidth: 5
+                            visible: checkButtonsVisible
+                            tristate: true
+
+                            onPressed: {
+                                root.currentIndex = model.index
+                            }
+
+                            onCheckStateChanged: {
+
+                                if(root.currentIndex === model.index){
+console.log("model.hasChildren", model.hasChildren)
+                                    if(checkState === Qt.PartiallyChecked && !proxyModel.hasChildren(model.projectId, model.paperId)){
+                                        model.checkState = Qt.Checked
+                                    }
+                                    else if(checkState === Qt.PartiallyChecked && proxyModel.hasChildren(model.projectId, model.paperId)){
+                                        model.checkState = Qt.PartiallyChecked
+                                    }
+                                    else if(checkState === Qt.Checked){
+                                        model.checkState = Qt.Checked
+                                    }
+                                    else if(checkState === Qt.Unchecked){
+                                        model.checkState = Qt.Unchecked
+                                    }
+
+                                }
+                            }
+
+                            Binding on checkState {
+                                value: model.checkState
+                                delayed: true
+                                restoreMode: Binding.RestoreBindingOrValue
+                            }
+
+                        }
+
                         Rectangle {
                             id: trashedIndicator
                             color: "#b50003"
@@ -502,7 +370,7 @@ TrashedListViewForm {
                             color: "lightsteelblue"
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
-                            visible: listView.currentIndex === model.index
+                            visible: root.currentIndex === model.index
                         }
                         Rectangle {
                             id: openedItemIndicator
@@ -638,7 +506,7 @@ TrashedListViewForm {
 
                             onClicked: {
 
-                                listView.currentIndex = model.index
+                                root.currentIndex = model.index
                                 delegateRoot.forceActiveFocus()
                                 menu.open()
                             }
@@ -765,11 +633,6 @@ TrashedListViewForm {
                     hoveringChangingTheCurrentItemAllowed = true
 
                 }
-                MenuItem {
-                    id: restoreMenuItem
-                    action: restoreAction
-
-                }
 
 
 
@@ -780,7 +643,7 @@ TrashedListViewForm {
                     icon {
                         name: "document-edit"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled
                     onTriggered: {
                         console.log("from deleted: open paper action", model.projectId,
                                     model.paperId)
@@ -795,7 +658,7 @@ TrashedListViewForm {
                     icon {
                         name: "tab-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled
                     onTriggered: {
                         console.log("from deleted: open paper in new tab action", model.projectId,
                                     model.paperId)
@@ -810,7 +673,7 @@ TrashedListViewForm {
                     icon {
                         name: "window-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && root.enabled &&  model.paperId !== -1
                     onTriggered: {
                         console.log("from trash: open paper in new window action", model.projectId,
                                     model.paperId)
@@ -828,7 +691,7 @@ TrashedListViewForm {
                     icon {
                         name: "edit-rename"
                     }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled
+                    enabled: contextMenuItemIndex === model.index  && root.enabled
                     onTriggered: {
                         console.log("from deleted: rename action", model.projectId,
                                     model.paperId)
@@ -845,12 +708,12 @@ TrashedListViewForm {
                     icon {
                         name: "edit-copy"
                     }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled
+                    enabled: contextMenuItemIndex === model.index  && root.enabled
 
                     onTriggered: {
                         console.log("from deleted: copy action", model.projectId,
                                     model.paperId)
-                        proxyModel.copy(model.projectId, model.paperId)
+                        copyCalled(model.projectId, model.paperId)
                     }
                 }
 
@@ -862,12 +725,12 @@ TrashedListViewForm {
                     icon {
                         name: "edit-delete"
                     }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
+                    enabled: contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
                     onTriggered: {
                         console.log("from deleted: delete action", model.projectId,
                                     model.paperId)
 
-
+                        //TODO: to fill
                     }
                 }
                 MenuSeparator {}
@@ -912,6 +775,5 @@ TrashedListViewForm {
             // move :
         }
     }
-
 
 }

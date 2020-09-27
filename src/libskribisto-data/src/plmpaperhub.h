@@ -82,9 +82,9 @@ public:
                                                const QString& newContent);
     Q_INVOKABLE QString             getContent(int projectId,
                                                int paperId) const;
-    Q_INVOKABLE PLMError            setTrashed(int  projectId,
-                                               int  paperId,
-                                               bool newTrashedState);
+    Q_INVOKABLE PLMError            setTrashedWithChildren(int  projectId,
+                                                           int  paperId,
+                                                           bool newTrashedState);
     Q_INVOKABLE bool                getTrashed(int projectId,
                                                int paperId) const;
     PLMError                        setCreationDate(int              projectId,
@@ -103,7 +103,7 @@ public:
     QDateTime                       getContentDate(int projectId,
                                                    int paperId) const;
     Q_INVOKABLE bool                hasChildren(int projectId,
-                                                int paperId) const;
+                                                int paperId, bool trashedAreIncluded = false, bool notTrashedAreIncluded = true) const;
 
     Q_INVOKABLE int                 getTopPaperId(int projectId) const;
 
@@ -166,27 +166,26 @@ public:
     //    int       getChildRowCount(int projectId,
     //                               int parentId) const;
 
-    PLMError renumberSortOrders(int projectId);
-    int      getValidSortOrderAfterPaper(int projectId,
+    PLMError              renumberSortOrders(int projectId);
+    int                   getValidSortOrderAfterPaper(int projectId,
+                                                      int paperId) const;
+
+    Q_INVOKABLE QList<int>getAllChildren(int projectId,
+                                         int paperId);
+    Q_INVOKABLE QList<int>getAllAncestors(int projectId,
+                                          int paperId);
+    QList<int> getAllSiblings(int projectId, int paperId);
+    Q_INVOKABLE QDateTime getTrashedDate(int projectId,
                                          int paperId) const;
+    Q_INVOKABLE PLMError  untrashOnlyOnePaper(int projectId,
+                                              int paperId);
 
 private:
 
-    //    PLMError setSetting(int             projectId,
-    //                        const QString & fieldName,
-    //                        const QVariant& value,
-    //                        bool            setCurrentDateBool);
-    //    QVariant getSetting(int            projectId,
-    //                        const QString& fieldName) const;
-
-    //    PLMError setDocSetting(int             projectId,
-    //                           int             paperId,
-    //                           const QString & fieldName,
-    //                           const QVariant& value,
-    //                           bool            setCurrentDateBool);
-    //    QVariant getDocSetting(int            projectId,
-    //                           int            paperId,
-    //                           const QString& fieldName) const;
+    PLMError setTrashedDateToNow(int projectId,
+                                 int paperId);
+    PLMError setTrashedDateToNull(int projectId,
+                                  int paperId);
 
 private slots:
 

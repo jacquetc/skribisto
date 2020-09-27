@@ -129,7 +129,7 @@ QVariant PLMSheetItem::data(int role)
             m_data.insert(role, plmdata->sheetHub()->getContentDate(projectId, paperId));
             break;
 
-        case Roles::HasChildrenRole:
+        case Roles::HasChildrenRole: //TODO: remove that because doeas not desciminate between trashed ot not
             m_data.insert(role, plmdata->sheetHub()->hasChildren(projectId, paperId));
             break;
 

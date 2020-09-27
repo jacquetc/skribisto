@@ -158,7 +158,7 @@ NotePadForm {
 
                 onAccepted: {
 
-                    plmData.noteHub().setTrashed(projectId, noteId, true)
+                    plmData.noteHub().setTrashedWithChildren(projectId, noteId, true)
                     plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, noteId)
 
                 }

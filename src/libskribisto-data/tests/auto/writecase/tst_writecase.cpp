@@ -38,6 +38,7 @@ private Q_SLOTS:
     void setIndent();
     void getIndent();
     void setTrashed();
+    void restoring();
     void getTrashed();
     void setContent();
     void getContent();
@@ -235,7 +236,8 @@ void WriteCase::setTrashed()
 {
     QSignalSpy spy(plmdata->sheetHub(), SIGNAL(trashedChanged(int,int,bool)));
 
-    plmdata->sheetHub()->setTrashed(m_currentProjectId, 2, true);
+    PLMError error = plmdata->sheetHub()->setTrashedWithChildren(m_currentProjectId, 2, true);
+    QCOMPARE(error.isSuccess(), true);
     QVERIFY(spy.count() > 1);
 
     // make sure the signal was emitted exactly one time
@@ -245,6 +247,42 @@ void WriteCase::setTrashed()
     bool value = plmdata->sheetHub()->getTrashed(m_currentProjectId, 2);
 
     QCOMPARE(value, true);
+
+    QDateTime date = plmdata->sheetHub()->getTrashedDate(m_currentProjectId, 2);
+    QCOMPARE(date.isValid(), true);
+
+
+
+}
+
+// ------------------------------------------------------------------------------------
+
+void WriteCase::restoring()
+{
+
+    setTrashed();
+
+    // restoring
+    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(trashedChanged(int,int,bool)));
+
+    PLMError error = plmdata->sheetHub()->untrashOnlyOnePaper(m_currentProjectId, 2);
+
+    QCOMPARE(error.isSuccess(), true);
+
+    QVERIFY(spy.count() == 1);
+    QList<QVariant> arguments = spy.takeFirst(); // take the first signal
+
+    QVERIFY(arguments.at(2).toBool() == false);
+
+    bool value = plmdata->sheetHub()->getTrashed(m_currentProjectId, 2);
+    QCOMPARE(value, false);
+
+    QDateTime date = plmdata->sheetHub()->getTrashedDate(m_currentProjectId, 2);
+
+    QCOMPARE(date.isNull(), true);
+
+
+
 }
 
 // ------------------------------------------------------------------------------------

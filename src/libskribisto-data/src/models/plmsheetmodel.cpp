@@ -256,7 +256,7 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
             break;
 
         case PLMSheetItem::Roles::TrashedRole:
-            error = plmdata->sheetHub()->setTrashed(projectId, paperId, value.toBool());
+            error = plmdata->sheetHub()->setTrashedWithChildren(projectId, paperId, value.toBool());
             break;
 
         case PLMSheetItem::Roles::CreationDateRole:

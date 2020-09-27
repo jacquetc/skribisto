@@ -70,5 +70,8 @@
         <file>qml/Commons/ToolHeader.qml</file>
         <file>qml/Commons/ToolHeaderForm.ui.qml</file>
         <file>qml/Commons/Dock.qml</file>
+        <file>qml/Commons/RestoreListView.qml</file>
+        <file>qml/Commons/RestoreListViewForm.ui.qml</file>
+        <file>qml/Commons/CheckableTree.qml</file>
     </qresource>
 </RCC>

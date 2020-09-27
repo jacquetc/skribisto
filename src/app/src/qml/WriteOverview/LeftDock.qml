@@ -9,6 +9,7 @@ import eu.skribisto.skrusersettings 1.0
 import ".."
 
 LeftDockForm {
+    id: root
 
 
     SkrUserSettings {
@@ -107,20 +108,41 @@ LeftDockForm {
     }
     navigation.trashedListViewProxyModel: trashedSheetProxyModel
 
-
-
-    //    Connections {
-    //        target: Globals
-    //        onOpenSheetCalled: function (projectId, paperId) {
-
-    //           //proxyModel.setCurrentPaperId(projectId, paperId)
-
-
-    //        }
-    //    }
+    SKRSearchSheetListProxyModel {
+        id: restoreSheetProxyModel
+        showTrashedFilter: true
+        showNotTrashedFilter: false
+    }
+    navigation.restoreListViewProxyModel: restoreSheetProxyModel
 
 
 
+
+
+
+    function restoreSheetList(projectId, sheetIdList){
+        // restore is difficult to explain : a restored parent will restore its children, even those trashed years before. To avoid that,
+        // children trashed at the same minute will be checked to allow restore. The older ones will stay unchecked by default.
+        // All that is done in RestoreView.qml
+
+        var i
+        for(i = 0 ; i < sheetIdList.length ; i++){
+            plmData.sheetHub().untrashOnlyOnePaper(projectId, sheetIdList[i])
+        }
+
+
+       console.log("restored: sheet:", sheetIdList)
+    }
+
+
+
+
+
+
+    //Document List :
+    //-----------------------------------------------------------
+    documentView.model: plmModels.writeDocumentListModel()
+    documentView.documentModel: plmModels.writeDocumentListModel()
 
 
 
@@ -193,6 +215,7 @@ LeftDockForm {
         loadConf()
         navigation.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
         navigation.openDocumentInNewWindow.connect(Globals.openSheetInNewWindowCalled)
+        navigation.restoreDocumentList.connect(root.restoreSheetList)
         Globals.resetDockConfCalled.connect(resetConf)
 
 
