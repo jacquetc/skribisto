@@ -57,10 +57,13 @@ private slots:
                                   PLMSheetItem::Roles role);
     void refreshAfterDataAddition(int                 projectId,
                                   int                 paperId);
+    void refreshAfterDataRemove(int                 projectId,
+                                int                 paperId);
     void refreshAfterDataMove(int sourceProjectId, int sourcePaperId, int targetProjectId, int targetPaperId);
     void refreshAfterTrashedStateChanged(int projectId, int paperId, bool newTrashedState);
     void refreshAfterProjectIsBackupChanged(int projectId, bool isProjectABackup);    
     void refreshAfterProjectIsActiveChanged(int projectId);
+
 
 private:
 

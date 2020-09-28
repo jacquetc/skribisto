@@ -5,8 +5,6 @@ import QtQuick.Layouts 1.15
 Item {
     id: base
 
-
-
     property alias listView: listView
     property alias scrollView: scrollView
     property int scrollBarVerticalPolicy: ScrollBar.AlwaysOff
@@ -14,7 +12,6 @@ Item {
     property alias restoreToolButton: restoreToolButton
     property alias listMenuToolButton: listMenuToolButton
     property alias selectAllToolButton: selectAllToolButton
-
 
     Pane {
         id: pane
@@ -32,27 +29,21 @@ Item {
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
 
-
-
                 //                Item {
                 //                    id: element
                 //                    Layout.fillHeight: true
                 //                    Layout.fillWidth: true
                 //                }
-
-
                 RowLayout {
                     id: rowLayout
                     spacing: 1
                     anchors.fill: parent
-
 
                     ToolButton {
                         id: goBackToolButton
                         flat: true
                         display: AbstractButton.IconOnly
                     }
-
 
                     ToolButton {
                         id: restoreToolButton
@@ -77,6 +68,13 @@ Item {
                 }
             }
 
+            Text {
+                id: text1
+                text: qsTr("The checked documents are those which were trashed at the same time")
+                font.pixelSize: 12
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
 
             ScrollView {
                 id: scrollView
@@ -87,7 +85,6 @@ Item {
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical.policy: scrollBarVerticalPolicy
 
-
                 CheckableTree {
                     id: listView
                     anchors.fill: parent
@@ -96,19 +93,21 @@ Item {
                     smooth: true
                     boundsBehavior: Flickable.StopAtBounds
 
-
                     treelikeIndentsVisible: true
                     checkButtonsVisible: true
                     openActionsEnabled: true
                     renameActionEnabled: true
                     copyActionEnabled: true
                     deleteActionEnabled: true
-
-
                 }
-
-
             }
         }
     }
 }
+
+/*##^##
+Designer {
+    D{i:0;autoSize:true;height:600;width:400}
+}
+##^##*/
+

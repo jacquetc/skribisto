@@ -252,6 +252,9 @@ void SKRSearchNoteListProxyModel::determineCheckStateOfAllAncestors(
         ancestorsIdsList = newList;
     }
 
+    if(ancestorsIdsList.empty()){
+        return;
+    }
 
     //for (int ancestorId : ancestorsIdsList) {
         m_checkedIdsHash.insert(ancestorsIdsList.first(), ancestorCheckState);
@@ -414,6 +417,13 @@ QList<int> SKRSearchNoteListProxyModel::findIdsTrashedAtTheSameTimeThan(int proj
 
     return result;
 
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::deleteDefinitively(int projectId, int paperId)
+{
+    plmdata->noteHub()->removePaper(projectId, paperId);
 }
 
 // --------------------------------------------------------------

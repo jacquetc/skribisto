@@ -249,6 +249,9 @@ void SKRSearchSheetListProxyModel::determineCheckStateOfAllAncestors(
         ancestorsIdsList = newList;
     }
 
+    if(ancestorsIdsList.empty()){
+        return;
+    }
 
     //for (int ancestorId : ancestorsIdsList) {
         m_checkedIdsHash.insert(ancestorsIdsList.first(), ancestorCheckState);
@@ -403,6 +406,13 @@ QList<int> SKRSearchSheetListProxyModel::findIdsTrashedAtTheSameTimeThan(int pro
 
     return result;
 
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchSheetListProxyModel::deleteDefinitively(int projectId, int paperId)
+{
+    PLMError error = plmdata->sheetHub()->removePaper(projectId, paperId);
 }
 
 // --------------------------------------------------------------

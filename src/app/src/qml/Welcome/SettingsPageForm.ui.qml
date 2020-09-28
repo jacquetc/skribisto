@@ -23,6 +23,7 @@ Item {
     property alias resetDockConfButton: resetDockConfButton
     property alias allowSwipeBetweenTabsCheckBox: allowSwipeBetweenTabsCheckBox
     property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
+    readonly property int columnWidth: 550
 
     Pane {
         id: pane2
@@ -41,10 +42,11 @@ Item {
             GridLayout {
                 id: gridLayout1
                 width: scrollView.width
-                columns: width / 500
+                columns: width / columnWidth
 
                 GroupBox {
                     id: accessibilityGroupBox
+                    Layout.fillWidth: true
                     focusPolicy: Qt.TabFocus
 
                     title: qsTr("Accessibility")
@@ -70,6 +72,7 @@ Item {
                     id: appearanceGroupBox
                     width: 200
                     height: 200
+                    Layout.fillWidth: true
                     focusPolicy: Qt.TabFocus
                     title: qsTr("Appearance")
 
@@ -86,6 +89,8 @@ Item {
 
                 GroupBox {
                     id: backupGroupBox
+                    Layout.rowSpan: 3
+                    Layout.fillWidth: true
                     focusPolicy: Qt.TabFocus
                     title: qsTr("Backup")
 
@@ -101,6 +106,7 @@ Item {
                             ColumnLayout {
                                 id: columnLayout1
                                 anchors.fill: parent
+                                anchors.topMargin: 5
 
                                 ToolBar {
                                     Layout.fillWidth: true
@@ -194,6 +200,8 @@ Item {
 
                 GroupBox {
                     id: saveGroupBox
+                    Layout.rowSpan: 2
+                    Layout.fillWidth: true
                     focusPolicy: Qt.TabFocus
                     title: qsTr("Save")
 
@@ -224,24 +232,26 @@ Item {
                         }
                     }
                 }
-                
+
                 GroupBox {
                     id: specialEPaperGroupBox
                     width: 200
                     height: 200
+                    Layout.fillWidth: true
                     focusPolicy: Qt.TabFocus
                     title: qsTr("Special E-Paper")
-                    
+
                     CheckBox {
                         id: setTextCursorUnblinkingCheckBox
                         text: qsTr("Set the text cursor unblinking")
                     }
                 }
-                
+
                 GroupBox {
                     id: advancedGroupBox
                     width: 200
                     height: 200
+                    Layout.fillWidth: true
                     focusPolicy: Qt.TabFocus
                     title: qsTr("Advanced")
 
@@ -266,7 +276,6 @@ Item {
                         }
                     }
                 }
-                
             }
         }
     }
@@ -274,7 +283,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;height:1500;width:1000}
+    D{i:0;autoSize:true;height:1500;width:600}
 }
 ##^##*/
 

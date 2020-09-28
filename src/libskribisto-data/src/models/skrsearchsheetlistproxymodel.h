@@ -92,6 +92,8 @@ public:
     Q_INVOKABLE QList<int> findIdsTrashedAtTheSameTimeThan(int projectId,
                                                            int paperId);
 
+    Q_INVOKABLE void deleteDefinitively(int projectId, int paperId);
+
 signals:
 
     void             projectIdFilterChanged(int projectIdFilter);

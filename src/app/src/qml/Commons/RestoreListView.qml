@@ -64,6 +64,7 @@ RestoreListViewForm {
         listView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
         listView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
         listView.goBackCalled.connect( function() {goBackAction.trigger()})
+        listView.deleteDefinitivelyCalled.connect(root.prepareDeleteDefinitivelyDialog)
 
         listView.proxyModel = proxyModel
         listView.treeIndentOffset = treeIndentOffset
@@ -132,13 +133,62 @@ RestoreListViewForm {
     }
 
 
-
-
-
-
     //----------------------------------------------------------------------------
 
+    function prepareDeleteDefinitivelyDialog(projectId, paperId){
 
+        var idList = [paperId]
+        idList = idList.concat(proxyModel.getChildrenList(projectId, paperId, true, false))
+
+        //get names
+        var nameList = []
+        var i
+        for(i = 0 ; i < idList.length ; i++){
+            var id = idList[i]
+
+            nameList.push(proxyModel.getItemName(projectId, id))
+
+        }
+
+        deleteDefinitivelyDialog.projectId = projectId
+        deleteDefinitivelyDialog.projectName = plmData.projectHub().getProjectName(projectId)
+        deleteDefinitivelyDialog.paperIdList = idList
+        deleteDefinitivelyDialog.paperNamesString = "\n- " + nameList.join("\n- ")
+        deleteDefinitivelyDialog.open()
+
+    }
+
+
+    SimpleDialog {
+        property int projectId: -2
+        property string projectName: ""
+        property var paperIdList: []
+        property var paperNamesString: ""
+
+        id: deleteDefinitivelyDialog
+        title: "Warning"
+        text: qsTr("Do you want to delete definitively the following documents from the \"%1\" project ?\n%2").arg(projectName).arg(paperNamesString)
+        standardButtons: Dialog.Yes  |  Dialog.Cancel
+
+        onRejected: {
+            deleteDefinitivelyDialog.close()
+
+        }
+
+        onAccepted: {
+            var i
+            for(i = 0 ; i < paperIdList.length ; i++){
+                var id = paperIdList[i]
+
+                proxyModel.deleteDefinitively(projectId, id)
+            }
+
+        }
+
+
+
+
+    }
     //----------------------------------------------------------------------------
     listMenuToolButton.icon.name: "overflow-menu"
     listMenuToolButton.onClicked: navigationMenu.open()
@@ -180,13 +230,13 @@ RestoreListViewForm {
         checkable: true
         onTriggered: {
 
-        if(selectAllAction.checked){
-            proxyModel.checkAll()
-        }
-        else {
-            proxyModel.checkNone()
+            if(selectAllAction.checked){
+                proxyModel.checkAll()
+            }
+            else {
+                proxyModel.checkNone()
 
-        }
+            }
 
 
         }

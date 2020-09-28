@@ -28,6 +28,11 @@ PLMSheetListModel::PLMSheetListModel(QObject *parent)
             &PLMSheetListModel::refreshAfterDataMove);
 
     connect(plmdata->sheetHub(),
+            &PLMSheetHub::paperRemoved,
+            this,
+            &PLMSheetListModel::refreshAfterDataRemove);
+
+    connect(plmdata->sheetHub(),
             &PLMSheetHub::trashedChanged,
 
             this,
@@ -517,6 +522,94 @@ void PLMSheetListModel::refreshAfterDataAddition(int projectId, int paperId)
                                                        sortOrdersHash.value(paperId)));
     this->index(row, 0, QModelIndex());
     endInsertRows();
+}
+
+// --------------------------------------------------------------------
+
+void PLMSheetListModel::refreshAfterDataRemove(int projectId, int paperId)
+{
+    Q_UNUSED(projectId)
+    Q_UNUSED(paperId)
+
+    // find parentIndex and row
+    //    QModelIndex parentIndex;
+//    int row = 0;
+
+//    auto idList         = plmdata->sheetHub()->getAllIds(projectId);
+//    auto sortOrdersHash = plmdata->sheetHub()->getAllSortOrders(projectId);
+//    auto indentsHash    = plmdata->sheetHub()->getAllIndents(projectId);
+
+
+//    int paperIndex      = idList.indexOf(paperId);
+//    int paperIndent     = indentsHash.value(paperId);
+//    int paperSortOrders = sortOrdersHash.value(paperId);
+
+//    bool parentFound = false;
+
+//    if (paperIndex == 0) { // meaning the parent have to be a project item
+//        this->populate();
+//        return;
+//    }
+
+//    if (!parentFound) {
+//        for (int i = paperIndex - 1; i >= 0; --i) {
+//            int possibleParentId     = idList.at(i);
+//            int possibleParentIndent = indentsHash.value(possibleParentId);
+
+//            if (paperIndent == possibleParentIndent + 1) {
+//                //                auto modelIndexList =
+//                // this->getModelIndex(projectId, possibleParentId);
+//                //                if(modelIndexList.isEmpty()){
+//                //                    qWarning() << Q_FUNC_INFO << "if
+//                // paperIndent == possibleParentIndent =>
+//                // modelIndexList.isEmpty()";
+//                //                    return;
+//                //                }
+//                //                parentIndex = modelIndexList.first();
+//                // int parentPaperId =
+//                // parentIndex.data(PLMSheetItem::Roles::PaperIdRole).toInt();
+//                row         = paperIndex - i;
+//                parentFound = true;
+//                break;
+//            }
+//        }
+//    }
+
+//    if (!parentFound) {
+//        qWarning() << Q_FUNC_INFO << "parent not found, failsafe used";
+        this->populate();
+//        return;
+//    }
+
+
+//    // find item just before in m_allSheetItems to determine item index to
+//    // insert in:
+
+
+//    PLMSheetItem *item = this->getItem(projectId, paperId);
+
+
+//    //        if(itemIndex >= m_allSheetItems.count() && paperIndent ==
+//    // itemBefore->indent() + 1){
+//    //            qWarning() << Q_FUNC_INFO << "last in the m_allSheetItems list
+//    // and child of previous item, so failsafe used";
+//    //            this->populate();
+//    //            return;
+//    //        }
+
+
+//    for (PLMSheetItem *item : m_allSheetItems) {
+//        item->invalidateData(PLMSheetItem::Roles::SortOrderRole);
+//        item->invalidateData(PLMSheetItem::Roles::HasChildrenRole);
+//    }
+
+//    beginRemoveRows(QModelIndex(), paperIndex - 1, paperIndex);
+
+//    m_allSheetItems.removeOne(item);
+
+//    endRemoveRows();
+
+
 }
 
 // --------------------------------------------------------------------

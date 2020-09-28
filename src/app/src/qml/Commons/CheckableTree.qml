@@ -17,6 +17,7 @@ ListView {
 
 
     signal copyCalled(int projectId, int paperId)
+    signal deleteDefinitivelyCalled(int projectId, int paperId)
     signal goBackCalled()
 
     property int currentPaperId: -2
@@ -887,8 +888,7 @@ ListView {
                         onTriggered: {
                             console.log("delete action", model.projectId,
                                         model.paperId)
-
-                            //TODO: to fill
+                            deleteDefinitivelyCalled(model.projectId, model.paperId)
                         }
                     }
                 }

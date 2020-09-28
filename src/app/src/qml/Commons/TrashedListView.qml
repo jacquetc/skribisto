@@ -157,6 +157,58 @@ TrashedListViewForm {
 
 
 
+    //----------------------------------------------------------------------------
+
+    function prepareDeleteDefinitivelyDialog(projectId, paperId){
+
+        var idList = [paperId]
+        idList = idList.concat(proxyModel.getChildrenList(projectId, paperId, true, false))
+
+        //get names
+        var nameList = []
+        var i
+        for(i = 0 ; i < idList.length ; i++){
+            var id = idList[i]
+
+            nameList.push(proxyModel.getItemName(projectId, id))
+
+        }
+
+        deleteDefinitivelyDialog.projectId = projectId
+        deleteDefinitivelyDialog.projectName = plmData.projectHub().getProjectName(projectId)
+        deleteDefinitivelyDialog.paperIdList = idList
+        deleteDefinitivelyDialog.paperNamesString = "\n- " + nameList.join("\n- ")
+        deleteDefinitivelyDialog.open()
+
+    }
+
+
+    SimpleDialog {
+        property int projectId: -2
+        property string projectName: ""
+        property var paperIdList: []
+        property var paperNamesString: ""
+
+        id: deleteDefinitivelyDialog
+        title: "Warning"
+        text: qsTr("Do you want to delete definitively the following documents from the \"%1\" project ?\n%2").arg(projectName).arg(paperNamesString)
+        standardButtons: Dialog.Yes  |  Dialog.Cancel
+
+        onRejected: {
+            deleteDefinitivelyDialog.close()
+
+        }
+
+        onAccepted: {
+            var i
+            for(i = 0 ; i < paperIdList.length ; i++){
+                var id = paperIdList[i]
+
+                proxyModel.deleteDefinitively(projectId, id)
+            }
+
+        }
+    }
 
 
     //----------------------------------------------------------------------------
@@ -868,7 +920,7 @@ TrashedListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled &&  model.paperId !== -1
                     onTriggered: {
-                        console.log("from deleted: open paper action", model.projectId,
+                        console.log("from trashed: open paper action", model.projectId,
                                     model.paperId)
                         openDocumentAction.trigger()
                     }
@@ -883,7 +935,7 @@ TrashedListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled &&  model.paperId !== -1
                     onTriggered: {
-                        console.log("from deleted: open paper in new tab action", model.projectId,
+                        console.log("from trashed: open paper in new tab action", model.projectId,
                                     model.paperId)
                         openDocumentInNewTabAction.trigger()
                     }
@@ -898,7 +950,7 @@ TrashedListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
                     onTriggered: {
-                        console.log("from trash: open paper in new window action", model.projectId,
+                        console.log("from trashed: open paper in new window action", model.projectId,
                                     model.paperId)
                         openDocumentInNewWindowAction.trigger()
                     }
@@ -916,7 +968,7 @@ TrashedListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index  && listView.enabled
                     onTriggered: {
-                        console.log("from deleted: rename action", model.projectId,
+                        console.log("from trashed: rename action", model.projectId,
                                     model.paperId)
                         delegateRoot.editName()
                     }
@@ -929,9 +981,9 @@ TrashedListViewForm {
                     icon {
                         name: "label"
                     }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
                     onTriggered: {
-                        console.log("from deleted: sel label", model.projectId,
+                        console.log("from trashed: sel label", model.projectId,
                                     model.paperId)
                         delegateRoot.editLabel()
                     }
@@ -946,10 +998,10 @@ TrashedListViewForm {
                     icon {
                         name: "edit-copy"
                     }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
 
                     onTriggered: {
-                        console.log("from deleted: copy action", model.projectId,
+                        console.log("from trashed: copy action", model.projectId,
                                     model.paperId)
                         proxyModel.copy(model.projectId, model.paperId)
                     }
@@ -965,10 +1017,10 @@ TrashedListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
                     onTriggered: {
-                        console.log("from deleted: delete action", model.projectId,
+                        console.log("from trashed: delete action", model.projectId,
                                     model.paperId)
 
-
+                        prepareDeleteDefinitivelyDialog(model.projectId, model.paperId)
                     }
                 }
                 MenuSeparator {}

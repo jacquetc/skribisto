@@ -31,6 +31,8 @@ Item {
     property alias recentListView: recentListView
     property alias newProjectButton: newProjectButton
 
+    readonly property int columnWidth: 550
+
     Pane {
         id: pane1
         anchors.fill: parent
@@ -54,11 +56,14 @@ Item {
                 GridLayout {
                     id: gridLayout
                     width: scrollView.width
-                    columns: gridLayout.width / 500
+                    columns: gridLayout.width / columnWidth
+
 
 
                     GroupBox {
                         id: groupBox1
+                        focusPolicy: Qt.TabFocus
+                        Layout.fillWidth: true
                         topPadding: 12
                         padding: 12
                         title: qsTr("Projects")
@@ -85,18 +90,33 @@ Item {
                                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 }
                             }
+                        }
+                    }
+
+
+                    GroupBox {
+                        id: groupBox
+                        width: 200
+                        height: 200
+                        Layout.rowSpan: 2
+                        focusPolicy: Qt.TabFocus
+                        Layout.fillWidth: true
+                        title: qsTr("Recent projects")
+
+
+                        ColumnLayout {
+                            id: columnLayout5
+                            anchors.fill: parent
 
                             ListView {
                                 id: recentListView
-                                width: 110
-                                height: 160
+                                Layout.fillWidth: true
+                                Layout.maximumWidth: 400
                                 clip: true
                                 Layout.preferredHeight: 200
-                                Layout.preferredWidth: 300
                                 Layout.fillHeight: false
                                 Layout.minimumHeight: 200
                                 Layout.minimumWidth: 300
-                                Layout.fillWidth: false
                                 keyNavigationWraps: false
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 delegate: Item {
@@ -125,6 +145,9 @@ Item {
 
                     GroupBox {
                         id: groupBox2
+                        Layout.rowSpan: 2
+                        focusPolicy: Qt.TabFocus
+                        Layout.fillWidth: true
                         title: qsTr("Save")
 
                         ColumnLayout {
@@ -153,20 +176,6 @@ Item {
                                     }
                                 }
                                 Button {
-                                    id: saveACopyButton
-                                    text: qsTr("Save a copy")
-                                    icon {
-                                        name: "document-save-as-template"
-                                    }
-                                }
-                                Button {
-                                    id: backUpButton
-                                    text: qsTr("Back up")
-                                    icon {
-                                        name: "tools-media-optical-burn-image"
-                                    }
-                                }
-                                Button {
                                     id: saveAllButton
                                     text: qsTr("Save all")
                                     icon {
@@ -174,11 +183,36 @@ Item {
                                     }
                                 }
                             }
+
+                            RowLayout {
+                                id: rowLayout6
+                                width: 100
+                                height: 100
+
+                                Button {
+                                    id: saveACopyButton
+                                    text: qsTr("Save a copy")
+                                    icon {
+                                        name: "document-save-as-template"
+                                    }
+                                }
+
+                                Button {
+                                    id: backUpButton
+                                    text: qsTr("Back up")
+                                    icon {
+                                        name: "tools-media-optical-burn-image"
+                                    }
+                                }
+                            }
                         }
                     }
 
+
                     GroupBox {
                         id: behaviorGroupBox
+                        focusPolicy: Qt.TabFocus
+                        Layout.fillWidth: true
                         title: qsTr("Behavior")
 
                         ColumnLayout {
@@ -193,8 +227,11 @@ Item {
                         }
                     }
 
+
                     GroupBox {
                         id: groupBox3
+                        focusPolicy: Qt.TabFocus
+                        Layout.fillWidth: true
                         title: qsTr("")
 
                         ColumnLayout {
@@ -226,6 +263,7 @@ Item {
                         }
                     }
 
+
                     Item {
                         id: stretcher1
                         Layout.columnSpan: 1
@@ -233,10 +271,13 @@ Item {
                         Layout.fillWidth: true
                     }
 
+
                 }
             }
 
             Item {
+                id: newProjectItem
+                enabled: false
                 ColumnLayout {
                     id: columnLayout3
                     anchors.fill: parent
@@ -362,7 +403,7 @@ Item {
 
 /*##^##
 Designer {
-    D{i:0;height:800;width:800}
+    D{i:0;height:800;width:800}D{i:11}
 }
 ##^##*/
 

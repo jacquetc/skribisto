@@ -26,6 +26,11 @@ PLMNoteListModel::PLMNoteListModel(QObject *parent)
             this,
             &PLMNoteListModel::refreshAfterDataMove);
 
+    connect(plmdata->sheetHub(),
+            &PLMNoteHub::paperRemoved,
+            this,
+            &PLMNoteListModel::refreshAfterDataRemove);
+
     connect(plmdata->noteHub(),
             &PLMNoteHub::trashedChanged, // careful, paper is trashed = true,
                                          // not a true removal
@@ -503,6 +508,17 @@ void PLMNoteListModel::refreshAfterDataAddition(int projectId, int paperId)
                                                      sortOrdersHash.value(paperId)));
     this->index(row, 0, QModelIndex());
     endInsertRows();
+}
+
+// --------------------------------------------------------------------
+
+void PLMNoteListModel::refreshAfterDataRemove(int projectId, int paperId)
+{
+    Q_UNUSED(projectId)
+    Q_UNUSED(paperId)
+
+    this->populate();
+
 }
 
 // --------------------------------------------------------------------

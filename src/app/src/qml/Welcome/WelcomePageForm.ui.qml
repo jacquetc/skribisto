@@ -18,6 +18,7 @@ Item {
     property alias separator: separator
     property alias mainButtonsPane: mainButtonsPane
 
+
     ColumnLayout {
         id: columnLayout2
         spacing: 0
