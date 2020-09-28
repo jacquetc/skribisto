@@ -342,6 +342,13 @@ TreeListViewForm {
                 titleTextField.forceActiveFocus()
                 titleTextField.selectAll()
             }
+
+            function editLabel() {
+                state = "edit_label"
+                labelTextField.forceActiveFocus()
+                labelTextField.selectAll()
+            }
+
             Keys.priority: Keys.AfterItem
 
             Keys.onShortcutOverride: {
@@ -357,7 +364,7 @@ TreeListViewForm {
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
                       event.accepted = true
                                      }
-                if( event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
+                if( event.key === Qt.Key_Escape  && (delegateRoot.state == "edit_name" || delegateRoot.state == "edit_label")){
                       event.accepted = true
                                      }
             }
@@ -741,6 +748,50 @@ TreeListViewForm {
                                 }
 
                                 TextField {
+                                    id: labelTextField
+                                    visible: false
+
+
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    text: labelLabel.text
+                                    maximumLength: 50
+
+                                    placeholderText: qsTr("Enter label")
+
+
+                                    onEditingFinished: {
+                                        //if (!activeFocus) {
+                                        //accepted()
+                                        //}
+                                        console.log("editing label finished")
+                                        model.label = text
+                                        delegateRoot.state = ""
+                                    }
+
+                                    //Keys.priority: Keys.AfterItem
+                                    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
+                                    Keys.onPressed: {
+                                        if (event.key === Qt.Key_Return){
+                                            console.log("Return key pressed title")
+                                            editingFinished()
+                                            event.accepted = true
+                                        }
+                                        if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                            console.log("Ctrl Return key pressed title")
+                                            editingFinished()
+                                            event.accepted = true
+                                        }
+                                        if (event.key === Qt.Key_Escape){
+                                            console.log("Escape key pressed title")
+                                            delegateRoot.state = ""
+                                            event.accepted = true
+                                        }
+                                    }
+
+                                }
+
+                                TextField {
                                     id: titleTextField
                                     visible: false
 
@@ -957,6 +1008,37 @@ TreeListViewForm {
                         target: titleTextField
                         visible: true
                     }
+                    PropertyChanges {
+                        target: labelTextField
+                        visible: false
+                    }
+                },
+                State {
+                    name: "edit_label"
+                    PropertyChanges {
+                        target: menuButton
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: goToChildButton
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: titleLabel
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: labelLabel
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: titleTextField
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: labelTextField
+                        visible: true
+                    }
                 },
 
                 State {
@@ -1079,6 +1161,21 @@ TreeListViewForm {
                         console.log("rename action", model.projectId,
                                     model.paperId)
                         delegateRoot.editName()
+                    }
+                }
+
+                Action {
+                    id: setLabelAction
+                    text: qsTr("Set label")
+                    //shortcut: "F2"
+                    icon {
+                        name: "label"
+                    }
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled
+                    onTriggered: {
+                        console.log("from deleted: sel label", model.projectId,
+                                    model.paperId)
+                        delegateRoot.editLabel()
                     }
                 }
 

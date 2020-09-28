@@ -314,24 +314,34 @@ TrashedListViewForm {
                 titleTextField.forceActiveFocus()
                 titleTextField.selectAll()
             }
+
+            function editLabel() {
+                state = "edit_label"
+                labelTextField.forceActiveFocus()
+                labelTextField.selectAll()
+            }
+
             Keys.priority: Keys.AfterItem
 
             Keys.onShortcutOverride: {
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
-                      event.accepted = true
-                                     }
-                if( event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
+                if( event.key === Qt.Key_Escape && (delegateRoot.state == "edit_name" || delegateRoot.state == "edit_label")){
+                    event.accepted = true
+                }
+                if( event.key === Qt.Key_Escape){
+                    event.accepted = true
+                }
             }
 
             Keys.onPressed: {
@@ -343,6 +353,17 @@ TrashedListViewForm {
                 if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
                     console.log("Alt Return key pressed")
                     openDocumentInNewTabAction.trigger()
+                    event.accepted = true
+                }
+                // rename
+
+                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name"){
+                    renameAction.trigger()
+                    event.accepted = true
+                }
+                if (event.key === Qt.Key_Escape){
+                    console.log("Escape key pressed")
+                    goBackAction.trigger()
                     event.accepted = true
                 }
             }
@@ -567,7 +588,49 @@ TrashedListViewForm {
 
                                     text: model.indent === -1 ? model.projectName : model.name
                                 }
+                                TextField {
+                                    id: labelTextField
+                                    visible: false
 
+
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    text: labelLabel.text
+                                    maximumLength: 50
+
+                                    placeholderText: qsTr("Enter label")
+
+
+                                    onEditingFinished: {
+                                        //if (!activeFocus) {
+                                        //accepted()
+                                        //}
+                                        console.log("editing label finished")
+                                        model.label = text
+                                        delegateRoot.state = ""
+                                    }
+
+                                    //Keys.priority: Keys.AfterItem
+                                    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
+                                    Keys.onPressed: {
+                                        if (event.key === Qt.Key_Return){
+                                            console.log("Return key pressed title")
+                                            editingFinished()
+                                            event.accepted = true
+                                        }
+                                        if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                            console.log("Ctrl Return key pressed title")
+                                            editingFinished()
+                                            event.accepted = true
+                                        }
+                                        if (event.key === Qt.Key_Escape){
+                                            console.log("Escape key pressed title")
+                                            delegateRoot.state = ""
+                                            event.accepted = true
+                                        }
+                                    }
+
+                                }
                                 TextField {
                                     id: titleTextField
                                     visible: false
@@ -728,7 +791,26 @@ TrashedListViewForm {
                         visible: false
                     }
                     PropertyChanges {
-                        target: goToChildButton
+                        target: titleLabel
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: labelLabel
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: titleTextField
+                        visible: true
+                    }
+                    PropertyChanges {
+                        target: labelTextField
+                        visible: false
+                    }
+                },
+                State {
+                    name: "edit_label"
+                    PropertyChanges {
+                        target: menuButton
                         visible: false
                     }
                     PropertyChanges {
@@ -741,6 +823,10 @@ TrashedListViewForm {
                     }
                     PropertyChanges {
                         target: titleTextField
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: labelTextField
                         visible: true
                     }
                 }
@@ -780,7 +866,7 @@ TrashedListViewForm {
                     icon {
                         name: "document-edit"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled &&  model.paperId !== -1
                     onTriggered: {
                         console.log("from deleted: open paper action", model.projectId,
                                     model.paperId)
@@ -795,7 +881,7 @@ TrashedListViewForm {
                     icon {
                         name: "tab-new"
                     }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled
+                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && listView.enabled &&  model.paperId !== -1
                     onTriggered: {
                         console.log("from deleted: open paper in new tab action", model.projectId,
                                     model.paperId)
@@ -833,6 +919,21 @@ TrashedListViewForm {
                         console.log("from deleted: rename action", model.projectId,
                                     model.paperId)
                         delegateRoot.editName()
+                    }
+                }
+
+                Action {
+                    id: setLabelAction
+                    text: qsTr("Set label")
+
+                    icon {
+                        name: "label"
+                    }
+                    enabled: contextMenuItemIndex === model.index  && listView.enabled
+                    onTriggered: {
+                        console.log("from deleted: sel label", model.projectId,
+                                    model.paperId)
+                        delegateRoot.editLabel()
                     }
                 }
 

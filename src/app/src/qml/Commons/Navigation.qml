@@ -107,6 +107,9 @@ NavigationForm {
             model: root.restoreListViewProxyModel
 
             Component.onCompleted: {
+                restoreListView.openDocument.connect(root.openDocument)
+                restoreListView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
+                restoreListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
                 restoreListView.restoreDocumentList.connect(root.restoreDocumentList)
                 restoreListView.goBack.connect(root.popRestoreListView)
 

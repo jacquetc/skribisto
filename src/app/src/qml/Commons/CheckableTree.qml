@@ -17,6 +17,7 @@ ListView {
 
 
     signal copyCalled(int projectId, int paperId)
+    signal goBackCalled()
 
     property int currentPaperId: -2
     property int currentProjectId: -2
@@ -156,6 +157,13 @@ ListView {
                 titleTextField.forceActiveFocus()
                 titleTextField.selectAll()
             }
+
+            function editLabel() {
+                state = "edit_label"
+                labelTextField.forceActiveFocus()
+                labelTextField.selectAll()
+            }
+
             Keys.priority: Keys.AfterItem
 
             Keys.onShortcutOverride: {
@@ -170,6 +178,9 @@ ListView {
                     event.accepted = true
                 }
                 if(renameActionEnabled && event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
+                    event.accepted = true
+                }
+                if( event.key === Qt.Key_Escape){
                     event.accepted = true
                 }
             }
@@ -206,6 +217,11 @@ ListView {
                     event.accepted = true
                 }
 
+                if (event.key === Qt.Key_Escape){
+                    console.log("Escape key pressed")
+                    goBackCalled()
+                    event.accepted = true
+                }
 
             }
 
@@ -471,6 +487,50 @@ ListView {
                                 }
 
                                 TextField {
+                                    id: labelTextField
+                                    visible: false
+
+
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    text: labelLabel.text
+                                    maximumLength: 50
+
+                                    placeholderText: qsTr("Enter label")
+
+
+                                    onEditingFinished: {
+                                        //if (!activeFocus) {
+                                        //accepted()
+                                        //}
+                                        console.log("editing label finished")
+                                        model.label = text
+                                        delegateRoot.state = ""
+                                    }
+
+                                    //Keys.priority: Keys.AfterItem
+                                    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
+                                    Keys.onPressed: {
+                                        if (event.key === Qt.Key_Return){
+                                            console.log("Return key pressed title")
+                                            editingFinished()
+                                            event.accepted = true
+                                        }
+                                        if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                            console.log("Ctrl Return key pressed title")
+                                            editingFinished()
+                                            event.accepted = true
+                                        }
+                                        if (event.key === Qt.Key_Escape){
+                                            console.log("Escape key pressed title")
+                                            delegateRoot.state = ""
+                                            event.accepted = true
+                                        }
+                                    }
+
+                                }
+
+                                TextField {
                                     id: titleTextField
                                     visible: false
 
@@ -630,7 +690,26 @@ ListView {
                         visible: false
                     }
                     PropertyChanges {
-                        target: goToChildButton
+                        target: titleLabel
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: labelLabel
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: titleTextField
+                        visible: true
+                    }
+                    PropertyChanges {
+                        target: labelTextField
+                        visible: false
+                    }
+                },
+                State {
+                    name: "edit_label"
+                    PropertyChanges {
+                        target: menuButton
                         visible: false
                     }
                     PropertyChanges {
@@ -643,6 +722,10 @@ ListView {
                     }
                     PropertyChanges {
                         target: titleTextField
+                        visible: false
+                    }
+                    PropertyChanges {
+                        target: labelTextField
                         visible: true
                     }
                 }
@@ -679,9 +762,9 @@ ListView {
                         icon {
                             name: "document-edit"
                         }
-                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled
+                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.paperId !== -1
                         onTriggered: {
-                            console.log("from deleted: open paper action", model.projectId,
+                            console.log("open paper action", model.projectId,
                                         model.paperId)
                             openDocumentAction.trigger()
                         }
@@ -698,9 +781,9 @@ ListView {
                         icon {
                             name: "tab-new"
                         }
-                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled
+                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.paperId !== -1
                         onTriggered: {
-                            console.log("from deleted: open paper in new tab action", model.projectId,
+                            console.log("open paper in new tab action", model.projectId,
                                         model.paperId)
                             openDocumentInNewTabAction.trigger()
                         }
@@ -719,7 +802,7 @@ ListView {
                         }
                         enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false && root.enabled &&  model.paperId !== -1
                         onTriggered: {
-                            console.log("from trash: open paper in new window action", model.projectId,
+                            console.log("open paper in new window action", model.projectId,
                                         model.paperId)
                             openDocumentInNewWindowAction.trigger()
                         }
@@ -740,12 +823,33 @@ ListView {
                         }
                         enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
                         onTriggered: {
-                            console.log("from deleted: rename action", model.projectId,
+                            console.log("rename action", model.projectId,
                                         model.paperId)
                             delegateRoot.editName()
                         }
                     }
                 }
+
+
+                MenuItem {
+                    height: renameActionEnabled ? undefined : 0
+                    visible: renameActionEnabled
+                    action :  Action {
+                        id: setLabelAction
+                        text: qsTr("Set label")
+
+                        icon {
+                            name: "label"
+                        }
+                        enabled: renameActionEnabled && contextMenuItemIndex === model.index  && listView.enabled
+                        onTriggered: {
+                            console.log("sel label", model.projectId,
+                                        model.paperId)
+                            delegateRoot.editLabel()
+                        }
+                    }
+                }
+
                 MenuSeparator {}
 
                 MenuItem {
@@ -761,7 +865,7 @@ ListView {
                         enabled: copyActionEnabled && contextMenuItemIndex === model.index  && root.enabled
 
                         onTriggered: {
-                            console.log("from deleted: copy action", model.projectId,
+                            console.log("copy action", model.projectId,
                                         model.paperId)
                             copyCalled(model.projectId, model.paperId)
                         }
@@ -781,7 +885,7 @@ ListView {
                         }
                         enabled: deleteActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
                         onTriggered: {
-                            console.log("from deleted: delete action", model.projectId,
+                            console.log("delete action", model.projectId,
                                         model.paperId)
 
                             //TODO: to fill

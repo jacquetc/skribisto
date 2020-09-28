@@ -367,7 +367,12 @@ void SKRSearchNoteListProxyModel::setCheckedIdsList(const QList<int> checkedIdsL
 }
 // --------------------------------------------------------------
 
-
+///
+/// \brief SKRSearchNoteListProxyModel::findIdsTrashedAtTheSameTimeThan
+/// \param projectId
+/// \param paperId
+/// \return
+/// more or less 1 second between items' trashed dates
 QList<int> SKRSearchNoteListProxyModel::findIdsTrashedAtTheSameTimeThan(int projectId, int paperId){
 
 
@@ -382,7 +387,7 @@ QList<int> SKRSearchNoteListProxyModel::findIdsTrashedAtTheSameTimeThan(int proj
 
             QDateTime childDate = plmdata->noteHub()->getTrashedDate(projectId, id);
 
-            if(childDate == parentDate){
+            if(qAbs(childDate.secsTo(parentDate)) < 1){
                 result.append(id);
             }
 
@@ -397,7 +402,7 @@ QList<int> SKRSearchNoteListProxyModel::findIdsTrashedAtTheSameTimeThan(int proj
 
             QDateTime childDate = plmdata->noteHub()->getTrashedDate(projectId, id);
 
-            if(childDate == parentDate){
+            if(qAbs(childDate.secsTo(parentDate)) < 1){
                 result.append(id);
             }
 

@@ -63,6 +63,7 @@ RestoreListViewForm {
         listView.openDocument.connect(root.openDocument)
         listView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
         listView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
+        listView.goBackCalled.connect( function() {goBackAction.trigger()})
 
         listView.proxyModel = proxyModel
         listView.treeIndentOffset = treeIndentOffset

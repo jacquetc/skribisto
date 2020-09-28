@@ -369,13 +369,14 @@ QList<int> SKRSearchSheetListProxyModel::findIdsTrashedAtTheSameTimeThan(int pro
     QDateTime parentDate = plmdata->sheetHub()->getTrashedDate(projectId, paperId);
 
 
+
     if(!m_paperIdListFilter.isEmpty()){
 
         for(int id : m_paperIdListFilter){
 
             QDateTime childDate = plmdata->sheetHub()->getTrashedDate(projectId, id);
 
-            if(childDate == parentDate){
+            if(qAbs(childDate.secsTo(parentDate)) < 1){
                 result.append(id);
             }
 
@@ -390,7 +391,7 @@ QList<int> SKRSearchSheetListProxyModel::findIdsTrashedAtTheSameTimeThan(int pro
 
             QDateTime childDate = plmdata->sheetHub()->getTrashedDate(projectId, id);
 
-            if(childDate == parentDate){
+            if(qAbs(childDate.secsTo(parentDate)) < 1){
                 result.append(id);
             }
 
