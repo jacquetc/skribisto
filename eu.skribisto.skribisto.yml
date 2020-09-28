@@ -26,11 +26,11 @@ modules:
       - --enable-threadsafe
       - --enable-threads-override-locks
     build-options:
-      cflags: -DSQLITE_ENABLE_UNLOCK_NOTIFY=1
+      cflags: -DSQLITE_ENABLE_UNLOCK_NOTIFY=1 -DSQLITE_ENABLE_COLUMN_METADATA=1
     sources:
       - type: archive
-        url: http://sqlite.org/2018/sqlite-autoconf-3230100.tar.gz
-        sha256: 92842b283e5e744eff5da29ed3c69391de7368fccc4d0ee6bf62490ce555ef25
+        url: https://sqlite.org/2020/sqlite-autoconf-3330000.tar.gz
+        sha256: 106a2c48c7f75a298a7557bcc0d5f4f454e5b43811cc738b7ca294d6956bbb15
         
   - name: quazip
     buildsystem: cmake-ninja
