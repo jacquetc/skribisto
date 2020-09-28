@@ -1062,11 +1062,10 @@ showTabListButton.icon{
 
         arguments = Qt.application.arguments
         for (arg in arguments) {
-            console.log("argument : " , arguments[arg])
-            console.log("argument : " , arguments[arg].slice(-6))
             if(arg === 0 ){
                 continue
             }
+            console.log("argument : " , arguments[arg])
 
             if (arguments[arg] === "--testProject") {
                 var error = plmData.projectHub().loadProject(

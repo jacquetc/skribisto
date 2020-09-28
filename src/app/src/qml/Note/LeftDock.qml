@@ -142,8 +142,8 @@ LeftDockForm {
 
     //Document List :
     //-----------------------------------------------------------
-    documentView.model: plmModels.noteDocumentListModel()
-    documentView.documentModel: plmModels.noteDocumentListModel()
+//    documentView.model: plmModels.noteDocumentListModel()
+//    documentView.documentModel: plmModels.noteDocumentListModel()
 
     //-----------------------------------------------------------
 

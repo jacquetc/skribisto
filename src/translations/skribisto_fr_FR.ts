@@ -55,6 +55,14 @@
         <source>Delete definitively</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DeletedListView</name>
@@ -460,6 +468,10 @@
         <source>Behavior</source>
         <translation>Comportement</translation>
     </message>
+    <message>
+        <source>Recent projects</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RestoreListView</name>
@@ -519,6 +531,15 @@
         <source>Restore</source>
         <translation type="unfinished">Restaurer</translation>
     </message>
+    <message>
+        <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
+%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select none</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RestoreListViewForm.ui</name>
@@ -532,6 +553,10 @@
     </message>
     <message>
         <source>Trashed menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The checked documents are those which were trashed at the same time</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -797,6 +822,19 @@
         <source>Delete definitively</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
+%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TrashedListViewForm.ui</name>
@@ -918,6 +956,14 @@
     <message>
         <source>Send to trash</source>
         <translation type="unfinished">Envoyer à la corbeille</translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
