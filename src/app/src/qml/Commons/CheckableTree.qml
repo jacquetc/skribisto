@@ -45,6 +45,13 @@ ListView {
     // options :
     property bool treelikeIndentsVisible: false
     property bool checkButtonsVisible: false
+    property bool openActionsEnabled: false
+    property bool renameActionEnabled: false
+    //property bool sendToTrashActionEnabled: false
+    property bool deleteActionEnabled: false
+    property bool cutActionEnabled: false
+    property bool copyActionEnabled: false
+    property bool pasteActionEnabled: false
 
 
     //tree-like onTreelikeIndents
@@ -52,7 +59,14 @@ ListView {
     property int treeIndentMultiplier: 10
 
     // checkButtons :
-    readonly property var checkedPaperIdList: proxyModel.checkedIdsList
+    function getCheckedPaperIdList(){
+        return proxyModel.getCheckedIdsList()
+    }
+
+    function setCheckedPaperIdList(checkedPaperIdList){
+        proxyModel.setCheckedIdsList(checkedPaperIdList)
+    }
+
 
 
     // TreeView item :
@@ -145,34 +159,54 @@ ListView {
             Keys.priority: Keys.AfterItem
 
             Keys.onShortcutOverride: {
-                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
+
+                if(copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
                     event.accepted = true
                 }
-                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
+                if(cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
                     event.accepted = true
                 }
-                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
+                if(pasteActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
                     event.accepted = true
                 }
-                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
-                    event.accepted = true
-                }
-                if( event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
+                if(renameActionEnabled && event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
                     event.accepted = true
                 }
             }
 
             Keys.onPressed: {
-                if (event.key === Qt.Key_Return){
+                if (openActionsEnabled && event.key === Qt.Key_Return){
                     console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
                 }
-                if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
+                if (openActionsEnabled && (event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
                     console.log("Alt Return key pressed")
                     openDocumentInNewTabAction.trigger()
                     event.accepted = true
                 }
+
+
+                // rename
+
+                if (renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name"){
+                    renameAction.trigger()
+                    event.accepted = true
+                }
+
+                // cut
+                if (cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name"){
+                    cutAction.trigger()
+                    event.accepted = true
+                }
+
+                // copy
+                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name"){
+                    copyAction.trigger()
+                    event.accepted = true
+                }
+
+
             }
 
             Rectangle {
@@ -333,7 +367,7 @@ ListView {
                             onCheckStateChanged: {
 
                                 if(root.currentIndex === model.index){
-console.log("model.hasChildren", model.hasChildren)
+                                    console.log("model.hasChildren", model.hasChildren)
                                     if(checkState === Qt.PartiallyChecked && !proxyModel.hasChildren(model.projectId, model.paperId)){
                                         model.checkState = Qt.Checked
                                     }
@@ -635,104 +669,126 @@ console.log("model.hasChildren", model.hasChildren)
                 }
 
 
-
-                Action {
-                    id: openPaperAction
-                    text: qsTr("Open")
-                    //shortcut: "Return"
-                    icon {
-                        name: "document-edit"
-                    }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled
-                    onTriggered: {
-                        console.log("from deleted: open paper action", model.projectId,
-                                    model.paperId)
-                        openDocumentAction.trigger()
-                    }
-                }
-
-                Action {
-                    id: openPaperInNewTabAction
-                    text: qsTr("Open in new tab")
-                    //shortcut: "Alt+Return"
-                    icon {
-                        name: "tab-new"
-                    }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled
-                    onTriggered: {
-                        console.log("from deleted: open paper in new tab action", model.projectId,
-                                    model.paperId)
-                        openDocumentInNewTabAction.trigger()
+                MenuItem {
+                    height: openActionsEnabled ? undefined : 0
+                    visible: openActionsEnabled
+                    action: Action {
+                        id: openPaperAction
+                        text: qsTr("Open")
+                        //shortcut: "Return"
+                        icon {
+                            name: "document-edit"
+                        }
+                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled
+                        onTriggered: {
+                            console.log("from deleted: open paper action", model.projectId,
+                                        model.paperId)
+                            openDocumentAction.trigger()
+                        }
                     }
                 }
 
-                Action {
-                    id: openPaperInNewWindowAction
-                    text: qsTr("Open in new window")
-                    //shortcut: "Alt+Return"
-                    icon {
-                        name: "window-new"
-                    }
-                    enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && root.enabled &&  model.paperId !== -1
-                    onTriggered: {
-                        console.log("from trash: open paper in new window action", model.projectId,
-                                    model.paperId)
-                        openDocumentInNewWindowAction.trigger()
+                MenuItem {
+                    height: openActionsEnabled ? undefined : 0
+                    visible: openActionsEnabled
+                    action: Action {
+                        id: openPaperInNewTabAction
+                        text: qsTr("Open in new tab")
+                        //shortcut: "Alt+Return"
+                        icon {
+                            name: "tab-new"
+                        }
+                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled
+                        onTriggered: {
+                            console.log("from deleted: open paper in new tab action", model.projectId,
+                                        model.paperId)
+                            openDocumentInNewTabAction.trigger()
+                        }
                     }
                 }
 
-
-                MenuSeparator {}
-
-                Action {
-                    id: renameAction
-                    text: qsTr("Rename")
-                    //shortcut: "F2"
-                    icon {
-                        name: "edit-rename"
-                    }
-                    enabled: contextMenuItemIndex === model.index  && root.enabled
-                    onTriggered: {
-                        console.log("from deleted: rename action", model.projectId,
-                                    model.paperId)
-                        delegateRoot.editName()
+                MenuItem {
+                    height: openActionsEnabled ? undefined : 0
+                    visible: openActionsEnabled
+                    action: Action {
+                        id: openPaperInNewWindowAction
+                        text: qsTr("Open in new window")
+                        //shortcut: "Alt+Return"
+                        icon {
+                            name: "window-new"
+                        }
+                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false && root.enabled &&  model.paperId !== -1
+                        onTriggered: {
+                            console.log("from trash: open paper in new window action", model.projectId,
+                                        model.paperId)
+                            openDocumentInNewWindowAction.trigger()
+                        }
                     }
                 }
 
                 MenuSeparator {}
 
-                Action {
-
-                    text: qsTr("Copy")
-                    //shortcut: StandardKey.Copy
-                    icon {
-                        name: "edit-copy"
+                MenuItem {
+                    height: renameActionEnabled ? undefined : 0
+                    visible: renameActionEnabled
+                    action :Action {
+                        id: renameAction
+                        text: qsTr("Rename")
+                        //shortcut: "F2"
+                        icon {
+                            name: "edit-rename"
+                        }
+                        enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
+                        onTriggered: {
+                            console.log("from deleted: rename action", model.projectId,
+                                        model.paperId)
+                            delegateRoot.editName()
+                        }
                     }
-                    enabled: contextMenuItemIndex === model.index  && root.enabled
+                }
+                MenuSeparator {}
 
-                    onTriggered: {
-                        console.log("from deleted: copy action", model.projectId,
-                                    model.paperId)
-                        copyCalled(model.projectId, model.paperId)
+                MenuItem {
+                    height: copyActionEnabled ? undefined : 0
+                    visible: copyActionEnabled
+                    action :Action {
+
+                        text: qsTr("Copy")
+                        //shortcut: StandardKey.Copy
+                        icon {
+                            name: "edit-copy"
+                        }
+                        enabled: copyActionEnabled && contextMenuItemIndex === model.index  && root.enabled
+
+                        onTriggered: {
+                            console.log("from deleted: copy action", model.projectId,
+                                        model.paperId)
+                            copyCalled(model.projectId, model.paperId)
+                        }
                     }
                 }
 
                 MenuSeparator {}
 
-                Action {
-                    text: qsTr("Delete definitively")
-                    //shortcut: "Del"
-                    icon {
-                        name: "edit-delete"
-                    }
-                    enabled: contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
-                    onTriggered: {
-                        console.log("from deleted: delete action", model.projectId,
-                                    model.paperId)
+                MenuItem {
+                    height: deleteActionEnabled ? undefined : 0
+                    visible: deleteActionEnabled
+                    action: Action {
+                        text: qsTr("Delete definitively")
+                        //shortcut: "Del"
+                        icon {
+                            name: "edit-delete"
+                        }
+                        enabled: deleteActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
+                        onTriggered: {
+                            console.log("from deleted: delete action", model.projectId,
+                                        model.paperId)
 
-                        //TODO: to fill
+                            //TODO: to fill
+                        }
                     }
                 }
+
                 MenuSeparator {}
             }
 

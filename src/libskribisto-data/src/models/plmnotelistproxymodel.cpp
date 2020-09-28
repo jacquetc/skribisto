@@ -502,7 +502,7 @@ QString PLMNoteListProxyModel::getItemName(int projectId, int paperId)
     }
     QString name = "";
 
-    if ((paperId == 0) && (plmdata->projectHub()->getProjectIdList().count() <= 1)) {
+    if (paperId == -1) {
         name = plmdata->projectHub()->getProjectName(projectId);
     }
     else {

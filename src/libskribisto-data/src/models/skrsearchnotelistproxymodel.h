@@ -20,8 +20,6 @@ class EXPORT SKRSearchNoteListProxyModel : public QSortFilterProxyModel {
         QList<int>paperIdListFilter MEMBER m_paperIdListFilter WRITE setPaperIdListFilter NOTIFY paperIdListFilterChanged)
     Q_PROPERTY(
         int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
-    Q_PROPERTY(
-        QList<int> checkedIdsList READ getCheckedIdsList  NOTIFY checkedIdsListChanged)
 
 public:
 
@@ -70,13 +68,13 @@ public:
                               bool getTrashed,
                               bool getNotTrashed);
 
-    void setPaperIdListFilter(const QList<int>& paperIdListFilter);
+    void                  setPaperIdListFilter(const QList<int>& paperIdListFilter);
 
     Q_INVOKABLE QString   getItemName(int projectId,
                                       int paperId);
     Q_INVOKABLE int       getItemIndent(int projectId,
                                         int paperId);
-    QHash<int, QByteArray> roleNames() const override;
+    QHash<int, QByteArray>roleNames() const override;
 
 
     void                  checkStateOfAllChildren(int            projectId,
@@ -87,16 +85,22 @@ public:
                                                             Qt::CheckState checkState);
 
 
-    Q_INVOKABLE void clearCheckedList();
+    Q_INVOKABLE void      clearCheckedList();
+    Q_INVOKABLE void      checkAll();
+    Q_INVOKABLE void      checkNone();
+    Q_INVOKABLE QList<int>getCheckedIdsList();
+    Q_INVOKABLE void      setCheckedIdsList(const QList<int>checkedIdsList);
+    Q_INVOKABLE QList<int>findIdsTrashedAtTheSameTimeThan(int projectId,
+                                                          int paperId);
+
 signals:
 
-    void             projectIdFilterChanged(int projectIdFilter);
-    void             textFilterChanged(const QString& value);
-    void             showTrashedFilterChanged(bool value);
-    void             showNotTrashedFilterChanged(bool value);
-    void             paperIdListFilterChanged(const QList<int>paperIdList);
+    void projectIdFilterChanged(int projectIdFilter);
+    void textFilterChanged(const QString& value);
+    void showTrashedFilterChanged(bool value);
+    void showNotTrashedFilterChanged(bool value);
+    void paperIdListFilterChanged(const QList<int>paperIdList);
     void forcedCurrentIndexChanged(int forcedCurrentIndex);
-    void checkedIdsListChanged();
 
 public slots:
 
@@ -109,7 +113,6 @@ private:
 
     PLMNoteItem* getItem(int projectId,
                          int paperId);
-    QList<int> getCheckedIdsList();
 
 private slots:
 

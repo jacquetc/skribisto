@@ -565,8 +565,7 @@ TreeListViewForm {
                         goToChildActionToBeTriggered = true
                         goToChildActionCurrentIndent =  model.indent
 
-                        //var _delegateRoot = delegateRoot
-                        //                        var _titleTextField = titleTextField
+
                         var _proxyModel = proxyModel
                         currentProject = model.projectId
                         currentParent = model.paperId
@@ -765,6 +764,7 @@ TreeListViewForm {
                                         else {
                                             model.name = text
                                         }
+
 
                                         delegateRoot.state = ""
                                     }

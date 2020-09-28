@@ -99,6 +99,11 @@ Item {
 
                     treelikeIndentsVisible: true
                     checkButtonsVisible: true
+                    openActionsEnabled: true
+                    renameActionEnabled: true
+                    copyActionEnabled: true
+                    deleteActionEnabled: true
+
 
                 }
 

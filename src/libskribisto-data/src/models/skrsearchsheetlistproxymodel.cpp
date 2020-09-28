@@ -12,16 +12,16 @@ SKRSearchSheetListProxyModel::SKRSearchSheetListProxyModel(QObject *parent) :
 
 
     connect(
-        plmdata->projectHub(),
-        &PLMProjectHub::projectLoaded,
-        this,
-        &SKRSearchSheetListProxyModel::loadProjectSettings);
+                plmdata->projectHub(),
+                &PLMProjectHub::projectLoaded,
+                this,
+                &SKRSearchSheetListProxyModel::loadProjectSettings);
     connect(
-        plmdata->projectHub(),
-        &PLMProjectHub::projectToBeClosed,
-        this,
-        &SKRSearchSheetListProxyModel::saveProjectSettings,
-        Qt::DirectConnection);
+                plmdata->projectHub(),
+                &PLMProjectHub::projectToBeClosed,
+                this,
+                &SKRSearchSheetListProxyModel::saveProjectSettings,
+                Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->clearFilters();
     });
@@ -74,7 +74,7 @@ bool SKRSearchSheetListProxyModel::setData(const QModelIndex& index,
     QModelIndex sourceIndex = this->mapToSource(index);
 
     PLMSheetItem *item =
-        static_cast<PLMSheetItem *>(sourceIndex.internalPointer());
+            static_cast<PLMSheetItem *>(sourceIndex.internalPointer());
 
     if ((role == Qt::EditRole) && (sourceIndex.column() == 0)) {
         if (item->isProjectItem()) {
@@ -101,7 +101,6 @@ bool SKRSearchSheetListProxyModel::setData(const QModelIndex& index,
                                                 item->paperId(),
                                                 checkState);
 
-        emit checkedIdsListChanged();
     }
 
     return QSortFilterProxyModel::setData(index, value, role);
@@ -130,16 +129,22 @@ void SKRSearchSheetListProxyModel::checkStateOfAllChildren(int            projec
 // --------------------------------------------------------------
 
 void SKRSearchSheetListProxyModel::determineCheckStateOfAllAncestors(
-    int            projectId,
-    int            paperId,
-    Qt::CheckState checkState)
+        int            projectId,
+        int            paperId,
+        Qt::CheckState checkState)
 {
     PLMSheetListModel *model    = static_cast<PLMSheetListModel *>(this->sourceModel());
     QList<int> ancestorsIdsList = this->getAncestorsList(projectId,
                                                          paperId,
                                                          m_showTrashedFilter,
                                                          m_showNotTrashedFilter);
-    Qt::CheckState ancestorCheckState;
+
+    if(ancestorsIdsList.isEmpty()){
+        return;
+    }
+
+    //default state :
+    Qt::CheckState ancestorCheckState = Qt::Unchecked;
 
     if (checkState == Qt::Unchecked) {
         // see if the direct ancestor has all its children unchecked
@@ -152,26 +157,33 @@ void SKRSearchSheetListProxyModel::determineCheckStateOfAllAncestors(
             ancestorCheckState = Qt::PartiallyChecked;
         }
         else {
-            bool areAllSiblingsChecked         = false;
+            bool areNoneOfTheSiblingsChecked         = false;
             bool areAtLeastOneSiblingChecked   = false;
+            bool areAtLeastOneSiblingPartiallyChecked = false;
             bool areAtLeastOneSiblingUnchecked = false;
 
             for (int siblingId : siblingsIdsList) {
                 Qt::CheckState state = m_checkedIdsHash.value(siblingId, Qt::Unchecked);
 
-                if ((state == Qt::Checked) || (state == Qt::PartiallyChecked)) {
+                if (state == Qt::Checked){
                     areAtLeastOneSiblingChecked = true;
                 }
-                else {
+                if(state == Qt::PartiallyChecked){
+                    areAtLeastOneSiblingPartiallyChecked = true;
+                }
+                if (state == Qt::Unchecked){
                     areAtLeastOneSiblingUnchecked = true;
                 }
             }
-            areAllSiblingsChecked = !areAtLeastOneSiblingUnchecked;
+            areNoneOfTheSiblingsChecked = !areAtLeastOneSiblingChecked && !areAtLeastOneSiblingPartiallyChecked;
 
             if (areAtLeastOneSiblingChecked) { // but this one
                 ancestorCheckState = Qt::PartiallyChecked;
             }
-            else if (!areAllSiblingsChecked) {
+            if (areAtLeastOneSiblingPartiallyChecked) {
+                ancestorCheckState = Qt::PartiallyChecked;
+            }
+            else if(areNoneOfTheSiblingsChecked){
                 ancestorCheckState = Qt::PartiallyChecked;
             }
         }
@@ -191,26 +203,34 @@ void SKRSearchSheetListProxyModel::determineCheckStateOfAllAncestors(
         else {
             bool areAllSiblingsChecked         = false;
             bool areAtLeastOneSiblingChecked   = false;
+            bool areAtLeastOneSiblingPartiallyChecked = false;
             bool areAtLeastOneSiblingUnchecked = false;
 
             for (int siblingId : siblingsIdsList) {
                 Qt::CheckState state = m_checkedIdsHash.value(siblingId, Qt::Unchecked);
 
-                if ((state == Qt::Checked) || (state == Qt::PartiallyChecked)) {
+                if (state == Qt::Checked){
                     areAtLeastOneSiblingChecked = true;
                 }
-                else {
+                if(state == Qt::PartiallyChecked){
+                    areAtLeastOneSiblingPartiallyChecked = true;
+                }
+                if(state == Qt::Unchecked){
                     areAtLeastOneSiblingUnchecked = true;
                 }
             }
-            areAllSiblingsChecked = !areAtLeastOneSiblingUnchecked;
+            areAllSiblingsChecked = !areAtLeastOneSiblingUnchecked && !areAtLeastOneSiblingPartiallyChecked;
 
-            if (areAtLeastOneSiblingUnchecked) { // but this one
-                ancestorCheckState = Qt::PartiallyChecked;
-            }
-            else if (areAllSiblingsChecked) {
+            if (areAllSiblingsChecked) {
                 ancestorCheckState = Qt::Checked;
             }
+            else if (areAtLeastOneSiblingUnchecked) { // but this one
+                ancestorCheckState = Qt::PartiallyChecked;
+            }
+            else if (areAtLeastOneSiblingPartiallyChecked) {
+                ancestorCheckState = Qt::PartiallyChecked;
+            }
+
         }
     }
     else if (checkState == Qt::PartiallyChecked) {
@@ -230,18 +250,20 @@ void SKRSearchSheetListProxyModel::determineCheckStateOfAllAncestors(
     }
 
 
-    for (int ancestorId : ancestorsIdsList) {
-        m_checkedIdsHash.insert(ancestorId, ancestorCheckState);
-        QModelIndex modelIndex = model->getModelIndex(projectId, ancestorId).first();
+    //for (int ancestorId : ancestorsIdsList) {
+        m_checkedIdsHash.insert(ancestorsIdsList.first(), ancestorCheckState);
+        QModelIndex modelIndex = model->getModelIndex(projectId, ancestorsIdsList.first()).first();
 
         emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
                          QVector<int>() << Qt::CheckStateRole);
-    }
+    //}
+        determineCheckStateOfAllAncestors(m_projectIdFilter, ancestorsIdsList.first(), ancestorCheckState);
+
 }
 
 // --------------------------------------------------------------
 
-QList<int>SKRSearchSheetListProxyModel::getCheckedIdsList() {
+QList<int>SKRSearchSheetListProxyModel::getCheckedIdsList() const{
     QList<int> result;
 
     QHash<int, Qt::CheckState>::const_iterator i = m_checkedIdsHash.constBegin();
@@ -249,11 +271,137 @@ QList<int>SKRSearchSheetListProxyModel::getCheckedIdsList() {
     while (i != m_checkedIdsHash.constEnd()) {
         if ((i.value() == Qt::Checked) || (i.value() == Qt::PartiallyChecked)) {
             result << i.key();
-            ++i;
         }
+        ++i;
+
     }
 
     return result;
+}
+
+// --------------------------------------------------------------
+
+
+void SKRSearchSheetListProxyModel::setCheckedIdsList(const QList<int> checkedIdsList){
+    PLMSheetListModel *model    = static_cast<PLMSheetListModel *>(this->sourceModel());
+
+    this->clearCheckedList();
+
+
+    if(checkedIdsList.isEmpty()){
+        return;
+    }
+
+    for(int i = checkedIdsList.count() - 1 ; i >= 0 ;  i--){
+
+        int paperId  = checkedIdsList[i];
+
+
+        if(!this->hasChildren(m_projectIdFilter, paperId)){
+            m_checkedIdsHash.insert(paperId, Qt::Checked);
+        }
+        else { // has children so verify if there is one checked or partially checked
+
+
+
+            Qt::CheckState finalState = Qt::Unchecked;
+            QList<int> childrenIdsList = this->getChildrenList(m_projectIdFilter,
+                                                               paperId,
+                                                               m_showTrashedFilter,
+                                                               m_showNotTrashedFilter);
+
+
+                bool areAllChildrenChecked         = false;
+                bool areAtLeastOneChildChecked   = false;
+                bool areAtLeastOneChildPartiallyChecked   = false;
+                bool areAtLeastOneChildUnchecked = false;
+
+                for (int childId : childrenIdsList) {
+                    Qt::CheckState state = m_checkedIdsHash.value(childId, Qt::Unchecked);
+
+                    if (state == Qt::Checked) {
+                        areAtLeastOneChildChecked = true;
+                    }
+                    else if(state == Qt::PartiallyChecked) {
+                            areAtLeastOneChildPartiallyChecked = true;
+                        }
+                    else {
+                        areAtLeastOneChildUnchecked = true;
+                    }
+                }
+
+                areAllChildrenChecked = !areAtLeastOneChildUnchecked && !areAtLeastOneChildPartiallyChecked;
+
+                if (areAtLeastOneChildUnchecked) { // but this one
+                    finalState = Qt::PartiallyChecked;
+                }
+                else if (areAllChildrenChecked) {
+                    finalState = Qt::Checked;
+                }
+                else {
+                    finalState = Qt::PartiallyChecked;
+                }
+
+
+
+
+
+            m_checkedIdsHash.insert(paperId, finalState);
+        }
+
+        //m_checkedIdsHash.insert(paperId, Qt::Checked);
+        QModelIndexList modelIndexList = model->getModelIndex(m_projectIdFilter, paperId);
+        if(modelIndexList.isEmpty()){
+            continue;
+        }
+        QModelIndex modelIndex = modelIndexList.first();
+
+        emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
+                         QVector<int>() << Qt::CheckStateRole);
+    }
+}
+// --------------------------------------------------------------
+QList<int> SKRSearchSheetListProxyModel::findIdsTrashedAtTheSameTimeThan(int projectId, int paperId){
+
+
+    QList<int> result;
+
+    QDateTime parentDate = plmdata->sheetHub()->getTrashedDate(projectId, paperId);
+
+
+    if(!m_paperIdListFilter.isEmpty()){
+
+        for(int id : m_paperIdListFilter){
+
+            QDateTime childDate = plmdata->sheetHub()->getTrashedDate(projectId, id);
+
+            if(childDate == parentDate){
+                result.append(id);
+            }
+
+
+        }
+
+
+    }
+    else {
+        QList<int> childrenIds  = this->getChildrenList(projectId, paperId, m_showTrashedFilter, m_showNotTrashedFilter);
+        for(int id : childrenIds){
+
+            QDateTime childDate = plmdata->sheetHub()->getTrashedDate(projectId, id);
+
+            if(childDate == parentDate){
+                result.append(id);
+            }
+
+
+        }
+    }
+
+
+
+    return result;
+
 }
 
 // --------------------------------------------------------------
@@ -270,7 +418,7 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int                sourceRow
         return false;
     }
     PLMSheetItem *item       = static_cast<PLMSheetItem *>(index.internalPointer());
-    PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
+    //PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
 
     // avoid project item
     if (item->data(PLMSheetItem::Roles::PaperIdRole).toInt() == -1) {
@@ -279,7 +427,7 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int                sourceRow
 
     // project filtering :
     if (result &&
-        (item->data(PLMSheetItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter)) {
+            (item->data(PLMSheetItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter)) {
         result = true;
     }
     else if (result) {
@@ -300,8 +448,8 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int                sourceRow
 
     // text filtering :
     if (result &&
-        item->data(PLMSheetItem::Roles::NameRole).toString().contains(m_textFilter,
-                                                                      Qt::CaseInsensitive))
+            item->data(PLMSheetItem::Roles::NameRole).toString().contains(m_textFilter,
+                                                                          Qt::CaseInsensitive))
     {
         result = true;
     }
@@ -312,8 +460,8 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int                sourceRow
     // paperIdListFiltering :
     if (!m_paperIdListFilter.isEmpty()) {
         if (result &&
-            m_paperIdListFilter.contains(item->data(PLMSheetItem::Roles::PaperIdRole).
-                                         toInt()))
+                m_paperIdListFilter.contains(item->data(PLMSheetItem::Roles::PaperIdRole).
+                                             toInt()))
         {
             result = true;
         }
@@ -321,6 +469,8 @@ bool SKRSearchSheetListProxyModel::filterAcceptsRow(int                sourceRow
             result = false;
         }
     }
+
+
 
     return result;
 }
@@ -357,9 +507,75 @@ void SKRSearchSheetListProxyModel::clearFilters()
 void SKRSearchSheetListProxyModel::clearCheckedList()
 {
     m_checkedIdsHash.clear();
-    emit checkedIdsListChanged();
 }
 
+// --------------------------------------------------------------
+
+void SKRSearchSheetListProxyModel::checkAll()
+{
+    PLMSheetListModel *model    = static_cast<PLMSheetListModel *>(this->sourceModel());
+
+    if(m_paperIdListFilter.isEmpty()){
+
+        QList<int> filteredIdsList;
+        QList<int> allIdsList = plmdata->sheetHub()->getAllIds(m_projectIdFilter);
+
+        for (int id : allIdsList) {
+            bool isTrashed = plmdata->sheetHub()->getTrashed(m_projectIdFilter, id);
+
+            if (m_showTrashedFilter && isTrashed) {
+                filteredIdsList.append(id);
+            }
+
+            if (m_showNotTrashedFilter && !isTrashed) {
+                filteredIdsList.append(id);
+            }
+        }
+
+        for (int id : filteredIdsList) {
+            m_checkedIdsHash.insert(id, Qt::Checked);
+
+            QModelIndex modelIndex = model->getModelIndex(m_projectIdFilter, id).first();
+
+            emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
+                             QVector<int>() << Qt::CheckStateRole);
+        }
+
+    }
+    else {
+        for(int paperId : m_paperIdListFilter){
+            m_checkedIdsHash.insert(paperId, Qt::Checked);
+
+            QModelIndex modelIndex = model->getModelIndex(m_projectIdFilter, paperId).first();
+
+            emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
+                             QVector<int>() << Qt::CheckStateRole);
+
+        }
+
+
+
+
+    }
+
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchSheetListProxyModel::checkNone()
+{
+    PLMSheetListModel *model    = static_cast<PLMSheetListModel *>(this->sourceModel());
+    QHash<int, Qt::CheckState> checkedIdsHash(m_checkedIdsHash);
+
+    this->clearCheckedList();
+
+    for(int paperId : checkedIdsHash.keys()){
+        QModelIndex modelIndex = model->getModelIndex(m_projectIdFilter, paperId).first();
+        emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
+                         QVector<int>() << Qt::CheckStateRole);
+    }
+
+}
 // --------------------------------------------------------------
 
 // --------------------------------------------------------------
@@ -410,7 +626,7 @@ void SKRSearchSheetListProxyModel::saveProjectSettings(int projectId)
 // ----------------------------------------------------------------------------------
 
 void SKRSearchSheetListProxyModel::setPaperIdListFilter(
-    const QList<int>& paperIdListFilter)
+        const QList<int>& paperIdListFilter)
 {
     m_paperIdListFilter = paperIdListFilter;
 
@@ -439,7 +655,7 @@ QList<int>SKRSearchSheetListProxyModel::getChildrenList(int  projectId,
     QList<int> resultChildrenIdList;
 
     QList<int> allChildrenIdList =
-        plmdata->sheetHub()->getAllChildren(projectId, paperId);
+            plmdata->sheetHub()->getAllChildren(projectId, paperId);
 
     for (int childId : allChildrenIdList) {
         bool isTrashed = plmdata->sheetHub()->getTrashed(projectId, childId);
@@ -465,7 +681,7 @@ QList<int>SKRSearchSheetListProxyModel::getAncestorsList(int  projectId,
     QList<int> resultAllAncestorsIdList;
 
     QList<int> allAncestorsIdList =
-        plmdata->sheetHub()->getAllAncestors(projectId, paperId);
+            plmdata->sheetHub()->getAllAncestors(projectId, paperId);
 
     for (int ancestorId : allAncestorsIdList) {
         bool isTrashed = plmdata->sheetHub()->getTrashed(projectId, ancestorId);
@@ -491,7 +707,7 @@ QList<int>SKRSearchSheetListProxyModel::getSiblingsList(int  projectId,
     QList<int> resultAllSiblingsIdList;
 
     QList<int> allSiblingsIdList =
-        plmdata->sheetHub()->getAllSiblings(projectId, paperId);
+            plmdata->sheetHub()->getAllSiblings(projectId, paperId);
 
     for (int ancestorId : allSiblingsIdList) {
         bool isTrashed = plmdata->sheetHub()->getTrashed(projectId, ancestorId);
@@ -558,7 +774,7 @@ void SKRSearchSheetListProxyModel::setCurrentPaperId(int projectId, int paperId)
     }
 
 
-    PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
+    //PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
     PLMSheetItem *item       = this->getItem(projectId, paperId);
 
     if (!item) {
@@ -593,8 +809,8 @@ int SKRSearchSheetListProxyModel::findVisualIndex(int projectId, int paperId)
 
         if ((this->data(modelIndex,
                         PLMSheetItem::Roles::ProjectIdRole).toInt() == projectId)
-            && (this->data(modelIndex,
-                           PLMSheetItem::Roles::PaperIdRole).toInt() == paperId)) {
+                && (this->data(modelIndex,
+                               PLMSheetItem::Roles::PaperIdRole).toInt() == paperId)) {
             result = i;
             break;
         }

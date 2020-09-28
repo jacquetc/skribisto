@@ -39,8 +39,6 @@ RestoreListViewForm {
     property int openedPaperId: -2
     property bool hoveringChangingTheCurrentItemAllowed: listView.hoveringChangingTheCurrentItemAllowed
 
-    property var paperIdListToBeFinallyRestored: listView.checkedPaperIdList
-
     // scrollBar interactivity :
 
     listView.onContentHeightChanged: {
@@ -69,8 +67,14 @@ RestoreListViewForm {
         listView.proxyModel = proxyModel
         listView.treeIndentOffset = treeIndentOffset
         listView.currentProjectId = currentProjectId
-        listView.currentPaperId = currentPaperId
+        proxyModel.projectIdFilter = currentProjectId
+        listView.currentPaperId = parentPaperIdToBeRestored
         listView.currentIndex = currentIndex
+
+
+        //pre-check same time trashed :
+        var idList = proxyModel.findIdsTrashedAtTheSameTimeThan(currentProjectId, parentPaperIdToBeRestored)
+        proxyModel.setCheckedIdsList(idList)
 
     }
 
@@ -87,6 +91,7 @@ RestoreListViewForm {
             width: 100
         }
         onTriggered: {
+            var paperIdListToBeFinallyRestored = listView.getCheckedPaperIdList()
 
             restoreDocumentList(currentProjectId, paperIdListToBeFinallyRestored)
             console.log('finally restore list', currentProjectId, paperIdListToBeFinallyRestored)
@@ -167,13 +172,22 @@ RestoreListViewForm {
 
     Action {
         id: selectAllAction
-        text: qsTr("Select all")
+        text: selectAllAction.checked ? qsTr("Select none") : qsTr("Select all")
         //enabled: navigationMenu.opened
         //shortcut: "Ctrl+Shift+Del"
         icon.name: selectAllAction.checked ? "edit-select-none" : "edit-select-all"
         checkable: true
         onTriggered: {
-            //TODO: fill that
+
+        if(selectAllAction.checked){
+            proxyModel.checkAll()
+        }
+        else {
+            proxyModel.checkNone()
+
+        }
+
+
         }
     }
 

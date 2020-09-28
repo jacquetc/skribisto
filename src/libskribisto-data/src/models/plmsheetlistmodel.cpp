@@ -28,8 +28,8 @@ PLMSheetListModel::PLMSheetListModel(QObject *parent)
             &PLMSheetListModel::refreshAfterDataMove);
 
     connect(plmdata->sheetHub(),
-            &PLMSheetHub::trashedChanged, // careful, paper is trashed = true,
-                                          // not a true removal
+            &PLMSheetHub::trashedChanged,
+
             this,
             &PLMSheetListModel::refreshAfterTrashedStateChanged);
 
@@ -630,30 +630,6 @@ void PLMSheetListModel::refreshAfterProjectIsActiveChanged(int projectId)
     }
 }
 
-// void PLMSheetListModel::movePaper(int sourceProjectId, int sourcePaperId, int
-// targetProjectId, int targetPaperId)
-// {
-
-
-//    QModelIndex sourceIndex = this->getModelIndex(sourceProjectId,
-// sourcePaperId).first();
-//    QModelIndex targetIndex = this->getModelIndex(targetProjectId,
-// targetPaperId).first();
-
-
-////    if (from == to)
-////        return;
-////    int modelFrom = from;
-////    int modelTo = to + (from < to ? 1 : 0);
-
-
-////beginMoveRows(QModelIndex(), sourceIndex.row(), sourceIndex.row(),
-// QModelIndex(), targetIndex.row());
-// beginMoveRows(QModelIndex(), 0, 0, QModelIndex(), 12);
-
-
-// endMoveRows();
-// }
 
 // --------------------------------------------------------------------
 
