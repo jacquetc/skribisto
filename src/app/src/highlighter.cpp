@@ -13,7 +13,7 @@ Highlighter::Highlighter(QTextDocument *parent)
     qDebug() << "dicts: " << speller.availableLanguages();
     qDebug() <<"backends: "<< speller.availableBackends();
 
-    speller.setLanguage("fr_FR");
+    //speller.setLanguage("fr_FR");
 
     m_checker = new Sonnet::BackgroundChecker(speller, this);
     m_checker->setAutoDetectLanguageDisabled (false);
@@ -29,14 +29,15 @@ void Highlighter::misspelling(const QString &word, int start){
 
 //    QTextBlock textBlock = this->currentBlock();
 //    textBlock.position();
-    //qDebug() << "word: " << word << " pos : " << start;
+    qDebug() << "word: " << word << " pos : " << start;
 
-    QTextCharFormat currentFormat = this->format(start);
-    currentFormat.setUnderlineStyle(QTextCharFormat::UnderlineStyle::WaveUnderline);
-    currentFormat.setUnderlineColor(QColor(Qt::GlobalColor::red));
+    QTextCharFormat format;
+    format.setUnderlineStyle(QTextCharFormat::UnderlineStyle::WaveUnderline);
+    format.setUnderlineColor(QColor(Qt::GlobalColor::red));
+    format.setFontUnderline(true);
 
 
-    this->setFormat(start, word.count(), currentFormat);
+    this->setFormat(start, word.count(), format);
 
     m_checker->continueChecking();
 }
