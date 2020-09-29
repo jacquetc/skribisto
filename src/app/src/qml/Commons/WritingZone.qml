@@ -45,6 +45,11 @@ WritingZoneForm {
         textArea.clear()
     }
 
+
+
+    // style :
+
+
     //quit fullscreen :
 
     //    Shortcut {

@@ -6,6 +6,9 @@ project(app LANGUAGES CXX)
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg Xml CONFIG REQUIRED)
 #find_package(KF5Kirigami2)
+
+find_package(KF5Sonnet)
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOUIC ON)
@@ -49,6 +52,8 @@ set(app_SRCS
     skreditmenusignalhub.h
     skreditmenusignalhub.cpp
     skrqmltools.h
+    highlighter.cpp
+    highlighter.h
     )
 
 set(QML qml.qrc
@@ -104,7 +109,7 @@ endif()
 target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
-target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg)
+target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg KF5::SonnetCore)
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 
