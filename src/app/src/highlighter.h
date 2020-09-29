@@ -18,7 +18,7 @@ private slots:
     void misspelling(const QString &word, int start);
 private:
     Sonnet::BackgroundChecker *m_checker;
-    QString currentTextBlock;
+
 };
 
 #endif // HIGHLIGHTER_H
