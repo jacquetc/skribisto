@@ -1,55 +1,14 @@
-Plume Creator was developed with Qt Creator 2.5.2 on Linux Mint 14 "Nadia" 64bit KDE using Qt 4.8.3 libraries.
-
-Moreover, I use Qt Creator 2.7.2 with Qt 5.1 libraries on Microsoft Windows 7
-
-The simplest way to try it is to open it as project in Qt Creator, then execute it.
-
-		On Linux :
-
-	To compile it, you need :
-
-g++
-make
-qmake
-libqt4-dev
-libzip-dev
-libhunspell-dev
+### Linux:
 
 
-To run it :
+- make sure to have flatpak and flatpak-builder installed on your system
+- type in a terminal :
 
-libqt4-core
-libqt4-gui
-libqt4-network
-libzip
-libhunspell
-
-
-
-		On Windows :
-		
-	To compile it :
-	
-Have in "include" folder of Qt :
-zconf.h
-zlib.h
-
-Have in "lib" folder of Qt :
-zdll.lib
-
-	To run it :
-	
-Have in "bin" folder of Qt or in the target folder of the .exe :
-zlib1.dll
-
-http://www.zlib.net/
-download : 
-http://prdownloads.sourceforge.net/libpng/zlib128-dll.zip?download
-
-Regards,
-
-Cyril Jacquet
-23/09/2013
-
-
-
+```
+mkdir Devel
+cd ~/Devel
+git clone https://github.com/jacquetc/skribisto.git
+flatpak uninstall eu.skribisto.skribisto -y
+flatpak-builder --user --repo=local-repo build-dir skribisto/eu.skribisto.skribisto.yml --force-clean
+flatpak install eu.skribisto.skribisto -y
+```

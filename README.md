@@ -81,13 +81,19 @@ Download the latest from GitHub, then you can use Qt Creator to open the top-mos
 
 ### Linux
 Also, thanks to the flatpak support, 
-- make sure to have flatpak installed on your system
+- make sure to have flatpak and flatpak-builder installed on your system
 - type in a terminal :
 
 ```
-flatpak-builder --user --install ../build-dir eu.skribisto.skribisto.yml --force-clean
+mkdir Devel
+cd ~/Devel
+git clone https://github.com/jacquetc/skribisto.git
+flatpak uninstall eu.skribisto.skribisto -y
+flatpak-builder --user --repo=local-repo build-dir skribisto/eu.skribisto.skribisto.yml --force-clean
+flatpak install eu.skribisto.skribisto -y
 ```
 
+It will download 500 Mo if dependencies the first time.
 
 
 ## To contact me :
