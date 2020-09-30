@@ -132,7 +132,7 @@ int PLMPaperHub::getOverallSize()
 
     QList<int> result;
 
-    foreach(int projectId, plmProjectManager->projectIdList()) {
+    for(int projectId : plmProjectManager->projectIdList()) {
         PLMSqlQueries queries(projectId, m_tableName);
 
         error = queries.getIds(result);

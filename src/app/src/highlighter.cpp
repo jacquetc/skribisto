@@ -17,7 +17,7 @@ Highlighter::Highlighter(QTextDocument *parent)
 
     m_checker = new Sonnet::BackgroundChecker(speller, this);
     m_checker->setAutoDetectLanguageDisabled (false);
-    connect(m_checker,&Sonnet::BackgroundChecker::misspelling, this, &Highlighter::misspelling);
+    connect(m_checker,&Sonnet::BackgroundChecker::misspelling, this, &Highlighter::misspelling, Qt::DirectConnection);
 }
 
 void Highlighter::highlightBlock(const QString &text)

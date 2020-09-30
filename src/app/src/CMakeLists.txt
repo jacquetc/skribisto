@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.1.0)
 
 project(app LANGUAGES CXX)
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg Xml CONFIG REQUIRED)
+find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg Xml QuickControls2 CONFIG REQUIRED)
 #find_package(KF5Kirigami2)
 
 find_package(KF5Sonnet)
@@ -109,7 +109,7 @@ endif()
 target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
-target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg KF5::SonnetCore)
+target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg Qt5::QuickControls2 KF5::SonnetCore)
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 

@@ -157,7 +157,7 @@ int PLMDbTree::moveList(QList<int>idList, int paperId)
 
     // Renumber each sheet to +1 after dest
     dest += 1;
-    foreach(int id, idList) {
+    for(int id : idList) {
         PLMDbPaper paper(m_sqlDb, m_tableName, m_idName, id, false);
 
         if (!paper.exists()) {
@@ -194,7 +194,7 @@ int PLMDbTree::copyList(QList<int>idList)
 {
     if (m_commit) m_sqlDb.transaction();
 
-    foreach(int id, idList) {
+    for(int id : idList) {
         PLMDbPaper paper(m_sqlDb, m_tableName, m_idName, id, false);
 
         if (!paper.exists()) {
@@ -240,7 +240,7 @@ int PLMDbTree::trashList(QList<int>idList)
 {
     if (m_commit) m_sqlDb.transaction();
 
-    foreach(int id, idList) {
+    for(int id : idList) {
         PLMDbPaper paper(m_sqlDb, m_tableName, m_idName, id, false);
 
         if (!paper.exists()) {
@@ -264,7 +264,7 @@ int PLMDbTree::untrashList(QList<int>idList)
 {
     if (m_commit) m_sqlDb.transaction();
 
-    foreach(int id, idList) {
+    for(int id : idList) {
         PLMDbPaper paper(m_sqlDb, m_tableName, m_idName, id, false);
 
         if (!paper.exists()) {

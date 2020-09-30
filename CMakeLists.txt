@@ -28,6 +28,10 @@ include(ECMOptionalAddSubdirectory)
 include_directories(${Qt5Core_PRIVATE_INCLUDE_DIRS})
 
 
+
+# forbid some old things
+add_definitions(-DQT_NO_FOREACH)
+
 #add_compile_definitions(VERSIONSTR=1.6 FORCEQML=1)
 add_definitions(-DVERSIONSTR=1.8)
 

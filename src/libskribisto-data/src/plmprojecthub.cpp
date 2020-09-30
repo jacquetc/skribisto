@@ -56,8 +56,13 @@ PLMError PLMProjectHub::createNewEmptyProject(const QUrl& path)
 
         this->setProjectNotSavedAnymore(projectId);
         this->setActiveProject(projectId);
-    }
 
+    }
+    IFOK(error) {
+        if(path.isValid()){
+        error = this->saveProjectAs(projectId, this->getProjectType(projectId), path);
+        }
+    }
 
     return error;
 }
@@ -211,10 +216,10 @@ PLMError PLMProjectHub::backupAProject(int            projectId,
     // then create a copy
     IFOK(error) {
         error =
-            plmProjectManager->saveProjectAs(projectId,
-                                             type,
-                                             QUrl::fromLocalFile(backupFile),
-                                             true);
+                plmProjectManager->saveProjectAs(projectId,
+                                                 type,
+                                                 QUrl::fromLocalFile(backupFile),
+                                                 true);
     }
     return error;
 }
@@ -282,6 +287,8 @@ bool PLMProjectHub::doesBackupOfTheDayExistAtPath(int projectId, const QUrl& fol
     return true;
 }
 
+// ----------------------------------------------------------------------------
+
 PLMError PLMProjectHub::closeProject(int projectId)
 {
     PLMError error;
@@ -304,6 +311,8 @@ PLMError PLMProjectHub::closeProject(int projectId)
     return error;
 }
 
+// ----------------------------------------------------------------------------
+
 PLMError PLMProjectHub::closeAllProjects()
 {
     PLMError error;
@@ -322,16 +331,22 @@ PLMError PLMProjectHub::closeAllProjects()
     }
     return error;
 }
+// ----------------------------------------------------------------------------
+
 
 QList<int>PLMProjectHub::getProjectIdList()
 {
     return plmProjectManager->projectIdList();
 }
 
+// ----------------------------------------------------------------------------
+
 int PLMProjectHub::getProjectCount()
 {
     return plmProjectManager->projectIdList().count();
 }
+
+// ----------------------------------------------------------------------------
 
 QUrl PLMProjectHub::getPath(int projectId) const
 {
@@ -353,6 +368,8 @@ QUrl PLMProjectHub::getPath(int projectId) const
     return result;
 }
 
+// ----------------------------------------------------------------------------
+
 PLMError PLMProjectHub::setPath(int projectId, const QUrl& newUrlPath)
 {
     PLMError error;
@@ -363,11 +380,13 @@ PLMError PLMProjectHub::setPath(int projectId, const QUrl& newUrlPath)
     }
 
     IFOKDO(error, project->setPath(newUrlPath))
-    IFOK(error) {
+            IFOK(error) {
         emit projectPathChanged(projectId, newUrlPath);
     }
     return error;
 }
+// ----------------------------------------------------------------------------
+
 
 int PLMProjectHub::getLastLoaded() const
 {
@@ -380,6 +399,8 @@ int PLMProjectHub::getLastLoaded() const
 
     return lastId;
 }
+
+// ----------------------------------------------------------------------------
 
 PLMError PLMProjectHub::getError()
 {
@@ -396,6 +417,8 @@ bool PLMProjectHub::isThereAnyLoadedProject()
     return true;
 }
 
+// ----------------------------------------------------------------------------
+
 bool PLMProjectHub::isThisProjectABackup(int projectId)
 {
     if (this->getPath(projectId).isEmpty()) {
@@ -409,6 +432,30 @@ bool PLMProjectHub::isThisProjectABackup(int projectId)
     }
     return false;
 }
+
+// ----------------------------------------------------------------------------
+
+QString PLMProjectHub::getProjectType(int projectId) const
+{
+    PLMError error;
+    QString result;
+    PLMProject *project = plmProjectManager->project(projectId);
+
+    if (!project) {
+        error.setSuccess(false);
+    }
+
+    IFOK(error) {
+        result = project->getType();
+    }
+    IFKO(error) {
+        // no project
+        emit errorSent(error);
+    }
+    return result;
+}
+
+// ----------------------------------------------------------------------------
 
 void PLMProjectHub::setActiveProject(int activeProject)
 {

@@ -24,6 +24,7 @@
 
 #include <QAbstractListModel>
 #include <QDateTime>
+#include <QUrl>
 
 
 struct PLMProjectItem {
@@ -33,7 +34,7 @@ public:
 
     explicit PLMProjectItem() {
         title            = "";
-        fileName         = "";
+        fileUrl         = QUrl();
         lastModification = QDateTime();
         writable         = false;
         exists           = false;
@@ -42,7 +43,7 @@ public:
     }
 
     QString   title;
-    QString   fileName;
+    QUrl   fileUrl;
     QDateTime lastModification;
     bool      writable;
     bool      exists;

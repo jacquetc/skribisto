@@ -10,7 +10,7 @@ PLMPluginLoader::PLMPluginLoader(QObject *parent) : QObject(parent)
     qRegisterMetaType<QList<PLMPlugin> >("QList<PLMPlugin>");
     m_instance = this;
 
-    foreach(const QString& path, PLMUtils::Dir::addonsPathsList()) {
+    for(const QString& path : PLMUtils::Dir::addonsPathsList()) {
         QCoreApplication::addLibraryPath(path);
     }
     QCoreApplication::removeLibraryPath(qApp->applicationDirPath());

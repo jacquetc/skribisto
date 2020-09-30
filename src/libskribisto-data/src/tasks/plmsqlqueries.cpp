@@ -124,7 +124,7 @@ PLMError PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
 
         while (query.next()) {
-            foreach(const QString& valueName, valueList) {
+            for(const QString& valueName : valueList) {
                 result.insert(valueName, query.value(valueName));
             }
         }

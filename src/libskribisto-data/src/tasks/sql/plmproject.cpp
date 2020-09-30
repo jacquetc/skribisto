@@ -79,7 +79,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
         }
         this->setPath(fileName);
     }
-    setType("SQLITE");
+    setType("skrib");
     IFOK(error) {
         // sheet and note sql tree :
         m_sheetTree = new PLMSheetTree(this, "tbl_sheet", "l_sheet_id", m_sqlDb);

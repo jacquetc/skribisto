@@ -78,6 +78,8 @@ public:
     QString               getProjectUniqueId(int projectId) const;
     Q_INVOKABLE bool      isThisProjectABackup(int projectId);
 
+    QString getProjectType(int projectId) const;
+
     PLMError              set(int             projectId,
                               const QString & fieldName,
                               const QVariant& value,

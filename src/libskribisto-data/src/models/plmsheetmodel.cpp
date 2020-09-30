@@ -377,7 +377,7 @@ void PLMSheetModel::populate()
     this->beginResetModel();
 
     m_allSheetItems.clear();
-    foreach(int projectId, plmdata->projectHub()->getProjectIdList()) {
+    for(int projectId : plmdata->projectHub()->getProjectIdList()) {
         if (plmdata->projectHub()->getProjectIdList().count() > 1) {
             PLMSheetItem *projectItem = new PLMSheetItem();
             projectItem->setIsProjectItem(projectId);
@@ -388,7 +388,7 @@ void PLMSheetModel::populate()
         auto sortOrdersHash = plmdata->sheetHub()->getAllSortOrders(projectId);
         auto indentsHash    = plmdata->sheetHub()->getAllIndents(projectId);
 
-        foreach(int sheetId, idList) {
+        for(int sheetId : idList) {
             m_allSheetItems.append(new PLMSheetItem(projectId, sheetId,
                                                     indentsHash.value(sheetId),
                                                     sortOrdersHash.value(sheetId)));

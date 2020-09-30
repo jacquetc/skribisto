@@ -209,7 +209,7 @@ void PLMTree::movePapersAsChildOf(QList<int>paperIdList, int destId, bool commit
         tree.moveList(paperIdList, destId);
 
 
-        foreach(int paperId, paperIdList) {
+        for(int paperId : paperIdList) {
             PLMDbPaper paper(sqlDb(), tableName(), idName(), paperId, false);
 
             paper.setIndent(destIndent + 1);
@@ -217,7 +217,7 @@ void PLMTree::movePapersAsChildOf(QList<int>paperIdList, int destId, bool commit
     }
     else if (childIdList.count() > 0) {
         movePapersBelow(paperIdList, childIdList.last(), false);
-        foreach(int paperId, paperIdList) {
+        for(int paperId : paperIdList) {
             PLMDbPaper paper(sqlDb(), tableName(), idName(), paperId, false);
 
             paper.setIndent(destIndent + 1);
@@ -247,7 +247,7 @@ void PLMTree::movePapersAbove(QList<int>paperIdList, int destId, bool commit)
     PLMDbPaper paper(sqlDb(), tableName(), idName(), destId, false);
     int destIndent = paper.getIndent();
 
-    foreach(int paperId, paperIdList) {
+    for(int paperId : paperIdList) {
         PLMDbPaper paper(sqlDb(), tableName(), idName(), paperId, false);
 
         paper.setIndent(destIndent);
@@ -274,7 +274,7 @@ void PLMTree::movePapersBelow(QList<int>paperIdList, int destId, bool commit)
 
     int destIndent = paper.getIndent();
 
-    foreach(int paperId, paperIdList) {
+    for(int paperId : paperIdList) {
         PLMDbPaper paper(sqlDb(), tableName(), idName(), paperId, false);
 
         paper.setIndent(destIndent);

@@ -16,7 +16,7 @@ using namespace std;
 #include <QTranslator>
 #include <QFileInfo>
 #include <QDir>
-
+#include <QQuickStyle>
 #include <QIcon>
 
 #include "plmpluginloader.h"
@@ -149,6 +149,8 @@ int main(int argc, char *argv[])
 
     startCore();
 
+
+    //QQuickStyle::setStyle("org.kde.desktop");
 
     // -----------------------------------------------------------------------
 

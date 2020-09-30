@@ -119,7 +119,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
                      << QStringLiteral("PRAGMA recursive_triggers=true");
         sqlDb.transaction();
 
-        foreach(const QString& string, optimization) {
+        for(const QString& string : optimization) {
             QSqlQuery query(sqlDb);
 
             query.prepare(string);
@@ -183,7 +183,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
                  << QStringLiteral("PRAGMA recursive_triggers=true");
     sqlDb.transaction();
 
-    foreach(const QString& string, optimization) {
+    for(const QString& string : optimization) {
         QSqlQuery query(sqlDb);
 
         query.prepare(string);
@@ -420,7 +420,7 @@ PLMError PLMImporter::executeSQLString(const QString& sqlString, QSqlDatabase& s
 
         // Execute each individual queries
         QStringList qList = queryStr.split(';', QString::SkipEmptyParts);
-        foreach(const QString& s, qList) {
+        for(const QString& s : qList) {
             query.exec(s);
 
             if (query.lastError().type() != QSqlError::NoError) {

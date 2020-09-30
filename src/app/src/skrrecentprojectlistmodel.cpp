@@ -83,7 +83,7 @@ QVariant SKRRecentProjectListModel::data(const QModelIndex& index, int role) con
     }
 
     if (role == Qt::UserRole + 1) {
-        return m_allRecentProjects.at(index.row())->fileName;
+        return m_allRecentProjects.at(index.row())->fileUrl.toLocalFile();
     }
 
     if (role == Qt::UserRole + 2) {
@@ -141,7 +141,7 @@ void SKRRecentProjectListModel::insertInRecentProjects(const QString& title,
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
 
-        QUrl settingFileName = settings.value("fileName").toUrl();
+        QUrl settingFileName = settings.value("fileNameUrl").toUrl();
 
         if (settingFileName == fileName) {
             alreadyHere      = true;
@@ -161,7 +161,7 @@ void SKRRecentProjectListModel::insertInRecentProjects(const QString& title,
         // add a new recent project
         settings.setArrayIndex(size);
         settings.setValue("title",    title);
-        settings.setValue("fileName", fileName);
+        settings.setValue("fileNameUrl", fileName);
     }
 
 
@@ -200,10 +200,10 @@ void SKRRecentProjectListModel::populate()
 
         PLMProjectItem *projectItem = new PLMProjectItem();
         projectItem->title    = settings.value("title").toString();
-        projectItem->fileName = settings.value("fileName").toString();
+        projectItem->fileUrl = settings.value("fileNameUrl").toUrl();
 
         // exists ?
-        QFileInfo info(projectItem->fileName);
+        QFileInfo info(projectItem->fileUrl.toLocalFile());
         projectItem->exists = info.exists();
 
         // writable ?
@@ -221,7 +221,7 @@ void SKRRecentProjectListModel::populate()
             QUrl    projectPath = plmdata->projectHub()->getPath(projectId);
 
             if ((projectName == projectItem->title) &&
-                (projectPath == projectItem->fileName)) {
+                (projectPath == projectItem->fileUrl)) {
                 projectItem->isOpened  = true;
                 projectItem->projectId = projectId;
 

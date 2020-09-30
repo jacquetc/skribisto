@@ -66,7 +66,7 @@ public:
 
     template<typename T>void addPluginType()
     {
-        foreach(QObject * obj, QPluginLoader::staticInstances()) {
+        for(QObject * obj : QPluginLoader::staticInstances()) {
             T *instance = qobject_cast<T *>(obj);
 
             if (instance) {
@@ -79,10 +79,10 @@ public:
             }
         }
 
-        foreach(const QString& path, QCoreApplication::libraryPaths()) {
+        for(const QString& path : QCoreApplication::libraryPaths()) {
             QList<QObject *> objects = this->pluginObjectsByDir<T>(path);
 
-            foreach(QObject * obj, objects) {
+            for(QObject * obj : objects) {
                 T *instance = qobject_cast<T *>(obj);
 
                 if (instance) {
@@ -101,7 +101,7 @@ public:
     {
         QList<T *> list;
 
-        foreach(PLMPlugin p, m_pluginsListHash.values()) {
+        for(PLMPlugin p : m_pluginsListHash.values()) {
             QObject *object = p.object;
 
             if (!object->property("activatedbydefault").toBool()) {
@@ -145,7 +145,7 @@ private:
         QList<T *> ls;
         QDir plugDir = QDir(dir);
 
-        foreach(const QString& file, plugDir.entryList(QDir::Files)) {
+        for(const QString& file : plugDir.entryList(QDir::Files)) {
             if (T *plugin =
                     PLMPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file))) {
                 ls.push_back(plugin);
@@ -166,8 +166,7 @@ private:
         filter << "*.so" << ".dll";
         QDir::Filters filterFlags(QDir::Files& ~QDir::Executable);
 
-        foreach(const QString& file,
-                plugDir.entryList(filter, filterFlags, QDir::NoSort)) {
+        for(const QString& file : plugDir.entryList(filter, filterFlags, QDir::NoSort)) {
             if (T *plugin =
                     PLMPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file)))
                 if (plugin) {
