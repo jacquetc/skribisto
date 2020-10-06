@@ -13,10 +13,10 @@ Highlighter::Highlighter(QTextDocument *parent)
     qDebug() << "dicts: " << speller.availableLanguages();
     qDebug() <<"backends: "<< speller.availableBackends();
 
-    //speller.setLanguage("fr_FR");
+    speller.setLanguage("fr_FR");
 
     m_checker = new Sonnet::BackgroundChecker(speller, this);
-    m_checker->setAutoDetectLanguageDisabled (false);
+    m_checker->setAutoDetectLanguageDisabled (true);
     connect(m_checker,&Sonnet::BackgroundChecker::misspelling, this, &Highlighter::misspelling, Qt::DirectConnection);
 }
 
