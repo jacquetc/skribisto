@@ -59,6 +59,7 @@ public:
     Q_INVOKABLE int       getLastLoaded() const;
     PLMError              getError();
     Q_INVOKABLE bool      isThereAnyLoadedProject();
+    Q_INVOKABLE bool      isURLAlreadyLoaded(const QUrl& newUrlPath);
 
     Q_INVOKABLE int       getActiveProject();
     Q_INVOKABLE void      setActiveProject(int activeProject);

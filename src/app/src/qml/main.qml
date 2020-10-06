@@ -132,8 +132,15 @@ ApplicationWindow {
         onAccepted: {
 
             var file = openFileDialog.file
-            var error = plmData.projectHub().loadProject(file)
 
+
+            if(plmData.projectHub().isURLAlreadyLoaded(file)){
+
+            }
+            else {
+
+                var error = plmData.projectHub().loadProject(file)
+            }
 
         }
         onRejected: {
@@ -1111,7 +1118,7 @@ ApplicationWindow {
             if(preventTrigger){
                 return
             }
-                skrEditMenuSignalHub.italicActionTriggered(italicAction.checked)
+            skrEditMenuSignalHub.italicActionTriggered(italicAction.checked)
 
 
 
@@ -1143,7 +1150,7 @@ ApplicationWindow {
             if(preventTrigger){
                 return
             }
-                skrEditMenuSignalHub.boldActionTriggered(boldAction.checked)
+            skrEditMenuSignalHub.boldActionTriggered(boldAction.checked)
 
 
         }
@@ -1173,7 +1180,7 @@ ApplicationWindow {
             if(preventTrigger){
                 return
             }
-                skrEditMenuSignalHub.strikeActionTriggered(strikeAction.checked)
+            skrEditMenuSignalHub.strikeActionTriggered(strikeAction.checked)
 
         }
     }
@@ -1203,7 +1210,7 @@ ApplicationWindow {
             if(preventTrigger){
                 return
             }
-                skrEditMenuSignalHub.underlineActionTriggered(underlineAction.checked)
+            skrEditMenuSignalHub.underlineActionTriggered(underlineAction.checked)
 
         }
     }

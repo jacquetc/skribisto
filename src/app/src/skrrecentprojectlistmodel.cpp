@@ -150,15 +150,16 @@ void SKRRecentProjectListModel::insertInRecentProjects(const QString& title,
     }
     settings.endArray();
 
-    settings.beginWriteArray("recentProjects");
 
     if (alreadyHere) {
         // write again the title in case it was changed
+        settings.beginWriteArray("recentProjects", size);
         settings.setArrayIndex(alreadyHereIndex);
         settings.setValue("title", title);
     }
     else {
         // add a new recent project
+        settings.beginWriteArray("recentProjects", size + 1);
         settings.setArrayIndex(size);
         settings.setValue("title",    title);
         settings.setValue("fileNameUrl", fileName);
@@ -168,6 +169,8 @@ void SKRRecentProjectListModel::insertInRecentProjects(const QString& title,
     settings.endArray();
 
     settings.endGroup();
+
+    settings.sync();
 
     this->populate();
 }

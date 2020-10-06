@@ -44,14 +44,14 @@ ProjectPageForm {
     }
 
     
-  newProjectButton.action: newProjectAction
+    newProjectButton.action: newProjectAction
 
-  Connections {
-      target: Globals
-      function onShowNewProjectWizard() {
-          swipeView.currentIndex = 1
-      }
-  }
+    Connections {
+        target: Globals
+        function onShowNewProjectWizard() {
+            swipeView.currentIndex = 1
+        }
+    }
 
 
     openProjectButton.action: openProjectAction
@@ -150,8 +150,8 @@ ProjectPageForm {
     projectPathTextField.text: {
 
         var path = skrQMLTools.translateURLToLocalFile(LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation))
-//
-//        path = path.replace(/^(file:\/{2})/,"")
+        //
+        //        path = path.replace(/^(file:\/{2})/,"")
 
         return path
 
@@ -271,6 +271,14 @@ ProjectPageForm {
 
                 onDoubleTapped: {
                     // open project
+
+                    if(plmData.projectHub().isURLAlreadyLoaded(skrQMLTools.getURLFromLocalFile(model.fileName))){
+                    }
+                    else {
+                        plmData.projectHub().loadProject(skrQMLTools.getURLFromLocalFile(model.fileName))
+                    }
+
+
                     eventPoint.accepted = true
                 }
 
@@ -362,7 +370,7 @@ ProjectPageForm {
                         visible: model.isOpened
                         icon.name: "document-close"
                         onClicked: {
-                          itemButtonsIndex = model.index
+                            itemButtonsIndex = model.index
                             closeAction.trigger()
                         }
 

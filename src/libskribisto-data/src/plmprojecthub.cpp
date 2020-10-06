@@ -60,7 +60,7 @@ PLMError PLMProjectHub::createNewEmptyProject(const QUrl& path)
     }
     IFOK(error) {
         if(path.isValid()){
-        error = this->saveProjectAs(projectId, this->getProjectType(projectId), path);
+            error = this->saveProjectAs(projectId, this->getProjectType(projectId), path);
         }
     }
 
@@ -387,7 +387,20 @@ PLMError PLMProjectHub::setPath(int projectId, const QUrl& newUrlPath)
 }
 // ----------------------------------------------------------------------------
 
+bool PLMProjectHub::isURLAlreadyLoaded(const QUrl& newUrlPath){
+    QList<int> list = plmProjectManager->projectIdList();
 
+    for(int id : list){
+        if(newUrlPath == this->getPath(id)){
+            return true;
+        }
+    }
+    return false;
+
+}
+
+
+// ----------------------------------------------------------------------------
 int PLMProjectHub::getLastLoaded() const
 {
     QList<int> list = plmProjectManager->projectIdList();
