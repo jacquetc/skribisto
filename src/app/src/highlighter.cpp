@@ -13,9 +13,9 @@ Highlighter::Highlighter(QTextDocument *parent)
     qDebug() << "dicts: " << speller.availableLanguages();
     qDebug() <<"backends: "<< speller.availableBackends();
 
-    speller.setLanguage("fr_FR");
 
     m_checker = new Sonnet::BackgroundChecker(speller, this);
+    m_checker->changeLanguage("fr_FR");
     m_checker->setAutoDetectLanguageDisabled (true);
     connect(m_checker,&Sonnet::BackgroundChecker::misspelling, this, &Highlighter::misspelling, Qt::DirectConnection);
 }
@@ -36,7 +36,7 @@ void Highlighter::misspelling(const QString &word, int start){
     format.setUnderlineColor(QColor(Qt::GlobalColor::red));
     format.setFontUnderline(true);
 
-
+    qDebug() <<  this->currentBlock().text();
     this->setFormat(start, word.count(), format);
 
     m_checker->continueChecking();
