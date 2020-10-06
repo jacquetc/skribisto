@@ -2,7 +2,7 @@
 #define HIGHLIGHTER_H
 
 #include <QSyntaxHighlighter>
-#include <SonnetCore/Sonnet/BackgroundChecker>
+#include <SonnetCore/Sonnet/Speller>
 
 class Highlighter : public QSyntaxHighlighter
 {
@@ -14,10 +14,9 @@ public:
 protected:
     void highlightBlock(const QString &text) override;
 
-private slots:
-    void misspelling(const QString &word, int start);
+
 private:
-    Sonnet::BackgroundChecker *m_checker;
+    Sonnet::Speller *m_speller;
 
 };
 

@@ -9,35 +9,38 @@ Highlighter::Highlighter(QTextDocument *parent)
 
     //Sonnet::GuessLanguage
 
-    Sonnet::Speller speller;
-    qDebug() << "dicts: " << speller.availableLanguages();
-    qDebug() <<"backends: "<< speller.availableBackends();
+    m_speller = new Sonnet::Speller();
+    qDebug() << "dicts: " << m_speller->availableLanguages();
+    qDebug() <<"backends: "<< m_speller->availableBackends();
+    qDebug() <<"client: "<< m_speller->defaultClient();
+
+    m_speller->setLanguage("fr_FR");
+
+    qDebug() <<"valid: "<< m_speller->isValid();
 
 
-    m_checker = new Sonnet::BackgroundChecker(speller, this);
-    m_checker->changeLanguage("fr_FR");
-    m_checker->setAutoDetectLanguageDisabled (true);
-    connect(m_checker,&Sonnet::BackgroundChecker::misspelling, this, &Highlighter::misspelling, Qt::DirectConnection);
 }
 
 void Highlighter::highlightBlock(const QString &text)
 {
-    m_checker->setText(text);
-}
-
-void Highlighter::misspelling(const QString &word, int start){
-
-//    QTextBlock textBlock = this->currentBlock();
-//    textBlock.position();
-    qDebug() << "word: " << word << " pos : " << start;
 
     QTextCharFormat format;
     format.setUnderlineStyle(QTextCharFormat::UnderlineStyle::WaveUnderline);
     format.setUnderlineColor(QColor(Qt::GlobalColor::red));
     format.setFontUnderline(true);
 
-    qDebug() <<  this->currentBlock().text();
-    this->setFormat(start, word.count(), format);
 
-    m_checker->continueChecking();
+    //qDebug() <<  this->currentBlock().text();
+
+    QVector<QStringRef> splitRefVector = text.splitRef(" ", Qt::SkipEmptyParts);
+
+    for(const QStringRef &stringRef : splitRefVector){
+
+        if(m_speller->isMisspelled(stringRef.toString())){
+            this->setFormat(stringRef.position(), stringRef.length(), format);
+        }
+
+    }
+
 }
+
