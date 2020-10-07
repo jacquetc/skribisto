@@ -43,6 +43,8 @@ void Highlighter::highlightBlock(const QString &text)
             qDebug() << "misspelled : " << stringRef.toString();
             format.setFontUnderline(true);
             this->setFormat(stringRef.position(), stringRef.length(), format);
+
+            qDebug() << "suggests  : " << m_speller->suggest(stringRef.toString());
         }
         else {
             qDebug() << "valid : " << stringRef.toString();
@@ -50,6 +52,8 @@ void Highlighter::highlightBlock(const QString &text)
             this->setFormat(stringRef.position(), stringRef.length(), format);
 
         }
+
+
 
     }
 
