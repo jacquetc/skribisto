@@ -11,12 +11,15 @@ Highlighter::Highlighter(QTextDocument *parent)
 
     m_speller = new Sonnet::Speller();
     qDebug() << "dicts: " << m_speller->availableLanguages();
+    qDebug() << "langs: " << m_speller->availableLanguageNames();
     qDebug() <<"backends: "<< m_speller->availableBackends();
     qDebug() <<"client: "<< m_speller->defaultClient();
 
+    m_speller->setDefaultClient("Hunspell");
     m_speller->setLanguage("fr_FR");
 
     qDebug() <<"valid: "<< m_speller->isValid();
+    qDebug() <<"current lang: "<< m_speller->language();
 
 
 }
@@ -25,8 +28,8 @@ void Highlighter::highlightBlock(const QString &text)
 {
 
     QTextCharFormat format;
-    format.setUnderlineStyle(QTextCharFormat::UnderlineStyle::WaveUnderline);
-    format.setUnderlineColor(QColor(Qt::GlobalColor::red));
+    format.setUnderlineStyle(QTextCharFormat::UnderlineStyle::SpellCheckUnderline);
+    format.setUnderlineColor(Qt::GlobalColor::red);
 
     QTextCharFormat emptyFormat;
 
@@ -37,10 +40,12 @@ void Highlighter::highlightBlock(const QString &text)
     for(const QStringRef &stringRef : splitRefVector){
 
         if(m_speller->isMisspelled(stringRef.toString())){
+            format.setFontUnderline(true);
             this->setFormat(stringRef.position(), stringRef.length(), format);
         }
         else {
-            this->setFormat(stringRef.position(), stringRef.length(), emptyFormat);
+            format.setFontUnderline(false);
+            this->setFormat(stringRef.position(), stringRef.length(), format);
 
         }
 
