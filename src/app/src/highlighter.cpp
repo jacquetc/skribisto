@@ -27,8 +27,8 @@ void Highlighter::highlightBlock(const QString &text)
     QTextCharFormat format;
     format.setUnderlineStyle(QTextCharFormat::UnderlineStyle::WaveUnderline);
     format.setUnderlineColor(QColor(Qt::GlobalColor::red));
-    format.setFontUnderline(true);
 
+    QTextCharFormat emptyFormat;
 
     //qDebug() <<  this->currentBlock().text();
 
@@ -38,6 +38,10 @@ void Highlighter::highlightBlock(const QString &text)
 
         if(m_speller->isMisspelled(stringRef.toString())){
             this->setFormat(stringRef.position(), stringRef.length(), format);
+        }
+        else {
+            this->setFormat(stringRef.position(), stringRef.length(), emptyFormat);
+
         }
 
     }
