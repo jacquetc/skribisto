@@ -33,17 +33,19 @@ void Highlighter::highlightBlock(const QString &text)
 
     QTextCharFormat emptyFormat;
 
-    //qDebug() <<  this->currentBlock().text();
+    qDebug() <<  this->currentBlock().text();
 
     QVector<QStringRef> splitRefVector = text.splitRef(" ", Qt::SkipEmptyParts);
 
     for(const QStringRef &stringRef : splitRefVector){
 
         if(m_speller->isMisspelled(stringRef.toString())){
+            qDebug() << "misspelled : " << stringRef.toString();
             format.setFontUnderline(true);
             this->setFormat(stringRef.position(), stringRef.length(), format);
         }
         else {
+            qDebug() << "valid : " << stringRef.toString();
             format.setFontUnderline(false);
             this->setFormat(stringRef.position(), stringRef.length(), format);
 
