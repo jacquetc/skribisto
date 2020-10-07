@@ -31,7 +31,7 @@ class SKRRootItem : public QObject
 
     Q_OBJECT
     Q_PROPERTY(QString currentTranslationLanguageCode READ getLanguageFromSettings WRITE setCurrentTranslationLanguageCode NOTIFY currentTranslationLanguageCodeChanged)
-
+    Q_PROPERTY(QString dynTr READ getEmptyString NOTIFY currentTranslationLanguageCodeChanged)
 public:
     explicit SKRRootItem(QObject *parent);
     Q_INVOKABLE void setCurrentTranslationLanguageCode(const QString &langCode = "default");
@@ -44,6 +44,10 @@ signals:
     void currentTranslationLanguageCodeChanged(const QString &langCode);
 
 private:
+    QString getEmptyString() {
+        return "";
+       }
+
     QTranslator *skribistoTranslator;
     QTranslator *qtTranslator;
 

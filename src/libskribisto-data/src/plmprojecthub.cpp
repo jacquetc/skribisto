@@ -136,6 +136,8 @@ PLMError PLMProjectHub::saveProjectAs(int            projectId,
     return error;
 }
 
+// ----------------------------------------------------------------------------
+
 PLMError PLMProjectHub::saveAProjectCopy(int            projectId,
                                          const QString& type,
                                          const QUrl   & path)
@@ -151,6 +153,8 @@ PLMError PLMProjectHub::saveAProjectCopy(int            projectId,
     }
     return error;
 }
+
+// ----------------------------------------------------------------------------
 
 PLMError PLMProjectHub::backupAProject(int            projectId,
                                        const QString& type,
@@ -223,6 +227,8 @@ PLMError PLMProjectHub::backupAProject(int            projectId,
     }
     return error;
 }
+
+// ----------------------------------------------------------------------------
 
 bool PLMProjectHub::doesBackupOfTheDayExistAtPath(int projectId, const QUrl& folderPath) {
     PLMError error;

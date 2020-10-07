@@ -16,6 +16,8 @@ SettingsPageForm {
         checkOnSaveEveryCheckBox()
         backUpOnceADayIfNeeded()
 
+        langComboBox.currentIndex = langComboBox.indexOfValue(skrRootItem.getLanguageFromSettings())
+
     }
 
 
@@ -72,12 +74,12 @@ SettingsPageForm {
     // interface languages :
 
 
-        ListModel {
-            id: langModel
-            ListElement { text: "english (US)"; langCode: "en_US" }
-            ListElement { text: "français (France)"; langCode: "fr_FR" }
-            ListElement { text: "deutch"; langCode: "de_DE" }
-        }
+    ListModel {
+        id: langModel
+        ListElement { text: "english (US)"; langCode: "en_US" }
+        ListElement { text: "français (France)"; langCode: "fr_FR" }
+        ListElement { text: "deutch"; langCode: "de_DE" }
+    }
 
 
     langComboBox.model: langModel
@@ -85,7 +87,7 @@ SettingsPageForm {
     langComboBox.valueRole: "langCode"
     langComboBox.onCurrentValueChanged: {
         if(langComboBox.activeFocus){
-        skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
+            skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
         }
     }
 
@@ -93,7 +95,7 @@ SettingsPageForm {
     Connections {
         target: skrRootItem
         function onCurrentTranslationLanguageCodeChanged(langCode){
-            langComboBox.currentValue = langCode
+            langComboBox.currentIndex = langComboBox.indexOfValue(langCode)
         }
     }
 
@@ -159,7 +161,7 @@ SettingsPageForm {
 
     function addBackupPath(pathUrl){
 
-        backupPathListModel.append({"path": pathUrl.toString(), "localPath": skrQMLTools.translateURLToLocalFile(pathUrl)})
+        backupPathListModel.append({"path": pathUrl, "localPath": skrQMLTools.translateURLToLocalFile(pathUrl)})
         saveBackupPathsToSettings()
 
     }
@@ -177,7 +179,7 @@ SettingsPageForm {
         var j;
         for (j = 0; j < backupPathListModel.count ; j++ ){
 
-            backupPathList.push(backupPathListModel.get(j).path)
+            backupPathList.push(backupPathListModel.get(j).localPath)
         }
 
         var backupPaths = backupPathList.join(";")
@@ -469,6 +471,13 @@ SettingsPageForm {
         }
     }
 
+    Connections {
+        target: plmData.projectHub()
+        function onProjectLoaded(projectId){
+                backUpOnceADayIfNeeded()
+
+        }
+    }
 
 
     // once a day :
@@ -517,7 +526,7 @@ SettingsPageForm {
 
 
                 // check if wanted backup exists already at paths
-                var isBackupThere = plmData.projectHub().doesBackupOfTheDayExistAtPath(projectId, path)
+                var isBackupThere = plmData.projectHub().doesBackupOfTheDayExistAtPath(projectId, skrQMLTools.getURLFromLocalFile(path))
 
                 if(isBackupThere){
                     break
@@ -525,7 +534,7 @@ SettingsPageForm {
 
                 // back up :
 
-                var error = plmData.projectHub().backupAProject(projectId, "skrib", path)
+                var error = plmData.projectHub().backupAProject(projectId, "skrib", skrQMLTools.getURLFromLocalFile(path))
 
                 if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
 
@@ -596,13 +605,13 @@ SettingsPageForm {
     // ---- special E-Paper --------------------------------
     // --------------------------------------------
 
-setTextCursorUnblinkingCheckBox.checked: SkrSettings.ePaperSettings.textCursorUnblinking
-Binding {
-    target: SkrSettings.ePaperSettings
-    property: "textCursorUnblinking"
-    value: setTextCursorUnblinkingCheckBox.checked
-    restoreMode: Binding.RestoreBindingOrValue
-}
+    setTextCursorUnblinkingCheckBox.checked: SkrSettings.ePaperSettings.textCursorUnblinking
+    Binding {
+        target: SkrSettings.ePaperSettings
+        property: "textCursorUnblinking"
+        value: setTextCursorUnblinkingCheckBox.checked
+        restoreMode: Binding.RestoreBindingOrValue
+    }
     // --------------------------------------------
     // ---- advanced --------------------------------
     // --------------------------------------------
@@ -630,7 +639,7 @@ Binding {
 
     resetDockConfButton.onClicked: {
 
-       Globals.resetDockConfCalled()
+        Globals.resetDockConfCalled()
 
     }
 
