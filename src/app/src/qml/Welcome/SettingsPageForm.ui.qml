@@ -24,6 +24,7 @@ Item {
     property alias allowSwipeBetweenTabsCheckBox: allowSwipeBetweenTabsCheckBox
     property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
     readonly property int columnWidth: 550
+    property alias langComboBox: langComboBox
 
     Pane {
         id: pane2
@@ -80,6 +81,22 @@ Item {
                         id: columnLayout5
                         anchors.fill: parent
 
+
+                        RowLayout {
+                            id: rowLayout4
+                            width: 100
+                            height: 100
+
+                            Label {
+                                id: langLabel
+                                text: qsTr("Interface language :")
+                            }
+
+                            ComboBox {
+                                id: langComboBox
+                                wheelEnabled: true
+                            }
+                        }
                         Switch {
                             id: menuButtonsInStatusBarSwitch
                             text: qsTr("Set main menu in status bar")
@@ -223,12 +240,18 @@ Item {
                                 id: saveSpinBox
                             }
 
+                            Label {
+                                id: saveMinutes
+                                text: qsTr("minutes")
+                            }
+
                             Dial {
                                 id: saveDial
                                 to: 60
                                 from: 1
                                 wheelEnabled: true
                             }
+
                         }
                     }
                 }
@@ -274,6 +297,20 @@ Item {
                                 text: qsTr("Reset dock configuration")
                             }
                         }
+                    }
+                }
+
+                GroupBox {
+                    id: spellCheckingGroupBox
+                    width: 200
+                    height: 200
+                    Layout.fillWidth: true
+                    focusPolicy: Qt.TabFocus
+                    title: qsTr("Spell checking")
+
+                    ColumnLayout {
+                        id: columnLayout6
+                        anchors.fill: parent
                     }
                 }
             }

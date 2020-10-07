@@ -6,14 +6,11 @@
 using namespace std;
 
 // for translator
-#include <QLibraryInfo>
-#include <QLocale>
 #include <QTextCodec>
 #include <QDebug>
 #include <QString>
 #include <QGuiApplication>
 #include <QApplication>
-#include <QTranslator>
 #include <QFileInfo>
 #include <QDir>
 #include <QQuickStyle>
@@ -40,6 +37,7 @@ using namespace std;
 #include "skrfonts.h"
 #include "skreditmenusignalhub.h"
 #include "skrqmltools.h"
+#include "skrrootitem.h"
 
 #ifdef QT_DEBUG
 # include <QQmlDebuggingEnabler>
@@ -156,46 +154,6 @@ int main(int argc, char *argv[])
 
 
     // Language :
-    QSettings settings;
-
-    qApp->processEvents();
-    QString qtTr        = QString("qt");
-    QString skribistoTr = QString("skribisto");
-    QLocale locale;
-
-
-    QString langCode = settings.value("lang", "none").toString();
-
-    if (langCode == "none") {
-        // apply system locale by default
-        locale = QLocale::system();
-    }
-
-
-    QTranslator skribistoTranslator;
-
-    if (skribistoTranslator.load(locale, skribistoTr, "_", ":/translations")) {
-        settings.setValue("lang", locale.name());
-        langCode = settings.value("lang", "none").toString();
-    }
-    else { // if translation not existing :
-        locale = QLocale("en_EN");
-        settings.setValue("lang", locale.name());
-        langCode = settings.value("lang", "none").toString();
-    }
-    app.installTranslator(&skribistoTranslator);
-
-    // PLMUtils::Lang::setUserLang(langCode);
-
-
-    // Qt translation :
-    QTranslator translator;
-
-    if (translator.load(locale, qtTr, "_",
-                        QLibraryInfo::location(QLibraryInfo::
-                                               TranslationsPath))) {
-        app.installTranslator(&translator);
-    }
 
     // install translation of plugins:
     //    PLMPluginLoader::instance()->installPluginTranslations();
@@ -203,13 +161,15 @@ int main(int argc, char *argv[])
 
     // -----------------------------------------------------------------------
 
+    SKRRootItem   *rootItem                            = new SKRRootItem(qApp);
+    rootItem->applyLanguageFromSettings();
+
 
     PLMData   *data                            = new PLMData(qApp);
     PLMModels *models                          = new PLMModels(qApp);
     SKRFonts  *skrFonts                        = new SKRFonts(qApp);
     SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(qApp);
     SKRQMLTools *skrQMLTools                   = new SKRQMLTools(qApp);
-
 
     qmlRegisterUncreatableType<PLMError>("eu.skribisto.plmerror",
                                          1,
@@ -302,6 +262,7 @@ int main(int argc, char *argv[])
     const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
 
     engine.rootContext()->setContextProperty("plmData", data);
+    engine.rootContext()->setContextProperty("skrRootItem", rootItem);
     engine.rootContext()->setContextProperty("plmModels", models);
     engine.rootContext()->setContextProperty("skrFonts", skrFonts);
     engine.rootContext()->setContextProperty("skrQMLTools", skrQMLTools);

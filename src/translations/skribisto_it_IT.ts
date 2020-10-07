@@ -243,9 +243,65 @@
     </message>
 </context>
 <context>
-    <name>DockFrameForm.ui</name>
+    <name>CheckableTree</name>
     <message>
-        <source>Label</source>
+        <source>Level %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>label: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This project is a backup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete definitively</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -295,6 +351,116 @@
     <message>
         <source>Italic</source>
         <translation type="obsolete">Corsivo</translation>
+    </message>
+</context>
+<context>
+    <name>EditView</name>
+    <message>
+        <source>Sizes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Full Screen Colors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>EditViewForm.ui</name>
+    <message>
+        <source>Edit text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation type="unfinished">Corsivo</translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="unfinished">Grassetto</translation>
+    </message>
+    <message>
+        <source>Strike</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation type="unfinished">Sottolineato</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Full screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Dimensioni</translation>
+    </message>
+    <message>
+        <source>Full screen Colors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text width :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text size :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text indent :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Top margin :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Background :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text Field</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tool Button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paper :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>#1234</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -759,6 +925,32 @@
     <message>
         <source>This assistant will help you create a new project .</source>
         <translation type="obsolete">Questa procedura guidata vi aiuterà a creare un nuovo progetto.</translation>
+    </message>
+</context>
+<context>
+    <name>LeftDock</name>
+    <message>
+        <source>&amp;Navigation dock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Documents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LeftDockForm.ui</name>
+    <message>
+        <source>Navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opened documents</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1439,6 +1631,60 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
+    <name>NotePad</name>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dissociate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to move the note &quot;%1&quot; to the trash ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>note related to the current sheet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Existing notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NotePadForm.ui</name>
+    <message>
+        <source>Show synopsis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes list</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>NoteZone</name>
     <message>
         <source>&amp;Undo</source>
@@ -1934,6 +2180,136 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
+    <name>ProjectPage</name>
+    <message>
+        <source>Part </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ProjectPageForm.ui</name>
+    <message>
+        <source>Projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recent projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save as</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save a copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Behavior</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create an empty project at start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation type="unfinished">Stampa</translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project title :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>project title</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project file :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>project file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project path :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>project path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This project will be created as : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Number of parts :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <source>XML problem : parseFolderElement(const QDomElement &amp;element, QTreeWidgetItem *parentItem)</source>
@@ -1949,6 +2325,79 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
+    <name>RestoreListView</name>
+    <message>
+        <source>Restore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
+%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Empty the trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RestoreListViewForm.ui</name>
+    <message>
+        <source>Restore a document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Trashed menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The checked documents are those which were trashed at the same time</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RightDock</name>
+    <message>
+        <source>&amp;Tools dock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Edit</source>
+        <translation type="unfinished">&amp;Edita</translation>
+    </message>
+    <message>
+        <source>&amp;Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Notes</source>
+        <translation type="unfinished">&amp;Note</translation>
+    </message>
+</context>
+<context>
+    <name>RightDockForm.ui</name>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>RootPage</name>
     <message>
         <source>Welcome</source>
@@ -1960,14 +2409,53 @@ Please open a .plume file.</source>
     </message>
     <message>
         <source>Notes</source>
-        <translation type="unfinished">Note</translation>
+        <translation type="obsolete">Note</translation>
     </message>
     <message>
         <source>Gallery</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Informations</source>
+        <source>Note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project</source>
+        <translation type="unfinished">Progetto</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Edit</source>
+        <translation type="unfinished">&amp;Edita</translation>
+    </message>
+    <message>
+        <source>&amp;Help</source>
+        <translation type="unfinished">Aiuto (&amp;H)</translation>
+    </message>
+    <message>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RootPageForm.ui</name>
+    <message>
+        <source>Main menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Label</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2239,6 +2727,104 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
+    <name>SettingsPage</name>
+    <message>
+        <source>Add backup path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove backup path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a path to back up to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SettingsPageForm.ui</name>
+    <message>
+        <source>Accessibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow swipe gesture between tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show menu bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interface language :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set main menu in status bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backup paths :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back up every</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back up once a day</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save every</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>minutes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Special E-Paper</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set the text cursor unblinking</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show properties tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset dock configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Spell checking</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Sheet</name>
     <message>
         <source>Synopsis</source>
@@ -2366,6 +2952,28 @@ Please open a .plume file.</source>
     <message>
         <source>Scene</source>
         <translation type="obsolete">Scena</translation>
+    </message>
+</context>
+<context>
+    <name>TagPad</name>
+    <message>
+        <source>tag related to the current paper</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add tag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Existing tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TagPadForm.ui</name>
+    <message>
+        <source>Tags list</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2516,6 +3124,223 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
+    <name>TrashedListView</name>
+    <message>
+        <source>Trash: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
+%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Empty the trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>has child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>label:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This project is a backup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete definitively</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TrashedListViewForm.ui</name>
+    <message>
+        <source>Restore a document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Trashed menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TreeListView</name>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>has child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>label:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This project is a backup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set as active project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation type="unfinished">Sposta su</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation type="unfinished">Sposta giù</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TreeListViewForm.ui</name>
+    <message>
+        <source>current folder name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigation menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UpdateChecker</name>
     <message>
         <source>Plume Creator Version</source>
@@ -2663,15 +3488,19 @@ Please open a .plume file.</source>
 <context>
     <name>WelcomePageForm.ui</name>
     <message>
-        <source>Open project</source>
+        <source>Project</source>
+        <translation type="unfinished">Progetto</translation>
+    </message>
+    <message>
+        <source>Examples</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Recent projects</source>
+        <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>New project</source>
+        <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2694,6 +3523,66 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
+    <name>WriteLeftDock</name>
+    <message>
+        <source>&amp;Navigation dock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Documents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WriteLeftDockForm.ui</name>
+    <message>
+        <source>Navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opened documents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WriteRightDock</name>
+    <message>
+        <source>&amp;Tools dock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Edit</source>
+        <translation type="unfinished">&amp;Edita</translation>
+    </message>
+    <message>
+        <source>&amp;Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Notes</source>
+        <translation type="unfinished">&amp;Note</translation>
+    </message>
+</context>
+<context>
+    <name>WriteRightDockForm.ui</name>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished">Note</translation>
+    </message>
+</context>
+<context>
     <name>WritingZone</name>
     <message>
         <source>Form</source>
@@ -2701,10 +3590,114 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
-    <name>WritingZoneForm.ui</name>
+    <name>main</name>
     <message>
-        <source>Text Area</source>
+        <source>Fullscreen</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New Project</source>
+        <translation type="unfinished">&amp;Nuovo Progetto</translation>
+    </message>
+    <message>
+        <source>&amp;Open Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open an existing project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save as...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the &quot;%1&quot; project as ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This path is read-only, please choose another path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save a Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save a copy of the &quot;%1&quot; project as ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation type="unfinished">Stampa (&amp;P)</translation>
+    </message>
+    <message>
+        <source>&amp;Import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Export</source>
+        <translation type="unfinished">&amp;Esporta</translation>
+    </message>
+    <message>
+        <source>&amp;Close &quot;%1&quot; project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The project %1 is not saved. Do you want to save it before quiting ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the %1 project as ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Quit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation type="unfinished">Corsivo</translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="unfinished">Grassetto</translation>
+    </message>
+    <message>
+        <source>Strike</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation type="unfinished">Sottolineato</translation>
     </message>
 </context>
 </TS>

@@ -56,6 +56,10 @@ SettingsPageForm {
 
 
 
+    // --------------------------------------------
+    // ---- appareance --------------------------------
+    // --------------------------------------------
+
 
     menuButtonsInStatusBarSwitch.checked: SkrSettings.interfaceSettings.menuButtonsInStatusBar
     Binding {
@@ -64,6 +68,35 @@ SettingsPageForm {
         value: menuButtonsInStatusBarSwitch.checked
         restoreMode: Binding.RestoreBindingOrValue
     }
+
+    // interface languages :
+
+
+        ListModel {
+            id: langModel
+            ListElement { text: "english (US)"; langCode: "en_US" }
+            ListElement { text: "français (France)"; langCode: "fr_FR" }
+            ListElement { text: "deutch"; langCode: "de_DE" }
+        }
+
+
+    langComboBox.model: langModel
+    langComboBox.textRole: "text"
+    langComboBox.valueRole: "langCode"
+    langComboBox.onCurrentValueChanged: {
+        if(langComboBox.activeFocus){
+        skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
+        }
+    }
+
+
+    Connections {
+        target: skrRootItem
+        function onCurrentTranslationLanguageCodeChanged(langCode){
+            langComboBox.currentValue = langCode
+        }
+    }
+
 
 
     // --------------------------------------------

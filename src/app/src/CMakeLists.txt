@@ -29,10 +29,17 @@ include(GNUInstallDirs)
 include(FeatureSummary)
 
 # translations :
-set(TS_FILES ${CMAKE_SOURCE_DIR}/src/translations/skribisto_fr_FR.ts)
-set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION "${CMAKE_SOURCE_DIR}/src/translations/")
+set(TS_FILES
+    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_fr_FR.ts
+    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_de_DE.ts
+    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_it_IT.ts
+    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_ru_RU.ts
+    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_pt_BR.ts
+    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_sp_SP.ts
+    )
+#set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION ${CMAKE_SOURCE_DIR}/src/translations/)
 qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
-
+configure_file(${CMAKE_SOURCE_DIR}/src/translations/translations.qrc ${CMAKE_BINARY_DIR}/src/app/src COPYONLY)
 
 set(app_SRCS 
     main.cpp
@@ -54,6 +61,8 @@ set(app_SRCS
     highlighter.h
     spellchecker.cpp
     spellchecker.h
+    skrrootitem.cpp
+    skrrootitem.h
 )
 
 set(QML qml.qrc
@@ -80,10 +89,10 @@ set(QML qml.qrc
 set(QRC pics.qrc
     controls.qrc
     icons.qrc
-    ${CMAKE_SOURCE_DIR}/src/translations/langs.qrc
     ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc
     ${CMAKE_SOURCE_DIR}/readme.qrc
 
+    ${CMAKE_BINARY_DIR}/src/app/src/translations.qrc
     )
 
 # needed to allow qML debugging :
@@ -99,12 +108,10 @@ endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 # Tell CMake to create the executable
 
 if(ANDROID)
-    add_library(skribisto ${app_SRCS} ${RESOURCES} ${QRC} ${QM_FILES})
+    add_library(skribisto ${app_SRCS} ${RESOURCES} ${QRC} )
 else()
-    add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC} ${QM_FILES})
+    add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC} )
 endif()
-
-#target_link_libraries(skribisto KF5::Kirigami2)
 
 target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
