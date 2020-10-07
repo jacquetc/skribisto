@@ -6,6 +6,8 @@ project(app LANGUAGES CXX)
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg Xml QuickControls2 CONFIG REQUIRED)
 #find_package(KF5Kirigami2)
+find_library(HUNSPELL hunspell)
+
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -27,7 +29,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Some defaults are set for OpenBSD as well (info and man pages).
 include(GNUInstallDirs)
 include(FeatureSummary)
-
 # translations :
 set(TS_FILES
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_fr_FR.ts
@@ -117,7 +118,7 @@ target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
 target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg Qt5::QuickControls2
-    hunspell)
+    ${HUNSPELL})
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 
