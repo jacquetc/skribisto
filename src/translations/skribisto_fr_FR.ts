@@ -221,22 +221,7 @@
     <message>
         <location filename="../app/src/qml/Note/EditViewForm.ui.qml" line="236"/>
         <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Note/EditViewForm.ui.qml" line="236"/>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Write/EditViewForm.ui.qml" line="237"/>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Write/EditViewForm.ui.qml" line="237"/>
-        <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -362,12 +347,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Welcome/ProjectPage.qml" line="381"/>
+        <location filename="../app/src/qml/Welcome/ProjectPage.qml" line="389"/>
         <source>Close project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Welcome/ProjectPage.qml" line="395"/>
+        <location filename="../app/src/qml/Welcome/ProjectPage.qml" line="403"/>
         <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
@@ -433,12 +418,7 @@
     <message>
         <location filename="../app/src/qml/Welcome/ProjectPageForm.ui.qml" line="235"/>
         <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Welcome/ProjectPageForm.ui.qml" line="235"/>
-        <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Welcome/ProjectPageForm.ui.qml" line="249"/>
@@ -1200,120 +1180,120 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="150"/>
+        <location filename="../app/src/qml/main.qml" line="157"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="220"/>
+        <location filename="../app/src/qml/main.qml" line="227"/>
         <source>Save All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="246"/>
+        <location filename="../app/src/qml/main.qml" line="253"/>
         <source>Ctrl+Shift+S</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="271"/>
+        <location filename="../app/src/qml/main.qml" line="278"/>
         <source>Save as...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="308"/>
+        <location filename="../app/src/qml/main.qml" line="315"/>
         <source>Save the &quot;%1&quot; project as ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="346"/>
-        <location filename="../app/src/qml/main.qml" line="427"/>
+        <location filename="../app/src/qml/main.qml" line="353"/>
+        <location filename="../app/src/qml/main.qml" line="434"/>
         <source>This path is read-only, please choose another path.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="359"/>
+        <location filename="../app/src/qml/main.qml" line="366"/>
         <source>Save a Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="388"/>
+        <location filename="../app/src/qml/main.qml" line="395"/>
         <source>Save a copy of the &quot;%1&quot; project as ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="524"/>
+        <location filename="../app/src/qml/main.qml" line="531"/>
         <source>Back up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="593"/>
+        <location filename="../app/src/qml/main.qml" line="600"/>
         <source>&amp;Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="619"/>
+        <location filename="../app/src/qml/main.qml" line="626"/>
         <source>&amp;Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="639"/>
+        <location filename="../app/src/qml/main.qml" line="646"/>
         <source>&amp;Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="662"/>
+        <location filename="../app/src/qml/main.qml" line="669"/>
         <source>&amp;Close &quot;%1&quot; project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="693"/>
-        <location filename="../app/src/qml/main.qml" line="869"/>
+        <location filename="../app/src/qml/main.qml" line="700"/>
+        <location filename="../app/src/qml/main.qml" line="876"/>
         <source>The project %1 is not saved. Do you want to save it before quiting ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="739"/>
-        <location filename="../app/src/qml/main.qml" line="904"/>
+        <location filename="../app/src/qml/main.qml" line="746"/>
+        <location filename="../app/src/qml/main.qml" line="911"/>
         <source>Save the %1 project as ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="800"/>
+        <location filename="../app/src/qml/main.qml" line="807"/>
         <source>&amp;Quit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1040"/>
+        <location filename="../app/src/qml/main.qml" line="1047"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1058"/>
+        <location filename="../app/src/qml/main.qml" line="1065"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1076"/>
+        <location filename="../app/src/qml/main.qml" line="1083"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1099"/>
+        <location filename="../app/src/qml/main.qml" line="1106"/>
         <source>Italic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1131"/>
+        <location filename="../app/src/qml/main.qml" line="1138"/>
         <source>Bold</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1162"/>
+        <location filename="../app/src/qml/main.qml" line="1169"/>
         <source>Strike</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1192"/>
+        <location filename="../app/src/qml/main.qml" line="1199"/>
         <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>

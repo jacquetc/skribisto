@@ -85,7 +85,7 @@ FocusScope {
                         }
                         TextArea.flickable: SKRTextArea {
                             id: textArea
-//                            renderType: Text.NativeRendering
+                            renderType: Text.QtRendering
                             font.preferShaping: false
                             font.kerning: false
                             //clip: true

@@ -7,8 +7,6 @@ project(app LANGUAGES CXX)
 find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg Xml QuickControls2 CONFIG REQUIRED)
 #find_package(KF5Kirigami2)
 
-find_package(KF5Sonnet)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOUIC ON)
@@ -54,7 +52,9 @@ set(app_SRCS
     skrqmltools.h
     highlighter.cpp
     highlighter.h
-    )
+    spellchecker.cpp
+    spellchecker.h
+)
 
 set(QML qml.qrc
     )
@@ -109,7 +109,8 @@ endif()
 target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
-target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg Qt5::QuickControls2 KF5::SonnetCore)
+target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg Qt5::QuickControls2
+    hunspell)
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 

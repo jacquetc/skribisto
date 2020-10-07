@@ -2,7 +2,7 @@
 *   Copyright (C) 2020 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: SKREditMenuSignalHub.h                                                   *
+*  Filename: SpellChecker.h                                                   *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -19,41 +19,56 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SKREDITMENUSIGNALHUB_H
-#define SKREDITMENUSIGNALHUB_H
+#ifndef SPELLCHECKER_H
+#define SPELLCHECKER_H
 
+#include <QString>
 #include <QObject>
+#include <QHash>
+#include <QTextStream>
+#include <QStringList>
 
-class SKREditMenuSignalHub : public QObject {
+
+class Hunspell;
+
+class SpellChecker : public QObject
+{
     Q_OBJECT
-
 public:
 
-    explicit SKREditMenuSignalHub(QObject *parent = nullptr);
-    Q_INVOKABLE bool clearCutConnections();
-    Q_INVOKABLE bool clearCopyConnections();
-    Q_INVOKABLE bool clearPasteConnections();
-    Q_INVOKABLE bool clearItalicConnections();
-    Q_INVOKABLE bool clearBoldConnections();
-    Q_INVOKABLE bool clearStrikeConnections();
-    Q_INVOKABLE bool clearUnderlineConnections();
-    Q_INVOKABLE void subscribe(const QString& objectName);
-    Q_INVOKABLE void unsubscribe(const QString& objectName);
-    Q_INVOKABLE bool isSubscribed(const QString& objectName);
+    SpellChecker(QObject *parent);
+    ~SpellChecker();
+    void setDict(const QString &dictionaryPath, const QStringList &userDictionary, const QStringList &attendTree_names);
+
+    bool spell(const QString &word);
+    QStringList suggest(const QString &word);
+    void ignoreWord(const QString &word);
+    void addToUserWordlist(const QString &word);
+
+    bool isActive();
+    bool activate();
+    void deactivate();
+
+    static QStringList dictsPaths();
+    static QHash<QString, QString> dictsList();
+
+    bool isInUserWordlist(QString &word);
+    void removeFromUserWordlist(const QString &word);
+
+    // fix bug when hunspell gives me latin1 encoded results on several Linux systems :
+    QString testHunspellForEncoding();
 
 signals:
-
-    void cutActionTriggered();
-    void copyActionTriggered();
-    void pasteActionTriggered();
-    void italicActionTriggered(bool isChecked);
-    void boldActionTriggered(bool isChecked);
-    void strikeActionTriggered(bool isChecked);
-    void underlineActionTriggered(bool isChecked);
+  void userDictSignal(QStringList userDict);
 
 private:
+    void put_word(const QString &word);
+    Hunspell *_hunspell;
+    bool m_isActive, hunspellLaunched;
+    QStringList userDict;
 
-    QStringList m_subscribedList;
+
+    QString encodingFix, m_dictionaryPath;
 };
 
-#endif // SKREDITMENUSIGNALHUB_H
+#endif // SPELLCHECKER_H
