@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1.0)
 
 # Populate a CMake variable with the sources
 
-project(app LANGUAGES CXX)
+project(app LANGUAGES CXX VERSION ${VERSION})
 
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg Xml QuickControls2 CONFIG REQUIRED)

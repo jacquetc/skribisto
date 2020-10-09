@@ -54,4 +54,4 @@ modules:
     sources:
       - type: git
         url: https://github.com/jacquetc/skribisto.git
-        branch: develop
+        branch: master
