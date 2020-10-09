@@ -114,7 +114,9 @@ WritePageForm {
         saveContent()
     }
 
-
+    Component.onDestruction: {
+        runActionsBedoreDestruction()
+    }
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------
@@ -485,14 +487,14 @@ WritePageForm {
 
 
     // compact mode :
-//    compactLeftDockShowButton.visible: Globals.compactSize
+    compactLeftDockShowButton.visible: Globals.compactSize
 
-//    compactLeftDockShowButton.onClicked: leftDrawer.open()
-//    compactLeftDockShowButton.icon {
-//        name: "go-next"
-//        height: 50
-//        width: 50
-//    }
+    compactLeftDockShowButton.onClicked: leftDrawer.open()
+    compactLeftDockShowButton.icon {
+        name: "go-next"
+        height: 50
+        width: 50
+    }
 
     // resizing with leftDockResizeButton:
 
@@ -569,14 +571,14 @@ WritePageForm {
     }
 
     // compact mode :
-//    compactRightDockShowButton.visible: Globals.compactSize
+    compactRightDockShowButton.visible: Globals.compactSize
 
-//    compactRightDockShowButton.onClicked: rightDrawer.open()
-//    compactRightDockShowButton.icon {
-//        name: "go-previous"
-//        height: 50
-//        width: 50
-//    }
+    compactRightDockShowButton.onClicked: rightDrawer.open()
+    compactRightDockShowButton.icon {
+        name: "go-previous"
+        height: 50
+        width: 50
+    }
 
     // resizing with rightDockResizeButton:
 
@@ -743,8 +745,6 @@ WritePageForm {
             return
         }
 
-
-
         if(contentSaveTimer.running){
             contentSaveTimer.stop()
         }
@@ -753,7 +753,7 @@ WritePageForm {
     Timer{
         id: contentSaveTimer
         repeat: false
-        interval: 100
+        interval: 200
         onTriggered: saveContent()
     }
 
@@ -769,10 +769,10 @@ WritePageForm {
         }
     }
 
-    writingZone.onActiveFocusChanged: {
-        writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
-        //        restoreCurrentPaperCursorPositionAndY()
-    }
+//    writingZone.onActiveFocusChanged: {
+//        writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
+//        //        restoreCurrentPaperCursorPositionAndY()
+//    }
 
 
     //    // project to be closed :

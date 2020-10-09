@@ -152,6 +152,7 @@ NotePageForm {
             }
             return value
         }
+        restoreMode: Binding.RestoreBindingOrValue
     }
     //    Binding on rightBasePreferredWidth {
     //        value:  {
@@ -309,6 +310,8 @@ NotePageForm {
             saveCurrentPaperCursorPositionAndY()
         }
 
+        paperId = _paperId
+        projectId = _projectId
 
         console.log("opening note :", _projectId, _paperId)
         writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
@@ -318,20 +321,7 @@ NotePageForm {
         writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent
         writingZone.documentHandler.topMarginEverywhere = SkrSettings.writeSettings.textTopMargin
 
-
-        //get cursor position
-        var position = skrUserSettings.getFromProjectSettingHash(
-                    _projectId, "notePositionHash", _paperId, 0)
-        //get Y
-        var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
-                    _projectId, "noteYHash", _paperId, 0)
-        console.log("newCursorPosition", position)
-
-        // set positions :
-        writingZone.setCursorPosition(position)
-        writingZone.flickable.contentY = visibleAreaY
-        paperId = _paperId
-        projectId = _projectId
+        restoreCurrentPaperCursorPositionAndY()
 
         writingZone.forceActiveFocus()
         //save :
@@ -345,6 +335,22 @@ NotePageForm {
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)
 
+
+    }
+
+    function restoreCurrentPaperCursorPositionAndY(){
+
+        //get cursor position
+        var position = skrUserSettings.getFromProjectSettingHash(
+                    projectId, "notePositionHash", paperId, 0)
+        //get Y
+        var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
+                    projectId, "noteYHash", paperId, 0)
+        console.log("newCursorPosition", position)
+
+        // set positions :
+        writingZone.setCursorPosition(position)
+        writingZone.flickable.contentY = visibleAreaY
 
     }
 
@@ -378,11 +384,13 @@ NotePageForm {
     Binding on writingZone.textAreaWidth {
         when: !Globals.compactSize && middleBase.width - 200 < writingZone.maximumTextAreaWidth
         value: middleBase.width - 200
+        restoreMode: Binding.RestoreBindingOrValue
 
     }
     Binding on writingZone.textAreaWidth {
         when: !Globals.compactSize && middleBase.width - 200 >= writingZone.maximumTextAreaWidth
         value: writingZone.maximumTextAreaWidth
+        restoreMode: Binding.RestoreBindingOrValue
 
     }
 
@@ -461,7 +469,7 @@ NotePageForm {
 
 
     // compact mode :
-    compactHeaderPane.visible: Globals.compactSize
+    compactLeftDockShowButton.visible: Globals.compactSize
 
     compactLeftDockShowButton.onClicked: leftDrawer.open()
     compactLeftDockShowButton.icon {
@@ -543,6 +551,7 @@ NotePageForm {
     }
 
     // compact mode :
+    compactRightDockShowButton.visible: Globals.compactSize
 
     compactRightDockShowButton.onClicked: rightDrawer.open()
     compactRightDockShowButton.icon {
@@ -706,8 +715,9 @@ NotePageForm {
     }
 
 
-
-
+    //------------------------------------------------------------
+    //------------------------------------------------------------
+    //------------------------------------------------------------
 
 
     // save content once after writing:
@@ -726,7 +736,7 @@ NotePageForm {
     Timer{
         id: contentSaveTimer
         repeat: false
-        interval: 100
+        interval: 200
         onTriggered: saveContent()
     }
 

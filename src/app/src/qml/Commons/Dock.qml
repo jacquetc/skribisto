@@ -50,7 +50,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.right: parent.left
-        width: 10
+        width: 5
 
         visible: edge === Qt.RightEdge && interactive
 
@@ -102,7 +102,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.left: parent.right
-        width: 10
+        width: 5
 
         visible: edge === Qt.LeftEdge && interactive
 
@@ -190,8 +190,10 @@ Item {
         id: overlayLayer
         parent: Overlay.overlay
         visible: root.interactive && root.position === 1.0
-        height: root.height
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
         y: Overlay.overlay.mapToItem(root.parent, root.x, root.y).y
+        width: Overlay.overlay.width - root.width
 
 
 
@@ -216,11 +218,10 @@ Item {
             State{
                 name: "left_edge"
                 when: root.edge === Qt.LeftEdge
-                PropertyChanges {
+                AnchorChanges{
                     target: overlayLayer
-                    x: Overlay.overlay.mapToItem(root.parent, root.width, root.y).x
-                    width: Overlay.overlay.width - root.width
-
+                    anchors.left: undefined
+                    anchors.right: parent.right
                 }
 
 
@@ -228,10 +229,10 @@ Item {
             State{
                 name: "right_edge"
                 when: root.edge === Qt.RightEdge
-                PropertyChanges {
+                AnchorChanges{
                     target: overlayLayer
-                    x: Overlay.overlay.mapToItem(root.parent, 0, 0).x
-                    width: Overlay.overlay.width - root.width
+                    anchors.left: parent.left
+                    anchors.right: undefined
 
                 }
 
