@@ -50,7 +50,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.right: parent.left
-        width: 10
+        width: 5
 
         visible: edge === Qt.RightEdge && interactive
 
@@ -102,7 +102,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.left: parent.right
-        width: 10
+        width: 5
 
         visible: edge === Qt.LeftEdge && interactive
 

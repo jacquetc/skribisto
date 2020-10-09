@@ -461,8 +461,6 @@ NotePageForm {
 
 
     // compact mode :
-    compactHeaderPane.visible: Globals.compactSize
-
     compactLeftDockShowButton.onClicked: leftDrawer.open()
     compactLeftDockShowButton.icon {
         name: "go-next"

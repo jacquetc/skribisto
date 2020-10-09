@@ -11,6 +11,8 @@ Item {
     property alias rightPaneScrollMouseArea: rightPaneScrollMouseArea
     property alias rightPaneScrollTouchArea: rightPaneScrollTouchArea
     property alias leftDockMenuGroup: leftDockMenuGroup
+    property alias compactRightDockShowButton: compactRightDockShowButton
+    property alias compactLeftDockShowButton: compactLeftDockShowButton
     property alias rightDockMenuGroup: rightDockMenuGroup
     property alias leftDockResizeButton: leftDockResizeButton
     property alias rightDockResizeButton: rightDockResizeButton
@@ -143,9 +145,30 @@ Item {
                 Layout.fillWidth: true
 
 
+                Button {
+                    id: compactLeftDockShowButton
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    width: 30
+                    height: 30
+                    z: 1
+                    flat: true
+                }
+
+
                 WritingZone {
                     id: writingZone
                     anchors.fill: parent
+                }
+
+                Button {
+                    id: compactRightDockShowButton
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    width: 30
+                    height: 30
+                    z: 1
+                    flat: true
                 }
 
             }
