@@ -1,0 +1,2 @@
+singleton Globals 1.0 Globals.qml
+singleton SkrSettings 1.0 SkrSettings.qml

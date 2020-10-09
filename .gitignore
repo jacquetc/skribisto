@@ -74,3 +74,32 @@ build
 #eric6
 .eric6project
 *.e4p
+.idea
+
+#Qt Creator
+*.autosave
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+CMakeLists.txt.user
+
+# QML
+*.qmlc
+*.jsc
+
+#plume
+.~lock.*
+
+#cmake
+CMakeLists.txt.user.*
+
+#kdevelop
+.kdev4/
+.kdev4 
+
+#flatpak
+.flatpak-builder
+.flatpak-builder/
+build-dir
+build-dir/

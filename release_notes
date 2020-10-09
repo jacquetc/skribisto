@@ -1,0 +1,21 @@
+Skribisto
+
+v 1.8.2
+    First usable release. Lacks a lot of features
+    New features:
+    - Open/Save/Backup/autosave of notes and sheets.
+    - Open multiple projects
+    - Settings
+    - Fullscreen
+    - 'New project' wizard
+    - Tag system for notes and sheets
+    - Note pad in the Write page
+    - Dynamic layout for all displays
+    - Accessible for screen readers
+    - French translation
+    Other:
+    - Flatpak manifest
+
+
+
+

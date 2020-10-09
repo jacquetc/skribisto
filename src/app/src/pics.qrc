@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>pics/skribisto.png</file>
+        <file>pics/skribisto.svg</file>
+        <file>pics/author.svg</file>
+        <file>pics/go-up.svg</file>
+        <file>pics/go-down.svg</file>
+        <file>pics/go-next.svg</file>
+        <file>pics/go-previous.svg</file>
+        <file>pics/resizecol.svg</file>
+    </qresource>
+</RCC>

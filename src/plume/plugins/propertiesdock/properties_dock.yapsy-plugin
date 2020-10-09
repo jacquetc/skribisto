@@ -1,9 +1,0 @@
-[Core]
-Name = Properties Dock
-Module = properties_dock
-
-[Documentation]
-Author = Cyril Jacquet
-Version = 0.1
-Website = http://www.plume-creator.eu
-Description = Dock displaying sheet's properties

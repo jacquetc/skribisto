@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/sql">
+        <file>sqlite_project.sql</file>
+    </qresource>
+</RCC>

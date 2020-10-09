@@ -1,0 +1,5 @@
+plume-creator (0.63-0ubuntu1) saucy; urgency=low
+
+  * First packaging test
+  
+-- Cyril Jacquet <cyril.jacquet@plume-creator.eu>  Thu, 26 Sept 2013 11:12:00 -0400

@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/testfiles">
+        <file>skribisto_test_project.sqlite</file>
+    </qresource>
+</RCC>

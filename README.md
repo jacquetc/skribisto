@@ -1,74 +1,108 @@
-# plume-creator
-Software for writers
-
-This software is the continuation of Plume Creator from http://sourceforge.net/projects/plume-creator/
-
-The main change is the coding language : python 3.4 / PyQt5 instead of the c++ / Qt5 of the original software.
-
-To avoid confusion with version numbers, this new Plume will start at version 1.5.0 . To point out the sofware is still under development, all releases will be tagged "alpha" until the 2.0 release.
-
-Of course, the projects from the old Plume will be importable.
-
-Help in testing or coding is always welcome !
-
-## For developers 
+# Skribisto
 
 
 
-You must set up the workspace before beginning to develop Plume.
-Add to your environnmeent variables :
+**Skribisto** is born from the ashes of **Plume Creator**, keeping the goals while adopting more recent ways to think an application.
 
-PLUME_DEVELOP_FROM=/path/to/plume/source/code
+Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or 
+write hundreds of notes. The tools are designed to be most unobstrusive, so you can write, write and write a bit more without too much distraction.
 
-### In linux :
-export PLUME_DEVELOP_FROM=/home/[username]/Devel/workspace_eclipse/plume-creator
+With Skribisto, the user can create and organize text papers (called "sheets"). Exactly the same is possible with the notes. Sheets can link to a synopsis and multiple notes, 
+or create them on the fly while writing.
 
-#### Necessities :
-Make sure you have pyQt 5.4 (for python3) or more, and it's dev tools (pyrcc5), installed
+What Skribisto is not : LibreOffice, Calligra or Word. Any project can be exported to .odt so as to make use of these complete text processors formatting abilities 
+before printing.
 
-sudo apt-get install pyqt5-dev-tools
+Accessibility is too often forgotten. I'm trying to keep the interface accessible for screen readers, as much as Qt let me implement it. Please contact me if there 
+is a glaring lack in the accessibility.
 
-sudo apt-get install python3-pyqt5
+## Goals
 
-sudo apt-get install python3-pyqt5.qtsql
+Short term goal is to rejoin its ancestor Plume Creator feature-wise. A few outstanding features are below. Bold means this feature is already implemented
 
-sudo apt-get install python3-pyqt5.qtopengl
+- **navigating between texts**
+- **distraction-free mode**
+- **rich text (bold/italic/underline/strikeout)**
+- **synopsis**
+- **label (named 'tag' in Plume) next to each text title**
+- **autosave**
+- advanced search/replace
+- display quickly the end of the previous text and the beginning of the next text
+- character/word count
+- character/word goal
+- overview of all texts
+- exporting to .txt/.odt/.PDF
+- printing
+- spellcheking
+- color themes
 
-Python 3 needs a few modules to launch Plume properly
+Skribisto will add to these features with :
 
-In a terminal :
+- **dynamic layouts adaptating to all devices (like a phone)**
+- **tagging system**
+- **touch-friendly**
+- **navigating between notes**
+- **a text can have several notes in addition of the synopsis**
+- **manual save**
+- **backup with mutliple paths**
+- **accessible for screen readers (NVDA or JAWS)**
+- **Open texts in a new window**
+- **Open texts in tabs**
+- **Linux (Flatpak) support**
+- Windows 10 support
+- Examples
+- Help page
+- importing old Plume Creator projects
+- texts overview
+- notes overview
+- project management
+- each note or text can take snapshots
+- on-the-fly notes from the context menu
 
-sudo easy_install3 pip
+Medium term goals are :
+- Adjoining documents to texts (without insertion)
+- Insert images into the text
+- Gallery tab to manage all external documents/images
+- Android support
 
-sudo pip3 install yapsy
 
-### In Windows :
-Development of Plume being done on Linux, I can't be sure about this setup.
+## For tech people, under the hood
 
-    1.Create an account on GitHub
-    
-    2.Fetch the last update of Plume (and stay in sync every update) :
-    
-        1.install Github for Windows
-            1.Download and install GitHub : https://github-windows.s3.amazonaws.com/GitHubSetup.exe
-        2.After the install, log in with the previously created account
-        3.Click on the "+" on the top right of GitHub and clone the repository :   https://github.com/jacquetc/plume-creator
-        4.click on "master" on the top and select develop in the drop-down menu, then click on "sync" button on the right top
-        5.when you want to fetch updates, click on the "sync" button on the right top
-        6.Plume is now in your personal "documents/github/plume-creator" folder !
-    3.Install Python 3 for windows
-        1.install Python 3
-            1.Download and install https://www.python.org/ftp/python/3.4.3/python-3.4.3.msi
-                1.when prompted to choose packages, allow the last one on the list to be installed ("add python.exe to the path")
-                2.let the other settings with the default values
-         2.install the necessary modules
-            1.launch a command line prompt (start menu/all programs/accessories/command line prompt) .
-            2.type :       
-            
-            pip3 install yapsy
-            
-    4.Install PyQt5
-        1.Download and install : http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.4.2/PyQt5-5.4.2-gpl-Py3.4-Qt5.4.2-x32.exe
-    5.launch Plume :
-        1.In the explorer, go to "c:\users\grant\documents\github\plume-creator\src\plume\"
-        2.double-click on "plume.py" (or "plume")
+All the application is rewritten from scratch using C++ Qt for backend and QML for the front-end. The QML allows for a touch friendly and dynamic interface.
+
+Each project is a SQLite3 file, more robust than the zipped projects in Plume.
+
+
+
+## Test it
+
+### Linux / Windows
+Download the latest from GitHub, then you can use Qt Creator to open the top-most CMakeLists.txt at the root of the project. Build it against Qt 5.15 minimum to be sure.
+
+### Linux
+Also, thanks to the flatpak support, 
+- make sure to have flatpak and flatpak-builder installed on your system
+- type in a terminal :
+
+```
+mkdir Devel
+cd ~/Devel
+git clone https://github.com/jacquetc/skribisto.git
+flatpak uninstall eu.skribisto.skribisto -y
+flatpak-builder --user --repo=local-repo build-dir skribisto/eu.skribisto.skribisto.yml --force-clean
+flatpak install eu.skribisto.skribisto -y
+```
+
+It will download 500 Mo if dependencies the first time.
+
+
+## To contact me :
+
+cyril.jacquet@skribisto.eu
+
+
+
+
+
+
+
