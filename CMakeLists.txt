@@ -19,9 +19,14 @@ version_from_git(
   TIMESTAMP "%Y%m%d%H%M%S"
 )
 
-add_definitions(-DSKR_VERSION_STR=${VERSION})
-add_definitions(-DSKR_SEMANTICVERSION_STR=${SEMVER})
-add_definitions(-DSKR_GITTAG_STR=${GIT_TAG})
+add_definitions(-DSKR_VERSION=${VERSION})
+add_definitions(-DSKR_SEMANTIC_VERSION=${SEMVER})
+add_definitions(-DSKR_GIT_TAG=${GIT_TAG})
+add_compile_definitions(SKR_VERSION=${VERSION})
+add_compile_definitions(SKR_SEMANTIC_VERSION=${SEMVER})
+add_compile_definitions(SKR_GIT_TAG=${GIT_TAG})
+add_compile_definitions(SKR_VERSION_MAJOR=${VERSION_MAJOR})
+add_compile_definitions(SKR_VERSION_MINOR=${VERSION_MINOR})
 
 project(skribisto LANGUAGES CXX VERSION ${VERSION})
 
