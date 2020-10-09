@@ -54,8 +54,8 @@ void startCore()
     QCoreApplication::setOrganizationName("skribisto");
     QCoreApplication::setOrganizationDomain("skribisto.eu");
 
-
-    QCoreApplication::setApplicationVersion(QString::number(VERSIONSTR));
+    QCoreApplication::setApplicationVersion(QString::number(SKR_VERSION_MAJOR) + "." + QString::number(SKR_VERSION_MINOR));
+    qDebug() << QCoreApplication::applicationVersion();
     QString appName = "Skribisto";
 
     QCoreApplication::setApplicationName(appName);
