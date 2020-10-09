@@ -335,19 +335,7 @@
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1998,7 +1986,7 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Print</source>
@@ -2058,10 +2046,6 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
         <translation type="unfinished"></translation>
     </message>
 </context>

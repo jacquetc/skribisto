@@ -11,7 +11,7 @@ set(QT_MIN_VERSION "5.15.0")
 project(skribisto LANGUAGES CXX)
 
 find_package(ECM REQUIRED NO_MODULE)
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
 
 # Include GNUInstallDirs, which sets sensible defaults for install directories.
 # See https://cmake.org/cmake/help/v3.0/module/GNUInstallDirs.html for further information.
@@ -26,8 +26,6 @@ include(CMakePackageConfigHelpers)
 include(ECMOptionalAddSubdirectory)
 
 include_directories(${Qt5Core_PRIVATE_INCLUDE_DIRS})
-
-
 
 # forbid some old things
 add_definitions(-DQT_NO_FOREACH)
@@ -59,8 +57,8 @@ add_subdirectory(src/app/src)
 
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-add_subdirectory(src/libskribisto-data/tests)
-add_subdirectory(src/app/tests)
+    add_subdirectory(src/libskribisto-data/tests)
+    add_subdirectory(src/app/tests)
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})

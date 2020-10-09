@@ -373,19 +373,7 @@
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -2223,7 +2211,7 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Print</source>
@@ -2283,10 +2271,6 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
         <translation type="unfinished"></translation>
     </message>
 </context>
