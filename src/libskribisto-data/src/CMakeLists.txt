@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 #
 # Populate a CMake variable with the sources
 
-project(skribisto-data)
+project(skribisto-data LANGUAGES CXX VERSION ${VERSION} )
 add_definitions(-DSKRIBISTO_DATA_LIBRARY)
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core Network Sql CONFIG REQUIRED)

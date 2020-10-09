@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 3.1.0)
 
 # Populate a CMake variable with the sources
 
-project(app LANGUAGES CXX)
+project(app LANGUAGES CXX VERSION ${VERSION})
+
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg Xml QuickControls2 CONFIG REQUIRED)
 #find_package(KF5Kirigami2)
-find_library(HUNSPELL hunspell)
-
+find_package(hunspell REQUIRED)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -118,9 +118,9 @@ target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
 target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg Qt5::QuickControls2
-    ${HUNSPELL})
+    ${HUNSPELL_LIBRARIES})
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
-
+target_include_directories(skribisto SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
 
 install(TARGETS skribisto RUNTIME DESTINATION ${KDE_INSTALL_BINDIR})
 

@@ -52,6 +52,5 @@ modules:
     config-opts:
       - -DCMAKE_BUILD_TYPE=RelWithDebInfo
     sources:
-      - type: git
-        url: https://github.com/jacquetc/skribisto.git
-        branch: master
+      - type: dir
+        path: /home/cyril/Devel/skribisto

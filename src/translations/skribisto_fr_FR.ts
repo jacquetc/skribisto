@@ -534,7 +534,8 @@
     <message>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Voulez-vous supprimer définitivement les documents suivants du project &quot;%1&quot; ?
+%2</translation>
     </message>
     <message>
         <source>Select none</source>
@@ -553,7 +554,7 @@
     </message>
     <message>
         <source>Trashed menu</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Menu de la corbeille</translation>
     </message>
     <message>
         <source>The checked documents are those which were trashed at the same time</source>
