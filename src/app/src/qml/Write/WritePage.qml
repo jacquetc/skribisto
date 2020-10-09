@@ -114,7 +114,9 @@ WritePageForm {
         saveContent()
     }
 
-
+    Component.onDestruction: {
+        runActionsBedoreDestruction()
+    }
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------
@@ -743,8 +745,6 @@ WritePageForm {
             return
         }
 
-
-
         if(contentSaveTimer.running){
             contentSaveTimer.stop()
         }
@@ -753,7 +753,7 @@ WritePageForm {
     Timer{
         id: contentSaveTimer
         repeat: false
-        interval: 100
+        interval: 200
         onTriggered: saveContent()
     }
 
@@ -769,10 +769,10 @@ WritePageForm {
         }
     }
 
-    writingZone.onActiveFocusChanged: {
-        writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
-        //        restoreCurrentPaperCursorPositionAndY()
-    }
+//    writingZone.onActiveFocusChanged: {
+//        writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
+//        //        restoreCurrentPaperCursorPositionAndY()
+//    }
 
 
     //    // project to be closed :
