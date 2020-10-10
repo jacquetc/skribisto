@@ -937,7 +937,7 @@
     </message>
     <message>
         <source>Cut</source>
-        <translation>Coller</translation>
+        <translation>Couper</translation>
     </message>
     <message>
         <source>Add before</source>
