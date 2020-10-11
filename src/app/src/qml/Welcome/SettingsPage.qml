@@ -78,7 +78,7 @@ SettingsPageForm {
         id: langModel
         ListElement { text: "english (US)"; langCode: "en_US" }
         ListElement { text: "français (France)"; langCode: "fr_FR" }
-        ListElement { text: "deutch"; langCode: "de_DE" }
+        ListElement { text: "deutsch"; langCode: "de_DE" }
     }
 
 
@@ -643,6 +643,19 @@ SettingsPageForm {
 
     }
 
+
+    // --------------------------------------------
+    // ---- spell checking --------------------------------
+    // --------------------------------------------
+
+
+    checkSpellingCheckBox.checked: SkrSettings.spellCheckingSettings.spellCheckingActivation
+    Binding {
+        target: SkrSettings.spellCheckingSettings
+        property: "spellCheckingActivation"
+        value: checkSpellingCheckBox.checked
+        restoreMode: Binding.RestoreBindingOrValue
+    }
 
 
 }

@@ -25,6 +25,7 @@ Item {
     property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
     readonly property int columnWidth: 550
     property alias langComboBox: langComboBox
+    property alias checkSpellingCheckBox: checkSpellingCheckBox
 
     Pane {
         id: pane2
@@ -311,6 +312,11 @@ Item {
                     ColumnLayout {
                         id: columnLayout6
                         anchors.fill: parent
+
+                        CheckBox {
+                            id: checkSpellingCheckBox
+                            text: qsTr("Check spelling")
+                        }
                     }
                 }
             }

@@ -472,7 +472,11 @@ WritingZoneForm {
         Component.onCompleted: {
 
             // activate
-            SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(highlighter.spellChecker.activate)
+            SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(
+                   function() {
+                       highlighter.spellChecker.activate(SkrSettings.spellCheckingSettings.spellCheckingActivation)
+                       highlighter.rehighlight()
+            })
             highlighter.spellChecker.active = SkrSettings.spellCheckingSettings.spellCheckingActivation
 
             //lang

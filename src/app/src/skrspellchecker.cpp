@@ -262,7 +262,6 @@ bool SKRSpellChecker::activate(bool value)
 {
     if(!value){
         deactivate();
-        emit activated(false);
         return false;
     }
 
@@ -283,6 +282,7 @@ bool SKRSpellChecker::activate(bool value)
 void SKRSpellChecker::deactivate()
 {
     m_isActive = false;
+    emit activated(false);
 
 }
 
