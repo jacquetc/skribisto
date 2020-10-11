@@ -203,7 +203,8 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     // new project :
     IFOKDO(error, this->executeSQLFile(":/sql/sqlite_project.sql", sqlDb));
     QString sqlString =
-        "INSERT INTO tbl_project (l_skribisto_maj_version, l_skribisto_min_version, l_db_maj_version, l_db_min_version) VALUES (2, 0, 1, 0)";
+        QString("INSERT INTO tbl_project (l_skribisto_maj_version, l_skribisto_min_version, l_skribisto_patch_version) VALUES (%1, %2, %3)")
+            .arg(SKR_VERSION_MAJOR).arg(SKR_VERSION_MINOR).arg(SKR_VERSION_PATCH);
 
     IFOKDO(error, this->executeSQLString(sqlString, sqlDb));
 

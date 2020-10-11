@@ -27,6 +27,7 @@ add_compile_definitions(SKR_SEMANTIC_VERSION=${SEMVER})
 add_compile_definitions(SKR_GIT_TAG=${GIT_TAG})
 add_compile_definitions(SKR_VERSION_MAJOR=${VERSION_MAJOR})
 add_compile_definitions(SKR_VERSION_MINOR=${VERSION_MINOR})
+add_compile_definitions(SKR_VERSION_PATCH=${VERSION_PATCH})
 
 project(skribisto LANGUAGES CXX VERSION ${VERSION})
 

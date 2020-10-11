@@ -27,15 +27,13 @@ PLMUpgrader::PLMUpgrader(QObject *parent) : QObject(parent)
 
 PLMError PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 {
-    Q_UNUSED(sqlDb);
-
     PLMError error;
 
     //find DB version :
     double dbVersion = -1;
 
     QSqlQuery query(sqlDb);
-    QString   queryStr = "SELECT dbl_version FROM tbl_info";
+    QString   queryStr = "SELECT dbl_database_version FROM tbl_project";
 
 
     query.prepare(queryStr);
@@ -51,29 +49,66 @@ PLMError PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     }
 
 
-    // from 1.6 to 1.8
-    if(dbVersion == 1.6){
+    // from 1.0 to 1.1
+    if(dbVersion == 1.0){
+        double newDbVersion = 1.1;
+
         sqlDb.transaction();
 
         QSqlQuery query(sqlDb);
         QString   queryStr = "CREATE TABLE tbl_project_dict (l_project_dict_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ON CONFLICT ROLLBACK UNIQUE ON CONFLICT ROLLBACK, t_word TEXT UNIQUE ON CONFLICT REPLACE NOT NULL ON CONFLICT ROLLBACK);"
-            ;
+                ;
         query.prepare(queryStr);
-        query.exec();
+        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
 
         sqlDb.commit();
 
-        PLMUpgrader::setNewDbVersion(sqlDb, 1.8);
+        IFKO(error){
+            error.setErrorCode("E_UPGRADER_cant_upgrade");
+            error.addData(newDbVersion);
+
+        }
+
+        IFOKDO(error, error = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
+
+        IFOK(error){
+            dbVersion = newDbVersion;
+        }
+
 
     }
 
-
-
-
+    // from 1.1 to 1.2
+    if(dbVersion == 1.1){
+        double newDbVersion = 1.2;
+        //fill here
+    }
 
     return error;
 }
 
-PLMError PLMUpgrader::setNewDbVersion(QSqlDatabase sqlDb, double newVersion){
+PLMError PLMUpgrader::setDbVersion(QSqlDatabase sqlDb, double newVersion){
 
+
+    PLMError error;
+
+    sqlDb.transaction();
+    QSqlQuery query(sqlDb);
+    QString   queryStr = "UPDATE tbl_project SET dbl_database_version = :newVersion;";
+    query.prepare(queryStr);
+    query.bindValue(":newVersion", newVersion);
+    query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+
+    // update date
+    IFOK(error){
+        queryStr = "UPDATE tbl_project SET dt_updated = CURRENT_TIMESTAMP;";
+        query.prepare(queryStr);
+        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+
+    }
+
+
+    sqlDb.commit();
+
+    return error;
 }
