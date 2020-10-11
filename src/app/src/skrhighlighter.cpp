@@ -1,17 +1,15 @@
-#include "highlighter.h"
+#include "skrhighlighter.h"
 #include <QDebug>
 #include <QTextBoundaryFinder>
 
-Highlighter::Highlighter(QTextDocument *parentDoc)
-    : QSyntaxHighlighter(parentDoc), spellCheckerSet(false)
+SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
+    : QSyntaxHighlighter(parentDoc), m_spellCheckerSet(false)
 {
-    this->setSpellChecker(new SpellChecker(this));
+    this->setSpellChecker(new SKRSpellChecker(this));
 
-    // for test :
-//    QString dictPath = SpellChecker::dictsList().key("fr_FR");
-//    m_spellChecker->setDict(dictPath, QStringList(), QStringList() );
 
-//    m_spellChecker->activate();
+
+    //m_spellChecker->activate();
 
 }
 
@@ -20,7 +18,7 @@ Highlighter::Highlighter(QTextDocument *parentDoc)
 
 //-------------------------------------------------------------------
 
-void Highlighter::highlightBlock(const QString &text)
+void SKRHighlighter::highlightBlock(const QString &text)
 {
 
     setCurrentBlockState(0);
@@ -73,11 +71,13 @@ void Highlighter::highlightBlock(const QString &text)
     QList<int> spellcheckerList;
 
     QTextCharFormat spellcheckFormat;
-    spellcheckFormat.setUnderlineColor(Qt::GlobalColor::red);
-    spellcheckFormat.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
-    spellcheckFormat.setFontUnderline(false);
+    //BUG to be uncommented when bug https://bugreports.qt.io/browse/QTBUG-87260 is fixed
+//    spellcheckFormat.setUnderlineColor(Qt::GlobalColor::red);
+//    spellcheckFormat.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
+    spellcheckFormat.setForeground(QBrush(Qt::GlobalColor::red));
 
-    if(spellCheckerSet)
+
+    if(m_spellCheckerSet)
         if(m_spellChecker->isActive()){
 
 
@@ -173,7 +173,7 @@ void Highlighter::highlightBlock(const QString &text)
 //-------------------------------------------------------------------
 
 
-void Highlighter::setTextToHighlight(QString string)
+void SKRHighlighter::setTextToHighlight(QString string)
 {
     textToHighLight = string;
     this->rehighlight();
@@ -181,7 +181,7 @@ void Highlighter::setTextToHighlight(QString string)
 
 //-------------------------------------------------------------------
 
-void Highlighter::setCaseSensitivity(bool isCaseSensitive)
+void SKRHighlighter::setCaseSensitivity(bool isCaseSensitive)
 {
     if(isCaseSensitive){
         sensitivity = Qt::CaseSensitive;
@@ -194,15 +194,26 @@ void Highlighter::setCaseSensitivity(bool isCaseSensitive)
 
 //-------------------------------------------------------------------
 
-void Highlighter::setSpellChecker(SpellChecker *spellChecker)
+SKRSpellChecker *SKRHighlighter::getSpellChecker()
+{
+    if(!m_spellChecker){
+        m_spellChecker = new SKRSpellChecker(this);
+    }
+    return m_spellChecker;
+
+}
+
+//-------------------------------------------------------------------
+
+void SKRHighlighter::setSpellChecker(SKRSpellChecker *spellChecker)
 {
     if(spellChecker){
         m_spellChecker = spellChecker;
-        spellCheckerSet = true;
+        m_spellCheckerSet = true;
     }
     else{
 //        qWarning() << "TextHighlighter : no spellchecker set";
-        spellCheckerSet = false;
+        m_spellCheckerSet = false;
 
     }
 }

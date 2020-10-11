@@ -19,34 +19,42 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef HIGHLIGHTER_H
-#define HIGHLIGHTER_H
+#ifndef SKRHIGHLIGHTER_H
+#define SKRHIGHLIGHTER_H
 
 #include <QSyntaxHighlighter>
-#include "spellchecker.h"
+#include "skrspellchecker.h"
 
-class Highlighter : public QSyntaxHighlighter
+class SKRHighlighter : public QSyntaxHighlighter
 {
     Q_OBJECT
+
+    Q_PROPERTY(SKRSpellChecker *spellChecker READ getSpellChecker)
+
 public:
-    Highlighter(QTextDocument *parentDoc);
+    SKRHighlighter(QTextDocument *parentDoc);
     void setTextToHighlight(QString string);
     void setCaseSensitivity(bool isCaseSensitive);
-    void setSpellChecker(SpellChecker *spellChecker);
+    SKRSpellChecker *getSpellChecker();
 
 protected:
     void highlightBlock(const QString &text) override;
+
 signals:
+
 
 public slots:
 
 private:
+    void setSpellChecker(SKRSpellChecker *spellChecker);
+
+private:
     QString textToHighLight;
     Qt::CaseSensitivity sensitivity;
-    SpellChecker *m_spellChecker;
-    bool spellCheckerSet;
+    SKRSpellChecker *m_spellChecker;
+    bool m_spellCheckerSet;
 
 
 };
 
-#endif // HIGHLIGHTER_H
+#endif // SKRHIGHLIGHTER_H

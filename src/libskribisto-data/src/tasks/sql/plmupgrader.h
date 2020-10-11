@@ -34,6 +34,7 @@ public:
     explicit PLMUpgrader(QObject *parent = nullptr);
     static PLMError upgradeSQLite(QSqlDatabase sqlDb);
 
+    static PLMError setNewDbVersion(QSqlDatabase sqlDb, double newVersion);
 signals:
 
 public slots:

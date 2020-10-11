@@ -20,6 +20,8 @@
 ***************************************************************************/
 #include "plmupgrader.h"
 
+#include <QSqlQuery>
+
 PLMUpgrader::PLMUpgrader(QObject *parent) : QObject(parent)
 {}
 
@@ -29,10 +31,49 @@ PLMError PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 
     PLMError error;
 
-    error.setSuccess(true);
+    //find DB version :
+    double dbVersion = -1;
 
-    // from 1.5 to 1.6
+    QSqlQuery query(sqlDb);
+    QString   queryStr = "SELECT dbl_version FROM tbl_info";
+
+
+    query.prepare(queryStr);
+    query.exec();
+
+    while (query.next()) {
+        dbVersion = query.value(0).toDouble();
+    }
+    if(dbVersion == -1){
+        error.setSuccess(false);
+        error.setErrorCode("E_UPGRADER_no_version_found");
+        return error;
+    }
+
+
+    // from 1.6 to 1.8
+    if(dbVersion == 1.6){
+        sqlDb.transaction();
+
+        QSqlQuery query(sqlDb);
+        QString   queryStr = "CREATE TABLE tbl_project_dict (l_project_dict_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ON CONFLICT ROLLBACK UNIQUE ON CONFLICT ROLLBACK, t_word TEXT UNIQUE ON CONFLICT REPLACE NOT NULL ON CONFLICT ROLLBACK);"
+            ;
+        query.prepare(queryStr);
+        query.exec();
+
+        sqlDb.commit();
+
+        PLMUpgrader::setNewDbVersion(sqlDb, 1.8);
+
+    }
+
+
+
 
 
     return error;
+}
+
+PLMError PLMUpgrader::setNewDbVersion(QSqlDatabase sqlDb, double newVersion){
+
 }

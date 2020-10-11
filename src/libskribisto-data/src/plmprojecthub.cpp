@@ -526,12 +526,33 @@ PLMError PLMProjectHub::setProjectName(int projectId, const QString& projectName
     IFOK(error) {
         emit projectNameChanged(projectId, projectName);
 
-        this->projectNotSavedAnymore(projectId);
+        this->setProjectNotSavedAnymore(projectId);
+
     }
     IFKO(error) {
         emit errorSent(error);
 
+    }
+    return error;
+}
+
+// ----------------------------------------------------------------------------
+
+QString PLMProjectHub::getLangCode(int projectId) const {
+    return get(projectId, "t_spell_check_lang").toString();
+}
+
+PLMError PLMProjectHub::setLangCode(int projectId, const QString& langCode) {
+    PLMError error = this->set(projectId, "t_spell_check_lang", langCode, true);
+
+    IFOK(error) {
+        emit langCodeChanged(projectId, langCode);
+
         this->setProjectNotSavedAnymore(projectId);
+    }
+    IFKO(error) {
+        emit errorSent(error);
+
     }
     return error;
 }

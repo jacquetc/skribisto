@@ -4,6 +4,9 @@ import QtQuick.Layouts 1.15
 import QtQml 2.15
 import ".."
 import eu.skribisto.documenthandler 1.0
+import eu.skribisto.highlighter 1.0
+import eu.skribisto.spellchecker 1.0
+import eu.skribisto.projectdicthub 1.0
 
 WritingZoneForm {
     id: root
@@ -40,9 +43,13 @@ WritingZoneForm {
     }
 
 
+    property int paperId: -1
+    property int projectId: -1
 
     function clear(){
         textArea.clear()
+        paperId = -1
+        projectId = -1
     }
 
 
@@ -444,7 +451,12 @@ WritingZoneForm {
     //        delayed: true
     //        when: cursorPositionBindingBool
     //    }
+
+    //-----------------------------------------------------------------------------
+
+
     property alias documentHandler: documentHandler
+    property alias highlighter: documentHandler.highlighter
 
     DocumentHandler {
         id: documentHandler
@@ -457,10 +469,72 @@ WritingZoneForm {
         selectionStart: textArea.selectionStart
         selectionEnd: textArea.selectionEnd
 
+        Component.onCompleted: {
+
+            // activate
+            SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(highlighter.spellChecker.activate)
+            highlighter.spellChecker.active = SkrSettings.spellCheckingSettings.spellCheckingActivation
+
+            //lang
+            SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.connect(setLangCodeSlot)
+            determineSpellCheckerLanguageCode(projectId)
+
+
+
+        }
 
     }
 
+    Connections{
+        target: plmData.projectDictHub()
+        function onProjectDictWordAdded(projectId, newWord){
+            highlighter.spellChecker.addWordToUserDict(newWord)
+        }
+    }
 
+    Connections{
+        target: plmData.projectDictHub()
+        function onProjectDictWordRemoved(projectId, removedWord){
+            highlighter.spellChecker.removeWordFromUserDict(removedWord)
+
+        }
+    }
+
+    function setLangCodeSlot(projectId, langCode){
+        //unused langCode
+        determineSpellCheckerLanguageCode(projectId)
+    }
+
+    function determineSpellCheckerLanguageCode(projectId){
+        var langCode  = ""
+
+        //if project has a lang defined :
+        if(plmData.projectHub().getLangCode(projectId) !== "" && projectId !== -1){
+            langCode = plmData.projectHub().getLangCode(projectId)
+        }
+        else{ // use default lang from settings
+            langCode = SkrSettings.spellCheckingSettings.spellCheckingLangCode
+        }
+
+        highlighter.spellChecker.langCode = langCode
+        console.log("langCode :", langCode)
+    }
+
+    function setProjectDictInSpellChecker(projectId){
+
+        highlighter.spellChecker.clearUserDict()
+        var projectDictList = plmData.projectDictHub().getProjectDictList()
+        highlighter.spellChecker.setUserDict(projectDictList)
+    }
+
+    onProjectIdChanged: {
+        determineSpellCheckerLanguageCode(projectId)
+        setProjectDictInSpellChecker(projectId)
+    }
+
+
+
+    //-----------------------------------------------------------------------------
     // left scroll area :
 
     //textArea.onCursorRectangleChanged: flickable.ensureVisible(textArea.cursorRectangle)

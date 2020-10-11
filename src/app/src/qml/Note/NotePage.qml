@@ -312,6 +312,8 @@ NotePageForm {
 
         paperId = _paperId
         projectId = _projectId
+        writingZone.paperId = _paperId
+        writingZone.projectId = _projectId
 
         console.log("opening note :", _projectId, _paperId)
         writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)

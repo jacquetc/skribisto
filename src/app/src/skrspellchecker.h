@@ -19,8 +19,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SPELLCHECKER_H
-#define SPELLCHECKER_H
+#ifndef SKRSPELLCHECKER_H
+#define SKRSPELLCHECKER_H
 
 #include <QString>
 #include <QObject>
@@ -31,44 +31,58 @@
 
 class Hunspell;
 
-class SpellChecker : public QObject
+class SKRSpellChecker : public QObject
 {
     Q_OBJECT
+
+    Q_PROPERTY(bool active WRITE activate READ isActive NOTIFY activated)
+    Q_PROPERTY(QString langCode WRITE setLangCode READ getLangCode NOTIFY langCodeChanged)
+    Q_PROPERTY(QStringList userDict WRITE setUserDict READ getUserDict NOTIFY userDictChanged)
 public:
 
-    SpellChecker(QObject *parent);
-    ~SpellChecker();
-    void setDict(const QString &dictionaryPath, const QStringList &userDictionary, const QStringList &attendTree_names);
+    SKRSpellChecker(QObject *parent = nullptr);
+    ~SKRSpellChecker();
+     Q_INVOKABLE void setDict(const QString &dictionaryPath);
 
-    bool spell(const QString &word);
-    QStringList suggest(const QString &word);
-    void ignoreWord(const QString &word);
-    void addToUserWordlist(const QString &word);
+    Q_INVOKABLE bool spell(const QString &word);
+    Q_INVOKABLE QStringList suggest(const QString &word);
 
     bool isActive();
-    bool activate();
+    Q_INVOKABLE bool activate(bool value=true);
     void deactivate();
 
-    static QStringList dictsPaths();
-    static QHash<QString, QString> dictsList();
+    Q_INVOKABLE static QStringList dictsPaths();
+    Q_INVOKABLE static QHash<QString, QString> dictsList();
 
-    bool isInUserWordlist(QString &word);
-    void removeFromUserWordlist(const QString &word);
+    void ignoreWord(const QString &word);
+    Q_INVOKABLE void addWordToUserDict(const QString &word, bool emitSignal = true);
+    Q_INVOKABLE bool isInUserDict(const QString &word);
+    Q_INVOKABLE void removeWordFromUserDict(const QString &word, bool emitSignal = true);
+    Q_INVOKABLE void clearUserDict();
 
-    // fix bug when hunspell gives me latin1 encoded results on several Linux systems :
-    QString testHunspellForEncoding();
+
+    Q_INVOKABLE void setLangCode(const QString &newLangCode);
+    QString getLangCode() const;
+
+    Q_INVOKABLE void setUserDict(const QStringList &userDict);
+    QStringList getUserDict() const;
 
 signals:
-  void userDictSignal(QStringList userDict);
+  void activated(bool value);
+  void langCodeChanged(QString langCode);
+  void userDictChanged(QStringList userDict);
 
 private:
-    void put_word(const QString &word);
+  // fix bug when hunspell gives me latin1 encoded results on several Linux systems :
+  QString testHunspellForEncoding();
+    void addWordToDict(const QString &word);
     Hunspell *_hunspell;
     bool m_isActive, hunspellLaunched;
-    QStringList userDict;
+    QStringList m_userDict;
+    QString m_langCode;
 
 
     QString encodingFix, m_dictionaryPath;
 };
 
-#endif // SPELLCHECKER_H
+#endif // SKRSPELLCHECKER_H

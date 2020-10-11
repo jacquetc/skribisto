@@ -462,6 +462,8 @@ NotePadForm {
 
         currentNoteId = _noteId
         projectId = _projectId
+        noteWritingZone.paperId = _noteId
+        noteWritingZone.projectId = _projectId
 
         restoreCurrentPaperCursorPositionAndY()
 

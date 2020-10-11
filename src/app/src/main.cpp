@@ -23,7 +23,10 @@ using namespace std;
 #include "skrtaghub.h"
 #include "plmerror.h"
 #include "plmprojecthub.h"
+#include "skrprojectdicthub.h"
 #include "documenthandler.h"
+#include "skrhighlighter.h"
+#include "skrspellchecker.h"
 #include "plmutils.h"
 #include "models/plmsheetlistproxymodel.h"
 #include "models/plmnotelistproxymodel.h"
@@ -202,6 +205,12 @@ int main(int argc, char *argv[])
                                           "SKRTagHub",
                                           "Can't instantiate SKRTagHub");
 
+    qmlRegisterUncreatableType<SKRProjectDictHub>("eu.skribisto.projectdicthub",
+                                                  1,
+                                                  0,
+                                                  "SKRProjectDictHub",
+                                                  "Can't instantiate SKRProjectDictHub");
+
     qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
                                           1,
                                           0,
@@ -252,6 +261,18 @@ int main(int argc, char *argv[])
                                      1,
                                      0,
                                      "DocumentHandler");
+
+    qmlRegisterUncreatableType<SKRHighlighter>("eu.skribisto.highlighter",
+                                     1,
+                                     0,
+                                     "Highlighter",
+                                            "Can't instantiate SKRHighlighter");
+
+    qmlRegisterUncreatableType<SKRSpellChecker>("eu.skribisto.spellchecker",
+                                     1,
+                                     0,
+                                     "SKRSpellChecker",
+                                                "Can't instantiate SKRSpellChecker");
 
     qmlRegisterType<SkrUserSettings>("eu.skribisto.skrusersettings",
                                      1,
