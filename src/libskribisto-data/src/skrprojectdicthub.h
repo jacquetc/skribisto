@@ -10,7 +10,7 @@
 #include "plmerror.h"
 #include "skribisto_data_global.h"
 
-class SKRProjectDictHub : public QObject
+class EXPORT SKRProjectDictHub : public QObject
 {
     Q_OBJECT
 public:

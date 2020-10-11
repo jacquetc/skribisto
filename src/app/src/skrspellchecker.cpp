@@ -129,11 +129,10 @@ Letter:
 
         if (is_word || (i == count && index != -1)) {
             if (!is_uppercase && !is_number) {
-
                 if(encodingFix == "latin1")
-                    return _hunspell->spell(word.toLatin1().toStdString()) != 0;
+                    return _hunspell->spell(word.toLatin1().toStdString());
                 if(encodingFix == "utf8")
-                    return _hunspell->spell(word.toUtf8().toStdString()) != 0;
+                    return _hunspell->spell(word.toUtf8().toStdString());
 
             }
             index = -1;
@@ -190,9 +189,10 @@ void SKRSpellChecker::addWordToDict(const QString &word)
         return;
 
     if(encodingFix == "latin1")
-        _hunspell->add(word.toLatin1().constData());
+        _hunspell->add(word.toLatin1().toStdString());
     if(encodingFix == "utf8")
-        _hunspell->add(word.toUtf8().constData());
+        _hunspell->add(word.toUtf8().toStdString());
+
 }
 
 //---------------------------------------------------------------------------------
@@ -226,9 +226,9 @@ void SKRSpellChecker::removeWordFromUserDict(const QString &word, bool emitSigna
 {
 
     if(encodingFix == "latin1")
-        _hunspell->remove(word.toLatin1().constData());
+        _hunspell->remove(word.toLatin1().toStdString());
     if(encodingFix == "utf8")
-        _hunspell->remove(word.toUtf8().constData());
+        _hunspell->remove(word.toUtf8().toStdString());
 
     m_userDict.removeAll(word);
 
@@ -370,6 +370,7 @@ void SKRSpellChecker::setLangCode(const QString &newLangCode)
         qWarning() << QString("Dict %1 not found, using en_US").arg(newLangCode);
     }
     this->setDict(dictPath);
+
 
     emit langCodeChanged(newLangCode);
 }

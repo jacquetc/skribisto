@@ -476,9 +476,8 @@ WritingZoneForm {
             highlighter.spellChecker.active = SkrSettings.spellCheckingSettings.spellCheckingActivation
 
             //lang
-            SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.connect(setLangCodeSlot)
-            determineSpellCheckerLanguageCode(projectId)
-
+            SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.connect(determineSpellCheckerLanguageCode)
+            determineSpellCheckerLanguageCode()
 
 
         }
@@ -488,24 +487,32 @@ WritingZoneForm {
     Connections{
         target: plmData.projectDictHub()
         function onProjectDictWordAdded(projectId, newWord){
-            highlighter.spellChecker.addWordToUserDict(newWord)
+            if(root.projectId === projectId){
+                highlighter.spellChecker.addWordToUserDict(newWord)
+            }
         }
     }
 
     Connections{
         target: plmData.projectDictHub()
         function onProjectDictWordRemoved(projectId, removedWord){
-            highlighter.spellChecker.removeWordFromUserDict(removedWord)
-
+            if(root.projectId === projectId){
+                highlighter.spellChecker.removeWordFromUserDict(removedWord)
+            }
         }
     }
 
-    function setLangCodeSlot(projectId, langCode){
-        //unused langCode
-        determineSpellCheckerLanguageCode(projectId)
+    Connections{
+        target: plmData.projectHub()
+        function onLangCodeChanged(projectId, langCode){
+            if(root.projectId === projectId){
+                determineSpellCheckerLanguageCode(projectId)
+            }
+        }
     }
 
-    function determineSpellCheckerLanguageCode(projectId){
+
+    function determineSpellCheckerLanguageCode(){
         var langCode  = ""
 
         //if project has a lang defined :
@@ -517,19 +524,23 @@ WritingZoneForm {
         }
 
         highlighter.spellChecker.langCode = langCode
+
+        setProjectDictInSpellChecker(projectId)
+
+
+        highlighter.rehighlight()
         console.log("langCode :", langCode)
     }
 
     function setProjectDictInSpellChecker(projectId){
 
         highlighter.spellChecker.clearUserDict()
-        var projectDictList = plmData.projectDictHub().getProjectDictList()
+        var projectDictList = plmData.projectDictHub().getProjectDictList(projectId)
         highlighter.spellChecker.setUserDict(projectDictList)
     }
 
     onProjectIdChanged: {
-        determineSpellCheckerLanguageCode(projectId)
-        setProjectDictInSpellChecker(projectId)
+        determineSpellCheckerLanguageCode()
     }
 
 
