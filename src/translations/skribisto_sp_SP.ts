@@ -375,6 +375,10 @@
         <source></source>
         <translation></translation>
     </message>
+    <message>
+        <source>Check spelling</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Exporter</name>
@@ -2275,6 +2279,36 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
+    <name>ProjectSubPage</name>
+    <message>
+        <source>Write this project&apos;s new name</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ProjectSupPageForm.ui</name>
+    <message>
+        <source>Edit project name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dictionary :</source>
+        <translation type="unfinished">Diccionario:</translation>
+    </message>
+    <message>
+        <source>Selected dictionary not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <source>No Title</source>
@@ -2903,6 +2937,14 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Spell checking</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check spelling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3938,6 +3980,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Underline</source>
         <translation type="unfinished">Subrayar</translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
