@@ -322,6 +322,7 @@ WritePageForm {
         if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
             saveContent()
             saveCurrentPaperCursorPositionAndY()
+            skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
         }
 
 
@@ -334,6 +335,8 @@ WritePageForm {
         console.log("opening sheet :", _projectId, _paperId)
         writingZone.text = plmData.sheetHub().getContent(_projectId, _paperId)
         title = plmData.sheetHub().getTitle(_projectId, _paperId)
+
+        skrTextBridge.subscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
         // apply format
         writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent
