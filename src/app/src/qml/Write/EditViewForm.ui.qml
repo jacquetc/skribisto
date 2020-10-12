@@ -22,9 +22,9 @@ Item {
     property alias goBack2ToolButton: goBack2ToolButton
     property alias backroundColorTextField: backroundColorTextField
     property alias backgroundColorToolButton: backgroundColorToolButton
+    property alias checkSpellingToolButton: checkSpellingToolButton
 
-
-     SwipeView {
+    SwipeView {
         id: swipeView
         interactive: false
         anchors.fill: parent
@@ -107,6 +107,12 @@ Item {
                             id: fullScreenColorToolButton
                             text: qsTr("Full screen Colors")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                            display: AbstractButton.IconOnly
+                        }
+
+                        ToolButton {
+                            id: checkSpellingToolButton
+                            text: qsTr("Check spelling")
                             display: AbstractButton.IconOnly
                         }
                     }
@@ -240,8 +246,7 @@ Item {
             }
         }
     }
- }
-
+}
 
 /*##^##
 Designer {

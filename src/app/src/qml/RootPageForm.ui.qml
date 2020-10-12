@@ -28,7 +28,7 @@ Item {
     property alias welcomePage: welcomePage
     property alias noteOverviewPage: noteOverviewPage
     property alias galleryPage: galleryPage
-    property alias projectsPage: projectsPage
+    property alias projectsMainPage: projectsMainPage
     property alias writeOverviewPage: writeOverviewPage
     property alias saveButton: saveButton
     property alias tabBarRevealer: tabBarRevealer
@@ -181,8 +181,8 @@ Item {
                             enabled: false
                         }
 
-                        ProjectsPage {
-                            id: projectsPage
+                        ProjectsMainPage {
+                            id: projectsMainPage
                             enabled: false
                         }
 

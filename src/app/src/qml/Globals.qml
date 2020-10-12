@@ -57,6 +57,7 @@ QtObject {
     //Focus
     signal forceFocusOnEscapePressed()
 
+    signal closeProjectCalled(int projectId)
 
     signal showMenuBarCalled()
 

@@ -58,10 +58,10 @@ set(app_SRCS
     skreditmenusignalhub.h
     skreditmenusignalhub.cpp
     skrqmltools.h
-    highlighter.cpp
-    highlighter.h
-    spellchecker.cpp
-    spellchecker.h
+    skrhighlighter.cpp
+    skrhighlighter.h
+    skrspellchecker.cpp
+    skrspellchecker.h
     skrrootitem.cpp
     skrrootitem.h
 )

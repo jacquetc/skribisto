@@ -5,7 +5,7 @@ import QtQuick.Layouts 1.2
 Item {
     width: 400
     height: 400
-    property alias swipeView: swipeView
+    property alias projectSwipeView: projectSwipeView
     property alias tabBar: tabBar
 
 
@@ -20,9 +20,11 @@ Item {
         }
 
         SwipeView {
-            id: swipeView
+            id: projectSwipeView
             Layout.fillHeight: true
             Layout.fillWidth: true
+            interactive: false
+
         }
     }
 }

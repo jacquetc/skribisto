@@ -19,8 +19,9 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
                                            "tbl_note_property",
                                            "l_note_code");
 
-    m_tagHub    = new SKRTagHub(this);
-    m_pluginHub = new PLMPluginHub(this);
+    m_tagHub         = new SKRTagHub(this);
+    m_projectDictHub = new SKRProjectDictHub(this);
+    m_pluginHub      = new PLMPluginHub(this);
 
 
     connect(m_sheetHub,
@@ -117,4 +118,11 @@ PLMPluginHub * PLMData::pluginHub()
 SKRTagHub * PLMData::tagHub()
 {
     return m_tagHub;
+}
+
+// -----------------------------------------------------------------------------
+
+SKRProjectDictHub *PLMData::projectDictHub()
+{
+    return m_projectDictHub;
 }

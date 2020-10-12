@@ -76,6 +76,9 @@ public:
     Q_INVOKABLE PLMError  setProjectName(int            projectId,
                                          const QString& projectName);
 
+    Q_INVOKABLE QString getLangCode(int projectId) const;
+    Q_INVOKABLE PLMError setLangCode(int projectId, const QString &langCode);
+
     QString               getProjectUniqueId(int projectId) const;
     Q_INVOKABLE bool      isThisProjectABackup(int projectId);
 
@@ -107,6 +110,8 @@ signals:
     Q_INVOKABLE void projectPathChanged(int         projectId,
                                         const QUrl& newUrlPath);
     Q_INVOKABLE void projectNameChanged(int            projectId,
+                                        const QString& newProjectName);
+    Q_INVOKABLE void langCodeChanged(int            projectId,
                                         const QString& newProjectName);
     Q_INVOKABLE void projectSaved(int projectId);
     Q_INVOKABLE void projectNotSavedAnymore(int projectId);

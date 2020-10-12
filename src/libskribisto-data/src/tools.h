@@ -78,7 +78,7 @@ Q_DECL_UNUSED QHash<int, bool>convertToIntBool(const QHash<int, QVariant>& hash)
     return newHash;
 }
 
-Q_DECL_UNUSED QHash<int, QString>convertToIntQString(const QHash<int, QVariant>& hash)
+QHash<int, QString>convertToIntQString(const QHash<int, QVariant>& hash)
 {
     QHash<int, QString> newHash;
 

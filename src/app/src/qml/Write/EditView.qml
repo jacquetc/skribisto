@@ -19,7 +19,7 @@ EditViewForm {
     fullScreenToolButton.action: fullscreenAction
 
 
-
+    checkSpellingToolButton.action: checkSpellingAction
 
 
     Action{
