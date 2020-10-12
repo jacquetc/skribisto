@@ -3,8 +3,9 @@ import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.platform 1.1 as LabPlatform
-import eu.skribisto.projecthub 1.0
 import Qt.labs.settings 1.1
+import eu.skribisto.projecthub 1.0
+import eu.skribisto.spellchecker 1.0
 import ".."
 
 SettingsPageForm {
@@ -17,6 +18,9 @@ SettingsPageForm {
         backUpOnceADayIfNeeded()
 
         langComboBox.currentIndex = langComboBox.indexOfValue(skrRootItem.getLanguageFromSettings())
+
+        populateCheckSpellingComboBox()
+        checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(SkrSettings.spellCheckingSettings.spellCheckingLangCode)
 
     }
 
@@ -648,13 +652,47 @@ SettingsPageForm {
     // ---- spell checking --------------------------------
     // --------------------------------------------
 
+    checkSpellingCheckBox.action: checkSpellingAction
 
-    checkSpellingCheckBox.checked: SkrSettings.spellCheckingSettings.spellCheckingActivation
-    Binding {
+
+    // combo box :
+
+    SKRSpellChecker {
+        id : spellChecker
+    }
+
+ListModel {
+    id: checkSpellingComboBoxModel
+}
+
+checkSpellingComboBox.model: checkSpellingComboBoxModel
+checkSpellingComboBox.textRole: "text"
+checkSpellingComboBox.valueRole: "dictCode"
+
+    function populateCheckSpellingComboBox(){
+
+        var dictList = spellChecker.dictList()
+
+        var i;
+        for(i = 0 ; i < dictList.length ; i++){
+            checkSpellingComboBoxModel.append({"text": dictList[i], "dictCode": dictList[i]})
+        }
+
+    }
+
+    checkSpellingComboBox.onCurrentValueChanged: {
+        if(checkSpellingComboBox.activeFocus){
+            SkrSettings.spellCheckingSettings.spellCheckingLangCode = langComboBox.currentValue
+        }
+    }
+
+
+    Connections {
         target: SkrSettings.spellCheckingSettings
-        property: "spellCheckingActivation"
-        value: checkSpellingCheckBox.checked
-        restoreMode: Binding.RestoreBindingOrValue
+        function onSpellCheckingLangCodeChanged(){
+            var value = SkrSettings.spellCheckingSettings.spellCheckingLangCode
+            checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(value)
+        }
     }
 
 

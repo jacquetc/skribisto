@@ -268,11 +268,10 @@ int main(int argc, char *argv[])
                                      "Highlighter",
                                             "Can't instantiate SKRHighlighter");
 
-    qmlRegisterUncreatableType<SKRSpellChecker>("eu.skribisto.spellchecker",
+    qmlRegisterType<SKRSpellChecker>("eu.skribisto.spellchecker",
                                      1,
                                      0,
-                                     "SKRSpellChecker",
-                                                "Can't instantiate SKRSpellChecker");
+                                     "SKRSpellChecker");
 
     qmlRegisterType<SkrUserSettings>("eu.skribisto.skrusersettings",
                                      1,

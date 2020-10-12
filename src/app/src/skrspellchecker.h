@@ -52,7 +52,9 @@ public:
     void deactivate();
 
     Q_INVOKABLE static QStringList dictsPaths();
-    Q_INVOKABLE static QHash<QString, QString> dictsList();
+    Q_INVOKABLE static QMap<QString, QString> dictAndPathMap();
+    Q_INVOKABLE static QStringList dictList();
+    Q_INVOKABLE static QStringList dictPathList();
 
     void ignoreWord(const QString &word);
     Q_INVOKABLE void addWordToUserDict(const QString &word, bool emitSignal = true);
@@ -76,13 +78,13 @@ private:
   // fix bug when hunspell gives me latin1 encoded results on several Linux systems :
   QString testHunspellForEncoding();
     void addWordToDict(const QString &word);
-    Hunspell *_hunspell;
-    bool m_isActive, hunspellLaunched;
+    Hunspell *m_hunspell;
+    bool m_isActive, m_hunspellLaunched;
     QStringList m_userDict;
     QString m_langCode;
 
 
-    QString encodingFix, m_dictionaryPath;
+    QString m_encodingFix, m_dictionaryPath;
 };
 
 #endif // SKRSPELLCHECKER_H

@@ -26,6 +26,7 @@ Item {
     readonly property int columnWidth: 550
     property alias langComboBox: langComboBox
     property alias checkSpellingCheckBox: checkSpellingCheckBox
+    property alias checkSpellingComboBox: checkSpellingComboBox
 
     Pane {
         id: pane2
@@ -81,7 +82,6 @@ Item {
                     ColumnLayout {
                         id: columnLayout5
                         anchors.fill: parent
-
 
                         RowLayout {
                             id: rowLayout4
@@ -252,7 +252,6 @@ Item {
                                 from: 1
                                 wheelEnabled: true
                             }
-
                         }
                     }
                 }
@@ -316,6 +315,10 @@ Item {
                         CheckBox {
                             id: checkSpellingCheckBox
                             text: qsTr("Check spelling")
+                        }
+
+                        ComboBox {
+                            id: checkSpellingComboBox
                         }
                     }
                 }

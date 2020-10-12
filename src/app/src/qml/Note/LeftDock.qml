@@ -182,7 +182,7 @@ LeftDockForm {
 
 
         PropertyAnimation {
-            target: writeNavigationFrame
+            target: navigationFrame
             property: "SplitView.preferredHeight"
             duration: 500
             easing.type: Easing.InOutQuad

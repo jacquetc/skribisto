@@ -93,6 +93,37 @@ ApplicationWindow {
         context: Qt.ApplicationShortcut
         onActivated: newProjectAction.trigger()
     }
+    //------------------------------------------------------------------
+    //--------- Check Spelling ---------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: checkSpellingAction
+        text: qsTr("&Check spelling")
+        icon {
+            name: "tools-check-spelling"
+            height: 50
+            width: 50
+        }
+        checkable: true
+        checked:     SkrSettings.spellCheckingSettings.spellCheckingActivation
+
+
+
+        onCheckedChanged: {
+            console.log("check spelling", checkSpellingAction.checked)
+
+            SkrSettings.spellCheckingSettings.spellCheckingActivation = checkSpellingAction.checked
+        }
+}
+
+
+    Shortcut {
+        sequence:  "Shift+F7"
+        context: Qt.ApplicationShortcut
+        onActivated: checkSpellingAction.trigger()
+    }
 
     //------------------------------------------------------------------
     //---------Open project---------

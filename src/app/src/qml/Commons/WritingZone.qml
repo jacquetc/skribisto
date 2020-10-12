@@ -472,12 +472,8 @@ WritingZoneForm {
         Component.onCompleted: {
 
             // activate
-            SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(
-                   function() {
-                       highlighter.spellChecker.activate(SkrSettings.spellCheckingSettings.spellCheckingActivation)
-                       highlighter.rehighlight()
-            })
-            highlighter.spellChecker.active = SkrSettings.spellCheckingSettings.spellCheckingActivation
+            SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(determineSpellCheckerActivation)
+            determineSpellCheckerActivation()
 
             //lang
             SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.connect(determineSpellCheckerLanguageCode)
@@ -485,6 +481,11 @@ WritingZoneForm {
 
 
         }
+        Component.onDestruction: {
+            SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.disconnect(determineSpellCheckerActivation)
+            SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.disconnect(determineSpellCheckerLanguageCode)
+        }
+
 
     }
 
@@ -515,6 +516,16 @@ WritingZoneForm {
         }
     }
 
+
+    function determineSpellCheckerActivation(){
+        var value = SkrSettings.spellCheckingSettings.spellCheckingActivation
+        highlighter.spellChecker.activate(SkrSettings.spellCheckingSettings.spellCheckingActivation)
+        highlighter.rehighlight()
+
+        // needed to "shake" the highlighter
+        textArea.enabled = false
+        textArea.enabled = true
+    }
 
     function determineSpellCheckerLanguageCode(){
         var langCode  = ""

@@ -37,6 +37,7 @@ public:
     void setCaseSensitivity(bool isCaseSensitive);
     SKRSpellChecker *getSpellChecker();
 
+
 protected:
     void highlightBlock(const QString &text) override;
 
