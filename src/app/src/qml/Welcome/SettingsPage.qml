@@ -3,8 +3,9 @@ import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.platform 1.1 as LabPlatform
-import eu.skribisto.projecthub 1.0
 import Qt.labs.settings 1.1
+import eu.skribisto.projecthub 1.0
+import eu.skribisto.spellchecker 1.0
 import ".."
 
 SettingsPageForm {
@@ -17,6 +18,9 @@ SettingsPageForm {
         backUpOnceADayIfNeeded()
 
         langComboBox.currentIndex = langComboBox.indexOfValue(skrRootItem.getLanguageFromSettings())
+
+        populateCheckSpellingComboBox()
+        checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(SkrSettings.spellCheckingSettings.spellCheckingLangCode)
 
     }
 
@@ -78,7 +82,7 @@ SettingsPageForm {
         id: langModel
         ListElement { text: "english (US)"; langCode: "en_US" }
         ListElement { text: "français (France)"; langCode: "fr_FR" }
-        ListElement { text: "deutch"; langCode: "de_DE" }
+        ListElement { text: "deutsch"; langCode: "de_DE" }
     }
 
 
@@ -474,7 +478,7 @@ SettingsPageForm {
     Connections {
         target: plmData.projectHub()
         function onProjectLoaded(projectId){
-                backUpOnceADayIfNeeded()
+            backUpOnceADayIfNeeded()
 
         }
     }
@@ -643,6 +647,53 @@ SettingsPageForm {
 
     }
 
+
+    // --------------------------------------------
+    // ---- spell checking --------------------------------
+    // --------------------------------------------
+
+    checkSpellingCheckBox.action: checkSpellingAction
+
+
+    // combo box :
+
+    SKRSpellChecker {
+        id : spellChecker
+    }
+
+    ListModel {
+        id: checkSpellingComboBoxModel
+    }
+
+    checkSpellingComboBox.model: checkSpellingComboBoxModel
+    checkSpellingComboBox.textRole: "text"
+    checkSpellingComboBox.valueRole: "dictCode"
+
+    function populateCheckSpellingComboBox(){
+
+        var dictList = spellChecker.dictList()
+
+        var i;
+        for(i = 0 ; i < dictList.length ; i++){
+            checkSpellingComboBoxModel.append({"text": dictList[i], "dictCode": dictList[i]})
+        }
+
+    }
+
+    checkSpellingComboBox.onCurrentValueChanged: {
+        if(checkSpellingComboBox.activeFocus){
+            SkrSettings.spellCheckingSettings.spellCheckingLangCode = langComboBox.currentValue
+        }
+    }
+
+
+    Connections {
+        target: SkrSettings.spellCheckingSettings
+        function onSpellCheckingLangCodeChanged(){
+            var value = SkrSettings.spellCheckingSettings.spellCheckingLangCode
+            checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(value)
+        }
+    }
 
 
 }

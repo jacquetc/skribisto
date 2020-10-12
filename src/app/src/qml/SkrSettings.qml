@@ -48,6 +48,12 @@ QtObject {
 
     }
 
+    property Settings spellCheckingSettings: Settings{
+        category: "spellChecking"
+        property bool spellCheckingActivation: true
+        property string spellCheckingLangCode: "en_US"
+    }
+
     property Settings writeSettings: Settings{
         category: "write"
         property int textWidth: initialTextWidth

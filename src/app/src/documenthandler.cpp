@@ -9,7 +9,6 @@
 #include <QImageReader>
 #include <QTextDocumentWriter>
 
-#include "highlighter.h"
 
 // #include "plmdata.h"
 
@@ -48,7 +47,7 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
         m_selectionCursor =
             textDocument->textDocument()->rootFrame()->firstCursorPosition();
 
-        new Highlighter(m_textDoc->textDocument());
+        m_highlighter = new SKRHighlighter(m_textDoc->textDocument());
 
     } else {
         m_textCursor.setPosition(0);

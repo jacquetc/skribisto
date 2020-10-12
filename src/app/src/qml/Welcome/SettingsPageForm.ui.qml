@@ -25,6 +25,8 @@ Item {
     property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
     readonly property int columnWidth: 550
     property alias langComboBox: langComboBox
+    property alias checkSpellingCheckBox: checkSpellingCheckBox
+    property alias checkSpellingComboBox: checkSpellingComboBox
 
     Pane {
         id: pane2
@@ -81,7 +83,6 @@ Item {
                         id: columnLayout5
                         anchors.fill: parent
 
-
                         RowLayout {
                             id: rowLayout4
                             width: 100
@@ -100,6 +101,40 @@ Item {
                         Switch {
                             id: menuButtonsInStatusBarSwitch
                             text: qsTr("Set main menu in status bar")
+                        }
+                    }
+                }
+
+                GroupBox {
+                    id: spellCheckingGroupBox
+                    width: 200
+                    height: 200
+                    Layout.fillWidth: true
+                    focusPolicy: Qt.TabFocus
+                    title: qsTr("Spell checking")
+
+                    ColumnLayout {
+                        id: columnLayout6
+                        anchors.fill: parent
+
+                        CheckBox {
+                            id: checkSpellingCheckBox
+                            text: qsTr("Check spelling")
+                        }
+
+                        RowLayout {
+                            id: rowLayout5
+                            width: 100
+                            height: 100
+
+                            Label {
+                                id: label
+                                text: qsTr("Default dictionary :")
+                            }
+
+                            ComboBox {
+                                id: checkSpellingComboBox
+                            }
                         }
                     }
                 }
@@ -215,6 +250,7 @@ Item {
                     }
                 }
 
+
                 GroupBox {
                     id: saveGroupBox
                     Layout.rowSpan: 2
@@ -251,10 +287,10 @@ Item {
                                 from: 1
                                 wheelEnabled: true
                             }
-
                         }
                     }
                 }
+
 
                 GroupBox {
                     id: specialEPaperGroupBox
@@ -269,6 +305,7 @@ Item {
                         text: qsTr("Set the text cursor unblinking")
                     }
                 }
+
 
                 GroupBox {
                     id: advancedGroupBox
@@ -300,19 +337,6 @@ Item {
                     }
                 }
 
-                GroupBox {
-                    id: spellCheckingGroupBox
-                    width: 200
-                    height: 200
-                    Layout.fillWidth: true
-                    focusPolicy: Qt.TabFocus
-                    title: qsTr("Spell checking")
-
-                    ColumnLayout {
-                        id: columnLayout6
-                        anchors.fill: parent
-                    }
-                }
             }
         }
     }

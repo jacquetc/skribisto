@@ -10,7 +10,6 @@ Item {
     height: 600
     property alias rightPaneScrollMouseArea: rightPaneScrollMouseArea
     property alias rightPaneScrollTouchArea: rightPaneScrollTouchArea
-    property alias compactHeaderPane: compactHeaderPane
     property alias compactRightDockShowButton: compactRightDockShowButton
     property alias compactLeftDockShowButton: compactLeftDockShowButton
     property alias leftDockMenuGroup: leftDockMenuGroup
@@ -38,47 +37,6 @@ Item {
         anchors.fill: parent
         anchors.leftMargin: Globals.compactSize ? undefined : leftDrawer.width * leftDrawer.position + 10
         anchors.rightMargin: Globals.compactSize ? undefined : rightDrawer.width * rightDrawer.position + 10
-
-
-        Pane {
-            id: compactHeaderPane
-            width: 200
-            height: 200
-            padding: 2
-            Layout.fillHeight: false
-            Layout.preferredHeight: 50
-            Layout.fillWidth: true
-
-            RowLayout {
-                id: rowLayout1
-                spacing: 2
-                anchors.fill: parent
-                RowLayout {
-                    id: rowLayout2
-                    spacing: 2
-                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                    Button {
-                        id: compactLeftDockShowButton
-                        Layout.preferredHeight: 50
-                        Layout.preferredWidth: 50
-                        flat: true
-                        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                    }
-                }
-                RowLayout {
-                    id: rowLayout3
-                    spacing: 2
-                    Layout.alignment: Qt.AlignRight | Qt.AlignTop
-                    Button {
-                        id: compactRightDockShowButton
-                        Layout.preferredHeight: 50
-                        Layout.preferredWidth: 50
-                        flat: true
-                        Layout.alignment: Qt.AlignRight | Qt.AlignTop
-                    }
-                }
-            }
-        }
 
         RowLayout {
             id: rowLayout
@@ -178,10 +136,32 @@ Item {
                 Layout.fillWidth: true
 
 
+                Button {
+                    id: compactLeftDockShowButton
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    width: 30
+                    height: 30
+                    z: 1
+                    flat: true
+                }
+
+
                 WritingZone {
                     id: writingZone
                     anchors.fill: parent
                 }
+
+                Button {
+                    id: compactRightDockShowButton
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    width: 30
+                    height: 30
+                    z: 1
+                    flat: true
+                }
+
 
             }
 

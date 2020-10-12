@@ -25,6 +25,7 @@
 #include <QObject>
 #include <QQuickTextDocument>
 #include <QTextCursor>
+#include "skrhighlighter.h"
 
 class DocumentHandler : public QObject {
     Q_OBJECT
@@ -63,6 +64,8 @@ class DocumentHandler : public QObject {
         qreal topMarginEverywhere READ topMarginEverywhere WRITE setTopMarginEverywhere NOTIFY topMarginEverywhereChanged)
     Q_PROPERTY(
         qreal indentEverywhere READ indentEverywhere WRITE setIndentEverywhere NOTIFY indentEverywhereChanged)
+
+    Q_PROPERTY(SKRHighlighter *highlighter READ getHighlighter)
 
 public:
 
@@ -128,6 +131,10 @@ public:
     qreal               indentEverywhere() const;
     void                setIndentEverywhere(qreal indent);
 
+    SKRHighlighter *getHighlighter(){
+        return m_highlighter;
+    }
+
 public slots:
 
     void addHorizontalLine();
@@ -163,6 +170,8 @@ private:
     int m_paperId;
     qreal m_topMarginEverywhere;
     qreal m_indentEverywhere;
+
+    SKRHighlighter *m_highlighter;
 };
 
 #endif // DOCUMENTHANDLER_H

@@ -31,6 +31,7 @@
 #include "skrtaghub.h"
 #include "plmsignalhub.h"
 #include "plmpluginhub.h"
+#include "skrprojectdicthub.h"
 #include "skribisto_data_global.h"
 #include "tasks/plmprojectmanager.h"
 
@@ -51,15 +52,16 @@ public:
         return m_instance;
     }
 
-    PLMSignalHub              * signalHub();
-    Q_INVOKABLE PLMErrorHub   * errorHub();
-    Q_INVOKABLE PLMSheetHub   * sheetHub();
-    Q_INVOKABLE PLMPropertyHub* sheetPropertyHub();
-    Q_INVOKABLE PLMNoteHub    * noteHub();
-    Q_INVOKABLE PLMPropertyHub* notePropertyHub();
-    Q_INVOKABLE PLMProjectHub * projectHub();
-    Q_INVOKABLE SKRTagHub     * tagHub();
-    PLMPluginHub              * pluginHub();
+    PLMSignalHub                 * signalHub();
+    Q_INVOKABLE PLMErrorHub      * errorHub();
+    Q_INVOKABLE PLMSheetHub      * sheetHub();
+    Q_INVOKABLE PLMPropertyHub   * sheetPropertyHub();
+    Q_INVOKABLE PLMNoteHub       * noteHub();
+    Q_INVOKABLE PLMPropertyHub   * notePropertyHub();
+    Q_INVOKABLE PLMProjectHub    * projectHub();
+    Q_INVOKABLE SKRTagHub        * tagHub();
+    Q_INVOKABLE SKRProjectDictHub* projectDictHub();
+    PLMPluginHub                 * pluginHub();
 
 signals:
 
@@ -78,6 +80,7 @@ private:
     PLMPropertyHub *m_notePropertyHub, *m_sheetPropertyHub;
     SKRTagHub *m_tagHub;
     PLMPluginHub *m_pluginHub;
+    SKRProjectDictHub *m_projectDictHub;
 };
 
 #endif // PLMDATA_H

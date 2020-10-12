@@ -4,6 +4,9 @@ import QtQuick.Layouts 1.15
 import QtQml 2.15
 import ".."
 import eu.skribisto.documenthandler 1.0
+import eu.skribisto.highlighter 1.0
+import eu.skribisto.spellchecker 1.0
+import eu.skribisto.projectdicthub 1.0
 
 WritingZoneForm {
     id: root
@@ -40,9 +43,13 @@ WritingZoneForm {
     }
 
 
+    property int paperId: -1
+    property int projectId: -1
 
     function clear(){
         textArea.clear()
+        paperId = -1
+        projectId = -1
     }
 
 
@@ -444,7 +451,12 @@ WritingZoneForm {
     //        delayed: true
     //        when: cursorPositionBindingBool
     //    }
+
+    //-----------------------------------------------------------------------------
+
+
     property alias documentHandler: documentHandler
+    property alias highlighter: documentHandler.highlighter
 
     DocumentHandler {
         id: documentHandler
@@ -457,10 +469,98 @@ WritingZoneForm {
         selectionStart: textArea.selectionStart
         selectionEnd: textArea.selectionEnd
 
+        Component.onCompleted: {
+
+            // activate
+            SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(determineSpellCheckerActivation)
+            determineSpellCheckerActivation()
+
+            //lang
+            SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.connect(determineSpellCheckerLanguageCode)
+            determineSpellCheckerLanguageCode()
+
+
+        }
+        Component.onDestruction: {
+            SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.disconnect(determineSpellCheckerActivation)
+            SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.disconnect(determineSpellCheckerLanguageCode)
+        }
+
 
     }
 
+    Connections{
+        target: plmData.projectDictHub()
+        function onProjectDictWordAdded(projectId, newWord){
+            if(root.projectId === projectId){
+                highlighter.spellChecker.addWordToUserDict(newWord)
+            }
+        }
+    }
 
+    Connections{
+        target: plmData.projectDictHub()
+        function onProjectDictWordRemoved(projectId, removedWord){
+            if(root.projectId === projectId){
+                highlighter.spellChecker.removeWordFromUserDict(removedWord)
+            }
+        }
+    }
+
+    Connections{
+        target: plmData.projectHub()
+        function onLangCodeChanged(projectId, langCode){
+            if(root.projectId === projectId){
+                determineSpellCheckerLanguageCode(projectId)
+            }
+        }
+    }
+
+
+    function determineSpellCheckerActivation(){
+        var value = SkrSettings.spellCheckingSettings.spellCheckingActivation
+        highlighter.spellChecker.activate(SkrSettings.spellCheckingSettings.spellCheckingActivation)
+        highlighter.rehighlight()
+
+        // needed to "shake" the highlighter
+        textArea.enabled = false
+        textArea.enabled = true
+    }
+
+    function determineSpellCheckerLanguageCode(){
+        var langCode  = ""
+
+        //if project has a lang defined :
+        if(plmData.projectHub().getLangCode(projectId) !== "" && projectId !== -1){
+            langCode = plmData.projectHub().getLangCode(projectId)
+        }
+        else{ // use default lang from settings
+            langCode = SkrSettings.spellCheckingSettings.spellCheckingLangCode
+        }
+
+        highlighter.spellChecker.langCode = langCode
+
+        setProjectDictInSpellChecker(projectId)
+
+
+        highlighter.rehighlight()
+        console.log("langCode :", langCode)
+    }
+
+    function setProjectDictInSpellChecker(projectId){
+
+        highlighter.spellChecker.clearUserDict()
+        var projectDictList = plmData.projectDictHub().getProjectDictList(projectId)
+        highlighter.spellChecker.setUserDict(projectDictList)
+    }
+
+    onProjectIdChanged: {
+        determineSpellCheckerLanguageCode()
+    }
+
+
+
+    //-----------------------------------------------------------------------------
     // left scroll area :
 
     //textArea.onCursorRectangleChanged: flickable.ensureVisible(textArea.cursorRectangle)

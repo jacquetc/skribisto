@@ -93,6 +93,37 @@ ApplicationWindow {
         context: Qt.ApplicationShortcut
         onActivated: newProjectAction.trigger()
     }
+    //------------------------------------------------------------------
+    //--------- Check Spelling ---------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: checkSpellingAction
+        text: qsTr("&Check spelling")
+        icon {
+            name: "tools-check-spelling"
+            height: 50
+            width: 50
+        }
+        checkable: true
+        checked:     SkrSettings.spellCheckingSettings.spellCheckingActivation
+
+
+
+        onCheckedChanged: {
+            console.log("check spelling", checkSpellingAction.checked)
+
+            SkrSettings.spellCheckingSettings.spellCheckingActivation = checkSpellingAction.checked
+        }
+}
+
+
+    Shortcut {
+        sequence:  "Shift+F7"
+        context: Qt.ApplicationShortcut
+        onActivated: checkSpellingAction.trigger()
+    }
 
     //------------------------------------------------------------------
     //---------Open project---------
@@ -660,36 +691,31 @@ ApplicationWindow {
     }
 
     //------------------------------------------------------------
-    //------------Close current project-----------------------------------
+    //------------Close project-----------------------------------
     //------------------------------------------------------------
 
-    property string activeProjectName: ""
-    Action {
-        id: closeCurrentProjectAction
-        text: qsTr("&Close \"%1\" project").arg(activeProjectName)
-        icon {
-            name: "document-close"
-            height: 50
-            width: 50
-        }
 
-        //shortcut: StandardKey.New
-        onTriggered: {
-            console.log("Close Project")
-            var activeProjectId = plmData.projectHub().getActiveProject()
-            var savedBool = plmData.projectHub().isProjectSaved(activeProjectId)
-            if(savedBool || plmData.projectHub().isProjectNotModifiedOnce(projectId)){
-                plmData.projectHub().closeProject(activeProjectId)
-            }
-            else{
-                saveOrNotBeforeClosingProjectDialog.projectId = activeProjectId
-                saveOrNotBeforeClosingProjectDialog.projectName = plmData.projectHub().getProjectName(activeProjectId)
-                saveOrNotBeforeClosingProjectDialog.open()
-                saveOrNotBeforeClosingProjectDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
-            }
+    Connections{
+        target: Globals
+        function onCloseProjectCalled(projectId){
+            closeProject(projectId)
         }
-
     }
+
+    function closeProject(projectId){
+
+        var savedBool = plmData.projectHub().isProjectSaved(projectId)
+        if(savedBool || plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+            plmData.projectHub().closeProject(projectId)
+        }
+        else{
+            saveOrNotBeforeClosingProjectDialog.projectId = projectId
+            saveOrNotBeforeClosingProjectDialog.projectName = plmData.projectHub().getProjectName(projectId)
+            saveOrNotBeforeClosingProjectDialog.open()
+            saveOrNotBeforeClosingProjectDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        }
+    }
+
 
     SimpleDialog {
         property int projectId: -2
@@ -728,12 +754,7 @@ ApplicationWindow {
             saveOrNotBeforeClosingProjectDialog.close()
 
 
-
-
-
         }
-
-
 
 
     }
@@ -781,6 +802,30 @@ ApplicationWindow {
             plmData.projectHub().closeProject(projectId)
             saveOrNotBeforeClosingProjectDialog.close()
         }
+    }
+
+
+    //------------------------------------------------------------
+    //------------Close current project-----------------------------------
+    //------------------------------------------------------------
+
+    property string activeProjectName: ""
+    Action {
+        id: closeCurrentProjectAction
+        text: qsTr("&Close \"%1\" project").arg(activeProjectName)
+        icon {
+            name: "document-close"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.New
+        onTriggered: {
+            console.log("Close Project")
+            var activeProjectId = plmData.projectHub().getActiveProject()
+            closeProject(activeProjectId)
+        }
+
     }
 
 

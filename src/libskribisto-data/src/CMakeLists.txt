@@ -25,6 +25,7 @@ set(data_SRCS
     skrtaghub.cpp
     plmsheethub.cpp
     plmutils.cpp
+    skrprojectdicthub.cpp
     tasks/plmprojectmanager.cpp
     tasks/plmsqlqueries.cpp
     tasks/sql/plmexporter.cpp
@@ -78,6 +79,7 @@ set(data_HDR
     plmutils.h
     skribisto_data_global.h
     tools.h
+    skrprojectdicthub.h
     tasks/plmprojectmanager.h
     tasks/plmsqlqueries.h
     tasks/sql/plmexporter.h

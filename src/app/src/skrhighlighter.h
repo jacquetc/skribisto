@@ -2,7 +2,7 @@
 *   Copyright (C) 2020 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: SpellChecker.h                                                   *
+*  Filename: Highlighter.h                                                   *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -19,56 +19,43 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SPELLCHECKER_H
-#define SPELLCHECKER_H
+#ifndef SKRHIGHLIGHTER_H
+#define SKRHIGHLIGHTER_H
 
-#include <QString>
-#include <QObject>
-#include <QHash>
-#include <QTextStream>
-#include <QStringList>
+#include <QSyntaxHighlighter>
+#include "skrspellchecker.h"
 
-
-class Hunspell;
-
-class SpellChecker : public QObject
+class SKRHighlighter : public QSyntaxHighlighter
 {
     Q_OBJECT
+
+    Q_PROPERTY(SKRSpellChecker *spellChecker READ getSpellChecker)
+
 public:
+    SKRHighlighter(QTextDocument *parentDoc);
+    void setTextToHighlight(QString string);
+    void setCaseSensitivity(bool isCaseSensitive);
+    SKRSpellChecker *getSpellChecker();
 
-    SpellChecker(QObject *parent);
-    ~SpellChecker();
-    void setDict(const QString &dictionaryPath, const QStringList &userDictionary, const QStringList &attendTree_names);
 
-    bool spell(const QString &word);
-    QStringList suggest(const QString &word);
-    void ignoreWord(const QString &word);
-    void addToUserWordlist(const QString &word);
-
-    bool isActive();
-    bool activate();
-    void deactivate();
-
-    static QStringList dictsPaths();
-    static QHash<QString, QString> dictsList();
-
-    bool isInUserWordlist(QString &word);
-    void removeFromUserWordlist(const QString &word);
-
-    // fix bug when hunspell gives me latin1 encoded results on several Linux systems :
-    QString testHunspellForEncoding();
+protected:
+    void highlightBlock(const QString &text) override;
 
 signals:
-  void userDictSignal(QStringList userDict);
+
+
+public slots:
 
 private:
-    void put_word(const QString &word);
-    Hunspell *_hunspell;
-    bool m_isActive, hunspellLaunched;
-    QStringList userDict;
+    void setSpellChecker(SKRSpellChecker *spellChecker);
+
+private:
+    QString textToHighLight;
+    Qt::CaseSensitivity sensitivity;
+    SKRSpellChecker *m_spellChecker;
+    bool m_spellCheckerSet;
 
 
-    QString encodingFix, m_dictionaryPath;
 };
 
-#endif // SPELLCHECKER_H
+#endif // SKRHIGHLIGHTER_H
