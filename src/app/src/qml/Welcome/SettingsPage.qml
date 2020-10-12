@@ -478,7 +478,7 @@ SettingsPageForm {
     Connections {
         target: plmData.projectHub()
         function onProjectLoaded(projectId){
-                backUpOnceADayIfNeeded()
+            backUpOnceADayIfNeeded()
 
         }
     }
@@ -661,13 +661,13 @@ SettingsPageForm {
         id : spellChecker
     }
 
-ListModel {
-    id: checkSpellingComboBoxModel
-}
+    ListModel {
+        id: checkSpellingComboBoxModel
+    }
 
-checkSpellingComboBox.model: checkSpellingComboBoxModel
-checkSpellingComboBox.textRole: "text"
-checkSpellingComboBox.valueRole: "dictCode"
+    checkSpellingComboBox.model: checkSpellingComboBoxModel
+    checkSpellingComboBox.textRole: "text"
+    checkSpellingComboBox.valueRole: "dictCode"
 
     function populateCheckSpellingComboBox(){
 

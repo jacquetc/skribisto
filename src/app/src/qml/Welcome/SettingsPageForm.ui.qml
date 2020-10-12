@@ -106,6 +106,40 @@ Item {
                 }
 
                 GroupBox {
+                    id: spellCheckingGroupBox
+                    width: 200
+                    height: 200
+                    Layout.fillWidth: true
+                    focusPolicy: Qt.TabFocus
+                    title: qsTr("Spell checking")
+
+                    ColumnLayout {
+                        id: columnLayout6
+                        anchors.fill: parent
+
+                        CheckBox {
+                            id: checkSpellingCheckBox
+                            text: qsTr("Check spelling")
+                        }
+
+                        RowLayout {
+                            id: rowLayout5
+                            width: 100
+                            height: 100
+
+                            Label {
+                                id: label
+                                text: qsTr("Default dictionary :")
+                            }
+
+                            ComboBox {
+                                id: checkSpellingComboBox
+                            }
+                        }
+                    }
+                }
+
+                GroupBox {
                     id: backupGroupBox
                     Layout.rowSpan: 3
                     Layout.fillWidth: true
@@ -216,6 +250,7 @@ Item {
                     }
                 }
 
+
                 GroupBox {
                     id: saveGroupBox
                     Layout.rowSpan: 2
@@ -256,6 +291,7 @@ Item {
                     }
                 }
 
+
                 GroupBox {
                     id: specialEPaperGroupBox
                     width: 200
@@ -269,6 +305,7 @@ Item {
                         text: qsTr("Set the text cursor unblinking")
                     }
                 }
+
 
                 GroupBox {
                     id: advancedGroupBox
@@ -300,28 +337,6 @@ Item {
                     }
                 }
 
-                GroupBox {
-                    id: spellCheckingGroupBox
-                    width: 200
-                    height: 200
-                    Layout.fillWidth: true
-                    focusPolicy: Qt.TabFocus
-                    title: qsTr("Spell checking")
-
-                    ColumnLayout {
-                        id: columnLayout6
-                        anchors.fill: parent
-
-                        CheckBox {
-                            id: checkSpellingCheckBox
-                            text: qsTr("Check spelling")
-                        }
-
-                        ComboBox {
-                            id: checkSpellingComboBox
-                        }
-                    }
-                }
             }
         }
     }

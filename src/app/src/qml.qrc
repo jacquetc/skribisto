@@ -34,8 +34,8 @@
         <file>qml/Write/WriteRightDockForm.ui.qml</file>
         <file>qml/Write/EditView.qml</file>
         <file>qml/Write/EditViewForm.ui.qml</file>
-        <file>qml/Projects/ProjectsPage.qml</file>
-        <file>qml/Projects/ProjectsPageForm.ui.qml</file>
+        <file>qml/Projects/ProjectsMainPage.qml</file>
+        <file>qml/Projects/ProjectsMainPageForm.ui.qml</file>
         <file>qml/Gallery/GalleryPageForm.ui.qml</file>
         <file>qml/Gallery/GalleryPage.qml</file>
         <file>qml/Commons/WritingZone.qml</file>
@@ -73,5 +73,9 @@
         <file>qml/Commons/RestoreListView.qml</file>
         <file>qml/Commons/RestoreListViewForm.ui.qml</file>
         <file>qml/Commons/CheckableTree.qml</file>
+        <file>qml/Projects/ProjectSubPage.qml</file>
+        <file>qml/Projects/ProjectTab.qml</file>
+        <file>qml/Projects/ProjectTabForm.ui.qml</file>
+        <file>qml/Projects/ProjectSupPageForm.ui.qml</file>
     </qresource>
 </RCC>

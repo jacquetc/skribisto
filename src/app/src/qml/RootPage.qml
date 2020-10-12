@@ -134,7 +134,7 @@ RootPageForm {
             checkable: true
             onTriggered: {
 
-                projectsPage.forceActiveFocus()
+                projectsMainPage.forceActiveFocus()
             }
         }
     }
