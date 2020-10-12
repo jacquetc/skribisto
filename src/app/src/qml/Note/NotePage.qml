@@ -308,6 +308,7 @@ NotePageForm {
         if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
             saveContent()
             saveCurrentPaperCursorPositionAndY()
+            skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
         }
 
         paperId = _paperId
@@ -318,6 +319,8 @@ NotePageForm {
         console.log("opening note :", _projectId, _paperId)
         writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
         title = plmData.noteHub().getTitle(_projectId, _paperId)
+
+        skrTextBridge.subscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
         // apply format
         writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent

@@ -14,6 +14,7 @@ NotePadForm {
     property int projectId: -2
     property int sheetId: -2
     property int currentNoteId: -2
+    property string pageType: "note"
 
     onProjectIdChanged: {
         populateNoteListModel()
@@ -449,6 +450,7 @@ NotePadForm {
         if(projectId !== -2 && currentNoteId !== -2 ){
             saveContent()
             saveCurrentPaperCursorPositionAndY()
+            skrTextBridge.unsubscribeTextDocument(pageType, projectId, currentNoteId, noteWritingZone.textArea.objectName, noteWritingZone.textArea.textDocument)
         }
 
 
@@ -464,6 +466,8 @@ NotePadForm {
         projectId = _projectId
         noteWritingZone.paperId = _noteId
         noteWritingZone.projectId = _projectId
+
+        skrTextBridge.subscribeTextDocument(pageType, projectId, currentNoteId, noteWritingZone.textArea.objectName, noteWritingZone.textArea.textDocument)
 
         restoreCurrentPaperCursorPositionAndY()
 

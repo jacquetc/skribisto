@@ -166,7 +166,7 @@
     </message>
     <message>
         <source>Full Screen Colors</source>
-        <translation type="unfinished">Couleurs du plein écran</translation>
+        <translation>Couleurs du plein écran</translation>
     </message>
     <message>
         <source>Go back</source>
@@ -254,6 +254,10 @@
     <message>
         <source>#1234</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check spelling</source>
+        <translation>Vérifie l&apos;orthographe</translation>
     </message>
 </context>
 <context>
@@ -474,6 +478,36 @@
     </message>
 </context>
 <context>
+    <name>ProjectSubPage</name>
+    <message>
+        <source>Write this project&apos;s new name</source>
+        <translation>Ecrivez le nouveau nom de ce projet</translation>
+    </message>
+</context>
+<context>
+    <name>ProjectSupPageForm.ui</name>
+    <message>
+        <source>Edit project name</source>
+        <translation>Renommer le projet</translation>
+    </message>
+    <message>
+        <source>Location :</source>
+        <translation>Emplacement :</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>Langage</translation>
+    </message>
+    <message>
+        <source>Dictionary :</source>
+        <translation>Dictionnaire :</translation>
+    </message>
+    <message>
+        <source>Selected dictionary not found</source>
+        <translation>Le dictionnaire sélectionné est introuvable</translation>
+    </message>
+</context>
+<context>
     <name>RestoreListView</name>
     <message>
         <source>Trash: %1</source>
@@ -481,11 +515,11 @@
     </message>
     <message>
         <source>Empty the trash</source>
-        <translation type="unfinished">Vider la corbeille</translation>
+        <translation>Vider la corbeille</translation>
     </message>
     <message>
         <source>Select all</source>
-        <translation type="unfinished"></translation>
+        <translation>Tout sélectionner</translation>
     </message>
     <message>
         <source>label:</source>
@@ -529,36 +563,36 @@
     </message>
     <message>
         <source>Restore</source>
-        <translation type="unfinished">Restaurer</translation>
+        <translation>Restaurer</translation>
     </message>
     <message>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
 %2</source>
-        <translation type="unfinished">Voulez-vous supprimer définitivement les documents suivants du project &quot;%1&quot; ?
+        <translation>Voulez-vous supprimer définitivement les documents suivants du project &quot;%1&quot; ?
 %2</translation>
     </message>
     <message>
         <source>Select none</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne rien sélectionner</translation>
     </message>
 </context>
 <context>
     <name>RestoreListViewForm.ui</name>
     <message>
         <source>Restore a document</source>
-        <translation type="unfinished">Restaurer un document</translation>
+        <translation>Restaurer un document</translation>
     </message>
     <message>
         <source>Select all</source>
-        <translation type="unfinished"></translation>
+        <translation>Tout sélectionner</translation>
     </message>
     <message>
         <source>Trashed menu</source>
-        <translation type="unfinished">Menu de la corbeille</translation>
+        <translation>Menu de la corbeille</translation>
     </message>
     <message>
         <source>The checked documents are those which were trashed at the same time</source>
-        <translation type="unfinished"></translation>
+        <translation>Les documents précochés sont ceux qui ont été déplacés dans la corbeille au même moment</translation>
     </message>
 </context>
 <context>
@@ -646,7 +680,7 @@
     </message>
     <message>
         <source>Button</source>
-        <translation type="unfinished"></translation>
+        <translation>Bouton</translation>
     </message>
 </context>
 <context>
@@ -749,6 +783,14 @@
     <message>
         <source>Spell checking</source>
         <translation>Correction orthographique</translation>
+    </message>
+    <message>
+        <source>Check spelling</source>
+        <translation>Vérifie l&apos;orthographe</translation>
+    </message>
+    <message>
+        <source>Default dictionary :</source>
+        <translation>Dictionnaire par défaut :</translation>
     </message>
 </context>
 <context>
@@ -1214,6 +1256,10 @@
     <message>
         <source>&amp;About</source>
         <translation type="vanished">&amp;A propos</translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation>Vérifie l&apos;orthographe</translation>
     </message>
 </context>
 </TS>

@@ -41,6 +41,7 @@ using namespace std;
 #include "skreditmenusignalhub.h"
 #include "skrqmltools.h"
 #include "skrrootitem.h"
+#include "skrtextbridge.h"
 
 #ifdef QT_DEBUG
 # include <QQmlDebuggingEnabler>
@@ -173,6 +174,7 @@ int main(int argc, char *argv[])
     SKRFonts  *skrFonts                        = new SKRFonts(qApp);
     SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(qApp);
     SKRQMLTools *skrQMLTools                   = new SKRQMLTools(qApp);
+    SKRTextBridge *skrTextBridge                   = new SKRTextBridge(qApp);
 
     qmlRegisterUncreatableType<PLMError>("eu.skribisto.plmerror",
                                          1,
@@ -288,6 +290,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("skrQMLTools", skrQMLTools);
     engine.rootContext()->setContextProperty("skrEditMenuSignalHub",
                                              skrEditMenuSignalHub);
+    engine.rootContext()->setContextProperty("skrTextBridge", skrTextBridge);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl& objUrl) {
