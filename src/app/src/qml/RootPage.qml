@@ -370,7 +370,7 @@ RootPageForm {
         rootSwipeView.insertItem(insertionIndex, incubator);
 
         var component = Qt.createComponent("Tab.qml");
-        var tabIncubator = component.incubateObject(rootTabBar, {text: title, pageType: pageType,projectId: projectId, paperId: paperId, height: rootTabBar.height });
+        var tabIncubator = component.incubateObject(rootTabBar, {text: title, pageType: pageType,projectId: projectId, paperId: paperId});
         console.debug("debug : ", component.errorString())
         if (tabIncubator.status !== Component.Ready) {
             tabIncubator.onStatusChanged = function(status) {

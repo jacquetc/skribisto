@@ -255,6 +255,8 @@ ProjectPageForm {
             property bool isCurrent: model.index === recentListView.currentIndex ? true : false
             height: 80
 
+            color: "transparent"
+
 
             HoverHandler {
                 id: hoverHandler

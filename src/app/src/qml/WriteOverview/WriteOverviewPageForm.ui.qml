@@ -73,21 +73,21 @@ Item {
                         ColumnLayout {
                             anchors.fill: parent
                             z: 2
-                            Button {
+                            ToolButton {
                                 id: leftDockShowButton
                                 focusPolicy: Qt.NoFocus
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: 30
+                                Layout.preferredHeight: 40
+                                Layout.preferredWidth: 40
                                 flat: true
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                             }
 
-                            Button {
+                            ToolButton {
                                 id: leftDockMenuButton
                                 focusPolicy: Qt.NoFocus
                                 checkable: true
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: 30
+                                Layout.preferredHeight: 40
+                                Layout.preferredWidth: 40
                                 hoverEnabled: true
                                 flat: true
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
@@ -97,11 +97,11 @@ Item {
                                 id: leftDockMenuGroup
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
 
-                                Button {
+                                ToolButton {
                                     id: leftDockResizeButton
                                     focusPolicy: Qt.NoFocus
-                                    Layout.preferredHeight: 30
-                                    Layout.preferredWidth: 30
+                                    Layout.preferredHeight: 40
+                                    Layout.preferredWidth: 40
                                     flat: true
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                                 }
@@ -125,12 +125,12 @@ Item {
                 Layout.fillWidth: true
 
 
-                Button {
+                ToolButton {
                     id: compactLeftDockShowButton
                     anchors.left: parent.left
                     anchors.top: parent.top
-                    width: 30
-                    height: 30
+                    width: 40
+                    height: 40
                     z: 1
                     flat: true
                 }

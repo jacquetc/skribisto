@@ -1015,11 +1015,11 @@
     </message>
     <message>
         <source>Enter label</source>
-        <translation>Entrer un label</translation>
+        <translation>Entrer un libelé</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation>Définir le label</translation>
+        <translation>Définir le libelé</translation>
     </message>
 </context>
 <context>

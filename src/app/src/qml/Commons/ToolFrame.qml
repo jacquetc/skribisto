@@ -17,7 +17,7 @@ FocusScope {
     property int dynamicWidth
     property alias folded: toolHeader.folded
     property alias title: toolHeader.title
-    property int scrollBarVerticalPolicy: ScrollBar.AlwaysOff
+    property int scrollBarVerticalPolicy: ScrollBar.AsNeeded
 
     onFoldedChanged: {
         folded ? state = "folded" : state = "unfolded"
@@ -94,7 +94,7 @@ FocusScope {
             container.children[0].anchors.fill = container
             container.children[0].focus = true
             minimumContainerHeight = container.children[0].minimumHeight
-            container.height = contentHeight - 25
+            container.height = contentHeight
         }
 
 

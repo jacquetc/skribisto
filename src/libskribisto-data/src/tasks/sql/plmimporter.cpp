@@ -173,14 +173,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
         return QSqlDatabase();
     }
 
-    // upgrade :
-    IFOKDO(error, PLMUpgrader::upgradeSQLite(sqlDb));
-    IFKO(error) {
-        error.setSuccess(false);
-        error.setErrorCode("E_IMPORTER_upgrade_sqlite_failed");
-        error.addData(tempFileName);
-        return QSqlDatabase();
-    }
+
 
     // optimization :
     QStringList optimization;
@@ -203,10 +196,19 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     // new project :
     IFOKDO(error, this->executeSQLFile(":/sql/sqlite_project.sql", sqlDb));
     QString sqlString =
-        QString("INSERT INTO tbl_project (l_skribisto_maj_version, l_skribisto_min_version, l_skribisto_patch_version) VALUES (%1, %2, %3)")
-            .arg(SKR_VERSION_MAJOR).arg(SKR_VERSION_MINOR).arg(SKR_VERSION_PATCH);
+        QString("INSERT INTO tbl_project (dbl_database_version) VALUES (%1)")
+            .arg(1.1);
 
     IFOKDO(error, this->executeSQLString(sqlString, sqlDb));
+
+    // upgrade :
+    IFOKDO(error, PLMUpgrader::upgradeSQLite(sqlDb));
+    IFKO(error) {
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_upgrade_sqlite_failed");
+        error.addData(tempFileName);
+        return QSqlDatabase();
+    }
 
 
     IFOK(error) {

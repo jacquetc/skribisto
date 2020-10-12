@@ -60,8 +60,8 @@ TabButton {
             text: "x"
             focusPolicy: Qt.NoFocus
             flat: true
-            implicitHeight: 20
-            implicitWidth: 20
+            implicitHeight: 30
+            implicitWidth: 30
         }
 
         HoverHandler {
@@ -71,8 +71,8 @@ TabButton {
 
     background: Item {
         id: element
-        implicitWidth: 100
-        implicitHeight: 40
+        //implicitWidth: 100
+        //implicitHeight: 50
         Rectangle {
             id: topRectangle
             height: 4

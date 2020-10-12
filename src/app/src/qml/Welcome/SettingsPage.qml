@@ -6,6 +6,7 @@ import Qt.labs.platform 1.1 as LabPlatform
 import Qt.labs.settings 1.1
 import eu.skribisto.projecthub 1.0
 import eu.skribisto.spellchecker 1.0
+import QtQuick.Controls.Material 2.15
 import ".."
 
 SettingsPageForm {
@@ -152,10 +153,10 @@ SettingsPageForm {
         for (j = 0; j < backupPathList.length ; j++ ){
             var path = backupPathList[j]
             if(path === ""){
-                break
+                continue
             }
 
-            backupPathListModel.append({"path": Qt.resolvedUrl(path), "localPath": skrQMLTools.translateURLToLocalFile(Qt.resolvedUrl(path))})
+            backupPathListModel.append({"path": skrQMLTools.getURLFromLocalFile(path), "localPath": path})
 
         }
 
@@ -244,7 +245,8 @@ SettingsPageForm {
 
         Item {
             id: delegateRoot
-            height: 30
+            height: Material.delegateHeight
+
 
 
             anchors {
@@ -285,8 +287,8 @@ SettingsPageForm {
 
                 onAccepted: {
 
-                    model.path = folderDialog.folder
-                    model.localPath = skrQMLTools.translateURLToLocalFile(folderDialog.folder)
+                    model.path = backupFolderDialog.folder
+                    model.localPath = skrQMLTools.translateURLToLocalFile(backupFolderDialog.folder)
                 }
                 onRejected: {
 
@@ -327,7 +329,7 @@ SettingsPageForm {
                     visible: false
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: model.path
+                    text: model.localPath
                     horizontalAlignment: Qt.AlignLeft
                     verticalAlignment: Qt.AlignVCenter
 

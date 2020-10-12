@@ -50,7 +50,7 @@ Item {
             Layout.fillWidth: true
 
 
-            Button {
+            ToolButton {
                 id: mainMenuButton
                 text: qsTr("Main menu")
                 focusPolicy: Qt.NoFocus
@@ -67,7 +67,7 @@ Item {
 
             TabBar {
                 id: rootTabBar
-                Layout.preferredHeight: 30
+                //Layout.preferredHeight: 40
                 Layout.minimumHeight: 30
                 Layout.fillWidth: true
 
@@ -94,7 +94,7 @@ Item {
             }
 
 
-            Button {
+            ToolButton {
                 id: showTabListButton
                 text: qsTr("Button")
                 flat: true
@@ -229,7 +229,7 @@ Item {
                 anchors.topMargin: 0
                 spacing: 0
 
-                Button {
+                ToolButton {
                     id: saveButton
                     flat: true
                     text: qsTr("Save")
@@ -255,7 +255,7 @@ Item {
                     Layout.fillHeight: true
                 }
 
-                Button {
+                ToolButton {
                     id: notificationButton
                     flat: true
                     Layout.preferredWidth: 40

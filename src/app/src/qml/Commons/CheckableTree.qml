@@ -240,6 +240,7 @@ ListView {
                 width: delegateRoot.width
                 height: 40
 
+                color: "transparent"
 
                 Behavior on color {
                     ColorAnimation {

@@ -441,6 +441,8 @@ TrashedListViewForm {
                     }
                 }
 
+                color: "transparent"
+
                 HoverHandler {
                     id: hoverHandler
                     //                    onHoveredChanged: {
@@ -731,7 +733,7 @@ TrashedListViewForm {
                                     id: labelLabel
 
                                     //                                text: model.label
-                                    text:  model.label
+                                    text:  model.label === undefined ? "" : model.label
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter

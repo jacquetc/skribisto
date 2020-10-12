@@ -43,6 +43,22 @@ WritingZoneForm {
     }
 
 
+    //style :
+    property bool textAreaStyleElevation : textArea.styleElevation
+    onTextAreaStyleElevationChanged: {
+        textArea.styleElevation = textAreaStyleElevation
+    }
+    property string textAreaStyleBackgroundColor : textArea.styleBackgroundColor
+    onTextAreaStyleBackgroundColorChanged: {
+        textArea.styleBackgroundColor = textAreaStyleBackgroundColor
+    }
+    property string textAreaStyleForegroundColor : textArea.styleForegroundColor
+    onTextAreaStyleForegroundColorChanged: {
+        textArea.styleForegroundColor = textAreaStyleForegroundColor
+    }
+
+
+
     property int paperId: -1
     property int projectId: -1
 
