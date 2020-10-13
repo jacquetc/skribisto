@@ -57,8 +57,6 @@ WritingZoneForm {
         textArea.styleForegroundColor = textAreaStyleForegroundColor
     }
 
-
-
     property int paperId: -1
     property int projectId: -1
 
@@ -524,6 +522,7 @@ WritingZoneForm {
     }
 
     Connections{
+
         target: plmData.projectHub()
         function onLangCodeChanged(projectId, langCode){
             if(root.projectId === projectId){

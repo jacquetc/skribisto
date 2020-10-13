@@ -469,6 +469,7 @@ NotePadForm {
 
         skrTextBridge.subscribeTextDocument(pageType, projectId, currentNoteId, noteWritingZone.textArea.objectName, noteWritingZone.textArea.textDocument)
 
+
         restoreCurrentPaperCursorPositionAndY()
 
         noteWritingZone.forceActiveFocus()

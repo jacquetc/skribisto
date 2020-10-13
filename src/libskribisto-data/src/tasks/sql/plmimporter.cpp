@@ -174,7 +174,6 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     }
 
 
-
     // optimization :
     QStringList optimization;
 
