@@ -79,7 +79,7 @@ Item {
                 Layout.fillWidth: true
 
 
-                currentIndex: 1
+                currentIndex: 0
                 interactive: false
                 clip: true
 

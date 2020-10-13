@@ -145,17 +145,14 @@ Item {
                     z: 1
                     flat: true
                 }
-
-                Button {
                     id: compactLeftDockShowButton
                     anchors.left: parent.left
                     anchors.top: parent.top
-                    width: 30
-                    height: 30
+                    width: 40
+                    height: 40
                     z: 1
                     flat: true
                 }
-
 
                 WritingZone {
                     id: writingZone
