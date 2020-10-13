@@ -6,8 +6,11 @@ Item {
     id: base
     width: 400
     height: 400
+    property alias vDockTitle: vDockTitle
+    property alias dockTitle: dockTitle
     property bool folded: true
     property alias title: dockTitle.text
+    property alias base: base
 
     GridLayout {
         id: gridBase
@@ -24,6 +27,7 @@ Item {
             //                implicitWidth: width * scale
             Layout.preferredHeight: 30
             Layout.preferredWidth: 60
+            Layout.alignment: Qt.AlignTop | Qt.AlignLeft
             padding: 1
             checked: !folded
             onCheckedChanged: checked ? folded = false : folded = true
@@ -36,8 +40,8 @@ Item {
             text: "Text"
 
 
-            Layout.fillHeight: true
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
             /*
 
                                                                                                                         anchors.horizontalCenter: parent.horizontalCenter
@@ -80,9 +84,19 @@ Item {
                 visible: false
             }
             PropertyChanges {
+                target: dockTitle
+                opacity: 0.0
+            }
+
+            PropertyChanges {
                 target: vDockTitle
                 visible: true
             }
+            PropertyChanges {
+                target: vDockTitle
+                opacity: 1.0
+            }
+
 
 //            PropertyChanges {
 //                target: hSwitch
@@ -93,6 +107,7 @@ Item {
                 target: base
                 width: 30
             }
+
         },
         State {
             name: "folded"
@@ -103,8 +118,16 @@ Item {
                 visible: false
             }
             PropertyChanges {
+                target: vDockTitle
+                opacity: 0.0
+            }
+            PropertyChanges {
                 target: dockTitle
                 visible: true
+            }
+            PropertyChanges {
+                target: dockTitle
+                opacity: 1.0
             }
 
             PropertyChanges {

@@ -67,25 +67,25 @@ Item {
                     id: columnLayout1
                     anchors.fill: parent
 
-                    Button {
+                    ToolButton {
                         id: projectPageButton
                         text: qsTr("Project")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     }
 
-                    Button {
+                    ToolButton {
                         id: examplePageButton
                         text: qsTr("Examples")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     }
 
-                    Button {
+                    ToolButton {
                         id: settingsPageButton
                         text: qsTr("Settings")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     }
 
-                    Button {
+                    ToolButton {
                         id: helpPageButton
                         text: qsTr("Help")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter

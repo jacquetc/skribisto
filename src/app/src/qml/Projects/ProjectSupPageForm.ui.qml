@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.11
+import QtQuick.Layouts 1.15
+import "../Commons"
 
 Item {
 
@@ -11,6 +12,7 @@ Item {
     property alias titleLabel: titleLabel
     property alias editTitleTextFieldLoader: editTitleTextFieldLoader
     property alias locationLabel: locationLabel
+    readonly property int columnWidth: 550
 
     Pane {
         id: pane
@@ -71,37 +73,70 @@ Item {
 
             }
 
-            GridLayout {
-                id: gridLayout
-                width: 100
-                height: 100
-                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+            SwipeView {
+                id: swipeView
+                Layout.fillHeight: true
+                Layout.fillWidth: true
 
-                GroupBox {
-                    id: langGroupBox
-                    width: 200
-                    height: 200
-                    focusPolicy: Qt.TabFocus
-                    Layout.fillWidth: true
-                    title: qsTr("Language")
 
-                    RowLayout {
-                        id: rowLayout1
-                        anchors.fill: parent
+                currentIndex: 1
+                interactive: false
+                clip: true
 
-                        Label {
-                            id: label1
-                            text: qsTr("Dictionary :")
+                ScrollView {
+                    id: scrollView
+                    clip: true
+
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                    contentWidth: pillarLayout.width
+                    contentHeight: pillarLayout.implicitHeight
+
+                    SKRPillarLayout {
+                        id: pillarLayout
+                        width: scrollView.width
+                        columns: ((pillarLayout.width / columnWidth) | 0 )
+                        maxColumns: 3
+
+                        GroupBox {
+                            id: langGroupBox
+                            focusPolicy: Qt.TabFocus
+                            Layout.fillWidth: true
+                            title: qsTr("Language")
+
+                            RowLayout {
+                                id: rowLayout1
+                                anchors.fill: parent
+
+                                Label {
+                                    id: label1
+                                    text: qsTr("Dictionary :")
+                                }
+
+                                ComboBox {
+                                    id: dictComboBox
+                                }
+
+                                Label {
+                                    id: dictNotFoundLabel
+                                    color: "#ee0000"
+                                    text: qsTr("Selected dictionary not found")
+                                }
+                            }
                         }
 
-                        ComboBox {
-                            id: dictComboBox
-                        }
+                        GroupBox {
+                            id: tagsGroupBox
+                            width: 200
+                            height: 200
+                            title: qsTr("Tags")
 
-                        Label {
-                            id: dictNotFoundLabel
-                            color: "#ee0000"
-                            text: qsTr("Selected dictionary not found")
+                            RowLayout {
+                                id: rowLayout3
+                                width: 100
+                                height: 100
+                            }
+
                         }
                     }
                 }
@@ -109,3 +144,10 @@ Item {
         }
     }
 }
+
+/*##^##
+Designer {
+    D{i:0;autoSize:true;height:480;width:640}
+}
+##^##*/
+

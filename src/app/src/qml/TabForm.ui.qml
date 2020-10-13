@@ -7,16 +7,19 @@ TabButton {
     text: ""
     width: implicitWidth
     property alias closeButton: closeButton
+    property alias tagText: tagText
     property bool closable: true
     property string iconSource : base.action.icon.source
     property string iconName : base.action.icon.name
     property string iconColor : base.action.icon.color
 
+    padding: 2
+
     contentItem: RowLayout {
         spacing: 2
         anchors.fill: parent
 
-        Button {
+        ToolButton {
             id: image
             focusPolicy: Qt.NoFocus
             enabled: true
@@ -28,7 +31,7 @@ TabButton {
             bottomPadding: 0
             leftPadding: 2
             topPadding: 0
-            flat: true
+            //flat: true
             icon {
                 source: iconSource
                 name: iconName
@@ -38,14 +41,30 @@ TabButton {
             }
             onDownChanged: down = false
             onClicked: base.checked = true
+            onDisplayChanged: r
+
+            Item {
+                id : mouseBlocker
+                anchors.fill: parent
+            }
 
         }
 
         Text {
+            id: tagText
+
+            Layout.minimumWidth: 50
+            topPadding: 6
+            bottomPadding: 6
+
+
             text: base.text === "" ? action.text : base.text
             font.weight: isCurrent ? Font.Bold : Font.Normal
             font.family: base.font.family
             font.pointSize: base.font.pointSize
+
+
+
 
             opacity: enabled ? 1.0 : 0.3
             horizontalAlignment: Text.AlignHCenter
@@ -53,15 +72,25 @@ TabButton {
             elide: Text.ElideRight
 
             Layout.fillHeight: true
+
+
+
+
+
         }
+
+
         RoundButton {
+
+
             id: closeButton
+
             visible: isCurrent | hoverHandler.hovered ? closable : false
             text: "x"
             focusPolicy: Qt.NoFocus
             flat: true
-            implicitHeight: 20
-            implicitWidth: 20
+            implicitHeight: 30
+            implicitWidth: 30
         }
 
         HoverHandler {
@@ -71,8 +100,8 @@ TabButton {
 
     background: Item {
         id: element
-        implicitWidth: 100
-        implicitHeight: 40
+        //implicitWidth: 100
+        //implicitHeight: 50
         Rectangle {
             id: topRectangle
             height: 4

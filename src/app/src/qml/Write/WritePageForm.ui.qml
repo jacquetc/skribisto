@@ -29,14 +29,15 @@ Item {
     property int leftBasePreferredWidth: 0
     property int rightBasePreferredWidth: 0
 
-
     ColumnLayout {
         id: columnLayout
         clip: false
         spacing: 0
         anchors.fill: parent
-        anchors.leftMargin: Globals.compactSize ? undefined : leftDrawer.width * leftDrawer.position + 10
-        anchors.rightMargin: Globals.compactSize ? undefined : rightDrawer.width * rightDrawer.position + 10
+        anchors.leftMargin: Globals.compactSize ? undefined : leftDrawer.width
+                                                  * leftDrawer.position + 10
+        anchors.rightMargin: Globals.compactSize ? undefined : rightDrawer.width
+                                                   * rightDrawer.position + 10
 
         RowLayout {
             id: rowLayout
@@ -63,7 +64,6 @@ Item {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
-
                         MultiPointTouchArea {
                             id: leftPaneScrollTouchArea
                             z: 1
@@ -77,64 +77,56 @@ Item {
                             ]
                         }
 
-
                         MouseArea {
                             id: leftPaneScrollMouseArea
                             z: 0
                             anchors.fill: parent
                         }
 
-
                         ColumnLayout {
                             anchors.fill: parent
                             z: 2
 
-                            Button {
+                            ToolButton {
                                 id: leftDockShowButton
                                 focusPolicy: Qt.NoFocus
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: 30
+                                Layout.preferredHeight: 40
+                                Layout.preferredWidth: 40
                                 flat: true
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                             }
 
-
-                            Button {
+                            ToolButton {
                                 id: leftDockMenuButton
                                 focusPolicy: Qt.NoFocus
                                 checkable: true
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: 30
+                                Layout.preferredHeight: 40
+                                Layout.preferredWidth: 40
                                 flat: true
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                             }
-
 
                             ColumnLayout {
                                 id: leftDockMenuGroup
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
 
-                                Button {
+                                ToolButton {
                                     id: leftDockResizeButton
                                     focusPolicy: Qt.NoFocus
-                                    Layout.preferredHeight: 30
-                                    Layout.preferredWidth: 30
+                                    Layout.preferredHeight: 40
+                                    Layout.preferredWidth: 40
                                     flat: true
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                                 }
                             }
-
 
                             Item {
                                 id: stretcher
                                 Layout.fillHeight: true
                                 Layout.fillWidth: true
                             }
-
                         }
-
                     }
-
                 }
             }
 
@@ -144,6 +136,15 @@ Item {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
 
+                ToolButton {
+                    id: compactLeftDockShowButton
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    width: 40
+                    height: 40
+                    z: 1
+                    flat: true
+                }
 
                 Button {
                     id: compactLeftDockShowButton
@@ -159,18 +160,18 @@ Item {
                 WritingZone {
                     id: writingZone
                     anchors.fill: parent
+                    textAreaStyleElevation: true
                 }
 
-                Button {
+                ToolButton {
                     id: compactRightDockShowButton
                     anchors.right: parent.right
                     anchors.top: parent.top
-                    width: 30
-                    height: 30
+                    width: 40
+                    height: 40
                     z: 1
                     flat: true
                 }
-
             }
 
             Item {
@@ -179,8 +180,8 @@ Item {
                 Layout.fillHeight: true
                 Layout.preferredWidth: rightBasePreferredWidth
                 Layout.minimumWidth: 30
-                //Layout.maximumWidth: 300
 
+                //Layout.maximumWidth: 300
                 z: 1
 
                 RowLayout {
@@ -215,45 +216,44 @@ Item {
                             anchors.fill: parent
                             z: 2
 
-                            Button {
+                            ToolButton {
                                 id: rightDockShowButton
                                 focusPolicy: Qt.NoFocus
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: 30
+                                Layout.preferredHeight: 40
+                                Layout.preferredWidth: 40
                                 flat: true
                                 Layout.alignment: Qt.AlignRight | Qt.AlignTop
                             }
 
-
-                            Button {
+                            ToolButton {
                                 id: rightDockMenuButton
                                 focusPolicy: Qt.NoFocus
                                 checkable: true
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: 30
+                                Layout.preferredHeight: 40
+                                Layout.preferredWidth: 40
                                 flat: true
                                 Layout.alignment: Qt.AlignRight | Qt.AlignTop
                             }
-
 
                             ColumnLayout {
                                 id: rightDockMenuGroup
                                 Layout.alignment: Qt.AlignRight | Qt.AlignTop
 
-                                Button {
+                                ToolButton {
                                     id: rightDockResizeButton
                                     focusPolicy: Qt.NoFocus
-                                    Layout.preferredHeight: 30
-                                    Layout.preferredWidth: 30
+                                    Layout.preferredHeight: 40
+                                    Layout.preferredWidth: 40
                                     flat: true
                                     Layout.alignment: Qt.AlignRight | Qt.AlignTop
                                 }
 
-                                Button {
+                                ToolButton {
                                     id: showMinimapButton
+                                    visible: false
                                     focusPolicy: Qt.NoFocus
-                                    Layout.preferredHeight: 30
-                                    Layout.preferredWidth: 30
+                                    Layout.preferredHeight: 40
+                                    Layout.preferredWidth: 40
                                     flat: true
                                     Layout.alignment: Qt.AlignRight | Qt.AlignTop
                                 }
@@ -264,7 +264,6 @@ Item {
                                 Layout.fillHeight: true
                                 Layout.fillWidth: true
                             }
-
                         }
                     }
                     Minimap {
@@ -278,20 +277,15 @@ Item {
                         sourceWidth: writingZone.textArea.width
                         sourcePointSize: writingZone.textArea.font.pointSize
                     }
-
-
-
-
                 }
             }
         }
     }
-
 }
 
 /*##^##
 Designer {
-    D{i:0;width:1300}D{i:1}
+    D{i:0;width:1300}
 }
 ##^##*/
 

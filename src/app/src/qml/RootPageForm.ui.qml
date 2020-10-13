@@ -23,11 +23,13 @@ Item {
     property alias welcomeTab: welcomeTab
     property alias writeOverviewTab: writeOverviewTab
     property alias projectTab: projectTab
-    property alias galleryTab: galleryTab
+    //NOTE: waiting to be implemented
+    //property alias galleryTab: galleryTab
     property alias noteOverviewTab: noteOverviewTab
     property alias welcomePage: welcomePage
     property alias noteOverviewPage: noteOverviewPage
-    property alias galleryPage: galleryPage
+    //NOTE: waiting to be implemented
+    //property alias galleryPage: galleryPage
     property alias projectsMainPage: projectsMainPage
     property alias writeOverviewPage: writeOverviewPage
     property alias saveButton: saveButton
@@ -50,7 +52,7 @@ Item {
             Layout.fillWidth: true
 
 
-            Button {
+            ToolButton {
                 id: mainMenuButton
                 text: qsTr("Main menu")
                 focusPolicy: Qt.NoFocus
@@ -67,34 +69,40 @@ Item {
 
             TabBar {
                 id: rootTabBar
-                Layout.preferredHeight: 30
+                //Layout.preferredHeight: 40
                 Layout.minimumHeight: 30
                 Layout.fillWidth: true
 
                 Tab {
                     id: welcomeTab
                     closable: false
+                    pageType: welcomePage.pageType
                 }
                 Tab {
                     id: writeOverviewTab
                     closable: false
+                    pageType: writeOverviewPage.pageType
                 }
                 Tab {
                     id: noteOverviewTab
                     closable: false
+                    pageType: noteOverviewPage.pageType
                 }
-                Tab {
-                    id: galleryTab
-                    closable: false
-                }
+                //NOTE: waiting to be implemented
+//                Tab {
+//                    id: galleryTab
+//                    closable: false
+//                    pageType: galleryPage.pageType
+//                }
                 Tab {
                     id: projectTab
                     closable: false
+                    pageType: projectsMainPage.pageType
                 }
             }
 
 
-            Button {
+            ToolButton {
                 id: showTabListButton
                 text: qsTr("Button")
                 flat: true
@@ -176,10 +184,12 @@ Item {
                             enabled: false
                         }
 
-                        GalleryPage {
-                            id: galleryPage
-                            enabled: false
-                        }
+                        //NOTE: waiting to be implemented
+//                        GalleryPage {
+//                            id: galleryPage
+//                            enabled: false
+//                            visible: false
+//                        }
 
                         ProjectsMainPage {
                             id: projectsMainPage
@@ -229,7 +239,7 @@ Item {
                 anchors.topMargin: 0
                 spacing: 0
 
-                Button {
+                ToolButton {
                     id: saveButton
                     flat: true
                     text: qsTr("Save")
@@ -255,7 +265,7 @@ Item {
                     Layout.fillHeight: true
                 }
 
-                Button {
+                ToolButton {
                     id: notificationButton
                     flat: true
                     Layout.preferredWidth: 40

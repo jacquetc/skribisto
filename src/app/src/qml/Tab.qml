@@ -29,4 +29,23 @@ TabForm {
         return false
     }
 
+
+
+
+//    tagText.layer.enabled: true
+//      tagText.layer.smooth: true
+//      tagText.layer.samplerName: "maskSource"
+//    tagText.layer.effect: ShaderEffect {
+//        property variant source: tagText
+//        fragmentShader: "
+//                varying highp vec2 qt_TexCoord0;
+//                uniform highp float qt_Opacity;
+//                uniform lowp sampler2D source;
+//                uniform lowp sampler2D maskSource;
+//                void main(void) {
+//                    gl_FragColor = texture2D(source, qt_TexCoord0.st) * (1.0-texture2D(maskSource, qt_TexCoord0.st).a) * qt_Opacity;
+//                }
+//            "
+//    }
+
 }

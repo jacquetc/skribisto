@@ -255,6 +255,11 @@ ProjectPageForm {
             property bool isCurrent: model.index === recentListView.currentIndex ? true : false
             height: 80
 
+            color: "transparent"
+
+            Accessible.name: "name"
+                Accessible.role: Accessible.ListItem
+            Accessible.description: qsTr("recent projects list item")
 
             HoverHandler {
                 id: hoverHandler

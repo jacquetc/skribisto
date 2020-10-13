@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
+import QtQuick.Controls.Material 2.15
 
 TreeListViewForm {
     id: root
@@ -454,17 +455,17 @@ TreeListViewForm {
                     verticalCenter: parent.verticalCenter
                 }
                 width: delegateRoot.width
-                height: 40
+                height: 50
 
                 Drag.active: dragHandler.active
                 Drag.source: content
                 Drag.hotSpot.x: width / 2
                 Drag.hotSpot.y: height / 2
 
-                color: dragHandler.active | !tapHandler.enabled ? "lightsteelblue" : "white"
+                color: dragHandler.active | !tapHandler.enabled ? "lightsteelblue" : "transparent"
                 Behavior on color {
                     ColorAnimation {
-                        duration: 100
+                        duration: 200
                     }
                 }
 
@@ -686,7 +687,7 @@ TreeListViewForm {
                         }
                         Rectangle {
                             id: openedItemIndicator
-                            color: "#2ba200"
+                            color:  Material.accentColor
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
                             visible: model.projectId === openedProjectId && model.paperId === openedPaperId
@@ -761,12 +762,13 @@ TreeListViewForm {
 
 
                                     onEditingFinished: {
-                                        //if (!activeFocus) {
-                                        //accepted()
-                                        //}
+
                                         console.log("editing label finished")
                                         model.label = text
                                         delegateRoot.state = ""
+                                        //fix bug while new lone child
+                                        titleLabel.visible = true
+                                        labelLabel.visible = true
                                     }
 
                                     //Keys.priority: Keys.AfterItem
@@ -805,9 +807,7 @@ TreeListViewForm {
 
 
                                     onEditingFinished: {
-                                        //if (!activeFocus) {
-                                        //accepted()
-                                        //}
+
                                         console.log("editing finished")
                                         if(model.indent === -1){ //project item
                                             model.projectName = text
@@ -816,8 +816,10 @@ TreeListViewForm {
                                             model.name = text
                                         }
 
-
                                         delegateRoot.state = ""
+                                        //fix bug while new lone child
+                                        titleLabel.visible = true
+                                        labelLabel.visible = true
                                     }
 
                                     //Keys.priority: Keys.AfterItem
@@ -844,8 +846,6 @@ TreeListViewForm {
 
                                 Label {
                                     id: labelLabel
-
-                                    //                                text: model.label
                                     text:  model.label === undefined ? "" : model.label
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
@@ -854,9 +854,7 @@ TreeListViewForm {
 
                                 }
                             }
-                            //                        MouseArea {
-                            //                            anchors.fill: parent
-                            //                        }
+
                         }
 
                         ToolButton {
@@ -898,17 +896,8 @@ TreeListViewForm {
                             Layout.preferredWidth: 30
                             Layout.fillHeight: true
                             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            visible: hoverHandler.hovered | content.isCurrent
+                            visible: model.hasChildren ? true : (hoverHandler.hovered | content.isCurrent)
                             focusPolicy: Qt.NoFocus
-                        }
-                        Label {
-                            id: hasChildrenLabel
-                            Layout.preferredWidth: 30
-                            Layout.fillHeight: true
-                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            text: ">"
-                            visible: model.hasChildren & !(hoverHandler.hovered | content.isCurrent)
-
                         }
 
 

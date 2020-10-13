@@ -64,6 +64,8 @@ set(app_SRCS
     skrspellchecker.h
     skrrootitem.cpp
     skrrootitem.h
+    skrtextbridge.cpp
+    skrtextbridge.h
 )
 
 set(QML qml.qrc

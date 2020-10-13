@@ -73,7 +73,7 @@ Item {
                         //                    anchors.topMargin: 0
                         //                    anchors.leftMargin: 0
                         spacing: 20
-                        padding: 0
+                        padding: 2
                         antialiasing: true
                         clip: true
                         focus: true

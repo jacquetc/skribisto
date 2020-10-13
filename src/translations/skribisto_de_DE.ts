@@ -577,6 +577,10 @@
         <source></source>
         <translation></translation>
     </message>
+    <message>
+        <source>Check spelling</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Exporter</name>
@@ -2621,6 +2625,36 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
 </context>
 <context>
+    <name>ProjectSubPage</name>
+    <message>
+        <source>Write this project&apos;s new name</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ProjectSupPageForm.ui</name>
+    <message>
+        <source>Edit project name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dictionary :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selected dictionary not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <source>XML problem : parseFolderElement(const QDomElement &amp;element, QTreeWidgetItem *parentItem)</source>
@@ -3213,6 +3247,14 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>Spell checking</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check spelling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4205,6 +4247,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source>Underline</source>
         <translation type="unfinished">Unterstrichen</translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

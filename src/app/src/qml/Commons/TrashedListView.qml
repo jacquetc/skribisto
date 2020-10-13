@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
+import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
 
 TrashedListViewForm {
@@ -432,7 +433,7 @@ TrashedListViewForm {
                     verticalCenter: parent.verticalCenter
                 }
                 width: delegateRoot.width
-                height: 40
+                height: 50
 
 
                 Behavior on color {
@@ -440,6 +441,8 @@ TrashedListViewForm {
                         duration: 100
                     }
                 }
+
+                color: "transparent"
 
                 HoverHandler {
                     id: hoverHandler
@@ -579,7 +582,7 @@ TrashedListViewForm {
                         }
                         Rectangle {
                             id: openedItemIndicator
-                            color: "#2ba200"
+                            color:  Material.accentColor
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
                             visible: model.projectId === openedProjectId && model.paperId === openedPaperId
@@ -731,7 +734,7 @@ TrashedListViewForm {
                                     id: labelLabel
 
                                     //                                text: model.label
-                                    text:  model.label
+                                    text:  model.label === undefined ? "" : model.label
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter

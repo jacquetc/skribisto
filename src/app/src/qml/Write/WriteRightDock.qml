@@ -227,6 +227,7 @@ WriteRightDockForm {
     Component.onCompleted: {
         loadConf()
         Globals.resetDockConfCalled.connect(resetConf)
+
     }
 
     Component.onDestruction: {

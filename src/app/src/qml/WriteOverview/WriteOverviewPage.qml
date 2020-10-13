@@ -133,11 +133,18 @@ WriteOverviewPageForm {
 
 
         }
+
+        onIsVisibleChanged: leftSettings.isVisible = leftDrawer.isVisible
+
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
             Globals.resetDockConfCalled.connect(resetConf)
             if(Globals.compactSize){
                 leftDrawer.close()
+            }
+            else {
+                leftDrawer.position = leftSettings.isVisible ? 1: 0
+                leftDrawer.isVisible = leftSettings.isVisible ? true: false
             }
         }
 
@@ -146,10 +153,14 @@ WriteOverviewPageForm {
             id: leftSettings
             category: "writeOverviewLeftDock"
             property int width: leftDockFixedWidth
+            property bool isVisible: true
         }
 
         function resetConf(){
             leftDockFixedWidth = 300
+            leftSettings.isVisible = true
+            leftDrawer.position = leftSettings.isVisible ? 1: 0
+            leftDrawer.isVisible = leftSettings.isVisible ? true: false
         }
 
     }

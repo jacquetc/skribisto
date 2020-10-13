@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import QtQml 2.15
+import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
 
 ListView {
@@ -238,8 +239,9 @@ ListView {
                     verticalCenter: parent.verticalCenter
                 }
                 width: delegateRoot.width
-                height: 40
+                height: 50
 
+                color: "transparent"
 
                 Behavior on color {
                     ColorAnimation {
@@ -425,7 +427,7 @@ ListView {
                         }
                         Rectangle {
                             id: openedItemIndicator
-                            color: "#2ba200"
+                            color: Material.accentColor
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
                             visible: model.projectId === openedProjectId && model.paperId === openedPaperId
