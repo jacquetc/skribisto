@@ -257,6 +257,9 @@ ProjectPageForm {
 
             color: "transparent"
 
+            Accessible.name: "name"
+                Accessible.role: Accessible.ListItem
+            Accessible.description: qsTr("recent projects list item")
 
             HoverHandler {
                 id: hoverHandler

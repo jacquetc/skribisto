@@ -328,7 +328,7 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
 
     // find others similar
     if (!this->isThereAnyOtherSimilarSyncDoc(senderSyncDoc)) {
-        qDebug() << this->metaObject()->className() << "no other doc to sync with";
+        //qDebug() << this->metaObject()->className() << "no other doc to sync with";
         return;
     }
 

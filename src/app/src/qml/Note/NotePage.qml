@@ -644,11 +644,17 @@ NotePageForm {
 
         }
 
+        onIsVisibleChanged: leftSettings.isVisible = leftDrawer.isVisible
+
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
             Globals.resetDockConfCalled.connect(resetConf)
             if(Globals.compactSize){
                 leftDrawer.close()
+            }
+            else {
+                leftDrawer.position = leftSettings.isVisible ? 1: 0
+                leftDrawer.isVisible = leftSettings.isVisible ? true: false
             }
         }
 
@@ -657,11 +663,15 @@ NotePageForm {
             id: leftSettings
             category: "noteLeftDock"
             property int width: leftDockFixedWidth
+            property bool isVisible: true
         }
 
 
         function resetConf(){
             leftDockFixedWidth = 300
+            leftSettings.isVisible = true
+            leftDrawer.position = leftSettings.isVisible ? 1: 0
+            leftDrawer.isVisible = leftSettings.isVisible ? true: false
         }
     }
 
@@ -696,12 +706,18 @@ NotePageForm {
 
         }
 
+        onIsVisibleChanged: rightSettings.isVisible = rightDrawer.isVisible
+
 
         Component.onCompleted: {
             rightDockFixedWidth = rightSettings.width
             Globals.resetDockConfCalled.connect(resetConf)
             if(Globals.compactSize){
                 rightDrawer.close()
+            }
+            else {
+                rightDrawer.position = rightSettings.isVisible ? 1: 0
+                rightDrawer.isVisible = rightSettings.isVisible ? true: false
             }
         }
 
@@ -710,10 +726,14 @@ NotePageForm {
             id: rightSettings
             category: "noteRightDock"
             property int width: rightDockFixedWidth
+            property bool isVisible: true
         }
 
         function resetConf(){
             rightDockFixedWidth = 300
+            leftSettings.isVisible = true
+            rightDrawer.position = rightSettings.isVisible ? 1: 0
+            rightDrawer.isVisible = rightSettings.isVisible ? true: false
         }
 
 

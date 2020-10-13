@@ -662,13 +662,17 @@ WritePageForm {
 
         }
 
-
+        onIsVisibleChanged: leftSettings.isVisible = leftDrawer.isVisible
 
         Component.onCompleted: {
             leftDockFixedWidth = leftSettings.width
             Globals.resetDockConfCalled.connect(resetConf)
             if(Globals.compactSize){
                 leftDrawer.close()
+            }
+            else {
+                leftDrawer.position = leftSettings.isVisible ? 1: 0
+                leftDrawer.isVisible = leftSettings.isVisible ? true: false
             }
         }
 
@@ -677,10 +681,14 @@ WritePageForm {
             id: leftSettings
             category: "writeLeftDock"
             property int width: leftDockFixedWidth
+            property bool isVisible: true
         }
 
         function resetConf(){
             leftDockFixedWidth = 300
+            leftSettings.isVisible = true
+            leftDrawer.position = leftSettings.isVisible ? 1: 0
+            leftDrawer.isVisible = leftSettings.isVisible ? true: false
 
         }
 
@@ -717,6 +725,7 @@ WritePageForm {
 
         }
 
+        onIsVisibleChanged: rightSettings.isVisible = rightDrawer.isVisible
 
         Component.onCompleted: {
             rightDockFixedWidth = rightSettings.width
@@ -725,6 +734,10 @@ WritePageForm {
             if(Globals.compactSize){
                 rightDrawer.close()
             }
+            else {
+                rightDrawer.position = rightSettings.isVisible ? 1: 0
+                rightDrawer.isVisible = rightSettings.isVisible ? true: false
+            }
         }
 
 
@@ -732,10 +745,14 @@ WritePageForm {
             id: rightSettings
             category: "writeRightDock"
             property int width: rightDockFixedWidth
+            property bool isVisible: true
         }
 
         function resetConf(){
             rightDockFixedWidth = 300
+            leftSettings.isVisible = true
+            rightDrawer.position = rightSettings.isVisible ? 1: 0
+            rightDrawer.isVisible = rightSettings.isVisible ? true: false
         }
     }
 

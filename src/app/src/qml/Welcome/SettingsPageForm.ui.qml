@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../Commons"
 
 Item {
 
@@ -39,13 +40,14 @@ Item {
 
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ScrollBar.vertical.policy: ScrollBar.AsNeeded
-            contentWidth: gridLayout1.width
-            contentHeight: gridLayout1.height
+            contentWidth: pillarLayout.width
+            contentHeight: pillarLayout.implicitHeight
 
-            GridLayout {
-                id: gridLayout1
+            SKRPillarLayout {
+                id: pillarLayout
                 width: scrollView.width
-                columns: width / columnWidth
+                columns: ((pillarLayout.width / columnWidth) | 0 )
+                maxColumns: 3
 
                 GroupBox {
                     id: accessibilityGroupBox

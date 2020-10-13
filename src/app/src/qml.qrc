@@ -77,5 +77,6 @@
         <file>qml/Projects/ProjectTab.qml</file>
         <file>qml/Projects/ProjectTabForm.ui.qml</file>
         <file>qml/Projects/ProjectSupPageForm.ui.qml</file>
+        <file>qml/Commons/SKRPillarLayout.qml</file>
     </qresource>
 </RCC>

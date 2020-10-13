@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../Commons"
 
 Item {
     width: 400
@@ -17,7 +18,6 @@ Item {
     property alias projectTitleTextField: projectTitleTextField
     property alias goBackToolButton: goBackToolButton
     property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
-    property alias gridLayout: gridLayout
     property alias gridLayout1: gridLayout1
     property alias swipeView: swipeView
 
@@ -50,13 +50,14 @@ Item {
 
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
-                contentWidth: gridLayout.width
-                contentHeight: gridLayout.height
+                contentWidth: pillarLayout.width
+                contentHeight: pillarLayout.implicitHeight
 
-                GridLayout {
-                    id: gridLayout
+                SKRPillarLayout {
+                    id: pillarLayout
                     width: scrollView.width
-                    columns: gridLayout.width / columnWidth
+                    columns: ((pillarLayout.width / columnWidth) | 0 )
+                    maxColumns: 3
 
 
 
@@ -102,6 +103,7 @@ Item {
                         focusPolicy: Qt.TabFocus
                         Layout.fillWidth: true
                         title: qsTr("Recent projects")
+                        KeyNavigation.tab: recentListView
 
 
                         ColumnLayout {
@@ -119,26 +121,10 @@ Item {
                                 Layout.minimumWidth: 300
                                 keyNavigationWraps: false
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                                delegate: Item {
-                                    x: 5
-                                    width: 80
-                                    height: 40
-                                    Row {
-                                        id: row1
-                                        spacing: 10
-                                        Rectangle {
-                                            width: 40
-                                            height: 40
-                                            color: colorCode
-                                        }
 
-                                        Text {
-                                            text: name
-                                            font.bold: true
-                                            anchors.verticalCenter: parent.verticalCenter
-                                        }
-                                    }
-                                }
+                                KeyNavigation.tab: groupBox2
+                                KeyNavigation.backtab: groupBox
+
                             }
                         }
                     }
