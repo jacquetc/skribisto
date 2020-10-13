@@ -24,6 +24,7 @@ Item {
             Layout.fillHeight: true
             Layout.fillWidth: true
             interactive: false
+            clip: true
 
         }
     }
