@@ -687,7 +687,7 @@ TreeListViewForm {
                         }
                         Rectangle {
                             id: openedItemIndicator
-                            color:  Material.color(Material.Green)
+                            color:  Material.accentColor
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
                             visible: model.projectId === openedProjectId && model.paperId === openedPaperId

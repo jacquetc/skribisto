@@ -60,12 +60,12 @@ Item {
                         id: columnLayout3
                         anchors.fill: parent
 
-                        CheckBox {
+                        Switch {
                             id: allowSwipeBetweenTabsCheckBox
                             text: qsTr("Allow swipe gesture between tabs")
                         }
 
-                        CheckBox {
+                        Switch {
                             id: showMenuBarCheckBox
                             visible: false
                             text: qsTr("Show menu bar")
@@ -119,7 +119,7 @@ Item {
                         id: columnLayout6
                         anchors.fill: parent
 
-                        CheckBox {
+                        Switch {
                             id: checkSpellingCheckBox
                             text: qsTr("Check spelling")
                         }
@@ -217,7 +217,7 @@ Item {
                         RowLayout {
                             id: rowLayout
 
-                            CheckBox {
+                            Switch {
                                 id: backUpEveryCheckBox
                                 text: qsTr("Back up every")
                             }
@@ -245,7 +245,7 @@ Item {
                             }
                         }
 
-                        CheckBox {
+                        Switch {
                             id: backUpOnceADayCheckBox
                             text: qsTr("Back up once a day")
                         }
@@ -269,7 +269,7 @@ Item {
                             Layout.fillHeight: true
                             Layout.fillWidth: true
 
-                            CheckBox {
+                            Switch {
                                 id: saveEveryCheckBox
                                 text: qsTr("Save every")
                             }
@@ -302,7 +302,7 @@ Item {
                     focusPolicy: Qt.TabFocus
                     title: qsTr("Special E-Paper")
 
-                    CheckBox {
+                    Switch {
                         id: setTextCursorUnblinkingCheckBox
                         text: qsTr("Set the text cursor unblinking")
                     }
@@ -326,7 +326,7 @@ Item {
                             width: 100
                             height: 100
 
-                            CheckBox {
+                            Switch {
                                 id: showPropertiesCheckBox
                                 text: qsTr("Show properties tool box")
                             }

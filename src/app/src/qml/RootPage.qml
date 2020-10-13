@@ -1,5 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
+import QtQml.Models 2.15
 import QtQml 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.skrusersettings 1.0
@@ -68,7 +70,7 @@ RootPageForm {
         }
 
         Action {
-            id: writeWindowAction
+            id: writeOverviewWindowAction
             text: qsTr("Write")
             icon {
                 name: "story-editor"
@@ -86,7 +88,7 @@ RootPageForm {
         }
 
         Action {
-            id: noteWindowAction
+            id: noteOverviewWindowAction
             text: qsTr("Note")
             icon {
                 name: "story-editor"
@@ -223,7 +225,7 @@ RootPageForm {
     Connections {
         target: Globals
         function onCompactSizeChanged() {
-                rootTabBar.visible = !Globals.compactSize
+            rootTabBar.visible = !Globals.compactSize
 
 
         }
@@ -391,7 +393,8 @@ RootPageForm {
 
         }
 
-
+        //add in drop-down menu :
+        dropDownTabMenuModel.insert(insertionIndex ,{"title": title, "closable": true, "tabId": pageType + "_" +  projectId + "_" + paperId })
 
 
     }
@@ -402,6 +405,13 @@ RootPageForm {
         rootSwipeView.itemAt(index).runActionsBedoreDestruction()
         rootSwipeView.removeItem(rootSwipeView.itemAt(index))
         rootTabBar.removeItem(rootTabBar.itemAt(index))
+
+
+
+        //remove from drop-down menu :
+        dropDownTabMenuModel.remove(index)
+
+
 
     }
 
@@ -418,6 +428,10 @@ RootPageForm {
                 rootSwipeView.itemAt(i).runActionsBedoreDestruction()
                 rootSwipeView.removeItem(rootSwipeView.itemAt(i))
                 rootTabBar.removeItem(rootTabBar.itemAt(i))
+
+                //remove from drop-down menu :
+                dropDownTabMenuModel.remove(i)
+
             }
         }
 
@@ -435,9 +449,203 @@ RootPageForm {
 
     //---------------------------------------------------------
 
+    // drop-down menu for tabs in compact size
+
+    function addMainMenuToDropDownTabMenuModel(){
+        dropDownTabMenuModel.append({"title": welcomeWindowAction.text, "closable": false, "tabId": welcomePage.pageType + "_" +  -2 + "_" + -2 })
+        dropDownTabMenuModel.append({"title": writeOverviewWindowAction.text, "closable": false, "tabId": writeOverviewPage.pageType + "_" +  -2 + "_" + -2 })
+        dropDownTabMenuModel.append({"title": noteOverviewWindowAction.text, "closable": false, "tabId": noteOverviewTab.pageType + "_" +  -2 + "_" + -2 })
+        dropDownTabMenuModel.append({"title": galleryWindowAction.text, "closable": false, "tabId": galleryTab.pageType + "_" +  -2 + "_" + -2 })
+        dropDownTabMenuModel.append({"title": projectWindowAction.text, "closable": false, "tabId": projectTab.pageType + "_" +  -2 + "_" + -2 })
+
+    }
+
+    showTabListButton.onCheckedChanged: {
+        showTabListButton.checked ? dropDownTabMenuPopup.open() : dropDownTabMenuPopup.close()
+    }
+
+    showTabListButton.checked: dropDownTabMenuPopup.visible
+
+    ListModel {
+        id: dropDownTabMenuModel
+    }
+
+    QtObject {
+        id: dropDownMenuPrivate
+        property string tabToOpen: ""
+    }
+
+    Popup {
+        id: dropDownTabMenuPopup
+        x: showTabListButton.x
+        y: showTabListButton.y + showTabListButton.height
+        width: 200
+        height: 200
+        modal: false
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        padding: 0
+
+        ColumnLayout {
+            anchors.fill: parent
+
+
+            ScrollView {
+                id: dropDownTabMenuScrollView
+                focusPolicy: Qt.StrongFocus
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                ListView {
+                    id: dropDownTabMenuList
+                    anchors.fill: parent
+                    clip: true
+                    smooth: true
+                    focus: true
+                    boundsBehavior: Flickable.StopAtBounds
+
+
+                    model: dropDownTabMenuModel
+                    interactive: true
+                    spacing: 1
+                    delegate: Component {
+                        id: itemDelegate
+
+                        Item {
+                            id: delegateRoot
+                            height: 30
+                            focus: true
+
+
+                            anchors {
+                                left: Qt.isQtObject(parent) ? parent.left : undefined
+                                right: Qt.isQtObject(parent) ? parent.right : undefined
+                                leftMargin: 5
+                                rightMargin: 5
+                            }
+
+                            TapHandler {
+                                id: tapHandler
+                                onSingleTapped: {
+                                    dropDownTabMenuList.currentIndex = model.index
+                                    delegateRoot.forceActiveFocus()
+                                    eventPoint.accepted = true
+                                }
+                                onDoubleTapped: {
+                                    // open tab
+
+                                    var noteId = model.tabId
+
+                                    dropDownMenuPrivate.tabToOpen = tabId
+                                    displayTabAfterClosingPopupTimer.start()
+                                    dropDownTabMenuPopup.close()
+
+                                }
+                            }
+                            Keys.priority: Keys.AfterItem
+
+                            Keys.onPressed: {
+                                if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
+                                    console.log("Return key pressed title")
+
+
+                                    // open tab
+
+                                    var noteId = model.tabId
+
+                                    dropDownMenuPrivate.tabToOpen = tabId
+                                    displayTabAfterClosingPopupTimer.start()
+                                    dropDownTabMenuPopup.close()
+
+
+                                }
+
+
+
+
+                            }
+
+
+                            RowLayout {
+                                anchors.fill: parent
+
+                                Text {
+                                    text: model.title
+
+                                    Layout.fillWidth: true
+
+                                    horizontalAlignment: Qt.AlignLeft
+                                    verticalAlignment: Qt.AlignVCenter
+                                }
+
+                                ToolButton {
+                                    id: closeTabFromDropDownMenuButton
+                                    text: "x"
+                                    visible: model.closable
+
+                                    onClicked: {
+                                        closeTab(model.index)
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+
+                    highlight:  Component {
+                        id: highlight
+                        Rectangle {
+                            //                            x: 0
+                            //                            y: searchResultList.currentItem.y + 1
+                            //                            width: searchResultList.width
+                            //                            height: searchResultList.currentItem.height - 1
+                            //                            color: "transparent"
+                            radius: 5
+                            border.color:  "lightsteelblue"
+                            border.width: 2
+                            visible: dropDownTabMenuList.activeFocus
+                            Behavior on y {
+                                SpringAnimation {
+                                    spring: 5
+                                    damping: 0.2
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    Timer {
+        id: displayTabAfterClosingPopupTimer
+        interval: 0
+        onTriggered: {
+
+            var tabToOpen = dropDownMenuPrivate.tabToOpen
+
+            var i
+            for(i = 0 ; i < rootTabBar.count ; i++){
+                var tab = rootTabBar.itemAt(i)
+                if(tab.tabId === tabToOpen){
+                    tab.toggle()
+                }
+            }
+
+        }
+    }
+
+
+
+
+    //---------------------------------------------------------
+
     welcomeTab.action: welcomeWindowAction
-    writeOverviewTab.action: writeWindowAction
-    noteOverviewTab.action: noteWindowAction
+    writeOverviewTab.action: writeOverviewWindowAction
+    noteOverviewTab.action: noteOverviewWindowAction
     galleryTab.action: galleryWindowAction
     projectTab.action: projectWindowAction
 
@@ -911,132 +1119,132 @@ RootPageForm {
         }
     }
 
-      Menu {
-            id: mainMenu
+    Menu {
+        id: mainMenu
 
-            onClosed: {
-                mainMenuButton.checked = false
-            }
+        onClosed: {
+            mainMenuButton.checked = false
+        }
 
-            function findMenuIndex(menu){
-                var i
-                for(i = 0; i< mainMenu.count ; i++){
-                    if(menu.title === mainMenu.menuAt(i).title){
+        function findMenuIndex(menu){
+            var i
+            for(i = 0; i< mainMenu.count ; i++){
+                if(menu.title === mainMenu.menuAt(i).title){
 
-                        return i
-                    }
+                    return i
                 }
             }
+        }
 
-            function openSubMenu(menu){
-                mainMenu.currentIndex = mainMenu.findMenuIndex(menu)
-                menu.open()
-                menu.currentIndex = 0
-            }
+        function openSubMenu(menu){
+            mainMenu.currentIndex = mainMenu.findMenuIndex(menu)
+            menu.open()
+            menu.currentIndex = 0
+        }
 
-            Component.onCompleted: {
-                skrEditMenuSignalHub.subscribe(mainMenu.objectName)
-            }
+        Component.onCompleted: {
+            skrEditMenuSignalHub.subscribe(mainMenu.objectName)
+        }
 
-            Menu {
-                id: fileMenu
-                title: qsTr("&File")
+        Menu {
+            id: fileMenu
+            title: qsTr("&File")
 
-                MenuItem{
-                    action: newProjectAction
-
-                }
-                MenuItem{
-                    action: openProjectAction
-                }
-                MenuSeparator { }
-                MenuItem{
-                    action: printAction
-                }
-                MenuItem{
-                    action: importAction
-                }
-                MenuItem{
-                    action: exportAction
-                }
-
-                MenuSeparator { }
-                MenuItem{
-                    action: saveAction
-                }
-                MenuItem{
-                    action: saveAsAction
-                }
-                MenuItem{
-                    action: saveACopyAction
-                }
-                MenuItem{
-                    action: saveAllAction
-                }
-
-                MenuSeparator { }
-                MenuItem{
-                    action: closeCurrentProjectAction
-                }
-                MenuItem{
-                    action: quitAction
-                }
-            }
-            Menu {
-                id: editMenu
-                objectName: "editMenu"
-                title: qsTr("&Edit")
-
-
-
-                MenuItem{
-                    id: cutItem
-                    objectName: "cutItem"
-                    action: cutAction
-                }
-                MenuItem{
-                    id: copyItem
-                    objectName: "copyItem"
-                    action: copyAction
-                }
-                MenuItem{
-                    id: pasteItem
-                    objectName: "pasteItem"
-                    action: pasteAction
-                }
-
-                Component.onCompleted:{
-                    skrEditMenuSignalHub.subscribe(editMenu.objectName)
-                    skrEditMenuSignalHub.subscribe(cutItem.objectName)
-                    skrEditMenuSignalHub.subscribe(copyItem.objectName)
-                    skrEditMenuSignalHub.subscribe(pasteItem.objectName)
-                }
+            MenuItem{
+                action: newProjectAction
 
             }
-            Menu {
-                id: helpMenu
-                objectName: "helpMenu"
-                title: qsTr("&Help")
-
-
-
-                Action { text: qsTr("&About") }
+            MenuItem{
+                action: openProjectAction
             }
+            MenuSeparator { }
+            MenuItem{
+                action: printAction
+            }
+            MenuItem{
+                action: importAction
+            }
+            MenuItem{
+                action: exportAction
+            }
+
+            MenuSeparator { }
+            MenuItem{
+                action: saveAction
+            }
+            MenuItem{
+                action: saveAsAction
+            }
+            MenuItem{
+                action: saveACopyAction
+            }
+            MenuItem{
+                action: saveAllAction
+            }
+
+            MenuSeparator { }
+            MenuItem{
+                action: closeCurrentProjectAction
+            }
+            MenuItem{
+                action: quitAction
+            }
+        }
+        Menu {
+            id: editMenu
+            objectName: "editMenu"
+            title: qsTr("&Edit")
+
+
+
+            MenuItem{
+                id: cutItem
+                objectName: "cutItem"
+                action: cutAction
+            }
+            MenuItem{
+                id: copyItem
+                objectName: "copyItem"
+                action: copyAction
+            }
+            MenuItem{
+                id: pasteItem
+                objectName: "pasteItem"
+                action: pasteAction
+            }
+
+            Component.onCompleted:{
+                skrEditMenuSignalHub.subscribe(editMenu.objectName)
+                skrEditMenuSignalHub.subscribe(cutItem.objectName)
+                skrEditMenuSignalHub.subscribe(copyItem.objectName)
+                skrEditMenuSignalHub.subscribe(pasteItem.objectName)
+            }
+
+        }
+        Menu {
+            id: helpMenu
+            objectName: "helpMenu"
+            title: qsTr("&Help")
+
+
+
+            Action { text: qsTr("&About") }
+        }
 
     }
 
 
 
 
-      //---------------------------------------------------------
-      //------ showTabListButton--------------------------------------------
-      //---------------------------------------------------------
+    //---------------------------------------------------------
+    //------ showTabListButton--------------------------------------------
+    //---------------------------------------------------------
 
-showTabListButton.icon{
-    name: "arrow-down"
-    height: 50
-    width: 50
-}
+    showTabListButton.icon{
+        name: "arrow-down"
+        height: 50
+        width: 50
+    }
 
 
 
@@ -1045,6 +1253,8 @@ showTabListButton.icon{
 
         this.openArgument()
         this.subscribeMainMenu()
+
+        this.addMainMenuToDropDownTabMenuModel()
     }
     Component.onDestruction: {
 
@@ -1074,7 +1284,7 @@ showTabListButton.icon{
                 console.log("projectFileName :", testProjectFileName.toString(), "\n")
 
                 //show Write window
-                //                writeWindowAction.trigger()
+                //                writeOverviewWindowAction.trigger()
                 isTestProject = true
 
             }
@@ -1093,19 +1303,19 @@ showTabListButton.icon{
                 }
             }
         }
-//        if(!isTestProject & oneProjectInArgument){
-//            var error = plmData.projectHub().loadProject(
-//                        projectInArgument)
-//            //show Write window
-//            //            writeWindowAction.trigger()
-//        }
+        //        if(!isTestProject & oneProjectInArgument){
+        //            var error = plmData.projectHub().loadProject(
+        //                        projectInArgument)
+        //            //show Write window
+        //            //            writeOverviewWindowAction.trigger()
+        //        }
 
 
         if (!isTestProject & !oneProjectInArgument & plmData.projectHub().getProjectCount() === 0 & SkrSettings.welcomeSettings.createEmptyProjectAtStart === true) {
             plmData.projectHub().loadProject("")
 
             //show Write window
-            //            writeWindowAction.trigger()
+            //            writeOverviewWindowAction.trigger()
 
         }
     }

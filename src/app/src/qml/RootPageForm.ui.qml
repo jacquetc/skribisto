@@ -74,22 +74,27 @@ Item {
                 Tab {
                     id: welcomeTab
                     closable: false
+                    pageType: welcomePage.pageType
                 }
                 Tab {
                     id: writeOverviewTab
                     closable: false
+                    pageType: writeOverviewPage.pageType
                 }
                 Tab {
                     id: noteOverviewTab
                     closable: false
+                    pageType: noteOverviewPage.pageType
                 }
                 Tab {
                     id: galleryTab
                     closable: false
+                    pageType: galleryPage.pageType
                 }
                 Tab {
                     id: projectTab
                     closable: false
+                    pageType: projectsMainPage.pageType
                 }
             }
 
