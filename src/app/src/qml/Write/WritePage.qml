@@ -681,6 +681,7 @@ WritePageForm {
 
         function resetConf(){
             leftDockFixedWidth = 300
+
         }
 
     }

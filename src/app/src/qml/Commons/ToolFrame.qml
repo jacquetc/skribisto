@@ -17,6 +17,7 @@ FocusScope {
     property int dynamicWidth
     property alias folded: toolHeader.folded
     property alias title: toolHeader.title
+    property alias scrollView: scrollView
     property int scrollBarVerticalPolicy: ScrollBar.AsNeeded
 
     onFoldedChanged: {
@@ -79,11 +80,11 @@ FocusScope {
                     id: container
                     width: scrollView.width
 
-                 onHeightChanged: {
-                     if(minimumContainerHeight != -1 && minimumContainerHeight > container.height){
-                         container.height = minimumContainerHeight
-                     }
-                 }
+                    onHeightChanged: {
+                        if(minimumContainerHeight != -1 && minimumContainerHeight > container.height){
+                            container.height = minimumContainerHeight
+                        }
+                    }
 
 
                 }
@@ -136,13 +137,29 @@ FocusScope {
 
     transitions: [
         Transition {
+            from: "*"; to: "*";
+            ParallelAnimation {
+                NumberAnimation {
+                    target: base
+                    properties: "dynamicHeight"
+                    easing.type: Easing.InOutQuad
+                    duration: 500
+                }
+                /*PropertyAnimation {
+                    target: base
+                    properties: "implicitHeight"
+                    easing.type: Easing.InOutQuad
+                    duration: 500
+                }*/
 
-            PropertyAnimation {
-                target: base
-                properties: "dynamicHeight";
-                easing.type: Easing.InOutQuad;duration: 500
+                NumberAnimation {
+                    target: scrollView
+                    property: "height"
+                    easing.type: Easing.InOutQuad
+                    duration: 200
+                }
+
             }
-
 
         }
     ]
@@ -154,7 +171,12 @@ FocusScope {
 
             PropertyChanges {
                 target: scrollView
+                height: 0
+            }
+            PropertyChanges {
+                target: scrollView
                 visible: false
+
             }
             PropertyChanges {
                 target: toolHeader
@@ -176,9 +198,14 @@ FocusScope {
 
             PropertyChanges {
                 target: scrollView
+                height: undefined
+            }
+            PropertyChanges {
+                target: scrollView
                 visible: true
 
             }
+
             PropertyChanges {
                 target: toolHeader
                 Layout.fillWidth: false
@@ -190,8 +217,8 @@ FocusScope {
             }
             PropertyChanges {
                 target: base
-                dynamicHeight: contentHeightAfterBinding
                 dynamicWidth: 40
+                dynamicHeight: contentHeightAfterBinding
             }
         }
 
