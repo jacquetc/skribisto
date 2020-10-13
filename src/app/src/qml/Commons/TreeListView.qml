@@ -455,7 +455,7 @@ TreeListViewForm {
                     verticalCenter: parent.verticalCenter
                 }
                 width: delegateRoot.width
-                height: 40
+                height: 50
 
                 Drag.active: dragHandler.active
                 Drag.source: content

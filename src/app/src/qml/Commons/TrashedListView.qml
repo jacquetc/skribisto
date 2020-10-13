@@ -433,7 +433,7 @@ TrashedListViewForm {
                     verticalCenter: parent.verticalCenter
                 }
                 width: delegateRoot.width
-                height: 40
+                height: 50
 
 
                 Behavior on color {

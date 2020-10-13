@@ -1163,7 +1163,7 @@
     </message>
     <message>
         <source>Save as...</source>
-        <translation>Enreistrer sous...</translation>
+        <translation>Enregistrer sous...</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as ...</source>
@@ -1259,7 +1259,7 @@
     </message>
     <message>
         <source>&amp;Check spelling</source>
-        <translation>Vérifie l&apos;orthographe</translation>
+        <translation>Vérifier l&apos;orthographe</translation>
     </message>
 </context>
 </TS>

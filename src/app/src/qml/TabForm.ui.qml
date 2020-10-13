@@ -13,13 +13,13 @@ TabButton {
     property string iconName : base.action.icon.name
     property string iconColor : base.action.icon.color
 
-    padding: 4
+    padding: 2
 
     contentItem: RowLayout {
         spacing: 2
         anchors.fill: parent
 
-        AbstractButton {
+        ToolButton {
             id: image
             focusPolicy: Qt.NoFocus
             enabled: true
@@ -43,12 +43,19 @@ TabButton {
             onClicked: base.checked = true
             onDisplayChanged: r
 
+            Item {
+                id : mouseBlocker
+                anchors.fill: parent
+            }
+
         }
 
         Text {
             id: tagText
 
             Layout.minimumWidth: 50
+            topPadding: 6
+            bottomPadding: 6
 
 
             text: base.text === "" ? action.text : base.text

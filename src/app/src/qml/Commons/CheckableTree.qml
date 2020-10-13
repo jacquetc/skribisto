@@ -239,7 +239,7 @@ ListView {
                     verticalCenter: parent.verticalCenter
                 }
                 width: delegateRoot.width
-                height: 40
+                height: 50
 
                 color: "transparent"
 

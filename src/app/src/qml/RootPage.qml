@@ -455,7 +455,8 @@ RootPageForm {
         dropDownTabMenuModel.append({"title": welcomeWindowAction.text, "closable": false, "tabId": welcomePage.pageType + "_" +  -2 + "_" + -2 })
         dropDownTabMenuModel.append({"title": writeOverviewWindowAction.text, "closable": false, "tabId": writeOverviewPage.pageType + "_" +  -2 + "_" + -2 })
         dropDownTabMenuModel.append({"title": noteOverviewWindowAction.text, "closable": false, "tabId": noteOverviewTab.pageType + "_" +  -2 + "_" + -2 })
-        dropDownTabMenuModel.append({"title": galleryWindowAction.text, "closable": false, "tabId": galleryTab.pageType + "_" +  -2 + "_" + -2 })
+        //NOTE: waiting to be implemented
+        //dropDownTabMenuModel.append({"title": galleryWindowAction.text, "closable": false, "tabId": galleryTab.pageType + "_" +  -2 + "_" + -2 })
         dropDownTabMenuModel.append({"title": projectWindowAction.text, "closable": false, "tabId": projectTab.pageType + "_" +  -2 + "_" + -2 })
 
     }
@@ -646,7 +647,8 @@ RootPageForm {
     welcomeTab.action: welcomeWindowAction
     writeOverviewTab.action: writeOverviewWindowAction
     noteOverviewTab.action: noteOverviewWindowAction
-    galleryTab.action: galleryWindowAction
+    //NOTE: waiting to be implemented
+    //galleryTab.action: galleryWindowAction
     projectTab.action: projectWindowAction
 
     //---------------------------------------------------------

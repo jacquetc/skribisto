@@ -23,11 +23,13 @@ Item {
     property alias welcomeTab: welcomeTab
     property alias writeOverviewTab: writeOverviewTab
     property alias projectTab: projectTab
-    property alias galleryTab: galleryTab
+    //NOTE: waiting to be implemented
+    //property alias galleryTab: galleryTab
     property alias noteOverviewTab: noteOverviewTab
     property alias welcomePage: welcomePage
     property alias noteOverviewPage: noteOverviewPage
-    property alias galleryPage: galleryPage
+    //NOTE: waiting to be implemented
+    //property alias galleryPage: galleryPage
     property alias projectsMainPage: projectsMainPage
     property alias writeOverviewPage: writeOverviewPage
     property alias saveButton: saveButton
@@ -86,11 +88,12 @@ Item {
                     closable: false
                     pageType: noteOverviewPage.pageType
                 }
-                Tab {
-                    id: galleryTab
-                    closable: false
-                    pageType: galleryPage.pageType
-                }
+                //NOTE: waiting to be implemented
+//                Tab {
+//                    id: galleryTab
+//                    closable: false
+//                    pageType: galleryPage.pageType
+//                }
                 Tab {
                     id: projectTab
                     closable: false
@@ -181,10 +184,12 @@ Item {
                             enabled: false
                         }
 
-                        GalleryPage {
-                            id: galleryPage
-                            enabled: false
-                        }
+                        //NOTE: waiting to be implemented
+//                        GalleryPage {
+//                            id: galleryPage
+//                            enabled: false
+//                            visible: false
+//                        }
 
                         ProjectsMainPage {
                             id: projectsMainPage
