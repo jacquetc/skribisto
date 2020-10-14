@@ -517,17 +517,18 @@ WritePageForm {
 
         var pressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
         var displacement = leftDockResizeButtonFirstPressX - pressX
-        leftDockFixedWidth = leftDockFixedWidth - displacement
+        leftDrawerFixedWidth = leftDrawerFixedWidth - displacement
         leftDockResizeButtonFirstPressX = pressX
 
-        if(leftDockFixedWidth < 300){
-            leftDockFixedWidth = 300
+        if(leftDrawerFixedWidth < 300){
+            leftDrawerFixedWidth = 300
         }
-        if(leftDockFixedWidth > 600){
-            leftDockFixedWidth = 600
+        if(leftDrawerFixedWidth > 600){
+            leftDrawerFixedWidth = 600
         }
 
 
+        leftSettings.dockWidth = leftDrawerFixedWidth
 
     }
 
@@ -600,17 +601,17 @@ WritePageForm {
 
         var pressX = root.mapFromItem(rightDockResizeButton, rightDockResizeButton.pressX, 0).x
         var displacement = rightDockResizeButtonFirstPressX - pressX
-        rightDockFixedWidth = rightDockFixedWidth + displacement
+        rightDrawerFixedWidth = rightDrawerFixedWidth + displacement
         rightDockResizeButtonFirstPressX = pressX
 
-        if(rightDockFixedWidth < 200){
-            rightDockFixedWidth = 200
+        if(rightDrawerFixedWidth < 200){
+            rightDrawerFixedWidth = 200
         }
-        if(rightDockFixedWidth > 350){
-            rightDockFixedWidth = 350
+        if(rightDrawerFixedWidth > 350){
+            rightDrawerFixedWidth = 350
         }
 
-
+        rightSettings.width = rightDrawerFixedWidth
     }
 
     rightDockResizeButton.onPressed: {
@@ -635,24 +636,26 @@ WritePageForm {
 
 
     property alias leftDock: leftDock
-    property int leftDockFixedWidth: 400
+    property int leftDrawerFixedWidth: 400
 
-    Dock {
+    SKRDrawer {
         id: leftDrawer
         enabled: base.enabled
         parent: base
-
-        width: Globals.compactSize ? 400 : leftDockFixedWidth
+        width: Globals.compactSize ? 400 : leftDrawerFixedWidth
         height: base.height
         interactive: Globals.compactSize
-        //position: Globals.compactSize ? 0 : 1 (leftDrawer.isVisible ? 1 : 0)
-        //isVisible: !Globals.compactSize
         edge: Qt.LeftEdge
 
         Connections {
             target: Globals
             function onCompactSizeChanged(){
-                leftDrawer.isVisible = !Globals.compactSize
+                if(Globals.compactSize){
+                    leftDrawer.close()
+                }
+                else {
+                    leftDrawer.isVisible = leftSettings.isVisible
+                }
             }
         }
 
@@ -662,59 +665,59 @@ WritePageForm {
 
         }
 
-        onIsVisibleChanged: leftSettings.isVisible = leftDrawer.isVisible
+        onIsVisibleChanged: if(!Globals.compactSize) leftSettings.isVisible = leftDrawer.isVisible
+
 
         Component.onCompleted: {
-            leftDockFixedWidth = leftSettings.width
+            leftDrawerFixedWidth = leftSettings.dockWidth
             Globals.resetDockConfCalled.connect(resetConf)
             if(Globals.compactSize){
                 leftDrawer.close()
             }
             else {
-                leftDrawer.position = leftSettings.isVisible ? 1: 0
-                leftDrawer.isVisible = leftSettings.isVisible ? true: false
+                leftDrawer.isVisible = leftSettings.isVisible
             }
         }
 
 
         Settings {
             id: leftSettings
-            category: "writeLeftDock"
-            property int width: leftDockFixedWidth
+            category: "writeLeftDrawer"
+            property int dockWidth: 300
             property bool isVisible: true
         }
 
         function resetConf(){
-            leftDockFixedWidth = 300
+            leftSettings.dockWidth = 300
+            leftDrawerFixedWidth = 300
             leftSettings.isVisible = true
-            leftDrawer.position = leftSettings.isVisible ? 1: 0
-            leftDrawer.isVisible = leftSettings.isVisible ? true: false
-
+            leftDrawer.isVisible = leftSettings.isVisible
         }
 
     }
 
     property alias rightDock: rightDock
-    property int rightDockFixedWidth: 400
-    Dock {
+    property int rightDrawerFixedWidth: 400
+    SKRDrawer {
         id: rightDrawer
         enabled: base.enabled
         parent: base
-        width:  Globals.compactSize ? 400 : rightDockFixedWidth
+        width:  Globals.compactSize ? 400 : rightDrawerFixedWidth
         height: base.height
         interactive: Globals.compactSize
-        //position: Globals.compactSize ? 0 : (rightDrawer.isVisible ? 1 : 0)
-        //isVisible: !Globals.compactSize
         edge: Qt.RightEdge
 
         Connections {
             target: Globals
             function onCompactSizeChanged(){
-                rightDrawer.isVisible = !Globals.compactSize
+                if(Globals.compactSize){
+                    rightDrawer.close()
+                }
+                else {
+                    rightDrawer.isVisible = rightSettings.isVisible
+                }
             }
         }
-
-
 
         WriteRightDock {
             id: rightDock
@@ -725,34 +728,33 @@ WritePageForm {
 
         }
 
-        onIsVisibleChanged: rightSettings.isVisible = rightDrawer.isVisible
+        onIsVisibleChanged:if(!Globals.compactSize) rightSettings.isVisible = rightDrawer.isVisible
 
         Component.onCompleted: {
-            rightDockFixedWidth = rightSettings.width
+            rightDrawerFixedWidth = rightSettings.dockWidth
             Globals.resetDockConfCalled.connect(resetConf)
 
             if(Globals.compactSize){
                 rightDrawer.close()
             }
             else {
-                rightDrawer.position = rightSettings.isVisible ? 1: 0
-                rightDrawer.isVisible = rightSettings.isVisible ? true: false
+                rightDrawer.isVisible = rightSettings.isVisible
             }
         }
 
 
         Settings {
             id: rightSettings
-            category: "writeRightDock"
-            property int width: rightDockFixedWidth
+            category: "writeRightDrawer"
+            property int dockWidth: 300
             property bool isVisible: true
         }
 
         function resetConf(){
-            rightDockFixedWidth = 300
-            leftSettings.isVisible = true
-            rightDrawer.position = rightSettings.isVisible ? 1: 0
-            rightDrawer.isVisible = rightSettings.isVisible ? true: false
+            rightSettings.dockWidth = 300
+            rightDrawerFixedWidth = 300
+            rightSettings.isVisible = true
+            rightDrawer.isVisible = rightSettings.isVisible
         }
     }
 
@@ -792,10 +794,10 @@ WritePageForm {
         }
     }
 
-//    writingZone.onActiveFocusChanged: {
-//        writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
-//        //        restoreCurrentPaperCursorPositionAndY()
-//    }
+    //    writingZone.onActiveFocusChanged: {
+    //        writingZone.text = plmData.sheetHub().getContent(projectId, paperId)
+    //        //        restoreCurrentPaperCursorPositionAndY()
+    //    }
 
 
     //    // project to be closed :
@@ -953,12 +955,12 @@ WritePageForm {
                 //save previous conf
                 fullscreen_left_drawer_visible = leftDrawer.visible
                 fullscreen_right_drawer_visible = rightDrawer.visible
-                leftDrawer.visible = false
-                rightDrawer.visible = false
+                leftDrawer.isVisible = false
+                rightDrawer.isVisible = false
             }
             else{
-                leftDrawer.visible = fullscreen_left_drawer_visible
-                rightDrawer.visible = fullscreen_right_drawer_visible
+                leftDrawer.isVisible = fullscreen_left_drawer_visible
+                rightDrawer.isVisible = fullscreen_right_drawer_visible
             }
 
         }

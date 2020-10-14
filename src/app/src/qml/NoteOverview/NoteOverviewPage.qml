@@ -70,16 +70,17 @@ NoteOverviewPageForm {
 
         var pressX = root.mapFromItem(leftDockResizeButton, leftDockResizeButton.pressX, 0).x
         var displacement = leftDockResizeButtonFirstPressX - pressX
-        leftDockFixedWidth = leftDockFixedWidth - displacement
+        leftDrawerFixedWidth = leftDrawerFixedWidth - displacement
         leftDockResizeButtonFirstPressX = pressX
 
-        if(leftDockFixedWidth < 300){
-            leftDockFixedWidth = 300
+        if(leftDrawerFixedWidth < 300){
+            leftDrawerFixedWidth = 300
         }
-        if(leftDockFixedWidth > 600){
-            leftDockFixedWidth = 600
+        if(leftDrawerFixedWidth > 600){
+            leftDrawerFixedWidth = 600
         }
 
+        leftSettings.width = leftDrawerFixedWidth
 
 
     }
@@ -101,24 +102,27 @@ NoteOverviewPageForm {
 
 
     property alias leftDock: leftDock
-    property int leftDockFixedWidth: 400
-    Dock {
+    property int leftDrawerFixedWidth: 400
+    SKRDrawer {
         id: leftDrawer
         parent: base
         enabled: base.enabled
 
-        width: Globals.compactSize ? 400 : leftDockFixedWidth
+        width: Globals.compactSize ? 400 : leftDrawerFixedWidth
         height: base.height
         interactive: Globals.compactSize
-//        position: Globals.compactSize ? 0 : (leftDrawer.isVisible ? 1 : 0)
-//        isVisible: !Globals.compactSize
         edge: Qt.LeftEdge
 
 
         Connections {
             target: Globals
             function onCompactSizeChanged(){
-                leftDrawer.isVisible = !Globals.compactSize
+                if(Globals.compactSize){
+                    leftDrawer.close()
+                }
+                else {
+                    leftDrawer.isVisible = leftSettings.isVisible
+                }
             }
         }
 
@@ -127,35 +131,33 @@ NoteOverviewPageForm {
             anchors.fill: parent
         }
 
-        onIsVisibleChanged: leftSettings.isVisible = leftDrawer.isVisible
+        onIsVisibleChanged: if(!Globals.compactSize) leftSettings.isVisible = leftDrawer.isVisible
 
 
         Component.onCompleted: {
-            leftDockFixedWidth = leftSettings.width
+            leftDrawerFixedWidth = leftSettings.dockWidth
             Globals.resetDockConfCalled.connect(resetConf)
             if(Globals.compactSize){
                 leftDrawer.close()
             }
             else {
-                leftDrawer.position = leftSettings.isVisible ? 1: 0
-                leftDrawer.isVisible = leftSettings.isVisible ? true: false
+                leftDrawer.isVisible = leftSettings.isVisible
             }
         }
 
 
         Settings {
             id: leftSettings
-            category: "noteOverviewLeftDock"
-            property int width: leftDockFixedWidth
+            category: "noteOverviewLeftDrawer"
+            property int dockWidth: 300
             property bool isVisible: true
-
         }
 
         function resetConf(){
-            leftDockFixedWidth = 300
+            leftSettings.dockWidth = 300
+            leftDrawerFixedWidth = 300
             leftSettings.isVisible = true
-            leftDrawer.position = leftSettings.isVisible ? 1: 0
-            leftDrawer.isVisible = leftSettings.isVisible ? true: false
+            leftDrawer.isVisible = leftSettings.isVisible
         }
 
     }
@@ -271,13 +273,13 @@ NoteOverviewPageForm {
         function onFullScreenCalled(value) {
             if(value){
                 //save previous conf
-                fullscreen_left_drawer_visible = leftDrawer.visible
+                fullscreen_left_drawer_visible = leftDrawer.isVisible
 
-                leftDrawer.visible = false
+                leftDrawer.isVisible = false
 
             }
             else{
-                leftDrawer.visible = fullscreen_left_drawer_visible
+                leftDrawer.isVisible = fullscreen_left_drawer_visible
 
             }
 

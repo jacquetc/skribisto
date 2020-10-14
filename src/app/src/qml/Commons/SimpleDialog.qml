@@ -16,7 +16,7 @@ Dialog {
     modal: true
 
 
-    Text {
+    Label {
         id: text
     }
     standardButtons: Dialog.Ok

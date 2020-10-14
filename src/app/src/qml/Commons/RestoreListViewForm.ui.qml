@@ -68,7 +68,7 @@ Item {
                 }
             }
 
-            Text {
+            Label {
                 id: text1
                 text: qsTr("The checked documents are those which were trashed at the same time")
                 font.pixelSize: 12

@@ -35,7 +35,8 @@ PLMSqlQueries::PLMSqlQueries(int            projectId,
     PLMProject *project = plmProjectManager->project(m_projectId);
 
     if (!project) {
-        qDebug() << "PLMSqlQueries: error project" << project;
+        qDebug() << "PLMSqlQueries: error tableName" << tableName;
+        qDebug() << "PLMSqlQueries: error projectId" << m_projectId;
         return;
     }
 

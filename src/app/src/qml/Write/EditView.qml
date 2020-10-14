@@ -109,35 +109,34 @@ EditViewForm {
     }
 
     // Font family combo :
-    fontFamilyComboBox.model: skrFonts.getModel()
+    fontFamilyComboBox.model: skrFonts.fontFamilies()
 
     Binding {
         target: SkrSettings.writeSettings
         property: "textFontFamily"
         value: fontFamilyComboBox.currentText
+        when:  fontFamilyLoaded
         delayed: true
         restoreMode: Binding.RestoreBindingOrValue
     }
 
-    // needed because the SkrSettings won't work for FontFamily
-    Settings{
-        id: settings
-            category: "write"
-    }
+    property bool fontFamilyLoaded: false
 
     function loadFontFamily(){
-        var fontFamily = settings.value("textFontFamily", Qt.application.font.family)
-        console.log("fontFamily", fontFamily)
-        console.log("fontFamily", Qt.application.font.family)
 
-        var index = fontFamilyComboBox.find(fontFamily)
-        console.log("index", index)
+        var fontFamily = SkrSettings.writeSettings.textFontFamily
+        //console.log("fontFamily", fontFamily)
+        //console.log("application fontFamily", Qt.application.font.family)
+
+        var index = fontFamilyComboBox.find(fontFamily, Qt.MatchFixedString)
+        //console.log("index", index)
         if(index === -1){
-            index = fontFamilyComboBox.find(Qt.application.font.family)
+            index = fontFamilyComboBox.find(Qt.application.font.family, Qt.MatchFixedString)
         }
-        console.log("index", index)
+        //console.log("index", index)
 
         fontFamilyComboBox.currentIndex = index
+        fontFamilyLoaded = true
     }
 
     // Indent :

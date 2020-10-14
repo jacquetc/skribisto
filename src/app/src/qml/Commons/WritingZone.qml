@@ -546,7 +546,10 @@ WritingZoneForm {
         var langCode  = ""
 
         //if project has a lang defined :
-        if(plmData.projectHub().getLangCode(projectId) !== "" && projectId !== -1){
+        if(projectId === -1){ // use default lang from settings
+            langCode = SkrSettings.spellCheckingSettings.spellCheckingLangCode
+        }
+        else if (plmData.projectHub().getLangCode(projectId) !== "") {
             langCode = plmData.projectHub().getLangCode(projectId)
         }
         else{ // use default lang from settings
@@ -555,7 +558,9 @@ WritingZoneForm {
 
         highlighter.spellChecker.langCode = langCode
 
-        setProjectDictInSpellChecker(projectId)
+        if(projectId !== -1){
+            setProjectDictInSpellChecker(projectId)
+        }
 
 
         highlighter.rehighlight()

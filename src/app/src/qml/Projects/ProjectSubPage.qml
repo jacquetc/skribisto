@@ -11,7 +11,6 @@ ProjectSupPageForm {
     Component.onCompleted: {
         editTitleTextFieldLoader.sourceComponent = editTitleTextFieldComponent
 
-
         titleLabel.text = plmData.projectHub().getProjectName(projectId)
         locationLabel.text = plmData.projectHub().getPath(projectId)
 
@@ -136,6 +135,7 @@ ProjectSupPageForm {
     }
 
     function determineCurrentDictComboBoxValue(){
+
         var langCode = plmData.projectHub().getLangCode(projectId)
 
 

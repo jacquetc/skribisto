@@ -91,7 +91,7 @@ set(QML qml.qrc
 
 set(QRC pics.qrc
     controls.qrc
-    icons.qrc
+    ${CMAKE_SOURCE_DIR}/3rdparty/icons.qrc
     ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc
     ${CMAKE_SOURCE_DIR}/readme.qrc
 

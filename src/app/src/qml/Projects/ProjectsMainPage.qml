@@ -64,6 +64,7 @@ ProjectsMainPageForm {
                 incubator.onStatusChanged = function(status) {
                     if (status === Component.Ready) {
 
+
                         var tabComp = Qt.createComponent("ProjectTab.qml");
                         if (tabComp.status === Component.Ready)
                             var tab = tabComp.createObject(tabBar, {projectId: projectId});
@@ -72,7 +73,6 @@ ProjectsMainPageForm {
                     }
                 }
             } else {
-
 
                 var tabComp = Qt.createComponent("ProjectTab.qml");
                 if (tabComp.status === Component.Ready)

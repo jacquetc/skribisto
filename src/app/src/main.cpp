@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     // icons :
-    // qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
+     qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
 
     // if Gnome desktop :
     //    if(qgetenv("XDG_CURRENT_DESKTOP") == "GNOME"){
@@ -145,7 +145,11 @@ int main(int argc, char *argv[])
     //        QIcon::setThemeName("Adwaita");
     //    }
     //    else {
-    QIcon::setThemeName("breeze");
+
+     //BUG preventing the use of basic breeze theme
+     // https://bugreports.qt.io/browse/QTBUG-87583
+     // instead, I am picking "actions" and "animations" folders from Breeze
+    QIcon::setThemeName(QStringLiteral("breeze-skribisto"));
 
     //    }
 

@@ -242,7 +242,7 @@ NotePadForm {
                 
                 anchors.margins : 5
                 
-                Text{
+                Label{
                     id: noteTitle
                     text: model.title
                     horizontalAlignment: Qt.AlignHCenter
@@ -806,7 +806,7 @@ NotePadForm {
 
 
 
-                            Text {
+                            Label {
                                 text: model.name
                                 anchors.fill: parent
                                 horizontalAlignment: Qt.AlignLeft
@@ -853,7 +853,7 @@ NotePadForm {
                             
                             required property string section
                             
-                            Text {
+                            Label {
                                 text: qsTr("Existing notes")
                                 font.bold: true
                                 //font.pixelSize: 20
