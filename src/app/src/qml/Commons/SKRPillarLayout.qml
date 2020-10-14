@@ -101,6 +101,8 @@ Item {
 
             columnHeightList.push(columnHeight)
 
+            columnLayout.data.push(stretcherComponent.createObject(columnLayout))
+
 
         }
 
