@@ -115,18 +115,16 @@ EditViewForm {
         target: SkrSettings.writeSettings
         property: "textFontFamily"
         value: fontFamilyComboBox.currentText
+        when:  fontFamilyLoaded
         delayed: true
         restoreMode: Binding.RestoreBindingOrValue
     }
 
-    // needed because the SkrSettings won't work for FontFamily
-    Settings{
-        id: settings
-            category: "write"
-    }
+    property bool fontFamilyLoaded: false
 
     function loadFontFamily(){
-        var fontFamily = settings.value("textFontFamily", Qt.application.font.family)
+
+        var fontFamily = SkrSettings.writeSettings.textFontFamily
         //console.log("fontFamily", fontFamily)
         //console.log("application fontFamily", Qt.application.font.family)
 
@@ -138,6 +136,7 @@ EditViewForm {
         //console.log("index", index)
 
         fontFamilyComboBox.currentIndex = index
+        fontFamilyLoaded = true
     }
 
     // Indent :
