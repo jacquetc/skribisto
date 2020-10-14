@@ -734,8 +734,6 @@ TreeListViewForm {
                                 id: columnLayout2
                                 spacing: 1
                                 anchors.fill: parent
-                                Layout.fillHeight: true
-                                Layout.fillWidth: true
 
                                 Label {
                                     id: titleLabel
@@ -1285,7 +1283,6 @@ TreeListViewForm {
 
                     }
                 }
-                MenuSeparator {}
             }
 
             //----------------------------------------------------------

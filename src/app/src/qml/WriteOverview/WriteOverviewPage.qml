@@ -3,6 +3,7 @@ import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.settings 1.1
+import eu.skribisto.searchsheetlistproxymodel 1.0
 import "../Commons"
 import ".."
 
@@ -11,13 +12,67 @@ WriteOverviewPageForm {
     id: root
     property string pageType: "writeOverview"
 
-
+    property int currentProjectId : -2
 
 
     Component.onCompleted: {
+        connectToSheetOverviewTree()
 
     }
 
+    Connections{
+        target: plmData.projectHub()
+        function onProjectLoaded(projectId){
+            //test :
+            currentProjectId = projectId
+        }
+    }
+
+    Connections{
+        target: plmData.projectHub()
+        function onProjectClosed(projectId){
+
+        }
+    }
+
+    //-------------------------------------------------------------
+    //-------Sheet Overview------------------------------------------
+    //-------------------------------------------------------------
+
+
+    //--------------------------------------------------------------------------
+    sheetOverviewTree.treeIndentMultiplier: 30
+
+
+    SKRSearchSheetListProxyModel {
+        id: restoreSheetProxyModel
+        showTrashedFilter: false
+        showNotTrashedFilter: true
+    }
+
+    sheetOverviewTree.proxyModel: restoreSheetProxyModel
+    sheetOverviewTree.model: restoreSheetProxyModel
+    //--------------------------------------------------------------------------
+
+    onCurrentProjectIdChanged: {
+        restoreSheetProxyModel.projectIdFilter = 1
+    }
+
+
+    //--------------------------------------------------------------------------
+    Connections {
+        target: sheetOverviewTree
+        function onOpenDocument(openedProjectId, openedPaperId, _projectId, _paperId) {
+            Globals.openSheetInNewTabCalled(_projectId, _paperId)
+        }
+    }
+
+    function connectToSheetOverviewTree(){
+
+        sheetOverviewTree.openDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
+        sheetOverviewTree.openDocumentInNewWindow.connect(Globals.openSheetInNewWindowCalled)
+
+    }
     //-------------------------------------------------------------
     //-------Left Dock------------------------------------------
     //-------------------------------------------------------------
@@ -51,6 +106,8 @@ WriteOverviewPageForm {
 
 
     // compact mode :
+    compactLeftDockShowButton.visible: Globals.compactSize
+
     compactLeftDockShowButton.onClicked: leftDrawer.open()
     compactLeftDockShowButton.icon {
         name: "go-next"

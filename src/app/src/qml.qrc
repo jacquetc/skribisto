@@ -78,5 +78,7 @@
         <file>qml/Projects/ProjectTabForm.ui.qml</file>
         <file>qml/Projects/ProjectSupPageForm.ui.qml</file>
         <file>qml/Commons/SKRPillarLayout.qml</file>
+        <file>qml/WriteOverview/SheetOverviewTree.qml</file>
+        <file>qml/WriteOverview/SheetOverviewTreeForm.ui.qml</file>
     </qresource>
 </RCC>

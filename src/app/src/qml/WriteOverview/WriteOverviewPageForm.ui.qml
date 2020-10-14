@@ -13,8 +13,8 @@ Item {
     property alias leftDockMenuButton: leftDockMenuButton
     property alias leftDockShowButton: leftDockShowButton
     property alias middleBase: middleBase
-    property alias overview: overview
     property alias base: base
+    property alias sheetOverviewTree: sheetOverviewTree
     property int leftBasePreferredWidth: 0
 
 
@@ -135,12 +135,13 @@ Item {
                     flat: true
                 }
 
-                Rectangle {
-                    id: overview
-                    anchors.fill: parent
-                    color: "orange"
-                }
 
+                SheetOverviewTree{
+                    id: sheetOverviewTree
+                    anchors.fill: parent
+                    anchors.leftMargin: 50
+
+                }
             }
         }
     }
