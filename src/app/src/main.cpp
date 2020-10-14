@@ -145,7 +145,8 @@ int main(int argc, char *argv[])
     //        QIcon::setThemeName("Adwaita");
     //    }
     //    else {
-    QIcon::setThemeName("breeze");
+
+    QIcon::setThemeName(QStringLiteral("breeze"));
 
     //    }
 

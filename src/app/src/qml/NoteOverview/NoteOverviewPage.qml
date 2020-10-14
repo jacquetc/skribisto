@@ -273,13 +273,13 @@ NoteOverviewPageForm {
         function onFullScreenCalled(value) {
             if(value){
                 //save previous conf
-                fullscreen_left_drawer_visible = leftDrawer.visible
+                fullscreen_left_drawer_visible = leftDrawer.isVisible
 
-                leftDrawer.visible = false
+                leftDrawer.isVisible = false
 
             }
             else{
-                leftDrawer.visible = fullscreen_left_drawer_visible
+                leftDrawer.isVisible = fullscreen_left_drawer_visible
 
             }
 

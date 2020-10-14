@@ -935,14 +935,14 @@ NotePageForm {
         function onFullScreenCalled(value) {
             if(value){
                 //save previous conf
-                fullscreen_left_drawer_visible = leftDrawer.visible
-                fullscreen_right_drawer_visible = rightDrawer.visible
-                leftDrawer.visible = false
-                rightDrawer.visible = false
+                fullscreen_left_drawer_visible = leftDrawer.isVisible
+                fullscreen_right_drawer_visible = rightDrawer.isVisible
+                leftDrawer.isVisible = false
+                rightDrawer.isVisible = false
             }
             else{
-                leftDrawer.visible = fullscreen_left_drawer_visible
-                rightDrawer.visible = fullscreen_right_drawer_visible
+                leftDrawer.isVisible = fullscreen_left_drawer_visible
+                rightDrawer.isVisible = fullscreen_right_drawer_visible
             }
 
         }
