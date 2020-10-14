@@ -1,4 +1,4 @@
-﻿#include "iostream"
+#include "iostream"
 #include <QSettings>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
