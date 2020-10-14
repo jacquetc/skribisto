@@ -120,28 +120,8 @@ WritePageForm {
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------
-    property int offset: leftDock.width
+    property int leftOffset: leftDrawer.width * leftDrawer.position
 
-    //    Connections {
-    //        target: Globals
-    //        function onWidthChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: Globals
-    //        function onCompactSizeChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: SkrSettings.rootSettings
-    //        function onLeftDockWidthChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: writingZone
-    //        function onWidthChanged() {applyOffset()}
-
-    //    }
 
     Binding on leftBasePreferredWidth {
         value:  {
@@ -151,7 +131,7 @@ WritePageForm {
             }
             else {
 
-                value = writingZone.wantedCenteredWritingZoneLeftPos - offset
+                value = writingZone.wantedCenteredWritingZoneLeftPos - leftOffset
                 if (value < 0) {
                     value = 0
                 }
@@ -164,26 +144,27 @@ WritePageForm {
         }
         restoreMode: Binding.RestoreBindingOrValue
     }
-    //    Binding on rightBasePreferredWidth {
-    //        value:  {
-    //            var value = 0
-    //            if (Globals.compactSize === true){
-    //                value = -1;
-    //            }
-    //            else {
+//    property int rightOffset: rightDrawer.width * rightDrawer.position
+//        Binding on rightBasePreferredWidth {
+//            value:  {
+//                var value = 0
+//                if (Globals.compactSize === true){
+//                    value = -1;
+//                }
+//                else {
 
-    //                value = 400 + offset
-    //                if (value < 0) {
-    //                    value = 0
-    //                }
-    //                //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
-    //                //                console.debug("right offset :: ", offset)
-    //                //                console.debug("right value :: ", value)
+//                    value = writingZone.wantedCenteredWritingZoneLeftPos - rightOffset - 100
+//                    if (value < 0) {
+//                        value = 0
+//                    }
+//                    //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
+//                    //                console.debug("right offset :: ", offset)
+//                    //                console.debug("right value :: ", value)
 
-    //            }
-    //            rightBasePreferredWidth = value
-    //        }
-    //    }
+//                }
+//                rightBasePreferredWidth = value
+//            }
+//        }
     //    Binding on leftBaseMaximumWidth {
     //        when: SkrSettings.rootSettings.onLeftDockWidthChanged || Globals.onCompactSizeChanged || writingZone.onWidthChanged
     //            value:  {
