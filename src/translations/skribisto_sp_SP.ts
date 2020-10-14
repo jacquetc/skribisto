@@ -2166,6 +2166,10 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>recent projects list item</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
@@ -2305,6 +2309,14 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Selected dictionary not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Statistics</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

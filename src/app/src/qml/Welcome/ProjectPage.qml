@@ -108,7 +108,7 @@ ProjectPageForm {
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
 
         onAccepted: {
-            folderNameURL = folderDialog.folder
+            folderNameURL = folderDialog.currentFolder
             projectPathTextField.text = skrQMLTools.translateURLToLocalFile(folderNameURL)
         }
         onRejected: {

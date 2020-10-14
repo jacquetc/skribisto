@@ -33,14 +33,14 @@ NotePageForm {
     //---Writing Zone-----------------------------------------
     //--------------------------------------------------------
 
-    writingZone.maximumTextAreaWidth: SkrSettings.writeSettings.textWidth
-    writingZone.textPointSize: SkrSettings.writeSettings.textPointSize
-    writingZone.textFontFamily: SkrSettings.writeSettings.textFontFamily
-    writingZone.textIndent: SkrSettings.writeSettings.textIndent
-    writingZone.textTopMargin: SkrSettings.writeSettings.textTopMargin
+    writingZone.maximumTextAreaWidth: SkrSettings.noteSettings.textWidth
+    writingZone.textPointSize: SkrSettings.noteSettings.textPointSize
+    writingZone.textFontFamily: SkrSettings.noteSettings.textFontFamily
+    writingZone.textIndent: SkrSettings.noteSettings.textIndent
+    writingZone.textTopMargin: SkrSettings.noteSettings.textTopMargin
 
     writingZone.stretch: Globals.compactSize
-    writingZone.name: "write-0" //useful ?
+    writingZone.name: "note-0" //useful ?
 
 
     Connections {
@@ -323,8 +323,8 @@ NotePageForm {
         skrTextBridge.subscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
         // apply format
-        writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent
-        writingZone.documentHandler.topMarginEverywhere = SkrSettings.writeSettings.textTopMargin
+        writingZone.documentHandler.indentEverywhere = SkrSettings.noteSettings.textIndent
+        writingZone.documentHandler.topMarginEverywhere = SkrSettings.noteSettings.textTopMargin
 
         restoreCurrentPaperCursorPositionAndY()
 
@@ -412,6 +412,7 @@ NotePageForm {
     Binding on minimap.text {
         when: minimapVisibility
         value: writingZone.textArea.text
+        restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
 
@@ -419,11 +420,13 @@ NotePageForm {
     Binding on writingZone.internalScrollBar.position {
         when: minimapVisibility
         value: minimap.position
+        restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
     Binding on  minimap.position {
         when: minimapVisibility
         value: writingZone.internalScrollBar.position
+        restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
 
@@ -749,6 +752,7 @@ NotePageForm {
 
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
+
         //avoid first text change, when blank HTML is inserted
         if(writingZone.textArea.length === 0
                 && plmData.projectHub().isProjectNotModifiedOnce(projectId)){
