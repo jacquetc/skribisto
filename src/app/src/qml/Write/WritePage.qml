@@ -325,12 +325,10 @@ WritePageForm {
             skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
         }
 
-
         paperId = _paperId
         projectId = _projectId
         writingZone.paperId = _paperId
         writingZone.projectId = _projectId
-
 
         console.log("opening sheet :", _projectId, _paperId)
         writingZone.text = plmData.sheetHub().getContent(_projectId, _paperId)
@@ -761,6 +759,8 @@ WritePageForm {
     //------------------------------------------------------------
     //------------------------------------------------------------
     //------------------------------------------------------------
+
+
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
 

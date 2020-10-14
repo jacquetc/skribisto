@@ -10,7 +10,6 @@ EditViewForm {
     swipeView.currentIndex: 0
 
 
-
     italicToolButton.action: italicAction
     boldToolButton.action: boldAction
     strikeToolButton.action: strikeAction
@@ -177,4 +176,12 @@ EditViewForm {
         }
     }
 
+
+    //focus
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            //swipeView.currentIndex = 0
+            italicToolButton.forceActiveFocus()
+        }
+    }
 }

@@ -365,6 +365,10 @@
         <source>Part </source>
         <translation>Partie </translation>
     </message>
+    <message>
+        <source>recent projects list item</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
@@ -505,6 +509,14 @@
     <message>
         <source>Selected dictionary not found</source>
         <translation>Le dictionnaire sélectionné est introuvable</translation>
+    </message>
+    <message>
+        <source>Tags</source>
+        <translation type="unfinished">Etiquettes</translation>
+    </message>
+    <message>
+        <source>Statistics</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

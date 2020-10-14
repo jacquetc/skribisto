@@ -2185,6 +2185,10 @@ Please open a .plume file.</source>
         <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>recent projects list item</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
@@ -2324,6 +2328,14 @@ Please open a .plume file.</source>
     </message>
     <message>
         <source>Selected dictionary not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Statistics</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
