@@ -213,7 +213,7 @@ LeftDockForm {
     Component.onCompleted: {
 
         loadConf()
-        navigation.onOpenDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
+        navigation.openDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
         navigation.openDocumentInNewWindow.connect(Globals.openSheetInNewWindowCalled)
         navigation.restoreDocumentList.connect(root.restoreSheetList)
         Globals.resetDockConfCalled.connect(resetConf)
