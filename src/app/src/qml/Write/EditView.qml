@@ -109,7 +109,7 @@ EditViewForm {
     }
 
     // Font family combo :
-    fontFamilyComboBox.model: skrFonts.getModel()
+    fontFamilyComboBox.model: skrFonts.fontFamilies()
 
     Binding {
         target: SkrSettings.writeSettings
@@ -127,15 +127,15 @@ EditViewForm {
 
     function loadFontFamily(){
         var fontFamily = settings.value("textFontFamily", Qt.application.font.family)
-        console.log("fontFamily", fontFamily)
-        console.log("fontFamily", Qt.application.font.family)
+        //console.log("fontFamily", fontFamily)
+        //console.log("application fontFamily", Qt.application.font.family)
 
-        var index = fontFamilyComboBox.find(fontFamily)
-        console.log("index", index)
+        var index = fontFamilyComboBox.find(fontFamily, Qt.MatchFixedString)
+        //console.log("index", index)
         if(index === -1){
-            index = fontFamilyComboBox.find(Qt.application.font.family)
+            index = fontFamilyComboBox.find(Qt.application.font.family, Qt.MatchFixedString)
         }
-        console.log("index", index)
+        //console.log("index", index)
 
         fontFamilyComboBox.currentIndex = index
     }
