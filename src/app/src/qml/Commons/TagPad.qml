@@ -148,7 +148,7 @@ TagPadForm {
 
                 anchors.margins : 5
 
-                Text{
+                Label{
                     id: tagTitle
                     text: model.name
                     horizontalAlignment: Qt.AlignHCenter
@@ -380,7 +380,7 @@ TagPadForm {
                                 }
 
                             }
-                            Text {
+                            Label {
                                 text: model.name
                                 anchors.fill: parent
                                 horizontalAlignment: Qt.AlignLeft
@@ -423,7 +423,7 @@ TagPadForm {
 
                             required property string section
 
-                            Text {
+                            Label {
                                 text: qsTr("Existing tags")
                                 font.bold: true
                                 //font.pixelSize: 20

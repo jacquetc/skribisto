@@ -1,13 +1,14 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls.Material 2.15
 
 TabButton {
     id: base
     text: ""
     width: implicitWidth
     property alias closeButton: closeButton
-    property alias tagText: tagText
+    property alias tabLabel: tabLabel
     property bool closable: true
     property string iconSource : base.action.icon.source
     property string iconName : base.action.icon.name
@@ -50,8 +51,8 @@ TabButton {
 
         }
 
-        Text {
-            id: tagText
+        Label {
+            id: tabLabel
 
             Layout.minimumWidth: 50
             topPadding: 6

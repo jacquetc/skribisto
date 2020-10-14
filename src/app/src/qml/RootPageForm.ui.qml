@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Controls.Material 2.15
 
 import "WriteOverview"
 import "Welcome"
@@ -82,6 +83,7 @@ Item {
                     id: writeOverviewTab
                     closable: false
                     pageType: writeOverviewPage.pageType
+                    iconColor: (Material.theme === Material.Dark) ? "white" : "black"
                 }
                 Tab {
                     id: noteOverviewTab

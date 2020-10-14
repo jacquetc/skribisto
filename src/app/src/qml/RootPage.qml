@@ -572,7 +572,7 @@ RootPageForm {
                             RowLayout {
                                 anchors.fill: parent
 
-                                Text {
+                                Label {
                                     text: model.title
 
                                     Layout.fillWidth: true

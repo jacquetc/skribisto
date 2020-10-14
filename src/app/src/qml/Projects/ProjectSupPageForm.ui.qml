@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls.Material 2.15
 import "../Commons"
 
 Item {
@@ -115,6 +116,7 @@ Item {
 
                                 ComboBox {
                                     id: dictComboBox
+
                                 }
 
                                 Label {
@@ -133,6 +135,20 @@ Item {
 
                             RowLayout {
                                 id: rowLayout3
+                                width: 100
+                                height: 100
+                            }
+
+                        }
+
+                        GroupBox {
+                            id: statsGroupBox
+                            width: 200
+                            height: 200
+                            title: qsTr("Statistics")
+
+                            RowLayout {
+                                id: rowLayout4
                                 width: 100
                                 height: 100
                             }

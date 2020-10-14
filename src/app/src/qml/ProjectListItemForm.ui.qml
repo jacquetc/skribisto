@@ -1,4 +1,5 @@
-import QtQuick 2.9
+import QtQuick 2.15
+import QtQuick.Controls 2.15
 
 Item {
     width: 400
@@ -15,7 +16,7 @@ Item {
         spacing: 20
         anchors.fill: parent
 
-        Text {
+        Label {
             id: projectNameLabel
             text: qsTr("Text")
         }

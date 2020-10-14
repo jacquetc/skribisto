@@ -90,7 +90,7 @@ ProjectPageForm {
     property string fileName: fileName
     property url folderNameURL
 
-
+    goBackToolButton.icon.name: "go-previous"
     goBackToolButton.onClicked: {
         swipeView.currentIndex = 0
     }
@@ -258,7 +258,7 @@ ProjectPageForm {
             color: "transparent"
 
             Accessible.name: "name"
-                Accessible.role: Accessible.ListItem
+            Accessible.role: Accessible.ListItem
             Accessible.description: qsTr("recent projects list item")
 
             HoverHandler {

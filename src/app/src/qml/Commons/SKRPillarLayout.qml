@@ -11,6 +11,7 @@ Item {
     property int columnSpacing: 5
 
     function placeChildren(){
+
         var repeaterCount = repeater.count
 
         var numberPerPillar = (childrenList.length / repeaterCount) | 0
@@ -138,11 +139,17 @@ Item {
         if(repeater.count === 0){
             return;
         }
-        placeChildren()
+        placeChildrenTimer.start()
 
 
     }
 
+    Timer{
+        id: placeChildrenTimer
+        interval: 0
+        repeat: false
+        onTriggered: placeChildren()
+    }
 
 
     RowLayout {
@@ -164,7 +171,7 @@ Item {
                 }
 
 
-                placeChildren()
+                placeChildrenTimer.start()
 
 
             }
