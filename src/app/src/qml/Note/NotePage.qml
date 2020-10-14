@@ -110,28 +110,8 @@ NotePageForm {
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------
-    property int offset: leftDock.width
+    property int leftOffset: leftDrawer.width * leftDrawer.position
 
-    //    Connections {
-    //        target: Globals
-    //        function onWidthChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: Globals
-    //        function onCompactSizeChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: SkrSettings.rootSettings
-    //        function onLeftDockWidthChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: writingZone
-    //        function onWidthChanged() {applyOffset()}
-
-    //    }
 
     Binding on leftBasePreferredWidth {
         value:  {
@@ -141,7 +121,7 @@ NotePageForm {
             }
             else {
 
-                value = writingZone.wantedCenteredWritingZoneLeftPos - offset
+                value = writingZone.wantedCenteredWritingZoneLeftPos - leftOffset
                 if (value < 0) {
                     value = 0
                 }
