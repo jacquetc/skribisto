@@ -510,8 +510,8 @@ SheetOverviewTreeForm {
                                         visible: false
 
 
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
+
+                                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                                         text: labelLabel.text
                                         maximumLength: 50
 
@@ -563,8 +563,7 @@ SheetOverviewTreeForm {
                                         visible: false
 
 
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
+                                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                         text: titleLabel.text
                                         maximumLength: 50
 
@@ -626,6 +625,8 @@ SheetOverviewTreeForm {
 
                                     }
                                 }
+
+
                             }
 
                             states: [
@@ -677,6 +678,34 @@ SheetOverviewTreeForm {
                                 }
 
                             ]
+                        }
+
+
+                        Rectangle {
+                            id: separator
+                            Layout.preferredWidth: 1
+                            Layout.preferredHeight: content.height / 2
+                            Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                            gradient: Gradient {
+                                orientation: Qt.Vertical
+                                GradientStop {
+                                    position: 0.00;
+                                    color: "#ffffff";
+                                }
+                                GradientStop {
+                                    position: 0.30;
+                                    color: "#9e9e9e";
+                                }
+                                GradientStop {
+                                    position: 0.70;
+                                    color: "#9e9e9e";
+                                }
+                                GradientStop {
+                                    position: 1.00;
+                                    color: "#ffffff";
+                                }
+                            }
+
                         }
 
                         ColumnLayout {
@@ -738,7 +767,7 @@ SheetOverviewTreeForm {
                         }
                         PropertyChanges {
                             target: focusOnBranchButton
-                            visible: true
+                            visible: hoverHandler.hovered | draggableContent.isCurrent
                         }
                     },
                     State {
@@ -749,6 +778,12 @@ SheetOverviewTreeForm {
                             target: content
                             height: 200
                         }
+                        PropertyChanges {
+                            target: focusOnBranchButton
+                            visible: hoverHandler.hovered | draggableContent.isCurrent
+                        }
+
+
                     }
 
                 ]

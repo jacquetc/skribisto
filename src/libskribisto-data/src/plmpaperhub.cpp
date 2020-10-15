@@ -101,7 +101,7 @@ QHash<int, int>PLMPaperHub::getAllIndents(int projectId) const
  * @brief PLMPaperHub::getAllIds
  * @param projectId
  * @return
- * Get sorted ids
+ * Get sorted ids, trashed ids included
  */
 QList<int>PLMPaperHub::getAllIds(int projectId) const
 {
