@@ -150,6 +150,8 @@ Item {
                     id: writingZone
                     anchors.fill: parent
                     textAreaStyleElevation: true
+                    minimalTextAreaWidth: 100
+
                 }
 
                 ToolButton {

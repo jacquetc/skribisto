@@ -9,7 +9,7 @@ Item {
         id: scrollView
         focusPolicy: Qt.StrongFocus
         anchors.fill: parent
-        clip: true
+        //clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
         ScrollBar.vertical.policy: ScrollBar.AsNeeded
 

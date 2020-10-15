@@ -7,6 +7,7 @@ FocusScope {
     property alias text: textArea.text
     property bool stretch: stretch
     property int textAreaWidth
+    property int minimalTextAreaWidth: 50
     property int maximumTextAreaWidth
     property alias scrollView: scrollView
     property alias textArea: textArea
@@ -22,7 +23,6 @@ FocusScope {
     property alias placeholderText: textArea.placeholderText
 
     property alias leftScrollItemVisible: leftScrollItem.visible
-
 
     Pane {
         id: pane
@@ -65,9 +65,12 @@ FocusScope {
                     id: scrollView
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     Layout.fillHeight: true
+                    Layout.minimumWidth: minimalTextAreaWidth
 
                     //Layout.preferredWidth: textWidth
                     padding: 2
+                    //                    bottomInset: 0
+                    //                    bottomPadding: 0
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                     ScrollBar.vertical.policy: scrollBarVerticalPolicy
                     //clip: true
@@ -93,15 +96,12 @@ FocusScope {
                             focus: true
                             selectByMouse: true
                             wrapMode: TextEdit.WordWrap
-
-
+                            topPadding: 4
+                            bottomPadding: 1
 
                             //                        background: Rectangle {
                             //                            border.color: "transparent"
                             //                        }
-
-
-
                         }
                     }
                 }
