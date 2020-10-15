@@ -2,14 +2,14 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
-import eu.skribisto.sheetlistproxymodel 1.0
+import eu.skribisto.notelistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
 import ".."
 
-WriteRightDockForm {
+RightDockForm {
 
     property int projectId : -2
     property int paperId : -2
@@ -17,7 +17,6 @@ WriteRightDockForm {
     SkrUserSettings {
         id: skrUserSettings
     }
-
 
     splitView.handle: Item {
         implicitHeight: 8
@@ -32,7 +31,6 @@ WriteRightDockForm {
         }
     }
 
-
     //-----------------------------------------------------------
 
 
@@ -41,6 +39,10 @@ WriteRightDockForm {
         enabled: root.enabled
 
     }
+
+
+    //-----------------------------------------------------------
+
 
     //Menu :
     property list<Component> menuComponents:  [
@@ -84,21 +86,14 @@ WriteRightDockForm {
                     tagPadView.forceActiveFocus()
                 }
             }
-
-            MenuItem {
-                text: qsTr( "&Notes")
-                onTriggered: {
-
-                    if(Globals.compactSize){
-                        rightDrawer.open()
-                    }
-                    notePadFrame.folded = false
-                    notePadView.forceActiveFocus()
-                }
-            }
         }
     }
 ]
+
+
+
+    //-----------------------------------------------------------
+
 
 
     //-----------------------------------------------------------
@@ -106,9 +101,9 @@ WriteRightDockForm {
     //-----------------------------------------------------------
 
 
-    editView.skrSettingsGroup: SkrSettings.writeSettings
 
-
+    editView.skrSettingsGroup: SkrSettings.overviewTreeNoteSettings
+    editView.textWidthVisible: false
 
 
 
@@ -122,21 +117,20 @@ WriteRightDockForm {
     SKRSearchTagListProxyModel {
         id: tagProxyModel
         projectIdFilter: projectId
-        sheetIdFilter: paperId
+        noteIdFilter: paperId
     }
     tagPadView.tagListModel: tagProxyModel
 
     Connections{
         target: tagPadView
         function onCallRemoveTagRelationship(projectId, itemId, tagId){
-            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Sheet , itemId, tagId)
+            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Note , itemId, tagId)
         }
     }
 
     Connections{
         target: tagPadView
         function onCallAddTagRelationship(projectId, itemId, tagName){
-
             var error;
             // verify if name doesn't already exist :
             var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
@@ -148,7 +142,7 @@ WriteRightDockForm {
             }
 
             // set relationship
-            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Sheet, itemId, tagId)
+            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Note, itemId, tagId)
             if (!error.success){
                 console.log("error onCallAddTagRelationship")
                 //TODO: add notification
@@ -157,6 +151,12 @@ WriteRightDockForm {
         }
     }
 
+    onProjectIdChanged: {
+        tagPadView.projectId = projectId
+    }
+    onPaperIdChanged: {
+        tagPadView.itemId = paperId
+    }
 
     //-----------------------------------------------------------
     //-----------------------------------------------------------
@@ -172,38 +172,20 @@ WriteRightDockForm {
         }
     ]
 
-
     property alias settings: settings
 
     Settings {
         id: settings
-        category: "writeRightDock"
+        category: "writeOverviewRightDock"
         property var dockSplitView
         property bool editFrameFolded: editFrame.folded
-        property bool notePadFrameFolded: notePadFrame.folded
         property bool tagPadFrameFolded: tagPadFrame.folded
-        //        property bool documentFrameFolded: documentFrame.folded ? true : false
     }
 
-
-    onProjectIdChanged: {
-        notePadView.projectId = projectId
-        tagPadView.projectId = projectId
-    }
-    onPaperIdChanged: {
-        notePadView.sheetId = paperId
-        tagPadView.itemId = paperId
-    }
 
 
     PropertyAnimation {
         target: editFrame
-        property: "SplitView.preferredHeight"
-        duration: 500
-        easing.type: Easing.InOutQuad
-    }
-    PropertyAnimation {
-        target: notePadFrame
         property: "SplitView.preferredHeight"
         duration: 500
         easing.type: Easing.InOutQuad
@@ -218,16 +200,14 @@ WriteRightDockForm {
     function loadConf(){
 
         editFrame.folded = settings.editFrameFolded
-        notePadFrame.folded = settings.notePadFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
 
-        var result = splitView.restoreState(settings.dockSplitView)
+        splitView.restoreState(settings.dockSplitView)
 
     }
 
     function resetConf(){
         editFrame.folded = false
-        notePadFrame.folded = false
         tagPadFrame.folded = false
         splitView.restoreState("")
 
@@ -236,17 +216,14 @@ WriteRightDockForm {
     Component.onCompleted: {
         loadConf()
         Globals.resetDockConfCalled.connect(resetConf)
-
     }
 
     Component.onDestruction: {
         settings.dockSplitView = splitView.saveState()
-
     }
 
     onEnabledChanged: {
         if(enabled){
-
         }
     }
 }

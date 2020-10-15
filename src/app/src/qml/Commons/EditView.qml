@@ -6,6 +6,11 @@ import '..'
 
 EditViewForm {
     property int minimumHeight: 500
+    // must be set :
+    property var skrSettingsGroup
+
+    //option:
+    property bool textWidthVisible: true
 
     swipeView.currentIndex: 0
 
@@ -81,13 +86,13 @@ EditViewForm {
 
     // textWidthSlider :
 
-    textWidthLabel.visible: !Globals.compactSize
-    textWidthSlider.visible: !Globals.compactSize
+    textWidthLabel.visible: !Globals.compactSize | textWidthVisible
+    textWidthSlider.visible: !Globals.compactSize | textWidthVisible
 
-    textWidthSlider.value: SkrSettings.noteSettings.textWidth
+    textWidthSlider.value: skrSettingsGroup.textWidth
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textWidth"
         value: textWidthSlider.value
         delayed: true
@@ -96,11 +101,11 @@ EditViewForm {
 
     // textPointSizeSlider :
 
-    textPointSizeSlider.value: SkrSettings.noteSettings.textPointSize
+    textPointSizeSlider.value: skrSettingsGroup.textPointSize
 
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textPointSize"
         value: textPointSizeSlider.value
         delayed: true
@@ -111,7 +116,7 @@ EditViewForm {
     fontFamilyComboBox.model: skrFonts.fontFamilies()
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textFontFamily"
         value: fontFamilyComboBox.currentText
         when:  fontFamilyLoaded
@@ -123,7 +128,7 @@ EditViewForm {
     property bool fontFamilyLoaded: false
 
     function loadFontFamily(){
-        var fontFamily = SkrSettings.writeSettings.textFontFamily
+        var fontFamily = skrSettingsGroup.textFontFamily
         //console.log("fontFamily", fontFamily)
         //console.log("application fontFamily", Qt.application.font.family)
 
@@ -139,10 +144,10 @@ EditViewForm {
     }
 
     // Indent :
-     textIndentSlider.value: SkrSettings.noteSettings.textIndent
+     textIndentSlider.value: skrSettingsGroup.textIndent
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textIndent"
         value: textIndentSlider.value
         delayed: true
@@ -150,10 +155,10 @@ EditViewForm {
     }
 
     // Margins :
-     textTopMarginSlider.value: SkrSettings.noteSettings.textTopMargin
+     textTopMarginSlider.value: skrSettingsGroup.textTopMargin
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textTopMargin"
         value: textTopMarginSlider.value
         delayed: true

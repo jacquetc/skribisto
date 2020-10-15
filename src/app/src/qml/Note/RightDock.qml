@@ -7,6 +7,7 @@ import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
+import "../Commons"
 import ".."
 
 RightDockForm {
@@ -86,18 +87,6 @@ RightDockForm {
                     tagPadView.forceActiveFocus()
                 }
             }
-
-            MenuItem {
-                text: qsTr( "&Notes")
-                onTriggered: {
-
-                    if(Globals.compactSize){
-                        rightDrawer.open()
-                    }
-                    notePadFrame.folded = false
-                    notePadView.forceActiveFocus()
-                }
-            }
         }
     }
 ]
@@ -107,6 +96,13 @@ RightDockForm {
     //-----------------------------------------------------------
 
 
+
+    //-----------------------------------------------------------
+    //---------------Edit---------------------------------------------
+    //-----------------------------------------------------------
+
+
+    editView.skrSettingsGroup: SkrSettings.noteSettings
 
 
 

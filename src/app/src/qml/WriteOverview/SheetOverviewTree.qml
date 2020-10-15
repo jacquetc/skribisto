@@ -53,7 +53,8 @@ SheetOverviewTreeForm {
     //-----------------------------------------------------------------------------
     // options :
     property bool treelikeIndentsVisible: true
-    property bool dragDropEnabled: false // not complemently implemented yet
+    property bool dragDropEnabled: false // not yet complemently implemented
+    property int displayMode : 0
 
     //tree-like onTreelikeIndents
     property int treeIndentOffset: 0
@@ -697,23 +698,62 @@ SheetOverviewTreeForm {
                 }
                 states: [
                     State {
-                        name: "drag_active"
-                        when: draggableContent.Drag.active
+                        name: "displayMode_1"
+                        when: root.displayMode === 1
 
-                        ParentChange {
-                            target: draggableContent
-                            parent: base
+                        PropertyChanges {
+                            target: content
+                            height: 100
                         }
-                        AnchorChanges {
-                            target: draggableContent
-                            anchors {
-                                horizontalCenter: undefined
-                                verticalCenter: undefined
-                            }
+                    },
+                    State {
+                        name: "displayMode_2"
+                        when: root.displayMode === 2
+
+                        PropertyChanges {
+                            target: content
+                            height: 200
+                        }
+                    }
+
+                ]
+
+                transitions: [
+                    Transition {
+                        PropertyAnimation {
+                            //target: content
+                            properties: "height"
+                            duration: 250
+                            easing.type: Easing.InOutQuad
                         }
                     }
                 ]
+
+
+
+
+
+
             }
+            states: [
+                State {
+                    name: "drag_active"
+                    when: draggableContent.Drag.active
+
+                    ParentChange {
+                        target: draggableContent
+                        parent: base
+                    }
+                    AnchorChanges {
+                        target: draggableContent
+                        anchors {
+                            horizontalCenter: undefined
+                            verticalCenter: undefined
+                        }
+                    }
+                }
+            ]
+
 
 
 
