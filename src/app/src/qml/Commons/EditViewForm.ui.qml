@@ -143,7 +143,7 @@ Item {
 
                 Slider {
                     id: textWidthSlider
-                    from: writingZone.width / 4
+                    from: 400
                     to: Screen.width
                 }
 

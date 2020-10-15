@@ -494,7 +494,6 @@ NotePageForm {
         }
 
 
-        leftSettings.width = leftDrawerFixedWidth
 
     }
 
@@ -575,7 +574,6 @@ NotePageForm {
             rightDrawerFixedWidth = 350
         }
 
-        rightSettings.width = rightDrawerFixedWidth
 
     }
 
@@ -602,28 +600,19 @@ NotePageForm {
 
 
     property alias leftDock: leftDock
-    property int leftDrawerFixedWidth: 400
+    property int leftDrawerFixedWidth: leftDrawer.width
     SKRDrawer {
         id: leftDrawer
-        parent: base
         enabled: base.enabled
-        width: Globals.compactSize ? 400 : leftDrawerFixedWidth
+        parent: base
+        widthInDockMode: leftDrawerFixedWidth
+        widthInDrawerMode: 400
         height: base.height
         interactive: Globals.compactSize
+        dockModeEnabled: !Globals.compactSize
+        settingsCategory: "noteLeftDrawer"
         edge: Qt.LeftEdge
 
-
-        Connections {
-            target: Globals
-            function onCompactSizeChanged(){
-                if(Globals.compactSize){
-                    leftDrawer.close()
-                }
-                else {
-                    leftDrawer.isVisible = leftSettings.isVisible
-                }
-            }
-        }
 
         LeftDock {
             id: leftDock
@@ -632,59 +621,23 @@ NotePageForm {
 
         }
 
-        onIsVisibleChanged: if(!Globals.compactSize) leftSettings.isVisible = leftDrawer.isVisible
-
-        Component.onCompleted: {
-            leftDrawerFixedWidth = leftSettings.dockWidth
-            Globals.resetDockConfCalled.connect(resetConf)
-            if(Globals.compactSize){
-                leftDrawer.close()
-            }
-            else {
-                leftDrawer.isVisible = leftSettings.isVisible
-            }
-        }
-
-
-        Settings {
-            id: leftSettings
-            category: "noteLeftDrawer"
-            property int dockWidth: 300
-            property bool isVisible: true
-        }
-
-        function resetConf(){
-            leftSettings.dockWidth = 300
-            leftDrawerFixedWidth = 300
-            leftSettings.isVisible = true
-            leftDrawer.isVisible = leftSettings.isVisible
-        }
     }
 
 
     property alias rightDock: rightDock
-    property int rightDrawerFixedWidth: 400
+    property int rightDrawerFixedWidth: rightDrawer.width
     SKRDrawer {
         id: rightDrawer
-        parent: base
         enabled: base.enabled
-        width:  Globals.compactSize ? 400 : rightDrawerFixedWidth
+        parent: base
+        widthInDockMode: rightDrawerFixedWidth
+        widthInDrawerMode: 400
         height: base.height
         interactive: Globals.compactSize
+        dockModeEnabled: !Globals.compactSize
+        settingsCategory: "noteRightDrawer"
         edge: Qt.RightEdge
 
-        Connections {
-            target: Globals
-            function onCompactSizeChanged(){
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-                else {
-                    rightDrawer.isVisible = rightSettings.isVisible
-
-                }
-            }
-        }
 
         RightDock {
             id: rightDock
@@ -695,34 +648,6 @@ NotePageForm {
 
         }
 
-        onIsVisibleChanged:if(!Globals.compactSize) rightSettings.isVisible = rightDrawer.isVisible
-
-        Component.onCompleted: {
-            rightDrawerFixedWidth = rightSettings.dockWidth
-            Globals.resetDockConfCalled.connect(resetConf)
-
-            if(Globals.compactSize){
-                rightDrawer.close()
-            }
-            else {
-                rightDrawer.isVisible = rightSettings.isVisible
-            }
-        }
-
-
-        Settings {
-            id: rightSettings
-            category: "noteRightDrawer"
-            property int dockWidth: 300
-            property bool isVisible: true
-        }
-
-        function resetConf(){
-            rightSettings.dockWidth = 300
-            rightDrawerFixedWidth = 300
-            rightSettings.isVisible = true
-            rightDrawer.isVisible = rightSettings.isVisible
-        }
     }
 
 

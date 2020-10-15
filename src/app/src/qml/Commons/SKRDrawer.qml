@@ -1,6 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQml 2.15
+import Qt.labs.settings 1.1
+import ".."
 
 Item {
     id: root
@@ -10,6 +12,10 @@ Item {
     property double position : 1.0
     property int edge : 0
     property bool isVisible: false
+    property bool dockModeEnabled: false
+    property string settingsCategory
+    property int widthInDockMode: 400
+    property int widthInDrawerMode: 400
 
 
     z:1
@@ -20,6 +26,7 @@ Item {
 
     onIsVisibleChanged: {
         isVisible ? position = 1.0 : position = 0
+        settings.isVisible = root.isVisible
     }
 
     Component.onCompleted: {
@@ -28,6 +35,9 @@ Item {
         if(state === "right_edge"){
             root.x = (root.parent.width - root.width) + (root.width * (1 - position))
         }
+
+        loadSettings()
+        determineStartUpPosition()
     }
 
     Behavior on position {
@@ -44,6 +54,65 @@ Item {
     function close(){
         position = 0.0
     }
+
+
+    //--------------------------------------------------------------------
+    onDockModeEnabledChanged: {
+
+        if(dockModeEnabled){
+            root.isVisible = settings.isVisible
+            root.width =  settings.dockWidth
+        }
+        else {
+            root.close()
+            root.width = root.widthInDrawerMode
+        }
+
+
+    }
+
+    function loadSettings(){
+        if(dockModeEnabled){
+            root.width = settings.dockWidth
+        }
+        Globals.resetDockConfCalled.connect(resetConf)
+
+    }
+
+    function determineStartUpPosition(){
+
+        if(dockModeEnabled){
+            root.isVisible = settings.isVisible
+        }
+        else {
+            root.close()
+        }
+    }
+
+    Settings {
+        id: settings
+        category: settingsCategory
+        property int dockWidth: 300
+        property bool isVisible: true
+    }
+
+    onWidthInDockModeChanged: {
+        settings.dockWidth = widthInDockMode
+        if(dockModeEnabled){
+            root.width = widthInDockMode
+        }
+    }
+
+
+    function resetConf(){
+        settings.dockWidth = 300
+        if(dockModeEnabled){
+            root.width = 300
+        }
+        settings.isVisible = true
+        root.isVisible = true
+    }
+    //--------------------------------------------------------------------
 
     Item{
         id: leftFeelingZone

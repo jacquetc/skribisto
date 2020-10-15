@@ -74,6 +74,7 @@ QtObject {
 
     property Settings notePadSettings: Settings{
         category: "notePad"
+        property int textWidth: -2 //unused but mandatory
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
@@ -82,6 +83,7 @@ QtObject {
 
     property Settings overviewTreeNoteSettings: Settings{
         category: "overviewTreeNote"
+        property int textWidth: -2 //unused but mandatory
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
