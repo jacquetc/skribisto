@@ -191,7 +191,7 @@ RightDockForm {
         id: settings
         category: "writeOverviewRightDock"
         property var dockSplitView
-        property bool sheetOverviewFrame: sheetOverviewFrame.folded
+        property bool sheetOverviewFrameFolded: sheetOverviewFrame.folded
         property bool editFrameFolded: editFrame.folded
         property bool tagPadFrameFolded: tagPadFrame.folded
     }

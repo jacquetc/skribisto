@@ -381,9 +381,6 @@ WriteOverviewPageForm {
             id: rightDock
             anchors.fill: parent
 
-            projectId: root.projectId
-            paperId: root.paperId
-
         }
 
         onIsVisibleChanged:if(!Globals.compactSize) rightSettings.isVisible = rightDrawer.isVisible
@@ -403,7 +400,7 @@ WriteOverviewPageForm {
 
         Settings {
             id: rightSettings
-            category: "noteRightDrawer"
+            category: "writeOverviewRightDrawer"
             property int dockWidth: 300
             property bool isVisible: true
         }

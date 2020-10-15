@@ -112,6 +112,7 @@ WritePageForm {
         saveCurrentPaperCursorPositionAndY()
         contentSaveTimer.stop()
         saveContent()
+        skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
     }
 
     Component.onDestruction: {

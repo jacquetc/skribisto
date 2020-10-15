@@ -68,6 +68,7 @@ WritingZoneForm {
 
 
 
+    property bool spellCheckerKilled: false
     // style :
 
 
@@ -485,14 +486,15 @@ WritingZoneForm {
 
         Component.onCompleted: {
 
-            // activate
-            SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(determineSpellCheckerActivation)
-            determineSpellCheckerActivation()
+            if(!spellCheckerKilled){
+                // activate
+                SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(determineSpellCheckerActivation)
+                determineSpellCheckerActivation()
 
-            //lang
-            SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.connect(determineSpellCheckerLanguageCode)
-            determineSpellCheckerLanguageCode()
-
+                //lang
+                SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.connect(determineSpellCheckerLanguageCode)
+                determineSpellCheckerLanguageCode()
+            }
 
         }
         Component.onDestruction: {
@@ -505,6 +507,7 @@ WritingZoneForm {
 
     Connections{
         target: plmData.projectDictHub()
+        enabled: !spellCheckerKilled
         function onProjectDictWordAdded(projectId, newWord){
             if(root.projectId === projectId){
                 highlighter.spellChecker.addWordToUserDict(newWord)
@@ -514,6 +517,7 @@ WritingZoneForm {
 
     Connections{
         target: plmData.projectDictHub()
+        enabled: !spellCheckerKilled
         function onProjectDictWordRemoved(projectId, removedWord){
             if(root.projectId === projectId){
                 highlighter.spellChecker.removeWordFromUserDict(removedWord)
@@ -524,6 +528,7 @@ WritingZoneForm {
     Connections{
 
         target: plmData.projectHub()
+        enabled: !spellCheckerKilled
         function onLangCodeChanged(projectId, langCode){
             if(root.projectId === projectId){
                 determineSpellCheckerLanguageCode(projectId)
@@ -543,6 +548,12 @@ WritingZoneForm {
     }
 
     function determineSpellCheckerLanguageCode(){
+
+        if(!highlighter){
+            console.log("no valid highlighter loaded")
+            return
+        }
+
         var langCode  = ""
 
         //if project has a lang defined :
@@ -575,7 +586,9 @@ WritingZoneForm {
     }
 
     onProjectIdChanged: {
+        if(!spellCheckerKilled){
         determineSpellCheckerLanguageCode()
+        }
     }
 
 
