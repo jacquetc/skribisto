@@ -515,12 +515,12 @@ void PLMSheetListModel::refreshAfterDataAddition(int projectId, int paperId)
     }
 
 
-    beginInsertRows(QModelIndex(), row, row);
+    beginInsertRows(QModelIndex(), paperIndex, paperIndex);
 
     m_allSheetItems.insert(itemIndex, new PLMSheetItem(projectId, paperId,
                                                        indentsHash.value(paperId),
                                                        sortOrdersHash.value(paperId)));
-    this->index(row, 0, QModelIndex());
+    this->index(paperIndex, 0, QModelIndex());
     endInsertRows();
 }
 
