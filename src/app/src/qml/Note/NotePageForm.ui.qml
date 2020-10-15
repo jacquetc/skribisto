@@ -10,8 +10,8 @@ Item {
     height: 600
     property alias rightPaneScrollMouseArea: rightPaneScrollMouseArea
     property alias rightPaneScrollTouchArea: rightPaneScrollTouchArea
-    property alias compactRightDockShowButton: compactRightDockShowButton
     property alias compactLeftDockShowButton: compactLeftDockShowButton
+    property alias compactRightDockShowButton: compactRightDockShowButton
     property alias leftDockMenuGroup: leftDockMenuGroup
     property alias rightDockMenuGroup: rightDockMenuGroup
     property alias leftDockResizeButton: leftDockResizeButton

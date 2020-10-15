@@ -480,7 +480,6 @@ TrashedListViewForm {
                     acceptedButtons: Qt.RightButton
                     onTapped: {
                         listView.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         menu.open()
                         eventPoint.accepted = true
                     }
@@ -490,7 +489,6 @@ TrashedListViewForm {
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
                         listView.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         openDocumentInNewTabAction.trigger()
                         eventPoint.accepted = true
 

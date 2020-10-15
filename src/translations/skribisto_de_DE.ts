@@ -2777,7 +2777,11 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>&amp;Notes</source>
-        <translation type="unfinished">&amp;Notizen</translation>
+        <translation type="obsolete">&amp;Notizen</translation>
+    </message>
+    <message>
+        <source>&amp;Overview</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2788,6 +2792,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Overview</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3279,6 +3287,124 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source>Synopsis</source>
         <translation type="obsolete">Zusammenfassung</translation>
+    </message>
+</context>
+<context>
+    <name>SheetOverviewToolForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display mode :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tree indentation :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation type="unfinished">Kursiv</translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="unfinished">Fett</translation>
+    </message>
+    <message>
+        <source>Strike</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation type="unfinished">Unterstrichen</translation>
+    </message>
+</context>
+<context>
+    <name>SheetOverviewTree</name>
+    <message>
+        <source>Level %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>label: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation type="unfinished">Aufwärts bewegen</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation type="unfinished">Abwärts bewegen</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

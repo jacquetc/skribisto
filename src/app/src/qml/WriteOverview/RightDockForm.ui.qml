@@ -14,6 +14,8 @@ Item {
     property alias editView: editView
     property alias tagPadFrame: tagPadFrame
     property alias tagPadView: tagPadView
+    property alias sheetOverviewFrame: sheetOverviewFrame
+    property alias sheetOverviewTool: sheetOverviewTool
 
     Pane {
         id: rightDockPane
@@ -50,6 +52,26 @@ Item {
 
                                 width: scrollView.width
 
+                                ToolFrame {
+                                    id: sheetOverviewFrame
+                                    folded: false
+                                    title: qsTr("Overview")
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 200
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
+                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
+
+
+                                    minimumContentHeight: SplitView.minimumHeight
+                                    contentHeight: SplitView.preferredHeight
+                                    maximumContentHeight: SplitView.maximumHeight
+
+
+
+                                    SheetOverviewTool {
+                                        id: sheetOverviewTool
+                                        clip: true
+                                    }
+                                }
                                 ToolFrame {
                                     id: editFrame
                                     folded: false

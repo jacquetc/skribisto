@@ -120,18 +120,18 @@ FocusScope {
 
 
 
-        //fix scrollbar visible at start
-        if(scrollView.height === 0){
-            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
-            return
-        }
+//        //fix scrollbar visible at start
+//        if(scrollView.height === 0){
+//            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
+//            return
+//        }
 
-        if(flickable.contentHeight > scrollView.height){
-            scrollBarVerticalPolicy = ScrollBar.AlwaysOn
-        }
-        else {
-            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
-        }
+//        if(flickable.contentHeight > scrollView.height){
+//            scrollBarVerticalPolicy = ScrollBar.AlwaysOn
+//        }
+//        else {
+//            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
+//        }
     }
 
 

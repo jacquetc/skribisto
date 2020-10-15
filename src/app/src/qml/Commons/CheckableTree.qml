@@ -285,7 +285,6 @@ ListView {
                     acceptedButtons: Qt.RightButton
                     onTapped: {
                         root.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         menu.open()
                         eventPoint.accepted = true
                     }
@@ -295,7 +294,6 @@ ListView {
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
                         root.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         openDocumentInNewTabAction.trigger()
                         eventPoint.accepted = true
 

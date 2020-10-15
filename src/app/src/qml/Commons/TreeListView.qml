@@ -517,7 +517,6 @@ TreeListViewForm {
                     acceptedButtons: Qt.RightButton
                     onTapped: {
                         listView.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         menu.open()
                         eventPoint.accepted = true
                     }
@@ -527,7 +526,6 @@ TreeListViewForm {
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
                         listView.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         openDocumentInNewTabAction.trigger()
                         eventPoint.accepted = true
 
