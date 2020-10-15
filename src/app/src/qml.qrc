@@ -57,8 +57,6 @@
         <file>qml/Commons/TreeListView.qml</file>
         <file>qml/Commons/TrashedListView.qml</file>
         <file>qml/Commons/TrashedListViewForm.ui.qml</file>
-        <file>qml/Write/NotePad.qml</file>
-        <file>qml/Write/NotePadForm.ui.qml</file>
         <file>qml/Commons/SKRTextArea.qml</file>
         <file>qml/Commons/TagPad.qml</file>
         <file>qml/Commons/TagPadForm.ui.qml</file>
@@ -82,5 +80,7 @@
         <file>qml/Commons/EditViewForm.ui.qml</file>
         <file>qml/WriteOverview/SheetOverviewTool.qml</file>
         <file>qml/WriteOverview/SheetOverviewToolForm.ui.qml</file>
+        <file>qml/Commons/NotePad.qml</file>
+        <file>qml/Commons/NotePadForm.ui.qml</file>
     </qresource>
 </RCC>

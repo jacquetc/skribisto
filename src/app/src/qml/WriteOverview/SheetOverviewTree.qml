@@ -5,6 +5,8 @@ import QtQml.Models 2.15
 import QtQml 2.15
 import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
+import eu.skribisto.searchtaglistproxymodel 1.0
+import eu.skribisto.taghub 1.0
 import "../Commons"
 import ".."
 
@@ -473,8 +475,10 @@ SheetOverviewTreeForm {
 
                         Item {
                             id: titleBox
+                            Layout.minimumWidth: 100
+                            Layout.maximumWidth: 200
                             Layout.fillHeight: true
-                            Layout.preferredWidth: 200
+                            Layout.fillWidth: true
 
 
 
@@ -733,7 +737,7 @@ SheetOverviewTreeForm {
                                         projectId: model.projectId
                                         spellCheckerKilled: true
                                         leftScrollItemVisible: false
-                                        textArea.placeholderText: qsTr("Synopsis")
+                                        textArea.placeholderText: qsTr("Outline")
 
                                         textPointSize: SkrSettings.overviewTreeNoteSettings.textPointSize
                                         textFontFamily: SkrSettings.overviewTreeNoteSettings.textFontFamily
@@ -758,6 +762,7 @@ SheetOverviewTreeForm {
                                             if(synopsisId === -2){ // no synopsis, create one
                                                 var error = plmData.noteHub().createSynopsis(projectId, sheetId)
                                                 synopsisId = error.getDataList()[0];
+                                                plmData.noteHub().setTitle(projectId, synopsisId, qsTr("Outline"))
                                                 if(synopsisId === -2){
                                                     console.warn("can't find synopsis of", projectId, sheetId)
                                                     return
@@ -904,7 +909,7 @@ SheetOverviewTreeForm {
                                     asynchronous: false
 
                                     Layout.minimumWidth: 300
-                                    Layout.maximumWidth: 500
+                                    Layout.maximumWidth: 600
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
@@ -913,6 +918,13 @@ SheetOverviewTreeForm {
                             }
 
                         }
+
+                        RowLayout{
+                            id: noteBox
+                            Layout.minimumWidth: 100
+                            Layout.maximumWidth: 400
+                            Layout.fillHeight: true
+                            Layout.fillWidth: true
 
                         Rectangle {
                             Layout.preferredWidth: 1
@@ -940,8 +952,29 @@ SheetOverviewTreeForm {
 
                         }
 
+
+                        NotePad {
+                            id: notePad
+                            Layout.minimumWidth: 100
+                            Layout.maximumWidth: 400
+                            Layout.fillHeight: true
+                            Layout.fillWidth: true
+
+
+                            projectId: model.projectId
+                            sheetId: model.paperId
+                        }
+
+
+
+                        }
+
                         RowLayout{
-                            Layout.preferredWidth: 100
+                            id: tagBox
+                            Layout.minimumWidth: 20
+                            Layout.maximumWidth: 400
+                            Layout.fillHeight: true
+                            Layout.fillWidth: true
 
                             Rectangle {
                                 Layout.preferredWidth: 1
@@ -970,11 +1003,38 @@ SheetOverviewTreeForm {
                             }
 
 
-                            Rectangle{
-                                Material.elevation: 6
-                                color: "red"
-                                height: 40
-                                width: 40
+                            TagPad{
+                                id: tagPad
+
+                                Layout.minimumWidth: 20
+                                Layout.maximumWidth: 400
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
+
+
+                                //-----------------------------------------------------------
+                                //---------------Tags :---------------------------------------------
+                                //-----------------------------------------------------------
+
+
+                                projectId: model.projectId
+                                itemId: model.paperId
+
+
+                                //proxy model for tag list :
+
+                                SKRSearchTagListProxyModel {
+                                    id: tagProxyModel
+                                    projectIdFilter: projectId
+                                    sheetIdFilter: paperId
+                                }
+                                tagListModel: tagProxyModel
+                                itemType: SKRTagHub.Sheet
+
+
+                                //---------------------------------------------------------
+                                //---------------------------------------------------------
+                                //---------------------------------------------------------
                             }
                         }
 

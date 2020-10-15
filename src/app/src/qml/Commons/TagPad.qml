@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import eu.skribisto.skrusersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
+import eu.skribisto.taghub 1.0
 //import ".."
 
 
@@ -12,7 +13,9 @@ TagPadForm {
 
 
     property int projectId: -2
+    // we use the term itemId instead of paperId to not be constrained if we want to tag more than papers in the future
     property int itemId: -2
+    property var itemType: SKRTagHub.Sheet
     property var tagListModel: undefined
 
     signal callAddTagRelationship(int projectId, int itemId, string tagName)
@@ -34,6 +37,36 @@ TagPadForm {
 
     }
 
+    Connections{
+        target: root
+        function onCallRemoveTagRelationship(projectId, itemId, tagId){
+            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Sheet , itemId, tagId)
+        }
+    }
+
+    Connections{
+        target: root
+        function onCallAddTagRelationship(projectId, itemId, tagName){
+
+            var error;
+            // verify if name doesn't already exist :
+            var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
+
+            if(tagId === -2){
+                //if not, create tag
+                error = plmData.tagHub().addTag(projectId, tagName)
+                tagId = plmData.tagHub().getLastAddedId()
+            }
+
+            // set relationship
+            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Sheet, itemId, tagId)
+            if (!error.success){
+                console.log("error onCallAddTagRelationship")
+                //TODO: add notification
+                return
+            }
+        }
+    }
 
     Component {
         id: tagFlowComponent

@@ -125,37 +125,8 @@ WriteRightDockForm {
         sheetIdFilter: paperId
     }
     tagPadView.tagListModel: tagProxyModel
+    tagPadView.itemType: SKRTagHub.Sheet
 
-    Connections{
-        target: tagPadView
-        function onCallRemoveTagRelationship(projectId, itemId, tagId){
-            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Sheet , itemId, tagId)
-        }
-    }
-
-    Connections{
-        target: tagPadView
-        function onCallAddTagRelationship(projectId, itemId, tagName){
-
-            var error;
-            // verify if name doesn't already exist :
-            var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
-
-            if(tagId === -2){
-                //if not, create tag
-                error = plmData.tagHub().addTag(projectId, tagName)
-                tagId = plmData.tagHub().getLastAddedId()
-            }
-
-            // set relationship
-            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Sheet, itemId, tagId)
-            if (!error.success){
-                console.log("error onCallAddTagRelationship")
-                //TODO: add notification
-                return
-            }
-        }
-    }
 
 
     //-----------------------------------------------------------
