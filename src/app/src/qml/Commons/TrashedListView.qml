@@ -421,6 +421,8 @@ TrashedListViewForm {
                 }
             }
 
+            property bool editBugWorkaround: false
+
             Rectangle {
                 id: content
                 property int visualIndex: 0
@@ -653,6 +655,13 @@ TrashedListViewForm {
 
                                     placeholderText: qsTr("Enter label")
 
+                                    //workaround for bug losing focus after using rename from context menu
+                                    onActiveFocusChanged: {
+                                        if(!activeFocus && editBugWorkaround){
+                                            delegateRoot.editLabel()
+                                            delegateRoot.editBugWorkaround = false
+                                        }
+                                    }
 
                                     onEditingFinished: {
                                         //if (!activeFocus) {
@@ -695,6 +704,14 @@ TrashedListViewForm {
                                     maximumLength: 50
 
                                     placeholderText: qsTr("Enter name")
+
+                                    //workaround for bug losing focus after using rename from context menu
+                                    onActiveFocusChanged: {
+                                        if(!activeFocus && editBugWorkaround){
+                                            delegateRoot.editName()
+                                            delegateRoot.editBugWorkaround = false
+                                        }
+                                    }
 
 
                                     onEditingFinished: {
@@ -971,6 +988,7 @@ TrashedListViewForm {
                     onTriggered: {
                         console.log("from trashed: rename action", model.projectId,
                                     model.paperId)
+                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editName()
                     }
                 }
@@ -986,6 +1004,7 @@ TrashedListViewForm {
                     onTriggered: {
                         console.log("from trashed: sel label", model.projectId,
                                     model.paperId)
+                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editLabel()
                     }
                 }

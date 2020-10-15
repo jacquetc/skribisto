@@ -53,8 +53,7 @@ SheetOverviewTreeForm {
     //-----------------------------------------------------------------------------
     // options :
     property bool treelikeIndentsVisible: true
-    property bool dragDropEnabled: false
-    property bool hoveringChangingTheCurrentItemAllowed: true
+    property bool dragDropEnabled: false // not complemently implemented yet
 
     //tree-like onTreelikeIndents
     property int treeIndentOffset: 0
@@ -159,17 +158,20 @@ SheetOverviewTreeForm {
             }
 
 
+
             function editName() {
-                state = "edit_name"
+                titleBox.state = "edit_name"
                 titleTextField.forceActiveFocus()
                 titleTextField.selectAll()
             }
 
             function editLabel() {
-                state = "edit_label"
-                labelTextField.forceActiveFocus()
+                titleBox.state = "edit_label"
+                //labelTextField.forceActiveFocus()
                 labelTextField.selectAll()
             }
+
+
 
             Keys.priority: Keys.AfterItem
 
@@ -261,6 +263,7 @@ SheetOverviewTreeForm {
 
             }
 
+            property bool editBugWorkaround: false
 
             Rectangle {
                 id: draggableContent
@@ -273,9 +276,9 @@ SheetOverviewTreeForm {
                     horizontalCenter: parent.horizontalCenter
                     verticalCenter: parent.verticalCenter
                 }
-                width: delegateRoot.width
+                width: delegateRoot.width  - 2
 
-                height: content.height
+                height: content.height + 2
 
                 Drag.active: dragHandler.active
                 Drag.source: draggableContent
@@ -319,7 +322,7 @@ SheetOverviewTreeForm {
                         wheel.accepted = true
                     }
 
-                    enabled: dragHandler.enabled
+                    enabled: dragHandler.enabled && root.dragDropEnabled
                 }
 
                 Action {
@@ -380,6 +383,10 @@ SheetOverviewTreeForm {
 
                     }
                 }
+
+
+
+
                 Pane{
                     id: content
 
@@ -389,11 +396,15 @@ SheetOverviewTreeForm {
                         horizontalCenter: parent.horizontalCenter
                         verticalCenter: parent.verticalCenter
                     }
-                    height: 50
+                    height: 60
                     width: draggableContent.width
+
+
+
 
                     HoverHandler {
                         id: hoverHandler
+
                     }
 
 
@@ -415,7 +426,9 @@ SheetOverviewTreeForm {
 
 
                         onLongPressed: { // needed to activate the grab handler
-                            enabled = false
+                            if(root.dragDropEnabled){
+                                enabled = false
+                            }
                         }
                     }
 
@@ -441,246 +454,266 @@ SheetOverviewTreeForm {
                         }
                     }
 
-                    ColumnLayout{
-                        id: columnLayout3
+                    Material.elevation: 4
+
+
+                    RowLayout{
+                        id: rowLayout3
                         anchors.fill: parent
 
 
-                        RowLayout {
-                            id: rowLayout
-                            spacing: 2
+                        Item {
+                            id: titleBox
                             Layout.fillHeight: true
                             Layout.fillWidth: true
 
 
-                            Rectangle {
-                                id: currentItemIndicator
-                                color: listView.currentIndex === model.index ? "lightsteelblue" : "transparent"
-                                Layout.fillHeight: true
-                                Layout.preferredWidth: 5
-                                //visible: listView.currentIndex === model.index
+
+                            RowLayout {
+                                id: rowLayout
+                                anchors.fill: parent
+                                spacing: 2
+
+                                Rectangle {
+                                    id: currentItemIndicator
+                                    color: listView.currentIndex === model.index ? "lightsteelblue" : "transparent"
+                                    Layout.fillHeight: true
+                                    Layout.preferredWidth: 5
+                                    //visible: listView.currentIndex === model.index
+                                }
+
+
+
+                                ColumnLayout {
+                                    id: columnLayout2
+                                    spacing: 1
+                                    Layout.fillHeight: true
+                                    Layout.fillWidth: true
+
+                                    Label {
+                                        id: titleLabel
+
+                                        Layout.fillWidth: true
+                                        Layout.topMargin: 2
+                                        Layout.leftMargin: 4
+                                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                        font.bold: model.projectIsActive && model.indent === -1 ? true : false
+                                        text: model.indent === -1 ? model.projectName : model.name
+                                    }
+
+                                    TextField {
+                                        id: labelTextField
+                                        visible: false
+
+
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        text: labelLabel.text
+                                        maximumLength: 50
+
+                                        placeholderText: qsTr("Enter label")
+
+                                        //workaround for bug losing focus after using rename from context menu
+                                        onActiveFocusChanged: {
+                                            if(!activeFocus && editBugWorkaround){
+                                                delegateRoot.editLabel()
+                                                delegateRoot.editBugWorkaround = false
+                                            }
+                                        }
+
+                                        onEditingFinished: {
+                                            console.log("editing label finished")
+                                            model.label = text
+                                            titleBox.state = ""
+
+                                            //fix bug while new lone child
+                                            titleLabel.visible = true
+                                            labelLabel.visible = true
+
+                                        }
+
+                                        //Keys.priority: Keys.AfterItem
+                                        Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
+                                        Keys.onPressed: {
+                                            if (event.key === Qt.Key_Return){
+                                                console.log("Return key pressed title")
+                                                editingFinished()
+                                                event.accepted = true
+                                            }
+                                            if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                                console.log("Ctrl Return key pressed title")
+                                                editingFinished()
+                                                event.accepted = true
+                                            }
+                                            if (event.key === Qt.Key_Escape){
+                                                console.log("Escape key pressed title")
+                                                delegateRoot.state = ""
+                                                event.accepted = true
+                                            }
+                                        }
+
+                                    }
+
+                                    TextField {
+                                        id: titleTextField
+                                        visible: false
+
+
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        text: titleLabel.text
+                                        maximumLength: 50
+
+                                        placeholderText: qsTr("Enter name")
+
+                                        //workaround for bug losing focus after using rename from context menu
+                                        onActiveFocusChanged: {
+                                            if(!activeFocus && editBugWorkaround){
+                                                delegateRoot.editName()
+                                                delegateRoot.editBugWorkaround = false
+                                            }
+                                        }
+
+                                        onEditingFinished: {
+
+                                            console.log("editing finished")
+                                            if(model.indent === -1){ //project item
+                                                model.projectName = text
+                                            }
+                                            else {
+                                                model.name = text
+                                            }
+
+                                            titleBox.state = ""
+                                            //fix bug while new lone child
+                                            titleLabel.visible = true
+                                            labelLabel.visible = true
+                                        }
+
+                                        //Keys.priority: Keys.AfterItem
+                                        Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
+                                        Keys.onPressed: {
+                                            if (event.key === Qt.Key_Return){
+                                                console.log("Return key pressed title")
+                                                editingFinished()
+                                                event.accepted = true
+                                            }
+                                            if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                                console.log("Ctrl Return key pressed title")
+                                                editingFinished()
+                                                event.accepted = true
+                                            }
+                                            if (event.key === Qt.Key_Escape){
+                                                console.log("Escape key pressed title")
+                                                titleBox.state = ""
+                                                event.accepted = true
+                                            }
+                                        }
+
+                                    }
+
+                                    Label {
+                                        id: labelLabel
+                                        text:  model.label === undefined ? "" : model.label
+                                        Layout.bottomMargin: 2
+                                        Layout.rightMargin: 4
+                                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+
+
+                                    }
+                                }
                             }
 
-
-
-                            ColumnLayout {
-                                id: columnLayout2
-                                spacing: 1
-                                Layout.fillHeight: true
-                                Layout.fillWidth: true
-
-                                Label {
-                                    id: titleLabel
-
-                                    Layout.fillWidth: true
-                                    Layout.topMargin: 2
-                                    Layout.leftMargin: 4
-                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                    font.bold: model.projectIsActive && model.indent === -1 ? true : false
-                                    text: model.indent === -1 ? model.projectName : model.name
+                            states: [
+                                State {
+                                    name: "edit_name"
+                                    PropertyChanges {
+                                        target: menuButton
+                                        visible: false
+                                    }
+                                    PropertyChanges {
+                                        target: titleLabel
+                                        visible: false
+                                    }
+                                    PropertyChanges {
+                                        target: labelLabel
+                                        visible: false
+                                    }
+                                    PropertyChanges {
+                                        target: titleTextField
+                                        visible: true
+                                    }
+                                    PropertyChanges {
+                                        target: labelTextField
+                                        visible: false
+                                    }
+                                },
+                                State {
+                                    name: "edit_label"
+                                    PropertyChanges {
+                                        target: menuButton
+                                        visible: false
+                                    }
+                                    PropertyChanges {
+                                        target: titleLabel
+                                        visible: false
+                                    }
+                                    PropertyChanges {
+                                        target: labelLabel
+                                        visible: false
+                                    }
+                                    PropertyChanges {
+                                        target: titleTextField
+                                        visible: false
+                                    }
+                                    PropertyChanges {
+                                        target: labelTextField
+                                        visible: true
+                                    }
                                 }
 
-                                TextField {
-                                    id: labelTextField
-                                    visible: false
+                            ]
+                        }
+                        ToolButton {
+                            id: menuButton
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: 30
 
+                            text: "..."
+                            flat: true
+                            focusPolicy: Qt.NoFocus
 
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    text: labelLabel.text
-                                    maximumLength: 50
-
-                                    placeholderText: qsTr("Enter label")
-
-
-                                    onEditingFinished: {
-
-                                        console.log("editing label finished")
-                                        model.label = text
-                                        delegateRoot.state = ""
-                                        //fix bug while new lone child
-                                        titleLabel.visible = true
-                                        labelLabel.visible = true
-                                    }
-
-                                    //Keys.priority: Keys.AfterItem
-                                    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
-                                    Keys.onPressed: {
-                                        if (event.key === Qt.Key_Return){
-                                            console.log("Return key pressed title")
-                                            editingFinished()
-                                            event.accepted = true
-                                        }
-                                        if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
-                                            console.log("Ctrl Return key pressed title")
-                                            editingFinished()
-                                            event.accepted = true
-                                        }
-                                        if (event.key === Qt.Key_Escape){
-                                            console.log("Escape key pressed title")
-                                            delegateRoot.state = ""
-                                            event.accepted = true
-                                        }
-                                    }
-
-                                }
-
-                                TextField {
-                                    id: titleTextField
-                                    visible: false
-
-
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    text: titleLabel.text
-                                    maximumLength: 50
-
-                                    placeholderText: qsTr("Enter name")
-
-
-                                    onEditingFinished: {
-
-                                        console.log("editing finished")
-                                        if(model.indent === -1){ //project item
-                                            model.projectName = text
-                                        }
-                                        else {
-                                            model.name = text
-                                        }
-
-                                        delegateRoot.state = ""
-                                        //fix bug while new lone child
-                                        titleLabel.visible = true
-                                        labelLabel.visible = true
-                                    }
-
-                                    //Keys.priority: Keys.AfterItem
-                                    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
-                                    Keys.onPressed: {
-                                        if (event.key === Qt.Key_Return){
-                                            console.log("Return key pressed title")
-                                            editingFinished()
-                                            event.accepted = true
-                                        }
-                                        if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
-                                            console.log("Ctrl Return key pressed title")
-                                            editingFinished()
-                                            event.accepted = true
-                                        }
-                                        if (event.key === Qt.Key_Escape){
-                                            console.log("Escape key pressed title")
-                                            delegateRoot.state = ""
-                                            event.accepted = true
-                                        }
-                                    }
-
-                                }
-
-                                Label {
-                                    id: labelLabel
-                                    text:  model.label === undefined ? "" : model.label
-                                    Layout.bottomMargin: 2
-                                    Layout.rightMargin: 4
-                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-
-
-                                }
+                            onClicked: {
+                                listView.currentIndex = model.index
+                                delegateRoot.forceActiveFocus()
+                                menu.open()
                             }
 
-                            ToolButton {
-                                id: menuButton
-                                Layout.fillHeight: true
-                                Layout.preferredWidth: 30
+                            visible: hoverHandler.hovered | draggableContent.isCurrent
+                        }
 
-                                text: "..."
-                                flat: true
-                                focusPolicy: Qt.NoFocus
 
-                                onClicked: {
-                                    listView.currentIndex = model.index
-                                    delegateRoot.forceActiveFocus()
-                                    menu.open()
-                                }
+                    }
+                }
+                states: [
+                    State {
+                        name: "drag_active"
+                        when: draggableContent.Drag.active
 
-                                visible: hoverHandler.hovered | draggableContent.isCurrent
+                        ParentChange {
+                            target: draggableContent
+                            parent: base
+                        }
+                        AnchorChanges {
+                            target: draggableContent
+                            anchors {
+                                horizontalCenter: undefined
+                                verticalCenter: undefined
                             }
                         }
                     }
-                }
+                ]
             }
-            states: [
-                State {
-                    name: "drag_active"
-                    when: draggableContent.Drag.active
-
-                    ParentChange {
-                        target: draggableContent
-                        parent: base
-                    }
-                    AnchorChanges {
-                        target: draggableContent
-                        anchors {
-                            horizontalCenter: undefined
-                            verticalCenter: undefined
-                        }
-                    }
-                },
-                State {
-                    name: "edit_name"
-                    PropertyChanges {
-                        target: menuButton
-                        visible: false
-                    }
-                    PropertyChanges {
-                        target: goToChildButton
-                        visible: false
-                    }
-                    PropertyChanges {
-                        target: titleLabel
-                        visible: false
-                    }
-                    PropertyChanges {
-                        target: labelLabel
-                        visible: false
-                    }
-                    PropertyChanges {
-                        target: titleTextField
-                        visible: true
-                    }
-                    PropertyChanges {
-                        target: labelTextField
-                        visible: false
-                    }
-                },
-                State {
-                    name: "edit_label"
-                    PropertyChanges {
-                        target: menuButton
-                        visible: false
-                    }
-                    PropertyChanges {
-                        target: goToChildButton
-                        visible: false
-                    }
-                    PropertyChanges {
-                        target: titleLabel
-                        visible: false
-                    }
-                    PropertyChanges {
-                        target: labelLabel
-                        visible: false
-                    }
-                    PropertyChanges {
-                        target: titleTextField
-                        visible: false
-                    }
-                    PropertyChanges {
-                        target: labelTextField
-                        visible: true
-                    }
-                }
-            ]
-
 
 
 
@@ -690,13 +723,11 @@ SheetOverviewTreeForm {
                 y: menuButton.height
 
                 onOpened: {
-                    hoveringChangingTheCurrentItemAllowed = false
                     // necessary to differenciate between all items
                     contextMenuItemIndex = model.index
                 }
 
                 onClosed: {
-                    hoveringChangingTheCurrentItemAllowed = true
 
                 }
                 MenuItem {
@@ -775,6 +806,7 @@ SheetOverviewTreeForm {
                     onTriggered: {
                         console.log("rename action", model.projectId,
                                     model.paperId)
+                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editName()
                     }
                 }
@@ -790,6 +822,7 @@ SheetOverviewTreeForm {
                     onTriggered: {
                         console.log("from deleted: sel label", model.projectId,
                                     model.paperId)
+                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editLabel()
                     }
                 }

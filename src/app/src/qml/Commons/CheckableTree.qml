@@ -227,6 +227,8 @@ ListView {
 
             }
 
+            property bool editBugWorkaround: false
+
             Rectangle {
                 id: content
                 property int visualIndex: 0
@@ -499,6 +501,13 @@ ListView {
 
                                     placeholderText: qsTr("Enter label")
 
+                                    //workaround for bug losing focus after using rename from context menu
+                                    onActiveFocusChanged: {
+                                        if(!activeFocus && editBugWorkaround){
+                                            delegateRoot.editLabel()
+                                            delegateRoot.editBugWorkaround = false
+                                        }
+                                    }
 
                                     onEditingFinished: {
                                         //if (!activeFocus) {
@@ -543,6 +552,13 @@ ListView {
 
                                     placeholderText: qsTr("Enter name")
 
+                                    //workaround for bug losing focus after using rename from context menu
+                                    onActiveFocusChanged: {
+                                        if(!activeFocus && editBugWorkaround){
+                                            delegateRoot.editName()
+                                            delegateRoot.editBugWorkaround = false
+                                        }
+                                    }
 
                                     onEditingFinished: {
                                         //if (!activeFocus) {
@@ -826,6 +842,7 @@ ListView {
                         onTriggered: {
                             console.log("rename action", model.projectId,
                                         model.paperId)
+                            delegateRoot.editBugWorkaround = true
                             delegateRoot.editName()
                         }
                     }
@@ -846,6 +863,7 @@ ListView {
                         onTriggered: {
                             console.log("sel label", model.projectId,
                                         model.paperId)
+                            delegateRoot.editBugWorkaround = true
                             delegateRoot.editLabel()
                         }
                     }

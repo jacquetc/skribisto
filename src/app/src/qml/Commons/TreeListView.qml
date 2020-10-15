@@ -24,7 +24,6 @@ TreeListViewForm {
     property int currentIndex: listView.currentIndex
     property int openedProjectId: -2
     property int openedPaperId: -2
-    property bool hoveringChangingTheCurrentItemAllowed: true
     listView.model: visualModel
     DelegateModel {
         id: visualModel
@@ -442,6 +441,7 @@ TreeListViewForm {
                     event.accepted = true
                 }
             }
+            property bool editBugWorkaround: false
 
             Rectangle {
                 id: content
@@ -487,11 +487,7 @@ TreeListViewForm {
 
                 HoverHandler {
                     id: hoverHandler
-                    //                    onHoveredChanged: {
-                    //                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
-                    //                            listView.currentIndex = model.index
-                    //                        }
-                    //                    }
+
                 }
 
                 TapHandler {
@@ -758,6 +754,13 @@ TreeListViewForm {
 
                                     placeholderText: qsTr("Enter label")
 
+                                    //workaround for bug losing focus after using rename from context menu
+                                    onActiveFocusChanged: {
+                                        if(!activeFocus && editBugWorkaround){
+                                            delegateRoot.editLabel()
+                                            delegateRoot.editBugWorkaround = false
+                                        }
+                                    }
 
                                     onEditingFinished: {
 
@@ -803,6 +806,13 @@ TreeListViewForm {
 
                                     placeholderText: qsTr("Enter name")
 
+                                    //workaround for bug losing focus after using rename from context menu
+                                    onActiveFocusChanged: {
+                                        if(!activeFocus && editBugWorkaround){
+                                            delegateRoot.editName()
+                                            delegateRoot.editBugWorkaround = false
+                                        }
+                                    }
 
                                     onEditingFinished: {
 
@@ -1049,13 +1059,11 @@ TreeListViewForm {
                 y: menuButton.height
 
                 onOpened: {
-                    hoveringChangingTheCurrentItemAllowed = false
                     // necessary to differenciate between all items
                     contextMenuItemIndex = model.index
                 }
 
                 onClosed: {
-                    hoveringChangingTheCurrentItemAllowed = true
 
                 }
                 MenuItem {
@@ -1147,6 +1155,7 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("rename action", model.projectId,
                                     model.paperId)
+                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editName()
                     }
                 }
@@ -1162,6 +1171,7 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("from deleted: sel label", model.projectId,
                                     model.paperId)
+                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editLabel()
                     }
                 }

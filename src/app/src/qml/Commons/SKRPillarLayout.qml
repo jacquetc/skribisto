@@ -146,7 +146,7 @@ Item {
 
     Timer{
         id: placeChildrenTimer
-        interval: 0
+        interval: 50
         repeat: false
         onTriggered: placeChildren()
     }
