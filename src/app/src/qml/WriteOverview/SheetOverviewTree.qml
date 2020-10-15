@@ -5,6 +5,8 @@ import QtQml.Models 2.15
 import QtQml 2.15
 import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
+import "../Commons"
+import ".."
 
 SheetOverviewTreeForm {
     id: root
@@ -401,7 +403,10 @@ SheetOverviewTreeForm {
                     width: draggableContent.width
 
 
-
+                    //                    background: Rectangle {
+                    //                        color: Material.backgroundColor
+                    //                        radius: 5
+                    //                    }
 
                     HoverHandler {
                         id: hoverHandler
@@ -469,7 +474,7 @@ SheetOverviewTreeForm {
                         Item {
                             id: titleBox
                             Layout.fillHeight: true
-                            Layout.fillWidth: true
+                            Layout.preferredWidth: 200
 
 
 
@@ -679,10 +684,237 @@ SheetOverviewTreeForm {
 
                             ]
                         }
+                        Item {
+                            id: synopsisBox
+                            Layout.fillHeight: true
+                            Layout.fillWidth: true
 
+                            RowLayout {
+                                anchors.fill: parent
+
+                                Rectangle {
+                                    Layout.preferredWidth: 1
+                                    Layout.preferredHeight: content.height / 2
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                    gradient: Gradient {
+                                        orientation: Qt.Vertical
+                                        GradientStop {
+                                            position: 0.00;
+                                            color: "#ffffff";
+                                        }
+                                        GradientStop {
+                                            position: 0.30;
+                                            color: "#9e9e9e";
+                                        }
+                                        GradientStop {
+                                            position: 0.70;
+                                            color: "#9e9e9e";
+                                        }
+                                        GradientStop {
+                                            position: 1.00;
+                                            color: "#ffffff";
+                                        }
+                                    }
+
+                                }
+
+
+                                Component {
+                                    id: noteWritingZoneComponent
+
+
+                                    WritingZone {
+                                        id: writingZone
+
+
+
+                                        property string pageType: "note"
+
+                                        projectId: model.projectId
+                                        spellCheckerKilled: true
+                                        leftScrollItemVisible: false
+                                        textArea.placeholderText: qsTr("Synopsis")
+
+                                        textPointSize: SkrSettings.overviewTreeNoteSettings.textPointSize
+                                        textFontFamily: SkrSettings.overviewTreeNoteSettings.textFontFamily
+                                        textIndent: SkrSettings.overviewTreeNoteSettings.textIndent
+                                        textTopMargin: SkrSettings.overviewTreeNoteSettings.textTopMargin
+
+                                        stretch: true
+
+
+                                        Component.onCompleted: {
+                                            openSynopsisFromSheetId(model.projectId, model.paperId)
+                                        }
+
+                                        Component.onDestruction: {
+                                            skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                        }
+
+
+                                        function openSynopsisFromSheetId(projectId, sheetId){
+                                            var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+
+                                            if(synopsisId === -2){ // no synopsis, create one
+                                                var error = plmData.noteHub().createSynopsis(projectId, sheetId)
+                                                synopsisId = error.getDataList()[0];
+                                                if(synopsisId === -2){
+                                                    console.warn("can't find synopsis of", projectId, sheetId)
+                                                    return
+                                                }
+                                            }
+
+
+                                            openSynopsis(projectId, synopsisId)
+
+                                        }
+
+                                        function openSynopsis(_projectId, _paperId){
+
+                                            // save current
+                                            if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
+                                                saveContent()
+                                                saveCurrentPaperCursorPositionAndY()
+                                                skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                            }
+
+
+                                            paperId = _paperId
+                                            projectId = _projectId
+                                            writingZone.paperId = _paperId
+                                            writingZone.projectId = _projectId
+
+                                            console.log("opening note :", _projectId, _paperId)
+                                            writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
+                                            title = plmData.noteHub().getTitle(_projectId, _paperId)
+
+                                            skrTextBridge.subscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+
+                                            // apply format
+                                            writingZone.documentHandler.indentEverywhere = SkrSettings.overviewTreeNoteSettings.textIndent
+                                            writingZone.documentHandler.topMarginEverywhere = SkrSettings.overviewTreeNoteSettings.textTopMargin
+
+                                            //restoreCurrentPaperCursorPositionAndY()
+
+                                            //writingZone.forceActiveFocus()
+                                            //save :
+                                            skrUserSettings.setProjectSetting(projectId, "overViewTreeNoteCurrentPaperId", paperId)
+
+                                            // start the timer for automatic position saving
+                                            if(!saveCurrentPaperCursorPositionAndYTimer.running){
+                                                saveCurrentPaperCursorPositionAndYTimer.start()
+                                            }
+
+
+                                        }
+
+
+                                        function restoreCurrentPaperCursorPositionAndY(){
+
+                                            //get cursor position
+                                            var position = skrUserSettings.getFromProjectSettingHash(
+                                                        projectId, "overViewTreeNotePositionHash", paperId, 0)
+                                            //get Y
+                                            var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
+                                                        projectId, "overViewTreeNoteYHash", paperId, 0)
+
+                                            // set positions :
+                                            if(position >= writingZone.textArea.length){
+                                                position = writingZone.textArea.length - 1
+                                            }
+
+                                            writingZone.setCursorPosition(position)
+                                            writingZone.flickable.contentY = visibleAreaY
+
+                                        }
+
+                                        function saveCurrentPaperCursorPositionAndY(){
+
+                                            if(paperId != -2 || projectId != -2){
+                                                //save cursor position of current document :
+
+                                                var previousCursorPosition = writingZone.cursorPosition
+                                                //console.log("previousCursorPosition", previousCursorPosition)
+                                                var previousY = writingZone.flickable.contentY
+                                                //console.log("previousContentY", previousY)
+                                                skrUserSettings.insertInProjectSettingHash(
+                                                            projectId, "overViewTreeNotePositionHash", paperId,
+                                                            previousCursorPosition)
+                                                skrUserSettings.insertInProjectSettingHash(projectId,
+                                                                                           "overViewTreeNoteYHash",
+                                                                                           paperId,
+                                                                                           previousY)
+                                            }
+                                        }
+
+                                        Timer{
+                                            id: saveCurrentPaperCursorPositionAndYTimer
+                                            repeat: true
+                                            interval: 10000
+                                            onTriggered: saveCurrentPaperCursorPositionAndY()
+                                        }
+
+
+
+                                        //------------------------------------------------------------
+                                        //------------------------------------------------------------
+                                        //------------------------------------------------------------
+
+
+                                        // save content once after writing:
+                                        textArea.onTextChanged: {
+
+                                            //avoid first text change, when blank HTML is inserted
+                                            if(writingZone.textArea.length === 0
+                                                    && plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                                                return
+                                            }
+
+                                            if(contentSaveTimer.running){
+                                                contentSaveTimer.stop()
+                                            }
+                                            contentSaveTimer.start()
+                                        }
+                                        Timer{
+                                            id: contentSaveTimer
+                                            repeat: false
+                                            interval: 200
+                                            onTriggered: saveContent()
+                                        }
+
+                                        function saveContent(){
+                                            //console.log("saving note")
+                                            var error = plmData.noteHub().setContent(projectId, paperId, writingZone.text)
+                                            if (!error.success){
+                                                console.log("saving note failed", projectId, paperId)
+                                            }
+                                            else {
+                                                console.log("saving note success", projectId, paperId)
+
+                                            }
+                                        }
+                                    }
+
+                                }
+
+
+                                Loader {
+                                    id: noteWritingZoneLoader
+                                    sourceComponent: noteWritingZoneComponent
+                                    asynchronous: false
+
+                                    Layout.minimumWidth: 300
+                                    Layout.maximumWidth: 500
+                                    Layout.fillHeight: true
+                                    Layout.fillWidth: true
+
+                                }
+
+                            }
+
+                        }
 
                         Rectangle {
-                            id: separator
                             Layout.preferredWidth: 1
                             Layout.preferredHeight: content.height / 2
                             Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
@@ -708,47 +940,119 @@ SheetOverviewTreeForm {
 
                         }
 
-                        ColumnLayout {
-                            ToolButton {
-                                id: menuButton
-                                Layout.fillHeight: true
-                                Layout.preferredWidth: 30
+                        RowLayout{
+                            Layout.preferredWidth: 100
 
-                                text: "..."
-                                flat: true
-                                focusPolicy: Qt.NoFocus
-
-                                onClicked: {
-                                    listView.currentIndex = model.index
-                                    delegateRoot.forceActiveFocus()
-                                    menu.open()
-                                    menu.popup(menuButton, menuButton.x, menuButton.height)
-
+                            Rectangle {
+                                Layout.preferredWidth: 1
+                                Layout.preferredHeight: content.height / 2
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                gradient: Gradient {
+                                    orientation: Qt.Vertical
+                                    GradientStop {
+                                        position: 0.00;
+                                        color: "#ffffff";
+                                    }
+                                    GradientStop {
+                                        position: 0.30;
+                                        color: "#9e9e9e";
+                                    }
+                                    GradientStop {
+                                        position: 0.70;
+                                        color: "#9e9e9e";
+                                    }
+                                    GradientStop {
+                                        position: 1.00;
+                                        color: "#ffffff";
+                                    }
                                 }
 
-                                visible: hoverHandler.hovered | draggableContent.isCurrent
                             }
 
-                            ToolButton {
-                                id: focusOnBranchButton
-                                Layout.fillHeight: true
-                                Layout.preferredWidth: 30
 
-                                text: "focus"
-                                icon.name: "edit-find"
-                                display: AbstractButton.IconOnly
-                                flat: true
-                                visible: false
+                            Rectangle{
+                                Material.elevation: 6
+                                color: "red"
+                                height: 40
+                                width: 40
+                            }
+                        }
 
-                                onClicked: {
-                                    listView.currentIndex = model.index
-                                    delegateRoot.forceActiveFocus()
+                        RowLayout{
+                            id: buttonsBox
+                            Layout.preferredWidth: 40
+                            visible: hoverHandler.hovered | draggableContent.isCurrent
 
-                                    // filter to this parent and its children
-
-
+                            Rectangle {
+                                Layout.preferredWidth: 1
+                                Layout.preferredHeight: content.height / 2
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                gradient: Gradient {
+                                    orientation: Qt.Vertical
+                                    GradientStop {
+                                        position: 0.00;
+                                        color: "#ffffff";
+                                    }
+                                    GradientStop {
+                                        position: 0.30;
+                                        color: "#9e9e9e";
+                                    }
+                                    GradientStop {
+                                        position: 0.70;
+                                        color: "#9e9e9e";
+                                    }
+                                    GradientStop {
+                                        position: 1.00;
+                                        color: "#ffffff";
+                                    }
                                 }
 
+                            }
+
+                            ColumnLayout {
+                                Layout.preferredWidth: 30
+
+                                ToolButton {
+                                    id: menuButton
+                                    Layout.fillHeight: true
+                                    Layout.preferredWidth: 30
+
+                                    text: "..."
+                                    flat: true
+                                    focusPolicy: Qt.NoFocus
+
+                                    onClicked: {
+                                        listView.currentIndex = model.index
+                                        delegateRoot.forceActiveFocus()
+                                        menu.open()
+                                        menu.popup(menuButton, menuButton.x, menuButton.height)
+
+                                    }
+
+                                    visible: hoverHandler.hovered | draggableContent.isCurrent
+                                }
+
+                                ToolButton {
+                                    id: focusOnBranchButton
+                                    Layout.fillHeight: true
+                                    Layout.preferredWidth: 30
+
+                                    text: "focus"
+                                    icon.name: "edit-find"
+                                    display: AbstractButton.IconOnly
+                                    flat: true
+                                    visible: false
+
+                                    onClicked: {
+                                        listView.currentIndex = model.index
+                                        delegateRoot.forceActiveFocus()
+
+                                        // filter to this parent and its children
+
+
+                                    }
+
+                                }
                             }
 
                         }

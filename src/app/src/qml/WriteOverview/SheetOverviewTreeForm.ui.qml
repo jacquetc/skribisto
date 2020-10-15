@@ -15,6 +15,7 @@ Item {
 
         ListView {
             id: listView
+            spacing: 5
         }
     }
 

@@ -57,8 +57,8 @@ Item {
                 GridLayout {
                     id: gridLayout
                     columns: gridLayout.width / italicToolButton.width - 1
-                    anchors.left: parent.left
-                    anchors.right: parent.right
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
                     columnSpacing: 5
                     rowSpacing: 5
 
