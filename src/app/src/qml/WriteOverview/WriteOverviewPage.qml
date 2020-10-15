@@ -34,6 +34,15 @@ WriteOverviewPageForm {
 
         }
     }
+    //--------------------------------------------------------
+    //---Writing Zone (little notes in tree)-----------------------------------------
+    //--------------------------------------------------------
+
+//    writingZone.maximumTextAreaWidth: SkrSettings.noteSettings.textWidth
+//    writingZone.textPointSize: SkrSettings.noteSettings.textPointSize
+//    writingZone.textFontFamily: SkrSettings.noteSettings.textFontFamily
+//    writingZone.textIndent: SkrSettings.noteSettings.textIndent
+//    writingZone.textTopMargin: SkrSettings.noteSettings.textTopMargin
 
     //-------------------------------------------------------------
     //-------Sheet Overview------------------------------------------
@@ -41,7 +50,6 @@ WriteOverviewPageForm {
 
 
     //--------------------------------------------------------------------------
-    sheetOverviewTree.treeIndentMultiplier: 30
 
 
     SKRSearchSheetListProxyModel {
@@ -73,6 +81,42 @@ WriteOverviewPageForm {
         sheetOverviewTree.openDocumentInNewWindow.connect(Globals.openSheetInNewWindowCalled)
 
     }
+
+
+
+    sheetOverviewTree.displayMode: SkrSettings.overviewTreeSettings.treeItemDisplayMode
+    sheetOverviewTree.treeIndentMultiplier: SkrSettings.overviewTreeSettings.treeIndentation
+
+    //---------------------------------------------------------
+    //------Actions----------------------------------------
+    //---------------------------------------------------------
+
+
+
+
+    Connections {
+        target: italicAction
+        function onTriggered() {closeRightDrawer()}
+    }
+    Connections {
+        target: boldAction
+        function onTriggered() {closeRightDrawer()}
+    }
+    Connections {
+        target: strikeAction
+        function onTriggered() {closeRightDrawer()}
+    }
+    Connections {
+        target: underlineAction
+        function onTriggered() {closeRightDrawer()}
+    }
+
+    function closeRightDrawer(){
+        if(Globals.compactSize){
+            rightDrawer.close()
+        }
+    }
+
     //-------------------------------------------------------------
     //-------Left Dock------------------------------------------
     //-------------------------------------------------------------
@@ -160,6 +204,89 @@ WriteOverviewPageForm {
     }
 
 
+
+    //-------------------------------------------------------------
+    //-------Right Dock------------------------------------------
+    //-------------------------------------------------------------
+
+
+    rightDockMenuGroup.visible: !Globals.compactSize && rightDockMenuButton.checked
+    rightDockMenuButton.visible: !Globals.compactSize
+
+    rightDockShowButton.onClicked: rightDrawer.isVisible ? rightDrawer.isVisible = false : rightDrawer.isVisible = true
+
+    rightDockShowButton.icon {
+        name: rightDrawer.isVisible ? "go-next" : "go-previous"
+        height: 50
+        width: 50
+    }
+
+    rightDockMenuButton.icon {
+        name: "overflow-menu"
+        height: 50
+        width: 50
+    }
+
+    rightDockResizeButton.icon {
+        name: "resizecol"
+        height: 50
+        width: 50
+    }
+
+    // compact mode :
+    compactRightDockShowButton.visible: Globals.compactSize
+
+    compactRightDockShowButton.onClicked: rightDrawer.open()
+    compactRightDockShowButton.icon {
+        name: "go-previous"
+        height: 50
+        width: 50
+    }
+
+    // resizing with rightDockResizeButton:
+
+    property int rightDockResizeButtonFirstPressX: 0
+    rightDockResizeButton.onReleased: {
+        rightDockResizeButtonFirstPressX = 0
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
+    }
+
+    rightDockResizeButton.onPressXChanged: {
+        if(rightDockResizeButtonFirstPressX === 0){
+            rightDockResizeButtonFirstPressX = root.mapFromItem(rightDockResizeButton, rightDockResizeButton.pressX, 0).x
+        }
+
+        var pressX = root.mapFromItem(rightDockResizeButton, rightDockResizeButton.pressX, 0).x
+        var displacement = rightDockResizeButtonFirstPressX - pressX
+        rightDrawerFixedWidth = rightDrawerFixedWidth + displacement
+        rightDockResizeButtonFirstPressX = pressX
+
+        if(rightDrawerFixedWidth < 200){
+            rightDrawerFixedWidth = 200
+        }
+        if(rightDrawerFixedWidth > 350){
+            rightDrawerFixedWidth = 350
+        }
+
+        rightSettings.width = rightDrawerFixedWidth
+
+    }
+
+    rightDockResizeButton.onPressed: {
+
+        rootSwipeView.interactive = false
+
+    }
+
+    rightDockResizeButton.onCanceled: {
+
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
+        rightDockResizeButtonFirstPressX = 0
+
+    }
+
+
+  //---------------------------------------------------------
     //---------------------------------------------------------
 
 
@@ -226,6 +353,75 @@ WriteOverviewPageForm {
     }
 
 
+    property alias rightDock: rightDock
+    property int rightDrawerFixedWidth: 400
+    SKRDrawer {
+        id: rightDrawer
+        parent: base
+        enabled: base.enabled
+        width:  Globals.compactSize ? 400 : rightDrawerFixedWidth
+        height: base.height
+        interactive: Globals.compactSize
+        edge: Qt.RightEdge
+
+        Connections {
+            target: Globals
+            function onCompactSizeChanged(){
+                if(Globals.compactSize){
+                    rightDrawer.close()
+                }
+                else {
+                    rightDrawer.isVisible = rightSettings.isVisible
+
+                }
+            }
+        }
+
+        RightDock {
+            id: rightDock
+            anchors.fill: parent
+
+            projectId: root.projectId
+            paperId: root.paperId
+
+        }
+
+        onIsVisibleChanged:if(!Globals.compactSize) rightSettings.isVisible = rightDrawer.isVisible
+
+        Component.onCompleted: {
+            rightDrawerFixedWidth = rightSettings.dockWidth
+            Globals.resetDockConfCalled.connect(resetConf)
+
+            if(Globals.compactSize){
+                rightDrawer.close()
+            }
+            else {
+                rightDrawer.isVisible = rightSettings.isVisible
+            }
+        }
+
+
+        Settings {
+            id: rightSettings
+            category: "noteRightDrawer"
+            property int dockWidth: 300
+            property bool isVisible: true
+        }
+
+        function resetConf(){
+            rightSettings.dockWidth = 300
+            rightDrawerFixedWidth = 300
+            rightSettings.isVisible = true
+            rightDrawer.isVisible = rightSettings.isVisible
+        }
+    }
+
+
+    //------------------------------------------------------------
+    //------------------------------------------------------------
+    //------------------------------------------------------------
+
+
 
     //------------------------------------------------------------
     //--------menus--------------------------------------------
@@ -262,6 +458,12 @@ WriteOverviewPageForm {
             newMenu.objectName = newMenu.objectName + "-" + privateMenuObject.dockUniqueId
             mainMenu.addMenu(newMenu)
 
+        }
+        var l
+        for(l = 0 ; l < rightDock.menuComponents.length ; l++){
+            var newMenu2 = rightDock.menuComponents[l].createObject(mainMenu)
+            newMenu2.objectName = newMenu2.objectName + "-" + privateMenuObject.dockUniqueId
+            mainMenu.addMenu(newMenu2)
         }
 
         // shortcuts:
@@ -329,6 +531,7 @@ WriteOverviewPageForm {
     // fullscreen :
     //------------------------------------------------------------
     property bool fullscreen_left_drawer_visible: false
+    property bool fullscreen_right_drawer_visible: false
 
     Connections {
         target: Globals
@@ -336,13 +539,14 @@ WriteOverviewPageForm {
             if(value){
                 //save previous conf
                 fullscreen_left_drawer_visible = leftDrawer.isVisible
-
+                fullscreen_right_drawer_visible = rightDrawer.isVisible
                 leftDrawer.isVisible = false
+                rightDrawer.isVisible = false
 
             }
             else{
                 leftDrawer.isVisible = fullscreen_left_drawer_visible
-
+                rightDrawer.isVisible = fullscreen_right_drawer_visible
             }
 
         }

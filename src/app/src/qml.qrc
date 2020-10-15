@@ -80,5 +80,7 @@
         <file>qml/WriteOverview/RightDockForm.ui.qml</file>
         <file>qml/Commons/EditView.qml</file>
         <file>qml/Commons/EditViewForm.ui.qml</file>
+        <file>qml/WriteOverview/SheetOverviewTool.qml</file>
+        <file>qml/WriteOverview/SheetOverviewToolForm.ui.qml</file>
     </qresource>
 </RCC>

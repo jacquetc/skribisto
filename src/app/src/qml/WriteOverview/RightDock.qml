@@ -62,6 +62,19 @@ RightDockForm {
                 })
             }
 
+
+            MenuItem {
+                text: qsTr( "&Overview")
+                onTriggered: {
+
+                    if(Globals.compactSize){
+                        rightDrawer.open()
+                    }
+                    sheetOverviewFrame.folded = false
+                    sheetOverviewTool.forceActiveFocus()
+                }
+            }
+
             MenuItem {
                 text: qsTr( "&Edit")
                 onTriggered: {
@@ -178,12 +191,19 @@ RightDockForm {
         id: settings
         category: "writeOverviewRightDock"
         property var dockSplitView
+        property bool sheetOverviewFrame: sheetOverviewFrame.folded
         property bool editFrameFolded: editFrame.folded
         property bool tagPadFrameFolded: tagPadFrame.folded
     }
 
 
 
+    PropertyAnimation {
+        target: sheetOverviewFrame
+        property: "SplitView.preferredHeight"
+        duration: 500
+        easing.type: Easing.InOutQuad
+    }
     PropertyAnimation {
         target: editFrame
         property: "SplitView.preferredHeight"
@@ -199,6 +219,7 @@ RightDockForm {
 
     function loadConf(){
 
+        sheetOverviewFrame.folded = settings.sheetOverviewFrameFolded
         editFrame.folded = settings.editFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
 
@@ -207,6 +228,7 @@ RightDockForm {
     }
 
     function resetConf(){
+        sheetOverviewFrame.folded = false
         editFrame.folded = false
         tagPadFrame.folded = false
         splitView.restoreState("")

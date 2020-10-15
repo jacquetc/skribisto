@@ -168,7 +168,7 @@ SheetOverviewTreeForm {
 
             function editLabel() {
                 titleBox.state = "edit_label"
-                //labelTextField.forceActiveFocus()
+                labelTextField.forceActiveFocus()
                 labelTextField.selectAll()
             }
 
@@ -434,12 +434,15 @@ SheetOverviewTreeForm {
                     }
 
                     TapHandler {
+                        id: rightClickHandler
                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                         acceptedButtons: Qt.RightButton
                         onTapped: {
                             listView.currentIndex = model.index
-                            delegateRoot.forceActiveFocus()
-                            menu.open()
+                            //delegateRoot.forceActiveFocus()
+
+                            menu.popup(content, eventPoint.position.x, eventPoint.position.y)
+
                             eventPoint.accepted = true
                         }
                     }
@@ -675,22 +678,50 @@ SheetOverviewTreeForm {
 
                             ]
                         }
-                        ToolButton {
-                            id: menuButton
-                            Layout.fillHeight: true
-                            Layout.preferredWidth: 30
 
-                            text: "..."
-                            flat: true
-                            focusPolicy: Qt.NoFocus
+                        ColumnLayout {
+                            ToolButton {
+                                id: menuButton
+                                Layout.fillHeight: true
+                                Layout.preferredWidth: 30
 
-                            onClicked: {
-                                listView.currentIndex = model.index
-                                delegateRoot.forceActiveFocus()
-                                menu.open()
+                                text: "..."
+                                flat: true
+                                focusPolicy: Qt.NoFocus
+
+                                onClicked: {
+                                    listView.currentIndex = model.index
+                                    delegateRoot.forceActiveFocus()
+                                    menu.open()
+                                    menu.popup(menuButton, menuButton.x, menuButton.height)
+
+                                }
+
+                                visible: hoverHandler.hovered | draggableContent.isCurrent
                             }
 
-                            visible: hoverHandler.hovered | draggableContent.isCurrent
+                            ToolButton {
+                                id: focusOnBranchButton
+                                Layout.fillHeight: true
+                                Layout.preferredWidth: 30
+
+                                text: "focus"
+                                icon.name: "edit-find"
+                                display: AbstractButton.IconOnly
+                                flat: true
+                                visible: false
+
+                                onClicked: {
+                                    listView.currentIndex = model.index
+                                    delegateRoot.forceActiveFocus()
+
+                                    // filter to this parent and its children
+
+
+                                }
+
+                            }
+
                         }
 
 
@@ -704,6 +735,10 @@ SheetOverviewTreeForm {
                         PropertyChanges {
                             target: content
                             height: 100
+                        }
+                        PropertyChanges {
+                            target: focusOnBranchButton
+                            visible: true
                         }
                     },
                     State {
@@ -760,7 +795,7 @@ SheetOverviewTreeForm {
 
             Menu {
                 id: menu
-                y: menuButton.height
+
 
                 onOpened: {
                     // necessary to differenciate between all items

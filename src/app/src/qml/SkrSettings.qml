@@ -88,6 +88,13 @@ QtObject {
         property string textFontFamily: Qt.application.font.family
     }
 
+    property Settings overviewTreeSettings: Settings{
+        category: "overviewTree"
+        property int treeItemDisplayMode: 1
+        property int treeIndentation: 30
+    }
+
+
     property int initialTextWidth: 0
     Component.onCompleted: {
         initialTextWidth = Globals.width / 3
