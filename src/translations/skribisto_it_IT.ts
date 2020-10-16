@@ -1664,15 +1664,19 @@ Please open a .plume file.</source>
 <context>
     <name>NotePadForm.ui</name>
     <message>
-        <source>Show synopsis</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Notes list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type your note here...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2893,19 +2897,27 @@ Please open a .plume file.</source>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished">Corsivo</translation>
+        <translation type="obsolete">Corsivo</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished">Grassetto</translation>
-    </message>
-    <message>
-        <source>Strike</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Grassetto</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished">Sottolineato</translation>
+        <translation type="obsolete">Sottolineato</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2992,6 +3004,10 @@ Please open a .plume file.</source>
     </message>
     <message>
         <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

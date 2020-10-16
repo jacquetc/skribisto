@@ -9,7 +9,7 @@ EditViewForm {
     property var skrSettingsGroup
 
     //option:
-    property bool textWidthVisible: true
+    property bool textWidthSliderVisible: true
 
     swipeView.currentIndex: 0
 
@@ -85,8 +85,8 @@ EditViewForm {
 
     // textWidthSlider :
 
-    textWidthLabel.visible: !Globals.compactSize | textWidthVisible
-    textWidthSlider.visible: !Globals.compactSize | textWidthVisible
+    textWidthLabel.visible: !Globals.compactSize && textWidthSliderVisible
+    textWidthSlider.visible: !Globals.compactSize && textWidthSliderVisible
 
     textWidthSlider.value: skrSettingsGroup.textWidth
 

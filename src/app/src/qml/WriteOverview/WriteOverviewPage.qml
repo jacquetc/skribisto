@@ -38,11 +38,11 @@ WriteOverviewPageForm {
     //---Writing Zone (little notes in tree)-----------------------------------------
     //--------------------------------------------------------
 
-//    writingZone.maximumTextAreaWidth: SkrSettings.noteSettings.textWidth
-//    writingZone.textPointSize: SkrSettings.noteSettings.textPointSize
-//    writingZone.textFontFamily: SkrSettings.noteSettings.textFontFamily
-//    writingZone.textIndent: SkrSettings.noteSettings.textIndent
-//    writingZone.textTopMargin: SkrSettings.noteSettings.textTopMargin
+    //    writingZone.maximumTextAreaWidth: SkrSettings.noteSettings.textWidth
+    //    writingZone.textPointSize: SkrSettings.noteSettings.textPointSize
+    //    writingZone.textFontFamily: SkrSettings.noteSettings.textFontFamily
+    //    writingZone.textIndent: SkrSettings.noteSettings.textIndent
+    //    writingZone.textTopMargin: SkrSettings.noteSettings.textTopMargin
 
     //-------------------------------------------------------------
     //-------Sheet Overview------------------------------------------
@@ -283,7 +283,7 @@ WriteOverviewPageForm {
     }
 
 
-  //---------------------------------------------------------
+    //---------------------------------------------------------
     //---------------------------------------------------------
 
 

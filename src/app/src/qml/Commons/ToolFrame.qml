@@ -7,12 +7,11 @@ FocusScope {
     id: base
 
     default property alias contents : container.data
+    property var edge: 0
     //property alias contentParent: container
     property int contentHeight: 100
-    property int contentHeightAfterBinding: 100
     property int minimumContentHeight: -1
     property int maximumContentHeight: -1
-    property int minimumContainerHeight: -1
     property int dynamicHeight
     property int dynamicWidth
     property alias folded: toolHeader.folded
@@ -20,24 +19,83 @@ FocusScope {
     property alias scrollView: scrollView
     property int scrollBarVerticalPolicy: ScrollBar.AsNeeded
 
+    // private :
+
+    QtObject{
+        id: priv
+
+        property int minimumContainerHeight: -1
+        property bool doNotBreakBinding: false
+
+
+        //        property int contentHeightAfterBinding: 100
+        //        onContentHeightAfterBindingChanged: {
+
+        //            priv.doNotBreakBinding = true
+        //            if(minimumContentHeight > 0 && priv.contentHeightAfterBinding < minimumContentHeight){
+
+        //                container.height = minimumContentHeight - 25
+        //                dynamicHeight =  minimumContentHeight - 25
+        //            }
+        //            else if(maximumContentHeight > 0 && priv.contentHeightAfterBinding > maximumContentHeight){
+
+        //                container.height = maximumContentHeight - 25
+        //                dynamicHeight =  maximumContentHeight - 25
+        //            }
+        //            else{
+
+        //                container.height = priv.contentHeightAfterBinding - 25
+        //            }
+        //            priv.doNotBreakBinding = false
+
+
+
+
+        //        //fix scrollbar visible at start
+        //        if(scrollView.height === 0){
+        //            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
+        //            return
+        //        }
+
+        //        if(flickable.contentHeight > scrollView.height){
+        //            scrollBarVerticalPolicy = ScrollBar.AlwaysOn
+        //        }
+        //        else {
+        //            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
+        //        }
+        //        }
+
+
+
+
+  }
+
+
+    implicitHeight: 30
+    implicitWidth: 0x0
+    dynamicHeight: 30
+    dynamicWidth: 0x0
+
+    //    Binding{
+    //        target: priv
+    //        property: "contentHeightAfterBinding"
+    //        value: contentHeight
+    //        delayed: true
+    //        restoreMode: Binding.RestoreBindingOrValue
+    //    }
+
+
     onFoldedChanged: {
-        folded ? state = "folded" : state = "unfolded"
+        folded ? state = "" : state = (edge === Qt.LeftEdge ? "unfolded_left_edge" : "unfolded_right_edge")
     }
     //    implicitWidth: folded ? 0x0 : 30
     //    implicitHeight: folded ? 30 : contentHeight
 
-    Binding{
-        target: base
-        property: "contentHeightAfterBinding"
-        value: contentHeight
-        delayed: true
-        restoreMode: Binding.RestoreBindingOrValue
-    }
-
-
     GridLayout {
         id: gridLayout
         anchors.fill: parent
+        rows: 2
+        columns: 2
 
         ToolHeader {
             id: toolHeader
@@ -46,12 +104,30 @@ FocusScope {
             Layout.preferredHeight: dynamicHeight
             Layout.preferredWidth: dynamicWidth
             Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+            Layout.fillWidth: true
+            Layout.row: 0
+            Layout.rowSpan: 1
+            Layout.column: 0
+            Layout.columnSpan: 2
+
+            edge: base.edge
+
+            onFoldedChanged: {
+                toolHeader.folded ? state = "" : state = (edge === Qt.LeftEdge ? "unfolded_left_edge" : "unfolded_right_edge")
+
+            }
 
         }
         ScrollView {
             id: scrollView
             Layout.fillHeight: true
             Layout.fillWidth: true
+            height: 0
+            visible: false
+            Layout.row: 1
+            Layout.rowSpan: 1
+            Layout.column: 0
+            Layout.columnSpan: 2
 
             padding: 2
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -81,8 +157,10 @@ FocusScope {
                     width: scrollView.width
 
                     onHeightChanged: {
-                        if(minimumContainerHeight != -1 && minimumContainerHeight > container.height){
-                            container.height = minimumContainerHeight
+                        if(priv.minimumContainerHeight != -1 && priv.minimumContainerHeight > container.height){
+                            priv.doNotBreakBinding = true
+                            container.height = priv.minimumContainerHeight
+                            priv.doNotBreakBinding = false
                         }
                     }
 
@@ -94,44 +172,23 @@ FocusScope {
         Component.onCompleted: {
             container.children[0].anchors.fill = container
             container.children[0].focus = true
-            minimumContainerHeight = container.children[0].minimumHeight
+            priv.minimumContainerHeight = container.children[0].minimumHeight
+
+            priv.doNotBreakBinding = true
             container.height = contentHeight
+            priv.doNotBreakBinding = false
+        }
+
+        Binding {
+            target: container
+            property: "height"
+            when: Component.status === Component.Ready && !priv.doNotBreakBinding
+            value: contentHeight
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
         }
 
 
-    }
-    onContentHeightAfterBindingChanged: {
-
-        if(minimumContentHeight > 0 && contentHeightAfterBinding < minimumContentHeight){
-
-            container.height = minimumContentHeight - 25
-            dynamicHeight =  minimumContentHeight - 25
-        }
-        else if(maximumContentHeight > 0 && contentHeightAfterBinding > maximumContentHeight){
-
-            container.height = maximumContentHeight - 25
-            dynamicHeight =  maximumContentHeight - 25
-        }
-        else{
-
-            container.height = contentHeightAfterBinding - 25
-        }
-
-
-
-
-//        //fix scrollbar visible at start
-//        if(scrollView.height === 0){
-//            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
-//            return
-//        }
-
-//        if(flickable.contentHeight > scrollView.height){
-//            scrollBarVerticalPolicy = ScrollBar.AlwaysOn
-//        }
-//        else {
-//            scrollBarVerticalPolicy = ScrollBar.AlwaysOff
-//        }
     }
 
 
@@ -166,35 +223,7 @@ FocusScope {
 
     states: [
         State {
-            name: "folded"
-            when: toolHeader.folded === true
-
-            PropertyChanges {
-                target: scrollView
-                height: 0
-            }
-            PropertyChanges {
-                target: scrollView
-                visible: false
-
-            }
-            PropertyChanges {
-                target: toolHeader
-                Layout.fillWidth: true
-            }
-            PropertyChanges {
-                target: base
-                implicitHeight: 30
-                implicitWidth: 0x0
-            }
-            PropertyChanges {
-                target: base
-                dynamicHeight: 30
-                dynamicWidth: 0x0
-            }
-        },State {
-            name: "unfolded"
-            when: toolHeader.folded === false
+            name: "unfolded_left_edge"
 
             PropertyChanges {
                 target: scrollView
@@ -213,13 +242,73 @@ FocusScope {
             PropertyChanges {
                 target: base
                 implicitWidth: 30
-                implicitHeight: contentHeightAfterBinding
+                implicitHeight: contentHeight
             }
             PropertyChanges {
                 target: base
                 dynamicWidth: 40
-                dynamicHeight: contentHeightAfterBinding
+                dynamicHeight:contentHeight
             }
+
+            PropertyChanges {
+                target: toolHeader
+                Layout.row: 0
+                Layout.rowSpan: 2
+                Layout.column: 0
+                Layout.columnSpan: 1
+            }
+            PropertyChanges {
+                target: scrollView
+                Layout.row: 0
+                Layout.rowSpan: 2
+                Layout.column: 1
+                Layout.columnSpan: 1
+            }
+
+        },
+        State {
+            name: "unfolded_right_edge"
+
+            PropertyChanges {
+                target: scrollView
+                height: undefined
+            }
+            PropertyChanges {
+                target: scrollView
+                visible: true
+
+            }
+
+            PropertyChanges {
+                target: toolHeader
+                Layout.fillWidth: false
+            }
+            PropertyChanges {
+                target: base
+                implicitWidth: 30
+                implicitHeight: contentHeight
+            }
+            PropertyChanges {
+                target: base
+                dynamicWidth: 40
+                dynamicHeight:contentHeight
+            }
+
+            PropertyChanges {
+                target: toolHeader
+                Layout.row: 0
+                Layout.rowSpan: 2
+                Layout.column: 1 //RightEdge
+                Layout.columnSpan: 1
+            }
+            PropertyChanges {
+                target: scrollView
+                Layout.row: 0
+                Layout.rowSpan: 2
+                Layout.column: 0 //RightEdge
+                Layout.columnSpan: 1
+            }
+
         }
 
     ]

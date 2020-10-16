@@ -116,7 +116,7 @@ RightDockForm {
 
 
     editView.skrSettingsGroup: SkrSettings.overviewTreeNoteSettings
-    editView.textWidthVisible: false
+    editView.textWidthSliderVisible: false
 
 
 

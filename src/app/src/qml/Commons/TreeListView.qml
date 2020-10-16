@@ -738,6 +738,7 @@ TreeListViewForm {
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                     font.bold: model.projectIsActive && model.indent === -1 ? true : false
                                     text: model.indent === -1 ? model.projectName : model.name
+                                    elide: Text.ElideRight
                                 }
 
                                 TextField {
@@ -856,6 +857,7 @@ TreeListViewForm {
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                    elide: Text.ElideRight
 
 
                                 }

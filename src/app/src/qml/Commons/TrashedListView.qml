@@ -640,6 +640,7 @@ TrashedListViewForm {
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
                                     text: model.indent === -1 ? model.projectName : model.name
+                                    elide: Text.ElideRight
                                 }
                                 TextField {
                                     id: labelTextField
@@ -751,6 +752,7 @@ TrashedListViewForm {
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                    elide: Text.ElideRight
                                 }
                             }
                             //                        MouseArea {

@@ -1785,15 +1785,19 @@ Have you checked the one(s) you want to look through ?</source>
 <context>
     <name>NotePadForm.ui</name>
     <message>
-        <source>Show synopsis</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Notes list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type your note here...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2995,19 +2999,27 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished">Cursiva</translation>
+        <translation type="obsolete">Cursiva</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished">Negrita</translation>
-    </message>
-    <message>
-        <source>Strike</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Negrita</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished">Subrayar</translation>
+        <translation type="obsolete">Subrayar</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3094,6 +3106,10 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

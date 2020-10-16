@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls.Material 2.15
 import eu.skribisto.skrusersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
@@ -9,8 +10,7 @@ import eu.skribisto.taghub 1.0
 
 TagPadForm {
     id: root
-    property int minimumHeight: 300
-
+    property int minimumHeight: 200 //mandatory for ToolFrame
 
     property int projectId: -2
     // we use the term itemId instead of paperId to not be constrained if we want to tag more than papers in the future
@@ -20,7 +20,6 @@ TagPadForm {
 
     signal callAddTagRelationship(int projectId, int itemId, string tagName)
     signal callRemoveTagRelationship(int projectId,int itemId, int tagId)
-
 
 
     tagRepeater.model: tagListModel
@@ -74,9 +73,8 @@ TagPadForm {
             id: itemBase
             width: childrenRect.width + 10
             height: childrenRect.height + 10
-            //color: isOpened ? "cyan" : "lightskyblue"
-            border.color: isSelected ? "blue" : "lightskyblue"
-            border.width: 1
+            border.color: isSelected ? Material.accentColor : "lightskyblue"
+            border.width: 2
             radius : height / 2
             property int projectId: model.projectId
             property int itemId: root.itemId
@@ -196,7 +194,12 @@ TagPadForm {
                     id: removeRelationshipButton
                     Layout.preferredWidth: 0
                     Layout.maximumHeight: tagTitle.height
-                    padding:1
+                    padding:0
+                    topInset: 1
+                    bottomInset: 1
+                    leftInset: 1
+                    rightInset: 1
+                    opacity: 0
                     icon.name: "list-remove"
                     onReleased:{
                         callRemoveTagRelationship(projectId, itemId, tagId)
@@ -213,8 +216,10 @@ TagPadForm {
 
                 states:[
                     State {
+
                         name: "visible_removeRelationshipButton"
-                        PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: tagTitle.height}
+                        PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: noteTitle.height}
+                        PropertyChanges { target: removeRelationshipButton; opacity: 1.0}
                     }
                 ]
 
@@ -222,13 +227,11 @@ TagPadForm {
                     Transition {
                         from: ""
                         to: "visible_removeRelationshipButton"
-                        NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 300; easing.type: Easing.OutCubic }
-                    },
-                    Transition {
-                        from: "visible_removeRelationshipButton"
-                        to: ""
-                        NumberAnimation { target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 300; easing.type: Easing.OutCubic }
-
+                        reversible: true
+                        ParallelAnimation {
+                            NumberAnimation {target: removeRelationshipButton; property: "opacity";duration: 250; easing.type: Easing.OutCubic }
+                            NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 250; easing.type: Easing.OutCubic }
+                        }
                     }
                 ]
             }
@@ -473,7 +476,14 @@ TagPadForm {
 
     onActiveFocusChanged: {
         if (activeFocus) {
-            addTagMenuToolButton.forceActiveFocus()
+
+
+            if(!toolBarVisible){
+                tagFlow.forceActiveFocus()
+            }
+            else{
+                addTagMenuToolButton.forceActiveFocus()
+            }
         }
     }
 }
