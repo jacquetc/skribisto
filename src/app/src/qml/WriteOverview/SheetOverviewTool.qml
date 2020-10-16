@@ -32,6 +32,42 @@ SheetOverviewToolForm {
         restoreMode: Binding.RestoreBindingOrValue
     }
 
+    // showOutlineSwitch
+
+    showOutlineSwitch.checked: SkrSettings.overviewTreeSettings.synopsisBoxVisible
+
+    Binding {
+        target: SkrSettings.overviewTreeSettings
+        property: "synopsisBoxVisible"
+        value: showOutlineSwitch.checked
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
+    // showNotePadSwitch
+
+    showNotePadSwitch.checked: SkrSettings.overviewTreeSettings.noteBoxVisible
+
+    Binding {
+        target: SkrSettings.overviewTreeSettings
+        property: "noteBoxVisible"
+        value: showNotePadSwitch.checked
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    // showTagPadSwitch
+
+    showTagPadSwitch.checked: SkrSettings.overviewTreeSettings.tagBoxVisible
+
+    Binding {
+        target: SkrSettings.overviewTreeSettings
+        property: "tagBoxVisible"
+        value: showTagPadSwitch.checked
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
 
     //focus
     onActiveFocusChanged: {

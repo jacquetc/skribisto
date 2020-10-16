@@ -501,12 +501,12 @@ void PLMNoteListModel::refreshAfterDataAddition(int projectId, int paperId)
     }
 
 
-    beginInsertRows(QModelIndex(), row, row);
+    beginInsertRows(QModelIndex(), paperIndex, paperIndex);
 
     m_allNoteItems.insert(itemIndex, new PLMNoteItem(projectId, paperId,
                                                      indentsHash.value(paperId),
                                                      sortOrdersHash.value(paperId)));
-    this->index(row, 0, QModelIndex());
+    this->index(paperIndex, 0, QModelIndex());
     endInsertRows();
 }
 

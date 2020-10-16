@@ -7,6 +7,7 @@ Item {
     property alias tagFlow: tagFlow
     property alias addTagMenuToolButton: addTagMenuToolButton
     property alias tagRepeater: tagRepeater
+    property bool toolBarVisible: true
     
     Pane {
         id: pane
@@ -23,6 +24,8 @@ Item {
                 Layout.maximumHeight: 40
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
+                Layout.alignment: Qt.AlignTop
+                visible: toolBarVisible
 
                 //                Item {
                 //                    id: element
@@ -51,7 +54,7 @@ Item {
 
             ScrollView {
                 id: scrollView
-                Layout.fillHeight: true
+                Layout.fillHeight: toolBarVisible ? true : false
                 Layout.minimumHeight: 40
                 focusPolicy: Qt.StrongFocus
                 Layout.fillWidth: true
@@ -72,7 +75,7 @@ Item {
                         //                    anchors.top: parent.top
                         //                    anchors.topMargin: 0
                         //                    anchors.leftMargin: 0
-                        spacing: 20
+                        spacing: 10
                         padding: 2
                         antialiasing: true
                         clip: true
@@ -92,6 +95,13 @@ Item {
                     }
                 }
             }
+
+            Item {
+                id: stretcher2
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+            }
+
         }
     }
 }

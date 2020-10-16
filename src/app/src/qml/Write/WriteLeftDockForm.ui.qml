@@ -36,6 +36,9 @@ Item {
                     ScrollView {
                         id: scrollView
                         anchors.fill: parent
+
+                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
                         Flickable {
                             boundsBehavior: Flickable.StopAtBounds
                             contentWidth: splitView.width
@@ -55,6 +58,8 @@ Item {
                                     id: navigationFrame
                                     folded: false
                                     title: qsTr("Navigation")
+                                    edge: Qt.LeftEdge
+
                                     SplitView.preferredHeight: folded ? dynamicHeight : 500
                                     SplitView.minimumHeight: folded ? dynamicHeight : 400
                                     //SplitView.maximumHeight : folded ? dynamicHeight : 600
@@ -72,6 +77,7 @@ Item {
                                     id: documentFrame
                                     folded: true
                                     title: qsTr("Opened documents")
+                                    edge: Qt.LeftEdge
 
                                     SplitView.preferredHeight: folded ? dynamicHeight : 300
                                     SplitView.minimumHeight: folded ? dynamicHeight : 200

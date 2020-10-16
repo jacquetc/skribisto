@@ -404,6 +404,10 @@ SheetOverviewTreeForm {
                     height: 60
                     width: draggableContent.width
 
+                    padding: 1
+                    Material.elevation: 4
+
+                    //Material.backgroundColor: Material.
 
                     //                    background: Rectangle {
                     //                        color: Material.backgroundColor
@@ -465,9 +469,6 @@ SheetOverviewTreeForm {
                         }
                     }
 
-                    Material.elevation: 4
-
-
                     RowLayout{
                         id: rowLayout3
                         anchors.fill: parent
@@ -475,8 +476,8 @@ SheetOverviewTreeForm {
 
                         Item {
                             id: titleBox
-                            Layout.minimumWidth: 100
-                            Layout.maximumWidth: 200
+                            Layout.minimumWidth: 50
+                            Layout.maximumWidth: 150
                             Layout.fillHeight: true
                             Layout.fillWidth: true
 
@@ -512,6 +513,7 @@ SheetOverviewTreeForm {
                                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                         font.bold: model.projectIsActive && model.indent === -1 ? true : false
                                         text: model.indent === -1 ? model.projectName : model.name
+                                        elide: Text.ElideRight
                                     }
 
                                     TextField {
@@ -630,6 +632,10 @@ SheetOverviewTreeForm {
                                         Layout.bottomMargin: 2
                                         Layout.rightMargin: 4
                                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                        elide: Text.ElideRight
+                                        visible: text.length === 0 ? false : true
+                                        font.italic: true
+
 
 
                                     }
@@ -692,6 +698,15 @@ SheetOverviewTreeForm {
                             id: synopsisBox
                             Layout.fillHeight: true
                             Layout.fillWidth: true
+                            Layout.minimumWidth: 100
+                            Layout.maximumWidth: 600
+
+                            onWidthChanged: {
+                                if(width === 50 && Component.status === Component.Ready){
+                                    SkrSettings.overviewTreeSettings.synopsisBoxVisible = false
+                                }
+                            }
+                            visible: SkrSettings.overviewTreeSettings.synopsisBoxVisible
 
                             RowLayout {
                                 anchors.fill: parent
@@ -908,8 +923,6 @@ SheetOverviewTreeForm {
                                     sourceComponent: noteWritingZoneComponent
                                     asynchronous: false
 
-                                    Layout.minimumWidth: 300
-                                    Layout.maximumWidth: 600
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
@@ -921,49 +934,55 @@ SheetOverviewTreeForm {
 
                         RowLayout{
                             id: noteBox
-                            Layout.minimumWidth: 100
+                            Layout.minimumWidth: 50
                             Layout.maximumWidth: 400
                             Layout.fillHeight: true
                             Layout.fillWidth: true
 
-                        Rectangle {
-                            Layout.preferredWidth: 1
-                            Layout.preferredHeight: content.height / 2
-                            Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                            gradient: Gradient {
-                                orientation: Qt.Vertical
-                                GradientStop {
-                                    position: 0.00;
-                                    color: "#ffffff";
-                                }
-                                GradientStop {
-                                    position: 0.30;
-                                    color: "#9e9e9e";
-                                }
-                                GradientStop {
-                                    position: 0.70;
-                                    color: "#9e9e9e";
-                                }
-                                GradientStop {
-                                    position: 1.00;
-                                    color: "#ffffff";
+                            onWidthChanged: {
+                                if(width === 50 && Component.status === Component.Ready){
+                                    SkrSettings.overviewTreeSettings.noteBoxVisible = false
                                 }
                             }
+                            visible: SkrSettings.overviewTreeSettings.noteBoxVisible
 
-                        }
+                            Rectangle {
+                                Layout.preferredWidth: 1
+                                Layout.preferredHeight: content.height / 2
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                gradient: Gradient {
+                                    orientation: Qt.Vertical
+                                    GradientStop {
+                                        position: 0.00;
+                                        color: "#ffffff";
+                                    }
+                                    GradientStop {
+                                        position: 0.30;
+                                        color: "#9e9e9e";
+                                    }
+                                    GradientStop {
+                                        position: 0.70;
+                                        color: "#9e9e9e";
+                                    }
+                                    GradientStop {
+                                        position: 1.00;
+                                        color: "#ffffff";
+                                    }
+                                }
+
+                            }
 
 
-                        NotePad {
-                            id: notePad
-                            Layout.minimumWidth: 100
-                            Layout.maximumWidth: 400
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
+                            NotePad {
+                                id: notePad
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
 
 
-                            projectId: model.projectId
-                            sheetId: model.paperId
-                        }
+                        minimalMode: true
+                        projectId: model.projectId
+                                sheetId: model.paperId
+                            }
 
 
 
@@ -971,10 +990,20 @@ SheetOverviewTreeForm {
 
                         RowLayout{
                             id: tagBox
-                            Layout.minimumWidth: 20
+                            Layout.minimumWidth: 50
                             Layout.maximumWidth: 400
                             Layout.fillHeight: true
                             Layout.fillWidth: true
+
+
+
+                            onWidthChanged: {
+                                if(width === 50 && Component.status === Component.Ready){
+                                    SkrSettings.overviewTreeSettings.tagBoxVisible = false
+                                }
+                            }
+                            visible: SkrSettings.overviewTreeSettings.tagBoxVisible
+
 
                             Rectangle {
                                 Layout.preferredWidth: 1
@@ -1006,8 +1035,6 @@ SheetOverviewTreeForm {
                             TagPad{
                                 id: tagPad
 
-                                Layout.minimumWidth: 20
-                                Layout.maximumWidth: 400
                                 Layout.fillHeight: true
                                 Layout.fillWidth: true
 
@@ -1016,7 +1043,7 @@ SheetOverviewTreeForm {
                                 //---------------Tags :---------------------------------------------
                                 //-----------------------------------------------------------
 
-
+                                toolBarVisible: false
                                 projectId: model.projectId
                                 itemId: model.paperId
 

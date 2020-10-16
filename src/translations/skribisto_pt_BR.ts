@@ -1540,15 +1540,19 @@ not allowed delete a filled book.</source>
 <context>
     <name>NotePadForm.ui</name>
     <message>
-        <source>Show synopsis</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Notes list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type your note here...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2632,19 +2636,27 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished">Itálico</translation>
+        <translation type="obsolete">Itálico</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished">Negrito</translation>
-    </message>
-    <message>
-        <source>Strike</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Negrito</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished">Sublinhado</translation>
+        <translation type="obsolete">Sublinhado</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2731,6 +2743,10 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
