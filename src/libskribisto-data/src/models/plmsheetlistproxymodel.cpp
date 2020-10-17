@@ -553,27 +553,38 @@ int PLMSheetListProxyModel::getItemIndent(int projectId, int paperId)
 
 // -----------------------------------------------------------------
 
-void PLMSheetListProxyModel::addItemAtEnd(int projectId,
+void PLMSheetListProxyModel::addChildItem(int projectId,
                                           int parentPaperId,
                                           int visualIndex)
 {
-    //    PLMSheetItem *parentItem = this->getItem(projectId, parentPaperId);
-    //    if(!parentItem){
-    //        if(plmdata->projectHub()->getProjectCount() <= 1){
-
-    //        }
-    //        else if (plmdata->projectHub()->getProjectCount() > 1){
-
-    //        }
-    //        }
-
-    //    finalSortOrder =
-    // plmdata->sheetHub()->getValidSortOrderAfterPaper(projectId,
-    // lastIdWithSameIndent);
-
     PLMError error = plmdata->sheetHub()->addChildPaper(projectId, parentPaperId);
 
-    this->invalidateFilter();
+    //this->invalidateFilter();
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+// -----------------------------------------------------------------
+
+void PLMSheetListProxyModel::addItemAbove(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->sheetHub()->addPaperAbove(projectId, parentPaperId);
+
+    //this->invalidateFilter();
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+
+// -----------------------------------------------------------------
+
+void PLMSheetListProxyModel::addItemBelow(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->sheetHub()->addPaperBelow(projectId, parentPaperId);
+
+    //this->invalidateFilter();
     this->setForcedCurrentIndex(visualIndex);
 }
 
