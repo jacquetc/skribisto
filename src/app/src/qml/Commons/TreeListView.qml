@@ -204,7 +204,7 @@ TreeListViewForm {
             width: 100
         }
         onTriggered: {
-            proxyModel.addItemAtEnd(currentProject, currentParent,
+            proxyModel.addChildItem(currentProject, currentParent,
                                     visualModel.items.count)
             listView.currentItem.editName()
         }
@@ -353,23 +353,23 @@ TreeListViewForm {
 
             Keys.onShortcutOverride: {
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
-                      event.accepted = true
-                                     }            
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if( event.key === Qt.Key_Escape  && (delegateRoot.state == "edit_name" || delegateRoot.state == "edit_label")){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
             }
 
             Keys.onPressed: {
@@ -590,13 +590,11 @@ TreeListViewForm {
                         if (!_proxyModel.hasChildren(_currentProject,
                                                      _currentParent)) {
                             newPaperAdded = true
-                            _proxyModel.addItemAtEnd(_currentProject,
+                            _proxyModel.addChildItem(_currentProject,
                                                      _currentParent, 0)
 
                             // edit it :
                             _listView.itemAtIndex(0).editName()
-                            //_listView.itemAt(0, 0).editName()
-
 
                         }
 
@@ -604,6 +602,20 @@ TreeListViewForm {
 
                     }
                 }
+
+                property int paperIdToEdit: -2
+                Timer{
+                    id: editNameTimer
+                    repeat: false
+                    interval: animationDuration
+                    onTriggered: {
+                        var index = proxyModel.findVisualIndex(model.projectId, paperIdToEdit)
+                        if(index !== -2){
+                            listView.itemAtIndex(index).editName()
+                        }
+                    }
+                }
+
                 Action {
                     id: openDocumentAction
                     //shortcut: "Return"
@@ -658,7 +670,7 @@ TreeListViewForm {
                     text: qsTr("Open document in a window")
                     onTriggered: {
                         root.openDocumentInNewWindow(model.projectId,
-                                                  model.paperId)
+                                                     model.paperId)
 
                     }
                 }
@@ -1223,9 +1235,12 @@ TreeListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index && listView.enabled
                     onTriggered: {
-                        //TODO: fill that
                         console.log("add before action", model.projectId,
                                     model.paperId)
+
+                        var visualIndex = root.currentIndex
+                        proxyModel.addItemAbove(model.projectId, model.paperId, visualIndex)
+                        listView.itemAtIndex(visualIndex).editName()
                     }
                 }
 
@@ -1238,9 +1253,12 @@ TreeListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index && listView.enabled
                     onTriggered: {
-                        //TODO: fill that
                         console.log("add after action", model.projectId,
                                     model.paperId)
+
+                        var visualIndex = root.currentIndex + 1
+                        proxyModel.addItemBelow(model.projectId, model.paperId, visualIndex)
+                        listView.itemAtIndex(visualIndex).editName()
                     }
                 }
 

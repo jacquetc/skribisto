@@ -53,7 +53,9 @@ public:
     void setParentIdFilter(int parentIdFilter);
     void clearFilters();
 
-    Q_INVOKABLE void addItemAtEnd(int projectId, int parentPaperId, int visualIndex);
+    Q_INVOKABLE void addChildItem(int projectId, int parentPaperId, int visualIndex);
+    Q_INVOKABLE void addItemAbove(int projectId, int parentPaperId, int visualIndex);
+    Q_INVOKABLE void addItemBelow(int projectId, int parentPaperId, int visualIndex);
     Q_INVOKABLE void moveUp(int projectId, int paperId, int visualIndex);
     Q_INVOKABLE void moveDown(int projectId, int paperId, int visualIndex);
     Q_INVOKABLE void setForcedCurrentIndex(int forcedCurrentIndex);
