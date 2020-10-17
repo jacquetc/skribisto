@@ -6,7 +6,7 @@
 SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel(QObject *parent) :
     QSortFilterProxyModel(parent),
     m_showTrashedFilter(true), m_showNotTrashedFilter(true), m_textFilter(""),
-    m_projectIdFilter(-2)
+    m_projectIdFilter(-2), m_parentIdFilter(-2), m_showParentWhenParentIdFilter(false)
 
 {
     this->setSourceModel(plmmodels->noteListModel());
@@ -430,6 +430,33 @@ void SKRSearchNoteListProxyModel::deleteDefinitively(int projectId, int paperId)
 
 // --------------------------------------------------------------
 
+void SKRSearchNoteListProxyModel::setParentIdFilter(int projectIdfilter)
+{
+
+    m_parentIdFilter = projectIdfilter;
+    emit parentIdFilterChanged(m_parentIdFilter);
+
+    this->invalidateFilter();
+
+}
+
+// --------------------------------------------------------------
+
+
+void SKRSearchNoteListProxyModel::setShowParentWhenParentIdFilter(bool showParent)
+{
+    m_showParentWhenParentIdFilter = showParent;
+    emit showParentWhenParentIdFilterChanged(showParent);
+
+    if(m_parentIdFilter != -2){
+
+        this->invalidateFilter();
+    }
+
+}
+
+// --------------------------------------------------------------
+
 
 bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
                                                    const QModelIndex& sourceParent) const
@@ -490,6 +517,29 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
         }
         else if (result) {
             result = false;
+        }
+    }
+
+
+    // parentId filtering :
+    if (result && m_parentIdFilter != -2) {
+
+        if(m_showParentWhenParentIdFilter && m_parentIdFilter == item->data(PLMNoteItem::Roles::PaperIdRole).toInt()){
+            result = true;
+        }
+        else {
+
+            PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
+            PLMNoteItem *parentItem = model->getParentNoteItem(item);
+
+            if (parentItem) {
+                if (parentItem->paperId() == m_parentIdFilter) {
+                    result = true;
+                }
+                else{
+                    result = false;
+                }
+            }
         }
     }
 

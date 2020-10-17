@@ -915,9 +915,9 @@ QModelIndexList PLMSheetListModel::getModelIndex(int projectId, int paperId)
 
 // -----------------------------------------------------------------------------------
 
-PLMSheetItem * PLMSheetListModel::getParentSheetItem(PLMSheetItem *chidItem)
+PLMSheetItem * PLMSheetListModel::getParentSheetItem(PLMSheetItem *childItem)
 {
-    return chidItem->parent(m_allSheetItems);
+    return childItem->parent(m_allSheetItems);
 }
 
 // -----------------------------------------------------------------------------------

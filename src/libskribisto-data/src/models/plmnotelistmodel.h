@@ -38,7 +38,7 @@ public:
 
     QHash<int, QByteArray> roleNames() const override;
     QModelIndexList getModelIndex(int projectId, int paperId);
-    PLMNoteItem *getParentNoteItem(PLMNoteItem *chidItem);
+    PLMNoteItem *getParentNoteItem(PLMNoteItem *childItem);
     PLMNoteItem *getItem(int projectId, int paperId);
 
 private slots:

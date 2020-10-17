@@ -794,9 +794,9 @@ QModelIndexList PLMNoteListModel::getModelIndex(int projectId, int paperId)
 
 // -----------------------------------------------------------------------------------
 
-PLMNoteItem * PLMNoteListModel::getParentNoteItem(PLMNoteItem *chidItem)
+PLMNoteItem * PLMNoteListModel::getParentNoteItem(PLMNoteItem *childItem)
 {
-    return chidItem->parent(m_allNoteItems);
+    return childItem->parent(m_allNoteItems);
 }
 
 // -----------------------------------------------------------------------------------
