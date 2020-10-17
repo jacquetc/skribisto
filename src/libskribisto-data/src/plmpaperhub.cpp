@@ -1144,7 +1144,7 @@ int PLMPaperHub::getValidSortOrderAfterPaper(int projectId, int paperId) const
 /// \param projectId
 /// \param paperId
 /// \return
-/// get all children, trashed or not
+/// get all children, grand-children, ...  trashed or not
 QList<int>PLMPaperHub::getAllChildren(int projectId, int paperId) {
     QList<int> childrenList;
 

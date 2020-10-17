@@ -899,6 +899,16 @@ TrashedListViewForm {
                         target: labelTextField
                         visible: true
                     }
+                },
+
+                State {
+                    name: "unset_anchors"
+                    AnchorChanges {
+                        target: delegateRoot
+                        anchors.left: undefined
+                        anchors.right: undefined
+
+                    }
                 }
             ]
 
@@ -1046,25 +1056,6 @@ TrashedListViewForm {
                 MenuSeparator {}
             }
 
-            ListView.onRemove: SequentialAnimation {
-                PropertyAction {
-                    target: delegateRoot
-                    property: "ListView.delayRemove"
-                    value: true
-                }
-                NumberAnimation {
-                    target: delegateRoot
-                    property: "height"
-                    to: 0
-                    easing.type: Easing.InOutQuad
-                }
-                PropertyAction {
-                    target: delegateRoot
-                    property: "ListView.delayRemove"
-                    value: false
-                }
-            }
-
             //----------------------------------------------------------
 
             ListView.onAdd: SequentialAnimation {
@@ -1086,5 +1077,37 @@ TrashedListViewForm {
         }
     }
 
+    listView.remove: Transition {
 
+        SequentialAnimation {
+            id: removePaperAnimation
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: true
+            }
+            PropertyAction {
+                property: "state"
+                value: "unset_anchors"
+            }
+
+            NumberAnimation {
+                property: "x"
+                to: listView.width
+                duration: 250
+                easing.type: Easing.InBack
+            }
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: false
+            }
+        }
+    }
+
+    listView.removeDisplaced: Transition {
+        SequentialAnimation {
+            PauseAnimation{duration: 250}
+            NumberAnimation { properties: "x,y"; duration: 250 }
+        }
+
+    }
 }

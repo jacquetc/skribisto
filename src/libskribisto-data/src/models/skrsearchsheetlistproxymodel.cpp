@@ -885,6 +885,79 @@ int SKRSearchSheetListProxyModel::getItemIndent(int projectId, int paperId)
     return indent;
 }
 
+// -----------------------------------------------------------------
+
+void SKRSearchSheetListProxyModel::addChildItem(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->sheetHub()->addChildPaper(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+// -----------------------------------------------------------------
+
+void SKRSearchSheetListProxyModel::addItemAbove(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->sheetHub()->addPaperAbove(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+
+// -----------------------------------------------------------------
+
+void SKRSearchSheetListProxyModel::addItemBelow(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->sheetHub()->addPaperBelow(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchSheetListProxyModel::moveUp(int projectId, int paperId, int visualIndex)
+{
+    PLMSheetItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+    PLMError error = plmdata->sheetHub()->movePaperUp(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex - 1);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchSheetListProxyModel::moveDown(int projectId, int paperId, int visualIndex)
+{
+    PLMSheetItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+    PLMError error = plmdata->sheetHub()->movePaperDown(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex + 1);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchSheetListProxyModel::trashItemWithChildren(int projectId, int paperId)
+{
+
+    PLMSheetItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+
+    plmdata->sheetHub()->setTrashedWithChildren(projectId, paperId, true);
+
+}
 // --------------------------------------------------------------
 
 
