@@ -1139,13 +1139,22 @@ SheetOverviewTreeForm {
                                     display: AbstractButton.IconOnly
                                     flat: true
                                     visible: false
+                                    checkable: true
 
-                                    onClicked: {
+                                    onCheckedChanged: {
                                         listView.currentIndex = model.index
                                         delegateRoot.forceActiveFocus()
 
                                         // filter to this parent and its children
+                                        if(checked){
+                                            proxyModel.showParentWhenParentIdFilter = true
+                                            proxyModel.parentIdFilter = model.paperId
+                                        }
+                                        else {
+                                            proxyModel.showParentWhenParentIdFilter = false
+                                            proxyModel.parentIdFilter = -2
 
+                                        }
 
                                     }
 

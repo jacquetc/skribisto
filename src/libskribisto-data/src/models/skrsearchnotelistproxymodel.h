@@ -20,6 +20,10 @@ class EXPORT SKRSearchNoteListProxyModel : public QSortFilterProxyModel {
         QList<int>paperIdListFilter MEMBER m_paperIdListFilter WRITE setPaperIdListFilter NOTIFY paperIdListFilterChanged)
     Q_PROPERTY(
         int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
+    Q_PROPERTY(
+        int parentIdFilter MEMBER m_parentIdFilter WRITE setParentIdFilter NOTIFY parentIdFilterChanged)
+    Q_PROPERTY(
+        bool showParentWhenParentIdFilter MEMBER m_showParentWhenParentIdFilter WRITE setShowParentWhenParentIdFilter NOTIFY showParentWhenParentIdFilterChanged)
 
 public:
 
@@ -36,12 +40,23 @@ public:
     Q_INVOKABLE void      setProjectIdFilter(int projectIdFilter);
     void                  clearFilters();
 
-    Q_INVOKABLE void addChildItem(int projectId, int parentPaperId, int visualIndex);
-    Q_INVOKABLE void addItemAbove(int projectId, int parentPaperId, int visualIndex);
-    Q_INVOKABLE void addItemBelow(int projectId, int parentPaperId, int visualIndex);
-    Q_INVOKABLE void moveUp(int projectId, int paperId, int visualIndex);
-    Q_INVOKABLE void moveDown(int projectId, int paperId, int visualIndex);
-    Q_INVOKABLE void trashItemWithChildren(int projectId, int paperId);
+    Q_INVOKABLE void      addChildItem(int projectId,
+                                       int parentPaperId,
+                                       int visualIndex);
+    Q_INVOKABLE void      addItemAbove(int projectId,
+                                       int parentPaperId,
+                                       int visualIndex);
+    Q_INVOKABLE void      addItemBelow(int projectId,
+                                       int parentPaperId,
+                                       int visualIndex);
+    Q_INVOKABLE void      moveUp(int projectId,
+                                 int paperId,
+                                 int visualIndex);
+    Q_INVOKABLE void      moveDown(int projectId,
+                                   int paperId,
+                                   int visualIndex);
+    Q_INVOKABLE void      trashItemWithChildren(int projectId,
+                                                int paperId);
     Q_INVOKABLE void      setForcedCurrentIndex(int forcedCurrentIndex);
     Q_INVOKABLE void      setForcedCurrentIndex(int projectId,
                                                 int paperId);
@@ -57,6 +72,8 @@ public:
     void                  setShowNotTrashedFilter(bool showNotTrashedFilter);
 
     void                  setTextFilter(const QString& value);
+    void                  setParentIdFilter(int projectIdfilter);
+    void                  setShowParentWhenParentIdFilter(bool showParent);
 
     Q_INVOKABLE QList<int>getChildrenList(int  projectId,
                                           int  paperId,
@@ -99,7 +116,8 @@ public:
     Q_INVOKABLE QList<int>findIdsTrashedAtTheSameTimeThan(int projectId,
                                                           int paperId);
 
-    Q_INVOKABLE void deleteDefinitively(int projectId, int paperId);
+    Q_INVOKABLE void      deleteDefinitively(int projectId,
+                                             int paperId);
 
 signals:
 
@@ -109,6 +127,8 @@ signals:
     void showNotTrashedFilterChanged(bool value);
     void paperIdListFilterChanged(const QList<int>paperIdList);
     void forcedCurrentIndexChanged(int forcedCurrentIndex);
+    void parentIdFilterChanged(int paperIdFilter);
+    void showParentWhenParentIdFilterChanged(bool value);
 
 public slots:
 
@@ -133,6 +153,8 @@ private:
     bool m_showNotTrashedFilter;
     QString m_textFilter;
     int m_projectIdFilter;
+    int m_parentIdFilter;
+    bool m_showParentWhenParentIdFilter;
     int m_forcedCurrentIndex;
     QList<int>m_paperIdListFilter;
     QHash<int, Qt::CheckState>m_checkedIdsHash;
