@@ -39,12 +39,7 @@ Item {
                         id: scrollView
                         anchors.fill: parent
 
-                        ScrollBar.vertical: ScrollBar {
-                            parent: scrollView.parent
-                            anchors.top: scrollView.top
-                            anchors.left: scrollView.right
-                            anchors.bottom: scrollView.bottom
-                        }
+                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
                         Flickable {
                             boundsBehavior: Flickable.StopAtBounds

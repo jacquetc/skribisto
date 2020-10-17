@@ -1017,11 +1017,30 @@ PLMError PLMPaperHub::addPaper(const QHash<QString, QVariant>& values, int proje
     IFKO(error) {
         emit errorSent(error);
     }
-    m_last_added_id = newId;
     IFOK(error) {
+        m_last_added_id = newId;
+        error.addData(newId);
         emit paperAdded(projectId, newId);
         emit projectModified(projectId);
     }
+    return error;
+}
+
+// -----------------------------------------------------------------------------
+
+PLMError PLMPaperHub::addPaperAbove(int projectId, int targetId)
+{
+    int target_indent = getIndent(projectId, targetId);
+
+    PLMError error;
+    int finalSortOrder = this->getValidSortOrderBeforePaper(projectId, targetId);
+
+    // finally add paper
+    QHash<QString, QVariant> values;
+
+    values.insert("l_sort_order", finalSortOrder);
+    values.insert("l_indent",     target_indent);
+    IFOKDO(error, addPaper(values, projectId));
     return error;
 }
 
@@ -1044,6 +1063,17 @@ PLMError PLMPaperHub::addPaperBelow(int projectId, int targetId)
 }
 
 // ------------------------------------------------------------------------------
+
+int PLMPaperHub::getValidSortOrderBeforePaper(int projectId, int paperId) const
+{
+    int target_sort_order = getSortOrder(projectId, paperId);
+
+    int finalSortOrder = target_sort_order - 1;
+
+    return finalSortOrder;
+}
+
+// -----------------------------------------------------------------------------
 
 int PLMPaperHub::getValidSortOrderAfterPaper(int projectId, int paperId) const
 {

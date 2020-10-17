@@ -191,6 +191,9 @@ SheetOverviewTreeForm {
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
                     event.accepted = true
                 }
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
+                    event.accepted = true
+                }
                 if(event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
                     event.accepted = true
                 }
@@ -220,43 +223,50 @@ SheetOverviewTreeForm {
                 }
 
                 // cut
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     cutAction.trigger()
                     event.accepted = true
                 }
 
                 // copy
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     copyAction.trigger()
                     event.accepted = true
                 }
 
+
+                // copy
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    pasteAction.trigger()
+                    event.accepted = true
+                }
+
                 // add before
-                if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addBeforeAction.trigger()
                     event.accepted = true
                 }
 
                 // add after
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addAfterAction.trigger()
                     event.accepted = true
                 }
 
                 // move up
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveUpAction.trigger()
                     event.accepted = true
                 }
 
                 // move down
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveDownAction.trigger()
                     event.accepted = true
                 }
 
                 // send to trash
-                if (event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name"){
+                if (event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     sendToTrashAction.trigger()
                     event.accepted = true
                 }
@@ -979,8 +989,8 @@ SheetOverviewTreeForm {
                                 Layout.fillWidth: true
 
 
-                        minimalMode: true
-                        projectId: model.projectId
+                                minimalMode: true
+                                projectId: model.projectId
                                 sheetId: model.paperId
                             }
 
@@ -1043,7 +1053,7 @@ SheetOverviewTreeForm {
                                 //---------------Tags :---------------------------------------------
                                 //-----------------------------------------------------------
 
-                                toolBarVisible: false
+                                minimalMode: true
                                 projectId: model.projectId
                                 itemId: model.paperId
 
@@ -1179,12 +1189,14 @@ SheetOverviewTreeForm {
 
                 ]
 
+                property int transitionAnimationDuration: 150
+
                 transitions: [
                     Transition {
                         PropertyAnimation {
                             //target: content
                             properties: "height"
-                            duration: 250
+                            duration: draggableContent.transitionAnimationDuration
                             easing.type: Easing.InOutQuad
                         }
                     }
@@ -1218,6 +1230,19 @@ SheetOverviewTreeForm {
 
 
 
+            property int paperIdToEdit: -2
+            Timer{
+                id: editNameTimer
+                repeat: false
+                interval: draggableContent.transitionAnimationDuration
+                onTriggered: {
+                    var index = proxyModel.findVisualIndex(model.projectId, paperIdToEdit)
+                    if(index !== -2){
+                        listView.itemAtIndex(index).editName()
+                    }
+                }
+
+            }
 
             Menu {
                 id: menu
@@ -1362,6 +1387,23 @@ SheetOverviewTreeForm {
                     }
                 }
 
+                Action {
+
+                    id: pasteAction
+                    text: qsTr("Paste")
+                    //shortcut: StandardKey.Copy
+                    icon {
+                        name: "edit-paste"
+                    }
+                    enabled: contextMenuItemIndex === model.index && listView.enabled
+
+                    onTriggered: {
+                        console.log("copy action", model.projectId,
+                                    model.paperId)
+                        proxyModel.paste(model.projectId, model.paperId)
+                    }
+                }
+
                 MenuSeparator {}
                 Action {
                     id: addBeforeAction
@@ -1372,9 +1414,15 @@ SheetOverviewTreeForm {
                     }
                     enabled: contextMenuItemIndex === model.index && listView.enabled
                     onTriggered: {
-                        //TODO: fill that
                         console.log("add before action", model.projectId,
                                     model.paperId)
+                        var error = plmData.sheetHub().addPaperAbove(model.projectId,
+                                                                     model.paperId)
+                        // edit it :
+                        if(error){
+                            delegateRoot.paperIdToEdit = error.getDataList()[0]
+                            editNameTimer.start()
+                        }
                     }
                 }
 
@@ -1387,10 +1435,45 @@ SheetOverviewTreeForm {
                     }
                     enabled: contextMenuItemIndex === model.index && listView.enabled
                     onTriggered: {
-                        //TODO: fill that
                         console.log("add after action", model.projectId,
                                     model.paperId)
+                        var error = plmData.sheetHub().addPaperBelow(model.projectId,
+                                                                     model.paperId)
+                        // edit it :
+                        if(error){
+                            delegateRoot.paperIdToEdit = error.getDataList()[0]
+                            editNameTimer.start()
+                        }
                     }
+                }
+
+                Action {
+                    id: addChildAction
+                    text: qsTr("Add child")
+                    //shortcut: "Ctrl+N"
+                    icon {
+                        name: "document-new"
+                    }
+                    enabled: contextMenuItemIndex === model.index && listView.enabled
+                    onTriggered: {
+                        console.log("add child action", model.projectId,
+                                    model.paperId)
+
+                        var error = plmData.sheetHub().addChildPaper(model.projectId,
+                                                                     model.paperId)
+                        // edit it :
+                        if(error){
+                            delegateRoot.paperIdToEdit = error.getDataList()[0]
+                            editNameTimer.start()
+                        }
+
+
+                    }
+
+
+
+
+
                 }
 
                 MenuSeparator {}

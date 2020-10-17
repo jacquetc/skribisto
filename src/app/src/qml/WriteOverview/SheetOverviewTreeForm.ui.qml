@@ -16,7 +16,16 @@ Item {
         ListView {
             id: listView
             spacing: 5
+            reuseItems: false
+            displayMarginBeginning: 200
+            displayMarginEnd: 200
         }
     }
 
 }
+
+/*##^##
+Designer {
+    D{i:0;autoSize:true;height:480;width:640}
+}
+##^##*/

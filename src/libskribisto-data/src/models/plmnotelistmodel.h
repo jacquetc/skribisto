@@ -36,12 +36,6 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
-    // Add data:
-    bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
-
-    // Remove data:
-    bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
-
     QHash<int, QByteArray> roleNames() const override;
     QModelIndexList getModelIndex(int projectId, int paperId);
     PLMNoteItem *getParentNoteItem(PLMNoteItem *chidItem);
