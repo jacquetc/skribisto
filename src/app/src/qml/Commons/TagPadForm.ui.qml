@@ -7,8 +7,8 @@ Item {
     property alias tagFlow: tagFlow
     property alias addTagMenuToolButton: addTagMenuToolButton
     property alias tagRepeater: tagRepeater
-    property bool toolBarVisible: true
-    
+    property bool minimalMode: false
+
     Pane {
         id: pane
         clip: true
@@ -25,7 +25,7 @@ Item {
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignTop
-                visible: toolBarVisible
+                visible: !minimalMode
 
                 //                Item {
                 //                    id: element
@@ -54,7 +54,7 @@ Item {
 
             ScrollView {
                 id: scrollView
-                Layout.fillHeight: toolBarVisible ? true : false
+                Layout.fillHeight: !minimalMode
                 Layout.minimumHeight: 40
                 focusPolicy: Qt.StrongFocus
                 Layout.fillWidth: true

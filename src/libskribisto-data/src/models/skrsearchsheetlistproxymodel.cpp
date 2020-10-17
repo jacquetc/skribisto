@@ -25,6 +25,8 @@ SKRSearchSheetListProxyModel::SKRSearchSheetListProxyModel(QObject *parent) :
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->clearFilters();
     });
+
+
 }
 
 Qt::ItemFlags SKRSearchSheetListProxyModel::flags(const QModelIndex& index) const

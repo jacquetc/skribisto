@@ -410,7 +410,7 @@ TrashedListViewForm {
                 }
                 // rename
 
-                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name"){
+                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     renameAction.trigger()
                     event.accepted = true
                 }

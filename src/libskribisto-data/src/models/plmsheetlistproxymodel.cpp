@@ -51,6 +51,11 @@ PLMSheetListProxyModel::PLMSheetListProxyModel(QObject *parent) : QSortFilterPro
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->clearFilters();
     });
+
+//    connect(this->sourceModel(), &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex &parent, int first, int last) {
+//        this->invalidateFilter();
+//    });
+
 }
 
 Qt::ItemFlags PLMSheetListProxyModel::flags(const QModelIndex& index) const

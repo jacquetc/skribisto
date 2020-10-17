@@ -312,24 +312,6 @@ Qt::ItemFlags PLMNoteListModel::flags(const QModelIndex& index) const
     return defaultFlags;
 }
 
-bool PLMNoteListModel::insertRows(int row, int count, const QModelIndex& parent)
-{
-    beginInsertRows(parent, row, row + count - 1);
-
-    // FIXME: Implement me!
-    endInsertRows();
-    return false;
-}
-
-bool PLMNoteListModel::removeRows(int row, int count, const QModelIndex& parent)
-{
-    beginRemoveRows(parent, row, row + count - 1);
-
-    // FIXME: Implement me!
-    endRemoveRows();
-    return false;
-}
-
 QHash<int, QByteArray>PLMNoteListModel::roleNames() const {
     QHash<int, QByteArray> roles;
 
@@ -433,45 +415,64 @@ void PLMNoteListModel::refreshAfterDataAddition(int projectId, int paperId)
 
 
     int paperIndex      = idList.indexOf(paperId);
-    int paperIndent     = indentsHash.value(paperId);
-    int paperSortOrders = sortOrdersHash.value(paperId);
-
-    bool parentFound = false;
 
     if (paperIndex == 0) { // meaning the parent have to be a project item
-        this->populate();
-        return;
-    }
 
-    if (!parentFound) {
-        for (int i = paperIndex - 1; i >= 0; --i) {
-            int possibleParentId     = idList.at(i);
-            int possibleParentIndent = indentsHash.value(possibleParentId);
-
-            if (paperIndent == possibleParentIndent + 1) {
-                //                auto modelIndexList =
-                // this->getModelIndex(projectId, possibleParentId);
-                //                if(modelIndexList.isEmpty()){
-                //                    qWarning() << Q_FUNC_INFO << "if
-                // paperIndent == possibleParentIndent =>
-                // modelIndexList.isEmpty()";
-                //                    return;
-                //                }
-                //                parentIndex = modelIndexList.first();
-                // int parentPaperId =
-                // parentIndex.data(PLMNoteItem::Roles::PaperIdRole).toInt();
-                row         = paperIndex - i;
-                parentFound = true;
-                break;
-            }
+        for (PLMNoteItem *item : m_allNoteItems) {
+            item->invalidateData(PLMNoteItem::Roles::SortOrderRole);
+            item->invalidateData(PLMNoteItem::Roles::HasChildrenRole);
         }
-    }
 
-    if (!parentFound) {
-        qWarning() << Q_FUNC_INFO << "parent not found, failsafe used";
-        this->populate();
+
+
+        // find project PLMSheetItem:
+        PLMNoteItem *itemBefore = this->getItem(projectId, -1);
+
+        int indexBefore = m_allNoteItems.indexOf(itemBefore);
+
+        int itemIndex = indexBefore + 1;
+
+
+        beginInsertRows(QModelIndex(), itemIndex, itemIndex);
+
+        m_allNoteItems.insert(itemIndex, new PLMNoteItem(projectId, paperId,
+                                                           indentsHash.value(paperId),
+                                                           sortOrdersHash.value(paperId)));
+        this->index(itemIndex, 0, QModelIndex());
+        endInsertRows();
+
         return;
     }
+
+//    if (!parentFound) {
+//        for (int i = paperIndex - 1; i >= 0; --i) {
+//            int possibleParentId     = idList.at(i);
+//            int possibleParentIndent = indentsHash.value(possibleParentId);
+
+//            if (paperIndent == possibleParentIndent + 1) {
+//                //                auto modelIndexList =
+//                // this->getModelIndex(projectId, possibleParentId);
+//                //                if(modelIndexList.isEmpty()){
+//                //                    qWarning() << Q_FUNC_INFO << "if
+//                // paperIndent == possibleParentIndent =>
+//                // modelIndexList.isEmpty()";
+//                //                    return;
+//                //                }
+//                //                parentIndex = modelIndexList.first();
+//                // int parentPaperId =
+//                // parentIndex.data(PLMNoteItem::Roles::PaperIdRole).toInt();
+//                row         = paperIndex - i;
+//                parentFound = true;
+//                break;
+//            }
+//        }
+//    }
+
+//    if (!parentFound) {
+//        qWarning() << Q_FUNC_INFO << "parent not found, failsafe used";
+//        this->populate();
+//        return;
+//    }
 
 
     // find item just before in m_allNoteItems to determine item index to insert
@@ -501,12 +502,12 @@ void PLMNoteListModel::refreshAfterDataAddition(int projectId, int paperId)
     }
 
 
-    beginInsertRows(QModelIndex(), paperIndex, paperIndex);
+    beginInsertRows(QModelIndex(), itemIndex, itemIndex);
 
     m_allNoteItems.insert(itemIndex, new PLMNoteItem(projectId, paperId,
                                                      indentsHash.value(paperId),
                                                      sortOrdersHash.value(paperId)));
-    this->index(paperIndex, 0, QModelIndex());
+    this->index(itemIndex, 0, QModelIndex());
     endInsertRows();
 }
 

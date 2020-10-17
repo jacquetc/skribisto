@@ -218,7 +218,7 @@ TagPadForm {
                     State {
 
                         name: "visible_removeRelationshipButton"
-                        PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: noteTitle.height}
+                        PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: tagTitle.height}
                         PropertyChanges { target: removeRelationshipButton; opacity: 1.0}
                     }
                 ]

@@ -26,6 +26,8 @@ SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel(QObject *parent) :
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->clearFilters();
     });
+
+
 }
 
 Qt::ItemFlags SKRSearchNoteListProxyModel::flags(const QModelIndex& index) const

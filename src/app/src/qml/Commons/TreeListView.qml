@@ -363,6 +363,9 @@ TreeListViewForm {
                                      }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
                       event.accepted = true
+                                     }            
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
+                      event.accepted = true
                                      }
                 if( event.key === Qt.Key_Escape  && (delegateRoot.state == "edit_name" || delegateRoot.state == "edit_label")){
                       event.accepted = true
@@ -385,14 +388,14 @@ TreeListViewForm {
                     openDocumentInNewTabAction.trigger()
                     event.accepted = true
                 }
-                if (event.key === Qt.Key_Return && delegateRoot.state !== "edit_name"){
+                if (event.key === Qt.Key_Return && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
                 }
                 // rename
 
-                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name"){
+                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     renameAction.trigger()
                     event.accepted = true
                 }
@@ -400,43 +403,43 @@ TreeListViewForm {
 
 
                 // cut
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     cutAction.trigger()
                     event.accepted = true
                 }
 
                 // copy
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     copyAction.trigger()
                     event.accepted = true
                 }
 
                 // add before
-                if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addBeforeAction.trigger()
                     event.accepted = true
                 }
 
                 // add after
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addAfterAction.trigger()
                     event.accepted = true
                 }
 
                 // move up
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveUpAction.trigger()
                     event.accepted = true
                 }
 
                 // move down
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveDownAction.trigger()
                     event.accepted = true
                 }
 
                 // send to trash
-                if (event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name"){
+                if (event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     sendToTrashAction.trigger()
                     event.accepted = true
                 }

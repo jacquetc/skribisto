@@ -53,17 +53,17 @@ WriteOverviewPageForm {
 
 
     SKRSearchSheetListProxyModel {
-        id: restoreSheetProxyModel
+        id: sheetOverviewProxyModel
         showTrashedFilter: false
         showNotTrashedFilter: true
     }
 
-    sheetOverviewTree.proxyModel: restoreSheetProxyModel
-    sheetOverviewTree.model: restoreSheetProxyModel
+    sheetOverviewTree.proxyModel: sheetOverviewProxyModel
+    sheetOverviewTree.model: sheetOverviewProxyModel
     //--------------------------------------------------------------------------
 
     onCurrentProjectIdChanged: {
-        restoreSheetProxyModel.projectIdFilter = 1
+        sheetOverviewProxyModel.projectIdFilter = 1
     }
 
 

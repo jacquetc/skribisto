@@ -179,7 +179,7 @@ ListView {
                 if(pasteActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
                     event.accepted = true
                 }
-                if(renameActionEnabled && event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
+                if(renameActionEnabled && event.key === Qt.Key_Escape && (delegateRoot.state == "edit_name" || delegateRoot.state == "edit_label")){
                     event.accepted = true
                 }
                 if( event.key === Qt.Key_Escape){
@@ -202,19 +202,19 @@ ListView {
 
                 // rename
 
-                if (renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name"){
+                if (renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     renameAction.trigger()
                     event.accepted = true
                 }
 
                 // cut
-                if (cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name"){
+                if (cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     cutAction.trigger()
                     event.accepted = true
                 }
 
                 // copy
-                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name"){
+                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     copyAction.trigger()
                     event.accepted = true
                 }
