@@ -745,6 +745,16 @@ ListView {
                         target: labelTextField
                         visible: true
                     }
+                },
+
+                State {
+                    name: "unset_anchors"
+                    AnchorChanges {
+                        target: delegateRoot
+                        anchors.left: undefined
+                        anchors.right: undefined
+
+                    }
                 }
             ]
 
@@ -952,6 +962,41 @@ ListView {
 
             // move :
         }
+    }
+
+
+    remove: Transition {
+
+        SequentialAnimation {
+            id: removePaperAnimation
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: true
+            }
+            PropertyAction {
+                property: "state"
+                value: "unset_anchors"
+            }
+
+            NumberAnimation {
+                property: "x"
+                to: listView.width
+                duration: 250
+                easing.type: Easing.InBack
+            }
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: false
+            }
+        }
+    }
+
+    removeDisplaced: Transition {
+        SequentialAnimation {
+            PauseAnimation{duration: 250}
+            NumberAnimation { properties: "x,y"; duration: 250 }
+        }
+
     }
 
 }

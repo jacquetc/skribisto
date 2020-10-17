@@ -1224,6 +1224,16 @@ SheetOverviewTreeForm {
                             verticalCenter: undefined
                         }
                     }
+                },
+
+                State {
+                    name: "unset_anchors"
+                    AnchorChanges {
+                        target: delegateRoot
+                        anchors.left: undefined
+                        anchors.right: undefined
+
+                    }
                 }
             ]
 
@@ -1444,6 +1454,7 @@ SheetOverviewTreeForm {
                             delegateRoot.paperIdToEdit = error.getDataList()[0]
                             editNameTimer.start()
                         }
+
                     }
                 }
 
@@ -1490,8 +1501,10 @@ SheetOverviewTreeForm {
                     onTriggered: {
                         console.log("move up action", model.projectId,
                                     model.paperId)
+
                         proxyModel.moveUp(model.projectId, model.paperId,
                                           model.index)
+
                     }
                 }
 
@@ -1508,6 +1521,7 @@ SheetOverviewTreeForm {
                     onTriggered: {
                         console.log("move down action", model.projectId,
                                     model.paperId)
+
                         proxyModel.moveDown(model.projectId, model.paperId,
                                             model.index)
                     }
@@ -1524,7 +1538,7 @@ SheetOverviewTreeForm {
                     onTriggered: {
                         console.log("sent to trash action", model.projectId,
                                     model.paperId)
-                        model.trashed = true
+                        proxyModel.trashItemWithChildren(model.projectId, model.paperId)
 
                     }
                 }
@@ -1534,7 +1548,7 @@ SheetOverviewTreeForm {
 
 
             SequentialAnimation {
-                id: removePaperAtEndAnimation
+                id: removePaperAnimation
                 PropertyAction {
                     target: delegateRoot
                     property: "ListView.delayRemove"
@@ -1553,24 +1567,43 @@ SheetOverviewTreeForm {
                     value: false
                 }
             }
-            SequentialAnimation {
-                id: addPaperAtEndAnimation
 
-                PropertyAction {
-                    target: delegateRoot
-                    property: "height"
-                    value: 0
-                }
-                NumberAnimation {
-                    target: delegateRoot
-                    property: "height"
-                    to: delegateRoot.height
-                    duration: 250
-                    easing.type: Easing.InOutQuad
-                }
-            }
 
         }
+    }
+
+    listView.remove: Transition {
+
+        SequentialAnimation {
+            id: removePaperAnimation
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: true
+            }
+            PropertyAction {
+                property: "state"
+                value: "unset_anchors"
+            }
+
+            NumberAnimation {
+                property: "x"
+                to: listView.width
+                duration: 250
+                easing.type: Easing.InBack
+            }
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: false
+            }
+        }
+    }
+
+    listView.removeDisplaced: Transition {
+        SequentialAnimation {
+            PauseAnimation{duration: 250}
+            NumberAnimation { properties: "x,y"; duration: 250 }
+        }
+
     }
 
 }

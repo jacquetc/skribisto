@@ -25,7 +25,7 @@
 #include <QTimer>
 
 PLMSheetListProxyModel::PLMSheetListProxyModel(QObject *parent) : QSortFilterProxyModel(
-        parent),
+                                                                      parent),
     m_showTrashedFilter(false), m_projectIdFilter(-2), m_parentIdFilter(-2)
 {
     this->setSourceModel(plmmodels->sheetListModel());
@@ -33,28 +33,28 @@ PLMSheetListProxyModel::PLMSheetListProxyModel(QObject *parent) : QSortFilterPro
 
 
     connect(
-        plmdata->projectHub(),
-                                   &PLMProjectHub::projectLoaded,
-                                                                  this,
-                                                                        &PLMSheetListProxyModel::loadProjectSettings);
+                plmdata->projectHub(),
+                &PLMProjectHub::projectLoaded,
+                this,
+                &PLMSheetListProxyModel::loadProjectSettings);
     connect(
-        plmdata->projectHub(),
-                                   &PLMProjectHub::projectToBeClosed,
-                                                                  this,
-                                                                        &PLMSheetListProxyModel::saveProjectSettings,
-        Qt::DirectConnection);
+                plmdata->projectHub(),
+                &PLMProjectHub::projectToBeClosed,
+                this,
+                &PLMSheetListProxyModel::saveProjectSettings,
+                Qt::DirectConnection);
     connect(
-        plmdata->projectHub(),
-                                   &PLMProjectHub::projectClosed,
-                                                                  this,
-                                                                        &PLMSheetListProxyModel::clearHistory);
+                plmdata->projectHub(),
+                &PLMProjectHub::projectClosed,
+                this,
+                &PLMSheetListProxyModel::clearHistory);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->clearFilters();
     });
 
-//    connect(this->sourceModel(), &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex &parent, int first, int last) {
-//        this->invalidateFilter();
-//    });
+    //    connect(this->sourceModel(), &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex &parent, int first, int last) {
+    //        this->invalidateFilter();
+    //    });
 
 }
 
@@ -93,7 +93,7 @@ bool PLMSheetListProxyModel::setData(const QModelIndex& index, const QVariant& v
     QModelIndex sourceIndex = this->mapToSource(index);
 
     PLMSheetItem *item =
-        static_cast<PLMSheetItem *>(sourceIndex.internalPointer());
+            static_cast<PLMSheetItem *>(sourceIndex.internalPointer());
 
     if ((role == Qt::EditRole) && (sourceIndex.column() == 0)) {
         if (item->isProjectItem()) {
@@ -173,7 +173,7 @@ bool PLMSheetListProxyModel::filterAcceptsRow(int                sourceRow,
     // trashed filtering :
 
     if (result &&
-        (item->data(PLMSheetItem::Roles::TrashedRole).toBool() == m_showTrashedFilter)) {
+            (item->data(PLMSheetItem::Roles::TrashedRole).toBool() == m_showTrashedFilter)) {
         QString string = item->data(PLMSheetItem::Roles::NameRole).toString();
 
         // qDebug() << "trashed : " << string;
@@ -238,9 +238,9 @@ void PLMSheetListProxyModel::moveItem(int from, int to) {
 
     QModelIndex fromIndex = this->index(modelFrom, 0);
     int fromPaperId       =
-        this->data(fromIndex, PLMSheetItem::Roles::PaperIdRole).toInt();
+            this->data(fromIndex, PLMSheetItem::Roles::PaperIdRole).toInt();
     int fromProjectId =
-        this->data(fromIndex, PLMSheetItem::Roles::ProjectIdRole).toInt();
+            this->data(fromIndex, PLMSheetItem::Roles::ProjectIdRole).toInt();
 
     QModelIndex toIndex = this->index(modelTo, 0);
     int toPaperId       = this->data(toIndex, PLMSheetItem::Roles::PaperIdRole).toInt();
@@ -249,10 +249,10 @@ void PLMSheetListProxyModel::moveItem(int from, int to) {
 
     qDebug() << "fromPaperId : " << fromPaperId << this->data(fromIndex,
                                                               PLMSheetItem::Roles::NameRole)
-    .toString();
+                .toString();
     qDebug() << "toPaperId : " << toPaperId << this->data(toIndex,
                                                           PLMSheetItem::Roles::NameRole).
-    toString();
+                toString();
 
     int finalSortOrder = toSortOrder - 1;
 
@@ -263,9 +263,9 @@ void PLMSheetListProxyModel::moveItem(int from, int to) {
         PLMSheetListModel *model = static_cast<PLMSheetListModel *>(this->sourceModel());
 
         QModelIndex modelIndex =
-            model->getModelIndex(fromProjectId, fromPaperId).first();
+                model->getModelIndex(fromProjectId, fromPaperId).first();
         PLMSheetItem *item =
-            static_cast<PLMSheetItem *>(modelIndex.internalPointer());
+                static_cast<PLMSheetItem *>(modelIndex.internalPointer());
 
         int indent                 = item->indent();
         QList<int> idList          = plmdata->sheetHub()->getAllIds(fromProjectId);
@@ -450,8 +450,8 @@ int PLMSheetListProxyModel::findVisualIndex(int projectId, int paperId)
 
         if ((this->data(modelIndex,
                         PLMSheetItem::Roles::ProjectIdRole).toInt() == projectId)
-            && (this->data(modelIndex,
-                           PLMSheetItem::Roles::PaperIdRole).toInt() == paperId)) {
+                && (this->data(modelIndex,
+                               PLMSheetItem::Roles::PaperIdRole).toInt() == paperId)) {
             result = i;
             break;
         }
@@ -558,8 +558,6 @@ void PLMSheetListProxyModel::addChildItem(int projectId,
                                           int visualIndex)
 {
     PLMError error = plmdata->sheetHub()->addChildPaper(projectId, parentPaperId);
-
-    //this->invalidateFilter();
     this->setForcedCurrentIndex(visualIndex);
 }
 
@@ -570,8 +568,6 @@ void PLMSheetListProxyModel::addItemAbove(int projectId,
                                           int visualIndex)
 {
     PLMError error = plmdata->sheetHub()->addPaperAbove(projectId, parentPaperId);
-
-    //this->invalidateFilter();
     this->setForcedCurrentIndex(visualIndex);
 }
 
@@ -583,8 +579,6 @@ void PLMSheetListProxyModel::addItemBelow(int projectId,
                                           int visualIndex)
 {
     PLMError error = plmdata->sheetHub()->addPaperBelow(projectId, parentPaperId);
-
-    //this->invalidateFilter();
     this->setForcedCurrentIndex(visualIndex);
 }
 
@@ -606,9 +600,6 @@ void PLMSheetListProxyModel::moveUp(int projectId, int paperId, int visualIndex)
 
 void PLMSheetListProxyModel::moveDown(int projectId, int paperId, int visualIndex)
 {
-    //    PLMError error = plmdata->sheetHub()->addChildPaper(projectId,
-    // paperId);
-
     PLMSheetItem *item = this->getItem(projectId, paperId);
 
     if (!item) {
@@ -617,4 +608,19 @@ void PLMSheetListProxyModel::moveDown(int projectId, int paperId, int visualInde
     PLMError error = plmdata->sheetHub()->movePaperDown(projectId, paperId);
 
     this->setForcedCurrentIndex(visualIndex + 1);
+}
+
+// --------------------------------------------------------------
+
+void PLMSheetListProxyModel::trashItemWithChildren(int projectId, int paperId)
+{
+
+    PLMSheetItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+
+    plmdata->sheetHub()->setTrashedWithChildren(projectId, paperId, true);
+
 }

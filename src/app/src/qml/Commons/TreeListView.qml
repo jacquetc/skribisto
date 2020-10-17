@@ -229,6 +229,21 @@ TreeListViewForm {
 
     //    }
 
+    property bool temporarilyDisableMove: false
+
+
+    Timer{
+        id: temporarilyDisableMoveTimer
+        repeat: false
+        interval: 300
+        onTriggered: {
+            temporarilyDisableMove = false
+        }
+
+    }
+
+
+
     //-----------------------------------------------------------------------------
     Component.onCompleted: {
 
@@ -1276,8 +1291,17 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("move up action", model.projectId,
                                     model.paperId)
+
+                        if(temporarilyDisableMove){
+                            return
+                        }
+                        temporarilyDisableMove = true
+                        temporarilyDisableMoveTimer.start()
+
                         proxyModel.moveUp(model.projectId, model.paperId,
                                           model.index)
+
+
                     }
                 }
 
@@ -1294,6 +1318,13 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("move down action", model.projectId,
                                     model.paperId)
+
+                        if(temporarilyDisableMove){
+                            return
+                        }
+                        temporarilyDisableMove = true
+                        temporarilyDisableMoveTimer.start()
+
                         proxyModel.moveDown(model.projectId, model.paperId,
                                             model.index)
                     }
@@ -1310,8 +1341,9 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("sent to trash action", model.projectId,
                                     model.paperId)
-                        model.trashed = true
 
+                        removePaperAnimation.start()
+                        proxyModel.trashItemWithChildren(model.projectId, model.paperId)
                     }
                 }
             }
@@ -1523,24 +1555,28 @@ TreeListViewForm {
             }
 
             SequentialAnimation {
-                id: removePaperAtEndAnimation
+                id: removePaperAnimation
                 PropertyAction {
-                    target: delegateRoot
                     property: "ListView.delayRemove"
                     value: true
                 }
+
+                ScriptAction {
+                    script: delegateRoot.state = "unset_anchors"
+                }
+
                 NumberAnimation {
                     target: delegateRoot
-                    property: "height"
-                    to: 0
+                    property: "x"
+                    to: listView.width
                     duration: 250
-                    easing.type: Easing.InOutQuad
+                    easing.type: Easing.InBack
                 }
                 PropertyAction {
-                    target: delegateRoot
                     property: "ListView.delayRemove"
                     value: false
                 }
+
             }
             SequentialAnimation {
                 id: addPaperAtEndAnimation
@@ -1567,4 +1603,20 @@ TreeListViewForm {
             listView.forceActiveFocus()
         }
     }
+
+
+    listView.addDisplaced:      Transition {
+        NumberAnimation { properties: "x,y"; duration: 500 }
+    }
+
+
+    listView.removeDisplaced: Transition {
+        SequentialAnimation {
+            PauseAnimation{duration: 250}
+            NumberAnimation { properties: "x,y"; duration: 250 }
+        }
+
+    }
+
+
 }

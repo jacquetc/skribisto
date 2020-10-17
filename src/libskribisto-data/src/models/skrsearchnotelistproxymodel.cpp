@@ -892,6 +892,79 @@ int SKRSearchNoteListProxyModel::getItemIndent(int projectId, int paperId)
     return indent;
 }
 
+// -----------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::addChildItem(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->noteHub()->addChildPaper(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+// -----------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::addItemAbove(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->noteHub()->addPaperAbove(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+
+// -----------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::addItemBelow(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->noteHub()->addPaperBelow(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::moveUp(int projectId, int paperId, int visualIndex)
+{
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+    PLMError error = plmdata->noteHub()->movePaperUp(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex - 1);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::moveDown(int projectId, int paperId, int visualIndex)
+{
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+    PLMError error = plmdata->noteHub()->movePaperDown(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex + 1);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::trashItemWithChildren(int projectId, int paperId)
+{
+
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+
+    plmdata->noteHub()->setTrashedWithChildren(projectId, paperId, true);
+
+}
 // --------------------------------------------------------------
 
 QHash<int, QByteArray>SKRSearchNoteListProxyModel::roleNames() const {

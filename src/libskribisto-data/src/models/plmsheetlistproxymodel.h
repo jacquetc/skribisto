@@ -58,6 +58,7 @@ public:
     Q_INVOKABLE void addItemBelow(int projectId, int parentPaperId, int visualIndex);
     Q_INVOKABLE void moveUp(int projectId, int paperId, int visualIndex);
     Q_INVOKABLE void moveDown(int projectId, int paperId, int visualIndex);
+    Q_INVOKABLE void trashItemWithChildren(int projectId, int paperId);
     Q_INVOKABLE void setForcedCurrentIndex(int forcedCurrentIndex);
     Q_INVOKABLE void setForcedCurrentIndex(int projectId, int paperId);
     Q_INVOKABLE bool hasChildren(int projectId, int paperId);

@@ -131,14 +131,10 @@ public:
     PLMError             removePaper(int projectId,
                                      int targetId);
 
-    PLMError             movePaper(int  projectId,
-                                   int  sourcePaperId,
-                                   int  targetPaperId,
-                                   bool after = false);
 
-    PLMError movePaperUp(int projectId,
+     Q_INVOKABLE PLMError movePaperUp(int projectId,
                          int paperId);
-    PLMError movePaperDown(int projectId,
+     Q_INVOKABLE PLMError movePaperDown(int projectId,
                            int paperId);
 
 
@@ -188,6 +184,11 @@ public:
                                               int paperId);
 
 private:
+
+    PLMError             movePaper(int  projectId,
+                                   int  sourcePaperId,
+                                   int  targetPaperId,
+                                   bool after = false);
 
     PLMError setTrashedDateToNow(int projectId,
                                  int paperId);
