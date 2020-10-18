@@ -284,6 +284,7 @@ TreeListViewForm {
     property int goToChildActionCurrentIndent: -2
     property bool newPaperAdded :false
 
+
     // TreeView item :
     Component {
         id: dragDelegate
@@ -354,15 +355,35 @@ TreeListViewForm {
             //            }
             function editName() {
                 state = "edit_name"
-                titleTextField.forceActiveFocus()
+                titleTextFieldForceActiveFocusTimer.start()
                 titleTextField.selectAll()
+            }
+
+            Timer{
+                id: titleTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    titleTextField.forceActiveFocus()
+                }
             }
 
             function editLabel() {
                 state = "edit_label"
-                labelTextField.forceActiveFocus()
+                labelTextFieldForceActiveFocusTimer.start()
                 labelTextField.selectAll()
             }
+
+            Timer{
+                id: labelTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    labelTextField.forceActiveFocus()
+                }
+            }
+
+
 
             Keys.priority: Keys.AfterItem
 
@@ -459,7 +480,6 @@ TreeListViewForm {
                     event.accepted = true
                 }
             }
-            property bool editBugWorkaround: false
 
             Rectangle {
                 id: content
@@ -510,7 +530,6 @@ TreeListViewForm {
 
                 TapHandler {
                     id: tapHandler
-
 
                     onSingleTapped: {
                         listView.currentIndex = model.index
@@ -783,19 +802,14 @@ TreeListViewForm {
 
                                     placeholderText: qsTr("Enter label")
 
-                                    //workaround for bug losing focus after using rename from context menu
-                                    onActiveFocusChanged: {
-                                        if(!activeFocus && editBugWorkaround){
-                                            delegateRoot.editLabel()
-                                            delegateRoot.editBugWorkaround = false
-                                        }
-                                    }
 
                                     onEditingFinished: {
 
                                         console.log("editing label finished")
                                         model.label = text
                                         delegateRoot.state = ""
+
+
                                         //fix bug while new lone child
                                         titleLabel.visible = true
                                         labelLabel.visible = true
@@ -835,13 +849,6 @@ TreeListViewForm {
 
                                     placeholderText: qsTr("Enter name")
 
-                                    //workaround for bug losing focus after using rename from context menu
-                                    onActiveFocusChanged: {
-                                        if(!activeFocus && editBugWorkaround){
-                                            delegateRoot.editName()
-                                            delegateRoot.editBugWorkaround = false
-                                        }
-                                    }
 
                                     onEditingFinished: {
 
@@ -854,6 +861,8 @@ TreeListViewForm {
                                         }
 
                                         delegateRoot.state = ""
+
+
                                         //fix bug while new lone child
                                         titleLabel.visible = true
                                         labelLabel.visible = true
@@ -917,19 +926,6 @@ TreeListViewForm {
                             id: goToChildButton
                             action: goToChildAction
 
-                            //                            background: Rectangle {
-                            //                                implicitWidth: 30
-                            //                                implicitHeight: 30
-                            //                                color: Qt.darker(
-                            //                                           "#33333333", control.enabled
-                            //                                           && (control.checked
-                            //                                               || control.highlighted) ? 1.5 : 1.0)
-                            //                                opacity: enabled ? 1 : 0.3
-                            //                                visible: control.down
-                            //                                         || (control.enabled
-                            //                                             && (control.checked
-                            //                                                 || control.highlighted))
-                            //                            }
                             flat: true
                             Layout.preferredWidth: 30
                             Layout.fillHeight: true
@@ -1096,6 +1092,8 @@ TreeListViewForm {
                 onClosed: {
 
                 }
+
+
                 MenuItem {
                     visible: model.paperId !== -1
                     height: model.paperId === -1 ? 0 : undefined
@@ -1185,7 +1183,6 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("rename action", model.projectId,
                                     model.paperId)
-                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editName()
                     }
                 }
@@ -1201,7 +1198,6 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("from deleted: sel label", model.projectId,
                                     model.paperId)
-                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editLabel()
                     }
                 }

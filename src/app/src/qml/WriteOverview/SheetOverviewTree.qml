@@ -86,7 +86,8 @@ SheetOverviewTreeForm {
 
 
     // TreeView item :
-    listView.delegate:     Component {
+    listView.delegate:
+        Component {
         id: dragDelegate
 
         DropArea {
@@ -163,17 +164,34 @@ SheetOverviewTreeForm {
             }
 
 
-
             function editName() {
                 titleBox.state = "edit_name"
-                titleTextField.forceActiveFocus()
+                titleTextFieldForceActiveFocusTimer.start()
                 titleTextField.selectAll()
+            }
+
+            Timer{
+                id: titleTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    titleTextField.forceActiveFocus()
+                }
             }
 
             function editLabel() {
                 titleBox.state = "edit_label"
-                labelTextField.forceActiveFocus()
+                labelTextFieldForceActiveFocusTimer.start()
                 labelTextField.selectAll()
+            }
+
+            Timer{
+                id: labelTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    labelTextField.forceActiveFocus()
+                }
             }
 
 
@@ -277,8 +295,6 @@ SheetOverviewTreeForm {
                 }
 
             }
-
-            property bool editBugWorkaround: false
 
             Rectangle {
                 id: draggableContent
@@ -460,10 +476,7 @@ SheetOverviewTreeForm {
                         acceptedButtons: Qt.RightButton
                         onTapped: {
                             listView.currentIndex = model.index
-                            //delegateRoot.forceActiveFocus()
-
                             menu.popup(content, eventPoint.position.x, eventPoint.position.y)
-
                             eventPoint.accepted = true
                         }
                     }
@@ -538,22 +551,11 @@ SheetOverviewTreeForm {
 
                                         placeholderText: qsTr("Enter label")
 
-                                        //workaround for bug losing focus after using rename from context menu
-                                        onActiveFocusChanged: {
-                                            if(!activeFocus && editBugWorkaround){
-                                                delegateRoot.editLabel()
-                                                delegateRoot.editBugWorkaround = false
-                                            }
-                                        }
-
                                         onEditingFinished: {
                                             console.log("editing label finished")
                                             model.label = text
                                             titleBox.state = ""
 
-                                            //fix bug while new lone child
-                                            titleLabel.visible = true
-                                            labelLabel.visible = true
 
                                         }
 
@@ -590,14 +592,6 @@ SheetOverviewTreeForm {
 
                                         placeholderText: qsTr("Enter name")
 
-                                        //workaround for bug losing focus after using rename from context menu
-                                        onActiveFocusChanged: {
-                                            if(!activeFocus && editBugWorkaround){
-                                                delegateRoot.editName()
-                                                delegateRoot.editBugWorkaround = false
-                                            }
-                                        }
-
                                         onEditingFinished: {
 
                                             console.log("editing finished")
@@ -609,9 +603,6 @@ SheetOverviewTreeForm {
                                             }
 
                                             titleBox.state = ""
-                                            //fix bug while new lone child
-                                            titleLabel.visible = true
-                                            labelLabel.visible = true
                                         }
 
                                         //Keys.priority: Keys.AfterItem
@@ -1351,7 +1342,6 @@ SheetOverviewTreeForm {
                     onTriggered: {
                         console.log("rename action", model.projectId,
                                     model.paperId)
-                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editName()
                     }
                 }
@@ -1367,7 +1357,6 @@ SheetOverviewTreeForm {
                     onTriggered: {
                         console.log("from deleted: sel label", model.projectId,
                                     model.paperId)
-                        delegateRoot.editBugWorkaround = true
                         delegateRoot.editLabel()
                     }
                 }
