@@ -542,6 +542,9 @@ void SKRSearchSheetListProxyModel::setProjectIdFilter(int projectIdFilter)
     m_projectIdFilter = projectIdFilter;
     emit projectIdFilterChanged(m_projectIdFilter);
 
+    m_parentIdFilter = -2;
+    emit parentIdFilterChanged(m_parentIdFilter);
+
     this->invalidateFilter();
 }
 
@@ -560,6 +563,12 @@ void SKRSearchSheetListProxyModel::clearFilters()
 
     m_textFilter = "";
     emit textFilterChanged(m_textFilter);
+
+    m_parentIdFilter = -2;
+    emit parentIdFilterChanged(m_parentIdFilter);
+
+    m_showParentWhenParentIdFilter = false;
+    emit showParentWhenParentIdFilterChanged(m_showParentWhenParentIdFilter);
 
     this->invalidateFilter();
 }

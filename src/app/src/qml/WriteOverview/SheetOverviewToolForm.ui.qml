@@ -5,6 +5,7 @@ import QtQuick.Controls 2.15
 Item {
     width: 400
     height: 400
+    property alias projectComboBox: projectComboBox
     property alias showNotePadSwitch: showNotePadSwitch
     property alias showTagPadSwitch: showTagPadSwitch
     property alias showOutlineSwitch: showOutlineSwitch
@@ -19,6 +20,25 @@ Item {
 
         ColumnLayout {
             anchors.fill: parent
+
+            GroupBox {
+                id: groupBox1
+                width: 200
+                height: 200
+                focusPolicy: Qt.TabFocus
+                Layout.fillWidth: true
+                title: qsTr("Project")
+
+                ColumnLayout {
+                    id: columnLayout
+                    anchors.fill: parent
+
+                    ComboBox {
+                        id: projectComboBox
+                        Layout.fillWidth: true
+                    }
+                }
+            }
 
             GroupBox {
                 id: groupBox
@@ -75,6 +95,7 @@ Item {
                     }
                 }
             }
+
         }
     }
 }

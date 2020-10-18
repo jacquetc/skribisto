@@ -7,6 +7,8 @@ Item {
     id: base
     width: 1000
     height: 600
+    property alias topfilteringBannerLabel: topfilteringBannerLabel
+    property alias topfilteringBanner: topfilteringBanner
     property alias compactLeftDockShowButton: compactLeftDockShowButton
     property alias compactRightDockShowButton: compactRightDockShowButton
     property alias leftDockMenuGroup: leftDockMenuGroup
@@ -131,36 +133,60 @@ Item {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
 
-
-                ToolButton {
-                    id: compactLeftDockShowButton
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    width: 40
-                    height: 40
-                    z: 1
-                    flat: true
-                }
-
-
-                SheetOverviewTree{
-                    id: sheetOverviewTree
+                ColumnLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 50
-                    anchors.rightMargin: 50
+
+                    Pane {
+                        id: topfilteringBanner
+                        Layout.preferredHeight: 50
+                        Layout.fillWidth: true
+
+                        RowLayout{
+                            anchors.fill: parent
+                            Label {
+                                id: topfilteringBannerLabel
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                            }
+                        }
+
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+
+                        ToolButton {
+                            id: compactLeftDockShowButton
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            width: 40
+                            height: 40
+                            z: 1
+                            flat: true
+                        }
+
+
+                        SheetOverviewTree{
+                            id: sheetOverviewTree
+                            anchors.fill: parent
+                            anchors.leftMargin: 50
+                            anchors.rightMargin: 50
+
+                        }
+
+                        ToolButton {
+                            id: compactRightDockShowButton
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            width: 40
+                            height: 40
+                            z: 1
+                            flat: true
+                        }
+                    }
+
 
                 }
-
-                ToolButton {
-                    id: compactRightDockShowButton
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    width: 40
-                    height: 40
-                    z: 1
-                    flat: true
-                }
-
 
             }
 

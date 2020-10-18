@@ -156,14 +156,32 @@ ListView {
             //            }
             function editName() {
                 state = "edit_name"
-                titleTextField.forceActiveFocus()
+                titleTextFieldForceActiveFocusTimer.start()
                 titleTextField.selectAll()
+            }
+
+            Timer{
+                id: titleTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    titleTextField.forceActiveFocus()
+                }
             }
 
             function editLabel() {
                 state = "edit_label"
-                labelTextField.forceActiveFocus()
+                labelTextFieldForceActiveFocusTimer.start()
                 labelTextField.selectAll()
+            }
+
+            Timer{
+                id: labelTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    labelTextField.forceActiveFocus()
+                }
             }
 
             Keys.priority: Keys.AfterItem
@@ -500,14 +518,6 @@ ListView {
 
                                     placeholderText: qsTr("Enter label")
 
-                                    //workaround for bug losing focus after using rename from context menu
-                                    onActiveFocusChanged: {
-                                        if(!activeFocus && editBugWorkaround){
-                                            delegateRoot.editLabel()
-                                            delegateRoot.editBugWorkaround = false
-                                        }
-                                    }
-
                                     onEditingFinished: {
                                         //if (!activeFocus) {
                                         //accepted()
@@ -550,14 +560,6 @@ ListView {
                                     maximumLength: 50
 
                                     placeholderText: qsTr("Enter name")
-
-                                    //workaround for bug losing focus after using rename from context menu
-                                    onActiveFocusChanged: {
-                                        if(!activeFocus && editBugWorkaround){
-                                            delegateRoot.editName()
-                                            delegateRoot.editBugWorkaround = false
-                                        }
-                                    }
 
                                     onEditingFinished: {
                                         //if (!activeFocus) {
@@ -852,7 +854,6 @@ ListView {
                         onTriggered: {
                             console.log("rename action", model.projectId,
                                         model.paperId)
-                            delegateRoot.editBugWorkaround = true
                             delegateRoot.editName()
                         }
                     }
@@ -873,7 +874,6 @@ ListView {
                         onTriggered: {
                             console.log("sel label", model.projectId,
                                         model.paperId)
-                            delegateRoot.editBugWorkaround = true
                             delegateRoot.editLabel()
                         }
                     }

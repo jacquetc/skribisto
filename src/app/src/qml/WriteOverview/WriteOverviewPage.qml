@@ -12,20 +12,12 @@ WriteOverviewPageForm {
     id: root
     property string pageType: "writeOverview"
 
-    property int currentProjectId : -2
+    property int currentProjectId : Globals.sheetOverviewCurrentProjectId
 
 
     Component.onCompleted: {
         connectToSheetOverviewTree()
 
-    }
-
-    Connections{
-        target: plmData.projectHub()
-        function onProjectLoaded(projectId){
-            //test :
-            currentProjectId = projectId
-        }
     }
 
     Connections{
@@ -56,15 +48,12 @@ WriteOverviewPageForm {
         id: sheetOverviewProxyModel
         showTrashedFilter: false
         showNotTrashedFilter: true
+        projectIdFilter: currentProjectId
     }
 
     sheetOverviewTree.proxyModel: sheetOverviewProxyModel
     sheetOverviewTree.model: sheetOverviewProxyModel
     //--------------------------------------------------------------------------
-
-    onCurrentProjectIdChanged: {
-        sheetOverviewProxyModel.projectIdFilter = 1
-    }
 
 
     //--------------------------------------------------------------------------
