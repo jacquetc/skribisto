@@ -302,6 +302,13 @@ ListView {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
                     onTapped: {
+
+
+                        if(menu.visible){
+                            menu.close()
+                            return
+                        }
+
                         root.currentIndex = model.index
                         menu.open()
                         eventPoint.accepted = true

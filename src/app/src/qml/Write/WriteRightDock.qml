@@ -160,6 +160,7 @@ WriteRightDockForm {
     onProjectIdChanged: {
         notePadView.projectId = projectId
         tagPadView.projectId = projectId
+        tagPadView.itemId = -2
     }
     onPaperIdChanged: {
         notePadView.sheetId = paperId
