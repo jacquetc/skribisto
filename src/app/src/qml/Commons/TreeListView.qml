@@ -553,6 +553,13 @@ TreeListViewForm {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
                     onTapped: {
+
+                        if(menu.visible){
+                            menu.close()
+                            return
+                        }
+
+
                         listView.currentIndex = model.index
                         menu.open()
                         eventPoint.accepted = true

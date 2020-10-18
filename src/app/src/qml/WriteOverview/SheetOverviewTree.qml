@@ -45,6 +45,7 @@ SheetOverviewTreeForm {
     property int contextMenuItemIndex: -2
     onCurrentIndexChanged: {
         contextMenuItemIndex = listView.currentIndex
+
     }
 
     Binding {
@@ -92,8 +93,6 @@ SheetOverviewTreeForm {
 
         DropArea {
             id: delegateRoot
-
-
 
             Accessible.name: {
 
@@ -475,7 +474,17 @@ SheetOverviewTreeForm {
                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                         acceptedButtons: Qt.RightButton
                         onTapped: {
+                            console.log("right clicked")
+                            if(menu.visible){
+                                menu.close()
+                                return
+                            }
+
+
+                            // necessary to differenciate between all items
+                            contextMenuItemIndex = model.index
                             listView.currentIndex = model.index
+
                             menu.popup(content, eventPoint.position.x, eventPoint.position.y)
                             eventPoint.accepted = true
                         }
@@ -1110,9 +1119,10 @@ SheetOverviewTreeForm {
                                     focusPolicy: Qt.NoFocus
 
                                     onClicked: {
+                                        contextMenuItemIndex = model.index
                                         listView.currentIndex = model.index
                                         delegateRoot.forceActiveFocus()
-                                        menu.open()
+                                        menu.close()
                                         menu.popup(menuButton, menuButton.x, menuButton.height)
 
                                     }
@@ -1241,6 +1251,12 @@ SheetOverviewTreeForm {
 
 
             property int paperIdToEdit: -2
+            onPaperIdToEditChanged: {
+                if(paperIdToEdit !== -2){
+                    editNameTimer.start()
+                }
+            }
+
             Timer{
                 id: editNameTimer
                 repeat: false
@@ -1250,297 +1266,11 @@ SheetOverviewTreeForm {
                     if(index !== -2){
                         listView.itemAtIndex(index).editName()
                     }
+                    paperIdToEdit = -2
                 }
 
             }
 
-            Menu {
-                id: menu
-
-
-                onOpened: {
-                    // necessary to differenciate between all items
-                    contextMenuItemIndex = model.index
-                }
-
-                onClosed: {
-
-                }
-                MenuItem {
-                    visible: model.paperId !== -1
-                    height: model.paperId === -1 ? 0 : undefined
-                    action: Action {
-                        id: openPaperAction
-                        text: qsTr("Open")
-                        //shortcut: "Return"
-                        icon {
-                            name: "document-edit"
-                        }
-
-                        enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
-                        onTriggered: {
-                            console.log("open paper action", model.projectId,
-                                        model.paperId)
-                            openDocumentAction.trigger()
-                        }
-                    }
-                }
-                MenuItem {
-                    visible: model.paperId !== -1
-                    height: model.paperId === -1 ? 0 : undefined
-
-                    action: Action {
-                        id: openPaperInNewTabAction
-                        text: qsTr("Open in new tab")
-                        //shortcut: "Alt+Return"
-                        icon {
-                            name: "tab-new"
-                        }
-                        enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
-                        onTriggered: {
-                            console.log("open paper in new tab action", model.projectId,
-                                        model.paperId)
-                            openDocumentInNewTabAction.trigger()
-                        }
-                    }
-                }
-
-
-                MenuItem {
-                    visible: model.paperId !== -1
-                    height: model.paperId === -1 ? 0 : undefined
-
-                    action: Action {
-                        id: openPaperInNewWindowAction
-                        text: qsTr("Open in new window")
-                        //shortcut: "Alt+Return"
-                        icon {
-                            name: "window-new"
-                        }
-                        enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
-                        onTriggered: {
-                            console.log("open paper in new window action", model.projectId,
-                                        model.paperId)
-                            openDocumentInNewWindowAction.trigger()
-                        }
-                    }
-                }
-
-
-
-                MenuSeparator {}
-
-                Action {
-                    id: renameAction
-                    text: qsTr("Rename")
-                    //shortcut: "F2"
-                    icon {
-                        name: "edit-rename"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-
-                    onTriggered: {
-                        console.log("rename action", model.projectId,
-                                    model.paperId)
-                        delegateRoot.editName()
-                    }
-                }
-
-                Action {
-                    id: setLabelAction
-                    text: qsTr("Set label")
-                    //shortcut: "F2"
-                    icon {
-                        name: "label"
-                    }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled
-                    onTriggered: {
-                        console.log("from deleted: sel label", model.projectId,
-                                    model.paperId)
-                        delegateRoot.editLabel()
-                    }
-                }
-
-                MenuSeparator {}
-                Action {
-                    id: cutAction
-                    text: qsTr("Cut")
-                    //shortcut: StandardKey.Cut
-                    icon {
-                        name: "edit-cut"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-
-                    onTriggered: {
-                        console.log("cut action", model.projectId,
-                                    model.paperId)
-                        proxyModel.cut(model.projectId, model.paperId, -2)
-                    }
-                }
-
-                Action {
-
-                    id: copyAction
-                    text: qsTr("Copy")
-                    //shortcut: StandardKey.Copy
-                    icon {
-                        name: "edit-copy"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-
-                    onTriggered: {
-                        console.log("copy action", model.projectId,
-                                    model.paperId)
-                        proxyModel.copy(model.projectId, model.paperId)
-                    }
-                }
-
-                Action {
-
-                    id: pasteAction
-                    text: qsTr("Paste")
-                    //shortcut: StandardKey.Copy
-                    icon {
-                        name: "edit-paste"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-
-                    onTriggered: {
-                        console.log("copy action", model.projectId,
-                                    model.paperId)
-                        proxyModel.paste(model.projectId, model.paperId)
-                    }
-                }
-
-                MenuSeparator {}
-                Action {
-                    id: addBeforeAction
-                    text: qsTr("Add before")
-                    //shortcut: "Ctrl+Shift+N"
-                    icon {
-                        name: "document-new"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-                    onTriggered: {
-                        console.log("add before action", model.projectId,
-                                    model.paperId)
-                        var error = plmData.sheetHub().addPaperAbove(model.projectId,
-                                                                     model.paperId)
-                        // edit it :
-                        if(error){
-                            delegateRoot.paperIdToEdit = error.getDataList()[0]
-                            editNameTimer.start()
-                        }
-                    }
-                }
-
-                Action {
-                    id: addAfterAction
-                    text: qsTr("Add after")
-                    //shortcut: "Ctrl+N"
-                    icon {
-                        name: "document-new"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-                    onTriggered: {
-                        console.log("add after action", model.projectId,
-                                    model.paperId)
-                        var error = plmData.sheetHub().addPaperBelow(model.projectId,
-                                                                     model.paperId)
-                        // edit it :
-                        if(error){
-                            delegateRoot.paperIdToEdit = error.getDataList()[0]
-                            editNameTimer.start()
-                        }
-
-                    }
-                }
-
-                Action {
-                    id: addChildAction
-                    text: qsTr("Add child")
-                    //shortcut: "Ctrl+N"
-                    icon {
-                        name: "document-new"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-                    onTriggered: {
-                        console.log("add child action", model.projectId,
-                                    model.paperId)
-
-                        var error = plmData.sheetHub().addChildPaper(model.projectId,
-                                                                     model.paperId)
-                        // edit it :
-                        if(error){
-                            delegateRoot.paperIdToEdit = error.getDataList()[0]
-                            editNameTimer.start()
-                        }
-
-
-                    }
-
-
-
-
-
-                }
-
-                MenuSeparator {}
-
-                Action {
-                    id: moveUpAction
-                    text: qsTr("Move up")
-                    //shortcut: "Ctrl+Up"
-                    icon {
-                        name: "object-order-raise"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-                             && model.index !== 0
-                    onTriggered: {
-                        console.log("move up action", model.projectId,
-                                    model.paperId)
-
-                        proxyModel.moveUp(model.projectId, model.paperId,
-                                          model.index)
-
-                    }
-                }
-
-                Action {
-                    id: moveDownAction
-                    text: qsTr("Move down")
-                    //shortcut: "Ctrl+Down"
-                    icon {
-                        name: "object-order-lower"
-                    }
-                    enabled: contextMenuItemIndex === model.index
-                             && model.index !== visualModel.items.count - 1  && listView.enabled
-
-                    onTriggered: {
-                        console.log("move down action", model.projectId,
-                                    model.paperId)
-
-                        proxyModel.moveDown(model.projectId, model.paperId,
-                                            model.index)
-                    }
-                }
-                MenuSeparator {}
-                Action {
-                    id: sendToTrashAction
-                    text: qsTr("Send to trash")
-                    //shortcut: "Del"
-                    icon {
-                        name: "edit-delete"
-                    }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
-                    onTriggered: {
-                        console.log("sent to trash action", model.projectId,
-                                    model.paperId)
-                        proxyModel.trashItemWithChildren(model.projectId, model.paperId)
-
-                    }
-                }
-            }
 
 
 
@@ -1603,6 +1333,315 @@ SheetOverviewTreeForm {
         }
 
     }
+
+
+    Menu {
+        id: menu
+
+
+        onOpened: {
+
+        }
+
+        onClosed: {
+        }
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action: Action {
+                id: openPaperAction
+                text: qsTr("Open")
+                //shortcut: "Return"
+                icon {
+                    name: "document-edit"
+                }
+
+                enabled: listView.enabled && currentPaperId !== -1
+                onTriggered: {
+                    console.log("open paper action",currentProjectId, currentPaperId)
+                    root.openDocument(root.openedProjectId, root.openedPaperId, currentProjectId, currentPaperId)
+                }
+            }
+        }
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+
+            action: Action {
+                id: openPaperInNewTabAction
+                text: qsTr("Open in new tab")
+                //shortcut: "Alt+Return"
+                icon {
+                    name: "tab-new"
+                }
+                enabled: listView.enabled && currentPaperId !== -1
+                onTriggered: {
+                    console.log("open paper in new tab action", currentProjectId, currentPaperId)
+                    root.openDocumentInNewTab(currentProjectId, currentPaperId)
+                }
+            }
+        }
+
+
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+
+            action: Action {
+                id: openPaperInNewWindowAction
+                text: qsTr("Open in new window")
+                //shortcut: "Alt+Return"
+                icon {
+                    name: "window-new"
+                }
+                enabled: listView.enabled && currentPaperId !== -1
+                onTriggered: {
+                    console.log("open paper in new window action", currentProjectId, currentPaperId)
+                    root.openDocumentInNewWindow(currentProjectId, currentPaperId)
+                }
+            }
+        }
+
+
+
+        MenuSeparator {}
+
+        Action {
+            id: renameAction
+            text: qsTr("Rename")
+            //shortcut: "F2"
+            icon {
+                name: "edit-rename"
+            }
+            enabled: listView.enabled
+
+            onTriggered: {
+                console.log("rename action", currentProjectId, currentPaperId)
+                listView.itemAtIndex(currentIndex).editName()
+            }
+        }
+
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action: Action {
+
+                id: setLabelAction
+                text: qsTr("Set label")
+                //shortcut: "F2"
+                icon {
+                    name: "label"
+                }
+                enabled: listView.enabled && currentPaperId !== -1
+                onTriggered: {
+                    console.log("from deleted: sel label", currentProjectId, currentPaperId)
+                    listView.itemAtIndex(currentIndex).editLabel()
+                }
+            }
+        }
+
+        MenuSeparator {}
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action: Action {
+                id: cutAction
+                text: qsTr("Cut")
+                //shortcut: StandardKey.Cut
+                icon {
+                    name: "edit-cut"
+                }
+                enabled: listView.enabled && currentPaperId !== -1
+
+                onTriggered: {
+                    console.log("cut action", currentProjectId, currentPaperId)
+                    proxyModel.cut(currentProjectId, currentPaperId)
+                }
+            }
+        }
+
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action:
+                Action {
+
+                id: copyAction
+                text: qsTr("Copy")
+                //shortcut: StandardKey.Copy
+                icon {
+                    name: "edit-copy"
+                }
+                enabled: listView.enabled && currentPaperId !== -1
+
+                onTriggered: {
+                    console.log("copy action", currentProjectId, currentPaperId)
+                    proxyModel.copy(currentProjectId, currentPaperId)
+                }
+            }
+        }
+
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action:
+                Action {
+
+                id: pasteAction
+                text: qsTr("Paste")
+                //shortcut: StandardKey.Copy
+                icon {
+                    name: "edit-paste"
+                }
+                enabled: listView.enabled && currentPaperId !== -1
+
+                onTriggered: {
+                    console.log("copy action", currentProjectId, currentPaperId)
+                    proxyModel.paste(currentProjectId, currentPaperId)
+                }
+            }
+        }
+
+        MenuSeparator {}
+
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action:
+                Action {
+                id: addBeforeAction
+                text: qsTr("Add before")
+                //shortcut: "Ctrl+Shift+N"
+                icon {
+                    name: "document-new"
+                }
+                enabled: listView.enabled && currentPaperId !== -1
+                onTriggered: {
+                    console.log("add before action", currentProjectId, currentPaperId)
+                    var error = plmData.sheetHub().addPaperAbove(currentProjectId, currentPaperId)
+                    // edit it :
+                    if(error){
+                        listView.itemAtIndex(currentIndex).paperIdToEdit = error.getDataList()[0] //start when paperIdToEdit changes
+                    }
+                }
+            }
+        }
+
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action:
+                Action {
+
+                id: addAfterAction
+                text: qsTr("Add after")
+                //shortcut: "Ctrl+N"
+                icon {
+                    name: "document-new"
+                }
+                enabled: listView.enabled && currentPaperId !== -1
+                onTriggered: {
+                    console.log("add after action", currentProjectId, currentPaperId)
+                    var error = plmData.sheetHub().addPaperBelow(currentProjectId, currentPaperId)
+                    // edit it :
+                    if(error){
+                        listView.itemAtIndex(currentIndex).paperIdToEdit = error.getDataList()[0]
+                    }
+
+                }
+            }
+        }
+
+        Action {
+            id: addChildAction
+            text: qsTr("Add child")
+            //shortcut: "Ctrl+N"
+            icon {
+                name: "document-new"
+            }
+            enabled: listView.enabled
+            onTriggered: {
+                console.log("add child action", currentProjectId, currentPaperId)
+
+                var error = plmData.sheetHub().addChildPaper(currentProjectId, currentPaperId)
+                // edit it :
+                if(error){
+                    listView.itemAtIndex(currentIndex).paperIdToEdit = error.getDataList()[0]
+                }
+
+
+            }
+
+
+
+
+
+        }
+
+        MenuSeparator {}
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action: Action {
+                id: moveUpAction
+                text: qsTr("Move up")
+                //shortcut: "Ctrl+Up"
+                icon {
+                    name: "object-order-raise"
+                }
+                enabled:listView.enabled && currentIndex !== 0 && currentPaperId !== -1
+                onTriggered: {
+                    console.log("move up action", currentProjectId, currentPaperId)
+
+                    proxyModel.moveUp(currentProjectId, currentPaperId, currentIndex)
+
+                }
+            }
+        }
+
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action:
+                Action {
+                id: moveDownAction
+                text: qsTr("Move down")
+                //shortcut: "Ctrl+Down"
+                icon {
+                    name: "object-order-lower"
+                }
+                enabled: currentIndex !== visualModel.items.count - 1  && listView.enabled && currentPaperId !== -1
+
+                onTriggered: {
+                    console.log("move down action", currentProjectId, currentPaperId)
+
+                    proxyModel.moveDown(currentProjectId, currentPaperId, currentIndex)
+                }
+            }
+        }
+        MenuSeparator {}
+
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+            action:
+                Action {
+                id: sendToTrashAction
+                text: qsTr("Send to trash")
+                //shortcut: "Del"
+                icon {
+                    name: "edit-delete"
+                }
+                enabled: listView.enabled && currentPaperId !== -1 && currentPaperId !== -1
+                onTriggered: {
+                    console.log("sent to trash action", currentProjectId, currentPaperId)
+                    proxyModel.trashItemWithChildren(currentProjectId, currentPaperId)
+
+                }
+            }
+        }
+    }
+
 
 }
 

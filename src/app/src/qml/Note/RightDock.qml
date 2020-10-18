@@ -125,6 +125,7 @@ RightDockForm {
 
     onProjectIdChanged: {
         tagPadView.projectId = projectId
+        tagPadView.itemId = -2
     }
     onPaperIdChanged: {
         tagPadView.itemId = paperId
