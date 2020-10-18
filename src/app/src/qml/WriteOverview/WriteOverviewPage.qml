@@ -47,16 +47,22 @@ WriteOverviewPageForm {
 
         onParentIdFilterChanged: {
             if(sheetOverviewProxyModel.parentIdFilter === -2){
-                topfilteringBanner.visible = false
+                topFilteringBanner.visible = false
                 return
             }
 
-            topfilteringBanner.visible = true
+            topFilteringBanner.visible = true
 
             var title = plmData.sheetHub().getTitle(currentProjectId, sheetOverviewProxyModel.parentIdFilter)
-            topfilteringBannerLabel.text = qsTr("The focus is currently on %1").arg(title)
+            topFilteringBannerLabel.text = qsTr("The focus is currently on %1").arg(title)
 
         }
+    }
+
+    unsetFilteringParentToolButton.icon.name: "window-close"
+    unsetFilteringParentToolButton.onClicked: {
+        sheetOverviewProxyModel.parentIdFilter = -2
+
     }
 
     sheetOverviewTree.proxyModel: sheetOverviewProxyModel
