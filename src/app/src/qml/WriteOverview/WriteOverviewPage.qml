@@ -30,15 +30,10 @@ WriteOverviewPageForm {
     //---Writing Zone (little notes in tree)-----------------------------------------
     //--------------------------------------------------------
 
-    //    writingZone.maximumTextAreaWidth: SkrSettings.noteSettings.textWidth
-    //    writingZone.textPointSize: SkrSettings.noteSettings.textPointSize
-    //    writingZone.textFontFamily: SkrSettings.noteSettings.textFontFamily
-    //    writingZone.textIndent: SkrSettings.noteSettings.textIndent
-    //    writingZone.textTopMargin: SkrSettings.noteSettings.textTopMargin
-
     //-------------------------------------------------------------
     //-------Sheet Overview------------------------------------------
     //-------------------------------------------------------------
+
 
 
     //--------------------------------------------------------------------------
@@ -49,6 +44,19 @@ WriteOverviewPageForm {
         showTrashedFilter: false
         showNotTrashedFilter: true
         projectIdFilter: currentProjectId
+
+        onParentIdFilterChanged: {
+            if(sheetOverviewProxyModel.parentIdFilter === -2){
+                topfilteringBanner.visible = false
+                return
+            }
+
+            topfilteringBanner.visible = true
+
+            var title = plmData.sheetHub().getTitle(currentProjectId, sheetOverviewProxyModel.parentIdFilter)
+            topfilteringBannerLabel.text = qsTr("The focus is currently on %1").arg(title)
+
+        }
     }
 
     sheetOverviewTree.proxyModel: sheetOverviewProxyModel
