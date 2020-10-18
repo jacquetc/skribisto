@@ -1210,6 +1210,16 @@ SheetOverviewTreeForm {
                             duration: draggableContent.transitionAnimationDuration
                             easing.type: Easing.InOutQuad
                         }
+                        ScriptAction {
+                            script: {
+                                // shakes the writingZone to avoid blanks when resizing
+                                synopsisBox.writingZone.flickable.contentY = 1
+                                synopsisBox.writingZone.flickable.contentY = 0
+
+                            }
+
+                        }
+
                         }
                     }
                 ]

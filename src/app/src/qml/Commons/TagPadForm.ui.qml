@@ -100,6 +100,7 @@ Item {
                 id: stretcher2
                 Layout.fillHeight: true
                 Layout.fillWidth: true
+                visible: !minimalMode
             }
 
         }
