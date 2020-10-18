@@ -711,6 +711,8 @@ SheetOverviewTreeForm {
                             Layout.minimumWidth: 100
                             Layout.maximumWidth: 600
 
+                            property var writingZone: noteWritingZoneLoader.item
+
                             onWidthChanged: {
                                 if(width === 50 && Component.status === Component.Ready){
                                     SkrSettings.overviewTreeSettings.synopsisBoxVisible = false
@@ -755,10 +757,9 @@ SheetOverviewTreeForm {
                                     WritingZone {
                                         id: writingZone
 
-
-
                                         property string pageType: "note"
 
+                                        clip: true
                                         projectId: model.projectId
                                         spellCheckerKilled: true
                                         leftScrollItemVisible: false
@@ -1203,11 +1204,12 @@ SheetOverviewTreeForm {
 
                 transitions: [
                     Transition {
+                        SequentialAnimation{
                         PropertyAnimation {
-                            //target: content
                             properties: "height"
                             duration: draggableContent.transitionAnimationDuration
                             easing.type: Easing.InOutQuad
+                        }
                         }
                     }
                 ]
