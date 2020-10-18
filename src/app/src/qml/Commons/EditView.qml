@@ -4,7 +4,11 @@ import QtQuick.Controls 2.15
 import '..'
 
 EditViewForm {
+    id: root
     property int minimumHeight: 500
+
+
+
     // must be set :
     property var skrSettingsGroup
 

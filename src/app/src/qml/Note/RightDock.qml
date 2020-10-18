@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
+import QtQuick.Controls.Material 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.notelistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
@@ -20,16 +21,20 @@ RightDockForm {
     }
 
     splitView.handle: Item {
+        id: handle
         implicitHeight: 8
+        property bool hovered: SplitHandle.hovered
+
         RowLayout {
             anchors.fill: parent
             Rectangle {
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 5
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: "lightgrey"
+                color: handle.hovered ? Material.accentColor : Material.dividerColor
             }
         }
+
     }
 
     //-----------------------------------------------------------
@@ -48,48 +53,48 @@ RightDockForm {
     //Menu :
     property list<Component> menuComponents:  [
         Component{
-        id:  toolDockMenuComponent
-        Menu {
-            id: toolDockMenu
-            objectName: "toolDockMenu"
-            title: qsTr("&Tools dock")
+            id:  toolDockMenuComponent
+            Menu {
+                id: toolDockMenu
+                objectName: "toolDockMenu"
+                title: qsTr("&Tools dock")
 
 
-            Component.onCompleted: {
+                Component.onCompleted: {
 
-                toolMenuShortcut.sequence = skrQMLTools.mnemonic(title)
-                toolMenuShortcut.activated.connect(function() {
-                    Globals.openSubMenuCalled(toolDockMenu)
-                })
-            }
-
-            MenuItem {
-                text: qsTr( "&Edit")
-                onTriggered: {
-
-                    if(Globals.compactSize){
-                        rightDrawer.open()
-                    }
-                    editFrame.folded = false
-                    editView.forceActiveFocus()
+                    toolMenuShortcut.sequence = skrQMLTools.mnemonic(title)
+                    toolMenuShortcut.activated.connect(function() {
+                        Globals.openSubMenuCalled(toolDockMenu)
+                    })
                 }
-            }
 
+                MenuItem {
+                    text: qsTr( "&Edit")
+                    onTriggered: {
 
-            MenuItem {
-                text: qsTr( "&Tags")
-                onTriggered: {
-
-                    if(Globals.compactSize){
-                        rightDrawer.open()
+                        if(Globals.compactSize){
+                            rightDrawer.open()
+                        }
+                        editFrame.folded = false
+                        editView.forceActiveFocus()
                     }
-                    tagPadFrame.folded = false
-                    tagPadView.forceActiveFocus()
+                }
+
+
+                MenuItem {
+                    text: qsTr( "&Tags")
+                    onTriggered: {
+
+                        if(Globals.compactSize){
+                            rightDrawer.open()
+                        }
+                        tagPadFrame.folded = false
+                        tagPadView.forceActiveFocus()
+                    }
                 }
             }
         }
-    }
-]
+    ]
 
 
 

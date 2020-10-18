@@ -4,7 +4,7 @@ import QtQuick.Controls 2.15
 import '..'
 
 SheetOverviewToolForm {
-    property int minimumHeight: 200
+    property int minimumHeight: 500
 
     //-------------------------------------------------------------------------------
     //-----Project-------------------------------------------------------------------

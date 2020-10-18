@@ -63,6 +63,7 @@ Item {
                                     SplitView.maximumHeight : folded ? dynamicHeight : 600
 
 
+
                                     minimumContentHeight: SplitView.minimumHeight
                                     contentHeight: SplitView.preferredHeight
                                     maximumContentHeight: SplitView.maximumHeight
@@ -82,7 +83,6 @@ Item {
 
                                     SplitView.preferredHeight: folded ? dynamicHeight : 400
                                     SplitView.minimumHeight: folded ? dynamicHeight : 300
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
 
 
                                     minimumContentHeight: SplitView.minimumHeight
@@ -105,12 +105,9 @@ Item {
                                     title: qsTr("Tags")
                                     edge: Qt.RightEdge
 
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: dynamicHeight
-
+                                    SplitView.fillWidth: true
                                     SplitView.preferredHeight: folded ? dynamicHeight : 200
                                     SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 400
 
 
                                     minimumContentHeight: SplitView.minimumHeight

@@ -67,7 +67,6 @@ Item {
 
                                     SplitView.preferredHeight: folded ? dynamicHeight : 400
                                     SplitView.minimumHeight: folded ? dynamicHeight : 300
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
 
 
                                     minimumContentHeight: SplitView.minimumHeight
@@ -91,7 +90,6 @@ Item {
 
                                     SplitView.preferredHeight: folded ? dynamicHeight : 200
                                     SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 400
 
 
                                     minimumContentHeight: SplitView.minimumHeight
@@ -110,10 +108,9 @@ Item {
                                     title: qsTr("Notes")
                                     edge: Qt.RightEdge
 
-
+                                    SplitView.fillHeight: true
                                     SplitView.preferredHeight: folded ? dynamicHeight : 400
                                     SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 800
 
 
                                     minimumContentHeight: SplitView.minimumHeight

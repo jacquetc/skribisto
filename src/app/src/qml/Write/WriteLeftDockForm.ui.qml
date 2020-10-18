@@ -62,7 +62,6 @@ Item {
 
                                     SplitView.preferredHeight: folded ? dynamicHeight : 500
                                     SplitView.minimumHeight: folded ? dynamicHeight : 400
-                                    //SplitView.maximumHeight : folded ? dynamicHeight : 600
 
                                     minimumContentHeight: SplitView.minimumHeight
                                     contentHeight: SplitView.preferredHeight
@@ -81,7 +80,6 @@ Item {
 
                                     SplitView.preferredHeight: folded ? dynamicHeight : 300
                                     SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
 
 
                                     minimumContentHeight: SplitView.minimumHeight
