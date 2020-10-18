@@ -7,8 +7,9 @@ Item {
     id: base
     width: 1000
     height: 600
-    property alias topfilteringBannerLabel: topfilteringBannerLabel
-    property alias topfilteringBanner: topfilteringBanner
+    property alias unsetFilteringParentToolButton: unsetFilteringParentToolButton
+    property alias topFilteringBanner: topFilteringBanner
+    property alias topFilteringBannerLabel: topFilteringBannerLabel
     property alias compactLeftDockShowButton: compactLeftDockShowButton
     property alias compactRightDockShowButton: compactRightDockShowButton
     property alias leftDockMenuGroup: leftDockMenuGroup
@@ -25,15 +26,14 @@ Item {
     property int leftBasePreferredWidth: 0
     property int rightBasePreferredWidth: 0
 
-
     ColumnLayout {
         id: columnLayout
         clip: false
         spacing: 0
         anchors.fill: parent
         anchors.leftMargin: Globals.compactSize ? undefined : leftDrawer.width * leftDrawer.position
-        anchors.rightMargin: Globals.compactSize ? undefined : rightDrawer.width * rightDrawer.position + 10
-
+        anchors.rightMargin: Globals.compactSize ? undefined : rightDrawer.width
+                                                   * rightDrawer.position + 10
 
         RowLayout {
             id: rowLayout
@@ -123,7 +123,6 @@ Item {
                             }
                         }
                     }
-
                 }
             }
 
@@ -137,18 +136,23 @@ Item {
                     anchors.fill: parent
 
                     Pane {
-                        id: topfilteringBanner
+                        id: topFilteringBanner
                         Layout.preferredHeight: 50
                         Layout.fillWidth: true
 
-                        RowLayout{
+                        RowLayout {
                             anchors.fill: parent
                             Label {
-                                id: topfilteringBannerLabel
+                                id: topFilteringBannerLabel
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             }
-                        }
 
+                            ToolButton {
+                                id: unsetFilteringParentToolButton
+                                text: qsTr("Unfocus")
+                                display: AbstractButton.IconOnly
+                            }
+                        }
                     }
 
                     Item {
@@ -165,13 +169,11 @@ Item {
                             flat: true
                         }
 
-
-                        SheetOverviewTree{
+                        SheetOverviewTree {
                             id: sheetOverviewTree
                             anchors.fill: parent
                             anchors.leftMargin: 50
                             anchors.rightMargin: 50
-
                         }
 
                         ToolButton {
@@ -184,12 +186,8 @@ Item {
                             flat: true
                         }
                     }
-
-
                 }
-
             }
-
 
             Item {
                 id: rightBase
@@ -198,8 +196,8 @@ Item {
                 //Layout.fillWidth: true
                 Layout.preferredWidth: rightBasePreferredWidth
                 Layout.minimumWidth: 30
-                //Layout.maximumWidth: 300
 
+                //Layout.maximumWidth: 300
                 z: 1
 
                 RowLayout {
