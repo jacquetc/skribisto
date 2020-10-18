@@ -101,7 +101,7 @@ NoteOverviewPageForm {
 
 
     property alias leftDock: leftDock
-    property int leftDrawerFixedWidth: leftDrawer.width
+    property int leftDrawerFixedWidth: 300
     SKRDrawer {
         id: leftDrawer
         enabled: base.enabled

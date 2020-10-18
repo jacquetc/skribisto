@@ -614,7 +614,7 @@ WritePageForm {
 
 
     property alias leftDock: leftDock
-    property int leftDrawerFixedWidth: leftDrawer.width
+    property int leftDrawerFixedWidth: 300
 
     SKRDrawer {
         id: leftDrawer
@@ -639,7 +639,7 @@ WritePageForm {
     }
 
     property alias rightDock: rightDock
-    property int rightDrawerFixedWidth: rightDrawer.width
+    property int rightDrawerFixedWidth: 300
     SKRDrawer {
         id: rightDrawer
         enabled: base.enabled

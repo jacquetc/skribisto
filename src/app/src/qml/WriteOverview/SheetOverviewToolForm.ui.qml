@@ -3,8 +3,6 @@ import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 
 Item {
-    width: 400
-    height: 400
     property alias projectComboBox: projectComboBox
     property alias showNotePadSwitch: showNotePadSwitch
     property alias showTagPadSwitch: showTagPadSwitch
@@ -12,6 +10,7 @@ Item {
 
     property alias treeItemDisplayModeSlider: treeItemDisplayModeSlider
     property alias treeIndentationSlider: treeIndentationSlider
+    property alias projectGroupBox: projectGroupBox
 
     Pane {
         id: pane
@@ -22,9 +21,7 @@ Item {
             anchors.fill: parent
 
             GroupBox {
-                id: groupBox1
-                width: 200
-                height: 200
+                id: projectGroupBox
                 focusPolicy: Qt.TabFocus
                 Layout.fillWidth: true
                 title: qsTr("Project")

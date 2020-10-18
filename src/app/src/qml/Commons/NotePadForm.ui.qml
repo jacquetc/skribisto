@@ -89,15 +89,9 @@ Item {
                     boundsBehavior: Flickable.StopAtBounds
                     contentWidth: scrollView.width
                     contentHeight: noteFlow.height
-                    //contentHeight: leftDockColumnLayout.height
                     Flow {
                         id: noteFlow
                         width: scrollView.width
-                        //                    width: parent.width
-                        //                    anchors.left: parent.left
-                        //                    anchors.top: parent.top
-                        //                    anchors.topMargin: 0
-                        //                    anchors.leftMargin: 0
                         spacing: 10
                         padding: 2
                         antialiasing: true
@@ -106,9 +100,7 @@ Item {
 
                         Repeater {
                             id: noteRepeater
-
                             delegate: noteFlowComponent
-
 
                         }
 

@@ -58,7 +58,7 @@ Item {
                                     title: qsTr("Overview")
                                     edge: Qt.RightEdge
 
-                                    SplitView.preferredHeight: folded ? dynamicHeight : 200
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 400
                                     SplitView.minimumHeight: folded ? dynamicHeight : 200
                                     SplitView.maximumHeight : folded ? dynamicHeight : 600
 

@@ -167,7 +167,7 @@ SheetOverviewToolForm {
     onActiveFocusChanged: {
         if (activeFocus) {
             //swipeView.currentIndex = 0
-            treeItemDisplayModeSlider.forceActiveFocus()
+            projectGroupBox.forceActiveFocus()
         }
     }
 }
