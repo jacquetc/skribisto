@@ -1,3 +1,4 @@
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
@@ -36,6 +37,10 @@ Item {
                     ScrollView {
                         id: scrollView
                         anchors.fill: parent
+
+                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
+
                         Flickable {
                             boundsBehavior: Flickable.StopAtBounds
                             contentWidth: splitView.width
@@ -45,8 +50,6 @@ Item {
                                 orientation: Qt.Vertical
                                 implicitWidth: scrollView.width
                                 implicitHeight: base.height > 1000 ?  base.height - 25 : 1000
-//                            ColumnLayout {
-//                                id: leftDockColumnLayout
 
                                 width: scrollView.width
 
@@ -54,9 +57,10 @@ Item {
                                     id: editFrame
                                     folded: false
                                     title: qsTr("Edit")
+                                    edge: Qt.RightEdge
+
                                     SplitView.preferredHeight: folded ? dynamicHeight : 400
                                     SplitView.minimumHeight: folded ? dynamicHeight : 300
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
 
 
                                     minimumContentHeight: SplitView.minimumHeight
@@ -75,11 +79,10 @@ Item {
                                     id: tagPadFrame
                                     folded: true
                                     title: qsTr("Tags")
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: dynamicHeight
+                                    edge: Qt.RightEdge
+
                                     SplitView.preferredHeight: folded ? dynamicHeight : 200
                                     SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 400
 
 
                                     minimumContentHeight: SplitView.minimumHeight

@@ -289,6 +289,8 @@ void SKRTextBridge::connectContentsChangeSignal(const SKRSyncDocument& syncDoc)
 
 void SKRTextBridge::disconnectContentsChangeSignal(const SKRSyncDocument& syncDoc)
 {
+
+
     disconnect(syncDoc.qQuickTextDocument()->textDocument(),
                &QTextDocument::contentsChange,
                this,
@@ -347,9 +349,15 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
     QTextDocumentFragment docFragment = selectionCursor.selection();
 
     for (const SKRSyncDocument& syncDoc : otherSyncDocs) {
+
+        if(!syncDoc.qQuickTextDocument()){
+            continue;
+        }
+
         this->disconnectContentsChangeSignal(syncDoc);
 
         QTextDocument *otherTextDocument = syncDoc.qQuickTextDocument()->textDocument();
+
         QTextCursor    selectionCursor   =
             otherTextDocument->rootFrame()->firstCursorPosition();
 

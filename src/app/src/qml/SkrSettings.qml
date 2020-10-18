@@ -74,11 +74,31 @@ QtObject {
 
     property Settings notePadSettings: Settings{
         category: "notePad"
+        property int textWidth: -2 //unused but mandatory
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
         property string textFontFamily: Qt.application.font.family
     }
+
+    property Settings overviewTreeNoteSettings: Settings{
+        category: "overviewTreeNote"
+        property int textWidth: -2 //unused but mandatory
+        property int textPointSize: Qt.application.font.pointSize
+        property real textIndent: 2
+        property real textTopMargin: 2
+        property string textFontFamily: Qt.application.font.family
+    }
+
+    property Settings overviewTreeSettings: Settings{
+        category: "overviewTree"
+        property int treeItemDisplayMode: 1
+        property int treeIndentation: 30
+        property bool synopsisBoxVisible: true
+        property bool noteBoxVisible: true
+        property bool tagBoxVisible: true
+    }
+
 
     property int initialTextWidth: 0
     Component.onCompleted: {

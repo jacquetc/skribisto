@@ -333,7 +333,7 @@
     <name>NotePadForm.ui</name>
     <message>
         <source>Show synopsis</source>
-        <translation>Montrer le synopsis</translation>
+        <translation type="vanished">Montrer le synopsis</translation>
     </message>
     <message>
         <source>Open note</source>
@@ -342,6 +342,14 @@
     <message>
         <source>Notes list</source>
         <translation>Liste de notes</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type your note here...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -623,7 +631,11 @@
     </message>
     <message>
         <source>&amp;Notes</source>
-        <translation>&amp;Notes</translation>
+        <translation type="vanished">&amp;Notes</translation>
+    </message>
+    <message>
+        <source>&amp;Overview</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -635,6 +647,10 @@
     <message>
         <source>Tags</source>
         <translation>Etiquettes</translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -803,6 +819,140 @@
     <message>
         <source>Default dictionary :</source>
         <translation>Dictionnaire par défaut :</translation>
+    </message>
+</context>
+<context>
+    <name>SheetOverviewToolForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished">Afficher</translation>
+    </message>
+    <message>
+        <source>Display mode :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tree indentation :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation type="obsolete">Italique</translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="obsolete">Gras</translation>
+    </message>
+    <message>
+        <source>Strike</source>
+        <translation type="obsolete">Barrer</translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation type="obsolete">Souligner</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SheetOverviewTree</name>
+    <message>
+        <source>Level %1</source>
+        <translation type="unfinished">Niveau %1</translation>
+    </message>
+    <message>
+        <source>label: %1</source>
+        <translation type="unfinished">label: %1</translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation type="unfinished">a des enfants</translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished">élément de navigation</translation>
+    </message>
+    <message>
+        <source>Open document</source>
+        <translation type="unfinished">Ouvrir document</translation>
+    </message>
+    <message>
+        <source>Open document in a new tab</source>
+        <translation type="unfinished">Ouvrir un document dans un nouvel onglet</translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished">Ouvrir un document dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished">Entrez un nom</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished">Ouvrir</translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished">Ouvrir dans un nouvel onglet</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished">Ouvrir dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Renommer</translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished">Couper</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Copier</translation>
+    </message>
+    <message>
+        <source>Add before</source>
+        <translation type="unfinished">Ajouter avant</translation>
+    </message>
+    <message>
+        <source>Add after</source>
+        <translation type="unfinished">Ajouter après</translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation type="unfinished">Déplacer vers le haut</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation type="unfinished">Déplacer vers le bas</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

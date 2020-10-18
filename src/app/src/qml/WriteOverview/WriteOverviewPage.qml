@@ -3,6 +3,7 @@ import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.settings 1.1
+import eu.skribisto.searchsheetlistproxymodel 1.0
 import "../Commons"
 import ".."
 
@@ -11,11 +12,112 @@ WriteOverviewPageForm {
     id: root
     property string pageType: "writeOverview"
 
-
+    property int currentProjectId : Globals.sheetOverviewCurrentProjectId
 
 
     Component.onCompleted: {
+        connectToSheetOverviewTree()
 
+    }
+
+    Connections{
+        target: plmData.projectHub()
+        function onProjectClosed(projectId){
+
+        }
+    }
+    //--------------------------------------------------------
+    //---Writing Zone (little notes in tree)-----------------------------------------
+    //--------------------------------------------------------
+
+    //-------------------------------------------------------------
+    //-------Sheet Overview------------------------------------------
+    //-------------------------------------------------------------
+
+
+
+    //--------------------------------------------------------------------------
+
+
+    SKRSearchSheetListProxyModel {
+        id: sheetOverviewProxyModel
+        showTrashedFilter: false
+        showNotTrashedFilter: true
+        projectIdFilter: currentProjectId
+
+        onParentIdFilterChanged: {
+            if(sheetOverviewProxyModel.parentIdFilter === -2){
+                topFilteringBanner.visible = false
+                return
+            }
+
+            topFilteringBanner.visible = true
+
+            var title = plmData.sheetHub().getTitle(currentProjectId, sheetOverviewProxyModel.parentIdFilter)
+            topFilteringBannerLabel.text = qsTr("The focus is currently on %1").arg(title)
+
+        }
+    }
+
+    unsetFilteringParentToolButton.icon.name: "window-close"
+    unsetFilteringParentToolButton.onClicked: {
+        sheetOverviewProxyModel.parentIdFilter = -2
+
+    }
+
+    sheetOverviewTree.proxyModel: sheetOverviewProxyModel
+    sheetOverviewTree.model: sheetOverviewProxyModel
+    //--------------------------------------------------------------------------
+
+
+    //--------------------------------------------------------------------------
+    Connections {
+        target: sheetOverviewTree
+        function onOpenDocument(openedProjectId, openedPaperId, _projectId, _paperId) {
+            Globals.openSheetInNewTabCalled(_projectId, _paperId)
+        }
+    }
+
+    function connectToSheetOverviewTree(){
+
+        sheetOverviewTree.openDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
+        sheetOverviewTree.openDocumentInNewWindow.connect(Globals.openSheetInNewWindowCalled)
+
+    }
+
+
+
+    sheetOverviewTree.displayMode: SkrSettings.overviewTreeSettings.treeItemDisplayMode
+    sheetOverviewTree.treeIndentMultiplier: SkrSettings.overviewTreeSettings.treeIndentation
+
+    //---------------------------------------------------------
+    //------Actions----------------------------------------
+    //---------------------------------------------------------
+
+
+
+
+    Connections {
+        target: italicAction
+        function onTriggered() {closeRightDrawer()}
+    }
+    Connections {
+        target: boldAction
+        function onTriggered() {closeRightDrawer()}
+    }
+    Connections {
+        target: strikeAction
+        function onTriggered() {closeRightDrawer()}
+    }
+    Connections {
+        target: underlineAction
+        function onTriggered() {closeRightDrawer()}
+    }
+
+    function closeRightDrawer(){
+        if(Globals.compactSize){
+            rightDrawer.close()
+        }
     }
 
     //-------------------------------------------------------------
@@ -51,6 +153,8 @@ WriteOverviewPageForm {
 
 
     // compact mode :
+    compactLeftDockShowButton.visible: Globals.compactSize
+
     compactLeftDockShowButton.onClicked: leftDrawer.open()
     compactLeftDockShowButton.icon {
         name: "go-next"
@@ -85,8 +189,6 @@ WriteOverviewPageForm {
         }
 
 
-        leftSettings.width = leftDrawerFixedWidth
-
     }
 
     leftDockResizeButton.onPressed: {
@@ -103,32 +205,106 @@ WriteOverviewPageForm {
     }
 
 
+
+    //-------------------------------------------------------------
+    //-------Right Dock------------------------------------------
+    //-------------------------------------------------------------
+
+
+    rightDockMenuGroup.visible: !Globals.compactSize && rightDockMenuButton.checked
+    rightDockMenuButton.visible: !Globals.compactSize
+
+    rightDockShowButton.onClicked: rightDrawer.isVisible ? rightDrawer.isVisible = false : rightDrawer.isVisible = true
+
+    rightDockShowButton.icon {
+        name: rightDrawer.isVisible ? "go-next" : "go-previous"
+        height: 50
+        width: 50
+    }
+
+    rightDockMenuButton.icon {
+        name: "overflow-menu"
+        height: 50
+        width: 50
+    }
+
+    rightDockResizeButton.icon {
+        name: "resizecol"
+        height: 50
+        width: 50
+    }
+
+    // compact mode :
+    compactRightDockShowButton.visible: Globals.compactSize
+
+    compactRightDockShowButton.onClicked: rightDrawer.open()
+    compactRightDockShowButton.icon {
+        name: "go-previous"
+        height: 50
+        width: 50
+    }
+
+    // resizing with rightDockResizeButton:
+
+    property int rightDockResizeButtonFirstPressX: 0
+    rightDockResizeButton.onReleased: {
+        rightDockResizeButtonFirstPressX = 0
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
+    }
+
+    rightDockResizeButton.onPressXChanged: {
+        if(rightDockResizeButtonFirstPressX === 0){
+            rightDockResizeButtonFirstPressX = root.mapFromItem(rightDockResizeButton, rightDockResizeButton.pressX, 0).x
+        }
+
+        var pressX = root.mapFromItem(rightDockResizeButton, rightDockResizeButton.pressX, 0).x
+        var displacement = rightDockResizeButtonFirstPressX - pressX
+        rightDrawerFixedWidth = rightDrawerFixedWidth + displacement
+        rightDockResizeButtonFirstPressX = pressX
+
+        if(rightDrawerFixedWidth < 200){
+            rightDrawerFixedWidth = 200
+        }
+        if(rightDrawerFixedWidth > 350){
+            rightDrawerFixedWidth = 350
+        }
+
+
+    }
+
+    rightDockResizeButton.onPressed: {
+
+        rootSwipeView.interactive = false
+
+    }
+
+    rightDockResizeButton.onCanceled: {
+
+        rootSwipeView.interactive = SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
+        rightDockResizeButtonFirstPressX = 0
+
+    }
+
+
+    //---------------------------------------------------------
     //---------------------------------------------------------
 
 
     property alias leftDock: leftDock
-    property int leftDrawerFixedWidth: 400
+    property int leftDrawerFixedWidth: 300
     SKRDrawer {
         id: leftDrawer
-        parent: base
         enabled: base.enabled
-        width: Globals.compactSize ? 400 : leftDrawerFixedWidth
+        parent: base
+        widthInDockMode: leftDrawerFixedWidth
+        widthInDrawerMode: 400
         height: base.height
         interactive: Globals.compactSize
+        dockModeEnabled: !Globals.compactSize
+        settingsCategory: "writeOverviewLeftDrawer"
         edge: Qt.LeftEdge
 
 
-        Connections {
-            target: Globals
-            function onCompactSizeChanged(){
-                if(Globals.compactSize){
-                    leftDrawer.close()
-                }
-                else {
-                    leftDrawer.isVisible = leftSettings.isVisible
-                }
-            }
-        }
 
         LeftDock {
             id: leftDock
@@ -137,36 +313,37 @@ WriteOverviewPageForm {
 
         }
 
-        onIsVisibleChanged: if(!Globals.compactSize) leftSettings.isVisible = leftDrawer.isVisible
+
+    }
 
 
-        Component.onCompleted: {
-            leftDrawerFixedWidth = leftSettings.dockWidth
-            Globals.resetDockConfCalled.connect(resetConf)
-            if(Globals.compactSize){
-                leftDrawer.close()
-            }
-            else {
-                leftDrawer.isVisible = leftSettings.isVisible
-            }
-        }
+    property alias rightDock: rightDock
+    property int rightDrawerFixedWidth: 300
+    SKRDrawer {
+        id: rightDrawer
+        parent: base
+        enabled: base.enabled
+        widthInDockMode: rightDrawerFixedWidth
+        widthInDrawerMode: 400
+        height: base.height
+        interactive: Globals.compactSize
+        dockModeEnabled: !Globals.compactSize
+        settingsCategory: "writeOverviewRightDrawer"
+        edge: Qt.RightEdge
 
 
-        Settings {
-            id: leftSettings
-            category: "writeOverviewLeftDrawer"
-            property int dockWidth: 300
-            property bool isVisible: true
-        }
+        RightDock {
+            id: rightDock
+            anchors.fill: parent
 
-        function resetConf(){
-            leftSettings.dockWidth = 300
-            leftDrawerFixedWidth = 300
-            leftSettings.isVisible = true
-            leftDrawer.isVisible = leftSettings.isVisible
         }
 
     }
+
+
+    //------------------------------------------------------------
+    //------------------------------------------------------------
+    //------------------------------------------------------------
 
 
 
@@ -205,6 +382,12 @@ WriteOverviewPageForm {
             newMenu.objectName = newMenu.objectName + "-" + privateMenuObject.dockUniqueId
             mainMenu.addMenu(newMenu)
 
+        }
+        var l
+        for(l = 0 ; l < rightDock.menuComponents.length ; l++){
+            var newMenu2 = rightDock.menuComponents[l].createObject(mainMenu)
+            newMenu2.objectName = newMenu2.objectName + "-" + privateMenuObject.dockUniqueId
+            mainMenu.addMenu(newMenu2)
         }
 
         // shortcuts:
@@ -272,6 +455,7 @@ WriteOverviewPageForm {
     // fullscreen :
     //------------------------------------------------------------
     property bool fullscreen_left_drawer_visible: false
+    property bool fullscreen_right_drawer_visible: false
 
     Connections {
         target: Globals
@@ -279,13 +463,14 @@ WriteOverviewPageForm {
             if(value){
                 //save previous conf
                 fullscreen_left_drawer_visible = leftDrawer.isVisible
-
+                fullscreen_right_drawer_visible = rightDrawer.isVisible
                 leftDrawer.isVisible = false
+                rightDrawer.isVisible = false
 
             }
             else{
                 leftDrawer.isVisible = fullscreen_left_drawer_visible
-
+                rightDrawer.isVisible = fullscreen_right_drawer_visible
             }
 
         }

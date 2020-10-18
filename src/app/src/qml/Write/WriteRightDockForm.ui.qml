@@ -38,7 +38,14 @@ Item {
                     ScrollView {
                         id: scrollView
                         anchors.fill: parent
+                        anchors.rightMargin: 10
+
+
+                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
+
                         Flickable {
+                            id: flickable
                             boundsBehavior: Flickable.StopAtBounds
                             contentWidth: splitView.width
                             contentHeight: splitView.height
@@ -48,8 +55,7 @@ Item {
                                 orientation: Qt.Vertical
                                 implicitWidth: scrollView.width
                                 implicitHeight: base.height > 1000 ?  base.height - 25 : 1000
-                                //                            ColumnLayout {
-                                //                                id: leftDockColumnLayout
+
 
                                 width: scrollView.width
 
@@ -57,9 +63,10 @@ Item {
                                     id: editFrame
                                     folded: false
                                     title: qsTr("Edit")
+                                    edge: Qt.RightEdge
+
                                     SplitView.preferredHeight: folded ? dynamicHeight : 400
                                     SplitView.minimumHeight: folded ? dynamicHeight : 300
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
 
 
                                     minimumContentHeight: SplitView.minimumHeight
@@ -79,10 +86,10 @@ Item {
                                     id: tagPadFrame
                                     folded: true
                                     title: qsTr("Tags")
+                                    edge: Qt.RightEdge
 
                                     SplitView.preferredHeight: folded ? dynamicHeight : 200
                                     SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 400
 
 
                                     minimumContentHeight: SplitView.minimumHeight
@@ -99,11 +106,11 @@ Item {
                                     id: notePadFrame
                                     folded: true
                                     title: qsTr("Notes")
+                                    edge: Qt.RightEdge
 
-
+                                    SplitView.fillHeight: true
                                     SplitView.preferredHeight: folded ? dynamicHeight : 400
                                     SplitView.minimumHeight: folded ? dynamicHeight : 200
-                                    SplitView.maximumHeight : folded ? dynamicHeight : 800
 
 
                                     minimumContentHeight: SplitView.minimumHeight
