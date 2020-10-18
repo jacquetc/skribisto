@@ -24,8 +24,8 @@ FocusScope {
     QtObject{
         id: priv
 
-        property int minimumContainerHeight: -1
         property bool doNotBreakBinding: false
+        property int minimumContainerHeight: -1
 
 
         //        property int contentHeightAfterBinding: 100
@@ -150,18 +150,20 @@ FocusScope {
 
 
                 contentWidth: scrollView.width
-                contentHeight: container.height
+               contentHeight: container.height
 
                 Item {
                     id: container
                     width: scrollView.width
 
+
                     onHeightChanged: {
-                        if(priv.minimumContainerHeight != -1 && priv.minimumContainerHeight > container.height){
-                            priv.doNotBreakBinding = true
-                            container.height = priv.minimumContainerHeight
-                            priv.doNotBreakBinding = false
-                        }
+//                        if(priv.minimumContainerHeight !== -1 && priv.minimumContainerHeight > container.height){
+//                            priv.doNotBreakBinding = true
+//                            container.height = priv.minimumContainerHeight
+//                            priv.doNotBreakBinding = false
+//                        }
+
                     }
 
 
@@ -172,21 +174,43 @@ FocusScope {
         Component.onCompleted: {
             container.children[0].anchors.fill = container
             container.children[0].focus = true
-            priv.minimumContainerHeight = container.children[0].minimumHeight
 
-            priv.doNotBreakBinding = true
-            container.height = contentHeight
-            priv.doNotBreakBinding = false
+
+            //priv.minimumContainerHeight = container.children[0].minimumHeight
+
         }
 
-        Binding {
-            target: container
-            property: "height"
-            when: Component.status === Component.Ready && !priv.doNotBreakBinding
-            value: contentHeight
-            delayed: true
-            restoreMode: Binding.RestoreBindingOrValue
+        Connections {
+            target: base
+            function onContentHeightChanged(){
+
+                if(base.contentHeight < base.minimumContentHeight){
+                    container.height = base.minimumContentHeight
+                    container.height = base.minimumContentHeight
+                    return
+                }
+
+//                if(base.contentHeight > base.maximumContentHeight){
+//                    container.height = base.maximumContentHeight
+//                    return
+//                }
+
+
+
+                container.height = base.contentHeight
+
+
+            }
         }
+
+
+//        Binding {
+//            target: container
+//            property: "height"
+//            value: contentHeight
+//            delayed: true
+//            restoreMode: Binding.RestoreBindingOrValue
+//        }
 
 
     }
@@ -242,12 +266,12 @@ FocusScope {
             PropertyChanges {
                 target: base
                 implicitWidth: 30
-                implicitHeight: contentHeight
+                implicitHeight: container.height
             }
             PropertyChanges {
                 target: base
                 dynamicWidth: 40
-                dynamicHeight:contentHeight
+                dynamicHeight:container.height
             }
 
             PropertyChanges {
@@ -286,12 +310,12 @@ FocusScope {
             PropertyChanges {
                 target: base
                 implicitWidth: 30
-                implicitHeight: contentHeight
+                implicitHeight: container.height
             }
             PropertyChanges {
                 target: base
                 dynamicWidth: 40
-                dynamicHeight:contentHeight
+                dynamicHeight:container.height
             }
 
             PropertyChanges {

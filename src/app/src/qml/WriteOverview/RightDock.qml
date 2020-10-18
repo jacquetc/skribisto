@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
+import QtQuick.Controls.Material 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.notelistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
@@ -19,14 +20,17 @@ RightDockForm {
     }
 
     splitView.handle: Item {
+        id: handle
         implicitHeight: 8
+        property bool hovered: SplitHandle.hovered
+
         RowLayout {
             anchors.fill: parent
             Rectangle {
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 5
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: "lightgrey"
+                color: handle.hovered ? Material.accentColor : Material.dividerColor
             }
         }
     }
@@ -110,7 +114,15 @@ RightDockForm {
     //-----------------------------------------------------------
     //---------------Overview---------------------------------------
     //-----------------------------------------------------------
+    sheetOverviewFrame.onContentHeightChanged: {
+        if(sheetOverviewFrame.SplitView.preferredHeight < sheetOverviewFrame.SplitView.minimumHeight){
+            sheetOverviewFrame.SplitView.preferredHeight = sheetOverviewFrame.SplitView.minimumHeight
+        }
 
+        if(sheetOverviewFrame.SplitView.preferredHeight > sheetOverviewFrame.SplitView.maximumHeight){
+            sheetOverviewFrame.SplitView.preferredHeight = sheetOverviewFrame.SplitView.maximumHeight
+        }
+    }
 
 
     //-----------------------------------------------------------
