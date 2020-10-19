@@ -174,7 +174,7 @@ FocusScope {
         Component.onCompleted: {
             container.children[0].anchors.fill = container
             container.children[0].focus = true
-
+            container.height = contentHeight
 
             //priv.minimumContainerHeight = container.children[0].minimumHeight
 
