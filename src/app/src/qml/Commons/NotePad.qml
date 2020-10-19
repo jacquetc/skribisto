@@ -102,6 +102,11 @@ NotePadForm {
                 id: rightClickHandler
                 acceptedButtons: Qt.RightButton
                 onSingleTapped: {
+                    if(rightClickMenu.visible){
+                        rightClickMenu.close()
+                        return
+                    }
+
                     rightClickMenu.popup()
 
 
