@@ -73,6 +73,7 @@ public:
     Q_INVOKABLE void      insertInRecentProjects(const QString& title,
                                                  const QUrl   & fileName);
 
+    Q_INVOKABLE void forgetProject(const QUrl &fileUrl);
 private slots:
 
     void insertInRecentProjectsFromAnId(int projectId);

@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls.Material 2.15
 
 Item {
     id: base
@@ -12,6 +13,7 @@ Item {
     property alias restoreToolButton: restoreToolButton
     property alias listMenuToolButton: listMenuToolButton
     property alias selectAllToolButton: selectAllToolButton
+    property var toolBarPrimaryColor
 
     Pane {
         id: pane
@@ -29,11 +31,8 @@ Item {
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
 
-                //                Item {
-                //                    id: element
-                //                    Layout.fillHeight: true
-                //                    Layout.fillWidth: true
-                //                }
+                Material.primary: toolBarPrimaryColor
+
                 RowLayout {
                     id: rowLayout
                     spacing: 1

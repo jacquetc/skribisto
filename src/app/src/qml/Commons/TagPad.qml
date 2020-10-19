@@ -22,6 +22,8 @@ TagPadForm {
     signal callRemoveTagRelationship(int projectId,int itemId, int tagId)
 
 
+    toolBarPrimaryColor: Material.color(Material.Cyan, Material.Shade200)
+
     tagRepeater.model: tagListModel
 
     // force focus on first child

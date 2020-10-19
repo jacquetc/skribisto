@@ -636,7 +636,7 @@ ListView {
 
                         Rectangle {
                             Layout.fillHeight: true
-                            Layout.preferredWidth: 5
+                            Layout.preferredWidth: 2
 
                             color: model.indent === 0 ? Material.color(Material.Indigo) :
                                                         (model.indent === 1 ? Material.color(Material.LightBlue) :

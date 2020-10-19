@@ -56,17 +56,13 @@ Item {
                 SKRPillarLayout {
                     id: pillarLayout
                     width: scrollView.width
-                    columns: ((pillarLayout.width / columnWidth) | 0 )
+                    columns: ((pillarLayout.width / columnWidth) | 0)
                     maxColumns: 3
-
-
 
                     GroupBox {
                         id: groupBox1
                         focusPolicy: Qt.TabFocus
                         Layout.fillWidth: true
-                        topPadding: 12
-                        padding: 12
                         title: qsTr("Projects")
 
                         ColumnLayout {
@@ -94,7 +90,6 @@ Item {
                         }
                     }
 
-
                     GroupBox {
                         id: groupBox
                         width: 200
@@ -104,7 +99,6 @@ Item {
                         Layout.fillWidth: true
                         title: qsTr("Recent projects")
                         KeyNavigation.tab: recentListView
-
 
                         ColumnLayout {
                             id: columnLayout5
@@ -124,7 +118,6 @@ Item {
 
                                 KeyNavigation.tab: groupBox2
                                 KeyNavigation.backtab: groupBox
-
                             }
                         }
                     }
@@ -194,7 +187,6 @@ Item {
                         }
                     }
 
-
                     GroupBox {
                         id: behaviorGroupBox
                         focusPolicy: Qt.TabFocus
@@ -212,7 +204,6 @@ Item {
                             }
                         }
                     }
-
 
                     GroupBox {
                         id: groupBox3
@@ -244,11 +235,9 @@ Item {
                                     id: exportButton
                                     text: qsTr("Export")
                                 }
-
                             }
                         }
                     }
-
 
                     Item {
                         id: stretcher1
@@ -256,8 +245,6 @@ Item {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
                     }
-
-
                 }
             }
 
@@ -382,14 +369,13 @@ Item {
                     }
                 }
             }
-
         }
     }
 }
 
 /*##^##
 Designer {
-    D{i:0;height:800;width:800}D{i:11}
+    D{i:0;height:800;width:800}
 }
 ##^##*/
 

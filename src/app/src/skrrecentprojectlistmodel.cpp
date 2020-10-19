@@ -30,12 +30,12 @@ SKRRecentProjectListModel::SKRRecentProjectListModel(QObject *parent)
     this->populate();
 
     connect(plmdata->projectHub(),
-                                   &PLMProjectHub::projectLoaded,
-                                                                       this,
+            &PLMProjectHub::projectLoaded,
+            this,
             &SKRRecentProjectListModel::insertInRecentProjectsFromAnId);
     connect(plmdata->projectHub(),
-                                   &PLMProjectHub::projectClosed,
-                                                                       this,
+            &PLMProjectHub::projectClosed,
+            this,
             &SKRRecentProjectListModel::populate);
     connect(plmdata->projectHub(), &PLMProjectHub::projectNameChanged, this,
             [this](int projectId, const QString& name) {
@@ -83,7 +83,7 @@ QVariant SKRRecentProjectListModel::data(const QModelIndex& index, int role) con
     }
 
     if (role == Qt::UserRole + 1) {
-        return m_allRecentProjects.at(index.row())->fileUrl.toLocalFile();
+        return m_allRecentProjects.at(index.row())->fileUrl;
     }
 
     if (role == Qt::UserRole + 2) {
@@ -185,6 +185,53 @@ void SKRRecentProjectListModel::insertInRecentProjectsFromAnId(int projectId)
     this->insertInRecentProjects(title, fileName);
 }
 
+
+// ----------------------------------------------------------
+
+
+void SKRRecentProjectListModel::forgetProject(const QUrl &fileUrl){
+
+    m_allRecentProjects.clear();
+
+    //read :
+    QSettings settings;
+    settings.beginGroup("welcome");
+    int size = settings.beginReadArray("recentProjects");
+
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+
+        PLMProjectItem *projectItem = new PLMProjectItem();
+        projectItem->title    = settings.value("title").toString();
+        projectItem->fileUrl = settings.value("fileNameUrl").toUrl();
+
+        // forget
+        if(fileUrl != projectItem->fileUrl){
+            m_allRecentProjects.append(projectItem);
+        }
+    }
+
+    settings.endArray();
+
+    //write:
+    settings.beginWriteArray("recentProjects", m_allRecentProjects.count());
+
+    for (int i = 0; i < m_allRecentProjects.count(); ++i) {
+        settings.setArrayIndex(i);
+
+        settings.setValue("title",    m_allRecentProjects.at(i)->title);
+        settings.setValue("fileNameUrl", m_allRecentProjects.at(i)->fileUrl);
+    }
+
+    settings.endArray();
+
+    settings.endGroup();
+
+    this->populate();
+}
+
+
+
 // ----------------------------------------------------------
 
 void SKRRecentProjectListModel::populate()
@@ -217,26 +264,73 @@ void SKRRecentProjectListModel::populate()
         projectItem->lastModification = info.lastModified();
 
         // is project opened ?
-        m_allRecentProjects.append(projectItem);
+        //default :
+        projectItem->isOpened  = false;
+        projectItem->projectId = -2;
 
         for (int projectId : plmdata->projectHub()->getProjectIdList()) {
             QString projectName = plmdata->projectHub()->getProjectName(projectId);
             QUrl    projectPath = plmdata->projectHub()->getPath(projectId);
 
             if ((projectName == projectItem->title) &&
-                (projectPath == projectItem->fileUrl)) {
+                    (projectPath == projectItem->fileUrl)) {
                 projectItem->isOpened  = true;
                 projectItem->projectId = projectId;
 
-                m_allRecentProjects.removeLast();
-                m_allRecentProjects.prepend(projectItem);
             }
         }
+
+        m_allRecentProjects.append(projectItem);
+
+
+
     }
 
 
     settings.endArray();
     settings.endGroup();
+
+    //sorting
+
+    //sorting opened first
+    QList<PLMProjectItem *> openedList;
+    for (PLMProjectItem *item : m_allRecentProjects) {
+        if(item->isOpened){
+            openedList.append(item);
+        }
+    }
+
+
+
+    //    //sorting opened more recent second
+    QList<PLMProjectItem *> moreRecentList;
+    for (PLMProjectItem *item : m_allRecentProjects) {
+        if(!item->isOpened){
+            moreRecentList.append(item);
+        }
+    }
+
+    for(int p = 0 ; p < moreRecentList.count() ; p++ ){
+        for(int i = 0 ; i < moreRecentList.count() ; i++ ){
+            QDateTime lastModification = moreRecentList.at(i)->lastModification;
+
+            if(i + 1 ==  moreRecentList.count()){
+                break;
+            }
+
+
+            QDateTime lastModificationFromItemAfter = moreRecentList.at(i + 1)->lastModification;
+
+            if(lastModification < lastModificationFromItemAfter){
+                moreRecentList.swapItemsAt(i, i + 1);
+            }
+
+        }
+    }
+
+    m_allRecentProjects.clear();
+    m_allRecentProjects << openedList << moreRecentList;
+
 
     this->endResetModel();
 }
