@@ -941,6 +941,19 @@ TreeListViewForm {
                             focusPolicy: Qt.NoFocus
                         }
 
+                        Rectangle {
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: 5
+
+                            color: model.indent === 0 ? Material.color(Material.Indigo) :
+                                                        (model.indent === 1 ? Material.color(Material.LightBlue) :
+                                                                         (model.indent === 2 ? Material.color(Material.LightGreen) :
+                                                                                               (model.indent === 3 ? Material.color(Material.Amber) :
+                                                                                                                     (model.indent === 4 ? Material.color(Material.DeepOrange) :
+                                                                                               Material.color(Material.Teal)
+                                                                              ))))
+                        }
+
 
                     }
                     Rectangle {

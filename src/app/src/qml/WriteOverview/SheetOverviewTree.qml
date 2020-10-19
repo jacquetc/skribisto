@@ -295,6 +295,8 @@ SheetOverviewTreeForm {
 
             }
 
+            property bool focusOnBranchChecked: false
+
             Rectangle {
                 id: draggableContent
                 property int visualIndex: 0
@@ -512,6 +514,7 @@ SheetOverviewTreeForm {
                         Item {
                             id: titleBox
                             Layout.minimumWidth: 50
+                            Layout.preferredWidth: 60
                             Layout.maximumWidth: 150
                             Layout.fillHeight: true
                             Layout.fillWidth: true
@@ -657,14 +660,15 @@ SheetOverviewTreeForm {
                                 Rectangle {
                                     Layout.fillHeight: true
                                     Layout.preferredWidth: 5
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
                                     color: model.indent === 0 ? Material.color(Material.Indigo) :
                                                                 (model.indent === 1 ? Material.color(Material.LightBlue) :
-                                                                                 (model.indent === 2 ? Material.color(Material.LightGreen) :
-                                                                                                       (model.indent === 3 ? Material.color(Material.Amber) :
-                                                                                                                             (model.indent === 4 ? Material.color(Material.DeepOrange) :
-                                                                                                       Material.color(Material.Teal)
-                                                                                      ))))
+                                                                                      (model.indent === 2 ? Material.color(Material.LightGreen) :
+                                                                                                            (model.indent === 3 ? Material.color(Material.Amber) :
+                                                                                                                                  (model.indent === 4 ? Material.color(Material.DeepOrange) :
+                                                                                                                                                        Material.color(Material.Teal)
+                                                                                                                                   ))))
                                 }
                             }
 
@@ -1161,20 +1165,17 @@ SheetOverviewTreeForm {
                                     flat: true
                                     visible: false
                                     checkable: true
+                                    checked: delegateRoot.focusOnBranchChecked
 
                                     onCheckedChanged: {
-                                        listView.currentIndex = model.index
-                                        delegateRoot.forceActiveFocus()
 
-                                        // filter to this parent and its children
-                                        if(checked){
-                                            proxyModel.showParentWhenParentIdFilter = true
-                                            proxyModel.parentIdFilter = model.paperId
-                                        }
-                                        else {
-                                            proxyModel.showParentWhenParentIdFilter = false
-                                            proxyModel.parentIdFilter = -2
+                                        if(focusOnBranchButton.activeFocus){
 
+                                            contextMenuItemIndex = model.index
+                                            listView.currentIndex = model.index
+                                            delegateRoot.forceActiveFocus()
+
+                                            focusOnbranchAction.trigger()
                                         }
 
                                     }
@@ -1224,20 +1225,20 @@ SheetOverviewTreeForm {
                 transitions: [
                     Transition {
                         SequentialAnimation{
-                        PropertyAnimation {
-                            properties: "height"
-                            duration: draggableContent.transitionAnimationDuration
-                            easing.type: Easing.InOutQuad
-                        }
-                        ScriptAction {
-                            script: {
-                                // shakes the writingZone to avoid blanks when resizing
-                                synopsisBox.writingZone.flickable.contentY = 1
-                                synopsisBox.writingZone.flickable.contentY = 0
+                            PropertyAnimation {
+                                properties: "height"
+                                duration: draggableContent.transitionAnimationDuration
+                                easing.type: Easing.InOutQuad
+                            }
+                            ScriptAction {
+                                script: {
+                                    // shakes the writingZone to avoid blanks when resizing
+                                    synopsisBox.writingZone.flickable.contentY = 1
+                                    synopsisBox.writingZone.flickable.contentY = 0
+
+                                }
 
                             }
-
-                        }
 
                         }
                     }
@@ -1434,6 +1435,41 @@ SheetOverviewTreeForm {
         }
 
 
+        MenuSeparator {}
+
+
+        MenuItem {
+            visible: currentPaperId !== -1
+            height: currentPaperId === -1 ? 0 : undefined
+
+            action: Action {
+                id: focusOnbranchAction
+                text: listView.itemAtIndex(currentIndex).focusOnBranchChecked ? qsTr("Unset focus") : qsTr("Set focus")
+                //shortcut: "Alt+Return"
+                icon {
+                    name: "edit-find"
+                }
+                enabled: listView.enabled && currentPaperId !== -1
+                onTriggered: {
+                    console.log("focus action", currentProjectId, currentPaperId)
+                    var checked = listView.itemAtIndex(currentIndex).focusOnBranchChecked
+
+                    // filter to this parent and its children
+                    if(checked){
+                        listView.itemAtIndex(currentIndex).focusOnBranchChecked = false
+                        proxyModel.showParentWhenParentIdFilter = false
+                        proxyModel.parentIdFilter = -2
+                    }
+                    else {
+                        listView.itemAtIndex(currentIndex).focusOnBranchChecked = true
+                        proxyModel.showParentWhenParentIdFilter = true
+                        proxyModel.parentIdFilter = currentPaperId
+
+
+                    }
+                }
+            }
+        }
 
         MenuSeparator {}
 

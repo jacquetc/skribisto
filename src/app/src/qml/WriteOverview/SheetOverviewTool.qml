@@ -70,32 +70,32 @@ SheetOverviewToolForm {
         }
     }
 
-        Connections{
-            target: Globals
-            enabled: !projectComboBox.activeFocus
-            function onSheetOverviewCurrentProjectIdChanged() {
-                var value = Globals.sheetOverviewCurrentProjectId
-                projectComboBox.currentIndex = projectComboBox.indexOfValue(value)
-            }
+    Connections{
+        target: Globals
+        enabled: !projectComboBox.activeFocus
+        function onSheetOverviewCurrentProjectIdChanged() {
+            var value = Globals.sheetOverviewCurrentProjectId
+            projectComboBox.currentIndex = projectComboBox.indexOfValue(value)
         }
+    }
 
 
-        Connections{
-            target: plmData.projectHub()
-            function onProjectLoaded(projectId) {
-                populateProjectComboBox()
-            }
+    Connections{
+        target: plmData.projectHub()
+        function onProjectLoaded(projectId) {
+            populateProjectComboBox()
         }
+    }
 
 
-        Connections{
-            target: plmData.projectHub()
-            function onProjectNameChanged(projectId, projectName) {
+    Connections{
+        target: plmData.projectHub()
+        function onProjectNameChanged(projectId, projectName) {
 
-                var index = projectComboBox.indexOfValue(projectId)
-                projectComboBoxModel.setProperty(index, "projectName", projectName)
-            }
+            var index = projectComboBox.indexOfValue(projectId)
+            projectComboBoxModel.setProperty(index, "projectName", projectName)
         }
+    }
 
     //-------------------------------------------------------------------------------
     //-----Display------------------------------------------------------------------
