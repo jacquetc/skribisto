@@ -78,7 +78,7 @@ TabButton {
             height: 4
 
             opacity: enabled ? 1 : 0.3
-            color: isCurrent ? "#17a81a" : "transparent"
+            color: /*isCurrent ? "#17a81a" : */"transparent"
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top

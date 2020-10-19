@@ -659,7 +659,7 @@ SheetOverviewTreeForm {
 
                                 Rectangle {
                                     Layout.fillHeight: true
-                                    Layout.preferredWidth: 5
+                                    Layout.preferredWidth: 2
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
                                     color: model.indent === 0 ? Material.color(Material.Indigo) :
@@ -1146,7 +1146,12 @@ SheetOverviewTreeForm {
                                         contextMenuItemIndex = model.index
                                         listView.currentIndex = model.index
                                         delegateRoot.forceActiveFocus()
-                                        menu.close()
+
+
+                                        if(menu.visible){
+                                          menu.close()
+                                            return
+                                        }
                                         menu.popup(menuButton, menuButton.x, menuButton.height)
 
                                     }

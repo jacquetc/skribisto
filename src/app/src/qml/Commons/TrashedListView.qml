@@ -52,6 +52,11 @@ TrashedListViewForm {
         }
     }
 
+
+    //-----------------------------------------------------------------------------
+
+    toolBarPrimaryColor: Material.color(Material.Cyan, Material.Shade200)
+
     //-----------------------------------------------------------------------------
     // project comboBox :
 
@@ -789,7 +794,7 @@ TrashedListViewForm {
 
                         Rectangle {
                             Layout.fillHeight: true
-                            Layout.preferredWidth: 5
+                            Layout.preferredWidth: 2
 
                             color: model.indent === 0 ? Material.color(Material.Indigo) :
                                                         (model.indent === 1 ? Material.color(Material.LightBlue) :

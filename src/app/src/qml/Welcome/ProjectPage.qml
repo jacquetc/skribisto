@@ -277,10 +277,10 @@ ProjectPageForm {
                 onDoubleTapped: {
                     // open project
 
-                    if(plmData.projectHub().isURLAlreadyLoaded(skrQMLTools.getURLFromLocalFile(model.fileName))){
+                    if(plmData.projectHub().isURLAlreadyLoaded(model.fileName)){
                     }
                     else {
-                        plmData.projectHub().loadProject(skrQMLTools.getURLFromLocalFile(model.fileName))
+                        plmData.projectHub().loadProject(model.fileName)
                     }
 
 
@@ -343,7 +343,7 @@ ProjectPageForm {
                             Label {
                                 id: fileNameLabel
 
-                                text: model.fileName
+                                text: skrQMLTools.translateURLToLocalFile(model.fileName)
                                 Layout.bottomMargin: 2
                                 Layout.rightMargin: 4
                                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -398,22 +398,31 @@ ProjectPageForm {
                             }
                             enabled: contextMenuItemIndex === model.index | itemButtonsIndex === model.index
                             onTriggered: {
-                                plmData.projectHub().closeProject(model.projectId)
                                 console.log("close project action")
+                                plmData.projectHub().closeProject(model.projectId)
 
                             }
                         }
-                        Action {
-                            id: forgetAction
-                            text: qsTr("Forget")
-                            //shortcut: "F2"
-                            icon {
-                                name: "trash-empty"
-                            }
-                            enabled: contextMenuItemIndex === model.index
-                            onTriggered: {
-                                console.log("forget action")
 
+
+
+                        MenuItem {
+                            visible: !model.isOpened
+                            height: model.isOpened ? 0 : undefined
+
+                            action: Action {
+                                id: forgetAction
+                                text: qsTr("Forget")
+                                //shortcut: "F2"
+                                icon {
+                                    name: "trash-empty"
+                                }
+                                enabled: contextMenuItemIndex === model.index
+                                onTriggered: {
+                                    console.log("forget action")
+                                    projectListModel.forgetProject(model.fileName)
+
+                                }
                             }
                         }
                     }

@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls.Material 2.15
 
 Item {
     id: base
@@ -8,6 +9,7 @@ Item {
     property alias addTagMenuToolButton: addTagMenuToolButton
     property alias tagRepeater: tagRepeater
     property bool minimalMode: false
+    property var toolBarPrimaryColor
 
     Pane {
         id: pane
@@ -26,6 +28,9 @@ Item {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignTop
                 visible: !minimalMode
+
+                Material.primary: toolBarPrimaryColor
+                Material.elevation: 2
 
                 //                Item {
                 //                    id: element

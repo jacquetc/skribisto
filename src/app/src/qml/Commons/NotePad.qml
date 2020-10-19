@@ -25,8 +25,13 @@ NotePadForm {
         clearNoteWritingZone()
         populateNoteListModel()
     }
-    
-    
+
+    //-----------------------------------------------------------------------------
+
+    toolBarPrimaryColor: Material.color(Material.Cyan, Material.Shade200)
+
+    //-----------------------------------------------------------------------------
+
     ListModel {
         id: noteListModel
     }

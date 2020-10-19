@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls.Material 2.15
 import "../Commons"
 
 Item {
@@ -11,8 +12,10 @@ Item {
     property alias openNoteInNewTabToolButton: openNoteInNewTabToolButton
     property alias addNoteMenuToolButton: addNoteMenuToolButton
     property alias noteRepeater: noteRepeater
+    property alias toolBar: toolBar
 
     property bool minimalMode: false
+    property var toolBarPrimaryColor
 
 
     Pane {
@@ -33,7 +36,9 @@ Item {
                 Layout.fillWidth: true
                 visible: !minimalMode
 
-                //                Item {
+                Material.primary: toolBarPrimaryColor
+                Material.elevation: 2
+                //                                 Item {
                 //                    id: element
                 //                    Layout.fillHeight: true
                 //                    Layout.fillWidth: true
