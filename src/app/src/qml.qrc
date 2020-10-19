@@ -32,8 +32,6 @@
         <file>qml/Commons/DocumentListViewForm.ui.qml</file>
         <file>qml/Write/WriteRightDock.qml</file>
         <file>qml/Write/WriteRightDockForm.ui.qml</file>
-        <file>qml/Write/EditView.qml</file>
-        <file>qml/Write/EditViewForm.ui.qml</file>
         <file>qml/Projects/ProjectsMainPage.qml</file>
         <file>qml/Projects/ProjectsMainPageForm.ui.qml</file>
         <file>qml/Gallery/GalleryPageForm.ui.qml</file>
@@ -48,8 +46,6 @@
         <file>qml/WriteOverview/LeftDock.qml</file>
         <file>qml/WriteOverview/WriteOverviewPageForm.ui.qml</file>
         <file>qml/Note/LeftDock.qml</file>
-        <file>qml/Note/EditView.qml</file>
-        <file>qml/Note/EditViewForm.ui.qml</file>
         <file>qml/Note/LeftDockForm.ui.qml</file>
         <file>qml/Note/RightDock.qml</file>
         <file>qml/Note/RightDockForm.ui.qml</file>
@@ -61,8 +57,6 @@
         <file>qml/Commons/TreeListView.qml</file>
         <file>qml/Commons/TrashedListView.qml</file>
         <file>qml/Commons/TrashedListViewForm.ui.qml</file>
-        <file>qml/Write/NotePad.qml</file>
-        <file>qml/Write/NotePadForm.ui.qml</file>
         <file>qml/Commons/SKRTextArea.qml</file>
         <file>qml/Commons/TagPad.qml</file>
         <file>qml/Commons/TagPadForm.ui.qml</file>
@@ -78,5 +72,15 @@
         <file>qml/Projects/ProjectTabForm.ui.qml</file>
         <file>qml/Projects/ProjectSupPageForm.ui.qml</file>
         <file>qml/Commons/SKRPillarLayout.qml</file>
+        <file>qml/WriteOverview/SheetOverviewTree.qml</file>
+        <file>qml/WriteOverview/SheetOverviewTreeForm.ui.qml</file>
+        <file>qml/WriteOverview/RightDock.qml</file>
+        <file>qml/WriteOverview/RightDockForm.ui.qml</file>
+        <file>qml/Commons/EditView.qml</file>
+        <file>qml/Commons/EditViewForm.ui.qml</file>
+        <file>qml/WriteOverview/SheetOverviewTool.qml</file>
+        <file>qml/WriteOverview/SheetOverviewToolForm.ui.qml</file>
+        <file>qml/Commons/NotePad.qml</file>
+        <file>qml/Commons/NotePadForm.ui.qml</file>
     </qresource>
 </RCC>

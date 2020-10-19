@@ -8,15 +8,17 @@ Item {
     id: base
     //implicitWidth: 300
     property int fixedWidth: 300
-    //property alias dockPane: dockPane
+//    property alias dockPane: rightDockPane
     property alias splitView: splitView
-    property alias documentFrame: documentFrame
-    property alias documentView: documentView
-    property alias navigationFrame: navigationFrame
-    property alias navigation: navigation
+    property alias editFrame: editFrame
+    property alias editView: editView
+    property alias tagPadFrame: tagPadFrame
+    property alias tagPadView: tagPadView
+    property alias sheetOverviewFrame: sheetOverviewFrame
+    property alias sheetOverviewTool: sheetOverviewTool
 
     Pane {
-        id: dockPane
+        id: rightDockPane
         anchors.fill: parent
 
         ColumnLayout {
@@ -39,49 +41,48 @@ Item {
 
                         ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
-
                         Flickable {
                             boundsBehavior: Flickable.StopAtBounds
                             contentWidth: splitView.width
                             contentHeight: splitView.height
-
                             SplitView {
                                 id: splitView
                                 orientation: Qt.Vertical
                                 implicitWidth: scrollView.width
-                                implicitHeight: base.height > 1000 ?  base.height : 1000
-
+                                implicitHeight: base.height > 1000 ?  base.height - 25 : 1000
                                 width: scrollView.width
 
                                 ToolFrame {
-                                    id: navigationFrame
+                                    id: sheetOverviewFrame
                                     folded: false
-                                    title: qsTr("Navigation")
-                                    edge: Qt.LeftEdge
+                                    title: qsTr("Overview")
+                                    edge: Qt.RightEdge
 
-                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
-                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 400
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
+                                    SplitView.maximumHeight : folded ? dynamicHeight : 600
+
 
 
                                     minimumContentHeight: SplitView.minimumHeight
                                     contentHeight: SplitView.preferredHeight
                                     maximumContentHeight: SplitView.maximumHeight
 
-                                    Layout.minimumWidth: 100
 
-                                    Navigation {
-                                        id: navigation
+
+                                    SheetOverviewTool {
+                                        id: sheetOverviewTool
                                         clip: true
                                     }
                                 }
                                 ToolFrame {
-                                    id: documentFrame
-                                    folded: true
-                                    title: qsTr("Opened documents")
-                                    edge: Qt.LeftEdge
+                                    id: editFrame
+                                    folded: false
+                                    title: qsTr("Edit")
+                                    edge: Qt.RightEdge
 
-                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
-                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 400
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 300
 
 
                                     minimumContentHeight: SplitView.minimumHeight
@@ -90,8 +91,31 @@ Item {
 
 
 
-                                    DocumentListView {
-                                        id: documentView
+                                    EditView {
+                                        id: editView
+                                        clip: true
+                                        textWidthSliderVisible: false
+
+                                    }
+                                }
+                                ToolFrame {
+
+                                    id: tagPadFrame
+                                    folded: true
+                                    title: qsTr("Tags")
+                                    edge: Qt.RightEdge
+
+                                    SplitView.fillWidth: true
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 200
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
+
+
+                                    minimumContentHeight: SplitView.minimumHeight
+                                    contentHeight: SplitView.preferredHeight
+                                    maximumContentHeight: SplitView.maximumHeight
+
+                                    TagPad {
+                                        id: tagPadView
                                         clip: true
                                     }
                                 }

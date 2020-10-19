@@ -40,6 +40,10 @@ QtObject {
     signal openMainMenuCalled()
     signal openSubMenuCalled(var menu)
 
+
+    //Sheet overview
+    property int sheetOverviewCurrentProjectId: -2
+
     //Write :
     signal openSheetCalled(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openSheetInNewTabCalled(int projectId, int paperId)

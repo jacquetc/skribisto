@@ -36,6 +36,10 @@ Item {
                     ScrollView {
                         id: scrollView
                         anchors.fill: parent
+
+                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
+
                         Flickable {
                             boundsBehavior: Flickable.StopAtBounds
                             contentWidth: splitView.width
@@ -55,6 +59,8 @@ Item {
                                     id: navigationFrame
                                     folded: true
                                     title: qsTr("Navigation")
+                                    edge: Qt.LeftEdge
+
                                     SplitView.preferredHeight: folded ? dynamicHeight : 500
                                     SplitView.minimumHeight: folded ? dynamicHeight : 400
 
@@ -70,25 +76,27 @@ Item {
                                         clip: true
                                     }
                                 }
-                                                                ToolFrame {
-                                                                    id: documentFrame
-                                                                    folded: true
-                                                                    title: qsTr("Opened documents")
-                                                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
-                                                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
+                                ToolFrame {
+                                    id: documentFrame
+                                    folded: true
+                                    title: qsTr("Opened documents")
+                                    edge: Qt.LeftEdge
+
+                                    SplitView.preferredHeight: folded ? dynamicHeight : 500
+                                    SplitView.minimumHeight: folded ? dynamicHeight : 400
 
 
-                                                                    minimumContentHeight: SplitView.minimumHeight
-                                                                    contentHeight: SplitView.preferredHeight
-                                                                    maximumContentHeight: SplitView.maximumHeight
+                                    minimumContentHeight: SplitView.minimumHeight
+                                    contentHeight: SplitView.preferredHeight
+                                    maximumContentHeight: SplitView.maximumHeight
 
-                                                                    Layout.minimumWidth: 100
+                                    Layout.minimumWidth: 100
 
-                                                                    DocumentListView {
-                                                                        id: documentView
-                                                                        clip: true
-                                                                    }
-                                                                }
+                                    DocumentListView {
+                                        id: documentView
+                                        clip: true
+                                    }
+                                }
 
                                 //                            Loader{
                                 //                                id: writeTreeViewHeader

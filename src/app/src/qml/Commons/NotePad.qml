@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls.Material 2.15
 import eu.skribisto.searchnotelistproxymodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import "../Commons"
@@ -8,7 +9,7 @@ import ".."
 
 NotePadForm {
     id: root
-    property int minimumHeight: 300
+    property int minimumHeight: 300  //mandatory for ToolFrame
 
     
     property int projectId: -2
@@ -17,9 +18,11 @@ NotePadForm {
     property string pageType: "note"
 
     onProjectIdChanged: {
+        clearNoteWritingZone()
         populateNoteListModel()
     }
     onSheetIdChanged: {
+        clearNoteWritingZone()
         populateNoteListModel()
     }
     
@@ -48,9 +51,9 @@ NotePadForm {
             id: itemBase
             width: childrenRect.width + 10
             height: childrenRect.height + 10
-            color: isOpened ? "cyan" : "lightskyblue"
-            border.color: isSelected ? "blue" : "lightskyblue"
-            border.width: 1
+            color: isOpened && !minimalMode? Material.accentColor : "lightskyblue"
+            border.color: isSelected ? Material.accentColor : "lightskyblue"
+            border.width: 2
             radius : height / 2
             property int projectId: model.itemProjectId
             property int sheetId: model.itemSheetId
@@ -99,6 +102,11 @@ NotePadForm {
                 id: rightClickHandler
                 acceptedButtons: Qt.RightButton
                 onSingleTapped: {
+                    if(rightClickMenu.visible){
+                        rightClickMenu.close()
+                        return
+                    }
+
                     rightClickMenu.popup()
 
 
@@ -136,7 +144,7 @@ NotePadForm {
                         moveToTrashOrNotDialog.noteName = model.title
                         moveToTrashOrNotDialog.open()
                         moveToTrashOrNotDialog.forceActiveFocus()
-                        }
+                    }
                 }
 
             }
@@ -257,7 +265,12 @@ NotePadForm {
                     id: removeRelationshipButton
                     Layout.preferredWidth: 0
                     Layout.maximumHeight: noteTitle.height
-                    padding:1
+                    padding: 0
+                    topInset: 1
+                    bottomInset: 1
+                    leftInset: 1
+                    rightInset: 1
+                    opacity: 0
                     icon.name: "list-remove"
                     onReleased:{
                         plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
@@ -276,8 +289,10 @@ NotePadForm {
 
             states:[
                 State {
+
                     name: "visible_removeRelationshipButton"
                     PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: noteTitle.height}
+                    PropertyChanges { target: removeRelationshipButton; opacity: 1.0}
                 }
             ]
 
@@ -285,13 +300,11 @@ NotePadForm {
                 Transition {
                     from: ""
                     to: "visible_removeRelationshipButton"
-                    NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 300; easing.type: Easing.OutCubic }
-                },
-                Transition {
-                    from: "visible_removeRelationshipButton"
-                    to: ""
-                    NumberAnimation { target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 300; easing.type: Easing.OutCubic }
-
+                    reversible: true
+                    ParallelAnimation {
+                        NumberAnimation {target: removeRelationshipButton; property: "opacity";duration: 250; easing.type: Easing.OutCubic }
+                        NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 250; easing.type: Easing.OutCubic }
+                    }
                 }
             ]
         }
@@ -330,7 +343,9 @@ NotePadForm {
     // save content once after writing:
     noteWritingZone.textArea.onTextChanged: {
 
-
+        if(minimalMode){
+            return
+        }
 
         // create if nothing opened
         if(currentNoteId === -2 && noteWritingZone.textArea.length === 1){
@@ -413,17 +428,17 @@ NotePadForm {
     }
 
     function saveContent(){
-        if(projectId !== -2 && currentNoteId !== -2){
+        if(projectId !== -2 && currentNoteId !== -2 && !minimalMode){
             console.log("saving note in notepad")
             plmData.noteHub().setContent(projectId, currentNoteId, noteWritingZone.text)
         }
     }
 
 
-//    noteWritingZone.onActiveFocusChanged: {
-//            noteWritingZone.text = plmData.sheetHub().getContent(projectId, currentNoteId)
-//            restoreCurrentPaperCursorPositionAndY()
-//}
+    //    noteWritingZone.onActiveFocusChanged: {
+    //            noteWritingZone.text = plmData.sheetHub().getContent(projectId, currentNoteId)
+    //            restoreCurrentPaperCursorPositionAndY()
+    //}
 
 
     // project to be closed :
@@ -440,12 +455,30 @@ NotePadForm {
         }
     }
 
+    function clearNoteWritingZone(){
+        if(currentNoteId !== -2 && projectId !== -2 && !minimalMode){
+            saveContent()
+            saveCurrentPaperCursorPositionAndY()
+            skrTextBridge.unsubscribeTextDocument(pageType, projectId, currentNoteId, noteWritingZone.textArea.objectName, noteWritingZone.textArea.textDocument)
+        }
+
+        noteWritingZone.clear()
+    }
+
+    Component.onDestruction:  {
+        clearNoteWritingZone()
+
+    }
 
     SkrUserSettings {
         id: skrUserSettings
     }
 
     function openDocument(_projectId, _noteId) {
+        if(minimalMode){
+            return
+        }
+
         // save current
         if(projectId !== -2 && currentNoteId !== -2 ){
             saveContent()
@@ -603,6 +636,11 @@ NotePadForm {
         repeat: false
         interval: 0
         onTriggered: {
+            if(minimalMode){
+                return
+            }
+
+
             //reset other notes :
             var i;
             for(i = 0; i < noteRepeater.count; i++) {
@@ -906,7 +944,13 @@ NotePadForm {
 
     onActiveFocusChanged: {
         if (activeFocus) {
-            openSynopsisToolButton.forceActiveFocus()
+
+            if(minimalMode){
+                noteFlow.forceActiveFocus()
+            }
+            else{
+                openSynopsisToolButton.forceActiveFocus()
+            }
         }
     }
 }

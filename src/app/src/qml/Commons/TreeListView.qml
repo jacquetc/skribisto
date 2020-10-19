@@ -24,7 +24,6 @@ TreeListViewForm {
     property int currentIndex: listView.currentIndex
     property int openedProjectId: -2
     property int openedPaperId: -2
-    property bool hoveringChangingTheCurrentItemAllowed: true
     listView.model: visualModel
     DelegateModel {
         id: visualModel
@@ -205,7 +204,7 @@ TreeListViewForm {
             width: 100
         }
         onTriggered: {
-            proxyModel.addItemAtEnd(currentProject, currentParent,
+            proxyModel.addChildItem(currentProject, currentParent,
                                     visualModel.items.count)
             listView.currentItem.editName()
         }
@@ -229,6 +228,21 @@ TreeListViewForm {
     //        goUpAction.trigger()
 
     //    }
+
+    property bool temporarilyDisableMove: false
+
+
+    Timer{
+        id: temporarilyDisableMoveTimer
+        repeat: false
+        interval: 300
+        onTriggered: {
+            temporarilyDisableMove = false
+        }
+
+    }
+
+
 
     //-----------------------------------------------------------------------------
     Component.onCompleted: {
@@ -269,6 +283,7 @@ TreeListViewForm {
     property bool goToChildActionToBeTriggered :false
     property int goToChildActionCurrentIndent: -2
     property bool newPaperAdded :false
+
 
     // TreeView item :
     Component {
@@ -340,34 +355,57 @@ TreeListViewForm {
             //            }
             function editName() {
                 state = "edit_name"
-                titleTextField.forceActiveFocus()
+                titleTextFieldForceActiveFocusTimer.start()
                 titleTextField.selectAll()
+            }
+
+            Timer{
+                id: titleTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    titleTextField.forceActiveFocus()
+                }
             }
 
             function editLabel() {
                 state = "edit_label"
-                labelTextField.forceActiveFocus()
+                labelTextFieldForceActiveFocusTimer.start()
                 labelTextField.selectAll()
             }
+
+            Timer{
+                id: labelTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    labelTextField.forceActiveFocus()
+                }
+            }
+
+
 
             Keys.priority: Keys.AfterItem
 
             Keys.onShortcutOverride: {
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
+                    event.accepted = true
+                }
                 if( event.key === Qt.Key_Escape  && (delegateRoot.state == "edit_name" || delegateRoot.state == "edit_label")){
-                      event.accepted = true
-                                     }
+                    event.accepted = true
+                }
             }
 
             Keys.onPressed: {
@@ -386,14 +424,14 @@ TreeListViewForm {
                     openDocumentInNewTabAction.trigger()
                     event.accepted = true
                 }
-                if (event.key === Qt.Key_Return && delegateRoot.state !== "edit_name"){
+                if (event.key === Qt.Key_Return && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
                 }
                 // rename
 
-                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name"){
+                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     renameAction.trigger()
                     event.accepted = true
                 }
@@ -401,43 +439,43 @@ TreeListViewForm {
 
 
                 // cut
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     cutAction.trigger()
                     event.accepted = true
                 }
 
                 // copy
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     copyAction.trigger()
                     event.accepted = true
                 }
 
                 // add before
-                if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addBeforeAction.trigger()
                     event.accepted = true
                 }
 
                 // add after
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addAfterAction.trigger()
                     event.accepted = true
                 }
 
                 // move up
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveUpAction.trigger()
                     event.accepted = true
                 }
 
                 // move down
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name"){
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveDownAction.trigger()
                     event.accepted = true
                 }
 
                 // send to trash
-                if (event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name"){
+                if (event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     sendToTrashAction.trigger()
                     event.accepted = true
                 }
@@ -487,16 +525,11 @@ TreeListViewForm {
 
                 HoverHandler {
                     id: hoverHandler
-                    //                    onHoveredChanged: {
-                    //                        if (hoverHandler.hovered & hoveringChangingTheCurrentItemAllowed) {
-                    //                            listView.currentIndex = model.index
-                    //                        }
-                    //                    }
+
                 }
 
                 TapHandler {
                     id: tapHandler
-
 
                     onSingleTapped: {
                         listView.currentIndex = model.index
@@ -520,8 +553,14 @@ TreeListViewForm {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
                     onTapped: {
+
+                        if(menu.visible){
+                            menu.close()
+                            return
+                        }
+
+
                         listView.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         menu.open()
                         eventPoint.accepted = true
                     }
@@ -531,7 +570,6 @@ TreeListViewForm {
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
                         listView.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         openDocumentInNewTabAction.trigger()
                         eventPoint.accepted = true
 
@@ -593,13 +631,11 @@ TreeListViewForm {
                         if (!_proxyModel.hasChildren(_currentProject,
                                                      _currentParent)) {
                             newPaperAdded = true
-                            _proxyModel.addItemAtEnd(_currentProject,
+                            _proxyModel.addChildItem(_currentProject,
                                                      _currentParent, 0)
 
                             // edit it :
                             _listView.itemAtIndex(0).editName()
-                            //_listView.itemAt(0, 0).editName()
-
 
                         }
 
@@ -607,6 +643,20 @@ TreeListViewForm {
 
                     }
                 }
+
+                property int paperIdToEdit: -2
+                Timer{
+                    id: editNameTimer
+                    repeat: false
+                    interval: animationDuration
+                    onTriggered: {
+                        var index = proxyModel.findVisualIndex(model.projectId, paperIdToEdit)
+                        if(index !== -2){
+                            listView.itemAtIndex(index).editName()
+                        }
+                    }
+                }
+
                 Action {
                     id: openDocumentAction
                     //shortcut: "Return"
@@ -661,7 +711,7 @@ TreeListViewForm {
                     text: qsTr("Open document in a window")
                     onTriggered: {
                         root.openDocumentInNewWindow(model.projectId,
-                                                  model.paperId)
+                                                     model.paperId)
 
                     }
                 }
@@ -734,8 +784,6 @@ TreeListViewForm {
                                 id: columnLayout2
                                 spacing: 1
                                 anchors.fill: parent
-                                Layout.fillHeight: true
-                                Layout.fillWidth: true
 
                                 Label {
                                     id: titleLabel
@@ -746,6 +794,7 @@ TreeListViewForm {
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                     font.bold: model.projectIsActive && model.indent === -1 ? true : false
                                     text: model.indent === -1 ? model.projectName : model.name
+                                    elide: Text.ElideRight
                                 }
 
                                 TextField {
@@ -766,6 +815,8 @@ TreeListViewForm {
                                         console.log("editing label finished")
                                         model.label = text
                                         delegateRoot.state = ""
+
+
                                         //fix bug while new lone child
                                         titleLabel.visible = true
                                         labelLabel.visible = true
@@ -817,6 +868,8 @@ TreeListViewForm {
                                         }
 
                                         delegateRoot.state = ""
+
+
                                         //fix bug while new lone child
                                         titleLabel.visible = true
                                         labelLabel.visible = true
@@ -850,6 +903,7 @@ TreeListViewForm {
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                    elide: Text.ElideRight
 
 
                                 }
@@ -879,25 +933,25 @@ TreeListViewForm {
                             id: goToChildButton
                             action: goToChildAction
 
-                            //                            background: Rectangle {
-                            //                                implicitWidth: 30
-                            //                                implicitHeight: 30
-                            //                                color: Qt.darker(
-                            //                                           "#33333333", control.enabled
-                            //                                           && (control.checked
-                            //                                               || control.highlighted) ? 1.5 : 1.0)
-                            //                                opacity: enabled ? 1 : 0.3
-                            //                                visible: control.down
-                            //                                         || (control.enabled
-                            //                                             && (control.checked
-                            //                                                 || control.highlighted))
-                            //                            }
                             flat: true
                             Layout.preferredWidth: 30
                             Layout.fillHeight: true
                             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                             visible: model.hasChildren ? true : (hoverHandler.hovered | content.isCurrent)
                             focusPolicy: Qt.NoFocus
+                        }
+
+                        Rectangle {
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: 5
+
+                            color: model.indent === 0 ? Material.color(Material.Indigo) :
+                                                        (model.indent === 1 ? Material.color(Material.LightBlue) :
+                                                                         (model.indent === 2 ? Material.color(Material.LightGreen) :
+                                                                                               (model.indent === 3 ? Material.color(Material.Amber) :
+                                                                                                                     (model.indent === 4 ? Material.color(Material.DeepOrange) :
+                                                                                               Material.color(Material.Teal)
+                                                                              ))))
                         }
 
 
@@ -1051,15 +1105,15 @@ TreeListViewForm {
                 y: menuButton.height
 
                 onOpened: {
-                    hoveringChangingTheCurrentItemAllowed = false
                     // necessary to differenciate between all items
                     contextMenuItemIndex = model.index
                 }
 
                 onClosed: {
-                    hoveringChangingTheCurrentItemAllowed = true
 
                 }
+
+
                 MenuItem {
                     visible: model.paperId !== -1
                     height: model.paperId === -1 ? 0 : undefined
@@ -1212,9 +1266,12 @@ TreeListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index && listView.enabled
                     onTriggered: {
-                        //TODO: fill that
                         console.log("add before action", model.projectId,
                                     model.paperId)
+
+                        var visualIndex = root.currentIndex
+                        proxyModel.addItemAbove(model.projectId, model.paperId, visualIndex)
+                        listView.itemAtIndex(visualIndex).editName()
                     }
                 }
 
@@ -1227,9 +1284,12 @@ TreeListViewForm {
                     }
                     enabled: contextMenuItemIndex === model.index && listView.enabled
                     onTriggered: {
-                        //TODO: fill that
                         console.log("add after action", model.projectId,
                                     model.paperId)
+
+                        var visualIndex = root.currentIndex + 1
+                        proxyModel.addItemBelow(model.projectId, model.paperId, visualIndex)
+                        listView.itemAtIndex(visualIndex).editName()
                     }
                 }
 
@@ -1247,8 +1307,17 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("move up action", model.projectId,
                                     model.paperId)
+
+                        if(temporarilyDisableMove){
+                            return
+                        }
+                        temporarilyDisableMove = true
+                        temporarilyDisableMoveTimer.start()
+
                         proxyModel.moveUp(model.projectId, model.paperId,
                                           model.index)
+
+
                     }
                 }
 
@@ -1265,6 +1334,13 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("move down action", model.projectId,
                                     model.paperId)
+
+                        if(temporarilyDisableMove){
+                            return
+                        }
+                        temporarilyDisableMove = true
+                        temporarilyDisableMoveTimer.start()
+
                         proxyModel.moveDown(model.projectId, model.paperId,
                                             model.index)
                     }
@@ -1281,11 +1357,11 @@ TreeListViewForm {
                     onTriggered: {
                         console.log("sent to trash action", model.projectId,
                                     model.paperId)
-                        model.trashed = true
 
+                        removePaperAnimation.start()
+                        proxyModel.trashItemWithChildren(model.projectId, model.paperId)
                     }
                 }
-                MenuSeparator {}
             }
 
             //----------------------------------------------------------
@@ -1495,24 +1571,28 @@ TreeListViewForm {
             }
 
             SequentialAnimation {
-                id: removePaperAtEndAnimation
+                id: removePaperAnimation
                 PropertyAction {
-                    target: delegateRoot
                     property: "ListView.delayRemove"
                     value: true
                 }
+
+                ScriptAction {
+                    script: delegateRoot.state = "unset_anchors"
+                }
+
                 NumberAnimation {
                     target: delegateRoot
-                    property: "height"
-                    to: 0
+                    property: "x"
+                    to: listView.width
                     duration: 250
-                    easing.type: Easing.InOutQuad
+                    easing.type: Easing.InBack
                 }
                 PropertyAction {
-                    target: delegateRoot
                     property: "ListView.delayRemove"
                     value: false
                 }
+
             }
             SequentialAnimation {
                 id: addPaperAtEndAnimation
@@ -1539,4 +1619,20 @@ TreeListViewForm {
             listView.forceActiveFocus()
         }
     }
+
+
+    listView.addDisplaced:      Transition {
+        NumberAnimation { properties: "x,y"; duration: 500 }
+    }
+
+
+    listView.removeDisplaced: Transition {
+        SequentialAnimation {
+            PauseAnimation{duration: 250}
+            NumberAnimation { properties: "x,y"; duration: 250 }
+        }
+
+    }
+
+
 }

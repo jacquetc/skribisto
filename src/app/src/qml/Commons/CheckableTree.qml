@@ -156,14 +156,32 @@ ListView {
             //            }
             function editName() {
                 state = "edit_name"
-                titleTextField.forceActiveFocus()
+                titleTextFieldForceActiveFocusTimer.start()
                 titleTextField.selectAll()
+            }
+
+            Timer{
+                id: titleTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    titleTextField.forceActiveFocus()
+                }
             }
 
             function editLabel() {
                 state = "edit_label"
-                labelTextField.forceActiveFocus()
+                labelTextFieldForceActiveFocusTimer.start()
                 labelTextField.selectAll()
+            }
+
+            Timer{
+                id: labelTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    labelTextField.forceActiveFocus()
+                }
             }
 
             Keys.priority: Keys.AfterItem
@@ -179,7 +197,7 @@ ListView {
                 if(pasteActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
                     event.accepted = true
                 }
-                if(renameActionEnabled && event.key === Qt.Key_Escape && delegateRoot.state == "edit_name"){
+                if(renameActionEnabled && event.key === Qt.Key_Escape && (delegateRoot.state == "edit_name" || delegateRoot.state == "edit_label")){
                     event.accepted = true
                 }
                 if( event.key === Qt.Key_Escape){
@@ -202,19 +220,19 @@ ListView {
 
                 // rename
 
-                if (renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name"){
+                if (renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     renameAction.trigger()
                     event.accepted = true
                 }
 
                 // cut
-                if (cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name"){
+                if (cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     cutAction.trigger()
                     event.accepted = true
                 }
 
                 // copy
-                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name"){
+                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     copyAction.trigger()
                     event.accepted = true
                 }
@@ -226,6 +244,8 @@ ListView {
                 }
 
             }
+
+            property bool editBugWorkaround: false
 
             Rectangle {
                 id: content
@@ -282,8 +302,14 @@ ListView {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
                     onTapped: {
+
+
+                        if(menu.visible){
+                            menu.close()
+                            return
+                        }
+
                         root.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         menu.open()
                         eventPoint.accepted = true
                     }
@@ -293,7 +319,6 @@ ListView {
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
                         root.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         openDocumentInNewTabAction.trigger()
                         eventPoint.accepted = true
 
@@ -475,8 +500,6 @@ ListView {
                                 id: columnLayout2
                                 spacing: 1
                                 anchors.fill: parent
-                                Layout.fillHeight: true
-                                Layout.fillWidth: true
 
                                 Label {
                                     id: titleLabel
@@ -487,6 +510,7 @@ ListView {
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
                                     text: model.indent === -1 ? model.projectName : model.name
+                                    elide: Text.ElideRight
                                 }
 
                                 TextField {
@@ -500,7 +524,6 @@ ListView {
                                     maximumLength: 50
 
                                     placeholderText: qsTr("Enter label")
-
 
                                     onEditingFinished: {
                                         //if (!activeFocus) {
@@ -545,7 +568,6 @@ ListView {
 
                                     placeholderText: qsTr("Enter name")
 
-
                                     onEditingFinished: {
                                         //if (!activeFocus) {
                                         //accepted()
@@ -585,6 +607,7 @@ ListView {
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                    elide: Text.ElideRight
                                 }
                             }
                             //                        MouseArea {
@@ -611,7 +634,18 @@ ListView {
                             visible: hoverHandler.hovered | content.isCurrent
                         }
 
+                        Rectangle {
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: 5
 
+                            color: model.indent === 0 ? Material.color(Material.Indigo) :
+                                                        (model.indent === 1 ? Material.color(Material.LightBlue) :
+                                                                         (model.indent === 2 ? Material.color(Material.LightGreen) :
+                                                                                               (model.indent === 3 ? Material.color(Material.Amber) :
+                                                                                                                     (model.indent === 4 ? Material.color(Material.DeepOrange) :
+                                                                                               Material.color(Material.Teal)
+                                                                              ))))
+                        }
                     }
                     Rectangle {
                         id: separator
@@ -730,6 +764,16 @@ ListView {
                     PropertyChanges {
                         target: labelTextField
                         visible: true
+                    }
+                },
+
+                State {
+                    name: "unset_anchors"
+                    AnchorChanges {
+                        target: delegateRoot
+                        anchors.left: undefined
+                        anchors.right: undefined
+
                     }
                 }
             ]
@@ -936,6 +980,41 @@ ListView {
 
             // move :
         }
+    }
+
+
+    remove: Transition {
+
+        SequentialAnimation {
+            id: removePaperAnimation
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: true
+            }
+            PropertyAction {
+                property: "state"
+                value: "unset_anchors"
+            }
+
+            NumberAnimation {
+                property: "x"
+                to: listView.width
+                duration: 250
+                easing.type: Easing.InBack
+            }
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: false
+            }
+        }
+    }
+
+    removeDisplaced: Transition {
+        SequentialAnimation {
+            PauseAnimation{duration: 250}
+            NumberAnimation { properties: "x,y"; duration: 250 }
+        }
+
     }
 
 }

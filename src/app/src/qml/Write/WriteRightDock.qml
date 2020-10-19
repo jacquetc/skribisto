@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
+import QtQuick.Controls.Material 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.sheetlistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
@@ -20,14 +21,17 @@ WriteRightDockForm {
 
 
     splitView.handle: Item {
+        id: handle
         implicitHeight: 8
+        property bool hovered: SplitHandle.hovered
+
         RowLayout {
             anchors.fill: parent
             Rectangle {
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 5
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: "lightgrey"
+                color: handle.hovered ? Material.accentColor : Material.dividerColor
             }
         }
     }
@@ -45,60 +49,69 @@ WriteRightDockForm {
     //Menu :
     property list<Component> menuComponents:  [
         Component{
-        id:  toolDockMenuComponent
-        Menu {
-            id: toolDockMenu
-            objectName: "toolDockMenu"
-            title: qsTr("&Tools dock")
+            id:  toolDockMenuComponent
+            Menu {
+                id: toolDockMenu
+                objectName: "toolDockMenu"
+                title: qsTr("&Tools dock")
 
 
-            Component.onCompleted: {
+                Component.onCompleted: {
 
-                toolMenuShortcut.sequence = skrQMLTools.mnemonic(title)
-                toolMenuShortcut.activated.connect(function() {
-                    Globals.openSubMenuCalled(toolDockMenu)
-                })
-            }
-
-            MenuItem {
-                text: qsTr( "&Edit")
-                onTriggered: {
-
-                    if(Globals.compactSize){
-                        rightDrawer.open()
-                    }
-                    editFrame.folded = false
-                    editView.forceActiveFocus()
+                    toolMenuShortcut.sequence = skrQMLTools.mnemonic(title)
+                    toolMenuShortcut.activated.connect(function() {
+                        Globals.openSubMenuCalled(toolDockMenu)
+                    })
                 }
-            }
 
+                MenuItem {
+                    text: qsTr( "&Edit")
+                    onTriggered: {
 
-            MenuItem {
-                text: qsTr( "&Tags")
-                onTriggered: {
-
-                    if(Globals.compactSize){
-                        rightDrawer.open()
+                        if(Globals.compactSize){
+                            rightDrawer.open()
+                        }
+                        editFrame.folded = false
+                        editView.forceActiveFocus()
                     }
-                    tagPadFrame.folded = false
-                    tagPadView.forceActiveFocus()
                 }
-            }
 
-            MenuItem {
-                text: qsTr( "&Notes")
-                onTriggered: {
 
-                    if(Globals.compactSize){
-                        rightDrawer.open()
+                MenuItem {
+                    text: qsTr( "&Tags")
+                    onTriggered: {
+
+                        if(Globals.compactSize){
+                            rightDrawer.open()
+                        }
+                        tagPadFrame.folded = false
+                        tagPadView.forceActiveFocus()
                     }
-                    notePadFrame.folded = false
-                    notePadView.forceActiveFocus()
+                }
+
+                MenuItem {
+                    text: qsTr( "&Notes")
+                    onTriggered: {
+
+                        if(Globals.compactSize){
+                            rightDrawer.open()
+                        }
+                        notePadFrame.folded = false
+                        notePadView.forceActiveFocus()
+                    }
                 }
             }
         }
-    }
-]
+    ]
+
+
+    //-----------------------------------------------------------
+    //---------------Edit---------------------------------------------
+    //-----------------------------------------------------------
+
+
+    editView.skrSettingsGroup: SkrSettings.writeSettings
+
 
 
 
@@ -116,37 +129,8 @@ WriteRightDockForm {
         sheetIdFilter: paperId
     }
     tagPadView.tagListModel: tagProxyModel
+    tagPadView.itemType: SKRTagHub.Sheet
 
-    Connections{
-        target: tagPadView
-        function onCallRemoveTagRelationship(projectId, itemId, tagId){
-            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Sheet , itemId, tagId)
-        }
-    }
-
-    Connections{
-        target: tagPadView
-        function onCallAddTagRelationship(projectId, itemId, tagName){
-
-            var error;
-            // verify if name doesn't already exist :
-            var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
-
-            if(tagId === -2){
-                //if not, create tag
-                error = plmData.tagHub().addTag(projectId, tagName)
-                tagId = plmData.tagHub().getLastAddedId()
-            }
-
-            // set relationship
-            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Sheet, itemId, tagId)
-            if (!error.success){
-                console.log("error onCallAddTagRelationship")
-                //TODO: add notification
-                return
-            }
-        }
-    }
 
 
     //-----------------------------------------------------------
@@ -180,6 +164,7 @@ WriteRightDockForm {
     onProjectIdChanged: {
         notePadView.projectId = projectId
         tagPadView.projectId = projectId
+        tagPadView.itemId = -2
     }
     onPaperIdChanged: {
         notePadView.sheetId = paperId

@@ -33,14 +33,14 @@ NotePageForm {
     //---Writing Zone-----------------------------------------
     //--------------------------------------------------------
 
-    writingZone.maximumTextAreaWidth: SkrSettings.writeSettings.textWidth
-    writingZone.textPointSize: SkrSettings.writeSettings.textPointSize
-    writingZone.textFontFamily: SkrSettings.writeSettings.textFontFamily
-    writingZone.textIndent: SkrSettings.writeSettings.textIndent
-    writingZone.textTopMargin: SkrSettings.writeSettings.textTopMargin
+    writingZone.maximumTextAreaWidth: SkrSettings.noteSettings.textWidth
+    writingZone.textPointSize: SkrSettings.noteSettings.textPointSize
+    writingZone.textFontFamily: SkrSettings.noteSettings.textFontFamily
+    writingZone.textIndent: SkrSettings.noteSettings.textIndent
+    writingZone.textTopMargin: SkrSettings.noteSettings.textTopMargin
 
     writingZone.stretch: Globals.compactSize
-    writingZone.name: "write-0" //useful ?
+    writingZone.name: "note-0" //useful ?
 
 
     Connections {
@@ -102,6 +102,7 @@ NotePageForm {
         saveCurrentPaperCursorPositionAndY()
         contentSaveTimer.stop()
         saveContent()
+        skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
     }
 
     Component.onDestruction: {
@@ -110,28 +111,8 @@ NotePageForm {
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------
-    property int offset: leftDock.width
+    property int leftOffset: leftDrawer.width * leftDrawer.position
 
-    //    Connections {
-    //        target: Globals
-    //        function onWidthChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: Globals
-    //        function onCompactSizeChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: SkrSettings.rootSettings
-    //        function onLeftDockWidthChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: writingZone
-    //        function onWidthChanged() {applyOffset()}
-
-    //    }
 
     Binding on leftBasePreferredWidth {
         value:  {
@@ -141,7 +122,7 @@ NotePageForm {
             }
             else {
 
-                value = writingZone.wantedCenteredWritingZoneLeftPos - offset
+                value = writingZone.wantedCenteredWritingZoneLeftPos - leftOffset
                 if (value < 0) {
                     value = 0
                 }
@@ -323,8 +304,8 @@ NotePageForm {
         skrTextBridge.subscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
         // apply format
-        writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent
-        writingZone.documentHandler.topMarginEverywhere = SkrSettings.writeSettings.textTopMargin
+        writingZone.documentHandler.indentEverywhere = SkrSettings.noteSettings.textIndent
+        writingZone.documentHandler.topMarginEverywhere = SkrSettings.noteSettings.textTopMargin
 
         restoreCurrentPaperCursorPositionAndY()
 
@@ -412,6 +393,7 @@ NotePageForm {
     Binding on minimap.text {
         when: minimapVisibility
         value: writingZone.textArea.text
+        restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
 
@@ -419,11 +401,13 @@ NotePageForm {
     Binding on writingZone.internalScrollBar.position {
         when: minimapVisibility
         value: minimap.position
+        restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
     Binding on  minimap.position {
         when: minimapVisibility
         value: writingZone.internalScrollBar.position
+        restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
 
@@ -510,7 +494,6 @@ NotePageForm {
         }
 
 
-        leftSettings.width = leftDrawerFixedWidth
 
     }
 
@@ -591,7 +574,6 @@ NotePageForm {
             rightDrawerFixedWidth = 350
         }
 
-        rightSettings.width = rightDrawerFixedWidth
 
     }
 
@@ -618,28 +600,19 @@ NotePageForm {
 
 
     property alias leftDock: leftDock
-    property int leftDrawerFixedWidth: 400
+    property int leftDrawerFixedWidth: 300
     SKRDrawer {
         id: leftDrawer
-        parent: base
         enabled: base.enabled
-        width: Globals.compactSize ? 400 : leftDrawerFixedWidth
+        parent: base
+        widthInDockMode: leftDrawerFixedWidth
+        widthInDrawerMode: 400
         height: base.height
         interactive: Globals.compactSize
+        dockModeEnabled: !Globals.compactSize
+        settingsCategory: "noteLeftDrawer"
         edge: Qt.LeftEdge
 
-
-        Connections {
-            target: Globals
-            function onCompactSizeChanged(){
-                if(Globals.compactSize){
-                    leftDrawer.close()
-                }
-                else {
-                    leftDrawer.isVisible = leftSettings.isVisible
-                }
-            }
-        }
 
         LeftDock {
             id: leftDock
@@ -648,59 +621,23 @@ NotePageForm {
 
         }
 
-        onIsVisibleChanged: if(!Globals.compactSize) leftSettings.isVisible = leftDrawer.isVisible
-
-        Component.onCompleted: {
-            leftDrawerFixedWidth = leftSettings.dockWidth
-            Globals.resetDockConfCalled.connect(resetConf)
-            if(Globals.compactSize){
-                leftDrawer.close()
-            }
-            else {
-                leftDrawer.isVisible = leftSettings.isVisible
-            }
-        }
-
-
-        Settings {
-            id: leftSettings
-            category: "noteLeftDrawer"
-            property int dockWidth: 300
-            property bool isVisible: true
-        }
-
-        function resetConf(){
-            leftSettings.dockWidth = 300
-            leftDrawerFixedWidth = 300
-            leftSettings.isVisible = true
-            leftDrawer.isVisible = leftSettings.isVisible
-        }
     }
 
 
     property alias rightDock: rightDock
-    property int rightDrawerFixedWidth: 400
+    property int rightDrawerFixedWidth: 300
     SKRDrawer {
         id: rightDrawer
-        parent: base
         enabled: base.enabled
-        width:  Globals.compactSize ? 400 : rightDrawerFixedWidth
+        parent: base
+        widthInDockMode: rightDrawerFixedWidth
+        widthInDrawerMode: 400
         height: base.height
         interactive: Globals.compactSize
+        dockModeEnabled: !Globals.compactSize
+        settingsCategory: "noteRightDrawer"
         edge: Qt.RightEdge
 
-        Connections {
-            target: Globals
-            function onCompactSizeChanged(){
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-                else {
-                    rightDrawer.isVisible = rightSettings.isVisible
-
-                }
-            }
-        }
 
         RightDock {
             id: rightDock
@@ -711,34 +648,6 @@ NotePageForm {
 
         }
 
-        onIsVisibleChanged:if(!Globals.compactSize) rightSettings.isVisible = rightDrawer.isVisible
-
-        Component.onCompleted: {
-            rightDrawerFixedWidth = rightSettings.dockWidth
-            Globals.resetDockConfCalled.connect(resetConf)
-
-            if(Globals.compactSize){
-                rightDrawer.close()
-            }
-            else {
-                rightDrawer.isVisible = rightSettings.isVisible
-            }
-        }
-
-
-        Settings {
-            id: rightSettings
-            category: "noteRightDrawer"
-            property int dockWidth: 300
-            property bool isVisible: true
-        }
-
-        function resetConf(){
-            rightSettings.dockWidth = 300
-            rightDrawerFixedWidth = 300
-            rightSettings.isVisible = true
-            rightDrawer.isVisible = rightSettings.isVisible
-        }
     }
 
 
@@ -749,6 +658,7 @@ NotePageForm {
 
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
+
         //avoid first text change, when blank HTML is inserted
         if(writingZone.textArea.length === 0
                 && plmData.projectHub().isProjectNotModifiedOnce(projectId)){

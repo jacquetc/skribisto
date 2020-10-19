@@ -544,26 +544,32 @@ int PLMNoteListProxyModel::getItemIndent(int projectId, int paperId)
 
 // -----------------------------------------------------------------
 
-void PLMNoteListProxyModel::addItemAtEnd(int projectId, int parentPaperId,
-                                         int visualIndex)
+void PLMNoteListProxyModel::addChildItem(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
 {
-    //    PLMNoteItem *parentItem = this->getItem(projectId, parentPaperId);
-    //    if(!parentItem){
-    //        if(plmdata->projectHub()->getProjectCount() <= 1){
-
-    //        }
-    //        else if (plmdata->projectHub()->getProjectCount() > 1){
-
-    //        }
-    //        }
-
-    //    finalSortOrder =
-    // plmdata->noteHub()->getValidSortOrderAfterPaper(projectId,
-    // lastIdWithSameIndent);
-
     PLMError error = plmdata->noteHub()->addChildPaper(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
 
-    this->invalidateFilter();
+// -----------------------------------------------------------------
+
+void PLMNoteListProxyModel::addItemAbove(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->noteHub()->addPaperAbove(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+
+// -----------------------------------------------------------------
+
+void PLMNoteListProxyModel::addItemBelow(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->noteHub()->addPaperBelow(projectId, parentPaperId);
     this->setForcedCurrentIndex(visualIndex);
 }
 
@@ -583,11 +589,22 @@ void PLMNoteListProxyModel::moveUp(int projectId, int paperId, int visualIndex)
 
 // --------------------------------------------------------------
 
+void PLMNoteListProxyModel::trashItemWithChildren(int projectId, int paperId)
+{
+
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+
+    plmdata->noteHub()->setTrashedWithChildren(projectId, paperId, true);
+
+}
+// --------------------------------------------------------------
+
 void PLMNoteListProxyModel::moveDown(int projectId, int paperId, int visualIndex)
 {
-    //    PLMError error = plmdata->noteHub()->addChildPaper(projectId,
-    // paperId);
-
     PLMNoteItem *item = this->getItem(projectId, paperId);
 
     if (!item) {

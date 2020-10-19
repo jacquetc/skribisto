@@ -1787,15 +1787,19 @@ Have you checked the one(s) you want to look through ?</source>
 <context>
     <name>NotePadForm.ui</name>
     <message>
-        <source>Show synopsis</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Notes list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type your note here...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2169,6 +2173,10 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>recent projects list item</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
@@ -2310,6 +2318,14 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Selected dictionary not found</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -2414,7 +2430,11 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>&amp;Notes</source>
-        <translation type="unfinished">&amp;Заметки</translation>
+        <translation type="obsolete">&amp;Заметки</translation>
+    </message>
+    <message>
+        <source>&amp;Overview</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2425,6 +2445,10 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Overview</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2960,6 +2984,136 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>Synopsis</source>
         <translation type="obsolete">Синопсис</translation>
+    </message>
+</context>
+<context>
+    <name>SheetOverviewToolForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display mode :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tree indentation :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation type="obsolete">Курсив</translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="obsolete">Жирный</translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation type="obsolete">Подчеркнутый</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SheetOverviewTree</name>
+    <message>
+        <source>Level %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>label: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished">Открыть</translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation type="unfinished">Поднять</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation type="unfinished">Опустить</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

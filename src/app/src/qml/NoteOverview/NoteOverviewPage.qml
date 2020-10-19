@@ -80,7 +80,6 @@ NoteOverviewPageForm {
             leftDrawerFixedWidth = 600
         }
 
-        leftSettings.width = leftDrawerFixedWidth
 
 
     }
@@ -102,62 +101,23 @@ NoteOverviewPageForm {
 
 
     property alias leftDock: leftDock
-    property int leftDrawerFixedWidth: 400
+    property int leftDrawerFixedWidth: 300
     SKRDrawer {
         id: leftDrawer
-        parent: base
         enabled: base.enabled
-
-        width: Globals.compactSize ? 400 : leftDrawerFixedWidth
+        parent: base
+        widthInDockMode: leftDrawerFixedWidth
+        widthInDrawerMode: 400
         height: base.height
         interactive: Globals.compactSize
+        dockModeEnabled: !Globals.compactSize
+        settingsCategory: "noteOverviewLeftDrawer"
         edge: Qt.LeftEdge
 
-
-        Connections {
-            target: Globals
-            function onCompactSizeChanged(){
-                if(Globals.compactSize){
-                    leftDrawer.close()
-                }
-                else {
-                    leftDrawer.isVisible = leftSettings.isVisible
-                }
-            }
-        }
 
         LeftDock {
             id: leftDock
             anchors.fill: parent
-        }
-
-        onIsVisibleChanged: if(!Globals.compactSize) leftSettings.isVisible = leftDrawer.isVisible
-
-
-        Component.onCompleted: {
-            leftDrawerFixedWidth = leftSettings.dockWidth
-            Globals.resetDockConfCalled.connect(resetConf)
-            if(Globals.compactSize){
-                leftDrawer.close()
-            }
-            else {
-                leftDrawer.isVisible = leftSettings.isVisible
-            }
-        }
-
-
-        Settings {
-            id: leftSettings
-            category: "noteOverviewLeftDrawer"
-            property int dockWidth: 300
-            property bool isVisible: true
-        }
-
-        function resetConf(){
-            leftSettings.dockWidth = 300
-            leftDrawerFixedWidth = 300
-            leftSettings.isVisible = true
-            leftDrawer.isVisible = leftSettings.isVisible
         }
 
     }

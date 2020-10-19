@@ -1,14 +1,21 @@
 import QtQuick 2.15
 import QtQml 2.15
 import QtQuick.Controls 2.15
-import Qt.labs.settings 1.1
 import '..'
 
 EditViewForm {
+    id: root
     property int minimumHeight: 500
 
-    swipeView.currentIndex: 0
 
+
+    // must be set :
+    property var skrSettingsGroup
+
+    //option:
+    property bool textWidthSliderVisible: true
+
+    swipeView.currentIndex: 0
 
 
     italicToolButton.action: italicAction
@@ -82,13 +89,13 @@ EditViewForm {
 
     // textWidthSlider :
 
-    textWidthLabel.visible: !Globals.compactSize
-    textWidthSlider.visible: !Globals.compactSize
+    textWidthLabel.visible: !Globals.compactSize && textWidthSliderVisible
+    textWidthSlider.visible: !Globals.compactSize && textWidthSliderVisible
 
-    textWidthSlider.value: SkrSettings.noteSettings.textWidth
+    textWidthSlider.value: skrSettingsGroup.textWidth
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textWidth"
         value: textWidthSlider.value
         delayed: true
@@ -97,11 +104,11 @@ EditViewForm {
 
     // textPointSizeSlider :
 
-    textPointSizeSlider.value: SkrSettings.noteSettings.textPointSize
+    textPointSizeSlider.value: skrSettingsGroup.textPointSize
 
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textPointSize"
         value: textPointSizeSlider.value
         delayed: true
@@ -112,7 +119,7 @@ EditViewForm {
     fontFamilyComboBox.model: skrFonts.fontFamilies()
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textFontFamily"
         value: fontFamilyComboBox.currentText
         when:  fontFamilyLoaded
@@ -124,7 +131,7 @@ EditViewForm {
     property bool fontFamilyLoaded: false
 
     function loadFontFamily(){
-        var fontFamily = SkrSettings.writeSettings.textFontFamily
+        var fontFamily = skrSettingsGroup.textFontFamily
         //console.log("fontFamily", fontFamily)
         //console.log("application fontFamily", Qt.application.font.family)
 
@@ -140,10 +147,10 @@ EditViewForm {
     }
 
     // Indent :
-     textIndentSlider.value: SkrSettings.noteSettings.textIndent
+     textIndentSlider.value: skrSettingsGroup.textIndent
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textIndent"
         value: textIndentSlider.value
         delayed: true
@@ -151,10 +158,10 @@ EditViewForm {
     }
 
     // Margins :
-     textTopMarginSlider.value: SkrSettings.noteSettings.textTopMargin
+     textTopMarginSlider.value: skrSettingsGroup.textTopMargin
 
     Binding {
-        target: SkrSettings.noteSettings
+        target: skrSettingsGroup
         property: "textTopMargin"
         value: textTopMarginSlider.value
         delayed: true
@@ -177,4 +184,12 @@ EditViewForm {
         }
     }
 
+
+    //focus
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            //swipeView.currentIndex = 0
+            italicToolButton.forceActiveFocus()
+        }
+    }
 }

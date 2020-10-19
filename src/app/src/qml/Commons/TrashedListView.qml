@@ -364,16 +364,33 @@ TrashedListViewForm {
             //            }
             function editName() {
                 state = "edit_name"
-                titleTextField.forceActiveFocus()
+                titleTextFieldForceActiveFocusTimer.start()
                 titleTextField.selectAll()
+            }
+
+            Timer{
+                id: titleTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    titleTextField.forceActiveFocus()
+                }
             }
 
             function editLabel() {
                 state = "edit_label"
-                labelTextField.forceActiveFocus()
+                labelTextFieldForceActiveFocusTimer.start()
                 labelTextField.selectAll()
             }
 
+            Timer{
+                id: labelTextFieldForceActiveFocusTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    labelTextField.forceActiveFocus()
+                }
+            }
             Keys.priority: Keys.AfterItem
 
             Keys.onShortcutOverride: {
@@ -410,7 +427,7 @@ TrashedListViewForm {
                 }
                 // rename
 
-                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name"){
+                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     renameAction.trigger()
                     event.accepted = true
                 }
@@ -420,6 +437,7 @@ TrashedListViewForm {
                     event.accepted = true
                 }
             }
+
 
             Rectangle {
                 id: content
@@ -477,8 +495,14 @@ TrashedListViewForm {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
                     onTapped: {
+
+
+                        if(menu.visible){
+                            menu.close()
+                            return
+                        }
+
                         listView.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         menu.open()
                         eventPoint.accepted = true
                     }
@@ -488,7 +512,6 @@ TrashedListViewForm {
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
                         listView.currentIndex = model.index
-                        delegateRoot.forceActiveFocus()
                         openDocumentInNewTabAction.trigger()
                         eventPoint.accepted = true
 
@@ -630,8 +653,6 @@ TrashedListViewForm {
                                 id: columnLayout2
                                 spacing: 1
                                 anchors.fill: parent
-                                Layout.fillHeight: true
-                                Layout.fillWidth: true
 
                                 Label {
                                     id: titleLabel
@@ -642,6 +663,7 @@ TrashedListViewForm {
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
                                     text: model.indent === -1 ? model.projectName : model.name
+                                    elide: Text.ElideRight
                                 }
                                 TextField {
                                     id: labelTextField
@@ -738,6 +760,7 @@ TrashedListViewForm {
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                    elide: Text.ElideRight
                                 }
                             }
                             //                        MouseArea {
@@ -764,6 +787,18 @@ TrashedListViewForm {
                             visible: hoverHandler.hovered | content.isCurrent
                         }
 
+                        Rectangle {
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: 5
+
+                            color: model.indent === 0 ? Material.color(Material.Indigo) :
+                                                        (model.indent === 1 ? Material.color(Material.LightBlue) :
+                                                                         (model.indent === 2 ? Material.color(Material.LightGreen) :
+                                                                                               (model.indent === 3 ? Material.color(Material.Amber) :
+                                                                                                                     (model.indent === 4 ? Material.color(Material.DeepOrange) :
+                                                                                               Material.color(Material.Teal)
+                                                                              ))))
+                        }
 
                     }
                     Rectangle {
@@ -883,6 +918,16 @@ TrashedListViewForm {
                     PropertyChanges {
                         target: labelTextField
                         visible: true
+                    }
+                },
+
+                State {
+                    name: "unset_anchors"
+                    AnchorChanges {
+                        target: delegateRoot
+                        anchors.left: undefined
+                        anchors.right: undefined
+
                     }
                 }
             ]
@@ -1029,25 +1074,6 @@ TrashedListViewForm {
                 MenuSeparator {}
             }
 
-            ListView.onRemove: SequentialAnimation {
-                PropertyAction {
-                    target: delegateRoot
-                    property: "ListView.delayRemove"
-                    value: true
-                }
-                NumberAnimation {
-                    target: delegateRoot
-                    property: "height"
-                    to: 0
-                    easing.type: Easing.InOutQuad
-                }
-                PropertyAction {
-                    target: delegateRoot
-                    property: "ListView.delayRemove"
-                    value: false
-                }
-            }
-
             //----------------------------------------------------------
 
             ListView.onAdd: SequentialAnimation {
@@ -1069,5 +1095,37 @@ TrashedListViewForm {
         }
     }
 
+    listView.remove: Transition {
 
+        SequentialAnimation {
+            id: removePaperAnimation
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: true
+            }
+            PropertyAction {
+                property: "state"
+                value: "unset_anchors"
+            }
+
+            NumberAnimation {
+                property: "x"
+                to: listView.width
+                duration: 250
+                easing.type: Easing.InBack
+            }
+            PropertyAction {
+                property: "ListView.delayRemove"
+                value: false
+            }
+        }
+    }
+
+    listView.removeDisplaced: Transition {
+        SequentialAnimation {
+            PauseAnimation{duration: 250}
+            NumberAnimation { properties: "x,y"; duration: 250 }
+        }
+
+    }
 }

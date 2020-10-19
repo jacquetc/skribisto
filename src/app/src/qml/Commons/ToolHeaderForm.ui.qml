@@ -12,26 +12,29 @@ Item {
     property alias title: dockTitle.text
     property alias base: base
 
+    property var edge: Qt.LeftEdge
+
     GridLayout {
         id: gridBase
         anchors.fill: parent
+        rows: 2
+        columns: 2
 
         Switch {
             id: hSwitch
-            scale: 0.5 /*
-                                                                                                                        anchors.top: parent.top
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    anchors.topMargin: -7
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                anchors.left: parent.left
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    anchors.leftMargin: -13*/
-            //                implicitHeight: height * scale
-            //                implicitWidth: width * scale
+            scale: 0.5
+
+            Layout.row: 0
+            Layout.column: edge === Qt.LeftEdge ? 0 : 1
+
             Layout.preferredHeight: 30
-            Layout.preferredWidth: 60
-            Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+            Layout.preferredWidth: 30
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
             padding: 1
             checked: !folded
             onCheckedChanged: checked ? folded = false : folded = true
             focusPolicy: Qt.NoFocus
+
         }
         Label {
             id: dockTitle
@@ -39,14 +42,12 @@ Item {
             height: 30
             text: "Text"
 
-
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
-            /*
 
-                                                                                                                        anchors.horizontalCenter: parent.horizontalCenter
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    anchors.top: parent.top
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                anchors.topMargin: 0*/
+            Layout.row: 0
+            Layout.column: edge === Qt.LeftEdge ? 1 : 0
+
             padding: 2
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
@@ -60,18 +61,18 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             Layout.fillHeight: true
             Layout.fillWidth: true
-            Layout.row: 1
             Layout.preferredHeight: 30
 
+            Layout.row: 1
+            Layout.column: 0
+            Layout.columnSpan: 2
 
-            /*
-                                                    anchors.left: parent.left
-                                                                                                                                                                                    anchors.leftMargin: 0
-                                                                                                                                                                                                                                                                                                                                                                                                                                    anchors.verticalCenter: parent.verticalCenter*/
             padding: 2
             antialiasing: true
             rotation: 270
             font.pixelSize: 12
+
+            visible: false
         }
     }
     states: [
@@ -97,17 +98,14 @@ Item {
                 opacity: 1.0
             }
 
-
-//            PropertyChanges {
-//                target: hSwitch
-//                rotation: 90
-//            }
-
+            //            PropertyChanges {
+            //                target: hSwitch
+            //                rotation: 90
+            //            }
             PropertyChanges {
                 target: base
                 width: 30
             }
-
         },
         State {
             name: "folded"

@@ -248,14 +248,21 @@ PLMError PLMNoteHub::createSynopsis(int projectId, int sheetId) {
     PLMError error;
 
     error = this->addChildPaper(projectId, -1); // add child to project item
-
+    int lastAddedNoteId = -2;
 
     IFOK(error) {
-        int lastAddedNoteId = this->getLastAddedId();
+        lastAddedNoteId = this->getLastAddedId();
 
         error = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId, true);
-    }
 
+    }
+    if(lastAddedNoteId == -2){
+        error.setSuccess(false);
+    }
+    IFOK(error){
+        error.addData(lastAddedNoteId);
+
+    }
     return error;
 }
 

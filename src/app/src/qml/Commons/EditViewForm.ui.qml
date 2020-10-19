@@ -86,7 +86,7 @@ Item {
                         id: gridLayout2
                         columnSpacing: 5
                         rowSpacing: 5
-                        columns: gridLayout2.width / fullScreenToolButton.width - 1
+                        columns: gridLayout.width / fullScreenToolButton.width - 1
                         anchors.left: parent.left
                         anchors.right: parent.right
 
@@ -109,7 +109,6 @@ Item {
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
-
                         ToolButton {
                             id: checkSpellingToolButton
                             text: qsTr("Check spelling")
@@ -144,7 +143,7 @@ Item {
 
                 Slider {
                     id: textWidthSlider
-                    from: writingZone.width / 4
+                    from: 400
                     to: Screen.width
                 }
 

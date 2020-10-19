@@ -8,7 +8,6 @@ import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.skrusersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
-import "../Commons"
 import ".."
 
 RightDockForm {
@@ -34,7 +33,6 @@ RightDockForm {
                 color: handle.hovered ? Material.accentColor : Material.dividerColor
             }
         }
-
     }
 
     //-----------------------------------------------------------
@@ -53,53 +51,78 @@ RightDockForm {
     //Menu :
     property list<Component> menuComponents:  [
         Component{
-            id:  toolDockMenuComponent
-            Menu {
-                id: toolDockMenu
-                objectName: "toolDockMenu"
-                title: qsTr("&Tools dock")
+        id:  toolDockMenuComponent
+        Menu {
+            id: toolDockMenu
+            objectName: "toolDockMenu"
+            title: qsTr("&Tools dock")
 
 
-                Component.onCompleted: {
+            Component.onCompleted: {
 
-                    toolMenuShortcut.sequence = skrQMLTools.mnemonic(title)
-                    toolMenuShortcut.activated.connect(function() {
-                        Globals.openSubMenuCalled(toolDockMenu)
-                    })
-                }
+                toolMenuShortcut.sequence = skrQMLTools.mnemonic(title)
+                toolMenuShortcut.activated.connect(function() {
+                    Globals.openSubMenuCalled(toolDockMenu)
+                })
+            }
 
-                MenuItem {
-                    text: qsTr( "&Edit")
-                    onTriggered: {
 
-                        if(Globals.compactSize){
-                            rightDrawer.open()
-                        }
-                        editFrame.folded = false
-                        editView.forceActiveFocus()
+            MenuItem {
+                text: qsTr( "&Overview")
+                onTriggered: {
+
+                    if(Globals.compactSize){
+                        rightDrawer.open()
                     }
+                    sheetOverviewFrame.folded = false
+                    sheetOverviewTool.forceActiveFocus()
                 }
+            }
 
+            MenuItem {
+                text: qsTr( "&Edit")
+                onTriggered: {
 
-                MenuItem {
-                    text: qsTr( "&Tags")
-                    onTriggered: {
-
-                        if(Globals.compactSize){
-                            rightDrawer.open()
-                        }
-                        tagPadFrame.folded = false
-                        tagPadView.forceActiveFocus()
+                    if(Globals.compactSize){
+                        rightDrawer.open()
                     }
+                    editFrame.folded = false
+                    editView.forceActiveFocus()
+                }
+            }
+
+
+            MenuItem {
+                text: qsTr( "&Tags")
+                onTriggered: {
+
+                    if(Globals.compactSize){
+                        rightDrawer.open()
+                    }
+                    tagPadFrame.folded = false
+                    tagPadView.forceActiveFocus()
                 }
             }
         }
-    ]
+    }
+]
 
 
 
     //-----------------------------------------------------------
 
+    //-----------------------------------------------------------
+    //---------------Overview---------------------------------------
+    //-----------------------------------------------------------
+    sheetOverviewFrame.onContentHeightChanged: {
+        if(sheetOverviewFrame.SplitView.preferredHeight < sheetOverviewFrame.SplitView.minimumHeight){
+            sheetOverviewFrame.SplitView.preferredHeight = sheetOverviewFrame.SplitView.minimumHeight
+        }
+
+        if(sheetOverviewFrame.SplitView.preferredHeight > sheetOverviewFrame.SplitView.maximumHeight){
+            sheetOverviewFrame.SplitView.preferredHeight = sheetOverviewFrame.SplitView.maximumHeight
+        }
+    }
 
 
     //-----------------------------------------------------------
@@ -107,8 +130,9 @@ RightDockForm {
     //-----------------------------------------------------------
 
 
-    editView.skrSettingsGroup: SkrSettings.noteSettings
 
+    editView.skrSettingsGroup: SkrSettings.overviewTreeNoteSettings
+    editView.textWidthSliderVisible: false
 
 
 
@@ -125,8 +149,36 @@ RightDockForm {
         noteIdFilter: paperId
     }
     tagPadView.tagListModel: tagProxyModel
-    tagPadView.itemType: SKRTagHub.Note
 
+    Connections{
+        target: tagPadView
+        function onCallRemoveTagRelationship(projectId, itemId, tagId){
+            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Note , itemId, tagId)
+        }
+    }
+
+    Connections{
+        target: tagPadView
+        function onCallAddTagRelationship(projectId, itemId, tagName){
+            var error;
+            // verify if name doesn't already exist :
+            var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
+
+            if(tagId === -2){
+                //if not, create tag
+                error = plmData.tagHub().addTag(projectId, tagName)
+                tagId = plmData.tagHub().getLastAddedId()
+            }
+
+            // set relationship
+            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Note, itemId, tagId)
+            if (!error.success){
+                console.log("error onCallAddTagRelationship")
+                //TODO: add notification
+                return
+            }
+        }
+    }
 
     onProjectIdChanged: {
         tagPadView.projectId = projectId
@@ -154,15 +206,21 @@ RightDockForm {
 
     Settings {
         id: settings
-        category: "noteRightDock"
+        category: "writeOverviewRightDock"
         property var dockSplitView
+        property bool sheetOverviewFrameFolded: sheetOverviewFrame.folded
         property bool editFrameFolded: editFrame.folded
         property bool tagPadFrameFolded: tagPadFrame.folded
-        //        property bool documentFrameFolded: documentFrame.folded ? true : false
     }
 
 
 
+    PropertyAnimation {
+        target: sheetOverviewFrame
+        property: "SplitView.preferredHeight"
+        duration: 500
+        easing.type: Easing.InOutQuad
+    }
     PropertyAnimation {
         target: editFrame
         property: "SplitView.preferredHeight"
@@ -178,6 +236,7 @@ RightDockForm {
 
     function loadConf(){
 
+        sheetOverviewFrame.folded = settings.sheetOverviewFrameFolded
         editFrame.folded = settings.editFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
 
@@ -186,6 +245,7 @@ RightDockForm {
     }
 
     function resetConf(){
+        sheetOverviewFrame.folded = false
         editFrame.folded = false
         tagPadFrame.folded = false
         splitView.restoreState("")

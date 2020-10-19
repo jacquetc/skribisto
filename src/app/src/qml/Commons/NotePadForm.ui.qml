@@ -12,6 +12,8 @@ Item {
     property alias addNoteMenuToolButton: addNoteMenuToolButton
     property alias noteRepeater: noteRepeater
 
+    property bool minimalMode: false
+
 
     Pane {
         id: pane
@@ -27,7 +29,9 @@ Item {
                 id: toolBar
                 Layout.maximumHeight: 40
                 Layout.preferredHeight: 40
+                Layout.alignment: Qt.AlignTop
                 Layout.fillWidth: true
+                visible: !minimalMode
 
                 //                Item {
                 //                    id: element
@@ -40,7 +44,7 @@ Item {
                     anchors.fill: parent
 
                     Item {
-                        id: element
+                        id: stretcher
                         Layout.fillHeight: true
                         Layout.fillWidth: true
                     }
@@ -48,7 +52,7 @@ Item {
                     ToolButton {
                         id: openSynopsisToolButton
                         flat: true
-                        text: qsTr("Show synopsis")
+                        text: qsTr("Show outline")
                         display: AbstractButton.IconOnly
                     }
 
@@ -73,7 +77,7 @@ Item {
 
             ScrollView {
                 id: scrollView
-                Layout.maximumHeight: 100
+                //Layout.fillHeight: minimalMode ? false : true
                 Layout.minimumHeight: 40
                 focusPolicy: Qt.StrongFocus
                 Layout.fillWidth: true
@@ -85,16 +89,10 @@ Item {
                     boundsBehavior: Flickable.StopAtBounds
                     contentWidth: scrollView.width
                     contentHeight: noteFlow.height
-                    //contentHeight: leftDockColumnLayout.height
                     Flow {
                         id: noteFlow
                         width: scrollView.width
-                        //                    width: parent.width
-                        //                    anchors.left: parent.left
-                        //                    anchors.top: parent.top
-                        //                    anchors.topMargin: 0
-                        //                    anchors.leftMargin: 0
-                        spacing: 20
+                        spacing: 10
                         padding: 2
                         antialiasing: true
                         clip: true
@@ -102,9 +100,7 @@ Item {
 
                         Repeater {
                             id: noteRepeater
-
                             delegate: noteFlowComponent
-
 
                         }
 
@@ -117,11 +113,12 @@ Item {
 
             WritingZone {
                 id: noteWritingZone
-                placeholderText: "Type your note here..."
+                placeholderText: qsTr("Type your note here...")
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 stretch: true
                 leftScrollItemVisible: false
+                visible: !minimalMode
             }
         }
     }

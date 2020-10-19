@@ -6,7 +6,7 @@
 SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel(QObject *parent) :
     QSortFilterProxyModel(parent),
     m_showTrashedFilter(true), m_showNotTrashedFilter(true), m_textFilter(""),
-    m_projectIdFilter(-2)
+    m_projectIdFilter(-2), m_parentIdFilter(-2), m_showParentWhenParentIdFilter(false)
 
 {
     this->setSourceModel(plmmodels->noteListModel());
@@ -26,6 +26,8 @@ SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel(QObject *parent) :
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->clearFilters();
     });
+
+
 }
 
 Qt::ItemFlags SKRSearchNoteListProxyModel::flags(const QModelIndex& index) const
@@ -428,6 +430,33 @@ void SKRSearchNoteListProxyModel::deleteDefinitively(int projectId, int paperId)
 
 // --------------------------------------------------------------
 
+void SKRSearchNoteListProxyModel::setParentIdFilter(int projectIdfilter)
+{
+
+    m_parentIdFilter = projectIdfilter;
+    emit parentIdFilterChanged(m_parentIdFilter);
+
+    this->invalidateFilter();
+
+}
+
+// --------------------------------------------------------------
+
+
+void SKRSearchNoteListProxyModel::setShowParentWhenParentIdFilter(bool showParent)
+{
+    m_showParentWhenParentIdFilter = showParent;
+    emit showParentWhenParentIdFilterChanged(showParent);
+
+    if(m_parentIdFilter != -2){
+
+        this->invalidateFilter();
+    }
+
+}
+
+// --------------------------------------------------------------
+
 
 bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
                                                    const QModelIndex& sourceParent) const
@@ -491,6 +520,29 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
         }
     }
 
+
+    // parentId filtering :
+    if (result && m_parentIdFilter != -2) {
+
+        if(m_showParentWhenParentIdFilter && m_parentIdFilter == item->data(PLMNoteItem::Roles::PaperIdRole).toInt()){
+            result = true;
+        }
+        else {
+
+            PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
+            PLMNoteItem *parentItem = model->getParentNoteItem(item);
+
+            if (parentItem) {
+                if (parentItem->paperId() == m_parentIdFilter) {
+                    result = true;
+                }
+                else{
+                    result = false;
+                }
+            }
+        }
+    }
+
     return result;
 }
 
@@ -498,6 +550,9 @@ void SKRSearchNoteListProxyModel::setProjectIdFilter(int projectIdFilter)
 {
     m_projectIdFilter = projectIdFilter;
     emit projectIdFilterChanged(m_projectIdFilter);
+
+    m_parentIdFilter = -2;
+    emit parentIdFilterChanged(m_parentIdFilter);
 
     this->invalidateFilter();
 }
@@ -518,6 +573,11 @@ void SKRSearchNoteListProxyModel::clearFilters()
     m_textFilter = "";
     emit textFilterChanged(m_textFilter);
 
+    m_parentIdFilter = -2;
+    emit parentIdFilterChanged(m_parentIdFilter);
+
+    m_showParentWhenParentIdFilter = false;
+    emit showParentWhenParentIdFilterChanged(m_showParentWhenParentIdFilter);
 
     this->invalidateFilter();
 }
@@ -890,6 +950,79 @@ int SKRSearchNoteListProxyModel::getItemIndent(int projectId, int paperId)
     return indent;
 }
 
+// -----------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::addChildItem(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->noteHub()->addChildPaper(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+// -----------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::addItemAbove(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->noteHub()->addPaperAbove(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+
+// -----------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::addItemBelow(int projectId,
+                                          int parentPaperId,
+                                          int visualIndex)
+{
+    PLMError error = plmdata->noteHub()->addPaperBelow(projectId, parentPaperId);
+    this->setForcedCurrentIndex(visualIndex);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::moveUp(int projectId, int paperId, int visualIndex)
+{
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+    PLMError error = plmdata->noteHub()->movePaperUp(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex - 1);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::moveDown(int projectId, int paperId, int visualIndex)
+{
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+    PLMError error = plmdata->noteHub()->movePaperDown(projectId, paperId);
+
+    this->setForcedCurrentIndex(visualIndex + 1);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::trashItemWithChildren(int projectId, int paperId)
+{
+
+    PLMNoteItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+
+    plmdata->noteHub()->setTrashedWithChildren(projectId, paperId, true);
+
+}
 // --------------------------------------------------------------
 
 QHash<int, QByteArray>SKRSearchNoteListProxyModel::roleNames() const {

@@ -112,6 +112,7 @@ WritePageForm {
         saveCurrentPaperCursorPositionAndY()
         contentSaveTimer.stop()
         saveContent()
+        skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
     }
 
     Component.onDestruction: {
@@ -120,28 +121,8 @@ WritePageForm {
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------
-    property int offset: leftDock.width
+    property int leftOffset: leftDrawer.width * leftDrawer.position
 
-    //    Connections {
-    //        target: Globals
-    //        function onWidthChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: Globals
-    //        function onCompactSizeChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: SkrSettings.rootSettings
-    //        function onLeftDockWidthChanged() {applyOffset()}
-
-    //    }
-    //    Connections {
-    //        target: writingZone
-    //        function onWidthChanged() {applyOffset()}
-
-    //    }
 
     Binding on leftBasePreferredWidth {
         value:  {
@@ -151,7 +132,7 @@ WritePageForm {
             }
             else {
 
-                value = writingZone.wantedCenteredWritingZoneLeftPos - offset
+                value = writingZone.wantedCenteredWritingZoneLeftPos - leftOffset
                 if (value < 0) {
                     value = 0
                 }
@@ -164,26 +145,27 @@ WritePageForm {
         }
         restoreMode: Binding.RestoreBindingOrValue
     }
-    //    Binding on rightBasePreferredWidth {
-    //        value:  {
-    //            var value = 0
-    //            if (Globals.compactSize === true){
-    //                value = -1;
-    //            }
-    //            else {
+//    property int rightOffset: rightDrawer.width * rightDrawer.position
+//        Binding on rightBasePreferredWidth {
+//            value:  {
+//                var value = 0
+//                if (Globals.compactSize === true){
+//                    value = -1;
+//                }
+//                else {
 
-    //                value = 400 + offset
-    //                if (value < 0) {
-    //                    value = 0
-    //                }
-    //                //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
-    //                //                console.debug("right offset :: ", offset)
-    //                //                console.debug("right value :: ", value)
+//                    value = writingZone.wantedCenteredWritingZoneLeftPos - rightOffset - 100
+//                    if (value < 0) {
+//                        value = 0
+//                    }
+//                    //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
+//                    //                console.debug("right offset :: ", offset)
+//                    //                console.debug("right value :: ", value)
 
-    //            }
-    //            rightBasePreferredWidth = value
-    //        }
-    //    }
+//                }
+//                rightBasePreferredWidth = value
+//            }
+//        }
     //    Binding on leftBaseMaximumWidth {
     //        when: SkrSettings.rootSettings.onLeftDockWidthChanged || Globals.onCompactSizeChanged || writingZone.onWidthChanged
     //            value:  {
@@ -325,12 +307,10 @@ WritePageForm {
             skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
         }
 
-
         paperId = _paperId
         projectId = _projectId
         writingZone.paperId = _paperId
         writingZone.projectId = _projectId
-
 
         console.log("opening sheet :", _projectId, _paperId)
         writingZone.text = plmData.sheetHub().getContent(_projectId, _paperId)
@@ -528,7 +508,6 @@ WritePageForm {
         }
 
 
-        leftSettings.dockWidth = leftDrawerFixedWidth
 
     }
 
@@ -611,7 +590,6 @@ WritePageForm {
             rightDrawerFixedWidth = 350
         }
 
-        rightSettings.width = rightDrawerFixedWidth
     }
 
     rightDockResizeButton.onPressed: {
@@ -636,28 +614,21 @@ WritePageForm {
 
 
     property alias leftDock: leftDock
-    property int leftDrawerFixedWidth: 400
+    property int leftDrawerFixedWidth: 300
 
     SKRDrawer {
         id: leftDrawer
         enabled: base.enabled
         parent: base
-        width: Globals.compactSize ? 400 : leftDrawerFixedWidth
+        widthInDockMode: leftDrawerFixedWidth
+        widthInDrawerMode: 400
         height: base.height
         interactive: Globals.compactSize
+        dockModeEnabled: !Globals.compactSize
+        settingsCategory: "writeLeftDrawer"
         edge: Qt.LeftEdge
 
-        Connections {
-            target: Globals
-            function onCompactSizeChanged(){
-                if(Globals.compactSize){
-                    leftDrawer.close()
-                }
-                else {
-                    leftDrawer.isVisible = leftSettings.isVisible
-                }
-            }
-        }
+
 
         WriteLeftDock {
             id: leftDock
@@ -665,59 +636,24 @@ WritePageForm {
 
         }
 
-        onIsVisibleChanged: if(!Globals.compactSize) leftSettings.isVisible = leftDrawer.isVisible
-
-
-        Component.onCompleted: {
-            leftDrawerFixedWidth = leftSettings.dockWidth
-            Globals.resetDockConfCalled.connect(resetConf)
-            if(Globals.compactSize){
-                leftDrawer.close()
-            }
-            else {
-                leftDrawer.isVisible = leftSettings.isVisible
-            }
-        }
-
-
-        Settings {
-            id: leftSettings
-            category: "writeLeftDrawer"
-            property int dockWidth: 300
-            property bool isVisible: true
-        }
-
-        function resetConf(){
-            leftSettings.dockWidth = 300
-            leftDrawerFixedWidth = 300
-            leftSettings.isVisible = true
-            leftDrawer.isVisible = leftSettings.isVisible
-        }
-
     }
 
     property alias rightDock: rightDock
-    property int rightDrawerFixedWidth: 400
+    property int rightDrawerFixedWidth: 300
     SKRDrawer {
         id: rightDrawer
         enabled: base.enabled
         parent: base
-        width:  Globals.compactSize ? 400 : rightDrawerFixedWidth
+        widthInDockMode: rightDrawerFixedWidth
+        widthInDrawerMode: 400
         height: base.height
         interactive: Globals.compactSize
+        dockModeEnabled: !Globals.compactSize
+        settingsCategory: "writeRightDrawer"
         edge: Qt.RightEdge
 
-        Connections {
-            target: Globals
-            function onCompactSizeChanged(){
-                if(Globals.compactSize){
-                    rightDrawer.close()
-                }
-                else {
-                    rightDrawer.isVisible = rightSettings.isVisible
-                }
-            }
-        }
+
+
 
         WriteRightDock {
             id: rightDock
@@ -728,39 +664,13 @@ WritePageForm {
 
         }
 
-        onIsVisibleChanged:if(!Globals.compactSize) rightSettings.isVisible = rightDrawer.isVisible
-
-        Component.onCompleted: {
-            rightDrawerFixedWidth = rightSettings.dockWidth
-            Globals.resetDockConfCalled.connect(resetConf)
-
-            if(Globals.compactSize){
-                rightDrawer.close()
-            }
-            else {
-                rightDrawer.isVisible = rightSettings.isVisible
-            }
-        }
-
-
-        Settings {
-            id: rightSettings
-            category: "writeRightDrawer"
-            property int dockWidth: 300
-            property bool isVisible: true
-        }
-
-        function resetConf(){
-            rightSettings.dockWidth = 300
-            rightDrawerFixedWidth = 300
-            rightSettings.isVisible = true
-            rightDrawer.isVisible = rightSettings.isVisible
-        }
     }
 
     //------------------------------------------------------------
     //------------------------------------------------------------
     //------------------------------------------------------------
+
+
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
 
