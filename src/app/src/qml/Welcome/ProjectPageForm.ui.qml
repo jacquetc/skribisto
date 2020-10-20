@@ -92,9 +92,6 @@ Item {
 
                     GroupBox {
                         id: groupBox
-                        width: 200
-                        height: 200
-                        Layout.rowSpan: 2
                         focusPolicy: Qt.TabFocus
                         Layout.fillWidth: true
                         title: qsTr("Recent projects")
@@ -107,12 +104,11 @@ Item {
                             ListView {
                                 id: recentListView
                                 Layout.fillWidth: true
-                                Layout.maximumWidth: 400
+                                Layout.minimumWidth: 400
                                 clip: true
-                                Layout.preferredHeight: 200
-                                Layout.fillHeight: false
+                                Layout.preferredHeight: 400
                                 Layout.minimumHeight: 200
-                                Layout.minimumWidth: 300
+                                Layout.fillHeight: false
                                 keyNavigationWraps: false
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
@@ -124,7 +120,6 @@ Item {
 
                     GroupBox {
                         id: groupBox2
-                        Layout.rowSpan: 2
                         focusPolicy: Qt.TabFocus
                         Layout.fillWidth: true
                         title: qsTr("Save")

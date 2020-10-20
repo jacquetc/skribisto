@@ -321,12 +321,8 @@ ProjectPageForm {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
 
-                        ColumnLayout {
-                            id: columnLayout2
-                            spacing: 1
+                        RowLayout{
                             anchors.fill: parent
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
 
                             Label {
                                 id: titleLabel
@@ -340,15 +336,31 @@ ProjectPageForm {
                                 color: model.exists ? "black" : "grey"
                             }
 
-                            Label {
-                                id: fileNameLabel
+                            ColumnLayout {
+                                id: columnLayout2
+                                spacing: 1
 
-                                text: skrQMLTools.translateURLToLocalFile(model.fileName)
-                                Layout.bottomMargin: 2
-                                Layout.rightMargin: 4
-                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                Layout.fillHeight: true
+//                                Layout.fillWidth: true
+
+                                Label {
+                                    id: lastModificationLabel
+
+                                    text: skrRootItem.toLocaleDateTimeFormat(model.lastModification)
+                                    Layout.bottomMargin: 2
+                                    Layout.rightMargin: 4
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                }
+
+                                Label {
+                                    id: fileNameLabel
+
+                                    text: skrQMLTools.translateURLToLocalFile(model.fileName)
+                                    Layout.bottomMargin: 2
+                                    Layout.rightMargin: 4
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                }
                             }
-
                         }
                     }
 
