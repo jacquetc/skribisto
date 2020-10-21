@@ -691,6 +691,10 @@
         <source>&amp;About</source>
         <translation>&amp;A propos</translation>
     </message>
+    <message>
+        <source>Skribisto %1 created by Cyril Jacquet</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RootPageForm.ui</name>
@@ -863,6 +867,10 @@
         <source>Show tags</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Project</source>
+        <translation type="unfinished">Projet</translation>
+    </message>
 </context>
 <context>
     <name>SheetOverviewTree</name>
@@ -952,6 +960,22 @@
     </message>
     <message>
         <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unset focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished">Coller</translation>
+    </message>
+    <message>
+        <source>Add child</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1242,6 +1266,20 @@
     <message>
         <source>Opened documents</source>
         <translation>Documents ouverts</translation>
+    </message>
+</context>
+<context>
+    <name>WriteOverviewPage</name>
+    <message>
+        <source>The focus is currently on %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WriteOverviewPageForm.ui</name>
+    <message>
+        <source>Unfocus</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
