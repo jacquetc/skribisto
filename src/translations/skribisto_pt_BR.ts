@@ -2229,6 +2229,10 @@ not allowed delete a filled book.</source>
         <source>&amp;About</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Skribisto %1 created by Cyril Jacquet</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RootPageForm.ui</name>
@@ -2658,6 +2662,10 @@ not allowed delete a filled book.</source>
         <source>Show tags</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Project</source>
+        <translation type="unfinished">Projeto</translation>
+    </message>
 </context>
 <context>
     <name>SheetOverviewTree</name>
@@ -2747,6 +2755,22 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unset focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add child</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3419,6 +3443,20 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Opened documents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WriteOverviewPage</name>
+    <message>
+        <source>The focus is currently on %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WriteOverviewPageForm.ui</name>
+    <message>
+        <source>Unfocus</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

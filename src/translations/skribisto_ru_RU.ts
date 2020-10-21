@@ -2494,6 +2494,10 @@ Have you checked the one(s) you want to look through ?</source>
         <source>&amp;About</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Skribisto %1 created by Cyril Jacquet</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RootPageForm.ui</name>
@@ -3024,6 +3028,10 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Show tags</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Project</source>
+        <translation type="unfinished">Проект</translation>
+    </message>
 </context>
 <context>
     <name>SheetOverviewTree</name>
@@ -3113,6 +3121,22 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unset focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add child</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3969,6 +3993,20 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Opened documents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WriteOverviewPage</name>
+    <message>
+        <source>The focus is currently on %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WriteOverviewPageForm.ui</name>
+    <message>
+        <source>Unfocus</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

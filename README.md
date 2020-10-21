@@ -84,6 +84,12 @@ Also, thanks to the flatpak support,
 - make sure to have flatpak and flatpak-builder installed on your system
 - type in a terminal :
 
+prerequisiste :
+```
+flatpak install flathub org.kde.Sdk//5.15
+```
+
+Compile and install :
 ```
 mkdir Devel
 cd ~/Devel

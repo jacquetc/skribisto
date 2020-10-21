@@ -38,6 +38,8 @@ Item {
     property alias mainMenuButton: mainMenuButton
     property alias showTabListButton: showTabListButton
     property alias headerRowLayout: headerRowLayout
+    property alias statusLeftLabel: statusLeftLabel
+    property alias statusRightLabel: statusRightLabel
 
     ColumnLayout {
         id: columnLayout
@@ -254,7 +256,6 @@ Item {
 
                 Label {
                     id: statusLeftLabel
-                    text: qsTr("Label")
                     verticalAlignment: Text.AlignVCenter
                     Layout.fillHeight: true
                     Layout.fillWidth: true

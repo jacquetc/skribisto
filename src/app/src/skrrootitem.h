@@ -40,6 +40,8 @@ public:
     Q_INVOKABLE QString getLanguageFromSettings() const;
 
 
+    Q_INVOKABLE QString skribistoVersion() const;
+    Q_INVOKABLE QString toLocaleDateTimeFormat(const QDateTime &dateTime) const;
 signals:
     void currentTranslationLanguageCodeChanged(const QString &langCode);
 
@@ -48,6 +50,7 @@ private:
         return "";
        }
 
+    QString m_langCode;
     QTranslator *skribistoTranslator;
     QTranslator *qtTranslator;
 

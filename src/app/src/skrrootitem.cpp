@@ -93,10 +93,27 @@ void SKRRootItem::setCurrentTranslationLanguageCode(const QString &langCode)
 
     // PLMUtils::Lang::setUserLang(langCode);
 
-
+    m_langCode = langCode;
 
 
     emit currentTranslationLanguageCodeChanged(locale.name());
 
 
+}
+
+ QString SKRRootItem::skribistoVersion() const{
+
+      QStringList strings;
+      strings << QString::number(SKR_VERSION_MAJOR) <<  QString::number(SKR_VERSION_MINOR) <<  QString::number(SKR_VERSION_PATCH) ;
+
+
+      return strings.join(".");
+}
+
+ QString SKRRootItem::toLocaleDateTimeFormat(const QDateTime &dateTime) const{
+
+     QLocale locale(m_langCode);
+
+
+     return dateTime.toString(locale.dateTimeFormat());
 }
