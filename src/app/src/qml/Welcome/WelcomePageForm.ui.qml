@@ -1,6 +1,8 @@
 import QtQuick 2.9
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.2
+import ".."
+import "../Items"
 
 Item {
     property alias projectPageButton: projectPageButton
@@ -24,26 +26,27 @@ Item {
         spacing: 0
         anchors.fill: parent
 
-        TabBar {
+        SkrTabBar {
             id: tabBar
             width: 240
             Layout.preferredHeight: 40
             Layout.fillWidth: true
 
-            TabButton {
+
+            SkrTabButton {
                 id: projectPageTabButton
                 text: qsTr("Project")
             }
-            TabButton {
+            SkrTabButton {
                 id: examplePageTabButton
                 text: qsTr("Examples")
             }
-            TabButton {
+            SkrTabButton {
                 id: settingsPageTabButton
                 text: qsTr("Settings")
             }
 
-            TabButton {
+            SkrTabButton {
                 id: helpPageTabButton
                 text: qsTr("Help")
             }
@@ -54,7 +57,7 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            Pane {
+            SkrPane {
                 id: mainButtonsPane
                 width: 200
                 height: 200
@@ -67,25 +70,25 @@ Item {
                     id: columnLayout1
                     anchors.fill: parent
 
-                    ToolButton {
+                    SkrToolButton {
                         id: projectPageButton
                         text: qsTr("Project")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: examplePageButton
                         text: qsTr("Examples")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: settingsPageButton
                         text: qsTr("Settings")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: helpPageButton
                         text: qsTr("Help")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter

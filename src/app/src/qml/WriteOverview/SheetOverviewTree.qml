@@ -8,6 +8,7 @@ import eu.skribisto.projecthub 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
 import "../Commons"
+import "../Items"
 import ".."
 
 SheetOverviewTreeForm {
@@ -317,7 +318,7 @@ SheetOverviewTreeForm {
                 Drag.hotSpot.x: width / 2
                 Drag.hotSpot.y: height / 2
 
-                color: dragHandler.active | !tapHandler.enabled ? "lightsteelblue" : "transparent"
+                color: dragHandler.active | !tapHandler.enabled ? SkrTheme.accent : "transparent"
 
                 Behavior on color {
                     ColorAnimation {
@@ -424,6 +425,7 @@ SheetOverviewTreeForm {
 
                     property alias tapHandler: tapHandler
 
+
                     anchors {
                         horizontalCenter: parent.horizontalCenter
                         verticalCenter: parent.verticalCenter
@@ -432,6 +434,8 @@ SheetOverviewTreeForm {
                     width: draggableContent.width
 
                     padding: 1
+
+                    Material.background: SkrTheme.pageBackground
                     Material.elevation: 4
 
                     //Material.backgroundColor: Material.
@@ -542,7 +546,7 @@ SheetOverviewTreeForm {
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
-                                    Label {
+                                    SkrLabel {
                                         id: titleLabel
 
                                         Layout.fillWidth: true
@@ -554,11 +558,9 @@ SheetOverviewTreeForm {
                                         elide: Text.ElideRight
                                     }
 
-                                    TextField {
+                                    SkrTextField {
                                         id: labelTextField
                                         visible: false
-
-
 
                                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                                         text: labelLabel.text
@@ -596,10 +598,9 @@ SheetOverviewTreeForm {
 
                                     }
 
-                                    TextField {
+                                    SkrTextField {
                                         id: titleTextField
                                         visible: false
-
 
                                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                         text: titleLabel.text
@@ -642,7 +643,7 @@ SheetOverviewTreeForm {
 
                                     }
 
-                                    Label {
+                                    SkrLabel {
                                         id: labelLabel
                                         text:  model.label === undefined ? "" : model.label
                                         Layout.bottomMargin: 2
@@ -651,9 +652,6 @@ SheetOverviewTreeForm {
                                         elide: Text.ElideRight
                                         visible: text.length === 0 ? false : true
                                         font.italic: true
-
-
-
                                     }
                                 }
 
@@ -795,6 +793,11 @@ SheetOverviewTreeForm {
 
                                         stretch: true
 
+
+                                        textAreaStyleBackgroundColor: SkrTheme.secondaryTextAreaBackground
+                                        textAreaStyleForegroundColor: SkrTheme.secondaryTextAreaForeground
+                                        paneStyleBackgroundColor: SkrTheme.pageBackground
+                                        textAreaStyleAccentColor: SkrTheme.accent
 
                                         Component.onCompleted: {
                                             openSynopsisFromSheetId(model.projectId, model.paperId)
@@ -1133,7 +1136,7 @@ SheetOverviewTreeForm {
                             ColumnLayout {
                                 Layout.preferredWidth: 30
 
-                                ToolButton {
+                                SkrToolButton {
                                     id: menuButton
                                     Layout.fillHeight: true
                                     Layout.preferredWidth: 30
@@ -1159,7 +1162,7 @@ SheetOverviewTreeForm {
                                     visible: hoverHandler.hovered | draggableContent.isCurrent
                                 }
 
-                                ToolButton {
+                                SkrToolButton {
                                     id: focusOnBranchButton
                                     Layout.fillHeight: true
                                     Layout.preferredWidth: 30
@@ -1372,7 +1375,7 @@ SheetOverviewTreeForm {
     }
 
 
-    Menu {
+    SkrMenu {
         id: menu
 
 
@@ -1382,7 +1385,7 @@ SheetOverviewTreeForm {
 
         onClosed: {
         }
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action: Action {
@@ -1400,7 +1403,7 @@ SheetOverviewTreeForm {
                 }
             }
         }
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
 
@@ -1420,7 +1423,7 @@ SheetOverviewTreeForm {
         }
 
 
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
 
@@ -1443,7 +1446,7 @@ SheetOverviewTreeForm {
         MenuSeparator {}
 
 
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
 
@@ -1493,7 +1496,7 @@ SheetOverviewTreeForm {
             }
         }
 
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action: Action {
@@ -1513,7 +1516,7 @@ SheetOverviewTreeForm {
         }
 
         MenuSeparator {}
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action: Action {
@@ -1532,7 +1535,7 @@ SheetOverviewTreeForm {
             }
         }
 
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action:
@@ -1553,7 +1556,7 @@ SheetOverviewTreeForm {
             }
         }
 
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action:
@@ -1576,7 +1579,7 @@ SheetOverviewTreeForm {
 
         MenuSeparator {}
 
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action:
@@ -1599,7 +1602,7 @@ SheetOverviewTreeForm {
             }
         }
 
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action:
@@ -1651,7 +1654,7 @@ SheetOverviewTreeForm {
         }
 
         MenuSeparator {}
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action: Action {
@@ -1671,7 +1674,7 @@ SheetOverviewTreeForm {
             }
         }
 
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action:
@@ -1693,7 +1696,7 @@ SheetOverviewTreeForm {
         }
         MenuSeparator {}
 
-        MenuItem {
+        SkrMenuItem {
             visible: currentPaperId !== -1
             height: currentPaperId === -1 ? 0 : undefined
             action:

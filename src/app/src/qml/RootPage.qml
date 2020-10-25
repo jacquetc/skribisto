@@ -3,11 +3,13 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import QtQml 2.15
+import QtQuick.Controls.Material 2.15
 import Qt.labs.settings 1.1
-import eu.skribisto.skrusersettings 1.0
+import eu.skribisto.usersettings 1.0
 import eu.skribisto.plmerror 1.0
 import eu.skribisto.projecthub 1.0
 
+import "Items"
 import "Write"
 import "Welcome"
 import "Note"
@@ -43,7 +45,7 @@ RootPageForm {
     }
 
 
-    SkrUserSettings {
+    SKRUserSettings {
         id: skrUserSettings
     }
 
@@ -167,7 +169,7 @@ RootPageForm {
 
     notificationButton.action: notificationButtonAction
 
-    Popup {
+    SkrPopup {
         id: popup
         x: notificationButton.x - 100
         y: notificationButton.y + 400
@@ -476,7 +478,7 @@ RootPageForm {
         property string tabToOpen: ""
     }
 
-    Popup {
+    SkrPopup {
         id: dropDownTabMenuPopup
         x: showTabListButton.x
         y: showTabListButton.y + showTabListButton.height
@@ -572,19 +574,23 @@ RootPageForm {
                             RowLayout {
                                 anchors.fill: parent
 
-                                Label {
+                                SkrLabel {
                                     text: model.title
 
                                     Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
 
                                     horizontalAlignment: Qt.AlignLeft
                                     verticalAlignment: Qt.AlignVCenter
                                 }
 
-                                ToolButton {
+                                SkrToolButton {
                                     id: closeTabFromDropDownMenuButton
                                     text: "x"
                                     visible: model.closable
+                                    Layout.fillHeight: true
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
 
                                     onClicked: {
                                         closeTab(model.index)
@@ -604,8 +610,9 @@ RootPageForm {
                             //                            height: searchResultList.currentItem.height - 1
                             //                            color: "transparent"
                             radius: 5
-                            border.color:  "lightsteelblue"
+                            border.color:  SkrTheme.accent
                             border.width: 2
+                            color: "transparent"
                             visible: dropDownTabMenuList.activeFocus
                             Behavior on y {
                                 SpringAnimation {
@@ -1047,6 +1054,55 @@ RootPageForm {
 
 
     //---------------------------------------------------------
+    //------------ Theme -----------------------------
+    //---------------------------------------------------------
+
+    Connections {
+        target: Globals
+        function onOpenThemePageCalled() {
+            addThemePage()
+        }
+    }
+
+    function addThemePage(){
+
+        var pageType = "theme"
+        // verify if theme page not already opened
+        var tabId = pageType + "_" +  -2 + "_" + -2
+        var i;
+        for (i = 0; i < rootTabBar.count; i++) {
+            if (rootTabBar.itemAt(i).tabId === tabId){
+
+                rootTabBar.setCurrentIndex(i)
+                return
+            }
+        }
+
+
+        insertionIndex = rootSwipeView.count
+        // create Theme tab
+        var component = Qt.createComponent("Theme/ThemePage.qml");
+        var incubator = component.incubateObject(rootSwipeView, {pageType: pageType,projectId: -2, paperId: -2, enabled: false });
+        if (incubator.status !== Component.Ready) {
+            incubator.onStatusChanged = function(status) {
+                if (status === Component.Ready) {
+
+                    addTab(incubator, insertionIndex, pageType, -2, -2)
+                    openTabTimer.start()
+                }
+            }
+        } else {
+
+            addTab(incubator, insertionIndex,  pageType,  -2, -2)
+            openTabTimer.start()
+
+        }
+
+
+
+    }
+
+    //---------------------------------------------------------
 
     //---------------------------------------------------------
 
@@ -1121,7 +1177,7 @@ RootPageForm {
         }
     }
 
-    Menu {
+    SkrMenu {
         id: mainMenu
 
         onClosed: {
@@ -1148,68 +1204,68 @@ RootPageForm {
             skrEditMenuSignalHub.subscribe(mainMenu.objectName)
         }
 
-        Menu {
+        SkrMenu {
             id: fileMenu
             title: qsTr("&File")
 
-            MenuItem{
+            SkrMenuItem{
                 action: newProjectAction
 
             }
-            MenuItem{
+            SkrMenuItem{
                 action: openProjectAction
             }
             MenuSeparator { }
-            MenuItem{
+            SkrMenuItem{
                 action: printAction
             }
-            MenuItem{
+            SkrMenuItem{
                 action: importAction
             }
-            MenuItem{
+            SkrMenuItem{
                 action: exportAction
             }
 
             MenuSeparator { }
-            MenuItem{
+            SkrMenuItem{
                 action: saveAction
             }
-            MenuItem{
+            SkrMenuItem{
                 action: saveAsAction
             }
-            MenuItem{
+            SkrMenuItem{
                 action: saveACopyAction
             }
-            MenuItem{
+            SkrMenuItem{
                 action: saveAllAction
             }
 
             MenuSeparator { }
-            MenuItem{
+            SkrMenuItem{
                 action: closeCurrentProjectAction
             }
-            MenuItem{
+            SkrMenuItem{
                 action: quitAction
             }
         }
-        Menu {
+        SkrMenu {
             id: editMenu
             objectName: "editMenu"
             title: qsTr("&Edit")
 
 
 
-            MenuItem{
+            SkrMenuItem{
                 id: cutItem
                 objectName: "cutItem"
                 action: cutAction
             }
-            MenuItem{
+            SkrMenuItem{
                 id: copyItem
                 objectName: "copyItem"
                 action: copyAction
             }
-            MenuItem{
+            SkrMenuItem{
                 id: pasteItem
                 objectName: "pasteItem"
                 action: pasteAction
@@ -1223,7 +1279,7 @@ RootPageForm {
             }
 
         }
-        Menu {
+        SkrMenu {
             id: helpMenu
             objectName: "helpMenu"
             title: qsTr("&Help")

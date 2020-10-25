@@ -1,7 +1,9 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../Items"
 import "../Commons"
+import ".."
 
 Item {
     width: 400
@@ -33,7 +35,7 @@ Item {
 
     readonly property int columnWidth: 550
 
-    Pane {
+    SkrPane {
         id: pane1
         anchors.fill: parent
 
@@ -59,7 +61,7 @@ Item {
                     columns: ((pillarLayout.width / columnWidth) | 0)
                     maxColumns: 3
 
-                    GroupBox {
+                    SkrGroupBox {
                         id: groupBox1
                         focusPolicy: Qt.TabFocus
                         Layout.fillWidth: true
@@ -75,13 +77,13 @@ Item {
                                 width: 100
                                 height: 100
 
-                                Button {
+                                SkrButton {
                                     id: newProjectButton
                                     text: qsTr("New project")
                                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 }
 
-                                Button {
+                                SkrButton {
                                     id: openProjectButton
                                     text: qsTr("Open project")
                                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -90,7 +92,7 @@ Item {
                         }
                     }
 
-                    GroupBox {
+                    SkrGroupBox {
                         id: groupBox
                         focusPolicy: Qt.TabFocus
                         Layout.fillWidth: true
@@ -118,7 +120,7 @@ Item {
                         }
                     }
 
-                    GroupBox {
+                    SkrGroupBox {
                         id: groupBox2
                         focusPolicy: Qt.TabFocus
                         Layout.fillWidth: true
@@ -134,7 +136,7 @@ Item {
                                 width: 100
                                 height: 100
 
-                                Button {
+                                SkrButton {
                                     id: saveButton
                                     text: qsTr("Save")
                                     icon {
@@ -142,14 +144,14 @@ Item {
                                     }
                                 }
 
-                                Button {
+                                SkrButton {
                                     id: saveAsButton
                                     text: qsTr("Save as")
                                     icon {
                                         name: "document-save-as"
                                     }
                                 }
-                                Button {
+                                SkrButton {
                                     id: saveAllButton
                                     text: qsTr("Save all")
                                     icon {
@@ -163,7 +165,7 @@ Item {
                                 width: 100
                                 height: 100
 
-                                Button {
+                                SkrButton {
                                     id: saveACopyButton
                                     text: qsTr("Save a copy")
                                     icon {
@@ -171,7 +173,7 @@ Item {
                                     }
                                 }
 
-                                Button {
+                                SkrButton {
                                     id: backUpButton
                                     text: qsTr("Back up")
                                     icon {
@@ -182,7 +184,7 @@ Item {
                         }
                     }
 
-                    GroupBox {
+                    SkrGroupBox {
                         id: behaviorGroupBox
                         focusPolicy: Qt.TabFocus
                         Layout.fillWidth: true
@@ -192,7 +194,7 @@ Item {
                             id: columnLayout1
                             anchors.fill: parent
 
-                            Switch {
+                            SkrSwitch {
                                 id: createEmpyProjectAtStartSwitch
                                 text: qsTr("Create an empty project at start")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -200,7 +202,7 @@ Item {
                         }
                     }
 
-                    GroupBox {
+                    SkrGroupBox {
                         id: groupBox3
                         focusPolicy: Qt.TabFocus
                         Layout.fillWidth: true
@@ -216,17 +218,17 @@ Item {
                                 width: 100
                                 height: 100
 
-                                Button {
+                                SkrButton {
                                     id: printButton
                                     text: qsTr("Print")
                                 }
 
-                                Button {
+                                SkrButton {
                                     id: importButton
                                     text: qsTr("Import")
                                 }
 
-                                Button {
+                                SkrButton {
                                     id: exportButton
                                     text: qsTr("Export")
                                 }
@@ -254,12 +256,12 @@ Item {
                         id: rowLayout2
                         Layout.fillWidth: true
 
-                        ToolButton {
+                        SkrToolButton {
                             id: goBackToolButton
                             text: qsTr("Go back")
                         }
 
-                        Label {
+                        SkrLabel {
                             id: titleLabel
                             text: qsTr("<h2>New project</h2>")
                             horizontalAlignment: Text.AlignHCenter
@@ -282,63 +284,63 @@ Item {
                             Layout.fillWidth: true
                             Layout.maximumWidth: 600
 
-                            Label {
+                            SkrLabel {
                                 id: projectTitleLabel
                                 text: qsTr("Project title :")
                             }
-                            TextField {
+                            SkrTextField {
 
                                 id: projectTitleTextField
                                 placeholderText: qsTr("project title")
                                 Layout.columnSpan: 2
                                 Layout.fillWidth: true
                             }
-                            Label {
+                            SkrLabel {
                                 id: projectFileLabel
                                 text: qsTr("Project file :")
                             }
-                            TextField {
+                            SkrTextField {
 
                                 id: projectFileTextField
                                 placeholderText: qsTr("project file")
                                 Layout.columnSpan: 2
                                 Layout.fillWidth: true
                             }
-                            Label {
+                            SkrLabel {
                                 id: projectPathLabel
                                 text: qsTr("Project path :")
                             }
 
-                            TextField {
+                            SkrTextField {
                                 id: projectPathTextField
                                 placeholderText: qsTr("project path")
                                 Layout.fillWidth: true
                             }
 
-                            ToolButton {
+                            SkrToolButton {
                                 id: selectProjectPathToolButton
                                 text: qsTr("Select")
                             }
                         }
                         ColumnLayout {
                             id: columnLayout6s
-                            Label {
+                            SkrLabel {
                                 id: projectDetailLabel
                                 text: qsTr("This project will be created as : ")
                             }
-                            Label {
+                            SkrLabel {
                                 id: projectDetailPathLabel
                             }
                         }
                         RowLayout {
                             id: rowLayout3
                             Layout.alignment: Qt.AlignHCenter
-                            Label {
+                            SkrLabel {
                                 id: partLabel
                                 text: qsTr("Number of parts :")
                             }
 
-                            SpinBox {
+                            SkrSpinBox {
                                 id: partSpinBox
                                 value: 1
                                 from: 1
@@ -350,9 +352,10 @@ Item {
                             id: rowLayout4
                             Layout.alignment: Qt.AlignHCenter
 
-                            Button {
+                            SkrButton {
                                 id: createNewProjectButton
                                 text: qsTr("Create")
+                                icon.color: SkrTheme.buttonIcon
                             }
                         }
                     }

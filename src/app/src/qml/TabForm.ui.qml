@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
+import "Items"
 
 TabButton {
     id: base
@@ -20,7 +21,7 @@ TabButton {
         spacing: 2
         anchors.fill: parent
 
-        ToolButton {
+        SkrToolButton {
             id: image
             focusPolicy: Qt.NoFocus
             enabled: true
@@ -51,7 +52,7 @@ TabButton {
 
         }
 
-        Label {
+        SkrLabel {
             id: tabLabel
 
             Layout.minimumWidth: 50
@@ -81,7 +82,7 @@ TabButton {
         }
 
 
-        RoundButton {
+        SkrRoundButton {
 
 
             id: closeButton

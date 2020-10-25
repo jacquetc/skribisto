@@ -2,8 +2,10 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
-import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
+import QtQuick.Controls.Material 2.15
+import "../Items"
+import ".."
 
 TrashedListViewForm {
     id: root
@@ -55,7 +57,6 @@ TrashedListViewForm {
 
     //-----------------------------------------------------------------------------
 
-    toolBarPrimaryColor: Material.color(Material.Cyan, Material.Shade200)
 
     //-----------------------------------------------------------------------------
     // project comboBox :
@@ -224,7 +225,7 @@ TrashedListViewForm {
     listMenuToolButton.icon.name: "overflow-menu"
     listMenuToolButton.onClicked: navigationMenu.open()
 
-    Menu {
+    SkrMenu {
         id: navigationMenu
         y: listMenuToolButton.height
 
@@ -610,13 +611,13 @@ TrashedListViewForm {
                         }
                         Rectangle {
                             id: openedItemIndicator
-                            color:  Material.accentColor
+                            color:  SkrTheme.accent
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
                             visible: model.projectId === openedProjectId && model.paperId === openedPaperId
                         }
 
-                        Button {
+                        SkrButton {
                             id: projectIsBackupIndicator
                             visible: model.projectIsBackup && model.paperId === -1
                             enabled: true
@@ -659,7 +660,7 @@ TrashedListViewForm {
                                 spacing: 1
                                 anchors.fill: parent
 
-                                Label {
+                                SkrLabel {
                                     id: titleLabel
 
                                     Layout.fillWidth: true
@@ -670,7 +671,7 @@ TrashedListViewForm {
                                     text: model.indent === -1 ? model.projectName : model.name
                                     elide: Text.ElideRight
                                 }
-                                TextField {
+                                SkrTextField {
                                     id: labelTextField
                                     visible: false
 
@@ -713,7 +714,7 @@ TrashedListViewForm {
                                     }
 
                                 }
-                                TextField {
+                                SkrTextField {
                                     id: titleTextField
                                     visible: false
 
@@ -757,7 +758,7 @@ TrashedListViewForm {
 
                                 }
 
-                                Label {
+                                SkrLabel {
                                     id: labelLabel
 
                                     //                                text: model.label
@@ -773,7 +774,7 @@ TrashedListViewForm {
                             //                        }
                         }
 
-                        ToolButton {
+                        SkrToolButton {
                             id: menuButton
                             Layout.fillHeight: true
                             Layout.preferredWidth: 30
@@ -942,7 +943,7 @@ TrashedListViewForm {
             //                onActivated: addBeforeAction.trigger()
             //                enabled: root.visible
             //            }
-            Menu {
+            SkrMenu {
                 id: menu
                 y: menuButton.height
 
@@ -956,7 +957,7 @@ TrashedListViewForm {
                     hoveringChangingTheCurrentItemAllowed = true
 
                 }
-                MenuItem {
+                SkrMenuItem {
                     id: restoreMenuItem
                     action: restoreAction
 

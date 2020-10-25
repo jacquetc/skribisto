@@ -55,8 +55,12 @@ QtObject {
     signal openNoteInNewTabCalled(int projectId, int paperId)
     signal openNoteInNewWindowCalled(int projectId, int paperId)
 
+    //Theme :
+    signal openThemePageCalled()
+
     //FullScreen
     signal fullScreenCalled(bool value)
+    property bool fullScreen: false
 
     //Focus
     signal forceFocusOnEscapePressed()

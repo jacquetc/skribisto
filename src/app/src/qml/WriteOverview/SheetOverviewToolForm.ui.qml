@@ -1,6 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
+import ".."
+import "../Items"
 
 Item {
     property alias projectComboBox: projectComboBox
@@ -12,15 +14,16 @@ Item {
     property alias treeIndentationSlider: treeIndentationSlider
     property alias projectGroupBox: projectGroupBox
 
-    Pane {
+    SkrPane {
         id: pane
         anchors.fill: parent
         padding: 5
 
+
         ColumnLayout {
             anchors.fill: parent
 
-            GroupBox {
+            SkrGroupBox {
                 id: projectGroupBox
                 focusPolicy: Qt.TabFocus
                 Layout.fillWidth: true
@@ -30,14 +33,14 @@ Item {
                     id: columnLayout
                     anchors.fill: parent
 
-                    ComboBox {
+                    SkrComboBox {
                         id: projectComboBox
                         Layout.fillWidth: true
                     }
                 }
             }
 
-            GroupBox {
+            SkrGroupBox {
                 id: groupBox
                 focusPolicy: Qt.TabFocus
                 padding: 5
@@ -53,7 +56,7 @@ Item {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
-                        Label {
+                        SkrLabel {
                             text: qsTr("Display mode :")
                         }
 
@@ -65,7 +68,7 @@ Item {
                             to: 2
                         }
 
-                        Label {
+                        SkrLabel {
                             text: qsTr("Tree indentation :")
                         }
 
@@ -77,15 +80,15 @@ Item {
                             to: 200
                         }
 
-                        Switch {
+                        SkrSwitch {
                             id: showOutlineSwitch
                             text: qsTr("Show outline")
                         }
-                        Switch {
+                        SkrSwitch {
                             id: showNotePadSwitch
                             text: qsTr("Show notes")
                         }
-                        Switch {
+                        SkrSwitch {
                             id: showTagPadSwitch
                             text: qsTr("Show tags")
                         }

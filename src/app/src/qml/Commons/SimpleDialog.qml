@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import "../Items"
 
 
 
@@ -16,7 +17,7 @@ Dialog {
     modal: true
 
 
-    Label {
+    SkrLabel {
         id: text
     }
     standardButtons: Dialog.Ok

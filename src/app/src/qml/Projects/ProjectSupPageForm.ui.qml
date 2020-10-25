@@ -1,8 +1,9 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls.Material 2.15
 import "../Commons"
+import "../Items"
+import ".."
 
 Item {
 
@@ -15,7 +16,7 @@ Item {
     property alias locationLabel: locationLabel
     readonly property int columnWidth: 550
 
-    Pane {
+    SkrPane {
         id: pane
         anchors.fill: parent
 
@@ -34,7 +35,7 @@ Item {
                 RowLayout {
                     id: rowLayout2
 
-                    Label {
+                    SkrLabel {
                         id: titleLabel
                         text: "title"
                         font.bold: true
@@ -45,7 +46,7 @@ Item {
                     }
 
 
-                    Button {
+                    SkrToolButton {
                         id: editTitlebutton
                         text: qsTr("Edit project name")
                         Layout.preferredHeight: 40
@@ -60,12 +61,12 @@ Item {
                 RowLayout {
                     id: rowLayout
 
-                    Label {
+                    SkrLabel {
                         id: label
                         text: qsTr("Location :")
                     }
 
-                    Label {
+                    SkrLabel {
                         id: locationLabel
                         text: "Label"
                         Layout.fillWidth: true
@@ -99,7 +100,7 @@ Item {
                         columns: ((pillarLayout.width / columnWidth) | 0 )
                         maxColumns: 3
 
-                        GroupBox {
+                        SkrGroupBox {
                             id: langGroupBox
                             focusPolicy: Qt.TabFocus
                             Layout.fillWidth: true
@@ -109,17 +110,16 @@ Item {
                                 id: rowLayout1
                                 anchors.fill: parent
 
-                                Label {
+                                SkrLabel {
                                     id: label1
                                     text: qsTr("Dictionary :")
                                 }
 
-                                ComboBox {
+                                SkrComboBox {
                                     id: dictComboBox
-
                                 }
 
-                                Label {
+                                SkrLabel {
                                     id: dictNotFoundLabel
                                     color: "#ee0000"
                                     text: qsTr("Selected dictionary not found")
@@ -127,7 +127,7 @@ Item {
                             }
                         }
 
-                        GroupBox {
+                        SkrGroupBox {
                             id: tagsGroupBox
                             width: 200
                             height: 200
@@ -141,7 +141,7 @@ Item {
 
                         }
 
-                        GroupBox {
+                        SkrGroupBox {
                             id: statsGroupBox
                             width: 200
                             height: 200

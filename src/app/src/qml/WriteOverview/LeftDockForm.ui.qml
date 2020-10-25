@@ -1,8 +1,10 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls.Material 2.15
 import ".."
 import "../Commons"
+import "../Items"
 
 Item {
     id: base
@@ -15,7 +17,7 @@ Item {
     property alias navigationFrame: navigationFrame
     property alias navigation: navigation
 
-    Pane {
+    SkrPane {
         id: dockPane
         anchors.fill: parent
 
@@ -119,20 +121,20 @@ Item {
                                 //                            Flow{
                                 //                                width: scrollview.contentWidth
 
-                                //                                ToolButton {
+                                //                                SkrToolButton {
                                 //                                    flat: true
                                 //                                    action: fullscreenAction
 
                                 //                                }
-                                //                                ToolButton {
+                                //                                SkrToolButton {
                                 //                                    flat: true
                                 //                                    action: fullscreenAction
                                 //                                }
-                                //                                ToolButton {
+                                //                                SkrToolButton {
                                 //                                    flat: true
                                 //                                    action: fullscreenAction
                                 //                                }
-                                //                                ToolButton {
+                                //                                SkrToolButton {
                                 //                                    flat: true
                                 //                                    action: fullscreenAction
                                 //                                }
