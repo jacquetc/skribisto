@@ -7,6 +7,7 @@ import eu.skribisto.documenthandler 1.0
 import eu.skribisto.highlighter 1.0
 import eu.skribisto.spellchecker 1.0
 import eu.skribisto.projectdicthub 1.0
+import "../Items"
 
 WritingZoneForm {
     id: root
@@ -43,6 +44,8 @@ WritingZoneForm {
     }
 
 
+    //-------------------------------------------------
+
     //style :
     property bool textAreaStyleElevation : textArea.styleElevation
     onTextAreaStyleElevationChanged: {
@@ -56,6 +59,12 @@ WritingZoneForm {
     onTextAreaStyleForegroundColorChanged: {
         textArea.styleForegroundColor = textAreaStyleForegroundColor
     }
+    property string textAreaStyleAccentColor : textArea.styleAccentColor
+    onTextAreaStyleAccentColorChanged: {
+        textArea.styleAccentColor = textAreaStyleAccentColor
+    }
+
+    //-------------------------------------------------
 
     property int paperId: -1
     property int projectId: -1
@@ -294,25 +303,25 @@ WritingZoneForm {
         documentHandler.underline = checked
     }
     //menu :
-    Menu {
+    SkrMenu {
         id: menu
         objectName: "editMenu"
 
 
-        MenuItem{
+        SkrMenuItem{
             id: italicItem
             action: italicAction
             objectName: "italicItem"
         }
 
-        MenuItem {
+        SkrMenuItem {
             id: boldItem
             action: boldAction
             objectName: "boldItem"
 
         }
 
-        MenuItem {
+        SkrMenuItem {
             id: strikeItem
             action: strikeAction
             objectName: "strikeItem"
@@ -320,7 +329,7 @@ WritingZoneForm {
 
         }
 
-        MenuItem {
+        SkrMenuItem {
             id: underlineItem
             action: underlineAction
             objectName: "underlineItem"
@@ -330,21 +339,21 @@ WritingZoneForm {
 
         MenuSeparator {}
 
-        MenuItem{
+        SkrMenuItem{
             id: cutItem
             action: cutAction
             objectName: "cutItem"
             enabled: textArea.selectedText !== ""
         }
 
-        MenuItem {
+        SkrMenuItem {
             id: copyItem
             action: copyAction
             objectName: "copyItem"
             enabled: textArea.selectedText !== ""
 
         }
-        MenuItem {
+        SkrMenuItem {
             id: pasteItem
             action: pasteAction
             objectName: "pasteItem"

@@ -1,6 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../Items"
+import ".."
 
 TabButton {
     id: base
@@ -16,7 +18,7 @@ TabButton {
         spacing: 2
         anchors.fill: parent
 
-        Button {
+        SkrToolButton {
             id: image
             focusPolicy: Qt.NoFocus
             enabled: true
@@ -41,7 +43,7 @@ TabButton {
 
         }
 
-        Label {
+        SkrLabel {
             text: base.text
             font.weight: isCurrent ? Font.Bold : Font.Normal
             font.family: base.font.family
@@ -54,7 +56,7 @@ TabButton {
 
             Layout.fillHeight: true
         }
-        RoundButton {
+        SkrRoundButton {
             id: closeButton
             visible: isCurrent | hoverHandler.hovered ? closable : false
             text: "x"

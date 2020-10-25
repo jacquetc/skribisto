@@ -661,6 +661,53 @@ QModelIndexList PLMUtils::Models::allParentIndexes(QModelIndex index)
 // ---------------------------------------------------------------------------------------
 
 
+QStringList PLMUtils::Dir::writableAddonsPathsList()
+{
+    QStringList list;
+
+    QDir dir;
+
+#ifdef Q_OS_LINUX
+    dir.setPath(QDir::homePath() + "/.local/share/skribisto/");
+
+    dir.mkpath(dir.path());
+
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
+
+
+#endif // ifdef Q_OS_LINUX
+#ifdef Q_OS_WIN32
+
+    dir.setPath(
+        QDir::homePath() + "/AppData/Roaming/" +
+        QCoreApplication::organizationName() + "/share/");
+
+    dir.mkpath(dir.path());
+
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
+#endif // ifdef Q_OS_WIN32
+#ifdef Q_OS_MAC
+
+    dir.setPath(QDir::homePath() + "/Library/Application Support/skribisto/");
+
+    dir.mkpath(dir.path());
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
+
+#endif // ifdef Q_OS_MAC
+
+
+    return list;
+}
+    //
+    //
+    // ---------------------------------------------------------------------------------------
+
 QStringList PLMUtils::Dir::addonsPathsList()
 {
     QStringList list;
@@ -717,7 +764,7 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
-    dir.setPath(QDir::homePath() + "/.skribisto/");
+    dir.setPath(QDir::homePath() + "/.local/share/skribisto/");
 
     if (dir.isReadable()) {
         list.append(dir.path());

@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import eu.skribisto.spellchecker 1.0
+import "../Items"
 
 ProjectSupPageForm {
     id: root
@@ -51,7 +52,7 @@ ProjectSupPageForm {
 
     Component {
         id: editTitleTextFieldComponent
-        TextField {
+        SkrTextField {
             id: editTitleTextField
             visible: false
             placeholderText: qsTr("Write this project's new name")

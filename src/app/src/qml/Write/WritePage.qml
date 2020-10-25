@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtQml 2.15
 import QtQuick.Controls 2.15
 import eu.skribisto.sheethub 1.0
-import eu.skribisto.skrusersettings 1.0
+import eu.skribisto.usersettings 1.0
 import Qt.labs.settings 1.1
 import "../Commons"
 import ".."
@@ -295,7 +295,7 @@ WritePageForm {
     //---------------------------------------------------------
 
 
-    SkrUserSettings {
+    SKRUserSettings {
         id: skrUserSettings
     }
 

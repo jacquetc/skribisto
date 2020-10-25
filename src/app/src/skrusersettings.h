@@ -8,12 +8,12 @@
 #include <QHash>
 #include "plmdata.h"
 
-class SkrUserSettings : public QObject {
+class SKRUserSettings : public QObject {
     Q_OBJECT
 
 public:
 
-    explicit SkrUserSettings(QObject *parent = nullptr);
+    explicit SKRUserSettings(QObject *parent = nullptr);
     Q_INVOKABLE void setProjectSetting(int            projectId,
                                        const QString& key,
                                        int            value);

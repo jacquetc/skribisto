@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../Commons"
+import "../Items"
 import ".."
 
 Item {
@@ -58,7 +59,7 @@ Item {
                     spacing: 0
                     anchors.fill: parent
 
-                    Pane {
+                    SkrPane {
                         id: leftPane
                         Layout.fillHeight: true
                         Layout.fillWidth: true
@@ -85,7 +86,7 @@ Item {
                         ColumnLayout {
                             anchors.fill: parent
                             z: 2
-                            ToolButton {
+                            SkrToolButton {
                                 id: leftDockShowButton
                                 focusPolicy: Qt.NoFocus
                                 Layout.preferredHeight: 40
@@ -94,7 +95,7 @@ Item {
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                             }
 
-                            ToolButton {
+                            SkrToolButton {
                                 id: leftDockMenuButton
                                 focusPolicy: Qt.NoFocus
                                 checkable: true
@@ -108,7 +109,7 @@ Item {
                                 id: leftDockMenuGroup
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
 
-                                ToolButton {
+                                SkrToolButton {
                                     id: leftDockResizeButton
                                     focusPolicy: Qt.NoFocus
                                     Layout.preferredHeight: 40
@@ -136,7 +137,7 @@ Item {
                 Layout.fillWidth: true
 
 
-                ToolButton {
+                SkrToolButton {
                     id: compactLeftDockShowButton
                     anchors.left: parent.left
                     anchors.top: parent.top
@@ -153,9 +154,14 @@ Item {
                     anchors.fill: parent
                     textAreaStyleElevation: true
                     minimalTextAreaWidth: 100
+
+                    textAreaStyleBackgroundColor: SkrTheme.mainTextAreaBackground
+                    textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
+                    paneStyleBackgroundColor: SkrTheme.pageBackground
+                    textAreaStyleAccentColor: SkrTheme.accent
                 }
 
-                ToolButton {
+                SkrToolButton {
                     id: compactRightDockShowButton
                     anchors.right: parent.right
                     anchors.top: parent.top
@@ -182,7 +188,7 @@ Item {
                     spacing: 0
                     anchors.fill: parent
 
-                    Pane {
+                    SkrPane {
                         id: rightPane
                         Layout.fillHeight: true
                         Layout.fillWidth: true
@@ -209,7 +215,7 @@ Item {
                         ColumnLayout {
                             anchors.fill: parent
                             z: 2
-                            ToolButton {
+                            SkrToolButton {
                                 id: rightDockShowButton
                                 focusPolicy: Qt.NoFocus
                                 Layout.preferredHeight: 40
@@ -218,7 +224,7 @@ Item {
                                 Layout.alignment: Qt.AlignRight | Qt.AlignTop
                             }
 
-                            ToolButton {
+                            SkrToolButton {
                                 id: rightDockMenuButton
                                 focusPolicy: Qt.NoFocus
                                 checkable: true
@@ -232,7 +238,7 @@ Item {
                                 id: rightDockMenuGroup
                                 Layout.alignment: Qt.AlignRight | Qt.AlignTop
 
-                                ToolButton {
+                                SkrToolButton {
                                     id: rightDockResizeButton
                                     focusPolicy: Qt.NoFocus
                                     Layout.preferredHeight: 40
@@ -241,7 +247,7 @@ Item {
                                     Layout.alignment: Qt.AlignRight | Qt.AlignTop
                                 }
 
-                                ToolButton {
+                                SkrToolButton {
                                     id: showMinimapButton
                                     focusPolicy: Qt.NoFocus
                                     Layout.preferredHeight: 40

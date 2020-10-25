@@ -8,6 +8,7 @@ import eu.skribisto.projecthub 1.0
 import eu.skribisto.spellchecker 1.0
 import QtQuick.Controls.Material 2.15
 import ".."
+import "../Items"
 
 SettingsPageForm {
 
@@ -104,6 +105,9 @@ SettingsPageForm {
         }
     }
 
+    openThemePageButton.onClicked: {
+        Globals.openThemePageCalled()
+    }
 
 
     // --------------------------------------------
@@ -301,7 +305,7 @@ SettingsPageForm {
             RowLayout{
                 anchors.fill: parent
 
-                Label {
+                SkrLabel {
                     id: pathLabel
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -309,7 +313,7 @@ SettingsPageForm {
                     horizontalAlignment: Qt.AlignLeft
                     verticalAlignment: Qt.AlignVCenter
                 }
-                Button {
+                SkrButton {
                     id: selectFolderButton
                     Layout.fillHeight: true
                     Layout.preferredWidth: 30
@@ -324,7 +328,7 @@ SettingsPageForm {
 
                 }
 
-                TextField {
+                SkrTextField {
                     id: editPathTextField
                     visible: false
                     Layout.fillWidth: true

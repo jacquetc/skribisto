@@ -28,6 +28,7 @@ using namespace std;
 #include "skrhighlighter.h"
 #include "skrspellchecker.h"
 #include "plmutils.h"
+#include "skrthemes.h"
 #include "models/plmsheetlistproxymodel.h"
 #include "models/plmnotelistproxymodel.h"
 #include "models/skrtaglistmodel.h"
@@ -279,10 +280,15 @@ int main(int argc, char *argv[])
                                      0,
                                      "SKRSpellChecker");
 
-    qmlRegisterType<SkrUserSettings>("eu.skribisto.skrusersettings",
+    qmlRegisterType<SKRUserSettings>("eu.skribisto.usersettings",
                                      1,
                                      0,
-                                     "SkrUserSettings");
+                                     "SKRUserSettings");
+
+    qmlRegisterType<SKRThemes>("eu.skribisto.themes",
+                                     1,
+                                     0,
+                                     "SKRThemes");
 
     QQmlApplicationEngine engine(qApp);
     const QUrl url(QStringLiteral("qrc:/qml/main.qml"));

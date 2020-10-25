@@ -1,4 +1,5 @@
-import QtQuick 2.4
+import QtQuick 2.15
+import ".."
 
 Item {
     width: 400

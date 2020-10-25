@@ -1,6 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../Items"
+
 
 Item {
     id: base
@@ -8,7 +10,7 @@ Item {
     width: 400
     height: 400
 
-    Pane {
+    SkrPane {
         id: pane
         clip: true
         anchors.fill: parent

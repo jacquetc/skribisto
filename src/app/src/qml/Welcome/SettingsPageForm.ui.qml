@@ -2,6 +2,8 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../Commons"
+import "../Items"
+import ".."
 
 Item {
 
@@ -28,8 +30,9 @@ Item {
     property alias langComboBox: langComboBox
     property alias checkSpellingCheckBox: checkSpellingCheckBox
     property alias checkSpellingComboBox: checkSpellingComboBox
+    property alias openThemePageButton: openThemePageButton
 
-    Pane {
+    SkrPane {
         id: pane2
         anchors.fill: parent
 
@@ -49,7 +52,7 @@ Item {
                 columns: ((pillarLayout.width / columnWidth) | 0 )
                 maxColumns: 3
 
-                GroupBox {
+                SkrGroupBox {
                     id: accessibilityGroupBox
                     Layout.fillWidth: true
                     focusPolicy: Qt.TabFocus
@@ -60,20 +63,22 @@ Item {
                         id: columnLayout3
                         anchors.fill: parent
 
-                        Switch {
+                        SkrSwitch {
                             id: allowSwipeBetweenTabsCheckBox
                             text: qsTr("Allow swipe gesture between tabs")
+
                         }
 
-                        Switch {
+                        SkrSwitch {
                             id: showMenuBarCheckBox
                             visible: false
                             text: qsTr("Show menu bar")
+
                         }
                     }
                 }
 
-                GroupBox {
+                SkrGroupBox {
                     id: appearanceGroupBox
                     width: 200
                     height: 200
@@ -90,24 +95,30 @@ Item {
                             width: 100
                             height: 100
 
-                            Label {
+                            SkrLabel {
                                 id: langLabel
                                 text: qsTr("Interface language :")
                             }
 
-                            ComboBox {
+                            SkrComboBox {
                                 id: langComboBox
                                 wheelEnabled: true
                             }
                         }
-                        Switch {
+                        SkrSwitch {
                             id: menuButtonsInStatusBarSwitch
                             text: qsTr("Set main menu in status bar")
+
+                        }
+
+                        SkrButton {
+                            id: openThemePageButton
+                            text: qsTr("Manage themes")
                         }
                     }
                 }
 
-                GroupBox {
+                SkrGroupBox {
                     id: spellCheckingGroupBox
                     width: 200
                     height: 200
@@ -119,7 +130,7 @@ Item {
                         id: columnLayout6
                         anchors.fill: parent
 
-                        Switch {
+                        SkrSwitch {
                             id: checkSpellingCheckBox
                             text: qsTr("Check spelling")
                         }
@@ -129,19 +140,20 @@ Item {
                             width: 100
                             height: 100
 
-                            Label {
+                            SkrLabel {
                                 id: label
                                 text: qsTr("Default dictionary :")
                             }
 
-                            ComboBox {
+                            SkrComboBox {
                                 id: checkSpellingComboBox
+
                             }
                         }
                     }
                 }
 
-                GroupBox {
+                SkrGroupBox {
                     id: backupGroupBox
                     Layout.rowSpan: 3
                     Layout.fillWidth: true
@@ -152,7 +164,7 @@ Item {
                         id: columnLayout
                         anchors.fill: parent
 
-                        GroupBox {
+                        SkrGroupBox {
                             id: groupBox1
                             title: qsTr("Backup paths :")
                             focusPolicy: Qt.TabFocus
@@ -162,8 +174,9 @@ Item {
                                 anchors.fill: parent
                                 anchors.topMargin: 5
 
-                                ToolBar {
+                                SkrToolBar {
                                     Layout.fillWidth: true
+
                                     RowLayout {
                                         id: rowLayout1
                                         spacing: 1
@@ -174,16 +187,19 @@ Item {
                                             Layout.fillHeight: true
                                             Layout.fillWidth: true
                                         }
-                                        ToolButton {
+                                        SkrToolButton {
                                             id: removeBackupPathButton
                                             flat: true
                                             display: AbstractButton.IconOnly
+                                            icon.color: SkrTheme.buttonIcon
                                         }
 
-                                        ToolButton {
+                                        SkrToolButton {
                                             id: addBackupPathButton
                                             flat: true
                                             display: AbstractButton.IconOnly
+                                            icon.color: SkrTheme.buttonIcon
+
                                         }
                                     }
                                 }
@@ -217,26 +233,28 @@ Item {
                         RowLayout {
                             id: rowLayout
 
-                            Switch {
+                            SkrSwitch {
                                 id: backUpEveryCheckBox
                                 text: qsTr("Back up every")
                             }
 
-                            SpinBox {
+                            SkrSpinBox {
                                 id: backupHoursSpinBox
                                 wheelEnabled: true
                                 editable: true
 
                                 to: 60
                                 from: 1
+
                             }
 
-                            Label {
+                            SkrLabel {
                                 id: backupHours
                                 text: qsTr("hours")
+
                             }
 
-                            Dial {
+                            SkrDial {
                                 id: backupHoursDial
                                 wheelEnabled: true
 
@@ -245,7 +263,7 @@ Item {
                             }
                         }
 
-                        Switch {
+                        SkrSwitch {
                             id: backUpOnceADayCheckBox
                             text: qsTr("Back up once a day")
                         }
@@ -253,7 +271,7 @@ Item {
                 }
 
 
-                GroupBox {
+                SkrGroupBox {
                     id: saveGroupBox
                     Layout.rowSpan: 2
                     Layout.fillWidth: true
@@ -269,21 +287,24 @@ Item {
                             Layout.fillHeight: true
                             Layout.fillWidth: true
 
-                            Switch {
+                            SkrSwitch {
                                 id: saveEveryCheckBox
                                 text: qsTr("Save every")
+
                             }
 
-                            SpinBox {
+                            SkrSpinBox {
                                 id: saveSpinBox
+
                             }
 
-                            Label {
+                            SkrLabel {
                                 id: saveMinutes
                                 text: qsTr("minutes")
+
                             }
 
-                            Dial {
+                            SkrDial {
                                 id: saveDial
                                 to: 60
                                 from: 1
@@ -294,7 +315,7 @@ Item {
                 }
 
 
-                GroupBox {
+                SkrGroupBox {
                     id: specialEPaperGroupBox
                     width: 200
                     height: 200
@@ -302,14 +323,15 @@ Item {
                     focusPolicy: Qt.TabFocus
                     title: qsTr("Special E-Paper")
 
-                    Switch {
+                    SkrSwitch {
                         id: setTextCursorUnblinkingCheckBox
                         text: qsTr("Set the text cursor unblinking")
+
                     }
                 }
 
 
-                GroupBox {
+                SkrGroupBox {
                     id: advancedGroupBox
                     width: 200
                     height: 200
@@ -326,12 +348,12 @@ Item {
                             width: 100
                             height: 100
 
-                            Switch {
+                            SkrSwitch {
                                 id: showPropertiesCheckBox
                                 text: qsTr("Show properties tool box")
                             }
 
-                            Button {
+                            SkrButton {
                                 id: resetDockConfButton
                                 text: qsTr("Reset dock configuration")
                             }

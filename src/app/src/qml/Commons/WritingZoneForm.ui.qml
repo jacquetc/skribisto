@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Controls.Material 2.15
 import QtQuick.Layouts 1.15
 
 FocusScope {
@@ -23,11 +24,14 @@ FocusScope {
     property alias placeholderText: textArea.placeholderText
 
     property alias leftScrollItemVisible: leftScrollItem.visible
+    property string paneStyleBackgroundColor: "#FAFAFA"
 
     Pane {
         id: pane
         anchors.fill: parent
         padding: 0
+
+        Material.background: paneStyleBackgroundColor
 
         //padding: 0
         ColumnLayout {

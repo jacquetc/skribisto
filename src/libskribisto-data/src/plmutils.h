@@ -73,6 +73,7 @@ class Dir {
 public:
 
     static bool        removeDir(const QString& dirName);
+    static QStringList writableAddonsPathsList();
     static QStringList addonsPathsList();
     static void        createPath(QStringList paths);
     static void        createPath(QString path);

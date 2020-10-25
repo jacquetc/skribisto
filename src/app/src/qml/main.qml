@@ -7,6 +7,7 @@ import Qt.labs.settings 1.1
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.plmerror 1.0
 import eu.skribisto.projecthub 1.0
+import QtQuick.Controls.Material 2.15
 import "Commons"
 
 ApplicationWindow {
@@ -25,6 +26,10 @@ ApplicationWindow {
     height: settings.height
     width: settings.width
 
+
+    Material.background: SkrTheme.pageBackground
+
+
     visibility: settings.visibility
     Settings {
         id: settings
@@ -35,6 +40,11 @@ ApplicationWindow {
         property int width: Screen.width
         property int visibility: Window.Maximized
     }
+
+    Component.onCompleted: {
+        SkrTheme
+    }
+
 
     //------------------------------------------------------------------
     //---------Fullscreen---------
@@ -54,6 +64,7 @@ ApplicationWindow {
         //shortcut: StandardKey.FullScreen
         checkable: true
         onCheckedChanged: {
+            Globals.fullScreen = fullscreenAction.checked
             Globals.fullScreenCalled(fullscreenAction.checked)
         }
     }

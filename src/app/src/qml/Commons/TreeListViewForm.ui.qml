@@ -1,7 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls.Material 2.15
+import "../Items"
+import ".."
 
 Item {
     id: base
@@ -14,7 +15,7 @@ Item {
     property alias treeMenuToolButton: treeMenuToolButton
     property var toolBarPrimaryColor
 
-    Pane {
+    SkrPane {
         id: pane
         clip: true
         anchors.fill: parent
@@ -24,39 +25,38 @@ Item {
             spacing: 0
             anchors.fill: parent
 
-            ToolBar {
+            SkrToolBar {
                 id: toolBar
                 Layout.maximumHeight: 40
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
 
-                Material.primary: toolBarPrimaryColor
 
                 RowLayout {
                     id: rowLayout
                     spacing: 1
                     anchors.fill: parent
 
-                    ToolButton {
+                    SkrToolButton {
                         id: goUpToolButton
                         flat: true
                         display: AbstractButton.IconOnly
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: currentParentToolButton
                         flat: true
                         Layout.fillWidth: true
                         text: qsTr("current folder name")
                     }
-                    ToolButton {
+                    SkrToolButton {
                         id: addToolButton
                         flat: true
                         text: qsTr("Add a document")
                         display: AbstractButton.IconOnly
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: treeMenuToolButton
                         flat: true
                         text: qsTr("Navigation menu")

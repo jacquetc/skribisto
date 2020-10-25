@@ -1,21 +1,21 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtQuick.Controls.Material 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.notelistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
-import eu.skribisto.skrusersettings 1.0
+import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
 import ".."
+import "../Items"
 
 RightDockForm {
 
     property int projectId : -2
     property int paperId : -2
 
-    SkrUserSettings {
+    SKRUserSettings {
         id: skrUserSettings
     }
 
@@ -30,7 +30,7 @@ RightDockForm {
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 5
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: handle.hovered ? Material.accentColor : Material.dividerColor
+                color: handle.hovered ? Material.accentColor : SkrTheme.divider
             }
         }
     }
@@ -52,7 +52,7 @@ RightDockForm {
     property list<Component> menuComponents:  [
         Component{
         id:  toolDockMenuComponent
-        Menu {
+        SkrMenu {
             id: toolDockMenu
             objectName: "toolDockMenu"
             title: qsTr("&Tools dock")
@@ -67,7 +67,7 @@ RightDockForm {
             }
 
 
-            MenuItem {
+            SkrMenuItem {
                 text: qsTr( "&Overview")
                 onTriggered: {
 
@@ -79,7 +79,7 @@ RightDockForm {
                 }
             }
 
-            MenuItem {
+            SkrMenuItem {
                 text: qsTr( "&Edit")
                 onTriggered: {
 
@@ -92,7 +92,7 @@ RightDockForm {
             }
 
 
-            MenuItem {
+            SkrMenuItem {
                 text: qsTr( "&Tags")
                 onTriggered: {
 

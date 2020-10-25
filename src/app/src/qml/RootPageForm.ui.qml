@@ -4,6 +4,7 @@ import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 
+import "Items"
 import "WriteOverview"
 import "Welcome"
 import "NoteOverview"
@@ -55,7 +56,7 @@ Item {
             Layout.fillWidth: true
 
 
-            ToolButton {
+            SkrToolButton {
                 id: mainMenuButton
                 text: qsTr("Main menu")
                 focusPolicy: Qt.NoFocus
@@ -75,40 +76,45 @@ Item {
                 //Layout.preferredHeight: 40
                 Layout.minimumHeight: 30
                 Layout.fillWidth: true
+                Material.background: SkrTheme.pageBackground
 
                 Tab {
                     id: welcomeTab
                     closable: false
                     pageType: welcomePage.pageType
+                    iconColor: "transparent"
                 }
                 Tab {
                     id: writeOverviewTab
                     closable: false
                     pageType: writeOverviewPage.pageType
-                    iconColor: (Material.theme === Material.Dark) ? "white" : "black"
+                    iconColor:  SkrTheme.buttonIcon
                 }
                 Tab {
                     id: noteOverviewTab
                     closable: false
                     pageType: noteOverviewPage.pageType
+                    iconColor:  SkrTheme.buttonIcon
                 }
                 //NOTE: waiting to be implemented
 //                Tab {
 //                    id: galleryTab
 //                    closable: false
 //                    pageType: galleryPage.pageType
-//                }
+//                    iconColor:  SkrTheme.buttonIcon
+//              }
                 Tab {
                     id: projectTab
                     closable: false
                     pageType: projectsMainPage.pageType
+                    iconColor:  SkrTheme.buttonIcon
                 }
             }
 
 
-            ToolButton {
+            SkrToolButton {
                 id: showTabListButton
-                text: qsTr("Button")
+                text: qsTr("Show list of tabs")
                 flat: true
                 checkable: true
                 focusPolicy: Qt.NoFocus
@@ -147,23 +153,23 @@ Item {
                     //                                wheelEnabled: true
                     //                                Layout.fillHeight: false
                     //                                Layout.fillWidth: true
-                    //                                TabButton {
+                    //                                SkrTabButton {
                     //                                    text: qsTr("Welcome")
                     //                                    width: implicitWidth
                     //                                }
-                    //                                TabButton {
+                    //                                SkrTabButton {
                     //                                    text: qsTr("Write")
                     //                                    width: implicitWidth
                     //                                }
-                    //                                TabButton {
+                    //                                SkrTabButton {
                     //                                    text: qsTr("Note")
                     //                                    width: implicitWidth
                     //                                }
-                    //                                TabButton {
+                    //                                SkrTabButton {
                     //                                    text: qsTr("Gallery")
                     //                                    width: implicitWidth
                     //                                }
-                    //                                TabButton {
+                    //                                SkrTabButton {
                     //                                    text: qsTr("Informations")
                     //                                    width: implicitWidth
                     //                                }
@@ -227,7 +233,7 @@ Item {
             //    }
         }
 
-        Pane {
+        SkrPane {
             id: statusBar
             Layout.preferredHeight: 30
             visible: true
@@ -243,7 +249,7 @@ Item {
                 anchors.topMargin: 0
                 spacing: 0
 
-                ToolButton {
+                SkrToolButton {
                     id: saveButton
                     flat: true
                     text: qsTr("Save")
@@ -252,23 +258,24 @@ Item {
                     Layout.preferredWidth: 30
                     focusPolicy: Qt.NoFocus
                     display: AbstractButton.IconOnly
+                    icon.color: SkrTheme.buttonIcon
                 }
 
-                Label {
+                SkrLabel {
                     id: statusLeftLabel
                     verticalAlignment: Text.AlignVCenter
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                 }
 
-                Label {
+                SkrLabel {
                     id: statusRightLabel
                     text: qsTr("Label")
                     verticalAlignment: Text.AlignVCenter
                     Layout.fillHeight: true
                 }
 
-                ToolButton {
+                SkrToolButton {
                     id: notificationButton
                     flat: true
                     Layout.preferredWidth: 40

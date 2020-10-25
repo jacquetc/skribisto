@@ -2978,6 +2978,10 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Default dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Manage themes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Sheet</name>
@@ -3149,6 +3153,53 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>...</source>
         <translation type="obsolete">...</translation>
+    </message>
+</context>
+<context>
+    <name>SkrTheme</name>
+    <message>
+        <source>Main text background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Main text foreground</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secondary text background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secondary text foreground</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Page background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Button background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Button foreground</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Button icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Accent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Spellcheck</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ToolBar background</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3554,6 +3605,68 @@ p, li { white-space: pre-wrap; }
         <source>F</source>
         <comment>paste unformated</comment>
         <translation type="obsolete">F</translation>
+    </message>
+</context>
+<context>
+    <name>ThemePage</name>
+    <message>
+        <source>Edit theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Distraction free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Normal</source>
+        <translation type="unfinished">Нормальный</translation>
+    </message>
+</context>
+<context>
+    <name>ThemePageForm.ui</name>
+    <message>
+        <source>Themes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Example</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>list item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Primary text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secondary text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Color properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Colors</source>
+        <translation type="unfinished">Цвета</translation>
     </message>
 </context>
 <context>

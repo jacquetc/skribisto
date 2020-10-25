@@ -1,11 +1,11 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls.Material 2.15
-import eu.skribisto.skrusersettings 1.0
+import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
-//import ".."
+import "../Items"
+import ".."
 
 
 TagPadForm {
@@ -22,7 +22,6 @@ TagPadForm {
     signal callRemoveTagRelationship(int projectId,int itemId, int tagId)
 
 
-    toolBarPrimaryColor: Material.color(Material.Cyan, Material.Shade200)
 
     tagRepeater.model: tagListModel
 
@@ -82,6 +81,10 @@ TagPadForm {
             property int itemId: root.itemId
             property int tagId: model.tagId
             property bool isSelected: false
+
+            //TODO: adapt to tag color
+            //temporary:
+            color: SkrTheme.buttonBackground
 
 
             focus: true
@@ -181,7 +184,7 @@ TagPadForm {
 
                 anchors.margins : 5
 
-                Label{
+                SkrLabel{
                     id: tagTitle
                     text: model.name
                     horizontalAlignment: Qt.AlignHCenter
@@ -192,7 +195,7 @@ TagPadForm {
                     Layout.fillHeight: true
                 }
 
-                RoundButton {
+                SkrRoundButton {
                     id: removeRelationshipButton
                     Layout.preferredWidth: 0
                     Layout.maximumHeight: tagTitle.height
@@ -273,7 +276,7 @@ TagPadForm {
 
 
 
-    Popup {
+    SkrPopup {
         id: titleEditPopup
         x: addTagMenuToolButton.x - 200
         y: addTagMenuToolButton.y + addTagMenuToolButton.height
@@ -285,7 +288,7 @@ TagPadForm {
 
         ColumnLayout {
             anchors.fill: parent
-            TextField {
+            SkrTextField {
                 id: titleTextField
                 Layout.fillWidth: true
 
@@ -418,7 +421,7 @@ TagPadForm {
                                 }
 
                             }
-                            Label {
+                            SkrLabel {
                                 text: model.name
                                 anchors.fill: parent
                                 horizontalAlignment: Qt.AlignLeft
@@ -461,7 +464,7 @@ TagPadForm {
 
                             required property string section
 
-                            Label {
+                            SkrLabel {
                                 text: qsTr("Existing tags")
                                 font.bold: true
                                 //font.pixelSize: 20
