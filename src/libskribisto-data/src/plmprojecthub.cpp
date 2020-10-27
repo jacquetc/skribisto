@@ -566,6 +566,17 @@ QString PLMProjectHub::getProjectUniqueId(int projectId) const
 
 // ----------------------------------------------------------------------------
 
+PLMError PLMProjectHub::importPlumeCreatorProject(const QUrl &plumeURL, const QUrl &targetFileURL)
+{
+
+    PLMError error = createNewEmptyProject(targetFileURL);
+
+    int projectId = this->getLastLoaded();
+    IFOKDO(error, plmProjectManager->project(projectId)->importPlumeCreatorProject(plumeURL));
+}
+
+// ----------------------------------------------------------------------------
+
 PLMError PLMProjectHub::set(int             projectId,
                             const QString & fieldName,
                             const QVariant& value,

@@ -63,6 +63,8 @@ public:
     QSqlDatabase  getSqlDb() const;
     QString       getIdNameFromTable(const QString& tableName);
 
+    PLMError importPlumeCreatorProject(const QUrl &plumeURL);
+
 signals:
 
 public slots:

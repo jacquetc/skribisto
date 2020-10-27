@@ -43,6 +43,8 @@ public:
     QSqlDatabase createEmptySQLiteProject(int       projectId,
                                           PLMError& error);
 
+    PLMError importPlumeCreatorProject(int projectId, const QUrl& plumeFileName);
+
 signals:
 
 public slots:

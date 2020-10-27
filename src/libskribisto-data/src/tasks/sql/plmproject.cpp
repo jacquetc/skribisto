@@ -218,3 +218,8 @@ PLMError PLMProject::setPath(const QUrl& value)
     }
     return error;
 }
+
+PLMError PLMProject::importPlumeCreatorProject(const QUrl &plumeURL){
+    PLMImporter importer;
+    return importer.importPlumeCreatorProject(this->id(), plumeURL);
+}

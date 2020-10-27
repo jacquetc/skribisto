@@ -22,6 +22,7 @@
 #include "plmimporter.h"
 #include "plmupgrader.h"
 #include "tasks/plmsqlqueries.h"
+#include "plmdata.h"
 
 #include <QtSql/QSqlQuery>
 #include <QtSql/QSqlRecord>
@@ -36,10 +37,15 @@
 #include <QSqlError>
 #include <QRandomGenerator>
 #include <QUrl>
+#include <QTemporaryDir>
+#include <QXmlStreamReader>
+#include <quazip5/JlCompress.h>
 
 PLMImporter::PLMImporter(QObject *parent) :
     QObject(parent)
 {}
+
+//-----------------------------------------------------------------------------------------------
 
 QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
                                              const QUrl   & fileName,
@@ -146,6 +152,8 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
 
     return QSqlDatabase();
 }
+
+//-----------------------------------------------------------------------------------------------
 
 QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& error)
 {
@@ -261,6 +269,79 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     return sqlDb;
 }
 
+//-----------------------------------------------------------------------------------------------
+
+PLMError PLMImporter::importPlumeCreatorProject(int projectId, const QUrl &plumeFileName)
+{
+  PLMError error;
+
+    // create temp file
+    QTemporaryDir tempDir;
+    tempDir.setAutoRemove(true);
+    if (!tempDir.isValid()) {
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_no_temp_dir");
+        return error;
+    }
+
+    QString tempDirPath = tempDir.path();
+
+    // extract zip
+
+    JlCompress::extractDir(plumeFileName.toLocalFile(), tempDirPath);
+
+
+    // read tree
+
+    QFileInfo treeFileInfo(tempDirPath + "/tree");
+
+    if(!treeFileInfo.exists()){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_no_tree_file");
+        return error;
+    }
+
+
+
+    QFile treeFile(treeFileInfo.absoluteFilePath());
+    if (!treeFile.open(QIODevice::ReadOnly | QIODevice::Text)){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_cant_open_tree_file");
+        return error;
+    }
+
+
+    QByteArray lines = treeFile.readAll();
+
+    QXmlStreamReader xml(lines);
+
+    while (!xml.atEnd()) {
+          xml.readNext();
+
+            if(xml.isStartElement()){
+                qDebug() << "name" << xml.name();
+                qDebug() << "namespaceUri" << xml.namespaceUri();
+                qDebug() << "attr" << xml.attributes().first().name();
+                qDebug() << "decl" << xml.namespaceDeclarations().first().namespaceUri();
+            }
+
+
+    }
+    if (xml.hasError()) {
+
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_error_in_tree_xml");
+        return error;
+
+    }
+
+
+
+    //plmdata->projectHub()->setProjectName(projectId, "ee");
+}
+
+//-----------------------------------------------------------------------------------------------
+
 // QSqlDatabase PLMImporter::copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
 // projectId, PLMError &error)
 // {
@@ -339,6 +420,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 //    }
 //    return destDB;
 // }
+//-----------------------------------------------------------------------------------------------
 
 PLMError PLMImporter::executeSQLFile(const QString& fileName, QSqlDatabase& sqlDB) {
     PLMError error;
@@ -351,6 +433,8 @@ PLMError PLMImporter::executeSQLFile(const QString& fileName, QSqlDatabase& sqlD
 
     return error;
 }
+
+//-----------------------------------------------------------------------------------------------
 
 PLMError PLMImporter::executeSQLString(const QString& sqlString, QSqlDatabase& sqlDB)
 {
@@ -444,3 +528,6 @@ PLMError PLMImporter::executeSQLString(const QString& sqlString, QSqlDatabase& s
     }
     return error;
 }
+
+//-----------------------------------------------------------------------------------------------
+
