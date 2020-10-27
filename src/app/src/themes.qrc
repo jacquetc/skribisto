@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>themes/default-light.json</file>
+    </qresource>
+</RCC>

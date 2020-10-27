@@ -66,6 +66,8 @@ set(app_SRCS
     skrrootitem.h
     skrtextbridge.cpp
     skrtextbridge.h
+    skrthemes.cpp
+    skrthemes.h
 )
 
 set(QML qml.qrc
@@ -91,6 +93,7 @@ set(QML qml.qrc
 
 set(QRC pics.qrc
     controls.qrc
+    themes.qrc
     ${CMAKE_SOURCE_DIR}/3rdparty/icons.qrc
     ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc
     ${CMAKE_SOURCE_DIR}/readme.qrc

@@ -9,8 +9,9 @@ TextArea {
     property bool styleElevation: false
     property string styleBackgroundColor: "#FFFFFF"
     property string styleForegroundColor: "#000000"
+    property string styleAccentColor: "#000000"
     objectName: "SKRTextArea-" + Qt.formatDateTime(new Date(), "yyyyMMddhhmmsszzz")
-
+    //color: styleForegroundColor
 
     //    Keys.priority: Keys.BeforeItem
 
@@ -22,12 +23,12 @@ TextArea {
     //        }
 
     //    }
+    Material.accent: styleAccentColor
+    Material.foreground: styleForegroundColor
 
     background:
         Pane {
-            Material.accent: "#555555"
             Material.background: styleBackgroundColor
-            Material.foreground: styleForegroundColor
             Material.elevation: styleElevation ? 6 : 0
         }
 

@@ -3,6 +3,8 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import QtQuick.Controls.Material 2.15
+import "../Items"
+import ".."
 
 TreeListViewForm {
     id: root
@@ -51,7 +53,7 @@ TreeListViewForm {
 
     //-----------------------------------------------------------------------------
 
-    toolBarPrimaryColor: Material.color(Material.Cyan, Material.Shade200)
+    //toolBarPrimaryColor: Material.color(Material.Cyan, Material.Shade200)
 
     //-----------------------------------------------------------------------------
     // go up button :
@@ -160,7 +162,7 @@ TreeListViewForm {
             navigationMenu.open()
     }
 
-    Menu {
+    SkrMenu {
         id: navigationMenu
         y: treeMenuToolButton.height
 
@@ -179,7 +181,7 @@ TreeListViewForm {
             shortcut: StandardKey.Paste
             icon.name: "edit-paste"
         }
-        Menu {
+        SkrMenu {
 
             title: qsTr("Advanced")
             Action {
@@ -746,13 +748,13 @@ TreeListViewForm {
                         }
                         Rectangle {
                             id: openedItemIndicator
-                            color:  Material.accentColor
+                            color:  SkrTheme.accent
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
                             visible: model.projectId === openedProjectId && model.paperId === openedPaperId
                         }
 
-                        Button {
+                        SkrButton {
                             id: projectIsBackupIndicator
                             visible: model.projectIsBackup && model.paperId === -1
                             enabled: true
@@ -794,7 +796,7 @@ TreeListViewForm {
                                 spacing: 1
                                 anchors.fill: parent
 
-                                Label {
+                                SkrLabel {
                                     id: titleLabel
 
                                     Layout.fillWidth: true
@@ -806,7 +808,7 @@ TreeListViewForm {
                                     elide: Text.ElideRight
                                 }
 
-                                TextField {
+                                SkrTextField {
                                     id: labelTextField
                                     visible: false
 
@@ -853,7 +855,7 @@ TreeListViewForm {
 
                                 }
 
-                                TextField {
+                                SkrTextField {
                                     id: titleTextField
                                     visible: false
 
@@ -906,7 +908,7 @@ TreeListViewForm {
 
                                 }
 
-                                Label {
+                                SkrLabel {
                                     id: labelLabel
                                     text:  model.label === undefined ? "" : model.label
                                     Layout.bottomMargin: 2
@@ -920,7 +922,7 @@ TreeListViewForm {
 
                         }
 
-                        ToolButton {
+                        SkrToolButton {
                             id: menuButton
                             Layout.fillHeight: true
                             Layout.preferredWidth: 30
@@ -938,7 +940,7 @@ TreeListViewForm {
                             visible: hoverHandler.hovered | content.isCurrent
                         }
 
-                        ToolButton {
+                        SkrToolButton {
                             id: goToChildButton
                             action: goToChildAction
 
@@ -1109,7 +1111,7 @@ TreeListViewForm {
             //                onActivated: addBeforeAction.trigger()
             //                enabled: root.visible
             //            }
-            Menu {
+            SkrMenu {
                 id: menu
                 y: menuButton.height
 
@@ -1123,7 +1125,7 @@ TreeListViewForm {
                 }
 
 
-                MenuItem {
+                SkrMenuItem {
                     visible: model.paperId !== -1
                     height: model.paperId === -1 ? 0 : undefined
                     action: Action {
@@ -1142,7 +1144,7 @@ TreeListViewForm {
                         }
                     }
                 }
-                MenuItem {
+                SkrMenuItem {
                     visible: model.paperId !== -1
                     height: model.paperId === -1 ? 0 : undefined
 
@@ -1163,7 +1165,7 @@ TreeListViewForm {
                 }
 
 
-                MenuItem {
+                SkrMenuItem {
                     visible: model.paperId !== -1
                     height: model.paperId === -1 ? 0 : undefined
 
@@ -1183,7 +1185,7 @@ TreeListViewForm {
                     }
                 }
 
-                MenuItem {
+                SkrMenuItem {
                     height: model.paperId === -1 ? undefined : 0
                     visible: model.paperId === -1
                     enabled: contextMenuItemIndex === model.index && model.projectIsActive === false && listView.enabled &&  model.paperId === -1

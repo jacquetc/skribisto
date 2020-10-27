@@ -1,19 +1,19 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtQuick.Controls.Material 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.sheetlistproxymodel 1.0
 import eu.skribisto.searchsheetlistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
-import eu.skribisto.skrusersettings 1.0
+import eu.skribisto.usersettings 1.0
 import ".."
+import "../Items"
 
 LeftDockForm {
     id: root
 
 
-    SkrUserSettings {
+    SKRUserSettings {
         id: skrUserSettings
     }
 
@@ -29,7 +29,7 @@ LeftDockForm {
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 5
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: handle.hovered ? Material.accentColor : Material.dividerColor
+                color: handle.hovered ? Material.accentColor : SkrTheme.divider
             }
         }
     }
@@ -55,7 +55,7 @@ LeftDockForm {
     property list<Component> menuComponents:  [
         Component{
             id:  navigationDockMenuComponent
-            Menu {
+            SkrMenu {
                 id: navigationDockMenu
                 objectName: "navigationDockMenu"
                 title: qsTr("&Navigation dock")
@@ -69,7 +69,7 @@ LeftDockForm {
                 }
 
 
-                MenuItem {
+                SkrMenuItem {
                     text: qsTr("&Navigation")
                     onTriggered: {
                         if(Globals.compactSize){
@@ -80,7 +80,7 @@ LeftDockForm {
                     }
                 }
 
-                MenuItem {
+                SkrMenuItem {
                     text: qsTr("&Documents")
                     onTriggered: {
                         if(Globals.compactSize){

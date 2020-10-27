@@ -1,11 +1,12 @@
 import QtQuick 2.15
-import ".."
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Qt.labs.platform 1.1 as LabPlatform
 import QtQml 2.15
 import eu.skribisto.recentprojectlistmodel 1.0
 import eu.skribisto.plmerror 1.0
+import "../Items"
+import ".."
 
 
 ProjectPageForm {
@@ -294,7 +295,15 @@ ProjectPageForm {
             TapHandler {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
-                onTapped: menu.open()
+                onTapped: {
+
+                    if(menu.visible){
+                        menu.close()
+                        return
+                    }
+
+                    menu.popup()
+                }
             }
             ColumnLayout{
                 id: columnLayout4
@@ -314,6 +323,14 @@ ProjectPageForm {
                         visible: recentListView.currentIndex === model.index
                     }
 
+                    Rectangle {
+                        id: openedItemIndicator
+                        color:  SkrTheme.accent
+                        Layout.fillHeight: true
+                        Layout.preferredWidth: 5
+                        visible: model.isOpened
+                    }
+
 
                     Rectangle {
                         color: "transparent"
@@ -324,7 +341,7 @@ ProjectPageForm {
                         RowLayout{
                             anchors.fill: parent
 
-                            Label {
+                            SkrLabel {
                                 id: titleLabel
 
                                 Layout.fillWidth: true
@@ -333,7 +350,7 @@ ProjectPageForm {
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
                                 text: model.title
-                                color: model.exists ? "black" : "grey"
+                                font.strikeout: !model.exists
                             }
 
                             ColumnLayout {
@@ -341,9 +358,9 @@ ProjectPageForm {
                                 spacing: 1
 
                                 Layout.fillHeight: true
-//                                Layout.fillWidth: true
+                                //                                Layout.fillWidth: true
 
-                                Label {
+                                SkrLabel {
                                     id: lastModificationLabel
 
                                     text: skrRootItem.toLocaleDateTimeFormat(model.lastModification)
@@ -352,7 +369,7 @@ ProjectPageForm {
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                                 }
 
-                                Label {
+                                SkrLabel {
                                     id: fileNameLabel
 
                                     text: skrQMLTools.translateURLToLocalFile(model.fileName)
@@ -364,7 +381,7 @@ ProjectPageForm {
                         }
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: menuButton
                         Layout.preferredWidth: 30
 
@@ -373,13 +390,21 @@ ProjectPageForm {
                         focusPolicy: Qt.NoFocus
 
                         onClicked: {
-                            menu.open()
+
+
+                            if(menu.visible){
+                                menu.close()
+                                return
+                            }
+
+
+                            menu.popup(menuButton, 0 , menuButton.height)
                         }
 
                         visible: hoverHandler.hovered | content.isCurrent
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: openedToolButton
                         flat: true
                         Layout.preferredWidth: 30
@@ -393,7 +418,7 @@ ProjectPageForm {
 
                     }
 
-                    Menu {
+                    SkrMenu {
                         id: menu
                         y: menuButton.height
 
@@ -401,24 +426,29 @@ ProjectPageForm {
                             // necessary to differenciate between all items
                             contextMenuItemIndex = model.index
                         }
-                        Action {
-                            id: closeAction
-                            text: qsTr("Close project")
-                            //shortcut: "F2"
-                            icon {
-                                name: "window-close"
-                            }
-                            enabled: contextMenuItemIndex === model.index | itemButtonsIndex === model.index
-                            onTriggered: {
-                                console.log("close project action")
-                                plmData.projectHub().closeProject(model.projectId)
 
+                        SkrMenuItem {
+                            visible: model.isOpened
+                            height: model.isOpened ? undefined : 0
+
+                            action: Action {
+                                id: closeAction
+                                text: qsTr("Close project")
+                                //shortcut: "F2"
+                                icon {
+                                    name: "window-close"
+                                }
+                                enabled: contextMenuItemIndex === model.index | itemButtonsIndex === model.index
+                                onTriggered: {
+                                    console.log("close project action")
+                                    plmData.projectHub().closeProject(model.projectId)
+
+                                }
                             }
                         }
 
 
-
-                        MenuItem {
+                        SkrMenuItem {
                             visible: !model.isOpened
                             height: model.isOpened ? 0 : undefined
 

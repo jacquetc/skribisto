@@ -16,7 +16,7 @@ Item {
         spacing: 20
         anchors.fill: parent
 
-        Label {
+        SkrLabel {
             id: projectNameLabel
             text: qsTr("Text")
         }

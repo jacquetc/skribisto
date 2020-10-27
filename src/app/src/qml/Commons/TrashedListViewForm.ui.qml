@@ -1,7 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls.Material 2.15
+import "../Items"
+import ".."
 
 Item {
     id: base
@@ -18,7 +19,7 @@ Item {
     property var toolBarPrimaryColor
 
 
-    Pane {
+    SkrPane {
         id: pane
         clip: true
         anchors.fill: parent
@@ -28,13 +29,11 @@ Item {
             spacing: 0
             anchors.fill: parent
 
-            ToolBar {
+            SkrToolBar {
                 id: toolBar
                 Layout.maximumHeight: 40
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
-
-                Material.primary: toolBarPrimaryColor
 
                 RowLayout {
                     id: rowLayout
@@ -42,25 +41,25 @@ Item {
                     anchors.fill: parent
 
 
-                    ToolButton {
+                    SkrToolButton {
                         id: goBackToolButton
                         flat: true
                         display: AbstractButton.IconOnly
                     }
 
-                    ComboBox {
+                    SkrComboBox {
                         id: trashProjectComboBox
                         Layout.fillWidth: true
 
                     }
-                    ToolButton {
+                    SkrToolButton {
                         id: restoreToolButton
                         flat: true
                         text: qsTr("Restore a document")
                         display: AbstractButton.IconOnly
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: listMenuToolButton
                         flat: true
                         text: qsTr("Trashed menu")

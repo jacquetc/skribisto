@@ -1,7 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls.Material 2.15
+import "../Items"
+import ".."
 
 Item {
     id: base
@@ -9,9 +10,8 @@ Item {
     property alias addTagMenuToolButton: addTagMenuToolButton
     property alias tagRepeater: tagRepeater
     property bool minimalMode: false
-    property var toolBarPrimaryColor
 
-    Pane {
+    SkrPane {
         id: pane
         clip: true
         anchors.fill: parent
@@ -21,16 +21,13 @@ Item {
             spacing: 0
             anchors.fill: parent
 
-            ToolBar {
+            SkrToolBar {
                 id: toolBar
                 Layout.maximumHeight: 40
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignTop
                 visible: !minimalMode
-
-                Material.primary: toolBarPrimaryColor
-                Material.elevation: 2
 
                 //                Item {
                 //                    id: element
@@ -48,7 +45,7 @@ Item {
                         Layout.fillWidth: true
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: addTagMenuToolButton
                         flat: true
                         display: AbstractButton.IconOnly

@@ -3,10 +3,10 @@
 #include <QDataStream>
 #include <QIODevice>
 
-SkrUserSettings::SkrUserSettings(QObject *parent) : QObject(parent)
+SKRUserSettings::SKRUserSettings(QObject *parent) : QObject(parent)
 {}
 
-void SkrUserSettings::setProjectSetting(int projectId, const QString& key, int value)
+void SKRUserSettings::setProjectSetting(int projectId, const QString& key, int value)
 {
     QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
@@ -16,7 +16,7 @@ void SkrUserSettings::setProjectSetting(int projectId, const QString& key, int v
     settings.endGroup();
 }
 
-int SkrUserSettings::getProjectSetting(int projectId, const QString& key,
+int SKRUserSettings::getProjectSetting(int projectId, const QString& key,
                                        int defaultValue)
 {
     QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
@@ -30,7 +30,7 @@ int SkrUserSettings::getProjectSetting(int projectId, const QString& key,
     return value;
 }
 
-void SkrUserSettings::removeProjectSetting(int projectId, const QString& key)
+void SKRUserSettings::removeProjectSetting(int projectId, const QString& key)
 {
     QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
@@ -40,7 +40,7 @@ void SkrUserSettings::removeProjectSetting(int projectId, const QString& key)
     settings.endGroup();
 }
 
-QByteArray SkrUserSettings::serializingHash(const QHash<QString, QVariant>& hash) const
+QByteArray SKRUserSettings::serializingHash(const QHash<QString, QVariant>& hash) const
 {
     QByteArray array;
 
@@ -51,7 +51,7 @@ QByteArray SkrUserSettings::serializingHash(const QHash<QString, QVariant>& hash
     return array;
 }
 
-QHash<QString, QVariant>SkrUserSettings::deserializingHash(QByteArray hashArray)
+QHash<QString, QVariant>SKRUserSettings::deserializingHash(QByteArray hashArray)
 {
     // Deserializing
     // read the data serialized from the file
@@ -63,7 +63,7 @@ QHash<QString, QVariant>SkrUserSettings::deserializingHash(QByteArray hashArray)
     return hash;
 }
 
-void SkrUserSettings::insertInProjectSettingHash(int             projectId,
+void SKRUserSettings::insertInProjectSettingHash(int             projectId,
                                                  const QString & key,
                                                  const QString & hashKey,
                                                  const QVariant& value)
@@ -92,7 +92,7 @@ void SkrUserSettings::insertInProjectSettingHash(int             projectId,
     settings.endGroup();
 }
 
-QVariant SkrUserSettings::getFromProjectSettingHash(int             projectId,
+QVariant SKRUserSettings::getFromProjectSettingHash(int             projectId,
                                                     const QString & key,
                                                     const QString & hashKey,
                                                     const QVariant& defaultValue)
@@ -116,7 +116,7 @@ QVariant SkrUserSettings::getFromProjectSettingHash(int             projectId,
     return hash.value(hashKey, defaultValue);
 }
 
-void SkrUserSettings::removeFromProjectSettingHash(int            projectId,
+void SKRUserSettings::removeFromProjectSettingHash(int            projectId,
                                                    const QString& key,
                                                    const QString& hashKey)
 {

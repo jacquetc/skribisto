@@ -2,6 +2,8 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
+import "../Items"
+import ".."
 
 Item {
     property alias swipeView: swipeView
@@ -35,7 +37,7 @@ Item {
             ColumnLayout {
                 anchors.fill: parent
 
-                GroupBox {
+                SkrGroupBox {
                     id: groupBox
                     padding: 5
                     Layout.fillWidth: true
@@ -49,34 +51,38 @@ Item {
                         columnSpacing: 5
                         rowSpacing: 5
 
-                        ToolButton {
+                        SkrToolButton {
                             id: italicToolButton
                             text: qsTr("Italic")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
+
                         }
-                        ToolButton {
+                        SkrToolButton {
                             id: boldToolButton
                             text: qsTr("Bold")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
+
                         }
-                        ToolButton {
+                        SkrToolButton {
                             id: strikeToolButton
                             text: qsTr("Strike")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
+
                         }
 
-                        ToolButton {
+                        SkrToolButton {
                             id: underlineToolButton
                             text: qsTr("Underline")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
+
                         }
                     }
                 }
-                GroupBox {
+                SkrGroupBox {
                     id: groupBox2
                     padding: 5
                     Layout.fillWidth: true
@@ -90,26 +96,26 @@ Item {
                         anchors.left: parent.left
                         anchors.right: parent.right
 
-                        ToolButton {
+                        SkrToolButton {
                             id: fullScreenToolButton
                             text: qsTr("Full screen")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
 
-                        ToolButton {
+                        SkrToolButton {
                             id: sizeToolButton
                             text: qsTr("Size")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
-                        ToolButton {
+                        SkrToolButton {
                             id: fullScreenColorToolButton
                             text: qsTr("Full screen Colors")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
                         }
-                        ToolButton {
+                        SkrToolButton {
                             id: checkSpellingToolButton
                             text: qsTr("Check spelling")
                             display: AbstractButton.IconOnly
@@ -130,13 +136,13 @@ Item {
             ColumnLayout {
                 anchors.fill: parent
 
-                ToolButton {
+                SkrToolButton {
                     id: goBackToolButton
                     text: qsTr("Go back")
                     display: AbstractButton.IconOnly
                 }
 
-                Label {
+                SkrLabel {
                     id: textWidthLabel
                     text: qsTr("Text width :")
                 }
@@ -147,7 +153,7 @@ Item {
                     to: Screen.width
                 }
 
-                Label {
+                SkrLabel {
                     text: qsTr("Text size :")
                 }
 
@@ -159,12 +165,12 @@ Item {
                     to: 40
                 }
 
-                ComboBox {
+                SkrComboBox {
                     id: fontFamilyComboBox
                     wheelEnabled: true
                     Layout.fillWidth: true
                 }
-                Label {
+                SkrLabel {
                     text: qsTr("Text indent :")
                 }
 
@@ -176,7 +182,7 @@ Item {
                     to: 200
                 }
 
-                Label {
+                SkrLabel {
                     text: qsTr("Top margin :")
                 }
 
@@ -197,29 +203,31 @@ Item {
                 id: columnLayout
                 anchors.fill: parent
 
-                ToolButton {
+                SkrToolButton {
                     id: goBack2ToolButton
                     text: qsTr("Go back")
                     display: AbstractButton.IconOnly
+                    icon.name: "edit-copy"
                 }
 
                 RowLayout {
                     id: rowLayout
                     Layout.fillWidth: true
 
-                    Label {
+                    SkrLabel {
                         id: label
                         text: qsTr("Background :")
                     }
 
-                    TextField {
+                    SkrTextField {
                         id: backroundColorTextField
                         text: qsTr("Text Field")
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: backgroundColorToolButton
                         text: qsTr("Tool Button")
+                        icon.name: "edit-copy"
                     }
                 }
 
@@ -227,17 +235,17 @@ Item {
                     id: rowLayout1
                     Layout.fillWidth: true
 
-                    Label {
+                    SkrLabel {
                         id: label2
                         text: qsTr("Paper :")
                     }
 
-                    TextField {
+                    SkrTextField {
                         id: paperColorTextField
                         text: qsTr("#1234")
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: paperColorToolButton
                         text: qsTr("")
                     }

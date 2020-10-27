@@ -82,5 +82,26 @@
         <file>qml/WriteOverview/SheetOverviewToolForm.ui.qml</file>
         <file>qml/Commons/NotePad.qml</file>
         <file>qml/Commons/NotePadForm.ui.qml</file>
+        <file>qml/Theme/ThemePage.qml</file>
+        <file>qml/Theme/ThemePageForm.ui.qml</file>
+        <file>qml/SkrTheme.qml</file>
+        <file>qml/Items/SkrButton.qml</file>
+        <file>qml/Items/SkrToolButton.qml</file>
+        <file>qml/Items/SkrMenuItem.qml</file>
+        <file>qml/Items/SkrMenu.qml</file>
+        <file>qml/Items/SkrLabel.qml</file>
+        <file>qml/Items/SkrPopup.qml</file>
+        <file>qml/Items/SkrPane.qml</file>
+        <file>qml/Items/SkrTabButton.qml</file>
+        <file>qml/Items/SkrTabBar.qml</file>
+        <file>qml/Items/SkrGroupBox.qml</file>
+        <file>qml/Items/SkrSlider.qml</file>
+        <file>qml/Items/SkrSwitch.qml</file>
+        <file>qml/Items/SkrSpinBox.qml</file>
+        <file>qml/Items/SkrDial.qml</file>
+        <file>qml/Items/SkrToolBar.qml</file>
+        <file>qml/Items/SkrComboBox.qml</file>
+        <file>qml/Items/SkrTextField.qml</file>
+        <file>qml/Items/SkrRoundButton.qml</file>
     </qresource>
 </RCC>

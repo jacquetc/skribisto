@@ -1,10 +1,10 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls.Material 2.15
 import eu.skribisto.searchnotelistproxymodel 1.0
-import eu.skribisto.skrusersettings 1.0
+import eu.skribisto.usersettings 1.0
 import "../Commons"
+import "../Items"
 import ".."
 
 NotePadForm {
@@ -28,7 +28,6 @@ NotePadForm {
 
     //-----------------------------------------------------------------------------
 
-    toolBarPrimaryColor: Material.color(Material.Cyan, Material.Shade200)
 
     //-----------------------------------------------------------------------------
 
@@ -118,10 +117,10 @@ NotePadForm {
                 }
             }
 
-            Menu{
+            SkrMenu{
                 id: rightClickMenu
 
-                MenuItem {
+                SkrMenuItem {
                     id: renameMenuItem
                     text: qsTr("Rename")
 
@@ -130,7 +129,7 @@ NotePadForm {
                     }
                 }
 
-                MenuItem {
+                SkrMenuItem {
                     id: dissociateNoteMenu
                     text: qsTr("Dissociate")
 
@@ -138,7 +137,7 @@ NotePadForm {
                         plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
                     }
                 }
-                MenuItem {
+                SkrMenuItem {
                     id: moveNoteToTrashMenuItem
                     text: qsTr("Send to trash")
 
@@ -255,7 +254,7 @@ NotePadForm {
                 
                 anchors.margins : 5
                 
-                Label{
+                SkrLabel{
                     id: noteTitle
                     text: model.title
                     horizontalAlignment: Qt.AlignHCenter
@@ -266,7 +265,7 @@ NotePadForm {
                     Layout.fillHeight: true
                 }
 
-                RoundButton {
+                SkrRoundButton {
                     id: removeRelationshipButton
                     Layout.preferredWidth: 0
                     Layout.maximumHeight: noteTitle.height
@@ -475,7 +474,7 @@ NotePadForm {
 
     }
 
-    SkrUserSettings {
+    SKRUserSettings {
         id: skrUserSettings
     }
 
@@ -665,7 +664,7 @@ NotePadForm {
 
     }
     //---------------------------------------------
-    Popup {
+    SkrPopup {
         id: titleEditPopup
         x: addNoteMenuToolButton.x - 200
         y: addNoteMenuToolButton.y + addNoteMenuToolButton.height
@@ -678,7 +677,7 @@ NotePadForm {
 
         ColumnLayout {
             anchors.fill: parent
-            TextField {
+            SkrTextField {
                 id: titleTextField
                 Layout.fillWidth: true
                 
@@ -849,7 +848,7 @@ NotePadForm {
 
 
 
-                            Label {
+                            SkrLabel {
                                 text: model.name
                                 anchors.fill: parent
                                 horizontalAlignment: Qt.AlignLeft
@@ -896,7 +895,7 @@ NotePadForm {
                             
                             required property string section
                             
-                            Label {
+                            SkrLabel {
                                 text: qsTr("Existing notes")
                                 font.bold: true
                                 //font.pixelSize: 20

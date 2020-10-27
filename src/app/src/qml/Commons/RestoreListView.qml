@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
+import "../Items"
 
 
 RestoreListViewForm {
@@ -59,7 +60,6 @@ RestoreListViewForm {
 
     //-----------------------------------------------------------------------------
 
-    toolBarPrimaryColor: Material.color(Material.Cyan, Material.Shade200)
 
     //-----------------------------------------------------------------------------
 
@@ -198,7 +198,7 @@ RestoreListViewForm {
     listMenuToolButton.icon.name: "overflow-menu"
     listMenuToolButton.onClicked: navigationMenu.open()
 
-    Menu {
+    SkrMenu {
         id: navigationMenu
         y: listMenuToolButton.height
 

@@ -5,6 +5,8 @@ import QtQml.Models 2.15
 import QtQml 2.15
 import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
+import "../Items"
+import ".."
 
 ListView {
     id: root
@@ -452,13 +454,13 @@ ListView {
                         }
                         Rectangle {
                             id: openedItemIndicator
-                            color: Material.accentColor
+                            color: SkrTheme.accent
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
                             visible: model.projectId === openedProjectId && model.paperId === openedPaperId
                         }
 
-                        Button {
+                        SkrButton {
                             id: projectIsBackupIndicator
                             visible: model.projectIsBackup && model.paperId === -1
                             enabled: true
@@ -473,7 +475,6 @@ ListView {
                             topPadding: 0
                             flat: true
                             onDownChanged: down = false
-
 
                             icon {
                                 name: "tools-media-optical-burn-image"
@@ -501,7 +502,7 @@ ListView {
                                 spacing: 1
                                 anchors.fill: parent
 
-                                Label {
+                                SkrLabel {
                                     id: titleLabel
 
                                     Layout.fillWidth: true
@@ -513,7 +514,7 @@ ListView {
                                     elide: Text.ElideRight
                                 }
 
-                                TextField {
+                                SkrTextField {
                                     id: labelTextField
                                     visible: false
 
@@ -556,7 +557,7 @@ ListView {
 
                                 }
 
-                                TextField {
+                                SkrTextField {
                                     id: titleTextField
                                     visible: false
 
@@ -599,7 +600,7 @@ ListView {
 
                                 }
 
-                                Label {
+                                SkrLabel {
                                     id: labelLabel
 
                                     //                                text: model.label
@@ -615,7 +616,7 @@ ListView {
                             //                        }
                         }
 
-                        ToolButton {
+                        SkrToolButton {
                             id: menuButton
                             Layout.fillHeight: true
                             Layout.preferredWidth: 30
@@ -783,7 +784,7 @@ ListView {
             //                onActivated: addBeforeAction.trigger()
             //                enabled: root.visible
             //            }
-            Menu {
+            SkrMenu {
                 id: menu
                 y: menuButton.height
 
@@ -799,7 +800,7 @@ ListView {
                 }
 
 
-                MenuItem {
+                SkrMenuItem {
                     height: openActionsEnabled ? undefined : 0
                     visible: openActionsEnabled
                     action: Action {
@@ -818,7 +819,7 @@ ListView {
                     }
                 }
 
-                MenuItem {
+                SkrMenuItem {
                     height: openActionsEnabled ? undefined : 0
                     visible: openActionsEnabled
                     action: Action {
@@ -837,7 +838,7 @@ ListView {
                     }
                 }
 
-                MenuItem {
+                SkrMenuItem {
                     height: openActionsEnabled ? undefined : 0
                     visible: openActionsEnabled
                     action: Action {
@@ -858,7 +859,7 @@ ListView {
 
                 MenuSeparator {}
 
-                MenuItem {
+                SkrMenuItem {
                     height: renameActionEnabled ? undefined : 0
                     visible: renameActionEnabled
                     action :Action {
@@ -878,7 +879,7 @@ ListView {
                 }
 
 
-                MenuItem {
+                SkrMenuItem {
                     height: renameActionEnabled ? undefined : 0
                     visible: renameActionEnabled
                     action :  Action {
@@ -899,7 +900,7 @@ ListView {
 
                 MenuSeparator {}
 
-                MenuItem {
+                SkrMenuItem {
                     height: copyActionEnabled ? undefined : 0
                     visible: copyActionEnabled
                     action :Action {
@@ -921,7 +922,7 @@ ListView {
 
                 MenuSeparator {}
 
-                MenuItem {
+                SkrMenuItem {
                     height: deleteActionEnabled ? undefined : 0
                     visible: deleteActionEnabled
                     action: Action {

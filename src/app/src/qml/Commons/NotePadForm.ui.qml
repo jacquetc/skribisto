@@ -1,8 +1,9 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls.Material 2.15
 import "../Commons"
+import "../Items"
+import ".."
 
 Item {
     id: base
@@ -15,10 +16,9 @@ Item {
     property alias toolBar: toolBar
 
     property bool minimalMode: false
-    property var toolBarPrimaryColor
 
 
-    Pane {
+    SkrPane {
         id: pane
         clip: true
         anchors.fill: parent
@@ -28,7 +28,7 @@ Item {
             spacing: 0
             anchors.fill: parent
 
-            ToolBar {
+            SkrToolBar {
                 id: toolBar
                 Layout.maximumHeight: 40
                 Layout.preferredHeight: 40
@@ -36,8 +36,6 @@ Item {
                 Layout.fillWidth: true
                 visible: !minimalMode
 
-                Material.primary: toolBarPrimaryColor
-                Material.elevation: 2
                 //                                 Item {
                 //                    id: element
                 //                    Layout.fillHeight: true
@@ -54,14 +52,14 @@ Item {
                         Layout.fillWidth: true
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: openSynopsisToolButton
                         flat: true
                         text: qsTr("Show outline")
                         display: AbstractButton.IconOnly
                     }
 
-                    ToolButton {
+                    SkrToolButton {
                         id: openNoteInNewTabToolButton
                         text: qsTr("Open note")
                         flat: true
@@ -71,7 +69,7 @@ Item {
 
 
 
-                    ToolButton {
+                    SkrToolButton {
                         id: addNoteMenuToolButton
                         flat: true
                         display: AbstractButton.IconOnly
@@ -124,6 +122,11 @@ Item {
                 stretch: true
                 leftScrollItemVisible: false
                 visible: !minimalMode
+
+                textAreaStyleBackgroundColor: SkrTheme.secondaryTextAreaBackground
+                textAreaStyleForegroundColor: SkrTheme.secondaryTextAreaForeground
+                paneStyleBackgroundColor: SkrTheme.pageBackground
+                textAreaStyleAccentColor: SkrTheme.accent
             }
         }
     }

@@ -1,6 +1,9 @@
 import QtQuick 2.4
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
+import QtQuick.Controls.Material 2.15
+import "../Items"
+import ".."
 
 Item {
     id: base
@@ -20,7 +23,7 @@ Item {
         rows: 2
         columns: 2
 
-        Switch {
+        SkrSwitch {
             id: hSwitch
             scale: 0.5
 
@@ -36,7 +39,7 @@ Item {
             focusPolicy: Qt.NoFocus
 
         }
-        Label {
+        SkrLabel {
             id: dockTitle
             //width: gridBase.width - hSwitch.width
             height: 30
@@ -54,7 +57,7 @@ Item {
             font.pixelSize: 12
         }
 
-        Label {
+        SkrLabel {
             id: vDockTitle
             text: dockTitle.text
             verticalAlignment: Text.AlignVCenter
