@@ -1283,6 +1283,7 @@ RootPageForm {
     //---------------------------------------------------------
 
     statusLeftLabel.text: qsTr("Skribisto %1 created by Cyril Jacquet").arg(skrRootItem.skribistoVersion())
+    statusLeftLabel.visible: !Globals.fullScreen
 
     //---------------------------------------------------------
     //------ showTabListButton--------------------------------------------

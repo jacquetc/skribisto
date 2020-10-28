@@ -126,10 +126,15 @@ TreeListViewForm {
             currentParentToolButton.text = proxyModel.getItemName(
                         currentProject, currentParent)
             //console.log("onCurrentParentChanged")
+            listView.section.property = ""
         }
         // clear :
         if (currentParent === -2 & currentProject === -2 ){
             currentParentToolButton.text = ""
+        }
+        // show "projects" section
+        else if (currentParent === -2 ){
+            listView.section.property = "indent"
         }
     }
     onCurrentProjectChanged: {
@@ -150,7 +155,28 @@ TreeListViewForm {
     }
 
     //----------------------------------------------------------------------------
+    listView.section.criteria: ViewSection.FullString
+    listView.section.labelPositioning: ViewSection.CurrentLabelAtStart |
+                              ViewSection.InlineLabels
+    listView.section.delegate: sectionHeading
 
+    // The delegate for each section header
+    Component {
+        id: sectionHeading
+        Rectangle {
+            width: searchResultList.width
+            height: childrenRect.height
+            color: "lightsteelblue"
+
+            required property string section
+
+            SkrLabel {
+                text: qsTr("Projects")
+                font.bold: true
+                //font.pixelSize: 20
+            }
+        }
+    }
 
     //----------------------------------------------------------------------------
     treeMenuToolButton.icon.name: "overflow-menu"
