@@ -83,6 +83,7 @@ public:
     Q_INVOKABLE bool      isThisProjectABackup(int projectId);
 
     QString getProjectType(int projectId) const;
+    Q_INVOKABLE PLMError importPlumeCreatorProject(const QUrl &plumeURL, const QUrl &targetFileURL);
 
     PLMError              set(int             projectId,
                               const QString & fieldName,

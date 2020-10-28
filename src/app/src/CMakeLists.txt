@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.1.0)
 project(app LANGUAGES CXX VERSION ${VERSION})
 
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg Xml QuickControls2 CONFIG REQUIRED)
+find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 CONFIG REQUIRED)
 #find_package(KF5Kirigami2)
 find_package(hunspell REQUIRED)
 

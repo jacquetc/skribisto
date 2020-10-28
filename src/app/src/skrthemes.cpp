@@ -309,10 +309,10 @@ bool SKRThemes::duplicate(const QString &themeName, const QString &newThemeName)
     }
 
 
-    QByteArray line = file.readAll();
+    QByteArray lines = file.readAll();
 
     QJsonParseError jsonError;
-    QJsonDocument jsonDoc = QJsonDocument::fromJson(line, &jsonError);
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(lines, &jsonError);
 
     if(jsonError.error != QJsonParseError::NoError){
         qDebug() << "Error JSON in theme" << fileInfo.absoluteFilePath() << "error :" << jsonError.errorString();

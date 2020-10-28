@@ -103,5 +103,13 @@
         <file>qml/Items/SkrComboBox.qml</file>
         <file>qml/Items/SkrTextField.qml</file>
         <file>qml/Items/SkrRoundButton.qml</file>
+        <file>qml/Welcome/PlumeImporter.qml</file>
+        <file>qml/Welcome/PlumeImporterForm.ui.qml</file>
+        <file>qml/Welcome/Print.qml</file>
+        <file>qml/Welcome/PrintForm.ui.qml</file>
+        <file>qml/Welcome/Exporter.qml</file>
+        <file>qml/Welcome/ExporterForm.ui.qml</file>
+        <file>qml/Welcome/Importer.qml</file>
+        <file>qml/Welcome/ImporterForm.ui.qml</file>
     </qresource>
 </RCC>

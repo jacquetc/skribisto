@@ -1,14 +1,46 @@
 #include "skrhighlighter.h"
 #include <QDebug>
 #include <QTextBoundaryFinder>
+#include "plmdata.h"
 
 SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
-    : QSyntaxHighlighter(parentDoc), m_spellCheckerSet(false)
+    : QSyntaxHighlighter(parentDoc), m_spellCheckerSet(false), m_projectId(-2)
 {
-    this->setSpellChecker(new SKRSpellChecker(this));
+    SKRSpellChecker *spellChecker = new SKRSpellChecker(this);
+    this->setSpellChecker(spellChecker);
 
+    connect(plmdata->projectDictHub(), &SKRProjectDictHub::projectDictFullyChanged, this, [this](int projectId, const QStringList &newProjectDict){
+        if(projectId == this->getProjectId()){
+            this->getSpellChecker()->setUserDict(newProjectDict);
+            this->rehighlight();
+        }
+    }
+    );
 
-    // m_spellChecker->activate();
+    connect(plmdata->projectDictHub(), &SKRProjectDictHub::projectDictWordAdded, this, [this](int projectId, const QString &newWord){
+        if(projectId == this->getProjectId()){
+            this->getSpellChecker()->addWordToUserDict(newWord);
+            this->rehighlight();
+        }
+    }
+    );
+
+    connect(plmdata->projectDictHub(), &SKRProjectDictHub::projectDictWordRemoved, this, [this](int projectId, const QString &wordToBeRemoved){
+        if(projectId == this->getProjectId()){
+            this->getSpellChecker()->removeWordFromUserDict(wordToBeRemoved);
+            this->rehighlight();
+        }
+    }
+    );
+
+    connect(spellChecker, &SKRSpellChecker::activated, this, [this](bool activated){
+        if(activated){
+            this->getSpellChecker()->setUserDict(m_userDictList);
+            this->rehighlight();
+        }
+    }
+    );
+
 }
 
 // -------------------------------------------------------------------
@@ -103,10 +135,10 @@ void SKRHighlighter::highlightBlock(const QString& text)
 
 
                     if (text.mid(wordStart + wordLength, 1) == "-") { // cerf-volant,
-                                                                      // orateur-né
+                        // orateur-né
                         wordFinder.toNextBoundary();
                         int nextWordLength = wordFinder.toNextBoundary() -
-                                             (wordStart + wordLength + 1);
+                                (wordStart + wordLength + 1);
                         wordFinder.toPreviousBoundary();
                         wordFinder.toPreviousBoundary();
 
@@ -199,4 +231,28 @@ void SKRHighlighter::setSpellChecker(SKRSpellChecker *spellChecker)
         //        qWarning() << "TextHighlighter : no spellchecker set";
         m_spellCheckerSet = false;
     }
+}
+
+int SKRHighlighter::getProjectId() const
+{
+    return m_projectId;
+}
+
+void SKRHighlighter::setProjectId(int projectId)
+{
+    m_projectId = projectId;
+
+    //get userdict
+    if( projectId != -2){
+        m_userDictList.clear();
+        m_userDictList = plmdata->projectDictHub()->getProjectDictList(projectId);
+    }
+    // set user dict
+    if(m_spellChecker && m_spellChecker->isActive() && projectId != -2){
+        m_spellChecker->setUserDict(m_userDictList);
+    }
+
+
+
+    emit projectIdChanged(projectId);
 }

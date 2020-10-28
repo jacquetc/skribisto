@@ -22,6 +22,7 @@
 #include "plmimporter.h"
 #include "plmupgrader.h"
 #include "tasks/plmsqlqueries.h"
+#include "plmdata.h"
 
 #include <QtSql/QSqlQuery>
 #include <QtSql/QSqlRecord>
@@ -36,10 +37,16 @@
 #include <QSqlError>
 #include <QRandomGenerator>
 #include <QUrl>
+#include <QTemporaryDir>
+#include <QXmlStreamReader>
+#include <quazip5/JlCompress.h>
+#include <QTextDocument>
 
 PLMImporter::PLMImporter(QObject *parent) :
     QObject(parent)
 {}
+
+//-----------------------------------------------------------------------------------------------
 
 QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
                                              const QUrl   & fileName,
@@ -69,7 +76,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
         if (!file.exists()) {
             error.setSuccess(false);
             error.setErrorCode("E_IMPORTER_file_does_not_exist");
-            error.addData(fileNameString);
+            error.addData("filePath", fileNameString);
             qWarning() << fileNameString + " doesn't exist";
             return QSqlDatabase();
         }
@@ -77,7 +84,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
         if (!file.open(QIODevice::ReadOnly)) {
             error.setSuccess(false);
             error.setErrorCode("E_IMPORTER_file_cant_be_opened");
-            error.addData(fileNameString);
+            error.addData("filePath", fileNameString);
             qWarning() << fileNameString + " can't be opened";
             return QSqlDatabase();
         }
@@ -88,7 +95,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
 
         // open temp file
         QSqlDatabase sqlDb =
-            QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
+                QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
         sqlDb.setHostName("localhost");
         sqlDb.setDatabaseName(tempFileName);
 
@@ -101,7 +108,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
         if (!ok) {
             error.setSuccess(false);
             error.setErrorCode("E_IMPORTER_cant_open_database");
-            error.addData(tempFileName);
+            error.addData("filePath", tempFileName);
 
             return QSqlDatabase();
         }
@@ -111,7 +118,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
         IFKO(error) {
             error.setSuccess(false);
             error.setErrorCode("E_IMPORTER_upgrade_sqlite_failed");
-            error.addData(fileNameString);
+            error.addData("filePath", fileNameString);
             return QSqlDatabase();
         }
 
@@ -147,6 +154,8 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
     return QSqlDatabase();
 }
 
+//-----------------------------------------------------------------------------------------------
+
 QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& error)
 {
     // create temp file
@@ -169,7 +178,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     if (!ok) {
         error.setSuccess(false);
         error.setErrorCode("E_IMPORTER_cant_open_database");
-        error.addData(tempFileName);
+        error.addData("filePath", tempFileName);
         return QSqlDatabase();
     }
 
@@ -195,7 +204,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     // new project :
     IFOKDO(error, this->executeSQLFile(":/sql/sqlite_project.sql", sqlDb));
     QString sqlString =
-        QString("INSERT INTO tbl_project (dbl_database_version) VALUES (%1)")
+            QString("INSERT INTO tbl_project (dbl_database_version) VALUES (%1)")
             .arg(1.1);
 
     IFOKDO(error, this->executeSQLString(sqlString, sqlDb));
@@ -205,7 +214,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     IFKO(error) {
         error.setSuccess(false);
         error.setErrorCode("E_IMPORTER_upgrade_sqlite_failed");
-        error.addData(tempFileName);
+        error.addData("filePath", tempFileName);
         return QSqlDatabase();
     }
 
@@ -218,7 +227,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 
         {
             const QString possibleCharacters(
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
             const int randomStringLength = 12;
 
             for (int i = 0; i < randomStringLength; ++i)
@@ -237,7 +246,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
         QSqlQuery query(sqlDb);
         QString   queryStr = "UPDATE tbl_project SET t_project_unique_identifier = :value"
                              " WHERE l_project_id = :id"
-        ;
+                ;
 
         query.prepare(queryStr);
         query.bindValue(":value", value);
@@ -259,6 +268,456 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
     sqlDb.commit();
 
     return sqlDb;
+}
+
+//-----------------------------------------------------------------------------------------------
+
+PLMError PLMImporter::importPlumeCreatorProject(int projectId, const QUrl &plumeFileName)
+{
+    PLMError error;
+
+    // create temp file
+    QTemporaryDir tempDir;
+    tempDir.setAutoRemove(true);
+    if (!tempDir.isValid()) {
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_no_temp_dir");
+        return error;
+    }
+
+    QString tempDirPath = tempDir.path();
+
+    // extract zip
+
+    JlCompress::extractDir(plumeFileName.toLocalFile(), tempDirPath);
+
+    //----------------------------- read attend---------------------------------------
+
+    QFileInfo attendFileInfo(tempDirPath + "/attendance");
+
+    if(!attendFileInfo.exists()){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_no_attend_file");
+        return error;
+    }
+
+
+
+    QFile attendFile(attendFileInfo.absoluteFilePath());
+    if (!attendFile.open(QIODevice::ReadOnly | QIODevice::Text)){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_cant_open_attend_file");
+        return error;
+    }
+
+
+    QByteArray attendLines = attendFile.readAll();
+
+    QXmlStreamReader attendXml(attendLines);
+
+
+
+    m_attendanceConversionHash.clear();
+
+
+    while (attendXml.readNextStartElement() && attendXml.name() == "plume-attendance") {
+        QStringList rolesNames = attendXml.attributes().value("rolesNames").toString().split("--", Qt::SkipEmptyParts);
+        QStringList levelsNames = attendXml.attributes().value("levelsNames").toString().split("--", Qt::SkipEmptyParts);
+
+        QStringList box_1Names = attendXml.attributes().value("box_1").toString().split("--", Qt::SkipEmptyParts);
+        QStringList box_2Names = attendXml.attributes().value("box_2").toString().split("--", Qt::SkipEmptyParts);
+        QStringList box_3Names = attendXml.attributes().value("box_3").toString().split("--", Qt::SkipEmptyParts);
+
+        QStringList spinBox_1Names = attendXml.attributes().value("spinBox_1").toString().split("--", Qt::SkipEmptyParts);
+
+
+
+
+        while (attendXml.readNextStartElement() && attendXml.name() == "group") {
+            int attendNumber = attendXml.attributes().value("number").toInt();
+            QString groupName = attendXml.attributes().value("name").toString();
+            error = this->createNote(projectId, 0, attendNumber, groupName, tempDirPath + "/attend/A");
+            IFOK(error){
+                int groupNoteId = error.getData("noteId", -2).toInt();
+                m_attendanceConversionHash.insert(attendNumber, groupNoteId);
+
+                this->createTagsFromAttend(projectId, groupNoteId, attendXml, "box_1", box_1Names);
+                this->createTagsFromAttend(projectId, groupNoteId, attendXml, "box_2", box_2Names);
+                this->createTagsFromAttend(projectId, groupNoteId, attendXml, "box_3", box_3Names);
+                this->createTagsFromAttend(projectId, groupNoteId, attendXml, "spinBox_1", spinBox_1Names);
+            }
+
+
+            while (attendXml.readNextStartElement() && attendXml.name() == "obj") {
+                int attendNumber = attendXml.attributes().value("number").toInt();
+                QString objName = attendXml.attributes().value("name").toString();
+                error = this->createNote(projectId, 1, attendNumber, objName, tempDirPath + "/attend/A");
+                IFOK(error){
+                    int objNoteId = error.getData("noteId", -2).toInt();
+                    m_attendanceConversionHash.insert(attendNumber, objNoteId);
+
+
+                    this->createTagsFromAttend(projectId, objNoteId, attendXml, "box_1", box_1Names);
+                    this->createTagsFromAttend(projectId, objNoteId, attendXml, "box_2", box_2Names);
+                    this->createTagsFromAttend(projectId, objNoteId, attendXml, "box_3", box_3Names);
+                    this->createTagsFromAttend(projectId, objNoteId, attendXml, "spinBox_1", spinBox_1Names);
+
+                    QString objQuickDetail = attendXml.attributes().value("quickDetails").toString();
+                    plmdata->notePropertyHub()->setProperty(projectId, objNoteId, "label", objQuickDetail);
+                }
+
+                attendXml.readElementText();
+            }
+        }
+    }
+
+
+
+    //----------------------------- read tree---------------------------------------
+
+    QFileInfo treeFileInfo(tempDirPath + "/tree");
+
+    if(!treeFileInfo.exists()){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_no_tree_file");
+        error.addData("filePath", treeFileInfo.absoluteFilePath());
+        return error;
+    }
+
+
+
+    QFile treeFile(treeFileInfo.absoluteFilePath());
+    if (!treeFile.open(QIODevice::ReadOnly | QIODevice::Text)){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_cant_open_tree_file");
+        error.addData("filePath", treeFileInfo.absoluteFilePath());
+        return error;
+    }
+
+
+    QByteArray lines = treeFile.readAll();
+
+    QXmlStreamReader xml(lines);
+
+
+
+
+    while (xml.readNextStartElement() && xml.name() == "plume-tree") {
+        // pick project name
+        QString projectName = xml.attributes().value("projectName").toString();
+        plmdata->projectHub()->setProjectName(projectId, projectName);
+
+
+        while (xml.readNextStartElement() && xml.name() == "book") {
+            this->createPapersAndAssociations(projectId, 0, xml, tempDirPath);
+
+            while (xml.readNextStartElement()) {
+
+                if(xml.name() == "act"){
+                    //qDebug() << "a name" << xml.name();
+                    this->createPapersAndAssociations(projectId, 1, xml, tempDirPath);
+
+                    while (xml.readNextStartElement() && xml.name() == "chapter") {
+                        //qDebug() << "c name" << xml.name();
+                        this->createPapersAndAssociations(projectId, 2, xml, tempDirPath);
+
+
+
+                        while (xml.readNextStartElement() && xml.name() == "scene") {
+                            //qDebug() << "s name" << xml.name();
+                            this->createPapersAndAssociations(projectId, 3, xml, tempDirPath);
+                            xml.readElementText();
+
+                            //            for(const QXmlStreamAttribute &attribute : xml.attributes()){
+                            //                qDebug() << "attr" << attribute.name() << ":" << attribute.value();
+                            //            }
+
+                            // qDebug() << "decl" << xml.namespaceDeclarations().first().namespaceUri();
+                        }
+                    }
+
+                }
+                else if(xml.name() == "chapter"){
+
+
+                    //qDebug() << "c name" << xml.name();
+                    this->createPapersAndAssociations(projectId, 1, xml, tempDirPath);
+
+
+
+                    while (xml.readNextStartElement() && xml.name() == "scene") {
+                        //qDebug() << "s name" << xml.name();
+                        this->createPapersAndAssociations(projectId, 2, xml, tempDirPath);
+                        xml.readElementText();
+                        //qDebug() << "read" << xml.readElementText();
+
+                        //            for(const QXmlStreamAttribute &attribute : xml.attributes()){
+                        //                qDebug() << "attr" << attribute.name() << ":" << attribute.value();
+                        //            }
+
+                        // qDebug() << "decl" << xml.namespaceDeclarations().first().namespaceUri();
+                    }
+
+                }
+
+            }
+        }
+    }
+    if (xml.hasError()) {
+
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_error_in_tree_xml");
+
+        error.addData("xmlError", QString("%1\nLine %2, column %3")
+                      .arg(xml.errorString())
+                      .arg(xml.lineNumber())
+                      .arg(xml.columnNumber()));
+
+        return error;
+
+    }
+
+
+    //----------------------------- user dict---------------------------------------
+    //
+
+    QFileInfo dictFileInfo(tempDirPath + "dicts/userDict.dict_plume");
+
+    if(!dictFileInfo.exists()){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_no_dict_file");
+        error.addData("filePath", dictFileInfo.absoluteFilePath());
+        return error;
+    }
+
+
+
+    QFile dictFile(dictFileInfo.absoluteFilePath());
+    if (!treeFile.open(QIODevice::ReadOnly | QIODevice::Text)){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_cant_open_dict_file");
+        error.addData("filePath", dictFileInfo.absoluteFilePath());
+        return error;
+    }
+
+
+    QByteArray dictLines = dictFile.readAll();
+
+    QString dictString = QString::fromUtf8(dictLines);
+
+    QStringList dictWords = dictString.split(";", Qt::SkipEmptyParts);
+
+    plmdata->projectDictHub()->setProjectDictList(projectId , dictWords);
+
+
+
+    return error;
+}
+
+PLMError PLMImporter::createPapersAndAssociations(int projectId, int indent, const QXmlStreamReader &xml, const QString &tempDirPath)
+{
+    PLMError error;
+
+    int plumeId = xml.attributes().value("number").toInt();
+    QString name = xml.attributes().value("name").toString();
+
+    // create sheet
+
+    error = plmdata->sheetHub()->addChildPaper(projectId, -1);
+    IFKO(error){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_sheet_creation");
+        return error;
+    }
+    int sheetId = error.getData("paperId", -2).toInt();
+
+
+    IFOKDO(error, plmdata->sheetHub()->setIndent(projectId, sheetId, indent));
+    IFOKDO(error, plmdata->sheetHub()->setTitle(projectId, sheetId, name));
+
+
+    // - fetch text
+
+    QFileInfo textFileInfo(tempDirPath + "/text/T" + QString::number(plumeId) + ".html");
+
+    if(!textFileInfo.exists()){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_no_text_file");
+        error.addData("filePath", textFileInfo.absoluteFilePath());
+        return error;
+    }
+
+
+
+    QFile textFile(textFileInfo.absoluteFilePath());
+    if (!textFile.open(QIODevice::ReadOnly | QIODevice::Text)){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_cant_open_text_file");
+        error.addData("filePath", textFileInfo.absoluteFilePath());
+        return error;
+    }
+
+    QByteArray textLines = textFile.readAll();
+
+
+    QTextDocument sheetDoc;
+    sheetDoc.setHtml(QString::fromUtf8(textLines));
+
+    IFOKDO(error, plmdata->sheetHub()->setContent(projectId, sheetId, sheetDoc.toMarkdown()));
+
+
+    IFKO(error){
+        return error;
+    }
+
+    // create note
+
+
+    error = this->createNote(projectId, indent, plumeId, name, tempDirPath + "/text/N");
+    bool ok;
+    int noteId = error.getData("noteId", -2).toInt(&ok);
+    if(!ok){
+        error.setSuccess(false);
+        return error;
+    }
+
+    plmdata->noteHub()->setSheetNoteRelationship(projectId, sheetId, noteId, false);
+
+
+
+
+    // create synopsis note
+
+    error = this->createNote(projectId, indent, plumeId, name, tempDirPath + "/text/S");
+    int synopsisId = error.getData("noteId", -2).toInt(&ok);
+    if(!ok){
+        error.setSuccess(false);
+        return error;
+    }
+    plmdata->noteHub()->setSheetNoteRelationship(projectId, sheetId, synopsisId, true);
+
+    // associate "attendance" notes
+    QStringList attendIds = xml.attributes().value("attend").toString().split("-", Qt::SkipEmptyParts);
+
+    for(const QString &attendIdString : attendIds){
+        int attendId = attendIdString.toInt();
+
+        if(attendId == 0){
+            continue;
+        }
+
+        int skrNoteId = m_attendanceConversionHash.value(attendId);
+
+        //associate :
+        plmdata->noteHub()->setSheetNoteRelationship(projectId, sheetId, skrNoteId, false);
+    }
+
+
+    // save
+
+    IFOKDO(error, plmdata->projectHub()->saveProject(projectId));
+
+    QUrl url = plmdata->projectHub()->getPath(projectId);
+    plmdata->projectHub()->closeProject(projectId);
+
+    plmdata->projectHub()->loadProject(url);
+
+
+    return error;
+}
+
+//-----------------------------------------------------------------------------------------------
+
+PLMError PLMImporter::createNote(int projectId, int indent, int plumeId, const QString &name, const QString &tempDirPath)
+{
+    PLMError error;
+
+
+
+    error = plmdata->noteHub()->addChildPaper(projectId, -1);
+    IFKO(error){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_note_creation");
+        return error;
+    }
+    int noteId = error.getData("paperId", -2).toInt();
+    error.addData("noteId", noteId);
+
+
+    IFOKDO(error, plmdata->noteHub()->setIndent(projectId, noteId, indent));
+    IFOKDO(error, plmdata->noteHub()->setTitle(projectId, noteId, name));
+
+
+    // fetch text
+
+    QFileInfo attendFileInfo(tempDirPath + QString::number(plumeId) + ".html");
+
+    if(!attendFileInfo.exists()){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_no_attend_file");
+        error.addData("filePath", attendFileInfo.absoluteFilePath());
+        return error;
+    }
+
+
+
+    QFile attendFile(attendFileInfo.absoluteFilePath());
+    if (!attendFile.open(QIODevice::ReadOnly | QIODevice::Text)){
+        error.setSuccess(false);
+        error.setErrorCode("E_IMPORTER_cant_open_attend_file");
+        error.addData("filePath", attendFileInfo.absoluteFilePath());
+        return error;
+    }
+
+    QByteArray lines = attendFile.readAll();
+
+
+    QTextDocument noteDoc;
+    noteDoc.setHtml(QString::fromUtf8(lines));
+    IFOKDO(error, plmdata->noteHub()->setContent(projectId, noteId, noteDoc.toMarkdown()));
+
+
+
+    return error;
+
+}
+
+//-----------------------------------------------------------------------------------------------
+
+PLMError PLMImporter::createTagsFromAttend(int projectId, int noteId, const QXmlStreamReader &xml, const QString &attributeName, const QStringList &values)
+{
+    PLMError error;
+
+    if(values.isEmpty()){
+        return error; // return successfully
+    }
+
+
+
+
+    bool ok;
+    int index = xml.attributes().value(attributeName).toInt(&ok);
+    if(!ok){
+        error.setErrorCode("E_IMPORTER_conversion_to_int");
+        error.setSuccess(false);
+        return error;
+    }
+
+    if(values.count() <= index){
+        return error;// return successfully
+    }
+
+
+    IFOK(error){
+
+        error = plmdata->tagHub()->addTag(projectId, values.at(index));
+        IFOK(error){
+            error = plmdata->tagHub()->setTagRelationship(projectId, SKRTagHub::Note, noteId, error.getData("tagId", -2).toInt());
+        }
+    }
+
+    return error;
+
 }
 
 // QSqlDatabase PLMImporter::copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
@@ -339,6 +798,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, PLMError& erro
 //    }
 //    return destDB;
 // }
+//-----------------------------------------------------------------------------------------------
 
 PLMError PLMImporter::executeSQLFile(const QString& fileName, QSqlDatabase& sqlDB) {
     PLMError error;
@@ -351,6 +811,8 @@ PLMError PLMImporter::executeSQLFile(const QString& fileName, QSqlDatabase& sqlD
 
     return error;
 }
+
+//-----------------------------------------------------------------------------------------------
 
 PLMError PLMImporter::executeSQLString(const QString& sqlString, QSqlDatabase& sqlDB)
 {
@@ -365,15 +827,15 @@ PLMError PLMImporter::executeSQLString(const QString& sqlString, QSqlDatabase& s
     if (sqlDB.driver()->hasFeature(QSqlDriver::Transactions)) {
         // Replace comments and tabs and new lines with space
         queryStr =
-            queryStr.replace(QRegularExpression("(\\/\\*(.)*?\\*\\/|^--.*\\n|\\t)",
-                                                QRegularExpression::CaseInsensitiveOption
-                                                | QRegularExpression::MultilineOption),
-                             " ");
+                queryStr.replace(QRegularExpression("(\\/\\*(.)*?\\*\\/|^--.*\\n|\\t)",
+                                                    QRegularExpression::CaseInsensitiveOption
+                                                    | QRegularExpression::MultilineOption),
+                                 " ");
         queryStr = queryStr.trimmed();
 
 
         // Extracting queries
-        QStringList qList = queryStr.split('\n', QString::SkipEmptyParts);
+        QStringList qList = queryStr.split('\n', Qt::SkipEmptyParts);
 
 
         QRegularExpression re_transaction("\\bbegin.transaction.*",
@@ -423,15 +885,15 @@ PLMError PLMImporter::executeSQLString(const QString& sqlString, QSqlDatabase& s
         // ...so we need to remove special queries (`begin transaction` and
         // `commit`)
         queryStr =
-            queryStr.replace(QRegularExpression(
-                                 "(\\bbegin.transaction.*;|\\bcommit.*;|\\/\\*(.|\\n)*?\\*\\/|^--.*\\n|\\t|\\n)",
-                                 QRegularExpression::CaseInsensitiveOption
-                                 | QRegularExpression::MultilineOption),
-                             " ");
+                queryStr.replace(QRegularExpression(
+                                     "(\\bbegin.transaction.*;|\\bcommit.*;|\\/\\*(.|\\n)*?\\*\\/|^--.*\\n|\\t|\\n)",
+                                     QRegularExpression::CaseInsensitiveOption
+                                     | QRegularExpression::MultilineOption),
+                                 " ");
         queryStr = queryStr.trimmed();
 
         // Execute each individual queries
-        QStringList qList = queryStr.split(';', QString::SkipEmptyParts);
+        QStringList qList = queryStr.split(';', Qt::SkipEmptyParts);
         for(const QString& s : qList) {
             query.exec(s);
 
@@ -444,3 +906,6 @@ PLMError PLMImporter::executeSQLString(const QString& sqlString, QSqlDatabase& s
     }
     return error;
 }
+
+//-----------------------------------------------------------------------------------------------
+

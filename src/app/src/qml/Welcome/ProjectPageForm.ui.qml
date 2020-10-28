@@ -8,6 +8,7 @@ import ".."
 Item {
     width: 400
     height: 400
+
     property alias printButton: printButton
     property alias importButton: importButton
     property alias exportButton: exportButton
@@ -32,6 +33,10 @@ Item {
     property alias openProjectButton: openProjectButton
     property alias recentListView: recentListView
     property alias newProjectButton: newProjectButton
+
+    property alias importerItem: importerItem
+    property alias printItem: printItem
+    property alias exporterItem: exporterItem
 
     readonly property int columnWidth: 550
 
@@ -366,6 +371,24 @@ Item {
                         Layout.fillWidth: true
                     }
                 }
+            }
+
+            Print {
+                id: printItem
+                enabled: false
+
+
+            }
+
+            Importer {
+                id: importerItem
+                enabled: false
+
+            }
+
+            Exporter {
+                id: exporterItem
+                enabled: false
             }
         }
     }

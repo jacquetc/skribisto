@@ -56,7 +56,7 @@ PLMError SKRProjectDictHub::setProjectDictList(int projectId, const QStringList 
     values.insert("t_word", word);
 
     error = queries.add(values, newId);
-    error.addData(newId);
+    error.addData("wordId", newId);
 
     IFKO(error){
         break;
@@ -90,7 +90,7 @@ PLMError SKRProjectDictHub::addWordToProjectDict(int projectId, const QString &n
 
     queries.beginTransaction();
     error = queries.add(values, newId);
-    error.addData(newId);
+    error.addData("wordId", newId);
 
     IFKO(error) {
         queries.rollback();

@@ -74,6 +74,7 @@ PLMError SKRTagHub::addTag(int projectId, const QString& tagName)
 
     IFOK(error) {
         m_last_added_id = newId;
+        error.addData("tagId", newId);
         emit tagAdded(projectId, newId);
         emit projectModified(projectId);
     }

@@ -65,7 +65,7 @@ PLMError PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 
         IFKO(error){
             error.setErrorCode("E_UPGRADER_cant_upgrade");
-            error.addData(newDbVersion);
+            error.addData("dbVersion", newDbVersion);
 
         }
 

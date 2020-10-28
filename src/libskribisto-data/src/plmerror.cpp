@@ -27,7 +27,7 @@ PLMError::PLMError(const PLMError& error)
 {
     m_success   = error.isSuccess();
     m_errorCode = error.getErrorCode();
-    m_dataList  = error.getDataList();
+    m_dataHash  = error.getDataHash();
 }
 
 bool PLMError::operator!() const
@@ -45,11 +45,26 @@ PLMError& PLMError::operator=(const PLMError& iError)
     if (Q_LIKELY(&iError != this)) {
         m_success   = iError.isSuccess();
         m_errorCode = iError.getErrorCode();
-        m_dataList  = iError.getDataList();
+        m_dataHash.insert(iError.getDataHash());
     }
 
     // m_success = iError.isSuccess();
     return *this;
+}
+
+
+bool PLMError::operator==(const PLMError& otherPLMError) const{
+    return m_success == otherPLMError.isSuccess()
+           && m_errorCode == otherPLMError.getErrorCode()
+           && m_dataHash == otherPLMError.getDataHash()
+    ;
+}
+
+bool PLMError::operator!=(const PLMError& otherPLMError) const{
+    return m_success != otherPLMError.isSuccess()
+           || m_errorCode != otherPLMError.getErrorCode()
+           || m_dataHash != otherPLMError.getDataHash()
+    ;
 }
 
 void PLMError::setSuccess(bool value)
@@ -72,17 +87,22 @@ void PLMError::setErrorCode(const QString& value)
     m_errorCode = value;
 }
 
-QVariantList PLMError::getDataList() const
+QHash<QString, QVariant> PLMError::getDataHash() const
 {
-    return m_dataList;
+    return m_dataHash;
 }
 
-void PLMError::setDataList(const QVariantList& dataList)
+void PLMError::setDataHash(const QHash<QString, QVariant>& dataHash)
 {
-    m_dataList = dataList;
+    m_dataHash = dataHash;
 }
 
-void PLMError::addData(const QVariant& value)
+void PLMError::addData(const QString &key, const QVariant& value)
 {
-    m_dataList.append(value);
+    m_dataHash.insert(key, value);
+}
+
+QVariant PLMError::getData(const QString &key, const QVariant& defaultValue) const
+{
+    return m_dataHash.value(key, defaultValue);
 }

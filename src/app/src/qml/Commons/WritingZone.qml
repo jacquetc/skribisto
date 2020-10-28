@@ -66,13 +66,13 @@ WritingZoneForm {
 
     //-------------------------------------------------
 
-    property int paperId: -1
-    property int projectId: -1
+    property int paperId: -2
+    property int projectId: -2
 
     function clear(){
         textArea.clear()
-        paperId = -1
-        projectId = -1
+        paperId = -2
+        projectId = -2
     }
 
 
@@ -493,6 +493,8 @@ WritingZoneForm {
         selectionStart: textArea.selectionStart
         selectionEnd: textArea.selectionEnd
 
+        projectId: root.projectId
+
         Component.onCompleted: {
 
             if(!spellCheckerKilled){
@@ -566,7 +568,7 @@ WritingZoneForm {
         var langCode  = ""
 
         //if project has a lang defined :
-        if(projectId === -1){ // use default lang from settings
+        if(projectId === -2){ // use default lang from settings
             langCode = SkrSettings.spellCheckingSettings.spellCheckingLangCode
         }
         else if (plmData.projectHub().getLangCode(projectId) !== "") {
@@ -578,7 +580,7 @@ WritingZoneForm {
 
         highlighter.spellChecker.langCode = langCode
 
-        if(projectId !== -1){
+        if(projectId !== -2){
             setProjectDictInSpellChecker(projectId)
         }
 
