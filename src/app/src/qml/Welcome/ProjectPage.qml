@@ -10,6 +10,7 @@ import ".."
 
 
 ProjectPageForm {
+    id: root
 
     swipeView.currentIndex: 0
 
@@ -28,7 +29,7 @@ ProjectPageForm {
     }
 
     Component.onCompleted: {
-        swipeView.itemAt(1).enabled = false
+        //swipeView.itemAt(1).enabled = false
     }
 
     saveButton.action: saveAction
@@ -504,8 +505,42 @@ ProjectPageForm {
 
 
     //----------------------------------------------------
+    //----Print----------------------------------------------
     //------------------------------------------------------------
+
+    Connections {
+        target: printItem
+        function onGoBackButtonClicked(){
+            swipeView.currentIndex = 0
+            root.forceActiveFocus()
+        }
+    }
+
+    //----------------------------------------------------
+    //----Importer----------------------------------------------
     //------------------------------------------------------------
+
+    Connections {
+        target: importerItem
+        function onGoBackButtonClicked(){
+            swipeView.currentIndex = 0
+            root.forceActiveFocus()
+
+        }
+    }
+
+    //----------------------------------------------------
+    //------Exporter---------------------------------------------
+    //------------------------------------------------------------
+
+    Connections {
+        target: exporterItem
+        function onGoBackButtonClicked(){
+            swipeView.currentIndex = 0
+            root.forceActiveFocus()
+
+        }
+    }
 
 
 }

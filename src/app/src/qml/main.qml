@@ -42,7 +42,20 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        SkrTheme
+        SkrTheme // instanciate singleton
+    }
+
+
+    //------------------------------------------------------------------
+    //---------window title---------
+    //------------------------------------------------------------------
+
+    Connections{
+        target: plmData.projectHub()
+        function onActiveProjectChanged(projectId){
+
+            rootWindow.title = "Skribisto - %1".arg(plmData.projectHub().getProjectName(projectId))
+        }
     }
 
 
@@ -284,7 +297,7 @@ ApplicationWindow {
                 var error = plmData.projectHub().saveProject(projectId)
 
                 if (error.getErrorCode() === "E_PROJECT_no_path"){
-                    var errorProjectId = error.getDataList()[0];
+                    var errorProjectId = error.getData("projectId", -2);
                     saveAsFileDialog.projectId = errorProjectId
                     saveAsFileDialog.open()
                 }
@@ -753,7 +766,7 @@ ApplicationWindow {
 
             var error = plmData.projectHub().saveProject(projectId)
             if (error.getErrorCode() === "E_PROJECT_no_path"){
-                var errorProjectId = error.getDataList()[0];
+                var errorProjectId = error.getData("projectId", -2);
                 saveAsBeforeClosingProjectFileDialog.projectId = errorProjectId
                 saveAsBeforeClosingProjectFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
                 saveAsBeforeClosingProjectFileDialog.open()
@@ -947,7 +960,7 @@ ApplicationWindow {
 
             var error = plmData.projectHub().saveProject(projectId)
             if (error.getErrorCode() === "E_PROJECT_no_path"){
-                var errorProjectId = error.getDataList()[0];
+                var errorProjectId = error.getData("projectId", -2);
                 saveAsBeforeQuitingFileDialog.projectId = errorProjectId
                 saveAsBeforeQuitingFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
                 saveAsBeforeQuitingFileDialog.open()

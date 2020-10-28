@@ -68,7 +68,7 @@ PLMError PLMProjectManager::saveProjectAs(int projectId,
         // emit plmTaskError->errorSent("E_PROJECT_PROJECTMISSING", Q_FUNC_INFO,
         // "No project with the id " + QString::number(projectId));
         error.setErrorCode("E_PROJECT_project_missing");
-        error.addData(projectId);
+        error.addData("projectId", projectId);
         error.setSuccess(false);
         return error;
     }
@@ -77,7 +77,7 @@ PLMError PLMProjectManager::saveProjectAs(int projectId,
         // emit plmTaskError->errorSent("E_PROJECT_NOPATH", Q_FUNC_INFO, "No
         // project path set");
         error.setErrorCode("E_PROJECT_no_path");
-        error.addData(projectId);
+        error.addData("projectId", projectId);
         error.setSuccess(false);
         return error;
     }

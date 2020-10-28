@@ -32,6 +32,11 @@ PLMNoteListModel::PLMNoteListModel(QObject *parent)
             &PLMNoteListModel::refreshAfterDataRemove);
 
     connect(plmdata->noteHub(),
+            &PLMNoteHub::indentChanged,
+            this,
+            &PLMNoteListModel::refreshAfterIndentChanged);
+
+    connect(plmdata->noteHub(),
             &PLMNoteHub::trashedChanged, // careful, paper is trashed = true,
                                          // not a true removal
             this,
@@ -633,6 +638,18 @@ void PLMNoteListModel::refreshAfterProjectIsActiveChanged(int projectId)
 }
 
 // --------------------------------------------------------------------
+
+void PLMNoteListModel::refreshAfterIndentChanged(int projectId, int paperId, int newIndent)
+{
+
+    for (PLMNoteItem *item : m_allNoteItems) {
+        item->invalidateData(PLMNoteItem::Roles::ProjectIsActiveRole);
+        item->invalidateData(PLMNoteItem::Roles::HasChildrenRole);
+    }
+}
+
+// --------------------------------------------------------------------
+
 void PLMNoteListModel::connectToPLMDataSignals()
 {
     m_dataConnectionsList << this->connect(plmdata->noteHub(),

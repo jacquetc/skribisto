@@ -56,6 +56,7 @@ private slots:
     void refreshAfterTrashedStateChanged(int projectId, int paperId, bool newTrashedState);
     void refreshAfterProjectIsBackupChanged(int projectId, bool isProjectABackup);
     void refreshAfterProjectIsActiveChanged(int projectId);
+    void refreshAfterIndentChanged(int projectId, int paperId, int newIndent);
 
 private:
 

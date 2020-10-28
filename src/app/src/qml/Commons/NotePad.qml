@@ -371,7 +371,7 @@ NotePadForm {
                 return
             }
 
-            var noteId = error.getDataList()[0]
+            var noteId = error.getData("noteId", -2)
 
             // set title
             var title = titleTextField.text
@@ -701,8 +701,8 @@ NotePadForm {
                         return
                     }
                     
-                    var noteId = error.getDataList()[0]
-                    
+                    var noteId = error.getData("noteId", -2)
+
                     // set title
                     var title = titleTextField.text
                     plmData.noteHub().setTitle(projectId, noteId, title)

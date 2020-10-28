@@ -813,7 +813,7 @@ SheetOverviewTreeForm {
 
                                             if(synopsisId === -2){ // no synopsis, create one
                                                 var error = plmData.noteHub().createSynopsis(projectId, sheetId)
-                                                synopsisId = error.getDataList()[0];
+                                                synopsisId = error.getData("synopsisId", -2);
                                                 plmData.noteHub().setTitle(projectId, synopsisId, qsTr("Outline"))
                                                 if(synopsisId === -2){
                                                     console.warn("can't find synopsis of", projectId, sheetId)
@@ -1596,7 +1596,7 @@ SheetOverviewTreeForm {
                     var error = plmData.sheetHub().addPaperAbove(currentProjectId, currentPaperId)
                     // edit it :
                     if(error){
-                        listView.itemAtIndex(currentIndex).paperIdToEdit = error.getDataList()[0] //start when paperIdToEdit changes
+                        listView.itemAtIndex(currentIndex).paperIdToEdit = error.getData("sheetId", -2) //start when paperIdToEdit changes
                     }
                 }
             }
@@ -1620,7 +1620,7 @@ SheetOverviewTreeForm {
                     var error = plmData.sheetHub().addPaperBelow(currentProjectId, currentPaperId)
                     // edit it :
                     if(error){
-                        listView.itemAtIndex(currentIndex).paperIdToEdit = error.getDataList()[0]
+                        listView.itemAtIndex(currentIndex).paperIdToEdit = error.getData("sheetId", -2)
                     }
 
                 }
@@ -1641,7 +1641,7 @@ SheetOverviewTreeForm {
                 var error = plmData.sheetHub().addChildPaper(currentProjectId, currentPaperId)
                 // edit it :
                 if(error){
-                    listView.itemAtIndex(currentIndex).paperIdToEdit = error.getDataList()[0]
+                    listView.itemAtIndex(currentIndex).paperIdToEdit = error.getData("sheetId", -2)
                 }
 
 

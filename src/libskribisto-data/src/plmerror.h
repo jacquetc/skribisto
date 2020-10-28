@@ -59,6 +59,8 @@ public:
     Q_INVOKABLE bool         operator!() const;
     Q_INVOKABLE              operator bool() const;
     Q_INVOKABLE PLMError   & operator=(const PLMError& iError);
+    bool operator ==(const PLMError &otherPLMError) const;
+    bool operator !=(const PLMError &otherPLMError) const;
 
     Q_INVOKABLE void         setSuccess(bool value);
     Q_INVOKABLE bool         isSuccess() const;
@@ -66,15 +68,17 @@ public:
     Q_INVOKABLE QString      getErrorCode() const;
     void                     setErrorCode(const QString& value);
 
-    Q_INVOKABLE QVariantList getDataList() const;
-    void                     setDataList(const QVariantList& dataList);
-    void                     addData(const QVariant& value);
+    Q_INVOKABLE QHash<QString, QVariant> getDataHash() const;
+    void                     setDataHash(const QHash<QString, QVariant>& dataHash);
+    void                     addData(const QString& key, const QVariant& value);
+
+    Q_INVOKABLE QVariant getData(const QString &key, const QVariant &defaultValue) const;
 
 private:
 
     bool         m_success;
     QString      m_errorCode;
-    QVariantList m_dataList;
+    QHash<QString, QVariant> m_dataHash;
 };
 
 #endif // PLMERROR_H

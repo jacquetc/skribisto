@@ -404,7 +404,7 @@ PLMError PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) 
             valueNamesStr = " DEFAULT VALUES";
         }
 
-        QString queryStr = "INSERT INTO " + m_tableName
+        QString queryStr = "INSERT INTO " + m_tableName + " "
                            + valueNamesStr + valuesStr;
         query.prepare(queryStr);
         i = values.constBegin();
@@ -415,6 +415,10 @@ PLMError PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) 
         }
 
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
         newId = query.lastInsertId().toInt();
     }
 

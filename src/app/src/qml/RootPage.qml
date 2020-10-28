@@ -19,22 +19,6 @@ import "Projects"
 RootPageForm {
     id: rootPage
 
-    //    Drawer{
-    //        id: drawer
-    //        width: 70
-    //        height: window.height
-    //        modal: false
-    //        interactive: true
-    //        position: 0
-
-    //        Loader{
-    //            anchors.fill: parent
-    //            sourceComponent: flow_comp
-
-    //        }
-
-    //    }
-
 
     Shortcut {
         sequence: "Esc"

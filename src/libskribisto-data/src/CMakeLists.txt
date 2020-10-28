@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 project(skribisto-data LANGUAGES CXX VERSION ${VERSION} )
 add_definitions(-DSKRIBISTO_DATA_LIBRARY)
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS Core Network Sql Xml CONFIG REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
 find_package(quazip5)
 
 
@@ -128,7 +128,7 @@ qt5_add_resources(RESOURCES ${QRC})
 # Tell CMake to create the executable
 add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${models_SRCS} ${RESOURCES})
 
-target_link_libraries(skribisto-data Qt5::Core Qt5::Network Qt5::Sql Qt5::Xml quazip5)
+target_link_libraries(skribisto-data Qt5::Core Qt5::Gui Qt5::Network Qt5::Sql Qt5::Xml quazip5)
 
 
 install(TARGETS skribisto-data LIBRARY DESTINATION ${KDE_INSTALL_LIBDIR})

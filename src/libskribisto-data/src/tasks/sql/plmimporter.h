@@ -26,6 +26,7 @@
 #include <QObject>
 #include <QtSql/QSqlDatabase>
 #include <QUrl>
+#include <QXmlStreamReader>
 
 #include "plmerror.h"
 
@@ -57,6 +58,14 @@ private:
                             QSqlDatabase & sqlDB);
     PLMError executeSQLString(const QString& sqlString,
                               QSqlDatabase & sqlDB);
+    PLMError createPapersAndAssociations(int projectId, int indent, const QXmlStreamReader &xml, const QString &tempDirPath);
+    PLMError createNote(int projectId, int indent, int plumeId, const QString &name, const QString &tempDirPath);
+    PLMError createTagsFromAttend(int projectId, int noteId, const QXmlStreamReader &xml, const QString &attributeName, const QStringList &values);
+
+private:
+
+    // used to track old plume id with new skribisto note id
+    QHash<int,int> m_attendanceConversionHash;
 };
 
 #endif // PLMIMPORTER_H
