@@ -58,7 +58,7 @@ class DocumentHandler : public QObject {
     Q_PROPERTY(bool canUndo READ canUndo NOTIFY canUndoChanged)
     Q_PROPERTY(bool canRedo READ canRedo NOTIFY canRedoChanged)
     Q_PROPERTY(int paperId READ paperId NOTIFY idChanged)
-    Q_PROPERTY(int projectId READ projectId NOTIFY idChanged)
+    Q_PROPERTY(int projectId READ projectId WRITE setProjectId NOTIFY idChanged)
 
     Q_PROPERTY(
         qreal topMarginEverywhere READ topMarginEverywhere WRITE setTopMarginEverywhere NOTIFY topMarginEverywhereChanged)
@@ -123,6 +123,7 @@ public:
     int                 paperId() const;
 
     int                 projectId() const;
+    void setProjectId(const int projectId);
 
     Q_INVOKABLE int     maxCursorPosition() const;
 
@@ -153,6 +154,7 @@ signals:
     void canUndoChanged(bool canUndo);
     void canRedoChanged(bool canRedo);
     void idChanged();
+    void projectIdChanged(int projectId);
     void topMarginEverywhereChanged(qreal topMargin);
     void indentEverywhereChanged(qreal indent);
 

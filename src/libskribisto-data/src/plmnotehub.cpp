@@ -36,7 +36,7 @@ PLMError PLMNoteHub::addNoteRelatedToSheet(int projectId, int sheetId) {
 
         error = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId);
 
-        error.addData(lastAddedNoteId);
+        error.addData("noteId", lastAddedNoteId);
     }
     return error;
 }
@@ -260,7 +260,7 @@ PLMError PLMNoteHub::createSynopsis(int projectId, int sheetId) {
         error.setSuccess(false);
     }
     IFOK(error){
-        error.addData(lastAddedNoteId);
+        error.addData("noteId", lastAddedNoteId);
 
     }
     return error;

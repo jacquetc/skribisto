@@ -24,7 +24,7 @@ SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel(QObject *parent) :
         &SKRSearchNoteListProxyModel::saveProjectSettings,
         Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
-        this->clearFilters();
+        this->invalidateFilter();
     });
 
 

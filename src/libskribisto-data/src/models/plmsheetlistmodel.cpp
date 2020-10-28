@@ -38,6 +38,12 @@ PLMSheetListModel::PLMSheetListModel(QObject *parent)
             this,
             &PLMSheetListModel::refreshAfterTrashedStateChanged);
 
+    connect(plmdata->sheetHub(),
+            &PLMSheetHub::indentChanged,
+
+            this,
+            &PLMSheetListModel::refreshAfterIndentChanged);
+
     connect(plmdata->projectHub(),
             &PLMProjectHub::projectIsBackupChanged,
             this,
@@ -723,6 +729,18 @@ void PLMSheetListModel::refreshAfterProjectIsActiveChanged(int projectId)
 
     for (PLMSheetItem *item : m_allSheetItems) {
         item->invalidateData(PLMSheetItem::Roles::ProjectIsActiveRole);
+    }
+}
+
+
+// --------------------------------------------------------------------
+
+void PLMSheetListModel::refreshAfterIndentChanged(int projectId, int paperId, int newIndent)
+{
+
+    for (PLMSheetItem *item : m_allSheetItems) {
+        item->invalidateData(PLMSheetItem::Roles::ProjectIsActiveRole);
+        item->invalidateData(PLMSheetItem::Roles::HasChildrenRole);
     }
 }
 

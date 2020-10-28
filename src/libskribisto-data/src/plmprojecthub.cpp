@@ -164,13 +164,13 @@ PLMError PLMProjectHub::backupAProject(int            projectId,
     QUrl projectPath = this->getPath(projectId);
 
     if (projectPath.isEmpty()) {
-        error.addData(projectId);
+        error.addData("projectId", projectId);
         error.setSuccess(false);
         error.setErrorCode("E_PROJECT_no_path");
     }
 
     if (projectPath.scheme() == "qrc") {
-        error.addData(projectId);
+        error.addData("projectId", projectId);
         error.setSuccess(false);
         error.setErrorCode("E_PROJECT_qrc_projects_cant_back_up");
     }
@@ -181,19 +181,19 @@ PLMError PLMProjectHub::backupAProject(int            projectId,
         QFileInfo folderInfo(folderPath.toLocalFile());
 
         if (!folderInfo.exists()) {
-            error.addData(projectId);
+            error.addData("projectId", projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_dont_exist");
         }
 
         if (!folderInfo.isDir()) {
-            error.addData(projectId);
+            error.addData("projectId", projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_not_a_directory");
         }
 
         if (!folderInfo.isWritable()) {
-            error.addData(projectId);
+            error.addData("projectId", projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_not_writable");
         }
@@ -236,7 +236,7 @@ bool PLMProjectHub::doesBackupOfTheDayExistAtPath(int projectId, const QUrl& fol
     QUrl projectPath = this->getPath(projectId);
 
     if (projectPath.isEmpty()) {
-        error.addData(projectId);
+        error.addData("projectId", projectId);
         error.setSuccess(false);
         error.setErrorCode("E_PROJECT_no_path");
     }
@@ -245,19 +245,19 @@ bool PLMProjectHub::doesBackupOfTheDayExistAtPath(int projectId, const QUrl& fol
         QFileInfo folderInfo(folderPath.toLocalFile());
 
         if (!folderInfo.exists()) {
-            error.addData(projectId);
+            error.addData("projectId", projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_dont_exist");
         }
 
         if (!folderInfo.isDir()) {
-            error.addData(projectId);
+            error.addData("projectId", projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_not_a_directory");
         }
 
         if (!folderInfo.isWritable()) {
-            error.addData(projectId);
+            error.addData("projectId", projectId);
             error.setSuccess(false);
             error.setErrorCode("E_PROJECT_path_not_writable");
         }
@@ -562,6 +562,19 @@ PLMError PLMProjectHub::setLangCode(int projectId, const QString& langCode) {
 QString PLMProjectHub::getProjectUniqueId(int projectId) const
 {
     return get(projectId, "t_project_unique_identifier").toString();
+}
+
+// ----------------------------------------------------------------------------
+
+PLMError PLMProjectHub::importPlumeCreatorProject(const QUrl &plumeURL, const QUrl &targetFileURL)
+{
+
+    PLMError error = createNewEmptyProject(targetFileURL);
+
+    int projectId = this->getLastLoaded();
+    IFOKDO(error, plmProjectManager->project(projectId)->importPlumeCreatorProject(plumeURL));
+
+    return error;
 }
 
 // ----------------------------------------------------------------------------

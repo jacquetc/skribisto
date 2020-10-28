@@ -1019,7 +1019,7 @@ PLMError PLMPaperHub::addPaper(const QHash<QString, QVariant>& values, int proje
     }
     IFOK(error) {
         m_last_added_id = newId;
-        error.addData(newId);
+        error.addData("paperId", newId);
         emit paperAdded(projectId, newId);
         emit projectModified(projectId);
     }
