@@ -1509,7 +1509,7 @@ SheetOverviewTreeForm {
                 }
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
-                    console.log("from deleted: sel label", currentProjectId, currentPaperId)
+                    console.log("sel label", currentProjectId, currentPaperId)
                     listView.itemAtIndex(currentIndex).editLabel()
                 }
             }

@@ -155,6 +155,7 @@ TreeListViewForm {
     }
 
     //----------------------------------------------------------------------------
+    listView.section.property: "indent"
     listView.section.criteria: ViewSection.FullString
     listView.section.labelPositioning: ViewSection.CurrentLabelAtStart |
                               ViewSection.InlineLabels
@@ -164,7 +165,7 @@ TreeListViewForm {
     Component {
         id: sectionHeading
         Rectangle {
-            width: searchResultList.width
+            width: listView.width
             height: childrenRect.height
             color: "lightsteelblue"
 

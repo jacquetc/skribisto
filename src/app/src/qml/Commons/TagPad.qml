@@ -20,6 +20,9 @@ TagPadForm {
 
     signal callAddTagRelationship(int projectId, int itemId, string tagName)
     signal callRemoveTagRelationship(int projectId,int itemId, int tagId)
+    signal callAddTag(int projectId, string tagName)
+    signal callRemoveTag(int projectId,int tagId)
+    signal tagTapped(int projectId,int tagId)
 
 
 
@@ -37,12 +40,15 @@ TagPadForm {
 
     }
 
+//----------------------------------------------------------------
+
     Connections{
         target: root
         function onCallRemoveTagRelationship(projectId, itemId, tagId){
-            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Sheet , itemId, tagId)
+            plmData.tagHub().removeTagRelationship(projectId, itemType , itemId, tagId)
         }
     }
+//----------------------------------------------------------------
 
     Connections{
         target: root
@@ -59,7 +65,7 @@ TagPadForm {
             }
 
             // set relationship
-            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Sheet, itemId, tagId)
+            error = plmData.tagHub().setTagRelationship(projectId, itemType, itemId, tagId)
             if (!error.success){
                 console.log("error onCallAddTagRelationship")
                 //TODO: add notification
@@ -67,6 +73,25 @@ TagPadForm {
             }
         }
     }
+
+    //----------------------------------------------------------------
+
+    Connections{
+        target: root
+        function onCallAddTag(projectId, tagName){
+            plmData.tagHub().addTag(projectId, tagName)
+        }
+    }
+
+    //----------------------------------------------------------------
+
+    Connections{
+        target: root
+        function onCallAddTag(projectId, tagId){
+            plmData.tagHub().removeTag(projectId, tagId)
+        }
+    }
+    //----------------------------------------------------------------
 
     Component {
         id: tagFlowComponent
@@ -92,7 +117,7 @@ TagPadForm {
             TapHandler {
                 id: tapHandler
                 onSingleTapped: {
-
+                    tagTapped(projectId, tagId)
 
 
                 }
@@ -130,9 +155,15 @@ TagPadForm {
             Keys.onPressed: {
                 if (event.key === Qt.Key_Delete){
                     console.log("Delete key pressed ")
-                    // remove
-                    callRemoveTagRelationship(projectId, itemId, tagId)
 
+                    if(itemId === -2){
+                        // remove tag
+                        callRemoveTag(projectId, tagId)
+                    }
+                    else {
+                        // remove relationship
+                        callRemoveTagRelationship(projectId, itemId, tagId)
+                    }
                 }
                 if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Delete){
                     console.log("Shift delete key pressed ")
@@ -207,7 +238,13 @@ TagPadForm {
                     opacity: 0
                     icon.name: "list-remove"
                     onReleased:{
-                        callRemoveTagRelationship(projectId, itemId, tagId)
+                        if(itemId === -2){
+                            callRemoveTag(projectId, tagId)
+                        }
+                        else {
+                            callRemoveTagRelationship(projectId, itemId, tagId)
+
+                        }
                     }
                     activeFocusOnTab: false
                 }
@@ -304,15 +341,12 @@ TagPadForm {
                 }
 
                 onAccepted: {
-
-                    //create basic tag
-                    //var error = plmData.tagHub().addTagRelationship(projectId, itemId)
-
-                    callAddTagRelationship(projectId, itemId, titleTextField.text)
-
-                    // add to model
-                    //tagListModel.append({title: title, itemProjectId: projectId, itemPaperId: paperId, itemTagId: tagId})
-
+                    if(itemId === -2){
+                        callAddTag(projectId, titleTextField.text)
+                    }
+                    else {
+                        callAddTagRelationship(projectId, itemId, titleTextField.text)
+                    }
                     titleEditPopup.close()
                 }
 
@@ -380,8 +414,14 @@ TagPadForm {
                                 }
                                 onDoubleTapped: {
 
+                                    if(itemId === -2){
+                                        callAddTag(model.projectId, model.name)
+                                    }
+                                    else {
                                     //create relationship with tag
                                     callAddTagRelationship(model.projectId, itemId, model.name)
+
+                                    }
                                     titleEditPopup.close()
                                 }
                             }

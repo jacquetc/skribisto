@@ -21,6 +21,7 @@ ListView {
 
     signal copyCalled(int projectId, int paperId)
     signal deleteDefinitivelyCalled(int projectId, int paperId)
+    signal sendToTrashCalled(int projectId, int paperId)
     signal goBackCalled()
 
     property int currentPaperId: -2
@@ -52,7 +53,7 @@ ListView {
     property bool checkButtonsVisible: false
     property bool openActionsEnabled: false
     property bool renameActionEnabled: false
-    //property bool sendToTrashActionEnabled: false
+    property bool sendToTrashActionEnabled: false
     property bool deleteActionEnabled: false
     property bool cutActionEnabled: false
     property bool copyActionEnabled: false
@@ -923,13 +924,31 @@ ListView {
                 MenuSeparator {}
 
                 SkrMenuItem {
+                    height: sendToTrashActionEnabled ? undefined : 0
+                    visible: sendToTrashActionEnabled
+                    action: Action {
+                        text: qsTr("Send to trash")
+                        //shortcut: "Del"
+                        icon {
+                            name: "edit-delete"
+                        }
+                        enabled: sendToTrashActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
+                        onTriggered: {
+                            console.log("sent to trash action", model.projectId,
+                                        model.paperId)
+                            sendToTrashCalled(model.projectId, model.paperId)
+                        }
+                    }
+                }
+
+                SkrMenuItem {
                     height: deleteActionEnabled ? undefined : 0
                     visible: deleteActionEnabled
                     action: Action {
                         text: qsTr("Delete definitively")
                         //shortcut: "Del"
                         icon {
-                            name: "edit-delete"
+                            name: "edit-delete-shred"
                         }
                         enabled: deleteActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
                         onTriggered: {
