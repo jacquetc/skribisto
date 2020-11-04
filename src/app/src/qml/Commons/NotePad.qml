@@ -130,6 +130,13 @@ NotePadForm {
                 }
 
                 SkrMenuItem {
+                    id: addNoteMenuItem
+                    text: qsTr("Add")
+                    action: addNoteAction
+
+                }
+
+                SkrMenuItem {
                     id: dissociateNoteMenu
                     text: qsTr("Dissociate")
 

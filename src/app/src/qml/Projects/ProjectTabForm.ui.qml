@@ -62,8 +62,8 @@ TabButton {
             text: "x"
             focusPolicy: Qt.NoFocus
             flat: true
-            implicitHeight: 20
-            implicitWidth: 20
+            implicitHeight: 30
+            implicitWidth: 30
         }
 
         HoverHandler {

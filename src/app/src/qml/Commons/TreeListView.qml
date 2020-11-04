@@ -158,7 +158,7 @@ TreeListViewForm {
     listView.section.property: "indent"
     listView.section.criteria: ViewSection.FullString
     listView.section.labelPositioning: ViewSection.CurrentLabelAtStart |
-                              ViewSection.InlineLabels
+                                       ViewSection.InlineLabels
     listView.section.delegate: sectionHeading
 
     // The delegate for each section header
@@ -186,7 +186,7 @@ TreeListViewForm {
             navigationMenu.close()
             return
         }
-            navigationMenu.open()
+        navigationMenu.open()
     }
 
     SkrMenu {
@@ -1193,8 +1193,8 @@ TreeListViewForm {
 
 
                 SkrMenuItem {
+                    height: model.paperId === -1 ?  0 : undefined
                     visible: model.paperId !== -1
-                    height: model.paperId === -1 ? 0 : undefined
 
                     action: Action {
                         id: openPaperInNewWindowAction
@@ -1213,7 +1213,7 @@ TreeListViewForm {
                 }
 
                 SkrMenuItem {
-                    height: model.paperId === -1 ? undefined : 0
+                    height: model.paperId === -1 ?  undefined : 0
                     visible: model.paperId === -1
                     enabled: contextMenuItemIndex === model.index && model.projectIsActive === false && listView.enabled &&  model.paperId === -1
                     text: qsTr("Set as active project")
@@ -1227,7 +1227,7 @@ TreeListViewForm {
                 }
 
 
-                MenuSeparator {}
+                MenuSeparator { }
 
                 Action {
                     id: renameAction
@@ -1245,159 +1245,216 @@ TreeListViewForm {
                     }
                 }
 
-                Action {
-                    id: setLabelAction
-                    text: qsTr("Set label")
-                    //shortcut: "F2"
-                    icon {
-                        name: "label"
-                    }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled
-                    onTriggered: {
-                        console.log("from deleted: sel label", model.projectId,
-                                    model.paperId)
-                        delegateRoot.editLabel()
-                    }
-                }
-
-                MenuSeparator {}
-                Action {
-                    id: cutAction
-                    text: qsTr("Cut")
-                    //shortcut: StandardKey.Cut
-                    icon {
-                        name: "edit-cut"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-
-                    onTriggered: {
-                        console.log("cut action", model.projectId,
-                                    model.paperId)
-                        proxyModel.cut(model.projectId, model.paperId, -2)
-                    }
-                }
-
-                Action {
-
-                    id: copyAction
-                    text: qsTr("Copy")
-                    //shortcut: StandardKey.Copy
-                    icon {
-                        name: "edit-copy"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-
-                    onTriggered: {
-                        console.log("copy action", model.projectId,
-                                    model.paperId)
-                        proxyModel.copy(model.projectId, model.paperId)
-                    }
-                }
-
-                MenuSeparator {}
-                Action {
-                    id: addBeforeAction
-                    text: qsTr("Add before")
-                    //shortcut: "Ctrl+Shift+N"
-                    icon {
-                        name: "document-new"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-                    onTriggered: {
-                        console.log("add before action", model.projectId,
-                                    model.paperId)
-
-                        var visualIndex = root.currentIndex
-                        proxyModel.addItemAbove(model.projectId, model.paperId, visualIndex)
-                        listView.itemAtIndex(visualIndex).editName()
-                    }
-                }
-
-                Action {
-                    id: addAfterAction
-                    text: qsTr("Add after")
-                    //shortcut: "Ctrl+N"
-                    icon {
-                        name: "document-new"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-                    onTriggered: {
-                        console.log("add after action", model.projectId,
-                                    model.paperId)
-
-                        var visualIndex = root.currentIndex + 1
-                        proxyModel.addItemBelow(model.projectId, model.paperId, visualIndex)
-                        listView.itemAtIndex(visualIndex).editName()
-                    }
-                }
-
-                MenuSeparator {}
-
-                Action {
-                    id: moveUpAction
-                    text: qsTr("Move up")
-                    //shortcut: "Ctrl+Up"
-                    icon {
-                        name: "object-order-raise"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
-                             && model.index !== 0
-                    onTriggered: {
-                        console.log("move up action", model.projectId,
-                                    model.paperId)
-
-                        if(temporarilyDisableMove){
-                            return
+                SkrMenuItem {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                    action:
+                        Action {
+                        id: setLabelAction
+                        text: qsTr("Set label")
+                        //shortcut: "F2"
+                        icon {
+                            name: "label"
                         }
-                        temporarilyDisableMove = true
-                        temporarilyDisableMoveTimer.start()
-
-                        proxyModel.moveUp(model.projectId, model.paperId,
-                                          model.index)
-
-
-                    }
-                }
-
-                Action {
-                    id: moveDownAction
-                    text: qsTr("Move down")
-                    //shortcut: "Ctrl+Down"
-                    icon {
-                        name: "object-order-lower"
-                    }
-                    enabled: contextMenuItemIndex === model.index
-                             && model.index !== visualModel.items.count - 1  && listView.enabled
-
-                    onTriggered: {
-                        console.log("move down action", model.projectId,
-                                    model.paperId)
-
-                        if(temporarilyDisableMove){
-                            return
+                        enabled: contextMenuItemIndex === model.index  && listView.enabled
+                        onTriggered: {
+                            console.log("from deleted: sel label", model.projectId,
+                                        model.paperId)
+                            delegateRoot.editLabel()
                         }
-                        temporarilyDisableMove = true
-                        temporarilyDisableMoveTimer.start()
-
-                        proxyModel.moveDown(model.projectId, model.paperId,
-                                            model.index)
                     }
                 }
-                MenuSeparator {}
-                Action {
-                    id: sendToTrashAction
-                    text: qsTr("Send to trash")
-                    //shortcut: "Del"
-                    icon {
-                        name: "edit-delete"
-                    }
-                    enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
-                    onTriggered: {
-                        console.log("sent to trash action", model.projectId,
-                                    model.paperId)
 
-                        removePaperAnimation.start()
-                        proxyModel.trashItemWithChildren(model.projectId, model.paperId)
+                MenuSeparator {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                }
+
+                SkrMenuItem {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                    action:
+                        Action {
+                        id: cutAction
+                        text: qsTr("Cut")
+                        //shortcut: StandardKey.Cut
+                        icon {
+                            name: "edit-cut"
+                        }
+                        enabled: contextMenuItemIndex === model.index && listView.enabled
+
+                        onTriggered: {
+                            console.log("cut action", model.projectId,
+                                        model.paperId)
+                            proxyModel.cut(model.projectId, model.paperId, -2)
+                        }
+                    }
+                }
+
+                SkrMenuItem {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                    action:
+                        Action {
+
+                        id: copyAction
+                        text: qsTr("Copy")
+                        //shortcut: StandardKey.Copy
+                        icon {
+                            name: "edit-copy"
+                        }
+                        enabled: contextMenuItemIndex === model.index && listView.enabled
+
+                        onTriggered: {
+                            console.log("copy action", model.projectId,
+                                        model.paperId)
+                            proxyModel.copy(model.projectId, model.paperId)
+                        }
+                    }
+                }
+                MenuSeparator {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                }
+
+                SkrMenuItem {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                    action:
+                        Action {
+                        id: addBeforeAction
+                        text: qsTr("Add before")
+                        //shortcut: "Ctrl+Shift+N"
+                        icon {
+                            name: "document-new"
+                        }
+                        enabled: contextMenuItemIndex === model.index && listView.enabled
+                        onTriggered: {
+                            console.log("add before action", model.projectId,
+                                        model.paperId)
+
+                            var visualIndex = root.currentIndex
+                            proxyModel.addItemAbove(model.projectId, model.paperId, visualIndex)
+                            listView.itemAtIndex(visualIndex).editName()
+                        }
+                    }
+                }
+
+                SkrMenuItem {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                    action:
+                        Action {
+                        id: addAfterAction
+                        text: qsTr("Add after")
+                        //shortcut: "Ctrl+N"
+                        icon {
+                            name: "document-new"
+                        }
+                        enabled: contextMenuItemIndex === model.index && listView.enabled
+                        onTriggered: {
+                            console.log("add after action", model.projectId,
+                                        model.paperId)
+
+                            var visualIndex = root.currentIndex + 1
+                            proxyModel.addItemBelow(model.projectId, model.paperId, visualIndex)
+                            listView.itemAtIndex(visualIndex).editName()
+                        }
+                    }
+
+                }
+
+                MenuSeparator {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                }
+
+                SkrMenuItem {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                    action:
+                        Action {
+                        id: moveUpAction
+                        text: qsTr("Move up")
+                        //shortcut: "Ctrl+Up"
+                        icon {
+                            name: "object-order-raise"
+                        }
+                        enabled: contextMenuItemIndex === model.index && listView.enabled
+                                 && model.index !== 0
+                        onTriggered: {
+                            console.log("move up action", model.projectId,
+                                        model.paperId)
+
+                            if(temporarilyDisableMove){
+                                return
+                            }
+                            temporarilyDisableMove = true
+                            temporarilyDisableMoveTimer.start()
+
+                            proxyModel.moveUp(model.projectId, model.paperId,
+                                              model.index)
+
+
+                        }
+                    }
+                }
+
+                SkrMenuItem {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                    action:
+                        Action {
+                        id: moveDownAction
+                        text: qsTr("Move down")
+                        //shortcut: "Ctrl+Down"
+                        icon {
+                            name: "object-order-lower"
+                        }
+                        enabled: contextMenuItemIndex === model.index
+                                 && model.index !== visualModel.items.count - 1  && listView.enabled
+
+                        onTriggered: {
+                            console.log("move down action", model.projectId,
+                                        model.paperId)
+
+                            if(temporarilyDisableMove){
+                                return
+                            }
+                            temporarilyDisableMove = true
+                            temporarilyDisableMoveTimer.start()
+
+                            proxyModel.moveDown(model.projectId, model.paperId,
+                                                model.index)
+                        }
+                    }
+
+                }
+
+                MenuSeparator {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                }
+
+                SkrMenuItem {
+                    height: model.paperId === -1 ? 0: undefined
+                    visible: model.paperId !== -1
+                    action:
+                        Action {
+                        id: sendToTrashAction
+                        text: qsTr("Send to trash")
+                        //shortcut: "Del"
+                        icon {
+                            name: "edit-delete"
+                        }
+                        enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
+                        onTriggered: {
+                            console.log("sent to trash action", model.projectId,
+                                        model.paperId)
+
+                            removePaperAnimation.start()
+                            proxyModel.trashItemWithChildren(model.projectId, model.paperId)
+                        }
                     }
                 }
             }

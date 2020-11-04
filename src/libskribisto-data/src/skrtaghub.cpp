@@ -106,7 +106,7 @@ PLMError SKRTagHub::removeTag(int projectId, int tagId)
     }
 
     IFOK(error) {
-        emit tagAdded(projectId, newId);
+        emit tagRemoved(projectId, newId);
         emit projectModified(projectId);
     }
 

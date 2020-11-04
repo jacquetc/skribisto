@@ -40,7 +40,7 @@ TagPadForm {
 
     }
 
-//----------------------------------------------------------------
+    //----------------------------------------------------------------
 
     Connections{
         target: root
@@ -48,7 +48,7 @@ TagPadForm {
             plmData.tagHub().removeTagRelationship(projectId, itemType , itemId, tagId)
         }
     }
-//----------------------------------------------------------------
+    //----------------------------------------------------------------
 
     Connections{
         target: root
@@ -87,7 +87,7 @@ TagPadForm {
 
     Connections{
         target: root
-        function onCallAddTag(projectId, tagId){
+        function onCallRemoveTag(projectId, tagId){
             plmData.tagHub().removeTag(projectId, tagId)
         }
     }
@@ -122,35 +122,84 @@ TagPadForm {
 
                 }
             }
-            //                onDoubleTapped: {
-            //                    //reset other tags :
-            //                    var i;
-            //                    for(i = 0; i < tagRepeater.count; i++) {
-            //                        tagRepeater.itemAt(i).isOpened = false
-            //                    }
-
-            //                    itemBase.isOpened = true
-            //                    Globals.openTagInNewTabCalled(itemBase.projectId, itemBase.tagId)
 
 
-            //                }
-            //            }
 
 
-            //            TapHandler {
-            //                id: shiftTapHandler
-            //                acceptedModifiers: Qt.ShiftModifier
-            //                onSingleTapped: {
-            //                    //reset other tags :
-            //                    var i;
-            //                    for(i = 0; i < tagRepeater.count; i++) {
-            //                        tagRepeater.itemAt(i).isOpened = false
-            //                    }
-            //                    itemBase.isOpened = true
-            //                    Globals.openTagInNewTabCalled(itemBase.projectId, itemBase.tagId)
-            //                }
-            //            }
+            TapHandler {
+                id: rightClickHandler
+                acceptedButtons: Qt.RightButton
+                onSingleTapped: {
+                    if(rightClickMenu.visible){
+                        rightClickMenu.close()
+                        return
+                    }
 
+                    rightClickMenu.popup()
+
+
+                }
+            }
+
+            SkrMenu{
+                id: rightClickMenu
+
+                SkrMenuItem {
+                    id: renameMenuItem
+                    text: qsTr("Rename")
+
+                    onTriggered: {
+
+                    }
+                }
+
+
+                SkrMenuItem {
+                    id: addTagMenuItem
+                    text: qsTr("Add")
+                    action: addTagAction
+
+
+                }
+                SkrMenuItem {
+                    id: removeTagMenuItem
+                    text: qsTr("Remove")
+
+                    onTriggered: {
+                        if(itemId === -2){
+                            removeTagDialog.projectId = projectId
+                            removeTagDialog.tagId = tagId
+                            removeTagDialog.tagName = model.name
+                            removeTagDialog.open()
+                        }
+                        else {
+                            callRemoveTagRelationship(projectId, itemId, tagId)
+                        }
+                    }
+
+                }
+
+            }
+
+            SimpleDialog {
+                property int projectId: -2
+                property int tagId: -2
+                property string tagName: ""
+
+                id: removeTagDialog
+                title: qsTr("Warning")
+                text: qsTr("Do you want to delete the tag \"%1\" ?").arg(tagName)
+                standardButtons: Dialog.Yes  | Dialog.Cancel
+
+                onRejected: {
+
+                }
+
+                onAccepted: {
+                    callRemoveTag(projectId, tagId)
+
+                }
+            }
 
             Keys.onPressed: {
                 if (event.key === Qt.Key_Delete){
@@ -294,7 +343,6 @@ TagPadForm {
         text: qsTr("Add tag")
         icon.name: "list-add"
         onTriggered: {
-
             titleEditPopup.open()
         }
     }
@@ -418,8 +466,8 @@ TagPadForm {
                                         callAddTag(model.projectId, model.name)
                                     }
                                     else {
-                                    //create relationship with tag
-                                    callAddTagRelationship(model.projectId, itemId, model.name)
+                                        //create relationship with tag
+                                        callAddTagRelationship(model.projectId, itemId, model.name)
 
                                     }
                                     titleEditPopup.close()
