@@ -890,7 +890,7 @@ ListView {
                         icon {
                             name: "label"
                         }
-                        enabled: renameActionEnabled && contextMenuItemIndex === model.index  && listView.enabled
+                        enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
                         onTriggered: {
                             console.log("sel label", model.projectId,
                                         model.paperId)

@@ -44,7 +44,7 @@ public:
 
     QList<int>getAllIdsWithPaperCode(int projectId,
                                      int paperCode) const;
-    PLMError  setProperty(int            projectId,
+    Q_INVOKABLE PLMError  setProperty(int            projectId,
                           int            paperCode,
                           const QString& name,
                           const QString& value);
@@ -64,7 +64,7 @@ public:
     PLMError  setValue(int            projectId,
                        int            propertyId,
                        const QString& value);
-    PLMError  setName(int            projectId,
+    Q_INVOKABLE PLMError  setName(int            projectId,
                       int            propertyId,
                       const QString& name);
     QString   getName(int projectId,

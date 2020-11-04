@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import eu.skribisto.searchnotelistproxymodel 1.0
 import eu.skribisto.usersettings 1.0
+import eu.skribisto.propertyhub 1.0
 import "../Commons"
 import "../Items"
 import ".."
@@ -599,6 +600,21 @@ NotePadForm {
         }
         
     }
+    //--------------------------------------------
+    //---------- Open synopsis------------------------
+    //--------------------------------------------
+
+    Action {
+        id: openSynopsisAction
+        text: qsTr("Show outline")
+        icon.name: "story-editor"
+        onTriggered: {
+
+        }
+    }
+    openSynopsisToolButton.action: openSynopsisAction
+
+
     //--------------------------------------------
     //---------- Add Note------------------------
     //--------------------------------------------

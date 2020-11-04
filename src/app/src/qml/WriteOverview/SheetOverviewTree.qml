@@ -804,7 +804,7 @@ SheetOverviewTreeForm {
                                         }
 
                                         Component.onDestruction: {
-                                            skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                            skrTextBridge.unsubscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
                                         }
 
 
@@ -813,10 +813,12 @@ SheetOverviewTreeForm {
 
                                             if(synopsisId === -2){ // no synopsis, create one
                                                 var error = plmData.noteHub().createSynopsis(projectId, sheetId)
-                                                synopsisId = error.getData("synopsisId", -2);
-                                                plmData.noteHub().setTitle(projectId, synopsisId, qsTr("Outline"))
+                                                synopsisId = error.getData("noteId", -2);
+                                                plmData.noteHub().setTitle(projectId, synopsisId, model.name)
+                                                plmData.notePropertyHub().setProperty(projectId, synopsisId, "label", qsTr("Outline"))
                                                 if(synopsisId === -2){
                                                     console.warn("can't find synopsis of", projectId, sheetId)
+                                                    //TODO: add notification
                                                     return
                                                 }
                                             }
@@ -827,12 +829,11 @@ SheetOverviewTreeForm {
                                         }
 
                                         function openSynopsis(_projectId, _paperId){
-
                                             // save current
                                             if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
                                                 saveContent()
                                                 saveCurrentPaperCursorPositionAndY()
-                                                skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                                skrTextBridge.unsubscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
                                             }
 
 
@@ -845,7 +846,7 @@ SheetOverviewTreeForm {
                                             writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
                                             title = plmData.noteHub().getTitle(_projectId, _paperId)
 
-                                            skrTextBridge.subscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                            skrTextBridge.subscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
                                             // apply format
                                             writingZone.documentHandler.indentEverywhere = SkrSettings.overviewTreeNoteSettings.textIndent
