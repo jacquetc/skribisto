@@ -85,9 +85,6 @@ Item {
 
                 CheckableTree {
                     id: listView
-                    anchors.fill: parent
-                    antialiasing: true
-                    clip: true
                     smooth: true
                     boundsBehavior: Flickable.StopAtBounds
 
@@ -97,6 +94,9 @@ Item {
                     renameActionEnabled: true
                     copyActionEnabled: true
                     deleteActionEnabled: true
+
+                    Accessible.name: "List of trashed items to be restored"
+                    Accessible.role: Accessible.List
                 }
             }
         }

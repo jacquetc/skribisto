@@ -366,7 +366,7 @@ TagPadForm {
         x: addTagMenuToolButton.x - 200
         y: addTagMenuToolButton.y + addTagMenuToolButton.height
         width: 200
-        height: 200
+        height: 400
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
         padding: 0
@@ -428,12 +428,9 @@ TagPadForm {
 
                 ListView {
                     id: searchResultList
-                    anchors.fill: parent
-                    clip: true
                     smooth: true
                     focus: true
                     boundsBehavior: Flickable.StopAtBounds
-
 
                     model: searchProxyModel
                     interactive: true

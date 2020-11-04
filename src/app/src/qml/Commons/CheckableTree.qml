@@ -41,7 +41,6 @@ ListView {
     }
     model: visualModel
 
-
     property int contextMenuItemIndex: -2
     onCurrentIndexChanged: {
         contextMenuItemIndex = root.currentIndex
@@ -328,6 +327,7 @@ ListView {
 
                     }
                 }
+
 
                 Action {
                     id: openDocumentAction

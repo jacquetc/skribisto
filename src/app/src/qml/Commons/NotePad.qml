@@ -332,12 +332,19 @@ NotePadForm {
         noteListModel.clear()
         
         var noteList = plmData.noteHub().getNotesFromSheetId(projectId, sheetId)
+        var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
         
         var i;
         for (i = 0; i < noteList.length ; i++){
             var noteId = noteList[i]
             
             var title = plmData.noteHub().getTitle(projectId, noteId)
+
+
+            // ignore synopsis
+            if (synopsisId === noteId){
+                continue
+            }
             
             noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
         }
@@ -616,6 +623,20 @@ NotePadForm {
 
 
     //--------------------------------------------
+    //---------- Open note in new tab------------------------
+    //--------------------------------------------
+
+    Action {
+        id: openNoteInNewTabAction
+        text: qsTr("Open current note in a new tab")
+        icon.name: "quickopen-file"
+        onTriggered: {
+
+        }
+    }
+    openNoteInNewTabToolButton.action: openNoteInNewTabAction
+
+    //--------------------------------------------
     //---------- Add Note------------------------
     //--------------------------------------------
     
@@ -692,7 +713,7 @@ NotePadForm {
         x: addNoteMenuToolButton.x - 200
         y: addNoteMenuToolButton.y + addNoteMenuToolButton.height
         width: 200
-        height: 200
+        height: 400
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
         padding: 0
@@ -766,12 +787,9 @@ NotePadForm {
                 
                 ListView {
                     id: searchResultList
-                    anchors.fill: parent
-                    clip: true
                     smooth: true
                     focus: true
                     boundsBehavior: Flickable.StopAtBounds
-                    
                     
                     model: searchProxyModel
                     interactive: true

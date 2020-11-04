@@ -1570,6 +1570,14 @@ not allowed delete a filled book.</source>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open current note in a new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>

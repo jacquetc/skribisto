@@ -24,8 +24,6 @@ SheetOverviewTreeForm {
     property int openedPaperId: -2
     property int currentIndex: listView.currentIndex
 
-
-
     property alias visualModel: visualModel
     property var proxyModel
     property var model
@@ -458,6 +456,7 @@ SheetOverviewTreeForm {
                             listView.currentIndex = model.index
                             delegateRoot.forceActiveFocus()
                             eventPoint.accepted = true
+
                         }
 
                         onDoubleTapped: {

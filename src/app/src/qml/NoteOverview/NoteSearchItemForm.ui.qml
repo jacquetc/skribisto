@@ -39,10 +39,11 @@ Item {
 
             CheckableTree {
                 id: searchListView
-                anchors.fill: parent
                 openActionsEnabled: true
                 renameActionEnabled: true
                 sendToTrashActionEnabled: true
+                treeIndentMultiplier: 20
+                elevationEnabled: true
             }
         }
     }

@@ -550,6 +550,7 @@ TreeListViewForm {
                     //acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     //xAxis.enabled: false
                     //grabPermissions: PointerHandler.TakeOverForbidden
+
                     onActiveChanged: {
                         if (active) {
                             moveSourceInt = content.visualIndex
@@ -585,6 +586,7 @@ TreeListViewForm {
                     onLongPressed: { // needed to activate the grab handler
                         enabled = false
                     }
+
                 }
 
                 TapHandler {
@@ -608,6 +610,7 @@ TreeListViewForm {
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
                         listView.currentIndex = model.index
+                        delegateRoot.forceActiveFocus()
                         openDocumentInNewTabAction.trigger()
                         eventPoint.accepted = true
 
@@ -616,6 +619,7 @@ TreeListViewForm {
                 /// without MouseArea, it breaks while dragging and scrolling:
                 MouseArea {
                     anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
                     onWheel: {
                         listView.flick(0, wheel.angleDelta.y * 50)
                         wheel.accepted = true

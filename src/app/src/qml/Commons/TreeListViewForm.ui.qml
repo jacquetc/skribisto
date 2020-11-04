@@ -76,12 +76,8 @@ Item {
 
                 ListView {
                     id: listView
-                    anchors.fill: parent
-                    antialiasing: true
-                    clip: true
                     smooth: true
                     boundsBehavior: Flickable.StopAtBounds
-                    focus: true
 
                     Accessible.name: "Navigation list"
                     Accessible.role: Accessible.List
