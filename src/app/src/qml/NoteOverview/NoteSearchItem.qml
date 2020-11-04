@@ -47,7 +47,7 @@ NoteSearchItemForm {
     searchListView.model: noteOverviewSearchProxyModel
     searchListView.treelikeIndentsVisible: searchTextField.text.length === 0
     searchListView.treeIndentMultiplier: 20
-
+    searchListView.elevationEnabled: true
 
 
 }

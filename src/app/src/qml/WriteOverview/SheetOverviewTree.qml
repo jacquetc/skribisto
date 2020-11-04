@@ -517,11 +517,12 @@ SheetOverviewTreeForm {
 
                         Item {
                             id: titleBox
-                            Layout.minimumWidth: 50
-                            Layout.preferredWidth: 60
-                            Layout.maximumWidth: 150
+                            clip: true
+                            //Layout.minimumWidth: 50
+                            Layout.preferredWidth: 200
+                            //Layout.maximumWidth: 150
                             Layout.fillHeight: true
-                            Layout.fillWidth: true
+                            //Layout.fillWidth: true
 
 
 
@@ -549,13 +550,14 @@ SheetOverviewTreeForm {
                                     SkrLabel {
                                         id: titleLabel
 
-                                        Layout.fillWidth: true
                                         Layout.topMargin: 2
                                         Layout.leftMargin: 4
                                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                         font.bold: model.projectIsActive && model.indent === -1 ? true : false
                                         text: model.indent === -1 ? model.projectName : model.name
                                         elide: Text.ElideRight
+
+                                        Layout.fillWidth: true
                                     }
 
                                     SkrTextField {
@@ -563,6 +565,7 @@ SheetOverviewTreeForm {
                                         visible: false
 
                                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                        Layout.fillWidth: true
                                         text: labelLabel.text
                                         maximumLength: 50
 
@@ -603,6 +606,7 @@ SheetOverviewTreeForm {
                                         visible: false
 
                                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                        Layout.fillWidth: true
                                         text: titleLabel.text
                                         maximumLength: 50
 
@@ -652,6 +656,7 @@ SheetOverviewTreeForm {
                                         elide: Text.ElideRight
                                         visible: text.length === 0 ? false : true
                                         font.italic: true
+                                        Layout.fillWidth: true
                                     }
                                 }
 

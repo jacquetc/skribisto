@@ -115,5 +115,6 @@
         <file>qml/NoteOverview/NoteSearchItemForm.ui.qml</file>
         <file>qml/NoteOverview/RecentNotesItem.qml</file>
         <file>qml/NoteOverview/RecentNotesItemForm.ui.qml</file>
+        <file>qml/Items/SkrToolTip.qml</file>
     </qresource>
 </RCC>

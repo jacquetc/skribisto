@@ -58,11 +58,14 @@ ListView {
     property bool cutActionEnabled: false
     property bool copyActionEnabled: false
     property bool pasteActionEnabled: false
-
+    property bool elevationEnabled: false
 
     //tree-like onTreelikeIndents
     property int treeIndentOffset: 0
     property int treeIndentMultiplier: 10
+
+    spacing: elevationEnabled ? 5 : 0
+    leftMargin: elevationEnabled ? 5 : 0
 
     // checkButtons :
     function getCheckedPaperIdList(){
@@ -250,7 +253,7 @@ ListView {
 
             property bool editBugWorkaround: false
 
-            Rectangle {
+            Pane {
                 id: content
                 property int visualIndex: 0
                 property int sourceIndex: -2
@@ -264,13 +267,11 @@ ListView {
                 width: delegateRoot.width
                 height: 50
 
-                color: "transparent"
+                padding: 1
 
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 100
-                    }
-                }
+                Material.background: SkrTheme.pageBackground
+                Material.elevation: root.elevationEnabled ? 4 : 0
+
 
                 HoverHandler {
                     id: hoverHandler
@@ -306,13 +307,13 @@ ListView {
                     acceptedButtons: Qt.RightButton
                     onTapped: {
 
+                        root.currentIndex = model.index
 
                         if(menu.visible){
                             menu.close()
                             return
                         }
 
-                        root.currentIndex = model.index
                         menu.open()
                         eventPoint.accepted = true
                     }
@@ -626,10 +627,16 @@ ListView {
                             flat: true
                             focusPolicy: Qt.NoFocus
 
-                            onClicked: {
+                            onClicked: {                                
 
                                 root.currentIndex = model.index
                                 delegateRoot.forceActiveFocus()
+
+                                if(menu.visible){
+                                    menu.close()
+                                    return
+                                }
+
                                 menu.open()
                             }
 
@@ -1018,7 +1025,7 @@ ListView {
 
             NumberAnimation {
                 property: "x"
-                to: listView.width
+                to: root.width
                 duration: 250
                 easing.type: Easing.InBack
             }

@@ -56,8 +56,8 @@ NotePadForm {
             id: itemBase
             width: childrenRect.width + 10
             height: childrenRect.height + 10
-            color: isOpened && !minimalMode? Material.accentColor : "lightskyblue"
-            border.color: isSelected ? Material.accentColor : "lightskyblue"
+            color: isOpened && !minimalMode? SkrTheme.accent : "lightskyblue"
+            border.color: isSelected ? SkrTheme.accent : "lightskyblue"
             border.width: 2
             radius : height / 2
             property int projectId: model.itemProjectId

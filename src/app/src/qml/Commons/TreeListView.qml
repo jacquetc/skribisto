@@ -959,6 +959,13 @@ TreeListViewForm {
                             focusPolicy: Qt.NoFocus
 
                             onClicked: {
+
+                                if(menu.visible){
+                                    menu.close()
+                                    return
+                                }
+
+
                                 listView.currentIndex = model.index
                                 delegateRoot.forceActiveFocus()
                                 menu.open()

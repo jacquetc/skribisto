@@ -99,7 +99,7 @@ TagPadForm {
             id: itemBase
             width: childrenRect.width + 10
             height: childrenRect.height + 10
-            border.color: isSelected ? Material.accentColor : "lightskyblue"
+            border.color: isSelected ? SkrTheme.accent : "lightskyblue"
             border.width: 2
             radius : height / 2
             property int projectId: model.projectId

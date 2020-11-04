@@ -28,13 +28,22 @@ Item {
             itemType: SKRTagHub.Note
         }
 
-        CheckableTree {
-            id: searchListView
-            Layout.fillHeight: true
+        ScrollView {
+            id: scrollView
+            focusPolicy: Qt.StrongFocus
             Layout.fillWidth: true
-            openActionsEnabled: true
-            renameActionEnabled: true
-            sendToTrashActionEnabled: true
+            Layout.fillHeight: true
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+            CheckableTree {
+                id: searchListView
+                anchors.fill: parent
+                openActionsEnabled: true
+                renameActionEnabled: true
+                sendToTrashActionEnabled: true
+            }
         }
     }
 }
