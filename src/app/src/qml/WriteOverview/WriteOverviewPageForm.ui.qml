@@ -143,15 +143,19 @@ Item {
 
                         RowLayout {
                             anchors.fill: parent
+
+                            RowLayout {
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+
                             SkrLabel {
                                 id: topFilteringBannerLabel
-                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             }
 
                             SkrToolButton {
                                 id: unsetFilteringParentToolButton
                                 text: qsTr("Unfocus")
                                 display: AbstractButton.IconOnly
+                            }
                             }
                         }
                     }

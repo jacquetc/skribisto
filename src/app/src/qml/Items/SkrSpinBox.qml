@@ -15,6 +15,6 @@ SpinBox {
 
     SkrToolTip {
         text: control.tip
-        visible: control.hovered
+        visible: control.hovered && tip.length !== 0
     }
 }

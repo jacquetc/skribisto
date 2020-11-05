@@ -16,7 +16,7 @@ Button {
 
     SkrToolTip {
         text: control.tip ? control.tip : control.text
-        visible: control.hovered
+        visible: control.hovered && text.length !== 0
     }
 
 }
