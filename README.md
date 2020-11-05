@@ -52,9 +52,9 @@ Skribisto will add to these features with :
 - Windows 10 support
 - Examples
 - Help page
-- importing old Plume Creator projects
-- texts overview
-- notes overview
+- **importing old Plume Creator projects**
+- **texts overview**
+- **notes overview**
 - project management
 - each note or text can take snapshots
 - on-the-fly notes from the context menu
@@ -74,33 +74,96 @@ Each project is a SQLite3 file, more robust than the zipped projects in Plume.
 
 
 
-## Test it
+## Build it, test it
 
-### Linux / Windows
+### Windows
+*Not supported yet*
 Download the latest from GitHub, then you can use Qt Creator to open the top-most CMakeLists.txt at the root of the project. Build it against Qt 5.15 minimum to be sure.
 
-### Linux
-Also, thanks to the flatpak support, 
-- make sure to have flatpak and flatpak-builder installed on your system
-- type in a terminal :
+Needed sources and libs :
+- hunspell
+- zlib
+- quazip
 
-prerequisiste :
+### Linux
+
+#### Flatpak prerequisites
+
+- make sure to have *flatpak* and *flatpak-builder* installed on your system
+
+Prerequisites (>1Go):
 ```
 flatpak install flathub org.kde.Sdk//5.15
+flatpak install flathub org.kde.Platform//5.15
 ```
 
-Compile and install :
+#### Flatpak from GitHub master branch :
+
+- type in a terminal :
+
+
+
+Compile :
 ```
 mkdir Devel
 cd ~/Devel
 git clone https://github.com/jacquetc/skribisto.git
-flatpak uninstall eu.skribisto.skribisto -y
 flatpak-builder --user --repo=local-repo build-dir skribisto/eu.skribisto.skribisto.yml --force-clean
-flatpak install eu.skribisto.skribisto -y
 ```
 
-It will download 500 Mo if dependencies the first time.
+Run only once :
+```
+flatpak build-update-repo local-repo
+flatpak --user remote-add --no-gpg-verify local-repo local-repo
+```
 
+Install :
+
+```
+flatpak install eu.skribisto.skribisto -y --reinstall
+```
+
+Later, when a new version is online, you can update with this single line:
+```
+cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/eu.skribisto.skribisto.yml --force-clean && flatpak install eu.skribisto.skribisto -y --reinstall
+```
+
+
+#### Flatpak from local source code:
+
+You can copy/paste in ~/Devel/ the file *eu.skribisto.skribisto* found in \[skribisto-repo\]/package/flatpak/local/
+
+Near the end of the file, in **skribisto** build module, adapt **path:** to your local repository (ex: path: /home/cyril/Devel/skribisto)
+
+
+
+```
+mkdir Devel
+cd ~/Devel
+git clone https://github.com/jacquetc/skribisto.git
+flatpak-builder --user --repo=local-repo build-dir eu.skribisto.skribisto.yml --force-clean
+```
+
+Run only once :
+```
+flatpak build-update-repo local-repo
+flatpak --user remote-add --no-gpg-verify local-repo local-repo
+```
+
+
+
+Install :
+```
+flatpak install eu.skribisto.skribisto -y --reinstall
+```
+
+
+After you modified the code you want in whichever git branch you want, type this command :
+
+```
+flatpak-builder --user --repo=local-repo build-dir eu.skribisto.skribisto.yml --force-clean
+flatpak install eu.skribisto.skribisto -y --reinstall
+```
 
 ## To contact me :
 
