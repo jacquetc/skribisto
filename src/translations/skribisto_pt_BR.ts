@@ -1578,6 +1578,10 @@ not allowed delete a filled book.</source>
         <source>Open current note in a new tab</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Note name</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
@@ -3111,6 +3115,10 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Do you want to delete the tag &quot;%1&quot; ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tag name</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

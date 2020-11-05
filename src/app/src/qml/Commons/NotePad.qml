@@ -75,6 +75,7 @@ NotePadForm {
 
             TapHandler {
                 id: tapHandler
+                acceptedButtons: Qt.LeftButton
                 onSingleTapped: {
                     //reset other notes :
                     var i;
@@ -105,6 +106,7 @@ NotePadForm {
 
             TapHandler {
                 id: rightClickHandler
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
                 onSingleTapped: {
                     if(rightClickMenu.visible){
@@ -726,11 +728,11 @@ NotePadForm {
                 Layout.fillWidth: true
                 
                 selectByMouse: true
+                placeholderText: qsTr("Note name")
                 
                 
                 onVisibleChanged: {
                     if (visible){
-                        titleTextField.text = "test"
                         titleTextField.forceActiveFocus()
                         titleTextField.selectAll()
                     }

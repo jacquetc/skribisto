@@ -21,8 +21,8 @@ ListView {
 
     signal copyCalled(int projectId, int paperId)
     signal deleteDefinitivelyCalled(int projectId, int paperId)
-    signal sendToTrashCalled(int projectId, int paperId)
-    signal goBackCalled()
+    //signal sendToTrashCalled(int projectId, int paperId)
+    signal escapeKeyPressed()
 
     property int currentPaperId: -2
     property int currentProjectId: -2
@@ -244,7 +244,7 @@ ListView {
 
                 if (event.key === Qt.Key_Escape){
                     console.log("Escape key pressed")
-                    goBackCalled()
+                    escapeKeyPressed()
                     event.accepted = true
                 }
 
@@ -627,7 +627,7 @@ ListView {
                             flat: true
                             focusPolicy: Qt.NoFocus
 
-                            onClicked: {                                
+                            onClicked: {
 
                                 root.currentIndex = model.index
                                 delegateRoot.forceActiveFocus()
@@ -649,11 +649,11 @@ ListView {
 
                             color: model.indent === 0 ? Material.color(Material.Indigo) :
                                                         (model.indent === 1 ? Material.color(Material.LightBlue) :
-                                                                         (model.indent === 2 ? Material.color(Material.LightGreen) :
-                                                                                               (model.indent === 3 ? Material.color(Material.Amber) :
-                                                                                                                     (model.indent === 4 ? Material.color(Material.DeepOrange) :
-                                                                                               Material.color(Material.Teal)
-                                                                              ))))
+                                                                              (model.indent === 2 ? Material.color(Material.LightGreen) :
+                                                                                                    (model.indent === 3 ? Material.color(Material.Amber) :
+                                                                                                                          (model.indent === 4 ? Material.color(Material.DeepOrange) :
+                                                                                                                                                Material.color(Material.Teal)
+                                                                                                                           ))))
                         }
                     }
                     Rectangle {
@@ -865,7 +865,10 @@ ListView {
                     }
                 }
 
-                MenuSeparator {}
+                MenuSeparator {
+                    height: renameActionEnabled  ? undefined : 0
+                    visible: renameActionEnabled
+                }
 
                 SkrMenuItem {
                     height: renameActionEnabled ? undefined : 0
@@ -906,7 +909,10 @@ ListView {
                     }
                 }
 
-                MenuSeparator {}
+                MenuSeparator {
+                    height: copyActionEnabled  ? undefined : 0
+                    visible: copyActionEnabled
+                }
 
                 SkrMenuItem {
                     height: copyActionEnabled ? undefined : 0
@@ -928,7 +934,10 @@ ListView {
                     }
                 }
 
-                MenuSeparator {}
+                MenuSeparator {
+                    height: sendToTrashActionEnabled || deleteActionEnabled ? undefined : 0
+                    visible: sendToTrashActionEnabled || deleteActionEnabled
+                }
 
                 SkrMenuItem {
                     height: sendToTrashActionEnabled ? undefined : 0
@@ -943,7 +952,8 @@ ListView {
                         onTriggered: {
                             console.log("sent to trash action", model.projectId,
                                         model.paperId)
-                            sendToTrashCalled(model.projectId, model.paperId)
+                            //sendToTrashCalled(model.projectId, model.paperId)
+                            proxyModel.trashItemWithChildren(model.projectId, model.paperId)
                         }
                     }
                 }
@@ -966,7 +976,7 @@ ListView {
                     }
                 }
 
-                MenuSeparator {}
+
             }
 
             ListView.onRemove: SequentialAnimation {

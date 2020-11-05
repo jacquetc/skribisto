@@ -68,7 +68,7 @@ RestoreListViewForm {
         listView.openDocument.connect(root.openDocument)
         listView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
         listView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
-        listView.goBackCalled.connect( function() {goBackAction.trigger()})
+        listView.escapeKeyPressed.connect( function() {goBackAction.trigger()})
         listView.deleteDefinitivelyCalled.connect(root.prepareDeleteDefinitivelyDialog)
 
         listView.proxyModel = proxyModel

@@ -1996,6 +1996,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>Open current note in a new tab</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Note name</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
@@ -3808,6 +3812,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>Do you want to delete the tag &quot;%1&quot; ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tag name</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

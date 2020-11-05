@@ -45,7 +45,22 @@ NoteSearchItemForm {
         textFilter: searchTextField.text
     }
     searchListView.model: noteOverviewSearchProxyModel
+    searchListView.proxyModel: noteOverviewSearchProxyModel
+
     searchListView.treelikeIndentsVisible: searchTextField.text.length === 0
+
+
+    Component.onCompleted: {
+        searchListView.openDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+        searchListView.openDocumentInNewWindow.connect(Globals.openNoteInNewWindowCalled)
+    }
+
+    Connections {
+        target: searchListView
+        function onOpenDocument(openedProjectId, openedPaperId, _projectId, _paperId) {
+            Globals.openNoteInNewTabCalled(_projectId, _paperId)
+        }
+    }
 
 
 }

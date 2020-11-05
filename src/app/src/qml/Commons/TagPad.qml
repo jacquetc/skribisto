@@ -23,6 +23,7 @@ TagPadForm {
     signal callAddTag(int projectId, string tagName)
     signal callRemoveTag(int projectId,int tagId)
     signal tagTapped(int projectId,int tagId)
+    signal tagDoubleTapped(int projectId,int tagId)
 
 
 
@@ -116,9 +117,19 @@ TagPadForm {
 
             TapHandler {
                 id: tapHandler
+                acceptedButtons: Qt.LeftButton
                 onSingleTapped: {
+                    //reset other notes :
+                    var i;
+                    for(i = 0; i < tagRepeater.count; i++) {
+                        tagRepeater.itemAt(i).isOpened = false
+                    }
+
                     tagTapped(projectId, tagId)
 
+                }
+                onDoubleTapped: {
+                    tagDoubleTapped(projectId, tagId)
 
                 }
             }
@@ -128,8 +139,16 @@ TagPadForm {
 
             TapHandler {
                 id: rightClickHandler
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
-                onSingleTapped: {
+                onSingleTapped: {                   
+                    //reset other notes :
+                    var i;
+                    for(i = 0; i < tagRepeater.count; i++) {
+                        tagRepeater.itemAt(i).isOpened = false
+                    }
+
+
                     if(rightClickMenu.visible){
                         rightClickMenu.close()
                         return
@@ -379,10 +398,11 @@ TagPadForm {
 
                 selectByMouse: true
 
+                placeholderText: qsTr("Tag name")
+
 
                 onVisibleChanged: {
                     if (visible){
-                        titleTextField.text = "test"
                         titleTextField.forceActiveFocus()
                         titleTextField.selectAll()
                     }
