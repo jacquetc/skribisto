@@ -277,6 +277,17 @@ void SKRSearchNoteListProxyModel::determineCheckStateOfAllAncestors(
 
 // --------------------------------------------------------------
 
+void SKRSearchNoteListProxyModel::setTagIdListFilter(const QList<int> &tagIdListFilter)
+{
+    m_tagIdListFilter = tagIdListFilter;
+
+
+    emit tagIdListFilterChanged(tagIdListFilter);
+    this->invalidateFilter();
+}
+
+// --------------------------------------------------------------
+
 QList<int>SKRSearchNoteListProxyModel::getCheckedIdsList() {
     QList<int> result;
 
@@ -530,6 +541,21 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
                 }
             }
         }
+    }
+
+    // tagId filtering
+
+    if (result && !m_tagIdListFilter.isEmpty() && m_projectIdFilter != -2) {
+
+        QList<int> tagIds = plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter, SKRTagHub::Note, item->data(PLMNoteItem::Roles::PaperIdRole).toInt());
+
+        result = false;
+        for(int tag : tagIds){
+            if(m_tagIdListFilter.contains(tag)){
+                result = true;
+            }
+        }
+
     }
 
     return result;

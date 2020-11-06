@@ -377,5 +377,21 @@
         <file>icons/breeze-skribisto/actions/24/quickopen-file.svg</file>
         <file>icons/breeze-skribisto/actions/24/quickopen-function.svg</file>
         <file>icons/breeze-skribisto/actions/24/quickopen.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-all.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-history.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-list.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-locationbar-ltr.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-locationbar-rtl.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-all.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-history.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-list.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-locationbar-ltr.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-locationbar-rtl.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear.svg</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-clear-all-symbolic.svg</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-clear-rtl-symbolic.svg</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-clear-symbolic-rtl.svg</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-clear-symbolic.svg</file>
     </qresource>
 </RCC>

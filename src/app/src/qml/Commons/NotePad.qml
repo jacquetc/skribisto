@@ -82,6 +82,8 @@ NotePadForm {
                     for(i = 0; i < noteRepeater.count; i++) {
                         noteRepeater.itemAt(i).isOpened = false
                     }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
 
                     itemBase.isOpened = true
                     //open in noteTextArea
@@ -95,11 +97,30 @@ NotePadForm {
                     for(i = 0; i < noteRepeater.count; i++) {
                         noteRepeater.itemAt(i).isOpened = false
                     }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
 
                     itemBase.isOpened = true
                     Globals.openNoteInNewTabCalled(itemBase.projectId, itemBase.noteId)
 
 
+                }
+
+                onLongPressed: {
+                    var i;
+                    for(i = 0; i < noteRepeater.count; i++) {
+                        noteRepeater.itemAt(i).isSelected = false
+                    }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
+
+
+                    if(rightClickMenu.visible){
+                        rightClickMenu.close()
+                        return
+                    }
+
+                    rightClickMenu.popup(itemBase, 0, itemBase.height)
                 }
             }
 
@@ -109,6 +130,13 @@ NotePadForm {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
                 onSingleTapped: {
+                    var i;
+                    for(i = 0; i < noteRepeater.count; i++) {
+                        noteRepeater.itemAt(i).isSelected = false
+                    }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
+
                     if(rightClickMenu.visible){
                         rightClickMenu.close()
                         return
@@ -269,43 +297,60 @@ NotePadForm {
                     text: model.title
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
+                    Layout.minimumWidth: 20
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                }
 
-                SkrRoundButton {
-                    id: removeRelationshipButton
-                    Layout.preferredWidth: 0
-                    Layout.maximumHeight: noteTitle.height
-                    padding: 0
-                    topInset: 1
-                    bottomInset: 1
-                    leftInset: 1
-                    rightInset: 1
-                    opacity: 0
-                    icon.name: "list-remove"
-                    onReleased:{
-                        plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                    SkrRoundButton {
+                        id: removeRelationshipButton
+                        width: 0
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.right: parent.right
+                        padding: 0
+                        topInset: 1
+                        bottomInset: 1
+                        leftInset: 1
+                        rightInset: 1
+                        opacity: 0
+                        icon.name: "list-remove"
+                        onReleased:{
+                            plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                        }
+
+                        activeFocusOnTab: false
+
                     }
-
-                    activeFocusOnTab: false
-
                 }
-            }
+
             
             HoverHandler {
                 id: hoverHandler
 
+                onHoveredChanged: {
+                    if(hovered){
+                        showRemoveRelationshipButtonTimer.start()
+                    }
+                }
+
             }
-            state: hoverHandler.hovered ? "visible_removeRelationshipButton": ""
+
+            Timer{
+                id: showRemoveRelationshipButtonTimer
+                repeat: false
+                interval: 1000
+
+            }
+
+            state: hoverHandler.hovered && !showRemoveRelationshipButtonTimer.running ? "visible_removeRelationshipButton": ""
 
             states:[
                 State {
 
                     name: "visible_removeRelationshipButton"
-                    PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: noteTitle.height}
+                    PropertyChanges { target: removeRelationshipButton; width: noteTitle.height}
                     PropertyChanges { target: removeRelationshipButton; opacity: 1.0}
                 }
             ]
@@ -317,12 +362,12 @@ NotePadForm {
                     reversible: true
                     ParallelAnimation {
                         NumberAnimation {target: removeRelationshipButton; property: "opacity";duration: 250; easing.type: Easing.OutCubic }
-                        NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 250; easing.type: Easing.OutCubic }
+                        NumberAnimation {target: removeRelationshipButton; property: "width";duration: 250; easing.type: Easing.OutCubic }
                     }
                 }
             ]
         }
-
+}
     }
     
     function populateNoteListModel(){

@@ -22,6 +22,18 @@ NoteSearchItemForm {
     }
 
     //----------------------------------------------------------------------------
+    // --------------------------------- text field ------------------------------
+    //----------------------------------------------------------------------------
+
+    searchTextField.onEditingFinished: {
+        searchListView.forceActiveFocus()
+        searchListView.currentIndex = 0
+    }
+
+
+
+
+    //----------------------------------------------------------------------------
     // --------------------------------- tagpad ----------------------------------
     //----------------------------------------------------------------------------
 
@@ -31,6 +43,11 @@ NoteSearchItemForm {
             id: noteOverviewTagProxyModel
         }
         searchTagPad.tagListModel: noteOverviewTagProxyModel
+
+        searchTagPad.onTagTapped: function (projectId, tagId){
+
+            noteOverviewSearchProxyModel.tagIdListFilter = [tagId]
+        }
 
     //----------------------------------------------------------------------------
     // --------------------------------- list view ----------------------------------

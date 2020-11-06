@@ -119,18 +119,40 @@ TagPadForm {
                 id: tapHandler
                 acceptedButtons: Qt.LeftButton
                 onSingleTapped: {
-                    //reset other notes :
                     var i;
                     for(i = 0; i < tagRepeater.count; i++) {
-                        tagRepeater.itemAt(i).isOpened = false
+                        tagRepeater.itemAt(i).isSelected = false
                     }
-
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
                     tagTapped(projectId, tagId)
 
                 }
                 onDoubleTapped: {
+                    var i;
+                    for(i = 0; i < tagRepeater.count; i++) {
+                        tagRepeater.itemAt(i).isSelected = false
+                    }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
                     tagDoubleTapped(projectId, tagId)
 
+                }
+                onLongPressed: {
+                    var i;
+                    for(i = 0; i < tagRepeater.count; i++) {
+                        tagRepeater.itemAt(i).isSelected = false
+                    }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
+
+
+                    if(rightClickMenu.visible){
+                        rightClickMenu.close()
+                        return
+                    }
+
+                    rightClickMenu.popup(itemBase, 0, itemBase.height)
                 }
             }
 
@@ -141,12 +163,13 @@ TagPadForm {
                 id: rightClickHandler
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
-                onSingleTapped: {                   
-                    //reset other notes :
+                onSingleTapped: {
                     var i;
                     for(i = 0; i < tagRepeater.count; i++) {
-                        tagRepeater.itemAt(i).isOpened = false
+                        tagRepeater.itemAt(i).isSelected = false
                     }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
 
 
                     if(rightClickMenu.visible){
@@ -204,11 +227,44 @@ TagPadForm {
                 property int projectId: -2
                 property int tagId: -2
                 property string tagName: ""
+                property string relatedItemNames: ""
 
                 id: removeTagDialog
                 title: qsTr("Warning")
-                text: qsTr("Do you want to delete the tag \"%1\" ?").arg(tagName)
+                text: qsTr("Do you want to delete the tag \"%1\" ?\n%2").arg(tagName).arg(relatedItemNames)
                 standardButtons: Dialog.Yes  | Dialog.Cancel
+
+                onOpened: {
+                    var list = plmData.tagHub().getItemIdsFromTag(projectId, tagId, true)
+
+                    var separator
+                    var i
+                    for (i = 0 ; i < list.length ; i++){
+
+
+                        if(list[i] === -30){
+                            relatedItemNames += "Sheets :\n"
+                            separator = -30
+                            continue
+                        }
+
+
+                        if(list[i] === -31){
+                            relatedItemNames += "Notes :\n"
+                            separator = -31
+                            continue
+                        }
+
+
+                        if(separator === -30){
+                            relatedItemNames += "- " + plmData.sheetHub().getTitle(projectId, list[i]) + "\n"
+                        }
+                        else if(separator === -31){
+                            relatedItemNames += "- " + plmData.noteHub().getTitle(projectId, list[i]) + "\n"
+                        }
+
+                    }
+                }
 
                 onRejected: {
 
@@ -226,7 +282,10 @@ TagPadForm {
 
                     if(itemId === -2){
                         // remove tag
-                        callRemoveTag(projectId, tagId)
+                        removeTagDialog.projectId = projectId
+                        removeTagDialog.tagId = tagId
+                        removeTagDialog.tagName = model.name
+                        removeTagDialog.open()
                     }
                     else {
                         // remove relationship
@@ -288,47 +347,69 @@ TagPadForm {
                     text: model.name
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
+                    Layout.minimumWidth: 20
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                }
 
-                SkrRoundButton {
-                    id: removeRelationshipButton
-                    Layout.preferredWidth: 0
-                    Layout.maximumHeight: tagTitle.height
-                    padding:0
-                    topInset: 1
-                    bottomInset: 1
-                    leftInset: 1
-                    rightInset: 1
-                    opacity: 0
-                    icon.name: "list-remove"
-                    onReleased:{
-                        if(itemId === -2){
-                            callRemoveTag(projectId, tagId)
-                        }
-                        else {
-                            callRemoveTagRelationship(projectId, itemId, tagId)
+                    SkrRoundButton {
+                        id: removeRelationshipButton
+                        width: 0
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.right: parent.right
+                        padding:0
+                        topInset: 1
+                        bottomInset: 1
+                        leftInset: 1
+                        rightInset: 1
+                        opacity: 0
+                        icon.name: "list-remove"
+                        onReleased:{
+                            if(itemId === -2){
 
+                                removeTagDialog.projectId = projectId
+                                removeTagDialog.tagId = tagId
+                                removeTagDialog.tagName = model.name
+                                removeTagDialog.open()
+                            }
+                            else {
+                                callRemoveTagRelationship(projectId, itemId, tagId)
+
+                            }
                         }
+                        activeFocusOnTab: false
+
+
                     }
-                    activeFocusOnTab: false
                 }
 
 
                 HoverHandler {
                     id: hoverHandler
 
+                    onHoveredChanged: {
+                        if(hovered){
+                            showRemoveRelationshipButtonTimer.start()
+                        }
+                    }
                 }
-                state: hoverHandler.hovered ? "visible_removeRelationshipButton": ""
+
+                Timer{
+                    id: showRemoveRelationshipButtonTimer
+                    repeat: false
+                    interval: 1000
+
+                }
+
+                state: hoverHandler.hovered && !showRemoveRelationshipButtonTimer.running ? "visible_removeRelationshipButton": ""
 
                 states:[
                     State {
 
                         name: "visible_removeRelationshipButton"
-                        PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: tagTitle.height}
+                        PropertyChanges { target: removeRelationshipButton; width: tagTitle.height}
                         PropertyChanges { target: removeRelationshipButton; opacity: 1.0}
                     }
                 ]
@@ -340,7 +421,7 @@ TagPadForm {
                         reversible: true
                         ParallelAnimation {
                             NumberAnimation {target: removeRelationshipButton; property: "opacity";duration: 250; easing.type: Easing.OutCubic }
-                            NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 250; easing.type: Easing.OutCubic }
+                            NumberAnimation {target: removeRelationshipButton; property: "width";duration: 250; easing.type: Easing.OutCubic }
                         }
                     }
                 ]

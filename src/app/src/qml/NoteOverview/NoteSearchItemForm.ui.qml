@@ -10,6 +10,7 @@ Item {
     property alias searchListView: searchListView
     property alias searchTextField: searchTextField
     property alias searchTagPad: searchTagPad
+
     ColumnLayout {
         id: columnLayout
         anchors.fill: parent

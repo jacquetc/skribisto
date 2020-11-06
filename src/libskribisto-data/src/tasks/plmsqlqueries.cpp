@@ -258,6 +258,10 @@ PLMError PLMSqlQueries::getValueByIds(const QString& valueName,
         }
 
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
 
         while (query.next()) {
             result.insert(query.value(0).toInt(), query.value(1));
@@ -322,6 +326,10 @@ PLMError PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
         }
 
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
 
         while (query.next()) {
             result.insert(query.value(0).toInt(), query.value(1));
@@ -368,6 +376,11 @@ bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
         }
 
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
+
         QHash<int, QVariant> out;
 
         while (query.next()) {
@@ -434,6 +447,10 @@ PLMError PLMSqlQueries::removeAll() const
         QString   queryStr = "DELETE * FROM " + m_tableName;
         query.prepare(queryStr);
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
     }
 
     return error;
@@ -451,6 +468,10 @@ PLMError PLMSqlQueries::remove(int id) const
         query.prepare(queryStr);
         query.bindValue(":id", id);
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
     }
 
     return error;
@@ -470,6 +491,10 @@ PLMError PLMSqlQueries::set(int id, const QString& valueName, const QVariant& va
         query.bindValue(":id",    id);
         query.bindValue(":value", value);
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
     }
 
     return error;
@@ -489,6 +514,10 @@ PLMError PLMSqlQueries::setId(int id, int newId) const
         query.bindValue(":id",    id);
         query.bindValue(":value", newId);
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
     }
 
     return error;
@@ -503,6 +532,10 @@ PLMError PLMSqlQueries::injectDirectSql(const QString& sqlString)
         QString   queryStr = sqlString;
         query.prepare(queryStr);
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
     }
 
     return error;
@@ -521,6 +554,10 @@ PLMError PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
         query.prepare(queryStr);
         query.bindValue(":id", id);
         query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        if(query.lastError().isValid()){
+            qDebug() << "SQL Error" << query.lastError();
+            qDebug() << "SQL Error" << query.lastError().text();
+        }
     }
 
     return error;
@@ -544,6 +581,10 @@ PLMError PLMSqlQueries::renumberSortOrder()
     //    qDebug() << "prepareOk" << prepareOk;
     //    qDebug() << query.lastError().text();
     query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+    if(query.lastError().isValid()){
+        qDebug() << "SQL Error" << query.lastError();
+        qDebug() << "SQL Error" << query.lastError().text();
+    }
 
     //    qDebug() << query.lastError().text();
 
