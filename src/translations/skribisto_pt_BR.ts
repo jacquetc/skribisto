@@ -3114,11 +3114,12 @@ not allowed delete a filled book.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Do you want to delete the tag &quot;%1&quot; ?</source>
+        <source>Tag name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tag name</source>
+        <source>Do you want to delete the tag &quot;%1&quot; ?
+%2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

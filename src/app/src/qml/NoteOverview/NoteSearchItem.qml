@@ -37,6 +37,11 @@ NoteSearchItemForm {
     // --------------------------------- tagpad ----------------------------------
     //----------------------------------------------------------------------------
 
+    showTagDrawerButton.onClicked: {
+        searchDrawer.open()
+        searchDrawer.forceActiveFocus()
+    }
+
         //proxy model for tag list :
 
         SKRSearchTagListProxyModel {

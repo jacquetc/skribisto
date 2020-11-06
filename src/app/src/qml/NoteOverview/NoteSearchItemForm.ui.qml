@@ -10,44 +10,76 @@ Item {
     property alias searchListView: searchListView
     property alias searchTextField: searchTextField
     property alias searchTagPad: searchTagPad
+    property alias searchDrawer: searchDrawer
+    property alias showTagDrawerButton: showTagDrawerButton
 
     ColumnLayout {
         id: columnLayout
         anchors.fill: parent
+        Layout.fillWidth: true
+        RowLayout {
+            id: rowLayout
 
-        SkrTextField {
-            id: searchTextField
-            Layout.fillWidth: true
-            placeholderText: qsTr("Search")
+            SkrTextField {
+                id: searchTextField
+                Layout.fillWidth: true
+                placeholderText: qsTr("Search")
+            }
+
+            SkrToolButton {
+                id: showTagDrawerButton
+                text: qsTr("Show tags list")
+                icon.name: "tag"
+                display: AbstractButton.IconOnly
+
+
+            }
         }
 
-        TagPad{
-            id: searchTagPad
-            Layout.fillWidth: true
-            Layout.minimumHeight: 100
-            minimalMode: true
-            itemType: SKRTagHub.Note
-        }
-
-        ScrollView {
-            id: scrollView
-            focusPolicy: Qt.StrongFocus
+        Item {
+            id: viewItem
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-            ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-            CheckableTree {
-                id: searchListView
-                openActionsEnabled: true
-                renameActionEnabled: true
-                sendToTrashActionEnabled: true
-                treeIndentMultiplier: 20
-                elevationEnabled: true
+            ScrollView {
+                id: scrollView
+                anchors.fill: parent
+                focusPolicy: Qt.StrongFocus
+                clip: true
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                CheckableTree {
+                    id: searchListView
+                    openActionsEnabled: true
+                    renameActionEnabled: true
+                    sendToTrashActionEnabled: true
+                    treeIndentMultiplier: 20
+                    elevationEnabled: true
+                }
             }
+
+            SKRDrawer {
+                id: searchDrawer
+                parent: viewItem
+                widthInDrawerMode: viewItem.width /2
+                height: viewItem.height
+                interactive: true
+                dockModeEnabled: false
+                edge: Qt.RightEdge
+                settingsCategory: "noteOverviewNoteSearchItemDrawer"
+
+                TagPad{
+                    id: searchTagPad
+                    minimalMode: true
+                    itemType: SKRTagHub.Note
+                }
+            }
+
         }
     }
+
 }
 
 /*##^##

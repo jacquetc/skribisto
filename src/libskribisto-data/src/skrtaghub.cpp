@@ -330,10 +330,9 @@ int SKRTagHub::getTopPaperId(int projectId) const
 // --------------------------------------------------------------------------------
 
 
-
-QList<int>SKRTagHub::getItemIdsFromTag(int projectId,
+QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
                                        SKRTagHub::ItemType itemType,
-                                       int tagId) const
+                                       int                 tagId) const
 {
     PLMError error;
 
@@ -344,13 +343,12 @@ QList<int>SKRTagHub::getItemIdsFromTag(int projectId,
 
 
     PLMSqlQueries queries(projectId, "tbl_sheet_note");
+
     where.insert("l_tag_code", tagId);
 
 
     // get l_sheet_code
     if (itemType == SKRTagHub::Sheet) {
-
-
         error = queries.getValueByIdsWhere("l_sheet_code", out, where);
 
         IFOK(error) {
@@ -400,15 +398,15 @@ QList<int>SKRTagHub::getItemIdsFromTag(int projectId, int tagId, bool addSeparat
     QHash<QString, QVariant> where;
 
 
-    PLMSqlQueries queries(projectId, "tbl_sheet_note");
+    PLMSqlQueries queries(projectId, "tbl_tag_relationship");
 
+    where.insert("l_tag_code", tagId);
 
     // get l_sheet_code
     if (addSeparator) {
         result.append(-30);
     }
 
-    where.insert("l_tag_code", tagId);
     error = queries.getValueByIdsWhere("l_sheet_code", out, where);
 
     IFOK(error) {
