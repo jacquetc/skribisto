@@ -40,8 +40,47 @@ TextArea {
     Keys.priority: Keys.BeforeItem
 
     property int initialCursorPositionX: -1
+    property int initialCursorPosition: -1
     Keys.onPressed: {
+        if((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_PageUp){
+
+            if(initialCursorPositionX === -1){
+                initialCursorPositionX = root.cursorRectangle.x
+            }
+            if(initialCursorPosition === -1){
+                initialCursorPosition = root.cursorPosition
+            }
+
+            var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y - viewHeight)
+            moveViewY(-viewHeight)
+            root.cursorPosition = newPosition
+
+            root.select(initialCursorPosition, root.cursorPosition)
+
+            event.accepted = true
+            return
+        }
+        if((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_PageDown){
+
+            if(initialCursorPositionX === -1){
+                initialCursorPositionX = root.cursorRectangle.x
+            }
+            if(initialCursorPosition === -1){
+                initialCursorPosition = root.cursorPosition
+            }
+
+            var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y + viewHeight)
+            moveViewY(viewHeight)
+            root.cursorPosition = newPosition
+
+            root.select(initialCursorPosition, root.cursorPosition)
+
+            event.accepted = true
+            return
+        }
+
         if(event.key === Qt.Key_PageUp){
+            root.deselect()
 
             if(initialCursorPositionX === -1){
                 initialCursorPositionX = root.cursorRectangle.x
@@ -55,6 +94,7 @@ TextArea {
             return
         }
         if(event.key === Qt.Key_PageDown){
+            root.deselect()
 
             if(initialCursorPositionX === -1){
                 initialCursorPositionX = root.cursorRectangle.x
@@ -69,6 +109,7 @@ TextArea {
         }
 
         initialCursorPositionX = -1
+        initialCursorPosition = -1
 
         event.accepted = false
 

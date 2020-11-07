@@ -702,7 +702,7 @@ WritingZoneForm {
     //--------Page Up/Down-------------------------------------------------------------
     //--------------------------------------------------------------------------------
 
-    textArea.viewHeight: flickable.height
+    textArea.viewHeight: flickable.height - textArea.topPadding - textArea.bottomPadding
 
     Connections {
         target: textArea
