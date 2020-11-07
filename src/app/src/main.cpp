@@ -24,6 +24,7 @@ using namespace std;
 #include "plmerror.h"
 #include "plmprojecthub.h"
 #include "skrprojectdicthub.h"
+#include "plmpropertyhub.h"
 #include "documenthandler.h"
 #include "skrhighlighter.h"
 #include "skrspellchecker.h"
@@ -217,6 +218,12 @@ int main(int argc, char *argv[])
                                                   0,
                                                   "SKRProjectDictHub",
                                                   "Can't instantiate SKRProjectDictHub");
+
+    qmlRegisterUncreatableType<PLMPropertyHub>("eu.skribisto.propertyhub",
+                                                  1,
+                                                  0,
+                                                  "PLMProjectDictHub",
+                                                  "Can't instantiate PLMPropertyHub");
 
     qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
                                           1,

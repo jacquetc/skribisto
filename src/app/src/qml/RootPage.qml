@@ -59,8 +59,7 @@ RootPageForm {
             id: writeOverviewWindowAction
             text: qsTr("Write")
             icon {
-                name: "story-editor"
-                color: "transparent"
+                name: "view-media-playlist"
                 height: 100
                 width: 100
             }
@@ -78,7 +77,6 @@ RootPageForm {
             text: qsTr("Note")
             icon {
                 name: "story-editor"
-                color: "transparent"
                 height: 100
                 width: 100
             }
@@ -95,7 +93,6 @@ RootPageForm {
             text: qsTr("Gallery")
             icon {
                 name: "view-preview"
-                color: "transparent"
                 height: 100
                 width: 100
             }
@@ -113,7 +110,6 @@ RootPageForm {
             text: qsTr("Project")
             icon {
                 name: "configure"
-                color: "transparent"
                 height: 100
                 width: 100
             }
@@ -349,7 +345,7 @@ RootPageForm {
     //---------------------------------------------------------
 
 
-    function addTab(incubator, insertionIndex, pageType, projectId, paperId) {
+    function addTab(incubator, insertionIndex, pageType, projectId, paperId, iconName) {
         var title = incubator.object.title
         //        console.debug("debug title : ", title)
         var page  = incubator.object
@@ -358,14 +354,16 @@ RootPageForm {
         rootSwipeView.insertItem(insertionIndex, incubator);
 
         var component = Qt.createComponent("Tab.qml");
-        var tabIncubator = component.incubateObject(rootTabBar, {text: title, pageType: pageType,projectId: projectId, paperId: paperId});
+        var tabIncubator = component.incubateObject(rootTabBar, {text: title, pageType: pageType,projectId: projectId, paperId: paperId, iconName: iconName});
         console.debug("debug : ", component.errorString())
         if (tabIncubator.status !== Component.Ready) {
             tabIncubator.onStatusChanged = function(status) {
                 if (status === Component.Ready) {
 
                     rootTabBar.insertItem(insertionIndex, tabIncubator)
-                    page.onTitleChangedString.connect(tabIncubator.object.setTitle)
+                    if(page.onTitleChangedString){
+                        page.onTitleChangedString.connect(tabIncubator.object.setTitle)
+                    }
                     tabIncubator.object.onCloseCalled.connect(closeTab)
 
                 }
@@ -388,7 +386,9 @@ RootPageForm {
     //---------------------------------------------------------
 
     function closeTab(index) {
-        rootSwipeView.itemAt(index).runActionsBedoreDestruction()
+        if(rootSwipeView.itemAt(index).runActionsBedoreDestruction){
+            rootSwipeView.itemAt(index).runActionsBedoreDestruction()
+        }
         rootSwipeView.removeItem(rootSwipeView.itemAt(index))
         rootTabBar.removeItem(rootTabBar.itemAt(index))
 
@@ -411,13 +411,7 @@ RootPageForm {
 
             if(rootTabBar.itemAt(i).projectId === projectId){
 
-                rootSwipeView.itemAt(i).runActionsBedoreDestruction()
-                rootSwipeView.removeItem(rootSwipeView.itemAt(i))
-                rootTabBar.removeItem(rootTabBar.itemAt(i))
-
-                //remove from drop-down menu :
-                dropDownTabMenuModel.remove(i)
-
+                closeTab(i)
             }
         }
 
@@ -726,7 +720,7 @@ RootPageForm {
                 incubator.onStatusChanged = function(status) {
                     if (status === Component.Ready) {
 
-                        addTab(incubator, insertionIndex, pageType, projectId, paperId)
+                        addTab(incubator, insertionIndex, pageType, projectId, paperId, "document-edit")
                         //                        console.debug("paprer 1 : ",paperId)
                         //                        console.debug("count 1 : ",rootSwipeView.count)
                         openTabTimer.start()
@@ -734,7 +728,7 @@ RootPageForm {
                 }
             } else {
 
-                addTab(incubator, insertionIndex,  pageType, projectId, paperId)
+                addTab(incubator, insertionIndex,  pageType, projectId, paperId, "document-edit")
                 openTabTimer.start()
 
             }
@@ -831,7 +825,7 @@ RootPageForm {
                 incubator.onStatusChanged = function(status) {
                     if (status === Component.Ready) {
 
-                        addTab(incubator, insertionIndex, pageType, projectId, paperId)
+                        addTab(incubator, insertionIndex, pageType, projectId, paperId, "document-edit-sign")
                         //                        console.debug("paper 1 : ",paperId)
                         //                        console.debug("count 1 : ",rootSwipeView.count)
                         openTabTimer.start()
@@ -839,7 +833,7 @@ RootPageForm {
                 }
             } else {
 
-                addTab(incubator, insertionIndex,  pageType, projectId, paperId)
+                addTab(incubator, insertionIndex,  pageType, projectId, paperId, "document-edit-sign")
                 openTabTimer.start()
 
             }
@@ -1071,13 +1065,13 @@ RootPageForm {
             incubator.onStatusChanged = function(status) {
                 if (status === Component.Ready) {
 
-                    addTab(incubator, insertionIndex, pageType, -2, -2)
+                    addTab(incubator, insertionIndex, pageType, -2, -2, "color-picker-white")
                     openTabTimer.start()
                 }
             }
         } else {
 
-            addTab(incubator, insertionIndex,  pageType,  -2, -2)
+            addTab(incubator, insertionIndex,  pageType,  -2, -2, "color-picker-white")
             openTabTimer.start()
 
         }

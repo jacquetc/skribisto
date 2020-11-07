@@ -270,7 +270,7 @@ ThemePageForm {
             }
             Rectangle {
                 id: openedItemIndicator
-                color:  Material.accentColor
+                color: SkrTheme.accent
                 Layout.fillHeight: true
                 Layout.preferredWidth: 5
                 visible: model.propertyExactName === currentProperty

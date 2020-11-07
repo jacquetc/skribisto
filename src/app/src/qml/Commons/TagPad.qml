@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQml.Models 2.15
 import QtQuick.Layouts 1.15
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
@@ -20,10 +21,55 @@ TagPadForm {
 
     signal callAddTagRelationship(int projectId, int itemId, string tagName)
     signal callRemoveTagRelationship(int projectId,int itemId, int tagId)
+    signal callAddTag(int projectId, string tagName)
+    signal callRemoveTag(int projectId,int tagId)
+    signal tagTapped(int projectId,int tagId)
+    signal tagDoubleTapped(int projectId,int tagId)
+    signal escapeKeyPressed()
+
+
+    property int focusedIndex: -2
+    property var selectedList: []
+    signal selectedListModified(var list)
+
+    function determineWhichItemIsSelected() {
+
+        var count = tagFlow.children.length - 1
+        var i
+        for (i = 0 ; i < count ; i++ ){
+            tagFlow.children[i].determineIfSelected()
+        }
+
+        selectedListModified(selectedList)
+
+    }
+
+
+    // options :
+    property bool selectionEnabled: false
+    property bool multipleSelectionsEnabled: false
+
+    function clearSelection(){
+        selectedList = []
+        determineWhichItemIsSelected()
+    }
+
+    tagFlowFocusScope.onActiveFocusChanged: {
+        if(!tagFlowFocusScope.activeFocus){
+            focusedIndex = -2
+        }
+    }
+
+    DelegateModel {
+        id: visualModel
+        model: tagListModel
+        delegate: tagFlowComponent
+    }
+
+    tagRepeater.model: visualModel
 
 
 
-    tagRepeater.model: tagListModel
 
     // force focus on first child
     tagFlow.activeFocusOnTab: true
@@ -31,18 +77,21 @@ TagPadForm {
         if(tagFlow.children.length > 1){// means there is no children
             var first = tagFlow.children[0]
             first.forceActiveFocus()
-            first.isSelected = true
+            first.setFocused()
             return
         }
 
     }
 
+    //----------------------------------------------------------------
+
     Connections{
         target: root
         function onCallRemoveTagRelationship(projectId, itemId, tagId){
-            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Sheet , itemId, tagId)
+            plmData.tagHub().removeTagRelationship(projectId, itemType , itemId, tagId)
         }
     }
+    //----------------------------------------------------------------
 
     Connections{
         target: root
@@ -59,7 +108,7 @@ TagPadForm {
             }
 
             // set relationship
-            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Sheet, itemId, tagId)
+            error = plmData.tagHub().setTagRelationship(projectId, itemType, itemId, tagId)
             if (!error.success){
                 console.log("error onCallAddTagRelationship")
                 //TODO: add notification
@@ -68,19 +117,39 @@ TagPadForm {
         }
     }
 
+    //----------------------------------------------------------------
+
+    Connections{
+        target: root
+        function onCallAddTag(projectId, tagName){
+            plmData.tagHub().addTag(projectId, tagName)
+        }
+    }
+
+    //----------------------------------------------------------------
+
+    Connections{
+        target: root
+        function onCallRemoveTag(projectId, tagId){
+            plmData.tagHub().removeTag(projectId, tagId)
+        }
+    }
+    //----------------------------------------------------------------
+
     Component {
         id: tagFlowComponent
         Rectangle {
             id: itemBase
             width: childrenRect.width + 10
             height: childrenRect.height + 10
-            border.color: isSelected ? Material.accentColor : "lightskyblue"
+            border.color: isSelected ? SkrTheme.accent : "lightskyblue"
             border.width: 2
             radius : height / 2
             property int projectId: model.projectId
             property int itemId: root.itemId
             property int tagId: model.tagId
             property bool isSelected: false
+            property bool isFocused: root.focusedIndex === model.index
 
             //TODO: adapt to tag color
             //temporary:
@@ -88,51 +157,263 @@ TagPadForm {
 
 
             focus: true
+//            onActiveFocusChanged: {
+//                if(activeFocus){
+//                    setFocused()
+//                }
+////                else {
+////                    root.focusedIndex = -2
+////                }
+//            }
+
+            function setFocused(){
+                root.focusedIndex = model.index
+            }
+
+             function setSelected(){
+                if(!multipleSelectionsEnabled && selectionEnabled){
+                    root.selectedList = []
+                }
+
+                if(selectionEnabled){
+
+                    var here = false
+                    for(var i = 0; i < root.selectedList.length ; i ++){
+
+                        if(root.selectedList[i] === itemBase.tagId){
+                            here = true
+                        }
+                    }
+
+                    if(!here){
+                        root.selectedList.push(itemBase.tagId)
+                        console.log(" root.selectedList",  root.selectedList)
+                        root.determineWhichItemIsSelected()
+                    }
+                }
+
+            }
+
+             function setDeselected(){
+
+
+                 var index = root.selectedList.indexOf(itemBase.tagId)
+                 if(index === -1){
+                     return
+                 }
+
+                 root.selectedList.splice(index, 1)
+                 root.determineWhichItemIsSelected()
+
+
+             }
+
+
+            function toggleSelected(){
+                if(itemBase.isSelected){
+                    itemBase.setDeselected()
+
+                }
+                else{
+                    itemBase.setSelected()
+                }
+
+            }
+
+
+            function determineIfSelected(){
+
+                var here = false
+                for(var i = 0; i < root.selectedList.length ; i ++){
+
+                    if(root.selectedList[i] === itemBase.tagId){
+                        here = true
+                    }
+                }
+
+               itemBase.isSelected = here
+                console.log("itemBase.isSelected", itemBase.isSelected, itemBase.tagId, root.selectedList)
+            }
 
             TapHandler {
                 id: tapHandler
+                acceptedButtons: Qt.LeftButton
                 onSingleTapped: {
 
+                    itemBase.setFocused()
+                    itemBase.toggleSelected()
+                    itemBase.forceActiveFocus()
+                    tagTapped(projectId, tagId)
 
+                    eventPoint.accepted = true
+
+                }
+                onDoubleTapped: {
+                    itemBase.setFocused()
+                    itemBase.setSelected()
+                    itemBase.forceActiveFocus()
+                    tagDoubleTapped(projectId, tagId)
+
+                    eventPoint.accepted = true
+                }
+                onLongPressed: {
+                    itemBase.setFocused()
+                    itemBase.setSelected()
+                    itemBase.forceActiveFocus()
+
+
+                    if(rightClickMenu.visible){
+                        rightClickMenu.close()
+                        eventPoint.accepted = true
+                        return
+                    }
+
+                    rightClickMenu.popup(itemBase, 0, itemBase.height)
+                    eventPoint.accepted = true
+                }
+            }
+
+
+
+
+            TapHandler {
+                id: rightClickHandler
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                acceptedButtons: Qt.RightButton
+                onSingleTapped: {
+
+                    itemBase.setFocused()
+                    itemBase.setSelected()
+                    itemBase.forceActiveFocus()
+
+
+                    if(rightClickMenu.visible){
+                        rightClickMenu.close()
+                        eventPoint.accepted = true
+                        return
+                    }
+
+                    rightClickMenu.popup()
+
+                    eventPoint.accepted = true
 
                 }
             }
-            //                onDoubleTapped: {
-            //                    //reset other tags :
-            //                    var i;
-            //                    for(i = 0; i < tagRepeater.count; i++) {
-            //                        tagRepeater.itemAt(i).isOpened = false
-            //                    }
 
-            //                    itemBase.isOpened = true
-            //                    Globals.openTagInNewTabCalled(itemBase.projectId, itemBase.tagId)
+            SkrMenu{
+                id: rightClickMenu
+
+                SkrMenuItem {
+                    id: renameMenuItem
+                    text: qsTr("Rename")
+
+                    onTriggered: {
+
+                    }
+                }
 
 
-            //                }
-            //            }
+                SkrMenuItem {
+                    id: addTagMenuItem
+                    text: qsTr("Add")
+                    action: addTagAction
 
 
-            //            TapHandler {
-            //                id: shiftTapHandler
-            //                acceptedModifiers: Qt.ShiftModifier
-            //                onSingleTapped: {
-            //                    //reset other tags :
-            //                    var i;
-            //                    for(i = 0; i < tagRepeater.count; i++) {
-            //                        tagRepeater.itemAt(i).isOpened = false
-            //                    }
-            //                    itemBase.isOpened = true
-            //                    Globals.openTagInNewTabCalled(itemBase.projectId, itemBase.tagId)
-            //                }
-            //            }
+                }
+                SkrMenuItem {
+                    id: removeTagMenuItem
+                    text: qsTr("Remove")
 
+                    onTriggered: {
+                        if(itemId === -2){
+                            removeTagDialog.projectId = projectId
+                            removeTagDialog.tagId = tagId
+                            removeTagDialog.tagName = model.name
+                            removeTagDialog.open()
+                        }
+                        else {
+                            callRemoveTagRelationship(projectId, itemId, tagId)
+                        }
+                    }
+
+                }
+
+            }
+
+            SimpleDialog {
+                property int projectId: -2
+                property int tagId: -2
+                property string tagName: ""
+                property string relatedItemNames: ""
+
+                id: removeTagDialog
+                title: qsTr("Warning")
+                text: qsTr("Do you want to delete the tag \"%1\" ?\n%2").arg(tagName).arg(relatedItemNames)
+                standardButtons: Dialog.Yes  | Dialog.Cancel
+
+                onOpened: {
+                    var list = plmData.tagHub().getItemIdsFromTag(projectId, tagId, true)
+
+                    var separator
+                    var i
+                    for (i = 0 ; i < list.length ; i++){
+
+
+                        if(list[i] === -30){
+                            relatedItemNames += "Sheets :\n"
+                            separator = -30
+                            continue
+                        }
+
+
+                        if(list[i] === -31){
+                            relatedItemNames += "Notes :\n"
+                            separator = -31
+                            continue
+                        }
+
+
+                        if(separator === -30){
+                            relatedItemNames += "- " + plmData.sheetHub().getTitle(projectId, list[i]) + "\n"
+                        }
+                        else if(separator === -31){
+                            relatedItemNames += "- " + plmData.noteHub().getTitle(projectId, list[i]) + "\n"
+                        }
+
+                    }
+                }
+
+                onRejected: {
+
+                }
+
+                onAccepted: {
+                    callRemoveTag(projectId, tagId)
+
+                }
+            }
+
+            Keys.onShortcutOverride: {
+                if( event.key === Qt.Key_Escape){
+                    event.accepted = true
+                }
+            }
 
             Keys.onPressed: {
                 if (event.key === Qt.Key_Delete){
                     console.log("Delete key pressed ")
-                    // remove
-                    callRemoveTagRelationship(projectId, itemId, tagId)
 
+                    if(itemId === -2){
+                        // remove tag
+                        removeTagDialog.projectId = projectId
+                        removeTagDialog.tagId = tagId
+                        removeTagDialog.tagName = model.name
+                        removeTagDialog.open()
+                    }
+                    else {
+                        // remove relationship
+                        callRemoveTagRelationship(projectId, itemId, tagId)
+                    }
                 }
                 if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Delete){
                     console.log("Shift delete key pressed ")
@@ -144,30 +425,36 @@ TagPadForm {
 
                 }
 
+                if (event.key === Qt.Key_Space){
+                    itemBase.toggleSelected()
+                }
+
+                if (event.key === Qt.Key_Escape){
+                    escapeKeyPressed()
+                }
+
                 if (event.key === Qt.Key_Right || event.key === Qt.Key_Down ){
 
-                    itemBase.isSelected = false
                     if(model.index === tagRepeater.count - 1){
                         tagRepeater.itemAt(0).forceActiveFocus()
-                        tagRepeater.itemAt(0).isSelected = true
+                        tagRepeater.itemAt(0).setFocused()
 
                     }
                     else{
                         tagRepeater.itemAt(model.index + 1).forceActiveFocus()
-                        tagRepeater.itemAt(model.index + 1).isSelected = true
+                        tagRepeater.itemAt(model.index + 1).setFocused()
                     }
 
                 }
                 if (event.key === Qt.Key_Left || event.key === Qt.Key_Up ){
 
-                    itemBase.isSelected = false
                     if(model.index === 0){
                         tagRepeater.itemAt(tagRepeater.count - 1).forceActiveFocus()
-                        tagRepeater.itemAt(tagRepeater.count - 1).isSelected = true
+                        tagRepeater.itemAt(tagRepeater.count - 1).setFocused()
                     }
                     else{
                         tagRepeater.itemAt(model.index - 1).forceActiveFocus()
-                        tagRepeater.itemAt(model.index - 1).isSelected = true
+                        tagRepeater.itemAt(model.index - 1).setFocused()
                     }
 
                 }
@@ -187,43 +474,77 @@ TagPadForm {
                 SkrLabel{
                     id: tagTitle
                     text: model.name
+                    style: Text.Raised
+                    styleColor: "white"
+
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
+                    Layout.minimumWidth: 20
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                }
 
-                SkrRoundButton {
-                    id: removeRelationshipButton
-                    Layout.preferredWidth: 0
-                    Layout.maximumHeight: tagTitle.height
-                    padding:0
-                    topInset: 1
-                    bottomInset: 1
-                    leftInset: 1
-                    rightInset: 1
-                    opacity: 0
-                    icon.name: "list-remove"
-                    onReleased:{
-                        callRemoveTagRelationship(projectId, itemId, tagId)
+                    color: itemBase.isFocused ? SkrTheme.accent : SkrTheme.buttonForeground
+
+                    SkrRoundButton {
+                        id: removeRelationshipButton
+                        width: 0
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.right: parent.right
+                        padding:0
+                        topInset: 1
+                        bottomInset: 1
+                        leftInset: 1
+                        rightInset: 1
+                        opacity: 0
+                        icon.name: "list-remove"
+                        onReleased:{
+                            if(itemId === -2){
+
+                                removeTagDialog.projectId = projectId
+                                removeTagDialog.tagId = tagId
+                                removeTagDialog.tagName = model.name
+                                removeTagDialog.open()
+                            }
+                            else {
+                                callRemoveTagRelationship(projectId, itemId, tagId)
+
+                            }
+                        }
+                        activeFocusOnTab: false
+                        focusPolicy: Qt.NoFocus
+
+
                     }
-                    activeFocusOnTab: false
                 }
 
 
                 HoverHandler {
                     id: hoverHandler
 
+                    onHoveredChanged: {
+                        if(hovered){
+                            showRemoveRelationshipButtonTimer.start()
+                        }
+                    }
                 }
-                state: hoverHandler.hovered ? "visible_removeRelationshipButton": ""
+
+                Timer{
+                    id: showRemoveRelationshipButtonTimer
+                    repeat: false
+                    interval: 1000
+
+                }
+
+                state: hoverHandler.hovered && !showRemoveRelationshipButtonTimer.running ? "visible_removeRelationshipButton": ""
 
                 states:[
                     State {
 
                         name: "visible_removeRelationshipButton"
-                        PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: tagTitle.height}
+                        PropertyChanges { target: removeRelationshipButton; width: tagTitle.height}
                         PropertyChanges { target: removeRelationshipButton; opacity: 1.0}
                     }
                 ]
@@ -235,7 +556,7 @@ TagPadForm {
                         reversible: true
                         ParallelAnimation {
                             NumberAnimation {target: removeRelationshipButton; property: "opacity";duration: 250; easing.type: Easing.OutCubic }
-                            NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 250; easing.type: Easing.OutCubic }
+                            NumberAnimation {target: removeRelationshipButton; property: "width";duration: 250; easing.type: Easing.OutCubic }
                         }
                     }
                 ]
@@ -257,7 +578,6 @@ TagPadForm {
         text: qsTr("Add tag")
         icon.name: "list-add"
         onTriggered: {
-
             titleEditPopup.open()
         }
     }
@@ -281,7 +601,7 @@ TagPadForm {
         x: addTagMenuToolButton.x - 200
         y: addTagMenuToolButton.y + addTagMenuToolButton.height
         width: 200
-        height: 200
+        height: 400
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
         padding: 0
@@ -294,25 +614,23 @@ TagPadForm {
 
                 selectByMouse: true
 
+                placeholderText: qsTr("Tag name")
+
 
                 onVisibleChanged: {
                     if (visible){
-                        titleTextField.text = "test"
                         titleTextField.forceActiveFocus()
                         titleTextField.selectAll()
                     }
                 }
 
                 onAccepted: {
-
-                    //create basic tag
-                    //var error = plmData.tagHub().addTagRelationship(projectId, itemId)
-
-                    callAddTagRelationship(projectId, itemId, titleTextField.text)
-
-                    // add to model
-                    //tagListModel.append({title: title, itemProjectId: projectId, itemPaperId: paperId, itemTagId: tagId})
-
+                    if(itemId === -2){
+                        callAddTag(projectId, titleTextField.text)
+                    }
+                    else {
+                        callAddTagRelationship(projectId, itemId, titleTextField.text)
+                    }
                     titleEditPopup.close()
                 }
 
@@ -346,12 +664,9 @@ TagPadForm {
 
                 ListView {
                     id: searchResultList
-                    anchors.fill: parent
-                    clip: true
                     smooth: true
                     focus: true
                     boundsBehavior: Flickable.StopAtBounds
-
 
                     model: searchProxyModel
                     interactive: true
@@ -380,8 +695,14 @@ TagPadForm {
                                 }
                                 onDoubleTapped: {
 
-                                    //create relationship with tag
-                                    callAddTagRelationship(model.projectId, itemId, model.name)
+                                    if(itemId === -2){
+                                        callAddTag(model.projectId, model.name)
+                                    }
+                                    else {
+                                        //create relationship with tag
+                                        callAddTagRelationship(model.projectId, itemId, model.name)
+
+                                    }
                                     titleEditPopup.close()
                                 }
                             }
@@ -483,8 +804,9 @@ TagPadForm {
         if (activeFocus) {
 
 
-            if(!toolBarVisible){
+            if(minimalMode){
                 tagFlow.forceActiveFocus()
+
             }
             else{
                 addTagMenuToolButton.forceActiveFocus()

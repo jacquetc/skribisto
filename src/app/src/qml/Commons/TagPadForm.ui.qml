@@ -9,6 +9,7 @@ Item {
     property alias tagFlow: tagFlow
     property alias addTagMenuToolButton: addTagMenuToolButton
     property alias tagRepeater: tagRepeater
+    property alias tagFlowFocusScope: tagFlowFocusScope
     property bool minimalMode: false
 
     SkrPane {
@@ -54,41 +55,48 @@ Item {
                 }
             }
 
-            ScrollView {
-                id: scrollView
-                Layout.fillHeight: !minimalMode
+            FocusScope {
+                id: tagFlowFocusScope
+                Layout.fillHeight: true
                 Layout.minimumHeight: 40
-                focusPolicy: Qt.StrongFocus
                 Layout.fillWidth: true
-                clip: true
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                Flickable {
-                    boundsBehavior: Flickable.StopAtBounds
-                    contentWidth: scrollView.width
-                    contentHeight: tagFlow.height
-                    Flow {
-                        id: tagFlow
-                        width: scrollView.width
-                        spacing: 10
-                        padding: 2
-                        antialiasing: true
-                        clip: true
-                        focus: true
+                ScrollView {
+                    id: scrollView
+                    anchors.fill: parent
+                    focusPolicy: Qt.StrongFocus
+                    clip: true
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                        Repeater {
-                            id: tagRepeater
-                            delegate: tagFlowComponent
+                    Flickable {
+                        boundsBehavior: Flickable.StopAtBounds
+                        contentWidth: scrollView.width
+                        contentHeight: tagFlow.height
+                        Flow {
+                            id: tagFlow
+                            width: scrollView.width
+                            spacing: 10
+                            padding: 2
+                            antialiasing: true
+                            clip: true
+                            focus: true
 
+                            Repeater {
+                                id: tagRepeater
+                                delegate: tagFlowComponent
+
+                            }
+
+                            Accessible.role: Accessible.List
+                            Accessible.name: qsTr("Tags list")
+                            Accessible.description: "Empty list of tags"
                         }
-
-                        Accessible.role: Accessible.List
-                        Accessible.name: qsTr("Tags list")
-                        Accessible.description: "Empty list of tags"
                     }
                 }
+
             }
+
 
             Item {
                 id: stretcher2
@@ -99,6 +107,7 @@ Item {
 
         }
     }
+
 }
 
 /*##^##

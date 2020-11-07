@@ -345,7 +345,7 @@ TrashedListViewForm {
 
 
             onActiveFocusChanged: {
-                if(listView.currentIndex === model.index){
+                if(listView.currentIndex === model.index && model.index !== -1 && activeFocus){
                     root.currentPaperId = model.paperId
                 }
             }

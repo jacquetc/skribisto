@@ -1,8 +1,10 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQml.Models 2.15
 import eu.skribisto.searchnotelistproxymodel 1.0
 import eu.skribisto.usersettings 1.0
+import eu.skribisto.propertyhub 1.0
 import "../Commons"
 import "../Items"
 import ".."
@@ -34,8 +36,12 @@ NotePadForm {
     ListModel {
         id: noteListModel
     }
-    
-    noteRepeater.model: noteListModel
+    DelegateModel {
+        id: visualModel
+        model: noteListModel
+        delegate: noteFlowComponent
+    }
+    noteRepeater.model: visualModel
 
     // force focus on first child
     noteFlow.activeFocusOnTab: true
@@ -55,8 +61,8 @@ NotePadForm {
             id: itemBase
             width: childrenRect.width + 10
             height: childrenRect.height + 10
-            color: isOpened && !minimalMode? Material.accentColor : "lightskyblue"
-            border.color: isSelected ? Material.accentColor : "lightskyblue"
+            color: isOpened && !minimalMode? SkrTheme.accent : "lightskyblue"
+            border.color: isSelected ? SkrTheme.accent : "lightskyblue"
             border.width: 2
             radius : height / 2
             property int projectId: model.itemProjectId
@@ -74,17 +80,21 @@ NotePadForm {
 
             TapHandler {
                 id: tapHandler
+                acceptedButtons: Qt.LeftButton
                 onSingleTapped: {
                     //reset other notes :
                     var i;
                     for(i = 0; i < noteRepeater.count; i++) {
                         noteRepeater.itemAt(i).isOpened = false
                     }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
 
                     itemBase.isOpened = true
                     //open in noteTextArea
                     openDocument(projectId, noteId)
 
+                    eventPoint.accepted = true
 
                 }
                 onDoubleTapped: {
@@ -93,26 +103,58 @@ NotePadForm {
                     for(i = 0; i < noteRepeater.count; i++) {
                         noteRepeater.itemAt(i).isOpened = false
                     }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
 
                     itemBase.isOpened = true
                     Globals.openNoteInNewTabCalled(itemBase.projectId, itemBase.noteId)
 
+                    eventPoint.accepted = true
 
+                }
+
+                onLongPressed: {
+                    var i;
+                    for(i = 0; i < noteRepeater.count; i++) {
+                        noteRepeater.itemAt(i).isSelected = false
+                    }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
+
+
+                    if(rightClickMenu.visible){
+                        rightClickMenu.close()
+                        eventPoint.accepted = true
+                        return
+                    }
+
+                    rightClickMenu.popup(itemBase, 0, itemBase.height)
+                    eventPoint.accepted = true
                 }
             }
 
 
             TapHandler {
                 id: rightClickHandler
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
                 onSingleTapped: {
+                    var i;
+                    for(i = 0; i < noteRepeater.count; i++) {
+                        noteRepeater.itemAt(i).isSelected = false
+                    }
+                    itemBase.isSelected = true
+                    itemBase.forceActiveFocus()
+
                     if(rightClickMenu.visible){
                         rightClickMenu.close()
+                        eventPoint.accepted = true
                         return
                     }
 
                     rightClickMenu.popup()
 
+                    eventPoint.accepted = true
 
                 }
             }
@@ -127,6 +169,13 @@ NotePadForm {
                     onTriggered: {
 
                     }
+                }
+
+                SkrMenuItem {
+                    id: addNoteMenuItem
+                    text: qsTr("Add")
+                    action: addNoteAction
+
                 }
 
                 SkrMenuItem {
@@ -214,6 +263,14 @@ NotePadForm {
                     
                 }
 
+                if (event.key === Qt.Key_Space){
+                    itemBase.toggleSelected()
+                }
+
+                if (event.key === Qt.Key_Escape){
+                    escapeKeyPressed()
+                }
+
                 if (event.key === Qt.Key_Right || event.key === Qt.Key_Down ){
 
                     itemBase.isSelected = false
@@ -257,45 +314,67 @@ NotePadForm {
                 SkrLabel{
                     id: noteTitle
                     text: model.title
+
+                    style: Text.Raised
+                    styleColor: "white"
+
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
+                    Layout.minimumWidth: 20
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                }
 
-                SkrRoundButton {
-                    id: removeRelationshipButton
-                    Layout.preferredWidth: 0
-                    Layout.maximumHeight: noteTitle.height
-                    padding: 0
-                    topInset: 1
-                    bottomInset: 1
-                    leftInset: 1
-                    rightInset: 1
-                    opacity: 0
-                    icon.name: "list-remove"
-                    onReleased:{
-                        plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                    SkrRoundButton {
+                        id: removeRelationshipButton
+                        width: 0
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.right: parent.right
+                        padding: 0
+                        topInset: 1
+                        bottomInset: 1
+                        leftInset: 1
+                        rightInset: 1
+                        opacity: 0
+                        icon.name: "list-remove"
+                        onReleased:{
+                            plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                        }
+
+                        activeFocusOnTab: false
+                        focusPolicy: Qt.NoFocus
+
                     }
-
-                    activeFocusOnTab: false
-
                 }
-            }
+
             
             HoverHandler {
                 id: hoverHandler
 
+                onHoveredChanged: {
+                    if(hovered){
+                        showRemoveRelationshipButtonTimer.start()
+                    }
+                }
+
             }
-            state: hoverHandler.hovered ? "visible_removeRelationshipButton": ""
+
+            Timer{
+                id: showRemoveRelationshipButtonTimer
+                repeat: false
+                interval: 1000
+
+            }
+
+            state: hoverHandler.hovered && !showRemoveRelationshipButtonTimer.running ? "visible_removeRelationshipButton": ""
 
             states:[
                 State {
 
                     name: "visible_removeRelationshipButton"
-                    PropertyChanges { target: removeRelationshipButton; Layout.preferredWidth: noteTitle.height}
+                    PropertyChanges { target: removeRelationshipButton; width: noteTitle.height}
                     PropertyChanges { target: removeRelationshipButton; opacity: 1.0}
                 }
             ]
@@ -307,12 +386,12 @@ NotePadForm {
                     reversible: true
                     ParallelAnimation {
                         NumberAnimation {target: removeRelationshipButton; property: "opacity";duration: 250; easing.type: Easing.OutCubic }
-                        NumberAnimation {target: removeRelationshipButton; property: "Layout.preferredWidth";duration: 250; easing.type: Easing.OutCubic }
+                        NumberAnimation {target: removeRelationshipButton; property: "width";duration: 250; easing.type: Easing.OutCubic }
                     }
                 }
             ]
         }
-
+}
     }
     
     function populateNoteListModel(){
@@ -324,12 +403,19 @@ NotePadForm {
         noteListModel.clear()
         
         var noteList = plmData.noteHub().getNotesFromSheetId(projectId, sheetId)
+        var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
         
         var i;
         for (i = 0; i < noteList.length ; i++){
             var noteId = noteList[i]
             
             var title = plmData.noteHub().getTitle(projectId, noteId)
+
+
+            // ignore synopsis
+            if (synopsisId === noteId){
+                continue
+            }
             
             noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
         }
@@ -593,6 +679,35 @@ NotePadForm {
         
     }
     //--------------------------------------------
+    //---------- Open synopsis------------------------
+    //--------------------------------------------
+
+    Action {
+        id: openSynopsisAction
+        text: qsTr("Show outline")
+        icon.name: "story-editor"
+        onTriggered: {
+
+        }
+    }
+    openSynopsisToolButton.action: openSynopsisAction
+
+
+    //--------------------------------------------
+    //---------- Open note in new tab------------------------
+    //--------------------------------------------
+
+    Action {
+        id: openNoteInNewTabAction
+        text: qsTr("Open current note in a new tab")
+        icon.name: "quickopen-file"
+        onTriggered: {
+
+        }
+    }
+    openNoteInNewTabToolButton.action: openNoteInNewTabAction
+
+    //--------------------------------------------
     //---------- Add Note------------------------
     //--------------------------------------------
     
@@ -669,7 +784,7 @@ NotePadForm {
         x: addNoteMenuToolButton.x - 200
         y: addNoteMenuToolButton.y + addNoteMenuToolButton.height
         width: 200
-        height: 200
+        height: 400
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
         padding: 0
@@ -682,11 +797,11 @@ NotePadForm {
                 Layout.fillWidth: true
                 
                 selectByMouse: true
+                placeholderText: qsTr("Note name")
                 
                 
                 onVisibleChanged: {
                     if (visible){
-                        titleTextField.text = "test"
                         titleTextField.forceActiveFocus()
                         titleTextField.selectAll()
                     }
@@ -743,12 +858,9 @@ NotePadForm {
                 
                 ListView {
                     id: searchResultList
-                    anchors.fill: parent
-                    clip: true
                     smooth: true
                     focus: true
                     boundsBehavior: Flickable.StopAtBounds
-                    
                     
                     model: searchProxyModel
                     interactive: true

@@ -13,21 +13,19 @@ SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel(QObject *parent) :
 
 
     connect(
-        plmdata->projectHub(),
-        &PLMProjectHub::projectLoaded,
-        this,
-        &SKRSearchNoteListProxyModel::loadProjectSettings);
+                plmdata->projectHub(),
+                &PLMProjectHub::projectLoaded,
+                this,
+                &SKRSearchNoteListProxyModel::loadProjectSettings);
     connect(
-        plmdata->projectHub(),
-        &PLMProjectHub::projectToBeClosed,
-        this,
-        &SKRSearchNoteListProxyModel::saveProjectSettings,
-        Qt::DirectConnection);
+                plmdata->projectHub(),
+                &PLMProjectHub::projectToBeClosed,
+                this,
+                &SKRSearchNoteListProxyModel::saveProjectSettings,
+                Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->invalidateFilter();
     });
-
-
 }
 
 Qt::ItemFlags SKRSearchNoteListProxyModel::flags(const QModelIndex& index) const
@@ -78,7 +76,7 @@ bool SKRSearchNoteListProxyModel::setData(const QModelIndex& index, const QVaria
 
 
     PLMNoteItem *item =
-        static_cast<PLMNoteItem *>(sourceIndex.internalPointer());
+            static_cast<PLMNoteItem *>(sourceIndex.internalPointer());
 
     if ((role == Qt::EditRole) && (sourceIndex.column() == 0)) {
         if (item->isProjectItem()) {
@@ -104,7 +102,6 @@ bool SKRSearchNoteListProxyModel::setData(const QModelIndex& index, const QVaria
         this->determineCheckStateOfAllAncestors(item->projectId(),
                                                 item->paperId(),
                                                 checkState);
-
     }
 
     return QSortFilterProxyModel::setData(index, value, role);
@@ -134,21 +131,21 @@ void SKRSearchNoteListProxyModel::checkStateOfAllChildren(int            project
 // --------------------------------------------------------------
 
 void SKRSearchNoteListProxyModel::determineCheckStateOfAllAncestors(
-    int            projectId,
-    int            paperId,
-    Qt::CheckState checkState)
+        int            projectId,
+        int            paperId,
+        Qt::CheckState checkState)
 {
-    PLMNoteListModel *model    = static_cast<PLMNoteListModel *>(this->sourceModel());
+    PLMNoteListModel *model     = static_cast<PLMNoteListModel *>(this->sourceModel());
     QList<int> ancestorsIdsList = this->getAncestorsList(projectId,
                                                          paperId,
                                                          m_showTrashedFilter,
                                                          m_showNotTrashedFilter);
 
-    if(ancestorsIdsList.isEmpty()){
+    if (ancestorsIdsList.isEmpty()) {
         return;
     }
 
-    //default state :
+    // default state :
     Qt::CheckState ancestorCheckState = Qt::Unchecked;
 
     if (checkState == Qt::Unchecked) {
@@ -162,33 +159,37 @@ void SKRSearchNoteListProxyModel::determineCheckStateOfAllAncestors(
             ancestorCheckState = Qt::PartiallyChecked;
         }
         else {
-            bool areNoneOfTheSiblingsChecked         = false;
-            bool areAtLeastOneSiblingChecked   = false;
+            bool areNoneOfTheSiblingsChecked          = false;
+            bool areAtLeastOneSiblingChecked          = false;
             bool areAtLeastOneSiblingPartiallyChecked = false;
-            bool areAtLeastOneSiblingUnchecked = false;
+            bool areAtLeastOneSiblingUnchecked        = false;
 
             for (int siblingId : siblingsIdsList) {
                 Qt::CheckState state = m_checkedIdsHash.value(siblingId, Qt::Unchecked);
 
-                if (state == Qt::Checked){
+                if (state == Qt::Checked) {
                     areAtLeastOneSiblingChecked = true;
                 }
-                if(state == Qt::PartiallyChecked){
+
+                if (state == Qt::PartiallyChecked) {
                     areAtLeastOneSiblingPartiallyChecked = true;
                 }
-                if (state == Qt::Unchecked){
+
+                if (state == Qt::Unchecked) {
                     areAtLeastOneSiblingUnchecked = true;
                 }
             }
-            areNoneOfTheSiblingsChecked = !areAtLeastOneSiblingChecked && !areAtLeastOneSiblingPartiallyChecked;
+            areNoneOfTheSiblingsChecked = !areAtLeastOneSiblingChecked &&
+                    !areAtLeastOneSiblingPartiallyChecked;
 
             if (areAtLeastOneSiblingChecked) { // but this one
                 ancestorCheckState = Qt::PartiallyChecked;
             }
+
             if (areAtLeastOneSiblingPartiallyChecked) {
                 ancestorCheckState = Qt::PartiallyChecked;
             }
-            else if(areNoneOfTheSiblingsChecked){
+            else if (areNoneOfTheSiblingsChecked) {
                 ancestorCheckState = Qt::PartiallyChecked;
             }
         }
@@ -206,25 +207,28 @@ void SKRSearchNoteListProxyModel::determineCheckStateOfAllAncestors(
             ancestorCheckState = Qt::Checked;
         }
         else {
-            bool areAllSiblingsChecked         = false;
-            bool areAtLeastOneSiblingChecked   = false;
+            bool areAllSiblingsChecked                = false;
+            bool areAtLeastOneSiblingChecked          = false;
             bool areAtLeastOneSiblingPartiallyChecked = false;
-            bool areAtLeastOneSiblingUnchecked = false;
+            bool areAtLeastOneSiblingUnchecked        = false;
 
             for (int siblingId : siblingsIdsList) {
                 Qt::CheckState state = m_checkedIdsHash.value(siblingId, Qt::Unchecked);
 
-                if (state == Qt::Checked){
+                if (state == Qt::Checked) {
                     areAtLeastOneSiblingChecked = true;
                 }
-                if(state == Qt::PartiallyChecked){
+
+                if (state == Qt::PartiallyChecked) {
                     areAtLeastOneSiblingPartiallyChecked = true;
                 }
-                if(state == Qt::Unchecked){
+
+                if (state == Qt::Unchecked) {
                     areAtLeastOneSiblingUnchecked = true;
                 }
             }
-            areAllSiblingsChecked = !areAtLeastOneSiblingUnchecked && !areAtLeastOneSiblingPartiallyChecked;
+            areAllSiblingsChecked = !areAtLeastOneSiblingUnchecked &&
+                    !areAtLeastOneSiblingPartiallyChecked;
 
             if (areAllSiblingsChecked) {
                 ancestorCheckState = Qt::Checked;
@@ -235,7 +239,6 @@ void SKRSearchNoteListProxyModel::determineCheckStateOfAllAncestors(
             else if (areAtLeastOneSiblingPartiallyChecked) {
                 ancestorCheckState = Qt::PartiallyChecked;
             }
-
         }
     }
     else if (checkState == Qt::PartiallyChecked) {
@@ -254,19 +257,33 @@ void SKRSearchNoteListProxyModel::determineCheckStateOfAllAncestors(
         ancestorsIdsList = newList;
     }
 
-    if(ancestorsIdsList.empty()){
+    if (ancestorsIdsList.empty()) {
         return;
     }
 
-    //for (int ancestorId : ancestorsIdsList) {
-        m_checkedIdsHash.insert(ancestorsIdsList.first(), ancestorCheckState);
-        QModelIndex modelIndex = model->getModelIndex(projectId, ancestorsIdsList.first()).first();
+    // for (int ancestorId : ancestorsIdsList) {
+    m_checkedIdsHash.insert(ancestorsIdsList.first(), ancestorCheckState);
+    QModelIndex modelIndex =
+            model->getModelIndex(projectId, ancestorsIdsList.first()).first();
 
-        emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
-                         QVector<int>() << Qt::CheckStateRole);
-    //}
-        determineCheckStateOfAllAncestors(m_projectIdFilter, ancestorsIdsList.first(), ancestorCheckState);
+    emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
+                     QVector<int>() << Qt::CheckStateRole);
 
+    // }
+    determineCheckStateOfAllAncestors(m_projectIdFilter,
+                                      ancestorsIdsList.first(),
+                                      ancestorCheckState);
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchNoteListProxyModel::setTagIdListFilter(const QList<int> &tagIdListFilter)
+{
+    m_tagIdListFilter = tagIdListFilter;
+
+
+    emit tagIdListFilterChanged(tagIdListFilter);
+    this->invalidateFilter();
 }
 
 // --------------------------------------------------------------
@@ -289,77 +306,73 @@ QList<int>SKRSearchNoteListProxyModel::getCheckedIdsList() {
 // --------------------------------------------------------------
 
 
-void SKRSearchNoteListProxyModel::setCheckedIdsList(const QList<int> checkedIdsList){
-    PLMNoteListModel *model    = static_cast<PLMNoteListModel *>(this->sourceModel());
+void SKRSearchNoteListProxyModel::setCheckedIdsList(const QList<int>checkedIdsList) {
+    PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
 
 
     this->clearCheckedList();
 
 
-    if(checkedIdsList.isEmpty()){
+    if (checkedIdsList.isEmpty()) {
         return;
     }
 
-    for(int i = checkedIdsList.count() - 1 ; i >= 0 ;  i--){
+    for (int i = checkedIdsList.count() - 1; i >= 0; i--) {
+        int paperId = checkedIdsList[i];
 
-        int paperId  = checkedIdsList[i];
 
-
-        if(!this->hasChildren(m_projectIdFilter, paperId)){
+        if (!this->hasChildren(m_projectIdFilter, paperId)) {
             m_checkedIdsHash.insert(paperId, Qt::Checked);
         }
-        else { // has children so verify if there is one checked or partially checked
-
-
-
-            Qt::CheckState finalState = Qt::Unchecked;
+        else { // has children so verify if there is one checked or partially
+            // checked
+            Qt::CheckState finalState  = Qt::Unchecked;
             QList<int> childrenIdsList = this->getChildrenList(m_projectIdFilter,
                                                                paperId,
                                                                m_showTrashedFilter,
                                                                m_showNotTrashedFilter);
 
 
-                bool areAllChildrenChecked         = false;
-                bool areAtLeastOneChildChecked   = false;
-                bool areAtLeastOneChildPartiallyChecked   = false;
-                bool areAtLeastOneChildUnchecked = false;
+            bool areAllChildrenChecked              = false;
+            bool areAtLeastOneChildChecked          = false;
+            bool areAtLeastOneChildPartiallyChecked = false;
+            bool areAtLeastOneChildUnchecked        = false;
 
-                for (int childId : childrenIdsList) {
-                    Qt::CheckState state = m_checkedIdsHash.value(childId, Qt::Unchecked);
+            for (int childId : childrenIdsList) {
+                Qt::CheckState state = m_checkedIdsHash.value(childId, Qt::Unchecked);
 
-                    if (state == Qt::Checked) {
-                        areAtLeastOneChildChecked = true;
-                    }
-                    else if(state == Qt::PartiallyChecked) {
-                            areAtLeastOneChildPartiallyChecked = true;
-                        }
-                    else {
-                        areAtLeastOneChildUnchecked = true;
-                    }
+                if (state == Qt::Checked) {
+                    areAtLeastOneChildChecked = true;
                 }
-
-                areAllChildrenChecked = !areAtLeastOneChildUnchecked && !areAtLeastOneChildPartiallyChecked;
-
-                if (areAtLeastOneChildUnchecked) { // but this one
-                    finalState = Qt::PartiallyChecked;
-                }
-                else if (areAllChildrenChecked) {
-                    finalState = Qt::Checked;
+                else if (state == Qt::PartiallyChecked) {
+                    areAtLeastOneChildPartiallyChecked = true;
                 }
                 else {
-                    finalState = Qt::PartiallyChecked;
+                    areAtLeastOneChildUnchecked = true;
                 }
+            }
 
+            areAllChildrenChecked = !areAtLeastOneChildUnchecked &&
+                    !areAtLeastOneChildPartiallyChecked;
 
-
+            if (areAtLeastOneChildUnchecked) { // but this one
+                finalState = Qt::PartiallyChecked;
+            }
+            else if (areAllChildrenChecked) {
+                finalState = Qt::Checked;
+            }
+            else {
+                finalState = Qt::PartiallyChecked;
+            }
 
 
             m_checkedIdsHash.insert(paperId, finalState);
         }
 
-        //m_checkedIdsHash.insert(paperId, Qt::Checked);
+        // m_checkedIdsHash.insert(paperId, Qt::Checked);
         QModelIndexList modelIndexList = model->getModelIndex(m_projectIdFilter, paperId);
-        if(modelIndexList.isEmpty()){
+
+        if (modelIndexList.isEmpty()) {
             continue;
         }
         QModelIndex modelIndex = modelIndexList.first();
@@ -367,9 +380,8 @@ void SKRSearchNoteListProxyModel::setCheckedIdsList(const QList<int> checkedIdsL
         emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
                          QVector<int>() << Qt::CheckStateRole);
     }
-
-
 }
+
 // --------------------------------------------------------------
 
 ///
@@ -378,47 +390,39 @@ void SKRSearchNoteListProxyModel::setCheckedIdsList(const QList<int> checkedIdsL
 /// \param paperId
 /// \return
 /// more or less 1 second between items' trashed dates
-QList<int> SKRSearchNoteListProxyModel::findIdsTrashedAtTheSameTimeThan(int projectId, int paperId){
-
-
+QList<int>SKRSearchNoteListProxyModel::findIdsTrashedAtTheSameTimeThan(int projectId,
+                                                                       int paperId) {
     QList<int> result;
 
     QDateTime parentDate = plmdata->noteHub()->getTrashedDate(projectId, paperId);
 
 
-    if(!m_paperIdListFilter.isEmpty()){
-
-        for(int id : m_paperIdListFilter){
-
+    if (!m_paperIdListFilter.isEmpty()) {
+        for (int id : m_paperIdListFilter) {
             QDateTime childDate = plmdata->noteHub()->getTrashedDate(projectId, id);
 
-            if(qAbs(childDate.secsTo(parentDate)) < 1){
+            if (qAbs(childDate.secsTo(parentDate)) < 1) {
                 result.append(id);
             }
-
-
         }
-
-
     }
     else {
-        QList<int> childrenIds  = this->getChildrenList(projectId, paperId, m_showTrashedFilter, m_showNotTrashedFilter);
-        for(int id : childrenIds){
+        QList<int> childrenIds = this->getChildrenList(projectId,
+                                                       paperId,
+                                                       m_showTrashedFilter,
+                                                       m_showNotTrashedFilter);
 
+        for (int id : childrenIds) {
             QDateTime childDate = plmdata->noteHub()->getTrashedDate(projectId, id);
 
-            if(qAbs(childDate.secsTo(parentDate)) < 1){
+            if (qAbs(childDate.secsTo(parentDate)) < 1) {
                 result.append(id);
             }
-
-
         }
     }
-
 
 
     return result;
-
 }
 
 // --------------------------------------------------------------
@@ -432,12 +436,10 @@ void SKRSearchNoteListProxyModel::deleteDefinitively(int projectId, int paperId)
 
 void SKRSearchNoteListProxyModel::setParentIdFilter(int projectIdfilter)
 {
-
     m_parentIdFilter = projectIdfilter;
     emit parentIdFilterChanged(m_parentIdFilter);
 
     this->invalidateFilter();
-
 }
 
 // --------------------------------------------------------------
@@ -448,11 +450,9 @@ void SKRSearchNoteListProxyModel::setShowParentWhenParentIdFilter(bool showParen
     m_showParentWhenParentIdFilter = showParent;
     emit showParentWhenParentIdFilterChanged(showParent);
 
-    if(m_parentIdFilter != -2){
-
+    if (m_parentIdFilter != -2) {
         this->invalidateFilter();
     }
-
 }
 
 // --------------------------------------------------------------
@@ -478,7 +478,7 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
 
     // project filtering :
     if (result &&
-        (item->data(PLMNoteItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter)) {
+            (item->data(PLMNoteItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter)) {
         result = true;
     }
     else if (result) {
@@ -497,8 +497,8 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
 
 
     if (result &&
-        item->data(PLMNoteItem::Roles::NameRole).toString().contains(m_textFilter,
-                                                                     Qt::CaseInsensitive))
+            item->data(PLMNoteItem::Roles::NameRole).toString().contains(m_textFilter,
+                                                                         Qt::CaseInsensitive))
     {
         result = true;
     }
@@ -510,8 +510,8 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
     // paperIdListFiltering :
     if (!m_paperIdListFilter.isEmpty()) {
         if (result &&
-            m_paperIdListFilter.contains(item->data(
-                                             PLMNoteItem::Roles::PaperIdRole).toInt()))
+                m_paperIdListFilter.contains(item->data(
+                                                 PLMNoteItem::Roles::PaperIdRole).toInt()))
         {
             result = true;
         }
@@ -522,25 +522,49 @@ bool SKRSearchNoteListProxyModel::filterAcceptsRow(int                sourceRow,
 
 
     // parentId filtering :
-    if (result && m_parentIdFilter != -2) {
-
-        if(m_showParentWhenParentIdFilter && m_parentIdFilter == item->data(PLMNoteItem::Roles::PaperIdRole).toInt()){
+    if (result && (m_parentIdFilter != -2)) {
+        if (m_showParentWhenParentIdFilter &&
+                (m_parentIdFilter == item->data(PLMNoteItem::Roles::PaperIdRole).toInt())) {
             result = true;
         }
         else {
-
-            PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
+            PLMNoteListModel *model =
+                    static_cast<PLMNoteListModel *>(this->sourceModel());
             PLMNoteItem *parentItem = model->getParentNoteItem(item);
 
             if (parentItem) {
                 if (parentItem->paperId() == m_parentIdFilter) {
                     result = true;
                 }
-                else{
+                else {
                     result = false;
                 }
             }
         }
+    }
+
+    // tagId filtering
+
+    if (result && !m_tagIdListFilter.isEmpty() && m_projectIdFilter != -2) {
+
+        QList<int> tagIds = plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter, SKRTagHub::Note, item->data(PLMNoteItem::Roles::PaperIdRole).toInt());
+
+        result = false;
+
+        int tagCountGoal = m_tagIdListFilter.count();
+        int tagCount = 0;
+
+        for(int tag : tagIds){
+            if(m_tagIdListFilter.contains(tag)){
+                tagCount += 1;
+            }
+        }
+
+        if(tagCount == tagCountGoal){
+            result = true;
+        }
+
+
     }
 
     return result;
@@ -593,10 +617,9 @@ void SKRSearchNoteListProxyModel::clearCheckedList()
 
 void SKRSearchNoteListProxyModel::checkAll()
 {
-    PLMNoteListModel *model    = static_cast<PLMNoteListModel *>(this->sourceModel());
+    PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
 
-    if(m_paperIdListFilter.isEmpty()){
-
+    if (m_paperIdListFilter.isEmpty()) {
         QList<int> filteredIdsList;
         QList<int> allIdsList = plmdata->noteHub()->getAllIds(m_projectIdFilter);
 
@@ -617,45 +640,41 @@ void SKRSearchNoteListProxyModel::checkAll()
 
             QModelIndex modelIndex = model->getModelIndex(m_projectIdFilter, id).first();
 
-            emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
+            emit dataChanged(this->mapFromSource(modelIndex),
+                             this->mapFromSource(modelIndex),
                              QVector<int>() << Qt::CheckStateRole);
         }
-
     }
     else {
-        for(int paperId : m_paperIdListFilter){
+        for (int paperId : m_paperIdListFilter) {
             m_checkedIdsHash.insert(paperId, Qt::Checked);
 
-            QModelIndex modelIndex = model->getModelIndex(m_projectIdFilter, paperId).first();
+            QModelIndex modelIndex =
+                    model->getModelIndex(m_projectIdFilter, paperId).first();
 
-            emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
+            emit dataChanged(this->mapFromSource(modelIndex),
+                             this->mapFromSource(modelIndex),
                              QVector<int>() << Qt::CheckStateRole);
-
         }
-
-
-
-
     }
-
 }
 
 // --------------------------------------------------------------
 
 void SKRSearchNoteListProxyModel::checkNone()
 {
-    PLMNoteListModel *model    = static_cast<PLMNoteListModel *>(this->sourceModel());
+    PLMNoteListModel *model = static_cast<PLMNoteListModel *>(this->sourceModel());
     QHash<int, Qt::CheckState> checkedIdsHash(m_checkedIdsHash);
 
     this->clearCheckedList();
 
-    for(int paperId : checkedIdsHash.keys()){
+    for (int paperId : checkedIdsHash.keys()) {
         QModelIndex modelIndex = model->getModelIndex(m_projectIdFilter, paperId).first();
         emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
                          QVector<int>() << Qt::CheckStateRole);
     }
-
 }
+
 // --------------------------------------------------------------
 
 
@@ -705,7 +724,7 @@ void SKRSearchNoteListProxyModel::saveProjectSettings(int projectId)
 // --------------------------------------------------------------
 
 void SKRSearchNoteListProxyModel::setPaperIdListFilter(
-    const QList<int>& paperIdListFilter)
+        const QList<int>& paperIdListFilter)
 {
     m_paperIdListFilter = paperIdListFilter;
 
@@ -798,7 +817,7 @@ QList<int>SKRSearchNoteListProxyModel::getAncestorsList(int  projectId,
     QList<int> resultAllAncestorsIdList;
 
     QList<int> allAncestorsIdList =
-        plmdata->noteHub()->getAllAncestors(projectId, paperId);
+            plmdata->noteHub()->getAllAncestors(projectId, paperId);
 
     for (int ancestorId : allAncestorsIdList) {
         bool isTrashed = plmdata->noteHub()->getTrashed(projectId, ancestorId);
@@ -824,7 +843,7 @@ QList<int>SKRSearchNoteListProxyModel::getSiblingsList(int  projectId,
     QList<int> resultAllSiblingsIdList;
 
     QList<int> allSiblingsIdList =
-        plmdata->noteHub()->getAllSiblings(projectId, paperId);
+            plmdata->noteHub()->getAllSiblings(projectId, paperId);
 
     for (int ancestorId : allSiblingsIdList) {
         bool isTrashed = plmdata->noteHub()->getTrashed(projectId, ancestorId);
@@ -887,8 +906,8 @@ int SKRSearchNoteListProxyModel::findVisualIndex(int projectId, int paperId)
 
         if ((this->data(modelIndex,
                         PLMNoteItem::Roles::ProjectIdRole).toInt() == projectId)
-            && (this->data(modelIndex,
-                           PLMNoteItem::Roles::PaperIdRole).toInt() == paperId)) {
+                && (this->data(modelIndex,
+                               PLMNoteItem::Roles::PaperIdRole).toInt() == paperId)) {
             result = i;
             break;
         }
@@ -953,31 +972,33 @@ int SKRSearchNoteListProxyModel::getItemIndent(int projectId, int paperId)
 // -----------------------------------------------------------------
 
 void SKRSearchNoteListProxyModel::addChildItem(int projectId,
-                                          int parentPaperId,
-                                          int visualIndex)
+                                               int parentPaperId,
+                                               int visualIndex)
 {
     PLMError error = plmdata->noteHub()->addChildPaper(projectId, parentPaperId);
+
     this->setForcedCurrentIndex(visualIndex);
 }
 
 // -----------------------------------------------------------------
 
 void SKRSearchNoteListProxyModel::addItemAbove(int projectId,
-                                          int parentPaperId,
-                                          int visualIndex)
+                                               int parentPaperId,
+                                               int visualIndex)
 {
     PLMError error = plmdata->noteHub()->addPaperAbove(projectId, parentPaperId);
+
     this->setForcedCurrentIndex(visualIndex);
 }
-
 
 // -----------------------------------------------------------------
 
 void SKRSearchNoteListProxyModel::addItemBelow(int projectId,
-                                          int parentPaperId,
-                                          int visualIndex)
+                                               int parentPaperId,
+                                               int visualIndex)
 {
     PLMError error = plmdata->noteHub()->addPaperBelow(projectId, parentPaperId);
+
     this->setForcedCurrentIndex(visualIndex);
 }
 
@@ -1013,7 +1034,6 @@ void SKRSearchNoteListProxyModel::moveDown(int projectId, int paperId, int visua
 
 void SKRSearchNoteListProxyModel::trashItemWithChildren(int projectId, int paperId)
 {
-
     PLMNoteItem *item = this->getItem(projectId, paperId);
 
     if (!item) {
@@ -1021,8 +1041,8 @@ void SKRSearchNoteListProxyModel::trashItemWithChildren(int projectId, int paper
     }
 
     plmdata->noteHub()->setTrashedWithChildren(projectId, paperId, true);
-
 }
+
 // --------------------------------------------------------------
 
 QHash<int, QByteArray>SKRSearchNoteListProxyModel::roleNames() const {

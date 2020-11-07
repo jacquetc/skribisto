@@ -344,5 +344,54 @@
         <file>icons/breeze-skribisto/actions/symbolic/window-close-symbolic.svg</file>
         <file>icons/breeze-skribisto/animations/16/process-working.svg</file>
         <file>icons/breeze-skribisto/animations/22/process-working.svg</file>
+        <file>icons/breeze-skribisto/actions/24/view-media-playlist.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-find-mail.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-find-project.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-find-replace.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-find-user.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-find.svg</file>
+        <file>icons/breeze-skribisto/actions/16/view-media-playlist.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-find-mail.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-find-project.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-find-replace.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-find-user.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-find.svg</file>
+        <file>icons/breeze-skribisto/actions/22/view-media-playlist.svg</file>
+        <file>icons/breeze-skribisto/actions/24/edit-find-mail.svg</file>
+        <file>icons/breeze-skribisto/actions/24/edit-find-project.svg</file>
+        <file>icons/breeze-skribisto/actions/24/edit-find-replace.svg</file>
+        <file>icons/breeze-skribisto/actions/24/edit-find-user.svg</file>
+        <file>icons/breeze-skribisto/actions/24/edit-find.svg</file>
+        <file>icons.qrc</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-find-replace-symbolic.svg</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-find-symbolic.svg</file>
+        <file>icons/breeze-skribisto/actions/16/quickopen-class.svg</file>
+        <file>icons/breeze-skribisto/actions/16/quickopen-file.svg</file>
+        <file>icons/breeze-skribisto/actions/16/quickopen-function.svg</file>
+        <file>icons/breeze-skribisto/actions/16/quickopen.svg</file>
+        <file>icons/breeze-skribisto/actions/22/quickopen-class.svg</file>
+        <file>icons/breeze-skribisto/actions/22/quickopen-file.svg</file>
+        <file>icons/breeze-skribisto/actions/22/quickopen-function.svg</file>
+        <file>icons/breeze-skribisto/actions/22/quickopen.svg</file>
+        <file>icons/breeze-skribisto/actions/24/quickopen-class.svg</file>
+        <file>icons/breeze-skribisto/actions/24/quickopen-file.svg</file>
+        <file>icons/breeze-skribisto/actions/24/quickopen-function.svg</file>
+        <file>icons/breeze-skribisto/actions/24/quickopen.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-all.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-history.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-list.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-locationbar-ltr.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear-locationbar-rtl.svg</file>
+        <file>icons/breeze-skribisto/actions/16/edit-clear.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-all.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-history.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-list.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-locationbar-ltr.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear-locationbar-rtl.svg</file>
+        <file>icons/breeze-skribisto/actions/22/edit-clear.svg</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-clear-all-symbolic.svg</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-clear-rtl-symbolic.svg</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-clear-symbolic-rtl.svg</file>
+        <file>icons/breeze-skribisto/actions/symbolic/edit-clear-symbolic.svg</file>
     </qresource>
 </RCC>

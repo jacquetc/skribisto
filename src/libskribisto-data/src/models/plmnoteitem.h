@@ -50,7 +50,6 @@ public:
         WordCountRole = Qt::UserRole + 13,
         ProjectIsBackupRole = Qt::UserRole + 14,
         ProjectIsActiveRole = Qt::UserRole + 15
-        // TODO: specific to note:
 
     };
     Q_ENUM(Roles)

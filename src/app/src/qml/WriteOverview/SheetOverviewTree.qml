@@ -24,8 +24,6 @@ SheetOverviewTreeForm {
     property int openedPaperId: -2
     property int currentIndex: listView.currentIndex
 
-
-
     property alias visualModel: visualModel
     property var proxyModel
     property var model
@@ -458,6 +456,7 @@ SheetOverviewTreeForm {
                             listView.currentIndex = model.index
                             delegateRoot.forceActiveFocus()
                             eventPoint.accepted = true
+
                         }
 
                         onDoubleTapped: {
@@ -517,11 +516,12 @@ SheetOverviewTreeForm {
 
                         Item {
                             id: titleBox
-                            Layout.minimumWidth: 50
-                            Layout.preferredWidth: 60
-                            Layout.maximumWidth: 150
+                            clip: true
+                            //Layout.minimumWidth: 50
+                            Layout.preferredWidth: 200
+                            //Layout.maximumWidth: 150
                             Layout.fillHeight: true
-                            Layout.fillWidth: true
+                            //Layout.fillWidth: true
 
 
 
@@ -549,13 +549,14 @@ SheetOverviewTreeForm {
                                     SkrLabel {
                                         id: titleLabel
 
-                                        Layout.fillWidth: true
                                         Layout.topMargin: 2
                                         Layout.leftMargin: 4
                                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                         font.bold: model.projectIsActive && model.indent === -1 ? true : false
                                         text: model.indent === -1 ? model.projectName : model.name
                                         elide: Text.ElideRight
+
+                                        Layout.fillWidth: true
                                     }
 
                                     SkrTextField {
@@ -563,6 +564,7 @@ SheetOverviewTreeForm {
                                         visible: false
 
                                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                        Layout.fillWidth: true
                                         text: labelLabel.text
                                         maximumLength: 50
 
@@ -603,6 +605,7 @@ SheetOverviewTreeForm {
                                         visible: false
 
                                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                        Layout.fillWidth: true
                                         text: titleLabel.text
                                         maximumLength: 50
 
@@ -652,6 +655,7 @@ SheetOverviewTreeForm {
                                         elide: Text.ElideRight
                                         visible: text.length === 0 ? false : true
                                         font.italic: true
+                                        Layout.fillWidth: true
                                     }
                                 }
 
@@ -804,7 +808,7 @@ SheetOverviewTreeForm {
                                         }
 
                                         Component.onDestruction: {
-                                            skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                            skrTextBridge.unsubscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
                                         }
 
 
@@ -813,10 +817,12 @@ SheetOverviewTreeForm {
 
                                             if(synopsisId === -2){ // no synopsis, create one
                                                 var error = plmData.noteHub().createSynopsis(projectId, sheetId)
-                                                synopsisId = error.getData("synopsisId", -2);
-                                                plmData.noteHub().setTitle(projectId, synopsisId, qsTr("Outline"))
+                                                synopsisId = error.getData("noteId", -2);
+                                                plmData.noteHub().setTitle(projectId, synopsisId, model.name)
+                                                plmData.notePropertyHub().setProperty(projectId, synopsisId, "label", qsTr("Outline"))
                                                 if(synopsisId === -2){
                                                     console.warn("can't find synopsis of", projectId, sheetId)
+                                                    //TODO: add notification
                                                     return
                                                 }
                                             }
@@ -827,12 +833,11 @@ SheetOverviewTreeForm {
                                         }
 
                                         function openSynopsis(_projectId, _paperId){
-
                                             // save current
                                             if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
                                                 saveContent()
                                                 saveCurrentPaperCursorPositionAndY()
-                                                skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                                skrTextBridge.unsubscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
                                             }
 
 
@@ -845,7 +850,7 @@ SheetOverviewTreeForm {
                                             writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
                                             title = plmData.noteHub().getTitle(_projectId, _paperId)
 
-                                            skrTextBridge.subscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                            skrTextBridge.subscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
                                             // apply format
                                             writingZone.documentHandler.indentEverywhere = SkrSettings.overviewTreeNoteSettings.textIndent
@@ -1509,7 +1514,7 @@ SheetOverviewTreeForm {
                 }
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
-                    console.log("from deleted: sel label", currentProjectId, currentPaperId)
+                    console.log("sel label", currentProjectId, currentPaperId)
                     listView.itemAtIndex(currentIndex).editLabel()
                 }
             }

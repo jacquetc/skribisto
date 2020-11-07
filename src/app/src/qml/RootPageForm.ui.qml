@@ -268,6 +268,12 @@ Item {
                     Layout.fillWidth: true
                 }
 
+                Item {
+                    id: stretcher
+                    Layout.fillWidth: true
+
+                }
+
                 SkrLabel {
                     id: statusRightLabel
                     text: qsTr("Label")

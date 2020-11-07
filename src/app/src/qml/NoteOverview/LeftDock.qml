@@ -27,7 +27,7 @@ LeftDockForm {
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 5
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: handle.hovered ? Material.accentColor : SkrTheme.divider
+                color: handle.hovered ? SkrTheme.accent : SkrTheme.divider
             }
         }
     }

@@ -106,7 +106,7 @@ PLMError SKRTagHub::removeTag(int projectId, int tagId)
     }
 
     IFOK(error) {
-        emit tagAdded(projectId, newId);
+        emit tagRemoved(projectId, newId);
         emit projectModified(projectId);
     }
 
@@ -330,6 +330,64 @@ int SKRTagHub::getTopPaperId(int projectId) const
 // --------------------------------------------------------------------------------
 
 
+QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
+                                       SKRTagHub::ItemType itemType,
+                                       int                 tagId) const
+{
+    PLMError error;
+
+    QList<int> result;
+    QHash<int, QVariant> out;
+
+    QHash<QString, QVariant> where;
+
+
+    PLMSqlQueries queries(projectId, "tbl_tag_relationship");
+
+    where.insert("l_tag_code", tagId);
+
+
+    // get l_sheet_code
+    if (itemType == SKRTagHub::Sheet) {
+        error = queries.getValueByIdsWhere("l_sheet_code", out, where);
+
+        IFOK(error) {
+            // filter null results
+            QHash<int, QVariant>::const_iterator i = out.constBegin();
+
+            while (i != out.constEnd()) {
+                if (!i.value().isNull()) {
+                    result.append(i.key());
+                }
+                ++i;
+            }
+        }
+    }
+
+
+    // get l_note_code
+    if (itemType == SKRTagHub::Note) {
+        error = queries.getValueByIdsWhere("l_note_code", out, where);
+
+        IFOK(error) {
+            // filter null results
+            QHash<int, QVariant>::const_iterator i = out.constBegin();
+
+            while (i != out.constEnd()) {
+                if (!i.value().isNull()) {
+                    result.append(i.key());
+                }
+                ++i;
+            }
+        }
+    }
+
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return result;
+}
+
 QList<int>SKRTagHub::getItemIdsFromTag(int projectId, int tagId, bool addSeparator) const
 {
     PLMError error;
@@ -340,15 +398,15 @@ QList<int>SKRTagHub::getItemIdsFromTag(int projectId, int tagId, bool addSeparat
     QHash<QString, QVariant> where;
 
 
-    PLMSqlQueries queries(projectId, "tbl_sheet_note");
+    PLMSqlQueries queries(projectId, "tbl_tag_relationship");
 
+    where.insert("l_tag_code", tagId);
 
     // get l_sheet_code
     if (addSeparator) {
         result.append(-30);
     }
 
-    where.insert("l_tag_code", tagId);
     error = queries.getValueByIdsWhere("l_sheet_code", out, where);
 
     IFOK(error) {
