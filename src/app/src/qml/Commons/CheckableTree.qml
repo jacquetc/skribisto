@@ -136,7 +136,7 @@ ListView {
 
 
             onActiveFocusChanged: {
-                if(root.currentIndex === model.index){
+                if(root.currentIndex === model.index && model.index !== -1 && activeFocus){
                     root.currentPaperId = model.paperId
                 }
             }
@@ -244,7 +244,7 @@ ListView {
 
                 if (event.key === Qt.Key_Escape){
                     console.log("Escape key pressed")
-                    escapeKeyPressed()
+                    root.escapeKeyPressed()
                     event.accepted = true
                 }
 

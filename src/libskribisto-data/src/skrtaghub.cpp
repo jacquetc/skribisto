@@ -342,7 +342,7 @@ QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
     QHash<QString, QVariant> where;
 
 
-    PLMSqlQueries queries(projectId, "tbl_sheet_note");
+    PLMSqlQueries queries(projectId, "tbl_tag_relationship");
 
     where.insert("l_tag_code", tagId);
 

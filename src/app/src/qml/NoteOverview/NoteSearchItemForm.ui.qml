@@ -12,6 +12,7 @@ Item {
     property alias searchTagPad: searchTagPad
     property alias searchDrawer: searchDrawer
     property alias showTagDrawerButton: showTagDrawerButton
+    property alias deselectTagsButton: deselectTagsButton
 
     ColumnLayout {
         id: columnLayout
@@ -24,6 +25,9 @@ Item {
                 id: searchTextField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Search")
+
+                KeyNavigation.tab: showTagDrawerButton
+
             }
 
             SkrToolButton {
@@ -32,8 +36,21 @@ Item {
                 icon.name: "tag"
                 display: AbstractButton.IconOnly
 
+                KeyNavigation.tab:  deselectTagsButton
 
             }
+
+            SkrToolButton {
+                id: deselectTagsButton
+                text: qsTr("Deselect tags")
+                icon.name: "edit-select-none"
+                display: AbstractButton.IconOnly
+                visible: false
+
+                KeyNavigation.tab: searchListView
+
+            }
+
         }
 
         Item {
@@ -45,13 +62,14 @@ Item {
             ScrollView {
                 id: scrollView
                 anchors.fill: parent
-                focusPolicy: Qt.StrongFocus
+                focusPolicy: Qt.WheelFocus
                 clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
                 CheckableTree {
                     id: searchListView
+                    anchors.fill: parent
                     openActionsEnabled: true
                     renameActionEnabled: true
                     sendToTrashActionEnabled: true
@@ -69,13 +87,17 @@ Item {
                 dockModeEnabled: false
                 edge: Qt.RightEdge
                 settingsCategory: "noteOverviewNoteSearchItemDrawer"
+                z: 1
 
                 TagPad{
                     id: searchTagPad
                     minimalMode: true
                     itemType: SKRTagHub.Note
+                    selectionEnabled: true
+                    multipleSelectionsEnabled: true
                 }
             }
+
 
         }
     }

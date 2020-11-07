@@ -161,7 +161,7 @@ Item {
                         NoteSearchItem {
                             id: noteSearchItem
                             Layout.fillWidth: true
-                            Layout.preferredHeight: scrollView.height *3/4
+                            Layout.preferredHeight: scrollView.height
                         }
 
                         Item {

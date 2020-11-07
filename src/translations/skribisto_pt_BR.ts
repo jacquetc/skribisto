@@ -1608,6 +1608,14 @@ not allowed delete a filled book.</source>
         <source>Search</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show tags list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deselect tags</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NoteZone</name>

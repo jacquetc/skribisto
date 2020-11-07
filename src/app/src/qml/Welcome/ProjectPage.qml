@@ -259,7 +259,14 @@ ProjectPageForm {
 
             color: "transparent"
 
-            Accessible.name: "name"
+            Accessible.name: {
+                var openedText = model.isOpened ? qsTr("Opened") : ""
+
+                var titleText = model.title
+                var dateText = qsTr("last modified %1").arg(skrRootItem.toLocaleDateTimeFormat(model.lastModification))
+
+                return openedText + " " + titleText + " " + dateText
+            }
             Accessible.role: Accessible.ListItem
             Accessible.description: qsTr("recent projects list item")
 

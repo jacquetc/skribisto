@@ -25,7 +25,7 @@ NoteSearchItemForm {
     // --------------------------------- text field ------------------------------
     //----------------------------------------------------------------------------
 
-    searchTextField.onEditingFinished: {
+    searchTextField.onAccepted: {
         searchListView.forceActiveFocus()
         searchListView.currentIndex = 0
     }
@@ -39,7 +39,7 @@ NoteSearchItemForm {
 
     showTagDrawerButton.onClicked: {
         searchDrawer.open()
-        searchDrawer.forceActiveFocus()
+        searchTagPad.forceActiveFocus()
     }
 
         //proxy model for tag list :
@@ -49,9 +49,23 @@ NoteSearchItemForm {
         }
         searchTagPad.tagListModel: noteOverviewTagProxyModel
 
-        searchTagPad.onTagTapped: function (projectId, tagId){
+        searchTagPad.onSelectedListModified: function (selectedList){
 
-            noteOverviewSearchProxyModel.tagIdListFilter = [tagId]
+            noteOverviewSearchProxyModel.tagIdListFilter = selectedList
+            deselectTagsButton.visible = selectedList.length === 0 ? false : true
+
+        }
+
+        deselectTagsButton.onClicked: {
+
+            noteOverviewSearchProxyModel.tagIdListFilter = []
+            searchTagPad.clearSelection()
+            deselectTagsButton.visible = false
+        }
+
+        searchTagPad.onEscapeKeyPressed: {
+            searchListView.forceActiveFocus()
+            searchDrawer.close()
         }
 
     //----------------------------------------------------------------------------

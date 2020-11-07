@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQml.Models 2.15
 import eu.skribisto.searchnotelistproxymodel 1.0
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.propertyhub 1.0
@@ -35,8 +36,12 @@ NotePadForm {
     ListModel {
         id: noteListModel
     }
-    
-    noteRepeater.model: noteListModel
+    DelegateModel {
+        id: visualModel
+        model: noteListModel
+        delegate: noteFlowComponent
+    }
+    noteRepeater.model: visualModel
 
     // force focus on first child
     noteFlow.activeFocusOnTab: true
@@ -89,6 +94,7 @@ NotePadForm {
                     //open in noteTextArea
                     openDocument(projectId, noteId)
 
+                    eventPoint.accepted = true
 
                 }
                 onDoubleTapped: {
@@ -103,6 +109,7 @@ NotePadForm {
                     itemBase.isOpened = true
                     Globals.openNoteInNewTabCalled(itemBase.projectId, itemBase.noteId)
 
+                    eventPoint.accepted = true
 
                 }
 
@@ -117,10 +124,12 @@ NotePadForm {
 
                     if(rightClickMenu.visible){
                         rightClickMenu.close()
+                        eventPoint.accepted = true
                         return
                     }
 
                     rightClickMenu.popup(itemBase, 0, itemBase.height)
+                    eventPoint.accepted = true
                 }
             }
 
@@ -139,11 +148,13 @@ NotePadForm {
 
                     if(rightClickMenu.visible){
                         rightClickMenu.close()
+                        eventPoint.accepted = true
                         return
                     }
 
                     rightClickMenu.popup()
 
+                    eventPoint.accepted = true
 
                 }
             }
@@ -252,6 +263,14 @@ NotePadForm {
                     
                 }
 
+                if (event.key === Qt.Key_Space){
+                    itemBase.toggleSelected()
+                }
+
+                if (event.key === Qt.Key_Escape){
+                    escapeKeyPressed()
+                }
+
                 if (event.key === Qt.Key_Right || event.key === Qt.Key_Down ){
 
                     itemBase.isSelected = false
@@ -295,6 +314,10 @@ NotePadForm {
                 SkrLabel{
                     id: noteTitle
                     text: model.title
+
+                    style: Text.Raised
+                    styleColor: "white"
+
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
                     Layout.minimumWidth: 20
@@ -321,6 +344,7 @@ NotePadForm {
                         }
 
                         activeFocusOnTab: false
+                        focusPolicy: Qt.NoFocus
 
                     }
                 }

@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQml.Models 2.15
 import QtQuick.Layouts 1.15
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
@@ -24,10 +25,51 @@ TagPadForm {
     signal callRemoveTag(int projectId,int tagId)
     signal tagTapped(int projectId,int tagId)
     signal tagDoubleTapped(int projectId,int tagId)
+    signal escapeKeyPressed()
+
+
+    property int focusedIndex: -2
+    property var selectedList: []
+    signal selectedListModified(var list)
+
+    function determineWhichItemIsSelected() {
+
+        var count = tagFlow.children.length - 1
+        var i
+        for (i = 0 ; i < count ; i++ ){
+            tagFlow.children[i].determineIfSelected()
+        }
+
+        selectedListModified(selectedList)
+
+    }
+
+
+    // options :
+    property bool selectionEnabled: false
+    property bool multipleSelectionsEnabled: false
+
+    function clearSelection(){
+        selectedList = []
+        determineWhichItemIsSelected()
+    }
+
+    tagFlowFocusScope.onActiveFocusChanged: {
+        if(!tagFlowFocusScope.activeFocus){
+            focusedIndex = -2
+        }
+    }
+
+    DelegateModel {
+        id: visualModel
+        model: tagListModel
+        delegate: tagFlowComponent
+    }
+
+    tagRepeater.model: visualModel
 
 
 
-    tagRepeater.model: tagListModel
 
     // force focus on first child
     tagFlow.activeFocusOnTab: true
@@ -35,7 +77,7 @@ TagPadForm {
         if(tagFlow.children.length > 1){// means there is no children
             var first = tagFlow.children[0]
             first.forceActiveFocus()
-            first.isSelected = true
+            first.setFocused()
             return
         }
 
@@ -107,6 +149,7 @@ TagPadForm {
             property int itemId: root.itemId
             property int tagId: model.tagId
             property bool isSelected: false
+            property bool isFocused: root.focusedIndex === model.index
 
             //TODO: adapt to tag color
             //temporary:
@@ -114,45 +157,119 @@ TagPadForm {
 
 
             focus: true
+//            onActiveFocusChanged: {
+//                if(activeFocus){
+//                    setFocused()
+//                }
+////                else {
+////                    root.focusedIndex = -2
+////                }
+//            }
+
+            function setFocused(){
+                root.focusedIndex = model.index
+            }
+
+             function setSelected(){
+                if(!multipleSelectionsEnabled && selectionEnabled){
+                    root.selectedList = []
+                }
+
+                if(selectionEnabled){
+
+                    var here = false
+                    for(var i = 0; i < root.selectedList.length ; i ++){
+
+                        if(root.selectedList[i] === itemBase.tagId){
+                            here = true
+                        }
+                    }
+
+                    if(!here){
+                        root.selectedList.push(itemBase.tagId)
+                        console.log(" root.selectedList",  root.selectedList)
+                        root.determineWhichItemIsSelected()
+                    }
+                }
+
+            }
+
+             function setDeselected(){
+
+
+                 var index = root.selectedList.indexOf(itemBase.tagId)
+                 if(index === -1){
+                     return
+                 }
+
+                 root.selectedList.splice(index, 1)
+                 root.determineWhichItemIsSelected()
+
+
+             }
+
+
+            function toggleSelected(){
+                if(itemBase.isSelected){
+                    itemBase.setDeselected()
+
+                }
+                else{
+                    itemBase.setSelected()
+                }
+
+            }
+
+
+            function determineIfSelected(){
+
+                var here = false
+                for(var i = 0; i < root.selectedList.length ; i ++){
+
+                    if(root.selectedList[i] === itemBase.tagId){
+                        here = true
+                    }
+                }
+
+               itemBase.isSelected = here
+                console.log("itemBase.isSelected", itemBase.isSelected, itemBase.tagId, root.selectedList)
+            }
 
             TapHandler {
                 id: tapHandler
                 acceptedButtons: Qt.LeftButton
                 onSingleTapped: {
-                    var i;
-                    for(i = 0; i < tagRepeater.count; i++) {
-                        tagRepeater.itemAt(i).isSelected = false
-                    }
-                    itemBase.isSelected = true
+
+                    itemBase.setFocused()
+                    itemBase.toggleSelected()
                     itemBase.forceActiveFocus()
                     tagTapped(projectId, tagId)
 
+                    eventPoint.accepted = true
+
                 }
                 onDoubleTapped: {
-                    var i;
-                    for(i = 0; i < tagRepeater.count; i++) {
-                        tagRepeater.itemAt(i).isSelected = false
-                    }
-                    itemBase.isSelected = true
+                    itemBase.setFocused()
+                    itemBase.setSelected()
                     itemBase.forceActiveFocus()
                     tagDoubleTapped(projectId, tagId)
 
+                    eventPoint.accepted = true
                 }
                 onLongPressed: {
-                    var i;
-                    for(i = 0; i < tagRepeater.count; i++) {
-                        tagRepeater.itemAt(i).isSelected = false
-                    }
-                    itemBase.isSelected = true
+                    itemBase.setFocused()
+                    itemBase.setSelected()
                     itemBase.forceActiveFocus()
 
 
                     if(rightClickMenu.visible){
                         rightClickMenu.close()
+                        eventPoint.accepted = true
                         return
                     }
 
                     rightClickMenu.popup(itemBase, 0, itemBase.height)
+                    eventPoint.accepted = true
                 }
             }
 
@@ -164,21 +281,21 @@ TagPadForm {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
                 onSingleTapped: {
-                    var i;
-                    for(i = 0; i < tagRepeater.count; i++) {
-                        tagRepeater.itemAt(i).isSelected = false
-                    }
-                    itemBase.isSelected = true
+
+                    itemBase.setFocused()
+                    itemBase.setSelected()
                     itemBase.forceActiveFocus()
 
 
                     if(rightClickMenu.visible){
                         rightClickMenu.close()
+                        eventPoint.accepted = true
                         return
                     }
 
                     rightClickMenu.popup()
 
+                    eventPoint.accepted = true
 
                 }
             }
@@ -276,6 +393,12 @@ TagPadForm {
                 }
             }
 
+            Keys.onShortcutOverride: {
+                if( event.key === Qt.Key_Escape){
+                    event.accepted = true
+                }
+            }
+
             Keys.onPressed: {
                 if (event.key === Qt.Key_Delete){
                     console.log("Delete key pressed ")
@@ -302,30 +425,36 @@ TagPadForm {
 
                 }
 
+                if (event.key === Qt.Key_Space){
+                    itemBase.toggleSelected()
+                }
+
+                if (event.key === Qt.Key_Escape){
+                    escapeKeyPressed()
+                }
+
                 if (event.key === Qt.Key_Right || event.key === Qt.Key_Down ){
 
-                    itemBase.isSelected = false
                     if(model.index === tagRepeater.count - 1){
                         tagRepeater.itemAt(0).forceActiveFocus()
-                        tagRepeater.itemAt(0).isSelected = true
+                        tagRepeater.itemAt(0).setFocused()
 
                     }
                     else{
                         tagRepeater.itemAt(model.index + 1).forceActiveFocus()
-                        tagRepeater.itemAt(model.index + 1).isSelected = true
+                        tagRepeater.itemAt(model.index + 1).setFocused()
                     }
 
                 }
                 if (event.key === Qt.Key_Left || event.key === Qt.Key_Up ){
 
-                    itemBase.isSelected = false
                     if(model.index === 0){
                         tagRepeater.itemAt(tagRepeater.count - 1).forceActiveFocus()
-                        tagRepeater.itemAt(tagRepeater.count - 1).isSelected = true
+                        tagRepeater.itemAt(tagRepeater.count - 1).setFocused()
                     }
                     else{
                         tagRepeater.itemAt(model.index - 1).forceActiveFocus()
-                        tagRepeater.itemAt(model.index - 1).isSelected = true
+                        tagRepeater.itemAt(model.index - 1).setFocused()
                     }
 
                 }
@@ -345,6 +474,9 @@ TagPadForm {
                 SkrLabel{
                     id: tagTitle
                     text: model.name
+                    style: Text.Raised
+                    styleColor: "white"
+
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
                     Layout.minimumWidth: 20
@@ -352,6 +484,8 @@ TagPadForm {
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+
+                    color: itemBase.isFocused ? SkrTheme.accent : SkrTheme.buttonForeground
 
                     SkrRoundButton {
                         id: removeRelationshipButton
@@ -380,6 +514,7 @@ TagPadForm {
                             }
                         }
                         activeFocusOnTab: false
+                        focusPolicy: Qt.NoFocus
 
 
                     }
@@ -669,8 +804,9 @@ TagPadForm {
         if (activeFocus) {
 
 
-            if(!toolBarVisible){
+            if(minimalMode){
                 tagFlow.forceActiveFocus()
+
             }
             else{
                 addTagMenuToolButton.forceActiveFocus()
