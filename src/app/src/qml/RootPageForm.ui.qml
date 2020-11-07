@@ -78,32 +78,32 @@ Item {
                 Layout.fillWidth: true
                 Material.background: SkrTheme.pageBackground
 
-                Tab {
+                SkrTab {
                     id: welcomeTab
                     closable: false
                     pageType: welcomePage.pageType
                     iconColor: "transparent"
                 }
-                Tab {
+                SkrTab {
                     id: writeOverviewTab
                     closable: false
                     pageType: writeOverviewPage.pageType
                     iconColor:  SkrTheme.buttonIcon
                 }
-                Tab {
+                SkrTab {
                     id: noteOverviewTab
                     closable: false
                     pageType: noteOverviewPage.pageType
                     iconColor:  SkrTheme.buttonIcon
                 }
                 //NOTE: waiting to be implemented
-//                Tab {
+//                SkrTab {
 //                    id: galleryTab
 //                    closable: false
 //                    pageType: galleryPage.pageType
 //                    iconColor:  SkrTheme.buttonIcon
 //              }
-                Tab {
+                SkrTab {
                     id: projectTab
                     closable: false
                     pageType: projectsMainPage.pageType
