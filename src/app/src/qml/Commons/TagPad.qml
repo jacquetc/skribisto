@@ -224,7 +224,7 @@ TagPadForm {
             function determineIfSelected(){
 
                 var here = false
-                for(var i = 0; i < root.selectedList.length ; i ++){
+                for(var i = 0; i < root.selectedList.length ; i++){
 
                     if(root.selectedList[i] === itemBase.tagId){
                         here = true
@@ -232,7 +232,6 @@ TagPadForm {
                 }
 
                itemBase.isSelected = here
-                console.log("itemBase.isSelected", itemBase.isSelected, itemBase.tagId, root.selectedList)
             }
 
             TapHandler {
@@ -258,7 +257,6 @@ TagPadForm {
                 }
                 onLongPressed: {
                     itemBase.setFocused()
-                    itemBase.setSelected()
                     itemBase.forceActiveFocus()
 
 
@@ -283,7 +281,6 @@ TagPadForm {
                 onSingleTapped: {
 
                     itemBase.setFocused()
-                    itemBase.setSelected()
                     itemBase.forceActiveFocus()
 
 
