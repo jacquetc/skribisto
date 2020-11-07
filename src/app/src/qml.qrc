@@ -111,5 +111,10 @@
         <file>qml/Welcome/ExporterForm.ui.qml</file>
         <file>qml/Welcome/Importer.qml</file>
         <file>qml/Welcome/ImporterForm.ui.qml</file>
+        <file>qml/NoteOverview/NoteSearchItem.qml</file>
+        <file>qml/NoteOverview/NoteSearchItemForm.ui.qml</file>
+        <file>qml/NoteOverview/RecentNotesItem.qml</file>
+        <file>qml/NoteOverview/RecentNotesItemForm.ui.qml</file>
+        <file>qml/Items/SkrToolTip.qml</file>
     </qresource>
 </RCC>

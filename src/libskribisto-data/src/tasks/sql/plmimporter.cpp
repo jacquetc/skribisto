@@ -39,7 +39,7 @@
 #include <QUrl>
 #include <QTemporaryDir>
 #include <QXmlStreamReader>
-#include <quazip5/JlCompress.h>
+#include <quazip/JlCompress.h>
 #include <QTextDocument>
 
 PLMImporter::PLMImporter(QObject *parent) :

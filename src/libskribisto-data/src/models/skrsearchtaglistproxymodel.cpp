@@ -34,14 +34,14 @@ SKRSearchTagListProxyModel::SKRSearchTagListProxyModel(QObject *parent) :
 
     connect(
         plmdata->projectHub(),
-                                   &PLMProjectHub::projectLoaded,
-                                                                  this,
-                                                                        &SKRSearchTagListProxyModel::loadProjectSettings);
+        &PLMProjectHub::projectLoaded,
+        this,
+        &SKRSearchTagListProxyModel::loadProjectSettings);
     connect(
         plmdata->projectHub(),
-                                   &PLMProjectHub::projectToBeClosed,
-                                                                  this,
-                                                                        &SKRSearchTagListProxyModel::saveProjectSettings,
+        &PLMProjectHub::projectToBeClosed,
+        this,
+        &SKRSearchTagListProxyModel::saveProjectSettings,
         Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->invalidateFilter();

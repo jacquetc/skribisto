@@ -1037,58 +1037,6 @@ ApplicationWindow {
             return
         }
 
-
-        // determine if menuBar is an ancestor
-        if(item.parent){
-            if(item.parent.objectName === "menuBar" || item.parent.objectName === "editMenu" ){
-                //console.log("menuBar is ancestor")
-                return
-            }
-            if(item.parent.parent){
-                if(item.parent.parent.objectName === "menuBar" ||item.parent.parent.objectName === "editMenu"){
-                    //console.log("menuBar is ancestor")
-                    return
-
-                }
-                if(item.parent.parent.parent){
-                    if(item.parent.parent.parent.objectName === "menuBar" ||item.parent.parent.parent.objectName === "editMenu"){
-                        //console.log("menuBar is ancestor")
-                        return
-
-                    }
-                    if(item.parent.parent.parent.parent){
-                        if(item.parent.parent.parent.parent.objectName === "menuBar" || item.parent.parent.parent.parent.objectName === "editMenu"){
-                            //console.log("menuBar is ancestor")
-                            return
-
-                        }
-                        if(item.parent.parent.parent.parent.parent){
-                            if(item.parent.parent.parent.parent.parent.objectName === "menuBar" || item.parent.parent.parent.parent.parent.objectName === "editMenu"){
-                                //console.log("menuBar is ancestor")
-                                return
-
-                            }
-
-                        }
-                    }
-
-                }
-
-
-            }
-
-
-        }
-        var itemString = item.toString()
-        if(itemString.slice(0, 15) === "QQuickPopupItem"){
-            //console.log("item is QQuickPopupItem")
-            return
-
-        }
-
-
-
-
         //        console.log("item", activeFocusItem)
         //        console.log("objectName", activeFocusItem.objectName)
         if(!lastFocusedItem){

@@ -229,6 +229,10 @@
         <source>Delete definitively</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DockedTextTreeWidget</name>
@@ -573,6 +577,17 @@
     <message>
         <source>scene break</source>
         <translation type="obsolete">разрыв сцены</translation>
+    </message>
+</context>
+<context>
+    <name>ExporterForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1042,6 +1057,21 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>Plume Project File (*.plume);;Plume Backup Project File (*.plume_backup);;Plume Exported Dictionary (*.plume_dict)</source>
         <translation type="obsolete">Файл проекта Plume (*.plume);;Резервная копия проекта Plume (*.plume_backup);;Экспортированный словарь Plume (*.plume_dict)</translation>
+    </message>
+</context>
+<context>
+    <name>ImporterForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import from Plume Creator project</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1783,6 +1813,22 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Existing notes</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open current note in a new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note name</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
@@ -1800,6 +1846,21 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Type your note here...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NoteSearchItemForm.ui</name>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deselect tags</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2054,6 +2115,48 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>Underline</source>
         <translation type="obsolete">Подчеркнутый</translation>
+    </message>
+</context>
+<context>
+    <name>PlumeImporterForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Import Plume Creator project&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Plume project file (*.plume) :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>plume project file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This project will be imported as : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished">Импорт</translation>
+    </message>
+</context>
+<context>
+    <name>PrintForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2506,15 +2609,15 @@ Have you checked the one(s) you want to look through ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Button</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show list of tabs</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3201,6 +3304,14 @@ Have you checked the one(s) you want to look through ?</source>
         <source>ToolBar background</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Divider</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Menu background</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SlimFindReplace</name>
@@ -3422,6 +3533,31 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Existing tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tag name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete the tag &quot;%1&quot; ?
+%2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3930,6 +4066,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Projects</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

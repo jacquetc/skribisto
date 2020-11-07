@@ -41,7 +41,7 @@ bool PLMUtils::Dir::removeDir(const QString& dirName)
     QDir dir(dirName);
 
     if (dir.exists(dirName)) {
-        for (QFileInfo info :
+        for (const QFileInfo &info :
                    dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System |
                                      QDir::Hidden  |
                                      QDir::AllDirs | QDir::Files,
@@ -740,7 +740,7 @@ QStringList PLMUtils::Dir::addonsPathsList()
             list.append(dir.path());
 
             QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-            for(const QString& pluginDir : dirList) {
+            for(const QString& pluginDir : qAsConst(dirList)) {
                 list.append(dir.path() + "/" + pluginDir);
             }
         }

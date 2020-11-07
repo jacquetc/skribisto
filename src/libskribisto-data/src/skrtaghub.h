@@ -84,6 +84,9 @@ public:
 
     // relationship :
     Q_INVOKABLE QList<int>getItemIdsFromTag(int  projectId,
+                                            SKRTagHub::ItemType itemType,
+                                            int  tagId) const;
+    Q_INVOKABLE QList<int>getItemIdsFromTag(int  projectId,
                                             int  tagId,
                                             bool haveSeparator = false) const;
     Q_INVOKABLE QList<int>getTagsFromItemId(int                 projectId,

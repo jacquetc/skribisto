@@ -21,7 +21,8 @@ ListView {
 
     signal copyCalled(int projectId, int paperId)
     signal deleteDefinitivelyCalled(int projectId, int paperId)
-    signal goBackCalled()
+    //signal sendToTrashCalled(int projectId, int paperId)
+    signal escapeKeyPressed()
 
     property int currentPaperId: -2
     property int currentProjectId: -2
@@ -40,7 +41,6 @@ ListView {
     }
     model: visualModel
 
-
     property int contextMenuItemIndex: -2
     onCurrentIndexChanged: {
         contextMenuItemIndex = root.currentIndex
@@ -52,16 +52,19 @@ ListView {
     property bool checkButtonsVisible: false
     property bool openActionsEnabled: false
     property bool renameActionEnabled: false
-    //property bool sendToTrashActionEnabled: false
+    property bool sendToTrashActionEnabled: false
     property bool deleteActionEnabled: false
     property bool cutActionEnabled: false
     property bool copyActionEnabled: false
     property bool pasteActionEnabled: false
-
+    property bool elevationEnabled: false
 
     //tree-like onTreelikeIndents
     property int treeIndentOffset: 0
     property int treeIndentMultiplier: 10
+
+    spacing: elevationEnabled ? 5 : 0
+    leftMargin: elevationEnabled ? 5 : 0
 
     // checkButtons :
     function getCheckedPaperIdList(){
@@ -133,7 +136,7 @@ ListView {
 
 
             onActiveFocusChanged: {
-                if(root.currentIndex === model.index){
+                if(root.currentIndex === model.index && model.index !== -1 && activeFocus){
                     root.currentPaperId = model.paperId
                 }
             }
@@ -241,7 +244,7 @@ ListView {
 
                 if (event.key === Qt.Key_Escape){
                     console.log("Escape key pressed")
-                    goBackCalled()
+                    root.escapeKeyPressed()
                     event.accepted = true
                 }
 
@@ -249,7 +252,7 @@ ListView {
 
             property bool editBugWorkaround: false
 
-            Rectangle {
+            Pane {
                 id: content
                 property int visualIndex: 0
                 property int sourceIndex: -2
@@ -263,13 +266,11 @@ ListView {
                 width: delegateRoot.width
                 height: 50
 
-                color: "transparent"
+                padding: 1
 
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 100
-                    }
-                }
+                Material.background: SkrTheme.pageBackground
+                Material.elevation: root.elevationEnabled ? 4 : 0
+
 
                 HoverHandler {
                     id: hoverHandler
@@ -305,13 +306,13 @@ ListView {
                     acceptedButtons: Qt.RightButton
                     onTapped: {
 
+                        root.currentIndex = model.index
 
                         if(menu.visible){
                             menu.close()
                             return
                         }
 
-                        root.currentIndex = model.index
                         menu.open()
                         eventPoint.accepted = true
                     }
@@ -326,6 +327,7 @@ ListView {
 
                     }
                 }
+
 
                 Action {
                     id: openDocumentAction
@@ -629,6 +631,12 @@ ListView {
 
                                 root.currentIndex = model.index
                                 delegateRoot.forceActiveFocus()
+
+                                if(menu.visible){
+                                    menu.close()
+                                    return
+                                }
+
                                 menu.open()
                             }
 
@@ -641,11 +649,11 @@ ListView {
 
                             color: model.indent === 0 ? Material.color(Material.Indigo) :
                                                         (model.indent === 1 ? Material.color(Material.LightBlue) :
-                                                                         (model.indent === 2 ? Material.color(Material.LightGreen) :
-                                                                                               (model.indent === 3 ? Material.color(Material.Amber) :
-                                                                                                                     (model.indent === 4 ? Material.color(Material.DeepOrange) :
-                                                                                               Material.color(Material.Teal)
-                                                                              ))))
+                                                                              (model.indent === 2 ? Material.color(Material.LightGreen) :
+                                                                                                    (model.indent === 3 ? Material.color(Material.Amber) :
+                                                                                                                          (model.indent === 4 ? Material.color(Material.DeepOrange) :
+                                                                                                                                                Material.color(Material.Teal)
+                                                                                                                           ))))
                         }
                     }
                     Rectangle {
@@ -857,7 +865,10 @@ ListView {
                     }
                 }
 
-                MenuSeparator {}
+                MenuSeparator {
+                    height: renameActionEnabled  ? undefined : 0
+                    visible: renameActionEnabled
+                }
 
                 SkrMenuItem {
                     height: renameActionEnabled ? undefined : 0
@@ -889,7 +900,7 @@ ListView {
                         icon {
                             name: "label"
                         }
-                        enabled: renameActionEnabled && contextMenuItemIndex === model.index  && listView.enabled
+                        enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
                         onTriggered: {
                             console.log("sel label", model.projectId,
                                         model.paperId)
@@ -898,7 +909,10 @@ ListView {
                     }
                 }
 
-                MenuSeparator {}
+                MenuSeparator {
+                    height: copyActionEnabled  ? undefined : 0
+                    visible: copyActionEnabled
+                }
 
                 SkrMenuItem {
                     height: copyActionEnabled ? undefined : 0
@@ -920,7 +934,29 @@ ListView {
                     }
                 }
 
-                MenuSeparator {}
+                MenuSeparator {
+                    height: sendToTrashActionEnabled || deleteActionEnabled ? undefined : 0
+                    visible: sendToTrashActionEnabled || deleteActionEnabled
+                }
+
+                SkrMenuItem {
+                    height: sendToTrashActionEnabled ? undefined : 0
+                    visible: sendToTrashActionEnabled
+                    action: Action {
+                        text: qsTr("Send to trash")
+                        //shortcut: "Del"
+                        icon {
+                            name: "edit-delete"
+                        }
+                        enabled: sendToTrashActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
+                        onTriggered: {
+                            console.log("sent to trash action", model.projectId,
+                                        model.paperId)
+                            //sendToTrashCalled(model.projectId, model.paperId)
+                            proxyModel.trashItemWithChildren(model.projectId, model.paperId)
+                        }
+                    }
+                }
 
                 SkrMenuItem {
                     height: deleteActionEnabled ? undefined : 0
@@ -929,7 +965,7 @@ ListView {
                         text: qsTr("Delete definitively")
                         //shortcut: "Del"
                         icon {
-                            name: "edit-delete"
+                            name: "edit-delete-shred"
                         }
                         enabled: deleteActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
                         onTriggered: {
@@ -940,7 +976,7 @@ ListView {
                     }
                 }
 
-                MenuSeparator {}
+
             }
 
             ListView.onRemove: SequentialAnimation {
@@ -999,7 +1035,7 @@ ListView {
 
             NumberAnimation {
                 property: "x"
-                to: listView.width
+                to: root.width
                 duration: 250
                 easing.type: Easing.InBack
             }

@@ -231,7 +231,7 @@ Item {
                             Layout.preferredHeight: 800
                             clip: true
                             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                            ScrollBar.vertical.policy: scrollBarVerticalPolicy
+                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
                         ListView {
                             id: propertiesListView

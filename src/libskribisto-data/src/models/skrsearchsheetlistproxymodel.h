@@ -1,5 +1,5 @@
-#ifndef PLMDELETEDSHEETLISTPROXYMODEL_H
-#define PLMDELETEDSHEETLISTPROXYMODEL_H
+#ifndef PLMSEARCHSHEETLISTPROXYMODEL_H
+#define PLMSEARCHSHEETLISTPROXYMODEL_H
 
 
 #include <QSortFilterProxyModel>
@@ -25,6 +25,8 @@ class EXPORT SKRSearchSheetListProxyModel : public QSortFilterProxyModel {
         int parentIdFilter MEMBER m_parentIdFilter WRITE setParentIdFilter NOTIFY parentIdFilterChanged)
     Q_PROPERTY(
         bool showParentWhenParentIdFilter MEMBER m_showParentWhenParentIdFilter WRITE setShowParentWhenParentIdFilter NOTIFY showParentWhenParentIdFilterChanged)
+    Q_PROPERTY(
+        QList<int>tagIdListFilter MEMBER m_tagIdListFilter WRITE setTagIdListFilter NOTIFY tagIdListFilterChanged)
 
 public:
 
@@ -105,6 +107,8 @@ public:
                                                             int            paperId,
                                                             Qt::CheckState checkState);
 
+    void                  setTagIdListFilter(const QList<int>& tagIdListFilter);
+
     Q_INVOKABLE void      clearCheckedList();
 
     Q_INVOKABLE void      checkAll();
@@ -127,6 +131,7 @@ signals:
     void forcedCurrentIndexChanged(int forcedCurrentIndex);
     void parentIdFilterChanged(int paperIdFilter);
     void showParentWhenParentIdFilterChanged(bool value);
+    void tagIdListFilterChanged(const QList<int>tagIdList);
 
 public slots:
 
@@ -155,7 +160,8 @@ private:
     bool m_showParentWhenParentIdFilter;
     int m_forcedCurrentIndex;
     QList<int>m_paperIdListFilter;
+    QList<int>m_tagIdListFilter;
     QHash<int, Qt::CheckState>m_checkedIdsHash;
 };
 
-#endif // PLMDELETEDSHEETLISTPROXYMODEL_H
+#endif // PLMSEARCHSHEETLISTPROXYMODEL_H

@@ -186,7 +186,6 @@ FocusScope {
 
                 if(base.contentHeight < base.minimumContentHeight){
                     container.height = base.minimumContentHeight
-                    container.height = base.minimumContentHeight
                     return
                 }
 

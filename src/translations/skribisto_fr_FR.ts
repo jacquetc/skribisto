@@ -63,6 +63,10 @@
         <source>Set label</source>
         <translation></translation>
     </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DeletedListView</name>
@@ -261,6 +265,32 @@
     </message>
 </context>
 <context>
+    <name>ExporterForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished">Revenir</translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ImporterForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished">Revenir</translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import from Plume Creator project</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LeftDock</name>
     <message>
         <source>&amp;Navigation dock</source>
@@ -328,6 +358,22 @@
         <source>Warning</source>
         <translation>Attention</translation>
     </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">Ajouter</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open current note in a new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note name</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
@@ -349,6 +395,63 @@
     </message>
     <message>
         <source>Type your note here...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NoteSearchItemForm.ui</name>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deselect tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PlumeImporterForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished">Revenir</translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Import Plume Creator project&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Plume project file (*.plume) :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>plume project file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished">Sélectionner</translation>
+    </message>
+    <message>
+        <source>This project will be imported as : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished">Importer</translation>
+    </message>
+</context>
+<context>
+    <name>PrintForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished">Revenir</translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -712,7 +815,11 @@
     </message>
     <message>
         <source>Button</source>
-        <translation>Bouton</translation>
+        <translation type="vanished">Bouton</translation>
+    </message>
+    <message>
+        <source>Show list of tabs</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1029,6 +1136,14 @@
         <source>ToolBar background</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Divider</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Menu background</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TagPad</name>
@@ -1043,6 +1158,31 @@
     <message>
         <source>Existing tags</source>
         <translation>Etiquettes existantes</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Renommer</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">Ajouter</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation type="unfinished">Attention</translation>
+    </message>
+    <message>
+        <source>Tag name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete the tag &quot;%1&quot; ?
+%2</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1319,6 +1459,10 @@
     <message>
         <source>Set label</source>
         <translation>Définir le libelé</translation>
+    </message>
+    <message>
+        <source>Projects</source>
+        <translation type="unfinished">Projets</translation>
     </message>
 </context>
 <context>

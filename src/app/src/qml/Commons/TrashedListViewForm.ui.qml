@@ -81,12 +81,12 @@ Item {
 
                 ListView {
                     id: listView
-                    anchors.fill: parent
-                    antialiasing: true
                     clip: true
                     smooth: true
                     boundsBehavior: Flickable.StopAtBounds
 
+                    Accessible.name: "List of trashed items"
+                    Accessible.role: Accessible.List
 
                 }
 

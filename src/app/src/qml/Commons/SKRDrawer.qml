@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQml 2.15
 import Qt.labs.settings 1.1
+import QtQuick.Window 2.15
 import ".."
 
 Item {
@@ -27,6 +28,11 @@ Item {
     onIsVisibleChanged: {
         isVisible ? position = 1.0 : position = 0
         settings.isVisible = root.isVisible
+
+        if(!dockModeEnabled){
+            root.width = root.widthInDrawerMode
+
+        }
     }
 
     Component.onCompleted: {
@@ -83,10 +89,13 @@ Item {
 
         if(dockModeEnabled){
             root.isVisible = settings.isVisible
+            root.width =  settings.dockWidth
         }
         else {
             root.close()
+            root.width = root.widthInDrawerMode
         }
+
     }
 
     Settings {
@@ -255,62 +264,64 @@ Item {
 
 
 
-    Item{
-        id: overlayLayer
-        parent: Overlay.overlay
-        visible: root.interactive && root.position === 1.0
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        y: Overlay.overlay.mapToItem(root.parent, root.x, root.y).y
-        width: Overlay.overlay.width - root.width
+    Component {
+        id: component_overlayLayer
+        Item{
+            property alias overlayTapHandler: inner_overlayTapHandler
+
+            id: overlayLayer
+            parent: Overlay.overlay
+            visible: root.interactive && root.position === 1.0
+
+            x: 0
+            y: Overlay.overlay.mapFromItem(root.parent, 0, root.y).y
+            width: root.parent.width - root.width
+            height: root.height
 
 
+            TapHandler {
+                id: inner_overlayTapHandler
 
+                enabled: root.interactive && root.position === 1.0
 
-        TapHandler {
-            id: overlayTapHandler
+                onTapped: {
+                    console.log('overlay pressed')
+                    root.position = 0.0
+                    eventPoint.accepted = false
+                }
 
-            enabled: root.interactive && root.position === 1.0
-
-            onTapped: {
-                console.log('overlay pressed')
-                root.position = 0.0
-                eventPoint.accepted = false
             }
 
+
+            states: [
+                State{
+                    name: "left_edge"
+                    when: root.edge === Qt.LeftEdge
+                    PropertyChanges{
+                        target: overlayLayer
+                        x: Overlay.overlay.mapFromItem(root.parent, root.x + root.width, 0).x
+                    }
+
+
+                },
+                State{
+                    name: "right_edge"
+                    when: root.edge === Qt.RightEdge
+                    PropertyChanges{
+                        target: overlayLayer
+                        x:  Overlay.overlay.mapFromItem(root.parent, 0, 0).x
+                    }
+                }
+            ]
         }
-
-
-
-
-        states: [
-            State{
-                name: "left_edge"
-                when: root.edge === Qt.LeftEdge
-                AnchorChanges{
-                    target: overlayLayer
-                    anchors.left: undefined
-                    anchors.right: parent.right
-                }
-
-
-            },
-            State{
-                name: "right_edge"
-                when: root.edge === Qt.RightEdge
-                AnchorChanges{
-                    target: overlayLayer
-                    anchors.left: parent.left
-                    anchors.right: undefined
-
-                }
-
-
-            }
-
-
-        ]
     }
+    Loader {
+        id: loader_overlayLayer
+        sourceComponent: component_overlayLayer
+        asynchronous: true
+        active: root.isVisible
+    }
+
 
 
 }

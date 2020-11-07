@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../Commons"
 import "../Items"
 import ".."
 
@@ -14,10 +15,10 @@ Item {
     property alias leftDockMenuButton: leftDockMenuButton
     property alias leftDockShowButton: leftDockShowButton
     property alias middleBase: middleBase
-    property alias overview: overview
     property alias base: base
     property int leftBasePreferredWidth: 0
 
+    readonly property int columnWidth: 550
 
     ColumnLayout {
         id: columnLayout
@@ -135,11 +136,40 @@ Item {
                     flat: true
                 }
 
-
-                Rectangle {
-                    id: overview
+                ScrollView {
+                    id: scrollView
                     anchors.fill: parent
-                    color: "orange"
+                    anchors.leftMargin: 50
+                    clip: true
+
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                    contentWidth: pillarLayout.width
+                    contentHeight: pillarLayout.implicitHeight
+
+                    SKRPillarLayout {
+                        id: pillarLayout
+                        width: scrollView.width
+                        columns: ((pillarLayout.width / columnWidth) | 0 )
+                        maxColumns: 2
+
+//                        RecentNotesItem {
+//                            id: recentNotesItem
+//                            Layout.fillWidth: true
+//                        }
+
+                        NoteSearchItem {
+                            id: noteSearchItem
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: scrollView.height
+                        }
+
+                        Item {
+                            id: placeHolder
+                            Layout.fillWidth: true
+                        }
+
+                    }
                 }
 
             }
