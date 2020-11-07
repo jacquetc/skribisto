@@ -645,7 +645,7 @@ TreeListViewForm {
                         } else
                             return false
                     }
-
+                    icon.name: model.hasChildren ? "go-next" : "list-add"
                     text: model.hasChildren ? ">" : "+"
                     onTriggered: {
                         console.log("goToChildAction triggered")
