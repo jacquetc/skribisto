@@ -418,7 +418,7 @@ SheetOverviewTreeForm {
 
 
 
-                Pane{
+                SkrPane{
                     id: content
 
                     property alias tapHandler: tapHandler
@@ -433,8 +433,7 @@ SheetOverviewTreeForm {
 
                     padding: 1
 
-                    Material.background: SkrTheme.pageBackground
-                    Material.elevation: 4
+                    elevation: 4
 
                     //Material.backgroundColor: Material.
 

@@ -416,8 +416,7 @@ NotePadForm {
                 SkrLabel{
                     id: noteTitle
                     text: model.title
-                    style: itemBase.isFocused && itemBase.isOpened ? Text.Outline : Text.Normal
-                    styleColor:  SkrTheme.accent
+                    font.bold: itemBase.isFocused
 
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
@@ -427,7 +426,8 @@ NotePadForm {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    color: itemBase.isFocused ? (itemBase.isOpened ? SkrTheme.buttonForeground : SkrTheme.accent ) :  SkrTheme.buttonForeground
+                    color: SkrTheme.buttonForeground
+
 
                     SkrRoundButton {
                         id: removeRelationshipButton
@@ -999,6 +999,7 @@ NotePadForm {
 
                                     if (!error.success){
                                         //TODO: add notification
+                                        eventPoint.accepted = true
                                         return
                                     }
 
@@ -1006,6 +1007,7 @@ NotePadForm {
                                     openDocumentAfterClosingPopupTimer.start()
                                     titleEditPopup.close()
 
+                                    eventPoint.accepted = true
                                 }
                             }
 
@@ -1031,7 +1033,6 @@ NotePadForm {
                             //                        }
 
                             //Keys.shortcutOverride: event.accepted = (event.key === Qt.Key_Return || event.key === Qt.Key_Space)
-                            Keys.priority: Keys.AfterItem
 
                             Keys.onPressed: {
                                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
@@ -1044,6 +1045,7 @@ NotePadForm {
 
                                     if (!error.success){
                                         //TODO: add notification
+                                        event.accepted = true
                                         return
                                     }
 
@@ -1051,7 +1053,7 @@ NotePadForm {
                                     openDocumentAfterClosingPopupTimer.start()
                                     titleEditPopup.close()
 
-
+                                    event.accepted = true
 
                                 }
 

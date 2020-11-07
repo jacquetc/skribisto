@@ -252,7 +252,7 @@ ListView {
 
             property bool editBugWorkaround: false
 
-            Pane {
+            SkrPane {
                 id: content
                 property int visualIndex: 0
                 property int sourceIndex: -2
@@ -268,8 +268,7 @@ ListView {
 
                 padding: 1
 
-                Material.background: SkrTheme.pageBackground
-                Material.elevation: root.elevationEnabled ? 4 : 0
+                elevation: root.elevationEnabled ? 4 : 0
 
 
                 HoverHandler {

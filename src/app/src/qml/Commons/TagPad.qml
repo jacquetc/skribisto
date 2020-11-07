@@ -471,8 +471,7 @@ TagPadForm {
                 SkrLabel{
                     id: tagTitle
                     text: model.name
-                    style: Text.Raised
-                    styleColor: "white"
+                    font.bold: itemBase.isFocused
 
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
@@ -482,7 +481,7 @@ TagPadForm {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    color: itemBase.isFocused ? SkrTheme.accent : SkrTheme.buttonForeground
+                    color: SkrTheme.buttonForeground
 
                     SkrRoundButton {
                         id: removeRelationshipButton
@@ -701,6 +700,7 @@ TagPadForm {
 
                                     }
                                     titleEditPopup.close()
+                                    eventPoint.accepted = true
                                 }
                             }
 
@@ -725,8 +725,6 @@ TagPadForm {
                             //                            //enabled: listView.activeFocus
                             //                        }
 
-                            Keys.priority: Keys.BeforeItem
-
                             Keys.onPressed: {
                                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
                                     console.log("Return key pressed title")
@@ -736,6 +734,7 @@ TagPadForm {
                                     titleEditPopup.close()
 
 
+                                    event.accepted = true
                                 }
 
                             }
