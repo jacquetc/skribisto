@@ -34,4 +34,44 @@ TextArea {
 
 
 
+    property int viewHeight: 200
+    signal moveViewY(int height)
+
+    Keys.priority: Keys.BeforeItem
+
+    property int initialCursorPositionX: -1
+    Keys.onPressed: {
+        if(event.key === Qt.Key_PageUp){
+
+            if(initialCursorPositionX === -1){
+                initialCursorPositionX = root.cursorRectangle.x
+            }
+
+            var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y - viewHeight)
+            moveViewY(-viewHeight)
+            root.cursorPosition = newPosition
+
+            event.accepted = true
+            return
+        }
+        if(event.key === Qt.Key_PageDown){
+
+            if(initialCursorPositionX === -1){
+                initialCursorPositionX = root.cursorRectangle.x
+            }
+
+            var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y + viewHeight)
+            moveViewY(viewHeight)
+            root.cursorPosition = newPosition
+
+            event.accepted = true
+            return
+        }
+
+        initialCursorPositionX = -1
+
+        event.accepted = false
+
+    }
+
 }

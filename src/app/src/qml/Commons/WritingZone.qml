@@ -698,8 +698,21 @@ WritingZoneForm {
     
     // scrollView :
     
-    
-    
+    //--------------------------------------------------------------------------------
+    //--------Page Up/Down-------------------------------------------------------------
+    //--------------------------------------------------------------------------------
+
+    textArea.viewHeight: flickable.height
+
+    Connections {
+        target: textArea
+        function onMoveViewY(height){
+            flickable.contentY += height - textArea.topPadding - textArea.bottomPadding
+        }
+    }
+
+
+    //--------------------------------------------------------------------------------
     //focus :
 
     onActiveFocusChanged: {
