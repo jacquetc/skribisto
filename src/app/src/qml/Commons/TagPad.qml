@@ -495,7 +495,7 @@ TagPadForm {
                         leftInset: 1
                         rightInset: 1
                         opacity: 0
-                        icon.name: "list-remove"
+                        icon.source: "qrc:///icons/backup/list-remove.svg"
                         onReleased:{
                             if(itemId === -2){
 
@@ -572,7 +572,7 @@ TagPadForm {
     Action {
         id: addTagAction
         text: qsTr("Add tag")
-        icon.name: "list-add"
+        icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
             titleEditPopup.open()
         }

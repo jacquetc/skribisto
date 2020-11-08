@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     qputenv("QT_STYLE_OVERRIDE", "");
 
 
-    QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << ":icons");
+    // QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << ":icons");
 
     // TODO : add option for UI scale
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     // icons :
-    qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
+    // qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
 
     // if Gnome desktop :
     //    if(qgetenv("XDG_CURRENT_DESKTOP") == "GNOME"){
@@ -153,7 +153,9 @@ int main(int argc, char *argv[])
     // BUG preventing the use of basic breeze theme
     // https://bugreports.qt.io/browse/QTBUG-87583
     // instead, I am picking "actions" and "animations" folders from Breeze
-    QIcon::setThemeName(QStringLiteral("breeze-skribisto"));
+    // QIcon::setThemeName(QStringLiteral("breeze"));
+
+    // QIcon::setThemeName(QStringLiteral("Adwaita"));
 
     //    }
 

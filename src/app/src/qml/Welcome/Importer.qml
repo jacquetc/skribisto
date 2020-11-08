@@ -3,7 +3,7 @@ import QtQuick 2.4
 ImporterForm {
 
 
-    goBackToolButton.icon.name: "go-previous"
+    goBackToolButton.icon.source: "qrc:///icons/backup/go-previous.svg"
     signal goBackButtonClicked()
     goBackToolButton.onClicked: goBackButtonClicked()
 

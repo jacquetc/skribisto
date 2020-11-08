@@ -243,7 +243,7 @@ SettingsPageForm {
     Action {
         id: addBackupPathAction
         text: qsTr("Add backup path")
-        icon.name: "list-add"
+        icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
 
 
@@ -257,7 +257,7 @@ SettingsPageForm {
     Action {
         id: removeBackupPathAction
         text: qsTr("Remove backup path")
-        icon.name: "list-remove"
+        icon.source: "qrc:///icons/backup/list-remove.svg"
         onTriggered: {
 
             removeBackupPath(backupPathListView.currentIndex)
@@ -342,7 +342,7 @@ SettingsPageForm {
                     Layout.fillHeight: true
                     Layout.preferredWidth: 30
                     flat: true
-                    icon.name: "document-open-folder"
+                    icon.source: "qrc:///icons/backup/document-open-folder.svg"
 
                     onClicked: {
                         backupFolderDialog.open()

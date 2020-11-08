@@ -164,7 +164,7 @@ TrashedListViewForm {
     goBackToolButton.action: Action {
         id: goBackAction
         text: "<"
-        icon.name: "go-previous"
+        icon.source: "qrc:///icons/backup/go-previous.svg"
         onTriggered:{
             goBack()
         }
@@ -231,7 +231,7 @@ TrashedListViewForm {
 
 
     //----------------------------------------------------------------------------
-    listMenuToolButton.icon.name: "overflow-menu"
+    listMenuToolButton.icon.source: "qrc:///icons/backup/overflow-menu.svg"
     listMenuToolButton.onClicked: navigationMenu.open()
 
     SkrMenu {
@@ -252,7 +252,7 @@ TrashedListViewForm {
             text: qsTr("Empty the trash")
             enabled: navigationMenu.opened
             //shortcut: "Ctrl+Shift+Del"
-            icon.name: "edit-delete-shred"
+            icon.source: "qrc:///icons/backup/edit-delete-shred.svg"
             onTriggered: {
                 //TODO: fill that
             }
@@ -269,7 +269,7 @@ TrashedListViewForm {
         //shortcut: ""
         enabled: listView.focus === true
         icon{
-            name: "edit-undo"
+            source: "qrc:///icons/backup/edit-undo.svg"
             height: 100
             width: 100
         }

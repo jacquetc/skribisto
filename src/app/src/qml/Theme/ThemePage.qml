@@ -21,7 +21,7 @@ ThemePageForm {
     //-----theme list-----------------------------------------------
     //-------------------------------------------------------------
 
-    addThemeButton.icon.name: "edit-copy"
+    addThemeButton.icon.source: "qrc:///icons/backup/edit-copy.svg"
     addThemeButton.onClicked: {
         SkrTheme.duplicate(currentTheme, qsTr("%1 (copy)".arg(currentTheme)))
         populateThemeListModel()
@@ -29,7 +29,7 @@ ThemePageForm {
 
     //--------------------------------------------------------
 
-    removeThemeButton.icon.name: "edit-delete"
+    removeThemeButton.icon.nsource: "qrc:///icons/backup/edit-delete.svg"
     removeThemeButton.onClicked: {
         SkrTheme.remove(currentlySelectedTheme)
         populateThemeListModel()
@@ -141,7 +141,7 @@ ThemePageForm {
                 display: AbstractButton.IconOnly
                 enabled: model.isEditable
 
-                icon.name: "edit-rename"
+                icon.source: "qrc:///icons/backup/edit-rename.svg"
 
                 onClicked: {
 
@@ -311,7 +311,7 @@ ThemePageForm {
                 display: AbstractButton.IconOnly
                 enabled: model.isEditable
 
-                icon.name: "edit-rename"
+                icon.source: "qrc:///icons/backup/edit-rename.svg"
 
                 onClicked: {
                     propertiesListView.currentIndex = model.index

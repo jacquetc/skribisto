@@ -478,7 +478,7 @@ ListView {
                             onDownChanged: down = false
 
                             icon {
-                                name: "tools-media-optical-burn-image"
+                                source: "qrc:///icons/backup/tools-media-optical-burn-image.svg"
                                 height: 32
                                 width: 32
                             }
@@ -815,7 +815,7 @@ ListView {
                         text: qsTr("Open")
                         //shortcut: "Return"
                         icon {
-                            name: "document-edit"
+                            source: "qrc:///icons/backup/document-edit.svg"
                         }
                         enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.paperId !== -1
                         onTriggered: {
@@ -834,7 +834,7 @@ ListView {
                         text: qsTr("Open in new tab")
                         //shortcut: "Alt+Return"
                         icon {
-                            name: "tab-new"
+                            source: "qrc:///icons/backup/tab-new.svg"
                         }
                         enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.paperId !== -1
                         onTriggered: {
@@ -853,7 +853,7 @@ ListView {
                         text: qsTr("Open in new window")
                         //shortcut: "Alt+Return"
                         icon {
-                            name: "window-new"
+                            source: "qrc:///icons/backup/window-new.svg"
                         }
                         enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false && root.enabled &&  model.paperId !== -1
                         onTriggered: {
@@ -877,7 +877,7 @@ ListView {
                         text: qsTr("Rename")
                         //shortcut: "F2"
                         icon {
-                            name: "edit-rename"
+                            source: "qrc:///icons/backup/edit-rename.svg"
                         }
                         enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
                         onTriggered: {
@@ -897,7 +897,7 @@ ListView {
                         text: qsTr("Set label")
 
                         icon {
-                            name: "label"
+                            source: "qrc:///icons/backup/label.svg"
                         }
                         enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
                         onTriggered: {
@@ -921,7 +921,7 @@ ListView {
                         text: qsTr("Copy")
                         //shortcut: StandardKey.Copy
                         icon {
-                            name: "edit-copy"
+                            source: "qrc:///icons/backup/edit-copy.svg"
                         }
                         enabled: copyActionEnabled && contextMenuItemIndex === model.index  && root.enabled
 
@@ -945,7 +945,7 @@ ListView {
                         text: qsTr("Send to trash")
                         //shortcut: "Del"
                         icon {
-                            name: "edit-delete"
+                            source: "qrc:///icons/backup/edit-delete.svg"
                         }
                         enabled: sendToTrashActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
                         onTriggered: {
@@ -964,7 +964,7 @@ ListView {
                         text: qsTr("Delete definitively")
                         //shortcut: "Del"
                         icon {
-                            name: "edit-delete-shred"
+                            source: "qrc:///icons/backup/edit-delete-shred.svg"
                         }
                         enabled: deleteActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
                         onTriggered: {

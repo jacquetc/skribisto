@@ -35,7 +35,7 @@ ProjectSupPageForm {
 
 
     editTitlebutton.icon {
-        name: "edit-rename"
+        source: "qrc:///icons/backup/edit-rename.svg"
     }
 
     editTitlebutton.onClicked: {

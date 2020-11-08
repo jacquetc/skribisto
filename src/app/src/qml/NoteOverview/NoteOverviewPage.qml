@@ -30,19 +30,19 @@ NoteOverviewPageForm {
     leftDockShowButton.onClicked: leftDrawer.isVisible ? leftDrawer.isVisible = false : leftDrawer.isVisible = true
 
     leftDockShowButton.icon {
-        name: leftDrawer.isVisible ? "go-previous" : "go-next"
+        source: leftDrawer.isVisible ? "qrc:///icons/backup/go-previous.svg" : "qrc:///icons/backup/go-next.svg"
         height: 50
         width: 50
     }
 
     leftDockMenuButton.icon {
-        name: "overflow-menu"
+        source: "qrc:///icons/backup/overflow-menu.svg"
         height: 50
         width: 50
     }
 
     leftDockResizeButton.icon {
-        name: "resizecol"
+        source: "qrc:///icons/backup/resizecol.svg"
         height: 50
         width: 50
     }
@@ -53,7 +53,7 @@ NoteOverviewPageForm {
 
     compactLeftDockShowButton.onClicked: leftDrawer.open()
     compactLeftDockShowButton.icon {
-        name: "go-next"
+        source: "qrc:///icons/backup/go-next.svg"
         height: 50
         width: 50
     }

@@ -231,7 +231,7 @@ FileMenuPageForm {
                         Layout.preferredWidth: 30
                         focusPolicy: Qt.NoFocus
                         visible: model.isOpened
-                        icon.name: "document-close"
+                        icon.source: "qrc:///icons/backup/document-close.svg"
                         onClicked: {
                             itemButtonsIndex = model.index
                             closeAction.trigger()
@@ -257,7 +257,7 @@ FileMenuPageForm {
                                 text: qsTr("Close project")
                                 //shortcut: "F2"
                                 icon {
-                                    name: "window-close"
+                                    source: "qrc:///icons/backup/window-close.svg"
                                 }
                                 enabled: contextMenuItemIndex === model.index | itemButtonsIndex === model.index
                                 onTriggered: {
@@ -278,7 +278,7 @@ FileMenuPageForm {
                                 text: qsTr("Forget")
                                 //shortcut: "F2"
                                 icon {
-                                    name: "trash-empty"
+                                    source: "qrc:///icons/backup/trash-empty.svg"
                                 }
                                 enabled: contextMenuItemIndex === model.index
                                 onTriggered: {

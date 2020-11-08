@@ -104,7 +104,7 @@ Item {
                             Layout.fillWidth: true
 
                             SkrToolButton {
-                                icon.name: "edit-copy"
+                                icon.source: "qrc:///icons/backup/edit-copy.svg"
                             }
                         }
 
@@ -144,14 +144,14 @@ Item {
 
                                 SkrButton {
                                     text: qsTr("button")
-                                    icon.name: "edit-copy"
+                                    icon.source: "qrc:///icons/backup/edit-copy.svg"
 
                                 }
 
                                 SkrToolButton {
                                     flat: true
                                     text: qsTr("button")
-                                    icon.name: "edit-copy"
+                                    icon.source: "qrc:///icons/backup/edit-copy.svg"
                                 }
 
                                 SkrSwitch {
