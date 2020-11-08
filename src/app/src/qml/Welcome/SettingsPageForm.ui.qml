@@ -137,7 +137,7 @@ Item {
 
                         SkrSwitch {
                             id: centerTextCursorSwitch
-                            text: qsTr("Center text cursor vertically")
+                            text: qsTr("Center vertically the text cursor")
                         }
                     }
                 }

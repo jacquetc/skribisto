@@ -83,13 +83,41 @@ ApplicationWindow {
     }
 
     Shortcut {
-        sequence:  StandardKey.FullScreen
+        sequences: [StandardKey.FullScreen, "F11"]
         context: Qt.ApplicationShortcut
         onActivated: fullscreenAction.trigger()
     }
 
     //------------------------------------------------------------------
-    //---------New project---------
+    //---------Center vertically text cursor---------------------------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: centerTextCursorAction
+        text: qsTr("Center vertically the text cursor")
+        icon {
+            name: "format-align-vertical-center"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.FullScreen
+        checkable: true
+        onCheckedChanged: {
+            SkrSettings.behaviorSettings.centerTextCursor = centerTextCursorAction.checked
+
+        }
+    }
+
+    Shortcut {
+        sequence: "Alt+C"
+        context: Qt.ApplicationShortcut
+        onActivated: centerTextCursorAction.trigger()
+    }
+
+    //------------------------------------------------------------------
+    //---------New project---------------------------------------------
     //------------------------------------------------------------------
 
     Action {
@@ -140,7 +168,7 @@ ApplicationWindow {
 
             SkrSettings.spellCheckingSettings.spellCheckingActivation = checkSpellingAction.checked
         }
-}
+    }
 
 
     Shortcut {

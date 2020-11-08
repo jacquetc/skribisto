@@ -28,6 +28,7 @@ EditViewForm {
 
 
     checkSpellingToolButton.action: checkSpellingAction
+    centerTextCursorToolButton.action: centerTextCursorAction
 
 
     Action{

@@ -22,6 +22,7 @@ Item {
     property alias checkSpellingToolButton: checkSpellingToolButton
     property alias fullScreenToolButton: fullScreenToolButton
     property alias themesToolButton: themesToolButton
+    property alias centerTextCursorToolButton: centerTextCursorToolButton
 
     SwipeView {
         id: swipeView
@@ -115,6 +116,11 @@ Item {
                         SkrToolButton {
                             id: checkSpellingToolButton
                             text: qsTr("Check spelling")
+                            display: AbstractButton.IconOnly
+                        }
+                        SkrToolButton {
+                            id: centerTextCursorToolButton
+                            text: qsTr("Center vertically the text cursor ")
                             display: AbstractButton.IconOnly
                         }
                     }
