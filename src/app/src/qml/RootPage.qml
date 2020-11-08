@@ -233,8 +233,8 @@ RootPageForm {
 
     Connections {
         target: Globals
-        function onCompactSizeChanged() {
-            rootTabBar.visible = !Globals.compactSize
+        function onCompactModeChanged() {
+            rootTabBar.visible = !Globals.compactMode
 
 
         }
@@ -1445,7 +1445,7 @@ RootPageForm {
         //        }
 
 
-        if (!isTestProject & !oneProjectInArgument & plmData.projectHub().getProjectCount() === 0 & SkrSettings.welcomeSettings.createEmptyProjectAtStart === true) {
+        if (!isTestProject & !oneProjectInArgument & plmData.projectHub().getProjectCount() === 0 & SkrSettings.behaviorSettings.createEmptyProjectAtStart === true) {
             plmData.projectHub().loadProject("")
 
             //show Write window

@@ -4,20 +4,19 @@ import QtQuick 2.15
 
 
 QtObject {
-    property color mainbg: 'red'
-    property bool compactSize: false
+    property bool compactMode: false
 
     property int height
     property int width
     //readonly property int  compactHeightLimit: 700
     readonly property int compactWidthLimit: 1000
 
-    //onHeightChanged: height < 700 ? compactSize = true : compactSize = false
+    //onHeightChanged: height < 700 ? compactMode = true : compactMode = false
     onWidthChanged: {
-        width < compactWidthLimit ? compactSize = true : compactSize = false
+        width < compactWidthLimit ? compactMode = true : compactMode = false
         // width < compactWidthLimit ? console.log("compact = true") : console.log("compact = false")
     }
-    onCompactSizeChanged: console.log("compact = " + compactSize)
+    onCompactModeChanged: console.log("compact = " + compactMode)
 
     // multiple projects ? :
     property bool multipleProjects: false

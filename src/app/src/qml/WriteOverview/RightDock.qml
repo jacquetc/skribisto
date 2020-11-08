@@ -76,7 +76,7 @@ RightDockForm {
                 text: qsTr( "&Overview")
                 onTriggered: {
 
-                    if(Globals.compactSize){
+                    if(Globals.compactMode){
                         rightDrawer.open()
                     }
                     sheetOverviewFrame.folded = false
@@ -88,7 +88,7 @@ RightDockForm {
                 text: qsTr( "&Edit")
                 onTriggered: {
 
-                    if(Globals.compactSize){
+                    if(Globals.compactMode){
                         rightDrawer.open()
                     }
                     editFrame.folded = false
@@ -101,7 +101,7 @@ RightDockForm {
                 text: qsTr( "&Tags")
                 onTriggered: {
 
-                    if(Globals.compactSize){
+                    if(Globals.compactMode){
                         rightDrawer.open()
                     }
                     tagPadFrame.folded = false

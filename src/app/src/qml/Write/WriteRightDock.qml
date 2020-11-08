@@ -73,7 +73,7 @@ WriteRightDockForm {
                     text: qsTr( "&Edit")
                     onTriggered: {
 
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             rightDrawer.open()
                         }
                         editFrame.folded = false
@@ -86,7 +86,7 @@ WriteRightDockForm {
                     text: qsTr( "&Tags")
                     onTriggered: {
 
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             rightDrawer.open()
                         }
                         tagPadFrame.folded = false
@@ -98,7 +98,7 @@ WriteRightDockForm {
                     text: qsTr( "&Notes")
                     onTriggered: {
 
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             rightDrawer.open()
                         }
                         notePadFrame.folded = false

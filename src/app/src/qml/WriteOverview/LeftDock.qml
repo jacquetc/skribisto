@@ -77,7 +77,7 @@ LeftDockForm {
                 SkrMenuItem {
                     text: qsTr("&Navigation")
                     onTriggered: {
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             leftDrawer.open()
                         }
                         navigationFrame.folded = false
@@ -88,7 +88,7 @@ LeftDockForm {
                 SkrMenuItem {
                     text: qsTr("&Documents")
                     onTriggered: {
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             leftDrawer.open()
                         }
                         documentFrame.folded = false
