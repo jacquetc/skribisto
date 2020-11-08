@@ -110,6 +110,21 @@ SettingsPageForm {
     }
 
 
+
+    // --------------------------------------------
+    // ---- Behavior --------------------------------
+    // --------------------------------------------
+
+
+    createEmpyProjectAtStartSwitch.checked: SkrSettings.welcomeSettings.createEmptyProjectAtStart
+    Binding {
+        target: SkrSettings.welcomeSettings
+        property: "createEmptyProjectAtStart"
+        value: createEmpyProjectAtStartSwitch.checked
+    }
+
+
+
     // --------------------------------------------
     // ---- accessibility --------------------------------
     // --------------------------------------------

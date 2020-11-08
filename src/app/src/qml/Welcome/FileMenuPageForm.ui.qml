@@ -12,8 +12,6 @@ Item {
     property alias importButton: importButton
     property alias exportButton: exportButton
 
-    property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
-
     property alias saveButton: saveButton
     property alias saveAsButton: saveAsButton
     property alias saveAllButton: saveAllButton
@@ -162,24 +160,6 @@ Item {
                                 name: "tools-media-optical-burn-image"
                             }
                         }
-                    }
-                }
-            }
-
-            SkrGroupBox {
-                id: behaviorGroupBox
-                focusPolicy: Qt.TabFocus
-                Layout.fillWidth: true
-                title: qsTr("Behavior")
-
-                ColumnLayout {
-                    id: columnLayout1
-                    anchors.fill: parent
-
-                    SkrSwitch {
-                        id: createEmpyProjectAtStartSwitch
-                        text: qsTr("Create an empty project at start")
-                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     }
                 }
             }

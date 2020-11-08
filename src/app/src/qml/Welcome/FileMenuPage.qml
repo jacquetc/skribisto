@@ -24,13 +24,6 @@ FileMenuPageForm {
     saveACopyButton.action: saveACopyAction
     backUpButton.action: backUpAction
 
-    createEmpyProjectAtStartSwitch.checked: SkrSettings.welcomeSettings.createEmptyProjectAtStart
-    Binding {
-        target: SkrSettings.welcomeSettings
-        property: "createEmptyProjectAtStart"
-        value: createEmpyProjectAtStartSwitch.checked
-    }
-
 
     newProjectButton.action: newProjectAction
 

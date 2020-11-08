@@ -2,15 +2,16 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
-import "Items"
 
 TabButton {
     id: base
     text: ""
-    width: implicitWidth
+    width: fillTabBarWidth ? undefined : implicitWidth
     property alias closeButton: closeButton
     property alias tabLabel: tabLabel
+    property alias tapHandler: tapHandler
     property bool closable: true
+    property bool fillTabBarWidth: false
     property string iconSource : base.action.icon.source
     property string iconName : base.action.icon.name
     property string iconColor : base.action.icon.color
@@ -97,6 +98,10 @@ TabButton {
 
         HoverHandler {
             id: hoverHandler
+        }
+
+        TapHandler {
+            id: tapHandler
         }
     }
 
