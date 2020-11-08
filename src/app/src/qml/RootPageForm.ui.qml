@@ -71,43 +71,38 @@ Item {
 
 
 
-            TabBar {
+            SkrTabBar {
                 id: rootTabBar
                 //Layout.preferredHeight: 40
                 Layout.minimumHeight: 30
                 Layout.fillWidth: true
-                Material.background: SkrTheme.pageBackground
 
-                SkrTab {
+                SkrTabButton {
                     id: welcomeTab
                     closable: false
                     pageType: welcomePage.pageType
-                    iconColor: "transparent"
                 }
-                SkrTab {
+                SkrTabButton {
                     id: writeOverviewTab
                     closable: false
                     pageType: writeOverviewPage.pageType
-                    iconColor:  SkrTheme.buttonIcon
                 }
-                SkrTab {
+                SkrTabButton {
                     id: noteOverviewTab
                     closable: false
                     pageType: noteOverviewPage.pageType
-                    iconColor:  SkrTheme.buttonIcon
                 }
                 //NOTE: waiting to be implemented
-//                SkrTab {
+//                fillTabBarWidth {
 //                    id: galleryTab
 //                    closable: false
 //                    pageType: galleryPage.pageType
 //                    iconColor:  SkrTheme.buttonIcon
 //              }
-                SkrTab {
+                SkrTabButton {
                     id: projectTab
                     closable: false
                     pageType: projectsMainPage.pageType
-                    iconColor:  SkrTheme.buttonIcon
                 }
             }
 
@@ -291,16 +286,7 @@ Item {
             }
         }
     }
-    states: [
-        State {
-            name: "toolbar"
 
-            PropertyChanges {
-                target: pane
-                visible: true
-            }
-        }
-    ]
 }
 
 /*##^##

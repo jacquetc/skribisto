@@ -114,7 +114,10 @@
         <file>qml/NoteOverview/RecentNotesItem.qml</file>
         <file>qml/NoteOverview/RecentNotesItemForm.ui.qml</file>
         <file>qml/Items/SkrToolTip.qml</file>
-        <file>qml/Items/SkrTab.qml</file>
-        <file>qml/Items/SkrTabForm.ui.qml</file>
+        <file>qml/Items/SkrTabButtonForm.ui.qml</file>
+        <file>qml/Welcome/NewProject.qml</file>
+        <file>qml/Welcome/NewProjectForm.ui.qml</file>
+        <file>qml/Welcome/FileMenuPage.qml</file>
+        <file>qml/Welcome/FileMenuPageForm.ui.qml</file>
     </qresource>
 </RCC>

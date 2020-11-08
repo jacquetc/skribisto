@@ -105,9 +105,9 @@ ApplicationWindow {
         //shortcut: StandardKey.New
         onTriggered: {
             console.log("New Project")
-            Globals.showWelcomePage()
-            Globals.showProjectPage()
-            Globals.showNewProjectWizard()
+            Globals.showWelcomePageCalled()
+            Globals.showWelcomeProjectPageCalled()
+            Globals.showNewProjectWizardCalled()
         }
 
 
@@ -661,9 +661,9 @@ ApplicationWindow {
 
         shortcut: StandardKey.Print
         onTriggered: {
-            Globals.showWelcomePage()
-            Globals.showProjectPage()
-            Globals.showPrintWizard()
+            Globals.showWelcomePageCalled()
+            Globals.showWelcomeProjectPageCalled()
+            Globals.showPrintWizardCalled()
 
         }
     }
@@ -687,9 +687,9 @@ ApplicationWindow {
 
         //shortcut: StandardKey
         onTriggered: {
-            Globals.showWelcomePage()
-            Globals.showProjectPage()
-            Globals.showImportWizard()
+            Globals.showWelcomePageCalled()
+            Globals.showWelcomeProjectPageCalled()
+            Globals.showImportWizardCalled()
 
         }
     }
@@ -707,9 +707,9 @@ ApplicationWindow {
 
         //shortcut: StandardKey.New
         onTriggered: {
-            Globals.showWelcomePage()
-            Globals.showProjectPage()
-            Globals.showExportWizard()
+            Globals.showWelcomePageCalled()
+            Globals.showWelcomeProjectPageCalled()
+            Globals.showExportWizardCalled()
 
         }
     }
