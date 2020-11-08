@@ -60,7 +60,9 @@ void startCore()
     QCoreApplication::setOrganizationName("skribisto");
     QCoreApplication::setOrganizationDomain("skribisto.eu");
 
-    QCoreApplication::setApplicationVersion(QString::number(SKR_VERSION_MAJOR) + "." + QString::number(SKR_VERSION_MINOR));
+    QCoreApplication::setApplicationVersion(QString::number(
+                                                SKR_VERSION_MAJOR) + "." + QString::number(
+                                                SKR_VERSION_MINOR));
     qDebug() << QCoreApplication::applicationVersion();
     QString appName = "Skribisto";
 
@@ -139,7 +141,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     // icons :
-     qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
+    qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
 
     // if Gnome desktop :
     //    if(qgetenv("XDG_CURRENT_DESKTOP") == "GNOME"){
@@ -148,9 +150,9 @@ int main(int argc, char *argv[])
     //    }
     //    else {
 
-     //BUG preventing the use of basic breeze theme
-     // https://bugreports.qt.io/browse/QTBUG-87583
-     // instead, I am picking "actions" and "animations" folders from Breeze
+    // BUG preventing the use of basic breeze theme
+    // https://bugreports.qt.io/browse/QTBUG-87583
+    // instead, I am picking "actions" and "animations" folders from Breeze
     QIcon::setThemeName(QStringLiteral("breeze-skribisto"));
 
     //    }
@@ -158,7 +160,7 @@ int main(int argc, char *argv[])
     startCore();
 
 
-    //QQuickStyle::setStyle("org.kde.desktop");
+    // QQuickStyle::setStyle("org.kde.desktop");
 
     // -----------------------------------------------------------------------
 
@@ -171,7 +173,7 @@ int main(int argc, char *argv[])
 
     // -----------------------------------------------------------------------
 
-    SKRRootItem   *rootItem                            = new SKRRootItem(qApp);
+    SKRRootItem *rootItem = new SKRRootItem(qApp);
     rootItem->applyLanguageFromSettings();
 
 
@@ -179,8 +181,8 @@ int main(int argc, char *argv[])
     PLMModels *models                          = new PLMModels(qApp);
     SKRFonts  *skrFonts                        = new SKRFonts(qApp);
     SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(qApp);
-    SKRQMLTools *skrQMLTools                   = new SKRQMLTools(qApp);
-    SKRTextBridge *skrTextBridge                   = new SKRTextBridge(qApp);
+    SKRQMLTools   *skrQMLTools                 = new SKRQMLTools(qApp);
+    SKRTextBridge *skrTextBridge               = new SKRTextBridge(qApp);
 
     qmlRegisterUncreatableType<PLMError>("eu.skribisto.plmerror",
                                          1,
@@ -220,10 +222,10 @@ int main(int argc, char *argv[])
                                                   "Can't instantiate SKRProjectDictHub");
 
     qmlRegisterUncreatableType<PLMPropertyHub>("eu.skribisto.propertyhub",
-                                                  1,
-                                                  0,
-                                                  "PLMProjectDictHub",
-                                                  "Can't instantiate PLMPropertyHub");
+                                               1,
+                                               0,
+                                               "PLMProjectDictHub",
+                                               "Can't instantiate PLMPropertyHub");
 
     qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
                                           1,
@@ -277,10 +279,10 @@ int main(int argc, char *argv[])
                                      "DocumentHandler");
 
     qmlRegisterUncreatableType<SKRHighlighter>("eu.skribisto.highlighter",
-                                     1,
-                                     0,
-                                     "Highlighter",
-                                            "Can't instantiate SKRHighlighter");
+                                               1,
+                                               0,
+                                               "Highlighter",
+                                               "Can't instantiate SKRHighlighter");
 
     qmlRegisterType<SKRSpellChecker>("eu.skribisto.spellchecker",
                                      1,
@@ -293,9 +295,9 @@ int main(int argc, char *argv[])
                                      "SKRUserSettings");
 
     qmlRegisterType<SKRThemes>("eu.skribisto.themes",
-                                     1,
-                                     0,
-                                     "SKRThemes");
+                               1,
+                               0,
+                               "SKRThemes");
 
     QQmlApplicationEngine engine(qApp);
     const QUrl url(QStringLiteral("qrc:/qml/main.qml"));

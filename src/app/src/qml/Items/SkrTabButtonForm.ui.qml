@@ -13,9 +13,9 @@ TabButton {
     property alias tapHandler: tapHandler
     property bool closable: true
     property bool fillTabBarWidth: false
-    property string iconSource : base.action === null ? "" : base.action.icon.source
-    property string iconName : base.action === null ? "" : base.action.icon.name
-    property string iconColor :base.action === null ? SkrTheme.buttonIcon : base.action.icon.color
+    property string iconSource: base.action === null ? "" : base.action.icon.source
+    property string iconName: base.action === null ? "" : base.action.icon.name
+    property string iconColor: base.action === null ? SkrTheme.buttonIcon : base.action.icon.color
 
     padding: 2
 

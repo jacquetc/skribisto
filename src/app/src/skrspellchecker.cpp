@@ -8,46 +8,39 @@
 #include <QCoreApplication>
 
 #ifdef Q_OS_WIN
-#include "externals/hunspell/hunspell.hxx"
-#endif //Q_OS_WIN
+# include "externals/hunspell/hunspell.hxx"
+#endif // Q_OS_WIN
 
 #include <hunspell/hunspell.hxx>
 #include "plmutils.h"
 
-SKRSpellChecker::SKRSpellChecker(QObject *parent):
-    QObject(parent), m_isActive(false), m_hunspellLaunched(false), m_encodingFix("utf8"), m_dictionaryPath("")
-{
-
-
-
-}
-
+SKRSpellChecker::SKRSpellChecker(QObject *parent) :
+    QObject(parent), m_isActive(false), m_hunspellLaunched(false), m_encodingFix("utf8"),
+    m_dictionaryPath("")
+{}
 
 SKRSpellChecker::~SKRSpellChecker()
 {
-    if(m_hunspellLaunched)
-        delete m_hunspell;
+    if (m_hunspellLaunched) delete m_hunspell;
 }
 
-void SKRSpellChecker::setDict(const QString &dictionaryPath)
+void SKRSpellChecker::setDict(const QString& dictionaryPath)
 {
-    if(m_hunspellLaunched)
-        delete m_hunspell;
+    if (m_hunspellLaunched) delete m_hunspell;
 
     m_dictionaryPath = dictionaryPath;
 
-    QString dictFile = dictionaryPath + ".dic";
+    QString dictFile  = dictionaryPath + ".dic";
     QString affixFile = dictionaryPath + ".aff";
 
     QFile testFile(dictFile);
-    if(!testFile.exists())
-        this->deactivate();
+
+    if (!testFile.exists()) this->deactivate();
 
 
-
-
-    QByteArray dictFilePathBA = dictFile.toUtf8();
+    QByteArray dictFilePathBA  = dictFile.toUtf8();
     QByteArray affixFilePathBA = affixFile.toUtf8();
+
     m_hunspell = new Hunspell(affixFilePathBA.constData(), dictFilePathBA.constData());
 
 
@@ -55,47 +48,48 @@ void SKRSpellChecker::setDict(const QString &dictionaryPath)
 
     m_hunspellLaunched = true;
 
-    //test :
+    // test :
 
 
     //    qWarning() << "encodingFix : " + encodingFix;
 
 
-
-
     //    m_isActive = true;
 }
 
-
-bool SKRSpellChecker::spell(const QString &word)
+bool SKRSpellChecker::spell(const QString& word)
 {
     //    qWarning() << "word  : " << word;
-    bool f_ignore_numbers = false;
+    bool f_ignore_numbers   = false;
     bool f_ignore_uppercase = true;
 
 
-    int index = -1;
-    int length = 0;
-    int chars = 1;
-    bool is_number = false;
+    int  index        = -1;
+    int  length       = 0;
+    int  chars        = 1;
+    bool is_number    = false;
     bool is_uppercase = f_ignore_uppercase;
-    bool is_word = false;
-
+    bool is_word      = false;
 
 
     int count = word.length() - 1;
+
     for (int i = 0; i <= count; ++i) {
         QChar c = word.at(i);
+
         switch (c.category()) {
         case QChar::Separator_Space:
             return 2;
+
         case QChar::Number_DecimalDigit:
         case QChar::Number_Letter:
         case QChar::Number_Other:
             is_number = f_ignore_numbers;
             goto Letter;
+
         case QChar::Letter_Lowercase:
             is_uppercase = false;
+
 Letter:
         case QChar::Letter_Uppercase:
         case QChar::Letter_Titlecase:
@@ -104,71 +98,71 @@ Letter:
         case QChar::Mark_NonSpacing:
         case QChar::Mark_SpacingCombining:
         case QChar::Mark_Enclosing:
+
             if (index == -1) {
-                index = i;
-                chars = 1;
+                index  = i;
+                chars  = 1;
                 length = 0;
             }
             length += chars;
-            chars = 1;
+            chars   = 1;
             break;
 
 
         case QChar::Punctuation_Other:
-            if (c == 0x0027 || c == 0x2019) {
+
+            if ((c == 0x0027) || (c == 0x2019)) {
                 ++chars;
                 break;
             }
 
         default:
+
             if (index != -1) {
                 is_word = true;
             }
             break;
         }
 
-        if (is_word || (i == count && index != -1)) {
+        if (is_word || ((i == count) && (index != -1))) {
             if (!is_uppercase && !is_number) {
-                if(m_encodingFix == "latin1")
-                    return m_hunspell->spell(word.toLatin1().toStdString());
-                if(m_encodingFix == "utf8")
-                    return m_hunspell->spell(word.toUtf8().toStdString());
+                if (m_encodingFix == "latin1") return m_hunspell->spell(
+                        word.toLatin1().toStdString());
 
+                if (m_encodingFix == "utf8") return m_hunspell->spell(
+                        word.toUtf8().toStdString());
             }
-            index = -1;
-            is_word = false;
-            is_number = false;
+            index        = -1;
+            is_word      = false;
+            is_number    = false;
             is_uppercase = f_ignore_uppercase;
         }
     }
     return true;
-
-
-
-
-
 }
 
-
-QStringList SKRSpellChecker::suggest(const QString &word)
+QStringList SKRSpellChecker::suggest(const QString& word)
 {
-    if(!m_isActive)
-        return QStringList();
+    if (!m_isActive) return QStringList();
 
 
     std::vector<std::string> suggestionsVector;
 
-    if(m_encodingFix == "latin1")
-        suggestionsVector = m_hunspell->suggest(word.toLatin1().toStdString());
-    if(m_encodingFix == "utf8")
-        suggestionsVector = m_hunspell->suggest(word.toUtf8().toStdString());
+    if (m_encodingFix == "latin1") suggestionsVector = m_hunspell->suggest(
+            word.toLatin1().toStdString());
+
+    if (m_encodingFix == "utf8") suggestionsVector = m_hunspell->suggest(
+            word.toUtf8().toStdString());
 
 
-    QVector<std::string> suggestionsQVect =  QVector<std::string>(suggestionsVector.begin(), suggestionsVector.end());
+    QVector<std::string> suggestionsQVect =  QVector<std::string>(
+        suggestionsVector.begin(),
+        suggestionsVector.end());
 
     // maybe differenciate between latin1 and utf8
     QStringList suggestions;
-    for(const std::string &string: suggestionsQVect){
+
+    for (const std::string& string: suggestionsQVect) {
         suggestions.append(QString::fromStdString(string));
     }
 
@@ -176,99 +170,84 @@ QStringList SKRSpellChecker::suggest(const QString &word)
     return suggestions;
 }
 
-//NOTE maybe useless
-void SKRSpellChecker::ignoreWord(const QString &word)
+// NOTE maybe useless
+void SKRSpellChecker::ignoreWord(const QString& word)
 {
     addWordToDict(word);
 }
 
-
-void SKRSpellChecker::addWordToDict(const QString &word)
+void SKRSpellChecker::addWordToDict(const QString& word)
 {
-    if(word == "")
-        return;
+    if (word == "") return;
 
-    if(m_encodingFix == "latin1")
-        m_hunspell->add(word.toLatin1().toStdString());
-    if(m_encodingFix == "utf8")
-        m_hunspell->add(word.toUtf8().toStdString());
+    if (m_encodingFix == "latin1") m_hunspell->add(word.toLatin1().toStdString());
 
+    if (m_encodingFix == "utf8") m_hunspell->add(word.toUtf8().toStdString());
 }
 
-//---------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------
 
-void SKRSpellChecker::addWordToUserDict(const QString &word, bool emitSignal)
+void SKRSpellChecker::addWordToUserDict(const QString& word, bool emitSignal)
 {
     addWordToDict(word);
 
-    if(!m_userDict.contains(word)){
+    if (!m_userDict.contains(word)) {
         m_userDict.append(word);
     }
 
-    if(emitSignal){
+    if (emitSignal) {
         emit userDictChanged(m_userDict);
     }
 }
 
-//---------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------
 
 bool SKRSpellChecker::isActive()
 {
-
     return m_isActive;
-
-
-
 }
 
-//---------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------
 
-void SKRSpellChecker::removeWordFromUserDict(const QString &word, bool emitSignal)
+void SKRSpellChecker::removeWordFromUserDict(const QString& word, bool emitSignal)
 {
+    if (m_encodingFix == "latin1") m_hunspell->remove(word.toLatin1().toStdString());
 
-    if(m_encodingFix == "latin1")
-        m_hunspell->remove(word.toLatin1().toStdString());
-    if(m_encodingFix == "utf8")
-        m_hunspell->remove(word.toUtf8().toStdString());
+    if (m_encodingFix == "utf8") m_hunspell->remove(word.toUtf8().toStdString());
 
     m_userDict.removeAll(word);
 
 
-    if(emitSignal){
+    if (emitSignal) {
         emit userDictChanged(m_userDict);
     }
-
 }
 
-//---------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------
 
 
 void SKRSpellChecker::clearUserDict()
 {
-    for(const QString &word : m_userDict){
+    for (const QString& word : m_userDict) {
         removeWordFromUserDict(word, false);
     }
     emit userDictChanged(m_userDict);
-
 }
 
-//---------------------------------------------------------------------------------
-bool SKRSpellChecker::isInUserDict(const QString &word)
+// ---------------------------------------------------------------------------------
+bool SKRSpellChecker::isInUserDict(const QString& word)
 {
-
     return m_userDict.contains(word);
-
 }
+
 bool SKRSpellChecker::activate(bool value)
 {
-    if(!value){
+    if (!value) {
         deactivate();
         return false;
     }
 
-    if(m_dictionaryPath.isEmpty()){
-
-
+    if (m_dictionaryPath.isEmpty()) {
         m_isActive = false;
         emit activated(false);
         return false;
@@ -277,6 +256,7 @@ bool SKRSpellChecker::activate(bool value)
     m_isActive = true;
 
     emit activated(true);
+
     return true;
 }
 
@@ -284,14 +264,10 @@ void SKRSpellChecker::deactivate()
 {
     m_isActive = false;
     emit activated(false);
-
 }
-
-
 
 QStringList SKRSpellChecker::dictsPaths()
 {
-
     QStringList list;
 
 
@@ -301,11 +277,11 @@ QStringList SKRSpellChecker::dictsPaths()
     dir.setPath("/usr/share/hunspell/");
     list.append(dir.path());
 
-#endif
+#endif // ifdef Q_OS_LINUX
 
     QStringList addonsList = PLMUtils::Dir::addonsPathsList();
 
-    for (const QString &string : addonsList) {
+    for (const QString& string : addonsList) {
         list.append(string + "/dicts/");
     }
 
@@ -313,27 +289,27 @@ QStringList SKRSpellChecker::dictsPaths()
     return list;
 }
 
+// --------------------------------------------------------------------
 
-//--------------------------------------------------------------------
 
-
-QMap<QString, QString> SKRSpellChecker::dictAndPathMap()
+QMap<QString, QString>SKRSpellChecker::dictAndPathMap()
 {
     QMap<QString, QString> map;
 
     QDir dir;
     QStringList filters;
+
     filters << "*.dic";
-    for(const QString &path : SKRSpellChecker::dictsPaths()) {
+
+    for (const QString& path : SKRSpellChecker::dictsPaths()) {
         dir.setPath(path);
 
 
-        for(QString dict : dir.entryList(filters, QDir::Files)){
-
+        for (QString dict : dir.entryList(filters, QDir::Files)) {
             dict.chop(4);
-            if(QFile(path + "/" + dict + ".aff").exists())
-                map.insert(path +"/" + dict, dict);
 
+            if (QFile(path + "/" + dict + ".aff").exists()) map.insert(path + "/" + dict,
+                                                                       dict);
         }
     }
 
@@ -341,13 +317,14 @@ QMap<QString, QString> SKRSpellChecker::dictAndPathMap()
     return map;
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 QStringList SKRSpellChecker::dictList()
 {
     return SKRSpellChecker::dictAndPathMap().values();
 }
-//--------------------------------------------------------------------
+
+// --------------------------------------------------------------------
 
 QStringList SKRSpellChecker::dictPathList()
 {
@@ -357,31 +334,27 @@ QStringList SKRSpellChecker::dictPathList()
 QString SKRSpellChecker::testHunspellForEncoding()
 {
     QString encoding(m_hunspell->get_dic_encoding());
-    //qWarning() << "_hunspell->get_dic_encoding() : " + encoding;
+
+    // qWarning() << "_hunspell->get_dic_encoding() : " + encoding;
 
 
-    if(encoding == "ISO8859-1")
-        return "latin1";
-    else
-        return "utf8";
+    if (encoding == "ISO8859-1") return "latin1";
+    else return "utf8";
 
     return "utf8";
-
-
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
-void SKRSpellChecker::setLangCode(const QString &newLangCode)
+void SKRSpellChecker::setLangCode(const QString& newLangCode)
 {
-    if(m_langCode == newLangCode){
+    if (m_langCode == newLangCode) {
         return;
     }
 
     QString dictPath = SKRSpellChecker::dictAndPathMap().key(newLangCode, "en_US");
 
-    if(newLangCode != "en_US"){ // means default was used
-
+    if (newLangCode != "en_US") { // means default was used
         qWarning() << QString("Dict %1 not found, using en_US").arg(newLangCode);
     }
     this->setDict(dictPath);
@@ -390,27 +363,27 @@ void SKRSpellChecker::setLangCode(const QString &newLangCode)
     emit langCodeChanged(newLangCode);
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 QString SKRSpellChecker::getLangCode() const
 {
     return m_langCode;
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
-void SKRSpellChecker::setUserDict(const QStringList &userDict)
+void SKRSpellChecker::setUserDict(const QStringList& userDict)
 {
     m_userDict = userDict;
 
-    for (const QString &name : m_userDict) {
+    for (const QString& name : m_userDict) {
         addWordToUserDict(name, false);
     }
 
     emit userDictChanged(m_userDict);
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 QStringList SKRSpellChecker::getUserDict() const
 {

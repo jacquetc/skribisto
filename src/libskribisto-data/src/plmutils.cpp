@@ -41,11 +41,11 @@ bool PLMUtils::Dir::removeDir(const QString& dirName)
     QDir dir(dirName);
 
     if (dir.exists(dirName)) {
-        for (const QFileInfo &info :
-                   dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System |
-                                     QDir::Hidden  |
-                                     QDir::AllDirs | QDir::Files,
-                                     QDir::DirsFirst)) {
+        for (const QFileInfo& info :
+             dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System |
+                               QDir::Hidden  |
+                               QDir::AllDirs | QDir::Files,
+                               QDir::DirsFirst)) {
             if (info.isDir()) {
                 result = removeDir(info.absoluteFilePath());
             } else {
@@ -695,6 +695,7 @@ QStringList PLMUtils::Dir::writableAddonsPathsList()
     dir.setPath(QDir::homePath() + "/Library/Application Support/skribisto/");
 
     dir.mkpath(dir.path());
+
     if (dir.isReadable()) {
         list.append(dir.path());
     }
@@ -704,9 +705,10 @@ QStringList PLMUtils::Dir::writableAddonsPathsList()
 
     return list;
 }
-    //
-    //
-    // ---------------------------------------------------------------------------------------
+
+//
+//
+// ---------------------------------------------------------------------------------------
 
 QStringList PLMUtils::Dir::addonsPathsList()
 {
@@ -740,7 +742,8 @@ QStringList PLMUtils::Dir::addonsPathsList()
             list.append(dir.path());
 
             QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-            for(const QString& pluginDir : qAsConst(dirList)) {
+
+            for (const QString& pluginDir : qAsConst(dirList)) {
                 list.append(dir.path() + "/" + pluginDir);
             }
         }
@@ -828,7 +831,7 @@ QStringList PLMUtils::Dir::addonsPathsList()
 
 void PLMUtils::Dir::createPath(QStringList paths)
 {
-    for(const QString &path : paths) {
+    for (const QString& path : paths) {
         QDir dir;
 
         dir.setPath(path);

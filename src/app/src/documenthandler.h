@@ -2,7 +2,8 @@
 *   Copyright (C) 2020 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: DocumentHandler.h                                                   *
+*  Filename: DocumentHandler.h
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -65,7 +66,7 @@ class DocumentHandler : public QObject {
     Q_PROPERTY(
         qreal indentEverywhere READ indentEverywhere WRITE setIndentEverywhere NOTIFY indentEverywhereChanged)
 
-    Q_PROPERTY(SKRHighlighter *highlighter READ getHighlighter)
+    Q_PROPERTY(SKRHighlighter * highlighter READ getHighlighter)
 
 public:
 
@@ -123,7 +124,7 @@ public:
     int                 paperId() const;
 
     int                 projectId() const;
-    void setProjectId(const int projectId);
+    void                setProjectId(const int projectId);
 
     Q_INVOKABLE int     maxCursorPosition() const;
 
@@ -132,7 +133,7 @@ public:
     qreal               indentEverywhere() const;
     void                setIndentEverywhere(qreal indent);
 
-    SKRHighlighter *getHighlighter(){
+    SKRHighlighter    * getHighlighter() {
         return m_highlighter;
     }
 

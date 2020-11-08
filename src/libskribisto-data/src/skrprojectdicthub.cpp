@@ -4,21 +4,19 @@
 #include "tools.h"
 #include <QDebug>
 
-SKRProjectDictHub::SKRProjectDictHub(QObject *parent) : QObject(parent), m_tableName("tbl_project_dict")
-{
+SKRProjectDictHub::SKRProjectDictHub(QObject *parent) : QObject(parent), m_tableName(
+        "tbl_project_dict")
+{}
 
-}
-
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 
 PLMError SKRProjectDictHub::getError()
 {
     return m_error;
-
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 
 QStringList SKRProjectDictHub::getProjectDictList(int projectId) const
@@ -38,10 +36,11 @@ QStringList SKRProjectDictHub::getProjectDictList(int projectId) const
     return final;
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 
-PLMError SKRProjectDictHub::setProjectDictList(int projectId, const QStringList &projectDictList)
+PLMError SKRProjectDictHub::setProjectDictList(int                projectId,
+                                               const QStringList& projectDictList)
 {
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -52,17 +51,16 @@ PLMError SKRProjectDictHub::setProjectDictList(int projectId, const QStringList 
     int newId;
     QHash<QString, QVariant> values;
 
-    for(const QString &word : projectDictList){
-    values.insert("t_word", word);
+    for (const QString& word : projectDictList) {
+        values.insert("t_word", word);
 
-    error = queries.add(values, newId);
-    error.addData("wordId", newId);
+        error = queries.add(values, newId);
+        error.addData("wordId", newId);
 
-    IFKO(error){
-        break;
+        IFKO(error) {
+            break;
+        }
     }
-
-}
     IFKO(error) {
         queries.rollback();
     }
@@ -77,15 +75,16 @@ PLMError SKRProjectDictHub::setProjectDictList(int projectId, const QStringList 
     return error;
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 
-PLMError SKRProjectDictHub::addWordToProjectDict(int projectId, const QString &newWord)
+PLMError SKRProjectDictHub::addWordToProjectDict(int projectId, const QString& newWord)
 {
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
     int newId;
     QHash<QString, QVariant> values;
+
     values.insert("t_word", newWord);
 
     queries.beginTransaction();
@@ -105,38 +104,37 @@ PLMError SKRProjectDictHub::addWordToProjectDict(int projectId, const QString &n
     return error;
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 
-PLMError SKRProjectDictHub::removeWordFromProjectDict(int projectId, const QString &wordtoRemove)
+PLMError SKRProjectDictHub::removeWordFromProjectDict(int            projectId,
+                                                      const QString& wordtoRemove)
 {
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    //find id :
+    // find id :
     QHash<int, QVariant> result;
-    QString where = "t_word";
+    QString where      = "t_word";
     QString whereValue = wordtoRemove;
-    int wordId = -1;
+    int     wordId     = -1;
 
     error = queries.getValueByIds("t_word", result, where, wordtoRemove);
 
-    IFOK(error){
-        if(result.isEmpty()){
+    IFOK(error) {
+        if (result.isEmpty()) {
             error.setSuccess(false);
             error.setErrorCode("E_PROJECTDICT_word_missing_from_dict");
         }
-
     }
-    IFOK(error){
+    IFOK(error) {
         wordId = result.key(wordtoRemove);
     }
 
-    IFOK(error){
-
-    queries.beginTransaction();
-    error = queries.remove(wordId);
-}
+    IFOK(error) {
+        queries.beginTransaction();
+        error = queries.remove(wordId);
+    }
     IFKO(error) {
         queries.rollback();
     }
@@ -151,10 +149,9 @@ PLMError SKRProjectDictHub::removeWordFromProjectDict(int projectId, const QStri
     return error;
 }
 
-//--------------------------------------------------------------------
+// --------------------------------------------------------------------
 
-void SKRProjectDictHub::setError(const PLMError &error)
+void SKRProjectDictHub::setError(const PLMError& error)
 {
     m_error = error;
-
 }
