@@ -31,7 +31,12 @@ WriteRightDockForm {
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 5
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: handle.hovered ? SkrTheme.accent : SkrTheme.divider
+                color: hoverHandler.hovered ? SkrTheme.accent : SkrTheme.divider
+
+                HoverHandler {
+                    id: hoverHandler
+                    cursorShape: Qt.SplitVCursor
+                }
             }
         }
     }
@@ -68,7 +73,7 @@ WriteRightDockForm {
                     text: qsTr( "&Edit")
                     onTriggered: {
 
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             rightDrawer.open()
                         }
                         editFrame.folded = false
@@ -81,7 +86,7 @@ WriteRightDockForm {
                     text: qsTr( "&Tags")
                     onTriggered: {
 
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             rightDrawer.open()
                         }
                         tagPadFrame.folded = false
@@ -93,7 +98,7 @@ WriteRightDockForm {
                     text: qsTr( "&Notes")
                     onTriggered: {
 
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             rightDrawer.open()
                         }
                         notePadFrame.folded = false

@@ -88,8 +88,8 @@ EditViewForm {
 
     // textWidthSlider :
 
-    textWidthLabel.visible: !Globals.compactSize && textWidthSliderVisible
-    textWidthSlider.visible: !Globals.compactSize && textWidthSliderVisible
+    textWidthLabel.visible: !Globals.compactMode && textWidthSliderVisible
+    textWidthSlider.visible: !Globals.compactMode && textWidthSliderVisible
 
     textWidthSlider.value: skrSettingsGroup.textWidth
 

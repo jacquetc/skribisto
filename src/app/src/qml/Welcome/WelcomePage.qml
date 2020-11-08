@@ -54,9 +54,9 @@ WelcomePageForm {
 
     }
     //compact mode :
-    tabBar.visible: Globals.compactSize
-    mainButtonsPane.visible: !Globals.compactSize
-    separator.visible: !Globals.compactSize
+    tabBar.visible: Globals.compactMode
+    mainButtonsPane.visible: !Globals.compactMode
+    separator.visible: !Globals.compactMode
 
 
 

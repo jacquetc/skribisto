@@ -289,11 +289,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Full Screen Colors</source>
+        <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Go back</source>
+        <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -356,31 +356,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Background :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Text Field</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tool Button</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paper :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>#1234</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source></source>
         <translation></translation>
     </message>
     <message>
         <source>Check spelling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor </source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -587,6 +571,88 @@
     </message>
     <message>
         <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FileMenuPage</name>
+    <message>
+        <source>Opened</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>last modified %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>recent projects list item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FileMenuPageForm.ui</name>
+    <message>
+        <source>Projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recent projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save as</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save a copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation type="unfinished">Imprimir</translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished">Importar </translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1704,6 +1770,64 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
+    <name>NewProject</name>
+    <message>
+        <source>Part </source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NewProjectForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project title :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>project title</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project file :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>project file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project path :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>project path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This project will be created as : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Number of parts :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>NewProjectWizard</name>
     <message>
         <source>Project Creator</source>
@@ -2260,133 +2384,18 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
-    <name>ProjectPage</name>
-    <message>
-        <source>Part </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Forget</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>recent projects list item</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>ProjectPageForm.ui</name>
-    <message>
-        <source>Projects</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recent projects</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save as</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save all</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save a copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Back up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Behavior</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create an empty project at start</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source></source>
         <translation></translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Imprimir</translation>
+        <translation type="obsolete">Imprimir</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished">Importar </translation>
-    </message>
-    <message>
-        <source>Export</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Project title :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>project title</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Project file :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>project file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Project path :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This project will be created as : </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Number of parts :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Importar </translation>
     </message>
 </context>
 <context>
@@ -2597,6 +2606,14 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished">&amp;Vista</translation>
     </message>
 </context>
 <context>
@@ -3080,6 +3097,18 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Manage themes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Behavior</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create an empty project at start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3884,60 +3913,8 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>has child</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>label:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>navigation item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This project is a backup</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open</source>
-        <translation type="unfinished">Abrir</translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete definitively</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Abrir</translation>
     </message>
 </context>
 <context>
@@ -4428,6 +4405,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Check spelling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -115,7 +115,7 @@ WriteOverviewPageForm {
     }
 
     function closeRightDrawer(){
-        if(Globals.compactSize){
+        if(Globals.compactMode){
             rightDrawer.close()
         }
     }
@@ -127,8 +127,8 @@ WriteOverviewPageForm {
 
 
 
-    leftDockMenuGroup.visible: !Globals.compactSize && leftDockMenuButton.checked
-    leftDockMenuButton.visible: !Globals.compactSize
+    leftDockMenuGroup.visible: !Globals.compactMode && leftDockMenuButton.checked
+    leftDockMenuButton.visible: !Globals.compactMode
 
 
     leftDockShowButton.onClicked: leftDrawer.isVisible ? leftDrawer.isVisible = false : leftDrawer.isVisible = true
@@ -153,7 +153,7 @@ WriteOverviewPageForm {
 
 
     // compact mode :
-    compactLeftDockShowButton.visible: Globals.compactSize
+    compactLeftDockShowButton.visible: Globals.compactMode
 
     compactLeftDockShowButton.onClicked: leftDrawer.open()
     compactLeftDockShowButton.icon {
@@ -211,8 +211,8 @@ WriteOverviewPageForm {
     //-------------------------------------------------------------
 
 
-    rightDockMenuGroup.visible: !Globals.compactSize && rightDockMenuButton.checked
-    rightDockMenuButton.visible: !Globals.compactSize
+    rightDockMenuGroup.visible: !Globals.compactMode && rightDockMenuButton.checked
+    rightDockMenuButton.visible: !Globals.compactMode
 
     rightDockShowButton.onClicked: rightDrawer.isVisible ? rightDrawer.isVisible = false : rightDrawer.isVisible = true
 
@@ -235,7 +235,7 @@ WriteOverviewPageForm {
     }
 
     // compact mode :
-    compactRightDockShowButton.visible: Globals.compactSize
+    compactRightDockShowButton.visible: Globals.compactMode
 
     compactRightDockShowButton.onClicked: rightDrawer.open()
     compactRightDockShowButton.icon {
@@ -299,8 +299,8 @@ WriteOverviewPageForm {
         widthInDockMode: leftDrawerFixedWidth
         widthInDrawerMode: 400
         height: base.height
-        interactive: Globals.compactSize
-        dockModeEnabled: !Globals.compactSize
+        interactive: Globals.compactMode
+        dockModeEnabled: !Globals.compactMode
         settingsCategory: "writeOverviewLeftDrawer"
         edge: Qt.LeftEdge
 
@@ -326,8 +326,8 @@ WriteOverviewPageForm {
         widthInDockMode: rightDrawerFixedWidth
         widthInDrawerMode: 400
         height: base.height
-        interactive: Globals.compactSize
-        dockModeEnabled: !Globals.compactSize
+        interactive: Globals.compactMode
+        dockModeEnabled: !Globals.compactMode
         settingsCategory: "writeOverviewRightDrawer"
         edge: Qt.RightEdge
 

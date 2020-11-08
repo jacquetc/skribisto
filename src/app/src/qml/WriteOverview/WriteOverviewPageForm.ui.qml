@@ -32,8 +32,8 @@ Item {
         clip: false
         spacing: 0
         anchors.fill: parent
-        anchors.leftMargin: Globals.compactSize ? undefined : leftDrawer.width * leftDrawer.position
-        anchors.rightMargin: Globals.compactSize ? undefined : rightDrawer.width
+        anchors.leftMargin: Globals.compactMode ? undefined : leftDrawer.width * leftDrawer.position
+        anchors.rightMargin: Globals.compactMode ? undefined : rightDrawer.width
                                                    * rightDrawer.position + 10
 
         RowLayout {
@@ -47,7 +47,7 @@ Item {
                 Layout.preferredWidth: leftBasePreferredWidth
                 Layout.maximumWidth: leftBasePreferredWidth
                 Layout.minimumWidth: 30
-                visible: !Globals.compactSize
+                visible: !Globals.compactMode
                 Layout.fillHeight: true
 
                 z: 1
@@ -196,7 +196,7 @@ Item {
 
             Item {
                 id: rightBase
-                visible: !Globals.compactSize
+                visible: !Globals.compactMode
                 Layout.fillHeight: true
                 //Layout.fillWidth: true
                 Layout.preferredWidth: rightBasePreferredWidth

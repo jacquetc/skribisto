@@ -52,7 +52,7 @@ WritePageForm {
     writingZone.textIndent: SkrSettings.writeSettings.textIndent
     writingZone.textTopMargin: SkrSettings.writeSettings.textTopMargin
 
-    writingZone.stretch: Globals.compactSize
+    writingZone.stretch: Globals.compactMode
     writingZone.name: "write-0" //useful ?
 
     Connections {
@@ -127,7 +127,7 @@ WritePageForm {
     Binding on leftBasePreferredWidth {
         value:  {
             var value = 0
-            if (Globals.compactSize === true){
+            if (Globals.compactMode === true){
                 value = -1;
             }
             else {
@@ -149,7 +149,7 @@ WritePageForm {
 //        Binding on rightBasePreferredWidth {
 //            value:  {
 //                var value = 0
-//                if (Globals.compactSize === true){
+//                if (Globals.compactMode === true){
 //                    value = -1;
 //                }
 //                else {
@@ -167,9 +167,9 @@ WritePageForm {
 //            }
 //        }
     //    Binding on leftBaseMaximumWidth {
-    //        when: SkrSettings.rootSettings.onLeftDockWidthChanged || Globals.onCompactSizeChanged || writingZone.onWidthChanged
+    //        when: SkrSettings.rootSettings.onLeftDockWidthChanged || Globals.onCompactModeChanged || writingZone.onWidthChanged
     //            value:  {
-    //                if (Globals.compactSize === true){
+    //                if (Globals.compactMode === true){
     //                    return -1;
     //                }
     //                else {
@@ -285,7 +285,7 @@ WritePageForm {
 
 
     function closeRightDrawer(){
-        if(Globals.compactSize){
+        if(Globals.compactMode){
             rightDrawer.close()
         }
     }
@@ -383,13 +383,13 @@ WritePageForm {
 
     //needed to adapt width to a shrinking window
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactSize && middleBase.width - 200 < writingZone.maximumTextAreaWidth
+        when: !Globals.compactMode && middleBase.width - 200 < writingZone.maximumTextAreaWidth
         value: middleBase.width - 200
         restoreMode: Binding.RestoreBindingOrValue
 
     }
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactSize && middleBase.width - 200 >= writingZone.maximumTextAreaWidth
+        when: !Globals.compactMode && middleBase.width - 200 >= writingZone.maximumTextAreaWidth
         value: writingZone.maximumTextAreaWidth
         restoreMode: Binding.RestoreBindingOrValue
 
@@ -445,8 +445,8 @@ WritePageForm {
 
 
 
-    leftDockMenuGroup.visible: !Globals.compactSize && leftDockMenuButton.checked
-    leftDockMenuButton.visible: !Globals.compactSize
+    leftDockMenuGroup.visible: !Globals.compactMode && leftDockMenuButton.checked
+    leftDockMenuButton.visible: !Globals.compactMode
 
 
     leftDockShowButton.onClicked: leftDrawer.isVisible ? leftDrawer.isVisible = false : leftDrawer.isVisible = true
@@ -472,7 +472,7 @@ WritePageForm {
 
 
     // compact mode :
-    compactLeftDockShowButton.visible: Globals.compactSize
+    compactLeftDockShowButton.visible: Globals.compactMode
 
     compactLeftDockShowButton.onClicked: leftDrawer.open()
     compactLeftDockShowButton.icon {
@@ -532,8 +532,8 @@ WritePageForm {
 
 
 
-    rightDockMenuGroup.visible: !Globals.compactSize && rightDockMenuButton.checked
-    rightDockMenuButton.visible: !Globals.compactSize
+    rightDockMenuGroup.visible: !Globals.compactMode && rightDockMenuButton.checked
+    rightDockMenuButton.visible: !Globals.compactMode
 
     rightDockShowButton.onClicked: rightDrawer.isVisible ? rightDrawer.isVisible = false : rightDrawer.isVisible = true
 
@@ -556,7 +556,7 @@ WritePageForm {
     }
 
     // compact mode :
-    compactRightDockShowButton.visible: Globals.compactSize
+    compactRightDockShowButton.visible: Globals.compactMode
 
     compactRightDockShowButton.onClicked: rightDrawer.open()
     compactRightDockShowButton.icon {
@@ -623,8 +623,8 @@ WritePageForm {
         widthInDockMode: leftDrawerFixedWidth
         widthInDrawerMode: 400
         height: base.height
-        interactive: Globals.compactSize
-        dockModeEnabled: !Globals.compactSize
+        interactive: Globals.compactMode
+        dockModeEnabled: !Globals.compactMode
         settingsCategory: "writeLeftDrawer"
         edge: Qt.LeftEdge
 
@@ -647,8 +647,8 @@ WritePageForm {
         widthInDockMode: rightDrawerFixedWidth
         widthInDrawerMode: 400
         height: base.height
-        interactive: Globals.compactSize
-        dockModeEnabled: !Globals.compactSize
+        interactive: Globals.compactMode
+        dockModeEnabled: !Globals.compactMode
         settingsCategory: "writeRightDrawer"
         edge: Qt.RightEdge
 

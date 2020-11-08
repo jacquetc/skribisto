@@ -39,7 +39,7 @@ NotePageForm {
     writingZone.textIndent: SkrSettings.noteSettings.textIndent
     writingZone.textTopMargin: SkrSettings.noteSettings.textTopMargin
 
-    writingZone.stretch: Globals.compactSize
+    writingZone.stretch: Globals.compactMode
     writingZone.name: "note-0" //useful ?
 
 
@@ -117,7 +117,7 @@ NotePageForm {
     Binding on leftBasePreferredWidth {
         value:  {
             var value = 0
-            if (Globals.compactSize === true){
+            if (Globals.compactMode === true){
                 value = -1;
             }
             else {
@@ -138,7 +138,7 @@ NotePageForm {
     //    Binding on rightBasePreferredWidth {
     //        value:  {
     //            var value = 0
-    //            if (Globals.compactSize === true){
+    //            if (Globals.compactMode === true){
     //                value = -1;
     //            }
     //            else {
@@ -156,9 +156,9 @@ NotePageForm {
     //        }
     //    }
     //    Binding on leftBaseMaximumWidth {
-    //        when: SkrSettings.rootSettings.onLeftDockWidthChanged || Globals.onCompactSizeChanged || writingZone.onWidthChanged
+    //        when: SkrSettings.rootSettings.onLeftDockWidthChanged || Globals.onCompactModeChanged || writingZone.onWidthChanged
     //            value:  {
-    //                if (Globals.compactSize === true){
+    //                if (Globals.compactMode === true){
     //                    return -1;
     //                }
     //                else {
@@ -271,7 +271,7 @@ NotePageForm {
     }
 
     function closeRightDrawer(){
-        if(Globals.compactSize){
+        if(Globals.compactMode){
             rightDrawer.close()
         }
     }
@@ -368,13 +368,13 @@ NotePageForm {
 
     //needed to adapt width to a shrinking window
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactSize && middleBase.width - 200 < writingZone.maximumTextAreaWidth
+        when: !Globals.compactMode && middleBase.width - 200 < writingZone.maximumTextAreaWidth
         value: middleBase.width - 200
         restoreMode: Binding.RestoreBindingOrValue
 
     }
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactSize && middleBase.width - 200 >= writingZone.maximumTextAreaWidth
+        when: !Globals.compactMode && middleBase.width - 200 >= writingZone.maximumTextAreaWidth
         value: writingZone.maximumTextAreaWidth
         restoreMode: Binding.RestoreBindingOrValue
 
@@ -432,8 +432,8 @@ NotePageForm {
     //-------------------------------------------------------------
 
 
-    leftDockMenuGroup.visible: !Globals.compactSize && leftDockMenuButton.checked
-    leftDockMenuButton.visible: !Globals.compactSize
+    leftDockMenuGroup.visible: !Globals.compactMode && leftDockMenuButton.checked
+    leftDockMenuButton.visible: !Globals.compactMode
 
 
     leftDockShowButton.onClicked: leftDrawer.isVisible ? leftDrawer.isVisible = false : leftDrawer.isVisible = true
@@ -458,7 +458,7 @@ NotePageForm {
 
 
     // compact mode :
-    compactLeftDockShowButton.visible: Globals.compactSize
+    compactLeftDockShowButton.visible: Globals.compactMode
 
     compactLeftDockShowButton.onClicked: leftDrawer.open()
     compactLeftDockShowButton.icon {
@@ -516,8 +516,8 @@ NotePageForm {
     //-------------------------------------------------------------
 
 
-    rightDockMenuGroup.visible: !Globals.compactSize && rightDockMenuButton.checked
-    rightDockMenuButton.visible: !Globals.compactSize
+    rightDockMenuGroup.visible: !Globals.compactMode && rightDockMenuButton.checked
+    rightDockMenuButton.visible: !Globals.compactMode
 
     rightDockShowButton.onClicked: rightDrawer.isVisible ? rightDrawer.isVisible = false : rightDrawer.isVisible = true
 
@@ -540,7 +540,7 @@ NotePageForm {
     }
 
     // compact mode :
-    compactRightDockShowButton.visible: Globals.compactSize
+    compactRightDockShowButton.visible: Globals.compactMode
 
     compactRightDockShowButton.onClicked: rightDrawer.open()
     compactRightDockShowButton.icon {
@@ -608,8 +608,8 @@ NotePageForm {
         widthInDockMode: leftDrawerFixedWidth
         widthInDrawerMode: 400
         height: base.height
-        interactive: Globals.compactSize
-        dockModeEnabled: !Globals.compactSize
+        interactive: Globals.compactMode
+        dockModeEnabled: !Globals.compactMode
         settingsCategory: "noteLeftDrawer"
         edge: Qt.LeftEdge
 
@@ -633,8 +633,8 @@ NotePageForm {
         widthInDockMode: rightDrawerFixedWidth
         widthInDrawerMode: 400
         height: base.height
-        interactive: Globals.compactSize
-        dockModeEnabled: !Globals.compactSize
+        interactive: Globals.compactMode
+        dockModeEnabled: !Globals.compactMode
         settingsCategory: "noteRightDrawer"
         edge: Qt.RightEdge
 

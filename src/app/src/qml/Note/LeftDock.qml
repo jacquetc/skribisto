@@ -29,7 +29,12 @@ LeftDockForm {
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 5
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: handle.hovered ? SkrTheme.accent : SkrTheme.divider
+                color: hoverHandler.hovered ? SkrTheme.accent : SkrTheme.divider
+
+                HoverHandler {
+                    id: hoverHandler
+                    cursorShape: Qt.SplitVCursor
+                }
             }
         }
     }
@@ -73,7 +78,7 @@ LeftDockForm {
                 SkrMenuItem {
                     text: qsTr("&Navigation")
                     onTriggered: {
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             leftDrawer.open()
                         }
                         navigationFrame.folded = false
@@ -84,7 +89,7 @@ LeftDockForm {
                 SkrMenuItem {
                     text: qsTr("&Documents")
                     onTriggered: {
-                        if(Globals.compactSize){
+                        if(Globals.compactMode){
                             leftDrawer.open()
                         }
                         documentFrame.folded = false
