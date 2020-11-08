@@ -42,10 +42,10 @@ QtObject {
 
     }
 
-    property Settings welcomeSettings: Settings{
-        category: "welcome"
+    property Settings behaviorSettings: Settings{
+        category: "behavior"
         property bool createEmptyProjectAtStart: false
-
+        property bool centerTextCursor: true
     }
 
     property Settings spellCheckingSettings: Settings{

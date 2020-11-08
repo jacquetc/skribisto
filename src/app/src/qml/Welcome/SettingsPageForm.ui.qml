@@ -32,6 +32,7 @@ Item {
     property alias checkSpellingComboBox: checkSpellingComboBox
     property alias openThemePageButton: openThemePageButton
     property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
+    property alias centerTextCursorSwitch: centerTextCursorSwitch
 
     SkrPane {
         id: pane2
@@ -132,6 +133,11 @@ Item {
                         SkrSwitch {
                             id: createEmpyProjectAtStartSwitch
                             text: qsTr("Create an empty project at start")
+                        }
+
+                        SkrSwitch {
+                            id: centerTextCursorSwitch
+                            text: qsTr("Center text cursor vertically")
                         }
                     }
                 }

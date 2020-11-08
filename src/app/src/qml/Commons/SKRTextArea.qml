@@ -35,7 +35,7 @@ TextArea {
 
 
     property int viewHeight: 200
-    signal moveViewY(int height)
+    signal moveViewYCalled(int height)
 
     Keys.priority: Keys.BeforeItem
 
@@ -52,7 +52,7 @@ TextArea {
             }
 
             var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y - viewHeight)
-            moveViewY(-viewHeight)
+            moveViewYCalled(-viewHeight)
             root.cursorPosition = newPosition
 
             root.select(initialCursorPosition, root.cursorPosition)
@@ -70,7 +70,7 @@ TextArea {
             }
 
             var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y + viewHeight)
-            moveViewY(viewHeight)
+            moveViewYCalled(viewHeight)
             root.cursorPosition = newPosition
 
             root.select(initialCursorPosition, root.cursorPosition)
@@ -87,7 +87,7 @@ TextArea {
             }
 
             var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y - viewHeight)
-            moveViewY(-viewHeight)
+            moveViewYCalled(-viewHeight)
             root.cursorPosition = newPosition
 
             event.accepted = true
@@ -101,7 +101,7 @@ TextArea {
             }
 
             var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y + viewHeight)
-            moveViewY(viewHeight)
+            moveViewYCalled(viewHeight)
             root.cursorPosition = newPosition
 
             event.accepted = true
@@ -112,6 +112,28 @@ TextArea {
         initialCursorPosition = -1
 
         event.accepted = false
+
+    }
+
+
+    //--------------------------------------------------------------------------------
+    //--------Text centering----------------------------------------------------------
+    //--------------------------------------------------------------------------------
+    property bool textCenteringEnabled: false
+    property int viewContentY
+
+
+    onCursorPositionChanged: {
+        if(!root.textCenteringEnabled || root.selectedText){
+            return
+        }
+
+        var cursorY = root.cursorRectangle.y
+
+        var wantedCursorY = root.viewContentY + root.viewHeight / 2
+
+        moveViewYCalled(-(wantedCursorY - cursorY))
+
 
     }
 

@@ -75,9 +75,12 @@ WritingZoneForm {
         projectId = -2
     }
 
+    //-------------------------------------------------
 
 
     property bool spellCheckerKilled: false
+
+    property bool textCenteringEnabled: false
     // style :
 
 
@@ -598,7 +601,7 @@ WritingZoneForm {
 
     onProjectIdChanged: {
         if(!spellCheckerKilled){
-        determineSpellCheckerLanguageCode()
+            determineSpellCheckerLanguageCode()
         }
     }
 
@@ -700,17 +703,53 @@ WritingZoneForm {
     
     //--------------------------------------------------------------------------------
     //--------Page Up/Down-------------------------------------------------------------
+    //--------Text centering----------------------------------------------------------
     //--------------------------------------------------------------------------------
 
     textArea.viewHeight: flickable.height - textArea.topPadding - textArea.bottomPadding
 
     Connections {
         target: textArea
-        function onMoveViewY(height){
-            flickable.contentY += height - textArea.topPadding - textArea.bottomPadding
+        function onMoveViewYCalled(height){
+            var value = height - textArea.topPadding - textArea.bottomPadding
+
+
+            //top bound
+            if(textCenteringEnabled && flickable.contentY + value < -textArea.viewHeight / 2){
+                flickable.contentY = -textArea.viewHeight / 2
+                return
+            }
+            else if(!textCenteringEnabled && flickable.contentY + value < 0){
+                flickable.contentY = 0
+                return
+            }
+
+            // bottom bound
+            if(textCenteringEnabled && flickable.contentY + value + 20 > flickable.contentHeight + textArea.viewHeight / 2){
+                flickable.contentY = flickable.contentHeight - textArea.viewHeight + textArea.viewHeight / 2
+                return
+            }
+            else if(!textCenteringEnabled && flickable.contentY + value + 20 > flickable.contentHeight){
+                flickable.contentY = flickable.contentHeight - textArea.viewHeight
+                return
+            }
+
+            // normal move
+            flickable.contentY += value
+
         }
     }
 
+    textArea.textCenteringEnabled: textCenteringEnabled
+    textArea.viewContentY: flickable.contentY
+
+
+    Behavior on flickable.contentY {
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutQuad
+        }
+    }
 
     //--------------------------------------------------------------------------------
     //focus :
