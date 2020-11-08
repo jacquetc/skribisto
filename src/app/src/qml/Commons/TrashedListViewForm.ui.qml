@@ -78,12 +78,18 @@ Item {
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical.policy: scrollBarVerticalPolicy
 
-
-                ListView {
+                CheckableTree {
                     id: listView
-                    clip: true
                     smooth: true
                     boundsBehavior: Flickable.StopAtBounds
+
+                    treelikeIndentsVisible: true
+                    checkButtonsVisible: false
+                    openActionsEnabled: true
+                    renameActionEnabled: true
+                    copyActionEnabled: true
+                    deleteActionEnabled: true
+
 
                     Accessible.name: "List of trashed items"
                     Accessible.role: Accessible.List

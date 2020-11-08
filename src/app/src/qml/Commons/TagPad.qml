@@ -224,7 +224,7 @@ TagPadForm {
             function determineIfSelected(){
 
                 var here = false
-                for(var i = 0; i < root.selectedList.length ; i ++){
+                for(var i = 0; i < root.selectedList.length ; i++){
 
                     if(root.selectedList[i] === itemBase.tagId){
                         here = true
@@ -232,7 +232,6 @@ TagPadForm {
                 }
 
                itemBase.isSelected = here
-                console.log("itemBase.isSelected", itemBase.isSelected, itemBase.tagId, root.selectedList)
             }
 
             TapHandler {
@@ -258,7 +257,6 @@ TagPadForm {
                 }
                 onLongPressed: {
                     itemBase.setFocused()
-                    itemBase.setSelected()
                     itemBase.forceActiveFocus()
 
 
@@ -283,7 +281,6 @@ TagPadForm {
                 onSingleTapped: {
 
                     itemBase.setFocused()
-                    itemBase.setSelected()
                     itemBase.forceActiveFocus()
 
 
@@ -474,8 +471,7 @@ TagPadForm {
                 SkrLabel{
                     id: tagTitle
                     text: model.name
-                    style: Text.Raised
-                    styleColor: "white"
+                    font.bold: itemBase.isFocused
 
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
@@ -485,7 +481,7 @@ TagPadForm {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    color: itemBase.isFocused ? SkrTheme.accent : SkrTheme.buttonForeground
+                    color: SkrTheme.buttonForeground
 
                     SkrRoundButton {
                         id: removeRelationshipButton
@@ -704,6 +700,7 @@ TagPadForm {
 
                                     }
                                     titleEditPopup.close()
+                                    eventPoint.accepted = true
                                 }
                             }
 
@@ -728,8 +725,6 @@ TagPadForm {
                             //                            //enabled: listView.activeFocus
                             //                        }
 
-                            Keys.priority: Keys.BeforeItem
-
                             Keys.onPressed: {
                                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
                                     console.log("Return key pressed title")
@@ -739,6 +734,7 @@ TagPadForm {
                                     titleEditPopup.close()
 
 
+                                    event.accepted = true
                                 }
 
                             }

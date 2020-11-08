@@ -110,6 +110,30 @@ SettingsPageForm {
     }
 
 
+
+    // --------------------------------------------
+    // ---- Behavior --------------------------------
+    // --------------------------------------------
+
+
+    createEmpyProjectAtStartSwitch.checked: SkrSettings.behaviorSettings.createEmptyProjectAtStart
+    Binding {
+        target: SkrSettings.behaviorSettings
+        property: "createEmptyProjectAtStart"
+        value: createEmpyProjectAtStartSwitch.checked
+    }
+
+
+
+    centerTextCursorSwitch.checked: SkrSettings.behaviorSettings.centerTextCursor
+    Binding {
+        target: SkrSettings.behaviorSettings
+        property: "centerTextCursor"
+        value: centerTextCursorSwitch.checked
+    }
+
+
+
     // --------------------------------------------
     // ---- accessibility --------------------------------
     // --------------------------------------------

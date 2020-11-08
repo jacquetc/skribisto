@@ -111,6 +111,9 @@ RestoreListViewForm {
     //-----------------------------------------------------------------------------
 
 
+    // go back button :
+
+
     Connections {
 
         target: plmData.projectHub()
@@ -121,10 +124,6 @@ RestoreListViewForm {
         }
     }
 
-
-
-    //-----------------------------------------------------------------------------
-    // go back button :
 
     signal goBack()
 

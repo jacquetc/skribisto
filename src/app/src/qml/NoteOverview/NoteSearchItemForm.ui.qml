@@ -89,12 +89,17 @@ Item {
                 settingsCategory: "noteOverviewNoteSearchItemDrawer"
                 z: 1
 
+                SkrPane {
+                    elevation: 3
+
                 TagPad{
                     id: searchTagPad
+                    anchors.fill: parent
                     minimalMode: true
                     itemType: SKRTagHub.Note
                     selectionEnabled: true
                     multipleSelectionsEnabled: true
+                }
                 }
             }
 

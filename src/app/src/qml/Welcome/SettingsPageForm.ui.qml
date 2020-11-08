@@ -31,6 +31,8 @@ Item {
     property alias checkSpellingCheckBox: checkSpellingCheckBox
     property alias checkSpellingComboBox: checkSpellingComboBox
     property alias openThemePageButton: openThemePageButton
+    property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
+    property alias centerTextCursorSwitch: centerTextCursorSwitch
 
     SkrPane {
         id: pane2
@@ -114,6 +116,28 @@ Item {
                         SkrButton {
                             id: openThemePageButton
                             text: qsTr("Manage themes")
+                        }
+                    }
+                }
+
+                SkrGroupBox {
+                    id: behaviorGroupBox
+                    focusPolicy: Qt.TabFocus
+                    Layout.fillWidth: true
+                    title: qsTr("Behavior")
+
+                    ColumnLayout {
+                        id: columnLayout10
+                        anchors.fill: parent
+
+                        SkrSwitch {
+                            id: createEmpyProjectAtStartSwitch
+                            text: qsTr("Create an empty project at start")
+                        }
+
+                        SkrSwitch {
+                            id: centerTextCursorSwitch
+                            text: qsTr("Center vertically the text cursor")
                         }
                     }
                 }

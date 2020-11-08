@@ -28,6 +28,7 @@ EditViewForm {
 
 
     checkSpellingToolButton.action: checkSpellingAction
+    centerTextCursorToolButton.action: centerTextCursorAction
 
 
     Action{
@@ -49,8 +50,8 @@ EditViewForm {
     sizeToolButton.action: sizeAction
 
     Action{
-        id: fullScreenColorAction
-        text: qsTr("Full Screen Colors")
+        id: themesColorAction
+        text: qsTr("Themes")
         icon {
             name: "color-picker-white"
             height: 50
@@ -59,12 +60,11 @@ EditViewForm {
 
         //shortcut: StandardKey.
         onTriggered: {
-            swipeView.setCurrentIndex(2)
-            backroundColorTextField.forceActiveFocus()
+            Globals.openThemePageCalled()
         }
 
     }
-    fullScreenColorToolButton.action: fullScreenColorAction
+    themesToolButton.action: themesColorAction
 
 
 
@@ -85,7 +85,6 @@ EditViewForm {
     }
 
     goBackToolButton.action: goBackAction
-    goBack2ToolButton.action: goBackAction
 
     // textWidthSlider :
 

@@ -362,7 +362,6 @@
         <file>icons/breeze-skribisto/actions/24/edit-find-replace.svg</file>
         <file>icons/breeze-skribisto/actions/24/edit-find-user.svg</file>
         <file>icons/breeze-skribisto/actions/24/edit-find.svg</file>
-        <file>icons.qrc</file>
         <file>icons/breeze-skribisto/actions/symbolic/edit-find-replace-symbolic.svg</file>
         <file>icons/breeze-skribisto/actions/symbolic/edit-find-symbolic.svg</file>
         <file>icons/breeze-skribisto/actions/16/quickopen-class.svg</file>
@@ -393,5 +392,7 @@
         <file>icons/breeze-skribisto/actions/symbolic/edit-clear-rtl-symbolic.svg</file>
         <file>icons/breeze-skribisto/actions/symbolic/edit-clear-symbolic-rtl.svg</file>
         <file>icons/breeze-skribisto/actions/symbolic/edit-clear-symbolic.svg</file>
+        <file>icons/breeze-skribisto/actions/16/format-align-vertical-center.svg</file>
+        <file>icons/breeze-skribisto/actions/22/format-align-vertical-center.svg</file>
     </qresource>
 </RCC>

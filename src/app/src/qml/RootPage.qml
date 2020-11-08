@@ -33,102 +33,129 @@ RootPageForm {
         id: skrUserSettings
     }
 
-    ActionGroup {
-        id: windowGroup
-        exclusive: true
 
-        Action {
-            id: welcomeWindowAction
-            text: qsTr("Welcome")
-            icon {
-                source: "qrc:/pics/skribisto.svg"
-                color: "transparent"
-                height: 100
-                width: 100
-            }
+    Action {
+        id: welcomeWindowAction
+        text: qsTr("Welcome")
+        icon {
+            source: "qrc:/pics/skribisto.svg"
+            color: "transparent"
+            height: 100
+            width: 100
 
-            shortcut: "F5"
-            checkable: true
-            onTriggered: {
-
-                welcomePage.forceActiveFocus()
-            }
         }
 
-        Action {
-            id: writeOverviewWindowAction
-            text: qsTr("Write")
-            icon {
-                name: "view-media-playlist"
-                height: 100
-                width: 100
-            }
+        shortcut: "F5"
+        onTriggered: {
 
-            shortcut: "F6"
-            checkable: true
-            onTriggered: {
-
-                writeOverviewPage.forceActiveFocus()
-            }
-        }
-
-        Action {
-            id: noteOverviewWindowAction
-            text: qsTr("Note")
-            icon {
-                name: "story-editor"
-                height: 100
-                width: 100
-            }
-
-            shortcut: "F7"
-            checkable: true
-            onTriggered: {
-
-                noteOverviewPage.forceActiveFocus()
-            }
-        }
-        Action {
-            id: galleryWindowAction
-            text: qsTr("Gallery")
-            icon {
-                name: "view-preview"
-                height: 100
-                width: 100
-            }
-
-            shortcut: "F8"
-            checkable: true
-            onTriggered: {
-                //                rootStack.
-
-                galleryPage.forceActiveFocus()
-            }
-        }
-        Action {
-            id: projectWindowAction
-            text: qsTr("Project")
-            icon {
-                name: "configure"
-                height: 100
-                width: 100
-            }
-
-            shortcut: "F9"
-            checkable: true
-            onTriggered: {
-
-                projectsMainPage.forceActiveFocus()
-            }
+            rootSwipeView.currentIndex = 0
+            welcomePage.forceActiveFocus()
         }
     }
 
     Connections {
         target: Globals
-        function onShowWelcomePage() {
-            rootSwipeView.currentIndex = 0
+        function onShowWelcomePageCalled() {
+          welcomeWindowAction.trigger()
         }
     }
+
+    Action {
+        id: writeOverviewWindowAction
+        text: qsTr("Write")
+        icon {
+            name: "view-media-playlist"
+            color: SkrTheme.buttonIcon
+            height: 100
+            width: 100
+        }
+
+        shortcut: "F6"
+        onTriggered: {
+            rootSwipeView.currentIndex = 1
+            writeOverviewPage.forceActiveFocus()
+        }
+    }
+
+    Connections {
+        target: Globals
+        function onShowWriteOverviewPageCalled() {
+          writeOverviewWindowAction.trigger()
+        }
+    }
+
+    Action {
+        id: noteOverviewWindowAction
+        text: qsTr("Note")
+        icon {
+            name: "story-editor"
+            color: SkrTheme.buttonIcon
+            height: 100
+            width: 100
+        }
+
+        shortcut: "F7"
+        onTriggered: {
+            rootSwipeView.currentIndex = 2
+            noteOverviewPage.forceActiveFocus()
+        }
+    }
+
+    Connections {
+        target: Globals
+        function onShowNoteOverviewPageCalled() {
+          noteOverviewWindowAction.trigger()
+        }
+    }
+
+    Action {
+        id: galleryWindowAction
+        text: qsTr("Gallery")
+        icon {
+            name: "view-preview"
+            color: SkrTheme.buttonIcon
+            height: 100
+            width: 100
+        }
+
+        shortcut: "F8"
+        onTriggered: {
+            //                rootStack.
+            rootSwipeView.currentIndex = 3
+            galleryPage.forceActiveFocus()
+        }
+    }
+
+    Connections {
+        target: Globals
+        function onShowGalleryPageCalled() {
+          galleryWindowAction.trigger()
+        }
+    }
+
+    Action {
+        id: projectWindowAction
+        text: qsTr("Project")
+        icon {
+            name: "configure"
+            color: SkrTheme.buttonIcon
+            height: 100
+            width: 100
+        }
+
+        shortcut: "F9"
+        onTriggered: {
+            rootSwipeView.currentIndex = 4
+            projectsMainPage.forceActiveFocus()
+        }
+    }
+    Connections {
+        target: Globals
+        function onShowProjectPageCalled() {
+          projectWindowAction.trigger()
+        }
+    }
+
 
     //------------------------------------------------
     // notification :
@@ -353,7 +380,7 @@ RootPageForm {
 
         rootSwipeView.insertItem(insertionIndex, incubator);
 
-        var component = Qt.createComponent("Tab.qml");
+        var component = Qt.createComponent("Items/SkrTabButton.qml");
         var tabIncubator = component.incubateObject(rootTabBar, {text: title, pageType: pageType,projectId: projectId, paperId: paperId, iconName: iconName});
         console.debug("debug : ", component.errorString())
         if (tabIncubator.status !== Component.Ready) {
@@ -1035,10 +1062,25 @@ RootPageForm {
     //------------ Theme -----------------------------
     //---------------------------------------------------------
 
+    Action {
+        id: themePageAction
+        text: qsTr("Theme")
+        icon {
+            name: "color-picker-white"
+            height: 100
+            width: 100
+        }
+
+        onTriggered: {
+
+            addThemePage()
+        }
+    }
+
     Connections {
         target: Globals
         function onOpenThemePageCalled() {
-            addThemePage()
+            themePageAction.trigger()
         }
     }
 
@@ -1133,6 +1175,16 @@ RootPageForm {
         onActivated: {
             Globals.openMainMenuCalled()
             mainMenu.openSubMenu(editMenu)
+
+        }
+    }
+
+    Shortcut {
+        id: viewMenuShortcut
+        sequence: skrQMLTools.mnemonic(viewMenu.title)
+        onActivated: {
+            Globals.openMainMenuCalled()
+            mainMenu.openSubMenu(viewMenu)
 
         }
     }
@@ -1255,6 +1307,45 @@ RootPageForm {
                 skrEditMenuSignalHub.subscribe(copyItem.objectName)
                 skrEditMenuSignalHub.subscribe(pasteItem.objectName)
             }
+
+        }
+        SkrMenu {
+            id: viewMenu
+            objectName: "viewMenu"
+            title: qsTr("&View")
+
+            SkrMenuItem{
+                action: welcomeWindowAction
+            }
+
+            SkrMenuItem{
+                action: writeOverviewWindowAction
+            }
+
+            SkrMenuItem{
+                action: noteOverviewWindowAction
+            }
+
+            //            SkrMenuItem{
+            //                action: galleryWindowAction
+            //            }
+
+            SkrMenuItem{
+                action: projectWindowAction
+            }
+
+            MenuSeparator{}
+
+            SkrMenuItem {
+                action: themePageAction
+            }
+
+            MenuSeparator{}
+
+            SkrMenuItem {
+                action: fullscreenAction
+            }
+
 
         }
         SkrMenu {

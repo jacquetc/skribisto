@@ -83,13 +83,41 @@ ApplicationWindow {
     }
 
     Shortcut {
-        sequence:  StandardKey.FullScreen
+        sequences: [StandardKey.FullScreen, "F11"]
         context: Qt.ApplicationShortcut
         onActivated: fullscreenAction.trigger()
     }
 
     //------------------------------------------------------------------
-    //---------New project---------
+    //---------Center vertically text cursor---------------------------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: centerTextCursorAction
+        text: qsTr("Center vertically the text cursor")
+        icon {
+            name: "format-align-vertical-center"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.FullScreen
+        checkable: true
+        onCheckedChanged: {
+            SkrSettings.behaviorSettings.centerTextCursor = centerTextCursorAction.checked
+
+        }
+    }
+
+    Shortcut {
+        sequence: "Alt+C"
+        context: Qt.ApplicationShortcut
+        onActivated: centerTextCursorAction.trigger()
+    }
+
+    //------------------------------------------------------------------
+    //---------New project---------------------------------------------
     //------------------------------------------------------------------
 
     Action {
@@ -105,9 +133,9 @@ ApplicationWindow {
         //shortcut: StandardKey.New
         onTriggered: {
             console.log("New Project")
-            Globals.showWelcomePage()
-            Globals.showProjectPage()
-            Globals.showNewProjectWizard()
+            Globals.showWelcomePageCalled()
+            Globals.showWelcomeProjectPageCalled()
+            Globals.showNewProjectWizardCalled()
         }
 
 
@@ -140,7 +168,7 @@ ApplicationWindow {
 
             SkrSettings.spellCheckingSettings.spellCheckingActivation = checkSpellingAction.checked
         }
-}
+    }
 
 
     Shortcut {
@@ -661,9 +689,9 @@ ApplicationWindow {
 
         shortcut: StandardKey.Print
         onTriggered: {
-            Globals.showWelcomePage()
-            Globals.showProjectPage()
-            Globals.showPrintWizard()
+            Globals.showWelcomePageCalled()
+            Globals.showWelcomeProjectPageCalled()
+            Globals.showPrintWizardCalled()
 
         }
     }
@@ -687,9 +715,9 @@ ApplicationWindow {
 
         //shortcut: StandardKey
         onTriggered: {
-            Globals.showWelcomePage()
-            Globals.showProjectPage()
-            Globals.showImportWizard()
+            Globals.showWelcomePageCalled()
+            Globals.showWelcomeProjectPageCalled()
+            Globals.showImportWizardCalled()
 
         }
     }
@@ -707,9 +735,9 @@ ApplicationWindow {
 
         //shortcut: StandardKey.New
         onTriggered: {
-            Globals.showWelcomePage()
-            Globals.showProjectPage()
-            Globals.showExportWizard()
+            Globals.showWelcomePageCalled()
+            Globals.showWelcomeProjectPageCalled()
+            Globals.showExportWizardCalled()
 
         }
     }

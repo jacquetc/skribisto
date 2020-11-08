@@ -13,7 +13,7 @@ NotePadForm {
     id: root
     property int minimumHeight: 300  //mandatory for ToolFrame
 
-    
+
     property int projectId: -2
     property int sheetId: -2
     property int currentNoteId: -2
@@ -31,6 +31,32 @@ NotePadForm {
     //-----------------------------------------------------------------------------
 
 
+    property int focusedIndex: -2
+    property var selectedList: []
+    signal selectedListModified(var list)
+    signal escapeKeyPressed()
+
+    function determineWhichItemIsSelected() {
+
+        var count = noteFlow.children.length - 1
+        var i
+        for (i = 0 ; i < count ; i++ ){
+            noteFlow.children[i].determineIfSelected()
+        }
+
+        selectedListModified(selectedList)
+
+    }
+
+
+    // options :
+    property bool selectionEnabled: false
+    property bool multipleSelectionsEnabled: false
+
+    function clearSelection(){
+        selectedList = []
+        determineWhichItemIsSelected()
+    }
     //-----------------------------------------------------------------------------
 
     ListModel {
@@ -49,7 +75,7 @@ NotePadForm {
         if(noteFlow.children.length > 1){ // means there is no children
             var first = noteFlow.children[0]
             first.forceActiveFocus()
-            first.isSelected = true
+            first.setFocused()
             return
         }
 
@@ -71,12 +97,81 @@ NotePadForm {
             property string noteTitle:  model.title
             property int isSynopsis: -2
             property bool isSelected: false
+            property bool isFocused: root.focusedIndex === model.index
             property bool isOpened: false
+
 
 
             focus: true
 
 
+            function setFocused(){
+                root.focusedIndex = model.index
+            }
+
+             function setSelected(){
+                if(!multipleSelectionsEnabled && selectionEnabled){
+                    root.selectedList = []
+                }
+
+                if(selectionEnabled){
+
+                    var here = false
+                    for(var i = 0; i < root.selectedList.length ; i ++){
+
+                        if(root.selectedList[i] === itemBase.itemNoteId){
+                            here = true
+                        }
+                    }
+
+                    if(!here){
+                        root.selectedList.push(itemBase.itemNoteId)
+                        console.log(" root.selectedList",  root.selectedList)
+                        root.determineWhichItemIsSelected()
+                    }
+                }
+
+            }
+
+             function setDeselected(){
+
+
+                 var index = root.selectedList.indexOf(itemBase.itemNoteId)
+                 if(index === -1){
+                     return
+                 }
+
+                 root.selectedList.splice(index, 1)
+                 root.determineWhichItemIsSelected()
+
+
+             }
+
+
+            function toggleSelected(){
+                if(itemBase.isSelected){
+                    itemBase.setDeselected()
+
+                }
+                else{
+                    itemBase.setSelected()
+                }
+
+            }
+
+
+            function determineIfSelected(){
+
+                var here = false
+                for(var i = 0; i < root.selectedList.length ; i++){
+
+                    if(root.selectedList[i] === itemBase.itemNoteId){
+                        here = true
+                    }
+                }
+
+               itemBase.isSelected = here
+            }
 
             TapHandler {
                 id: tapHandler
@@ -87,7 +182,9 @@ NotePadForm {
                     for(i = 0; i < noteRepeater.count; i++) {
                         noteRepeater.itemAt(i).isOpened = false
                     }
-                    itemBase.isSelected = true
+
+                    itemBase.setFocused()
+                    itemBase.toggleSelected()
                     itemBase.forceActiveFocus()
 
                     itemBase.isOpened = true
@@ -103,7 +200,9 @@ NotePadForm {
                     for(i = 0; i < noteRepeater.count; i++) {
                         noteRepeater.itemAt(i).isOpened = false
                     }
-                    itemBase.isSelected = true
+
+                    itemBase.setFocused()
+                    itemBase.toggleSelected()
                     itemBase.forceActiveFocus()
 
                     itemBase.isOpened = true
@@ -114,11 +213,8 @@ NotePadForm {
                 }
 
                 onLongPressed: {
-                    var i;
-                    for(i = 0; i < noteRepeater.count; i++) {
-                        noteRepeater.itemAt(i).isSelected = false
-                    }
-                    itemBase.isSelected = true
+
+                    itemBase.setFocused()
                     itemBase.forceActiveFocus()
 
 
@@ -143,7 +239,8 @@ NotePadForm {
                     for(i = 0; i < noteRepeater.count; i++) {
                         noteRepeater.itemAt(i).isSelected = false
                     }
-                    itemBase.isSelected = true
+
+                    itemBase.setFocused()
                     itemBase.forceActiveFocus()
 
                     if(rightClickMenu.visible){
@@ -235,12 +332,19 @@ NotePadForm {
                     for(i = 0; i < noteRepeater.count; i++) {
                         noteRepeater.itemAt(i).isOpened = false
                     }
+                    itemBase.setFocused()
                     itemBase.isOpened = true
                     Globals.openNoteInNewTabCalled(itemBase.projectId, itemBase.noteId)
                 }
             }
 
-            
+            Keys.onShortcutOverride: {
+                if( event.key === Qt.Key_Escape){
+                    event.accepted = true
+                }
+            }
+
+
             Keys.onPressed: {
                 if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Delete){
                     console.log("Shift delete key pressed ")
@@ -260,7 +364,7 @@ NotePadForm {
                     console.log("Delete key pressed: dissociate ")
                     // dissociate
                     plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
-                    
+
                 }
 
                 if (event.key === Qt.Key_Space){
@@ -273,28 +377,26 @@ NotePadForm {
 
                 if (event.key === Qt.Key_Right || event.key === Qt.Key_Down ){
 
-                    itemBase.isSelected = false
                     if(model.index === noteRepeater.count - 1){
                         noteRepeater.itemAt(0).forceActiveFocus()
-                        noteRepeater.itemAt(0).isSelected = true
+                        noteRepeater.itemAt(0).setFocused()
 
                     }
                     else{
                         noteRepeater.itemAt(model.index + 1).forceActiveFocus()
-                        noteRepeater.itemAt(model.index + 1).isSelected = true
+                        noteRepeater.itemAt(model.index + 1).setFocused()
                     }
 
                 }
                 if (event.key === Qt.Key_Left || event.key === Qt.Key_Up ){
 
-                    itemBase.isSelected = false
                     if(model.index === 0){
                         noteRepeater.itemAt(noteRepeater.count - 1).forceActiveFocus()
-                        noteRepeater.itemAt(noteRepeater.count - 1).isSelected = true
+                        noteRepeater.itemAt(noteRepeater.count - 1).setFocused()
                     }
                     else{
                         noteRepeater.itemAt(model.index - 1).forceActiveFocus()
-                        noteRepeater.itemAt(model.index - 1).isSelected = true
+                        noteRepeater.itemAt(model.index - 1).setFocused()
                     }
 
                 }
@@ -303,28 +405,29 @@ NotePadForm {
             Accessible.role: Accessible.ListItem
             Accessible.name: model.title
             Accessible.description: qsTr("note related to the current sheet")
-            
+
             RowLayout{
                 id: noteLayout
                 anchors.left: parent.left
                 anchors.top: parent.top
-                
+
                 anchors.margins : 5
-                
+
                 SkrLabel{
                     id: noteTitle
                     text: model.title
-
-                    style: Text.Raised
-                    styleColor: "white"
+                    font.bold: itemBase.isFocused
 
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignHCenter
                     Layout.minimumWidth: 20
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    
+
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+
+                    color: SkrTheme.buttonForeground
+
 
                     SkrRoundButton {
                         id: removeRelationshipButton
@@ -349,7 +452,7 @@ NotePadForm {
                     }
                 }
 
-            
+
             HoverHandler {
                 id: hoverHandler
 
@@ -393,22 +496,22 @@ NotePadForm {
         }
 }
     }
-    
+
     function populateNoteListModel(){
         if(projectId === -2 || sheetId === -2){
             noteListModel.clear()
             return
         }
-        
+
         noteListModel.clear()
-        
+
         var noteList = plmData.noteHub().getNotesFromSheetId(projectId, sheetId)
         var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
-        
+
         var i;
         for (i = 0; i < noteList.length ; i++){
             var noteId = noteList[i]
-            
+
             var title = plmData.noteHub().getTitle(projectId, noteId)
 
 
@@ -416,10 +519,10 @@ NotePadForm {
             if (synopsisId === noteId){
                 continue
             }
-            
+
             noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
         }
-        
+
     }
 
     //--------------------------------------------
@@ -654,29 +757,29 @@ NotePadForm {
     //--------------------------------------------
     //---------- set title------------------------
     //--------------------------------------------
-    
+
     Connections{
         target: plmData.noteHub()
         function onTitleChanged(projectId, noteId, newTitle){
             if(projectId !== root.projectId){
                 return
             }
-            
+
             var i;
             for(i=0; i < noteListModel.count; i++){
                 var item = noteListModel.get(i)
-                
+
                 if (item.itemNoteId === noteId){
 
                     noteListModel.setProperty(i, "title", newTitle)
                     break
                 }
-                
+
             }
-            
-            
+
+
         }
-        
+
     }
     //--------------------------------------------
     //---------- Open synopsis------------------------
@@ -710,44 +813,44 @@ NotePadForm {
     //--------------------------------------------
     //---------- Add Note------------------------
     //--------------------------------------------
-    
+
     Action {
         id: addNoteAction
         text: qsTr("Add note")
         icon.name: "list-add"
         onTriggered: {
-            
+
             titleEditPopup.open()
         }
     }
     addNoteMenuToolButton.action: addNoteAction
-    
-    
+
+
     Connections{
         target: plmData.noteHub()
         function onSheetNoteRelationshipAdded(projectId, sheetId, noteId){
             if(sheetId !== root.sheetId){
                 return
             }
-            
+
             var title = plmData.noteHub().getTitle(projectId, noteId)
             noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
-            
+
         }
-        
+
     }
-    
+
     //proxy model for search :
-    
+
     SKRSearchNoteListProxyModel {
         id: searchProxyModel
         showTrashedFilter: false
         showNotTrashedFilter: true
         projectIdFilter: projectId
     }
-    
-    
-    
+
+
+
     //---------------------------------------------
     property int noteIdToOpen: -2
     Timer{
@@ -795,47 +898,47 @@ NotePadForm {
             SkrTextField {
                 id: titleTextField
                 Layout.fillWidth: true
-                
+
                 selectByMouse: true
                 placeholderText: qsTr("Note name")
-                
-                
+
+
                 onVisibleChanged: {
                     if (visible){
                         titleTextField.forceActiveFocus()
                         titleTextField.selectAll()
                     }
                 }
-                
+
                 onAccepted: {
-                    
+
                     //create basic note
                     var error = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
                     if (!error.success){
                         //TODO: add notification
                         return
                     }
-                    
+
                     var noteId = error.getData("noteId", -2)
 
                     // set title
                     var title = titleTextField.text
                     plmData.noteHub().setTitle(projectId, noteId, title)
-                    
+
                     // add to model
                     //noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
-                    
+
                     noteIdToOpen = noteId
                     openDocumentAfterClosingPopupTimer.start()
 
 
                     titleEditPopup.close()
                 }
-                
+
                 onTextChanged: {
                     searchProxyModel.textFilter = text
                 }
-                
+
                 Keys.priority: Keys.BeforeItem
                 Keys.onPressed: {
                     if (event.key === Qt.Key_Down){
@@ -846,7 +949,7 @@ NotePadForm {
 
                 }
             }
-            
+
             ScrollView {
                 id: searchListScrollView
                 focusPolicy: Qt.StrongFocus
@@ -855,32 +958,32 @@ NotePadForm {
                 clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
-                
+
                 ListView {
                     id: searchResultList
                     smooth: true
                     focus: true
                     boundsBehavior: Flickable.StopAtBounds
-                    
+
                     model: searchProxyModel
                     interactive: true
                     spacing: 1
                     delegate: Component {
                         id: itemDelegate
-                        
+
                         Item {
                             id: delegateRoot
                             height: 30
                             focus: true
-                            
-                            
+
+
                             anchors {
                                 left: Qt.isQtObject(parent) ? parent.left : undefined
                                 right: Qt.isQtObject(parent) ? parent.right : undefined
                                 leftMargin: 5
                                 rightMargin: 5
                             }
-                            
+
                             TapHandler {
                                 id: tapHandler
                                 onSingleTapped: {
@@ -896,6 +999,7 @@ NotePadForm {
 
                                     if (!error.success){
                                         //TODO: add notification
+                                        eventPoint.accepted = true
                                         return
                                     }
 
@@ -903,53 +1007,54 @@ NotePadForm {
                                     openDocumentAfterClosingPopupTimer.start()
                                     titleEditPopup.close()
 
+                                    eventPoint.accepted = true
                                 }
                             }
-                            
+
                             //                        Shortcut {
                             //                            sequences: ["Return", "Space"]
                             //                            onActivated: {
-                            
+
                             //                                //create relationship with note
-                            
+
                             //                                var noteId = model.paperId
                             //                                var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
-                            
+
                             //                                if (!error.success){
                             //                                    //TODO: add notification
                             //                                    return
                             //                                }
-                            
+
                             //                                titleEditPopup.close()
-                            
+
                             //                            }
-                            
+
                             //                            //enabled: listView.activeFocus
                             //                        }
-                            
+
                             //Keys.shortcutOverride: event.accepted = (event.key === Qt.Key_Return || event.key === Qt.Key_Space)
-                            Keys.priority: Keys.AfterItem
-                            
+
                             Keys.onPressed: {
                                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
                                     console.log("Return key pressed title")
-                                    
+
                                     //create relationship with note
-                                    
+
                                     var noteId = model.paperId
                                     var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
-                                    
+
                                     if (!error.success){
                                         //TODO: add notification
+                                        event.accepted = true
                                         return
                                     }
-                                    
+
                                     noteIdToOpen = noteId
                                     openDocumentAfterClosingPopupTimer.start()
                                     titleEditPopup.close()
 
+                                    event.accepted = true
 
-                                    
                                 }
 
 
@@ -968,7 +1073,7 @@ NotePadForm {
                             }
                         }
                     }
-                    
+
                     highlight:  Component {
                         id: highlight
                         Rectangle {
@@ -989,14 +1094,14 @@ NotePadForm {
                             }
                         }
                     }
-                    
-                    
+
+
                     section.property: "projectId"
                     section.criteria: ViewSection.FullString
                     section.labelPositioning: ViewSection.CurrentLabelAtStart |
                                               ViewSection.InlineLabels
                     section.delegate: sectionHeading
-                    
+
                     // The delegate for each section header
                     Component {
                         id: sectionHeading
@@ -1004,9 +1109,9 @@ NotePadForm {
                             width: searchResultList.width
                             height: childrenRect.height
                             color: "lightsteelblue"
-                            
+
                             required property string section
-                            
+
                             SkrLabel {
                                 text: qsTr("Existing notes")
                                 font.bold: true
@@ -1018,12 +1123,12 @@ NotePadForm {
             }
         }
     }
-    
-    
+
+
     //--------------------------------------------
     //------- Remove Note relationship with sheet
     //--------------------------------------------
-    
+
     Connections{
         target: plmData.noteHub()
         function onSheetNoteRelationshipRemoved(projectId, sheetId, noteId){
@@ -1034,7 +1139,7 @@ NotePadForm {
             var i;
             for(i=0; i < noteListModel.count; i++){
                 var item = noteListModel.get(i)
-                
+
                 if (item.itemNoteId === noteId){
                     console.log("removing " + i)
                     noteListModel.remove(i)
@@ -1049,11 +1154,11 @@ NotePadForm {
 
                     break
                 }
-                
+
             }
-            
+
         }
-        
+
     }
 
 

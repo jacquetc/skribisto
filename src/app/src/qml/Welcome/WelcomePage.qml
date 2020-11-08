@@ -62,7 +62,7 @@ WelcomePageForm {
 
     Connections {
         target: Globals
-        function onShowProjectPage() {
+        function onShowWelcomeProjectPageCalled() {
             stackLayout.currentIndex = 0
             stackLayout.itemAt(0).forceActiveFocus()
         }

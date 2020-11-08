@@ -152,6 +152,7 @@ Item {
                     anchors.fill: parent
                     textAreaStyleElevation: true
                     minimalTextAreaWidth: 100
+                    textCenteringEnabled: SkrSettings.behaviorSettings.centerTextCursor
 
                     textAreaStyleBackgroundColor: SkrTheme.mainTextAreaBackground
                     textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground

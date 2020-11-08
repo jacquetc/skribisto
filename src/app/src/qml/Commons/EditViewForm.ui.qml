@@ -12,7 +12,6 @@ Item {
     property alias strikeToolButton: strikeToolButton
     property alias sizeToolButton: sizeToolButton
     property alias underlineToolButton: underlineToolButton
-    property alias fullScreenToolButton: fullScreenToolButton
     property alias goBackToolButton: goBackToolButton
     property alias textWidthLabel: textWidthLabel
     property alias textWidthSlider: textWidthSlider
@@ -20,11 +19,10 @@ Item {
     property alias fontFamilyComboBox: fontFamilyComboBox
     property alias textTopMarginSlider: textTopMarginSlider
     property alias textIndentSlider: textIndentSlider
-    property alias fullScreenColorToolButton: fullScreenColorToolButton
-    property alias goBack2ToolButton: goBack2ToolButton
-    property alias backroundColorTextField: backroundColorTextField
-    property alias backgroundColorToolButton: backgroundColorToolButton
     property alias checkSpellingToolButton: checkSpellingToolButton
+    property alias fullScreenToolButton: fullScreenToolButton
+    property alias themesToolButton: themesToolButton
+    property alias centerTextCursorToolButton: centerTextCursorToolButton
 
     SwipeView {
         id: swipeView
@@ -110,7 +108,7 @@ Item {
                             display: AbstractButton.IconOnly
                         }
                         SkrToolButton {
-                            id: fullScreenColorToolButton
+                            id: themesToolButton
                             text: qsTr("Full screen Colors")
                             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                             display: AbstractButton.IconOnly
@@ -118,6 +116,11 @@ Item {
                         SkrToolButton {
                             id: checkSpellingToolButton
                             text: qsTr("Check spelling")
+                            display: AbstractButton.IconOnly
+                        }
+                        SkrToolButton {
+                            id: centerTextCursorToolButton
+                            text: qsTr("Center vertically the text cursor ")
                             display: AbstractButton.IconOnly
                         }
                     }
@@ -140,6 +143,7 @@ Item {
                     id: goBackToolButton
                     text: qsTr("Go back")
                     display: AbstractButton.IconOnly
+                    icon.name: "go-previous"
                 }
 
                 SkrLabel {
@@ -192,63 +196,6 @@ Item {
                     stepSize: 1
                     from: 0
                     to: 30
-                }
-            }
-        }
-
-        Item {
-            id: fullScreenColorPage
-
-            ColumnLayout {
-                id: columnLayout
-                anchors.fill: parent
-
-                SkrToolButton {
-                    id: goBack2ToolButton
-                    text: qsTr("Go back")
-                    display: AbstractButton.IconOnly
-                    icon.name: "edit-copy"
-                }
-
-                RowLayout {
-                    id: rowLayout
-                    Layout.fillWidth: true
-
-                    SkrLabel {
-                        id: label
-                        text: qsTr("Background :")
-                    }
-
-                    SkrTextField {
-                        id: backroundColorTextField
-                        text: qsTr("Text Field")
-                    }
-
-                    SkrToolButton {
-                        id: backgroundColorToolButton
-                        text: qsTr("Tool Button")
-                        icon.name: "edit-copy"
-                    }
-                }
-
-                RowLayout {
-                    id: rowLayout1
-                    Layout.fillWidth: true
-
-                    SkrLabel {
-                        id: label2
-                        text: qsTr("Paper :")
-                    }
-
-                    SkrTextField {
-                        id: paperColorTextField
-                        text: qsTr("#1234")
-                    }
-
-                    SkrToolButton {
-                        id: paperColorToolButton
-                        text: qsTr("")
-                    }
                 }
             }
         }

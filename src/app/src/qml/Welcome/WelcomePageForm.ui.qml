@@ -36,19 +36,27 @@ Item {
             SkrTabButton {
                 id: projectPageTabButton
                 text: qsTr("Project")
+                closable: false
+                fillTabBarWidth: true
             }
             SkrTabButton {
                 id: examplePageTabButton
                 text: qsTr("Examples")
+                closable: false
+                fillTabBarWidth: true
             }
             SkrTabButton {
                 id: settingsPageTabButton
                 text: qsTr("Settings")
+                closable: false
+                fillTabBarWidth: true
             }
 
             SkrTabButton {
                 id: helpPageTabButton
                 text: qsTr("Help")
+                closable: false
+                fillTabBarWidth: true
             }
         }
 
