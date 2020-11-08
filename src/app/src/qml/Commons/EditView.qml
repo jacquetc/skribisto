@@ -35,7 +35,7 @@ EditViewForm {
         id: sizeAction
         text: qsTr("Sizes")
         icon {
-            name: "format-font-size-more"
+            source: "qrc:///icons/backup/format-font-size-more.svg"
             height: 50
             width: 50
         }
@@ -53,7 +53,7 @@ EditViewForm {
         id: themesColorAction
         text: qsTr("Themes")
         icon {
-            name: "color-picker-white"
+            source: "qrc:///icons/backup/color-picker-white.svg"
             height: 50
             width: 50
         }
@@ -72,7 +72,7 @@ EditViewForm {
         id: goBackAction
         text: qsTr("Go back")
         icon {
-            name: "go-previous"
+            source: "qrc:///icons/backup/go-previous.svg"
             height: 50
             width: 50
         }

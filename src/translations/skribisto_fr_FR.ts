@@ -334,7 +334,7 @@
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Print</source>
@@ -347,10 +347,6 @@
     <message>
         <source>Export</source>
         <translation type="unfinished">Exporter</translation>
-    </message>
-    <message>
-        <source></source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

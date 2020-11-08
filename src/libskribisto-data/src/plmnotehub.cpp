@@ -254,14 +254,13 @@ PLMError PLMNoteHub::createSynopsis(int projectId, int sheetId) {
         lastAddedNoteId = this->getLastAddedId();
 
         error = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId, true);
-
     }
-    if(lastAddedNoteId == -2){
+
+    if (lastAddedNoteId == -2) {
         error.setSuccess(false);
     }
-    IFOK(error){
+    IFOK(error) {
         error.addData("noteId", lastAddedNoteId);
-
     }
     return error;
 }

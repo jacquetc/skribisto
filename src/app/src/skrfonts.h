@@ -11,8 +11,8 @@ class SKRFonts : public QObject {
 public:
 
     explicit SKRFonts(QObject *parent = nullptr);
-    Q_INVOKABLE QStringList fontFamilies();   
-    QFont systemFont();
+    Q_INVOKABLE QStringList fontFamilies();
+    QFont                   systemFont();
 
 signals:
 

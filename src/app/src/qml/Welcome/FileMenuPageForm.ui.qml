@@ -120,7 +120,7 @@ Item {
                             id: saveButton
                             text: qsTr("Save")
                             icon {
-                                name: "document-save"
+                                source: "qrc:///icons/backup/document-save.svg"
                             }
                         }
 
@@ -128,14 +128,14 @@ Item {
                             id: saveAsButton
                             text: qsTr("Save as")
                             icon {
-                                name: "document-save-as"
+                                source: "qrc:///icons/backup/document-save-as.svg"
                             }
                         }
                         SkrButton {
                             id: saveAllButton
                             text: qsTr("Save all")
                             icon {
-                                name: "document-save-all"
+                                source: "qrc:///icons/backup/document-save-all.svg"
                             }
                         }
                     }
@@ -149,7 +149,7 @@ Item {
                             id: saveACopyButton
                             text: qsTr("Save a copy")
                             icon {
-                                name: "document-save-as-template"
+                                source: "qrc:///icons/backup/document-save-as-template.svg"
                             }
                         }
 
@@ -157,7 +157,7 @@ Item {
                             id: backUpButton
                             text: qsTr("Back up")
                             icon {
-                                name: "tools-media-optical-burn-image"
+                                source: "qrc:///icons/backup/tools-media-optical-burn-image.svg"
                             }
                         }
                     }

@@ -93,7 +93,7 @@ RestoreListViewForm {
         text: qsTr("Restore")
         //shortcut: ""
         icon{
-            name: "edit-undo"
+            source: "qrc:///icons/backup/edit-undo.svg"
             height: 100
             width: 100
         }
@@ -130,7 +130,7 @@ RestoreListViewForm {
     goBackToolButton.action: Action {
         id: goBackAction
         text: "<"
-        icon.name: "go-previous"
+        icon.source: "qrc:///icons/backup/go-previous.svg"
         onTriggered:{
             goBack()
         }
@@ -215,7 +215,7 @@ RestoreListViewForm {
             text: qsTr("Empty the trash")
             enabled: navigationMenu.opened
             //shortcut: "Ctrl+Shift+Del"
-            icon.name: "edit-delete-shred"
+            icon.source: "qrc:///icons/backup/edit-delete-shred.svg"
             onTriggered: {
                 //TODO: fill that
             }
@@ -230,7 +230,7 @@ RestoreListViewForm {
         text: selectAllAction.checked ? qsTr("Select none") : qsTr("Select all")
         //enabled: navigationMenu.opened
         //shortcut: "Ctrl+Shift+Del"
-        icon.name: selectAllAction.checked ? "edit-select-none" : "edit-select-all"
+        icon.source: selectAllAction.checked ? "qrc:///icons/backup/edit-select-none.svg" : "qrc:///icons/backup/edit-select-all.svg"
         checkable: true
         onTriggered: {
 

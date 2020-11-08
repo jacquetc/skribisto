@@ -67,7 +67,7 @@ TreeListViewForm {
         text: qsTr("Go up")
         //shortcut: "Left,Backspace" Doesn't work well
         icon {
-            name: "go-parent-folder"
+            source: "qrc:///icons/backup/go-parent-folder.svg"
         }
         //enabled:
         onTriggered: {
@@ -180,7 +180,7 @@ TreeListViewForm {
     }
 
     //----------------------------------------------------------------------------
-    treeMenuToolButton.icon.name: "overflow-menu"
+    treeMenuToolButton.icon.source: "qrc:///icons/backup/overflow-menu.svg"
     treeMenuToolButton.onClicked: {
         if(navigationMenu.visible){
             navigationMenu.close()
@@ -206,14 +206,14 @@ TreeListViewForm {
             text: qsTr("Paste")
             enabled: listView.enabled
             shortcut: StandardKey.Paste
-            icon.name: "edit-paste"
+            icon.source: "qrc:///icons/backup/edit-paste.svg"
         }
         SkrMenu {
 
             title: qsTr("Advanced")
             Action {
                 text: qsTr("Sort alphabetically")
-                icon.name: "view-sort-ascending-name"
+                icon.source: "qrc:///icons/backup/view-sort-ascending-name.svg"
             }
         }
 
@@ -222,7 +222,7 @@ TreeListViewForm {
         Action {
             text: qsTr("Trash")
             //shortcut: StandardKey.Paste
-            icon.name: "edit-delete"
+            icon.source: "qrc:///icons/backup/edit-delete.svg"
             onTriggered: showTrashedList()
         }
 
@@ -237,7 +237,7 @@ TreeListViewForm {
         shortcut: "Ctrl+T"
         enabled:  listView.enabled && currentParent !== -2
         icon{
-            name: "document-new"
+            source: "qrc:///icons/backup/document-new.svg"
             height: 100
             width: 100
         }
@@ -645,7 +645,7 @@ TreeListViewForm {
                         } else
                             return false
                     }
-                    icon.name: model.hasChildren ? "go-next" : "list-add"
+                    icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : "qrc:///icons/backup/list-add.svg"
                     text: model.hasChildren ? ">" : "+"
                     onTriggered: {
                         console.log("goToChildAction triggered")
@@ -803,7 +803,7 @@ TreeListViewForm {
 
 
                             icon {
-                                name: "tools-media-optical-burn-image"
+                                source: "qrc:///icons/backup/tools-media-optical-burn-image.svg"
                                 height: 32
                                 width: 32
                             }
@@ -1171,7 +1171,7 @@ TreeListViewForm {
                         text: qsTr("Open")
                         //shortcut: "Return"
                         icon {
-                            name: "document-edit"
+                            source: "qrc:///icons/backup/document-edit.svg"
                         }
 
                         enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
@@ -1191,7 +1191,7 @@ TreeListViewForm {
                         text: qsTr("Open in new tab")
                         //shortcut: "Alt+Return"
                         icon {
-                            name: "tab-new"
+                            source: "qrc:///icons/backup/tab-new.svg"
                         }
                         enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
                         onTriggered: {
@@ -1212,7 +1212,7 @@ TreeListViewForm {
                         text: qsTr("Open in new window")
                         //shortcut: "Alt+Return"
                         icon {
-                            name: "window-new"
+                            source: "qrc:///icons/backup/window-new.svg"
                         }
                         enabled: contextMenuItemIndex === model.index && titleTextField.visible === false && listView.enabled &&  model.paperId !== -1
                         onTriggered: {
@@ -1229,7 +1229,7 @@ TreeListViewForm {
                     enabled: contextMenuItemIndex === model.index && model.projectIsActive === false && listView.enabled &&  model.paperId === -1
                     text: qsTr("Set as active project")
                     icon {
-                        name: "tab-new"
+                        source: "qrc:///icons/backup/tab-new.svg"
                     }
                     onTriggered: {
                         console.log("set active project", model.projectId)
@@ -1245,7 +1245,7 @@ TreeListViewForm {
                     text: qsTr("Rename")
                     //shortcut: "F2"
                     icon {
-                        name: "edit-rename"
+                        source: "qrc:///icons/backup/edit-rename.svg"
                     }
                     enabled: contextMenuItemIndex === model.index && listView.enabled
 
@@ -1265,7 +1265,7 @@ TreeListViewForm {
                         text: qsTr("Set label")
                         //shortcut: "F2"
                         icon {
-                            name: "label"
+                            source: "qrc:///icons/backup/label.svg"
                         }
                         enabled: contextMenuItemIndex === model.index  && listView.enabled
                         onTriggered: {
@@ -1290,7 +1290,7 @@ TreeListViewForm {
                         text: qsTr("Cut")
                         //shortcut: StandardKey.Cut
                         icon {
-                            name: "edit-cut"
+                            source: "qrc:///icons/backup/edit-cut.svg"
                         }
                         enabled: contextMenuItemIndex === model.index && listView.enabled
 
@@ -1312,7 +1312,7 @@ TreeListViewForm {
                         text: qsTr("Copy")
                         //shortcut: StandardKey.Copy
                         icon {
-                            name: "edit-copy"
+                            source: "qrc:///icons/backup/edit-copy.svg"
                         }
                         enabled: contextMenuItemIndex === model.index && listView.enabled
 
@@ -1337,7 +1337,7 @@ TreeListViewForm {
                         text: qsTr("Add before")
                         //shortcut: "Ctrl+Shift+N"
                         icon {
-                            name: "document-new"
+                            source: "qrc:///icons/backup/document-new.svg"
                         }
                         enabled: contextMenuItemIndex === model.index && listView.enabled
                         onTriggered: {
@@ -1360,7 +1360,7 @@ TreeListViewForm {
                         text: qsTr("Add after")
                         //shortcut: "Ctrl+N"
                         icon {
-                            name: "document-new"
+                            source: "qrc:///icons/backup/document-new.svg"
                         }
                         enabled: contextMenuItemIndex === model.index && listView.enabled
                         onTriggered: {
@@ -1389,7 +1389,7 @@ TreeListViewForm {
                         text: qsTr("Move up")
                         //shortcut: "Ctrl+Up"
                         icon {
-                            name: "object-order-raise"
+                            source: "qrc:///icons/backup/object-order-raise.svg"
                         }
                         enabled: contextMenuItemIndex === model.index && listView.enabled
                                  && model.index !== 0
@@ -1420,7 +1420,7 @@ TreeListViewForm {
                         text: qsTr("Move down")
                         //shortcut: "Ctrl+Down"
                         icon {
-                            name: "object-order-lower"
+                            source: "qrc:///icons/backup/object-order-lower.svg"
                         }
                         enabled: contextMenuItemIndex === model.index
                                  && model.index !== visualModel.items.count - 1  && listView.enabled
@@ -1456,7 +1456,7 @@ TreeListViewForm {
                         text: qsTr("Send to trash")
                         //shortcut: "Del"
                         icon {
-                            name: "edit-delete"
+                            source: "qrc:///icons/backup/edit-delete.svg"
                         }
                         enabled: contextMenuItemIndex === model.index  && listView.enabled && model.indent !== -1
                         onTriggered: {

@@ -64,7 +64,7 @@ RootPageForm {
         id: writeOverviewWindowAction
         text: qsTr("Write")
         icon {
-            name: "view-media-playlist"
+            source: "qrc:///icons/backup/view-media-playlist.svg"
             color: SkrTheme.buttonIcon
             height: 100
             width: 100
@@ -88,7 +88,7 @@ RootPageForm {
         id: noteOverviewWindowAction
         text: qsTr("Note")
         icon {
-            name: "story-editor"
+            source: "qrc:///icons/backup/story-editor.svg"
             color: SkrTheme.buttonIcon
             height: 100
             width: 100
@@ -112,7 +112,7 @@ RootPageForm {
         id: galleryWindowAction
         text: qsTr("Gallery")
         icon {
-            name: "view-preview"
+            source: "qrc:///icons/backup/view-preview.svg"
             color: SkrTheme.buttonIcon
             height: 100
             width: 100
@@ -137,7 +137,7 @@ RootPageForm {
         id: projectWindowAction
         text: qsTr("Project")
         icon {
-            name: "configure"
+            source: "qrc:///icons/backup/configure.svg"
             color: SkrTheme.buttonIcon
             height: 100
             width: 100
@@ -162,7 +162,7 @@ RootPageForm {
     Action{
         id: notificationButtonAction
         icon{
-            name: "dialog-messages"
+            source: "qrc:///icons/backup/dialog-messages.svg"
             width: 50
             height: 50
         }
@@ -1066,7 +1066,7 @@ RootPageForm {
         id: themePageAction
         text: qsTr("Theme")
         icon {
-            name: "color-picker-white"
+            source: "qrc:///icons/backup/color-picker-white.svg"
             height: 100
             width: 100
         }
@@ -1137,7 +1137,7 @@ RootPageForm {
         }
     }
     mainMenuButton.objectName: "mainMenuButton"
-    mainMenuButton.icon.name: "application-menu"
+    mainMenuButton.icon.source: "qrc:///icons/backup/application-menu.svg"
 
     function subscribeMainMenu() {
         skrEditMenuSignalHub.subscribe(mainMenuButton.objectName)
@@ -1375,7 +1375,7 @@ RootPageForm {
     //---------------------------------------------------------
 
     showTabListButton.icon{
-        name: "arrow-down"
+        source: "qrc:///icons/backup/arrow-down.svg"
         height: 50
         width: 50
     }

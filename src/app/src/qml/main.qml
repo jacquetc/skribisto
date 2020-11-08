@@ -69,7 +69,7 @@ ApplicationWindow {
         id: fullscreenAction
         text: qsTr("Fullscreen")
         icon {
-            name: "view-fullscreen"
+            source: "qrc:///icons/backup/view-fullscreen"
             height: 50
             width: 50
         }
@@ -97,7 +97,7 @@ ApplicationWindow {
         id: centerTextCursorAction
         text: qsTr("Center vertically the text cursor")
         icon {
-            name: "format-align-vertical-center"
+            source: "qrc:///icons/backup/format-align-vertical-center.svg"
             height: 50
             width: 50
         }
@@ -125,7 +125,7 @@ ApplicationWindow {
         id: newProjectAction
         text: qsTr("&New Project")
         icon {
-            name: "document-new"
+            source: "qrc:///icons/backup/document-new.svg"
             height: 50
             width: 50
         }
@@ -154,7 +154,7 @@ ApplicationWindow {
         id: checkSpellingAction
         text: qsTr("&Check spelling")
         icon {
-            name: "tools-check-spelling"
+            source: "qrc:///icons/backup/tools-check-spelling.svg"
             height: 50
             width: 50
         }
@@ -186,7 +186,7 @@ ApplicationWindow {
         id: openProjectAction
         text: qsTr("&Open Project")
         icon {
-            name: "document-open"
+            source: "qrc:///icons/backup/document-open.svg"
             height: 50
             width: 50
         }
@@ -239,7 +239,7 @@ ApplicationWindow {
         id: saveAction
         text: qsTr("Save")
         icon {
-            name: "document-save"
+            source: "qrc:///icons/backup/document-save.svg"
             height: 50
             width: 50
         }
@@ -309,7 +309,7 @@ ApplicationWindow {
         id: saveAllAction
         text: qsTr("Save All")
         icon {
-            name: "document-save-all"
+            source: "qrc:///icons/backup/document-save-all.svg"
             height: 50
             width: 50
         }
@@ -360,7 +360,7 @@ ApplicationWindow {
         id: saveAsAction
         text: qsTr("Save as...")
         icon {
-            name: "document-save-as"
+            source: "qrc:///icons/backup/document-save-as.svg"
             height: 50
             width: 50
         }
@@ -448,7 +448,7 @@ ApplicationWindow {
         id: saveACopyAction
         text: qsTr("Save a Copy")
         icon {
-            name: "document-save-as-template"
+            source: "qrc:///icons/backup/document-save-as-template.svg"
             height: 50
             width: 50
         }
@@ -613,7 +613,7 @@ ApplicationWindow {
         id: backUpAction
         text: qsTr("Back up")
         icon {
-            name: "tools-media-optical-burn-image"
+            source: "qrc:///icons/backup/tools-media-optical-burn-image.svg"
             height: 50
             width: 50
         }
@@ -682,7 +682,7 @@ ApplicationWindow {
         id: printAction
         text: qsTr("&Print")
         icon {
-            name: "document-print"
+            source: "qrc:///icons/backup/document-print.svg"
             height: 50
             width: 50
         }
@@ -708,7 +708,7 @@ ApplicationWindow {
         id: importAction
         text: qsTr("&Import")
         icon {
-            name: "document-import"
+            source: "qrc:///icons/backup/document-import.svg"
             height: 50
             width: 50
         }
@@ -728,7 +728,7 @@ ApplicationWindow {
         id: exportAction
         text: qsTr("&Export")
         icon {
-            name: "document-export"
+            source: "qrc:///icons/backup/document-export.svg"
             height: 50
             width: 50
         }
@@ -866,7 +866,7 @@ ApplicationWindow {
         id: closeCurrentProjectAction
         text: qsTr("&Close \"%1\" project").arg(activeProjectName)
         icon {
-            name: "document-close"
+            source: "qrc:///icons/backup/document-close.svg"
             height: 50
             width: 50
         }
@@ -903,7 +903,7 @@ ApplicationWindow {
         id: quitAction
         text: qsTr("&Quit")
         icon {
-            name: "window-close"
+            source: "qrc:///icons/backup/window-close.svg"
             height: 50
             width: 50
         }
@@ -1092,7 +1092,7 @@ ApplicationWindow {
         text: qsTr("Cut")
         shortcut: StandardKey.Cut
         icon {
-            name: "edit-cut"
+            source: "qrc:///icons/backup/edit-cut.svg"
         }
 
         onTriggered: {
@@ -1110,7 +1110,7 @@ ApplicationWindow {
         text: qsTr("Copy")
         shortcut: StandardKey.Copy
         icon {
-            name: "edit-copy"
+            source: "qrc:///icons/backup/edit-copy.svg"
         }
 
         onTriggered: {
@@ -1128,7 +1128,7 @@ ApplicationWindow {
         text: qsTr("Paste")
         shortcut: StandardKey.Paste
         icon {
-            name: "edit-paste"
+            source: "qrc:///icons/backup/edit-paste.svg"
         }
 
         onTriggered: {
@@ -1150,7 +1150,7 @@ ApplicationWindow {
         id: italicAction
         text: qsTr("Italic")
         icon {
-            name: "format-text-italic"
+            source: "qrc:///icons/backup/format-text-italic.svg"
             height: 50
             width: 50
         }
@@ -1182,7 +1182,7 @@ ApplicationWindow {
         id: boldAction
         text: qsTr("Bold")
         icon {
-            name: "format-text-bold"
+            source: "qrc:///icons/backup/format-text-bold.svg"
             height: 50
             width: 50
         }
@@ -1213,7 +1213,7 @@ ApplicationWindow {
         id: strikeAction
         text: qsTr("Strike")
         icon {
-            name: "format-text-strikethrough"
+            source: "qrc:///icons/backup/format-text-strikethrough.svg"
             height: 50
             width: 50
         }
@@ -1243,7 +1243,7 @@ ApplicationWindow {
         id: underlineAction
         text: qsTr("Underline")
         icon {
-            name: "format-text-underline"
+            source: "qrc:///icons/backup/format-text-underline.svg"
             height: 50
             width: 50
         }

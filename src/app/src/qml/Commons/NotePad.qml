@@ -441,7 +441,7 @@ NotePadForm {
                         leftInset: 1
                         rightInset: 1
                         opacity: 0
-                        icon.name: "list-remove"
+                        icon.source: "qrc:///icons/backup/list-remove.svg"
                         onReleased:{
                             plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
                         }
@@ -788,7 +788,7 @@ NotePadForm {
     Action {
         id: openSynopsisAction
         text: qsTr("Show outline")
-        icon.name: "story-editor"
+        icon.source: "qrc:///icons/backup/story-editor.svg"
         onTriggered: {
 
         }
@@ -803,7 +803,7 @@ NotePadForm {
     Action {
         id: openNoteInNewTabAction
         text: qsTr("Open current note in a new tab")
-        icon.name: "quickopen-file"
+        icon.source: "qrc:///icons/backup/quickopen-file.svg"
         onTriggered: {
 
         }
@@ -817,7 +817,7 @@ NotePadForm {
     Action {
         id: addNoteAction
         text: qsTr("Add note")
-        icon.name: "list-add"
+        icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
 
             titleEditPopup.open()

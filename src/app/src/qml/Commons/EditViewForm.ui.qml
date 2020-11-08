@@ -143,7 +143,7 @@ Item {
                     id: goBackToolButton
                     text: qsTr("Go back")
                     display: AbstractButton.IconOnly
-                    icon.name: "go-previous"
+                    icon.source: "qrc:///icons/backup/go-previous.svg"
                 }
 
                 SkrLabel {

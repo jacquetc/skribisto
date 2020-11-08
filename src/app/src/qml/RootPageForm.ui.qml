@@ -93,11 +93,10 @@ Item {
                     pageType: noteOverviewPage.pageType
                 }
                 //NOTE: waiting to be implemented
-//                fillTabBarWidth {
+//                SkrTabButton {
 //                    id: galleryTab
 //                    closable: false
 //                    pageType: galleryPage.pageType
-//                    iconColor:  SkrTheme.buttonIcon
 //              }
                 SkrTabButton {
                     id: projectTab

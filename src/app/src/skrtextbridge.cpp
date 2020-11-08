@@ -289,8 +289,6 @@ void SKRTextBridge::connectContentsChangeSignal(const SKRSyncDocument& syncDoc)
 
 void SKRTextBridge::disconnectContentsChangeSignal(const SKRSyncDocument& syncDoc)
 {
-
-
     disconnect(syncDoc.qQuickTextDocument()->textDocument(),
                &QTextDocument::contentsChange,
                this,
@@ -330,7 +328,8 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
 
     // find others similar
     if (!this->isThereAnyOtherSimilarSyncDoc(senderSyncDoc)) {
-        //qDebug() << this->metaObject()->className() << "no other doc to sync with";
+        // qDebug() << this->metaObject()->className() << "no other doc to sync
+        // with";
         return;
     }
 
@@ -349,8 +348,7 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
     QTextDocumentFragment docFragment = selectionCursor.selection();
 
     for (const SKRSyncDocument& syncDoc : otherSyncDocs) {
-
-        if(!syncDoc.qQuickTextDocument()){
+        if (!syncDoc.qQuickTextDocument()) {
             continue;
         }
 
@@ -358,7 +356,7 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
 
         QTextDocument *otherTextDocument = syncDoc.qQuickTextDocument()->textDocument();
 
-        QTextCursor    selectionCursor   =
+        QTextCursor selectionCursor =
             otherTextDocument->rootFrame()->firstCursorPosition();
 
         // remove

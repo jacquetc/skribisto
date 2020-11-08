@@ -19,7 +19,7 @@ TextField {
 
     SkrToolButton {
         id: clearButton
-        icon.name: "edit-clear"
+        icon.source: "qrc:///icons/backup/edit-clear.svg"
         focusPolicy: Qt.NoFocus
 
         anchors.right: parent.right
