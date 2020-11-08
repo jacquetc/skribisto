@@ -6,28 +6,24 @@ SKRFonts::SKRFonts(QObject *parent) : QObject(parent)
 {
     QFontDatabase database;
 
-    QStringList unfilteredFamilies = database.families(QFontDatabase::WritingSystem::Latin);
+    QStringList unfilteredFamilies =
+        database.families(QFontDatabase::WritingSystem::Latin);
 
-    for(const QString &family : unfilteredFamilies){
-
-        if(database.isPrivateFamily(family)){
+    for (const QString& family : unfilteredFamilies) {
+        if (database.isPrivateFamily(family)) {
             continue;
         }
 
-        if(!database.isSmoothlyScalable(family)){
+        if (!database.isSmoothlyScalable(family)) {
             continue;
         }
         const QStringList fontStyles = database.styles(family);
-//        qDebug() << "font family :" <<family << fontStyles;
-        for (const QString &style : fontStyles) {
 
-
-        }
+        //        qDebug() << "font family :" <<family << fontStyles;
+        for (const QString& style : fontStyles) {}
 
         families.append(family);
-
     }
-
 }
 
 QStringList SKRFonts::fontFamilies()
@@ -35,6 +31,6 @@ QStringList SKRFonts::fontFamilies()
     return families;
 }
 
-QFont SKRFonts::systemFont(){
+QFont SKRFonts::systemFont() {
     return QFontDatabase::systemFont(QFontDatabase::SystemFont::GeneralFont);
 }

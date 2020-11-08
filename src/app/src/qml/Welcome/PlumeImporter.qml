@@ -13,7 +13,7 @@ PlumeImporterForm {
     property string plumeFileName: ""
     property string targetFileName: ""
 
-    goBackToolButton.icon.name: "go-previous"
+    goBackToolButton.icon.source: "qrc:///icons/backup/go-previous.svg"
     signal goBackButtonClicked()
     goBackToolButton.onClicked: goBackButtonClicked()
 

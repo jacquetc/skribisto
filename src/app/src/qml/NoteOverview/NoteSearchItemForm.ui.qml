@@ -33,7 +33,7 @@ Item {
             SkrToolButton {
                 id: showTagDrawerButton
                 text: qsTr("Show tags list")
-                icon.name: "tag"
+                icon.source: "qrc:///icons/backup/tag.svg"
                 display: AbstractButton.IconOnly
 
                 KeyNavigation.tab:  deselectTagsButton
@@ -43,7 +43,7 @@ Item {
             SkrToolButton {
                 id: deselectTagsButton
                 text: qsTr("Deselect tags")
-                icon.name: "edit-select-none"
+                icon.source: "qrc:///icons/backup/edit-select-none.svg"
                 display: AbstractButton.IconOnly
                 visible: false
 

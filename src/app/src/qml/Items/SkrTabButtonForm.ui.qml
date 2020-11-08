@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
+import ".."
 
 TabButton {
     id: base
@@ -12,9 +13,9 @@ TabButton {
     property alias tapHandler: tapHandler
     property bool closable: true
     property bool fillTabBarWidth: false
-    property string iconSource : base.action.icon.source
-    property string iconName : base.action.icon.name
-    property string iconColor : base.action.icon.color
+    property string iconSource: base.action === null ? "" : base.action.icon.source
+    property string iconName: base.action === null ? "" : base.action.icon.name
+    property string iconColor: base.action === null ? SkrTheme.buttonIcon : base.action.icon.color
 
     padding: 2
 

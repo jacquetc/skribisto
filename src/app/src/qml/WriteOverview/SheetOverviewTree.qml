@@ -1172,7 +1172,7 @@ SheetOverviewTreeForm {
                                     Layout.preferredWidth: 30
 
                                     text: "focus"
-                                    icon.name: "edit-find"
+                                    icon.source: "qrc:///icons/backup/edit-find.svg"
                                     display: AbstractButton.IconOnly
                                     flat: true
                                     visible: false
@@ -1397,7 +1397,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Open")
                 //shortcut: "Return"
                 icon {
-                    name: "document-edit"
+                    source: "qrc:///icons/backup/document-edit.svg"
                 }
 
                 enabled: listView.enabled && currentPaperId !== -1
@@ -1416,7 +1416,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Open in new tab")
                 //shortcut: "Alt+Return"
                 icon {
-                    name: "tab-new"
+                    source: "qrc:///icons/backup/tab-new.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
@@ -1436,7 +1436,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Open in new window")
                 //shortcut: "Alt+Return"
                 icon {
-                    name: "window-new"
+                    source: "qrc:///icons/backup/window-new.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
@@ -1459,7 +1459,7 @@ SheetOverviewTreeForm {
                 text: listView.itemAtIndex(currentIndex).focusOnBranchChecked ? qsTr("Unset focus") : qsTr("Set focus")
                 //shortcut: "Alt+Return"
                 icon {
-                    name: "edit-find"
+                    source: "qrc:///icons/backup/edit-find.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
@@ -1490,7 +1490,7 @@ SheetOverviewTreeForm {
             text: qsTr("Rename")
             //shortcut: "F2"
             icon {
-                name: "edit-rename"
+                source: "qrc:///icons/backup/edit-rename.svg"
             }
             enabled: listView.enabled
 
@@ -1509,7 +1509,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Set label")
                 //shortcut: "F2"
                 icon {
-                    name: "label"
+                    source: "qrc:///icons/backup/label.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
@@ -1528,7 +1528,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Cut")
                 //shortcut: StandardKey.Cut
                 icon {
-                    name: "edit-cut"
+                    source: "qrc:///icons/backup/edit-cut.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1
 
@@ -1549,7 +1549,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Copy")
                 //shortcut: StandardKey.Copy
                 icon {
-                    name: "edit-copy"
+                    source: "qrc:///icons/backup/edit-copy.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1
 
@@ -1570,7 +1570,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Paste")
                 //shortcut: StandardKey.Copy
                 icon {
-                    name: "edit-paste"
+                    source: "qrc:///icons/backup/edit-paste.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1
 
@@ -1592,7 +1592,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Add before")
                 //shortcut: "Ctrl+Shift+N"
                 icon {
-                    name: "document-new"
+                    source: "qrc:///icons/backup/document-new.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
@@ -1616,7 +1616,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Add after")
                 //shortcut: "Ctrl+N"
                 icon {
-                    name: "document-new"
+                    source: "qrc:///icons/backup/document-new.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
@@ -1636,7 +1636,7 @@ SheetOverviewTreeForm {
             text: qsTr("Add child")
             //shortcut: "Ctrl+N"
             icon {
-                name: "document-new"
+                source: "qrc:///icons/backup/document-new.svg"
             }
             enabled: listView.enabled
             onTriggered: {
@@ -1666,7 +1666,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Move up")
                 //shortcut: "Ctrl+Up"
                 icon {
-                    name: "object-order-raise"
+                    source: "qrc:///icons/backup/object-order-raise.svg"
                 }
                 enabled:listView.enabled && currentIndex !== 0 && currentPaperId !== -1
                 onTriggered: {
@@ -1687,7 +1687,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Move down")
                 //shortcut: "Ctrl+Down"
                 icon {
-                    name: "object-order-lower"
+                    source: "qrc:///icons/backup/object-order-lower.svg"
                 }
                 enabled: currentIndex !== visualModel.items.count - 1  && listView.enabled && currentPaperId !== -1
 
@@ -1709,7 +1709,7 @@ SheetOverviewTreeForm {
                 text: qsTr("Send to trash")
                 //shortcut: "Del"
                 icon {
-                    name: "edit-delete"
+                    source: "qrc:///icons/backup/edit-delete.svg"
                 }
                 enabled: listView.enabled && currentPaperId !== -1 && currentPaperId !== -1
                 onTriggered: {

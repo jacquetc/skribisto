@@ -583,7 +583,7 @@
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Print</source>
@@ -595,10 +595,6 @@
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
         <translation type="unfinished"></translation>
     </message>
 </context>

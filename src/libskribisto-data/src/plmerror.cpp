@@ -52,15 +52,14 @@ PLMError& PLMError::operator=(const PLMError& iError)
     return *this;
 }
 
-
-bool PLMError::operator==(const PLMError& otherPLMError) const{
+bool PLMError::operator==(const PLMError& otherPLMError) const {
     return m_success == otherPLMError.isSuccess()
            && m_errorCode == otherPLMError.getErrorCode()
            && m_dataHash == otherPLMError.getDataHash()
     ;
 }
 
-bool PLMError::operator!=(const PLMError& otherPLMError) const{
+bool PLMError::operator!=(const PLMError& otherPLMError) const {
     return m_success != otherPLMError.isSuccess()
            || m_errorCode != otherPLMError.getErrorCode()
            || m_dataHash != otherPLMError.getDataHash()
@@ -87,7 +86,7 @@ void PLMError::setErrorCode(const QString& value)
     m_errorCode = value;
 }
 
-QHash<QString, QVariant> PLMError::getDataHash() const
+QHash<QString, QVariant>PLMError::getDataHash() const
 {
     return m_dataHash;
 }
@@ -97,12 +96,12 @@ void PLMError::setDataHash(const QHash<QString, QVariant>& dataHash)
     m_dataHash = dataHash;
 }
 
-void PLMError::addData(const QString &key, const QVariant& value)
+void PLMError::addData(const QString& key, const QVariant& value)
 {
     m_dataHash.insert(key, value);
 }
 
-QVariant PLMError::getData(const QString &key, const QVariant& defaultValue) const
+QVariant PLMError::getData(const QString& key, const QVariant& defaultValue) const
 {
     return m_dataHash.value(key, defaultValue);
 }

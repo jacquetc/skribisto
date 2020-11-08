@@ -25,44 +25,45 @@
 #include <QSyntaxHighlighter>
 #include "skrspellchecker.h"
 
-class SKRHighlighter : public QSyntaxHighlighter
-{
+class SKRHighlighter : public QSyntaxHighlighter {
     Q_OBJECT
 
-    Q_PROPERTY(SKRSpellChecker *spellChecker READ getSpellChecker)
+    Q_PROPERTY(SKRSpellChecker * spellChecker READ getSpellChecker)
     Q_PROPERTY(int projectId READ getProjectId WRITE setProjectId NOTIFY projectIdChanged)
 
 public:
+
     SKRHighlighter(QTextDocument *parentDoc);
-    void setTextToHighlight(QString string);
-    void setCaseSensitivity(bool isCaseSensitive);
-    SKRSpellChecker *getSpellChecker();
+    void             setTextToHighlight(QString string);
+    void             setCaseSensitivity(bool isCaseSensitive);
+    SKRSpellChecker* getSpellChecker();
 
 
-    int getProjectId() const;
-    void setProjectId(int projectId);
+    int              getProjectId() const;
+    void             setProjectId(int projectId);
 
 protected:
-    void highlightBlock(const QString &text) override;
+
+    void highlightBlock(const QString& text) override;
 
 signals:
-    void projectIdChanged(int projectId);
 
+    void projectIdChanged(int projectId);
 
 public slots:
 
 private:
+
     void setSpellChecker(SKRSpellChecker *spellChecker);
 
 private:
+
     QString textToHighLight;
     Qt::CaseSensitivity sensitivity;
     SKRSpellChecker *m_spellChecker;
     bool m_spellCheckerSet;
     int m_projectId;
     QStringList m_userDictList;
-
-
 };
 
 #endif // SKRHIGHLIGHTER_H

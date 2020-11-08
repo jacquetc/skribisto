@@ -16,8 +16,8 @@ DocumentHandler::DocumentHandler(QObject *parent) :
     QObject(parent),
     m_textDoc(nullptr),
     m_formatPosition(-2),
-  m_projectId(-2),
-m_paperId(-2)
+    m_projectId(-2),
+    m_paperId(-2)
 {}
 
 QQuickTextDocument * DocumentHandler::textDocument() const
@@ -50,8 +50,10 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
 
         m_highlighter = new SKRHighlighter(m_textDoc->textDocument());
         m_highlighter->setProjectId(m_projectId);
-        connect(this, &DocumentHandler::projectIdChanged, m_highlighter, &SKRHighlighter::setProjectId);
-
+        connect(this,
+                &DocumentHandler::projectIdChanged,
+                m_highlighter,
+                &SKRHighlighter::setProjectId);
     } else {
         m_textCursor.setPosition(0);
     }
@@ -472,7 +474,6 @@ void DocumentHandler::setProjectId(const int projectId)
     m_projectId = projectId;
 
     emit projectIdChanged(projectId);
-
 }
 
 int DocumentHandler::maxCursorPosition() const

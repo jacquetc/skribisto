@@ -26,35 +26,39 @@
 #include <QString>
 #include <QTranslator>
 
-class SKRRootItem : public QObject
-{
-
+class SKRRootItem : public QObject {
     Q_OBJECT
-    Q_PROPERTY(QString currentTranslationLanguageCode READ getLanguageFromSettings WRITE setCurrentTranslationLanguageCode NOTIFY currentTranslationLanguageCodeChanged)
-    Q_PROPERTY(QString dynTr READ getEmptyString NOTIFY currentTranslationLanguageCodeChanged)
-public:
-    explicit SKRRootItem(QObject *parent);
-    Q_INVOKABLE void setCurrentTranslationLanguageCode(const QString &langCode = "default");
+    Q_PROPERTY(
+        QString currentTranslationLanguageCode READ getLanguageFromSettings WRITE setCurrentTranslationLanguageCode NOTIFY currentTranslationLanguageCodeChanged)
+    Q_PROPERTY(
+        QString dynTr READ getEmptyString NOTIFY currentTranslationLanguageCodeChanged)
 
-    Q_INVOKABLE void applyLanguageFromSettings();
+public:
+
+    explicit SKRRootItem(QObject *parent);
+    Q_INVOKABLE void    setCurrentTranslationLanguageCode(
+        const QString& langCode = "default");
+
+    Q_INVOKABLE void    applyLanguageFromSettings();
     Q_INVOKABLE QString getLanguageFromSettings() const;
 
 
     Q_INVOKABLE QString skribistoVersion() const;
-    Q_INVOKABLE QString toLocaleDateTimeFormat(const QDateTime &dateTime) const;
+    Q_INVOKABLE QString toLocaleDateTimeFormat(const QDateTime& dateTime) const;
+
 signals:
-    void currentTranslationLanguageCodeChanged(const QString &langCode);
+
+    void currentTranslationLanguageCodeChanged(const QString& langCode);
 
 private:
+
     QString getEmptyString() {
         return "";
-       }
+    }
 
     QString m_langCode;
     QTranslator *skribistoTranslator;
     QTranslator *qtTranslator;
-
-
 };
 
 #endif // SKRROOTITEM_H

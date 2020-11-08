@@ -34,7 +34,7 @@ public:
 
     explicit PLMProjectItem() {
         title            = "";
-        fileUrl         = QUrl();
+        fileUrl          = QUrl();
         lastModification = QDateTime();
         writable         = false;
         exists           = false;
@@ -43,7 +43,7 @@ public:
     }
 
     QString   title;
-    QUrl   fileUrl;
+    QUrl      fileUrl;
     QDateTime lastModification;
     bool      writable;
     bool      exists;
@@ -73,7 +73,8 @@ public:
     Q_INVOKABLE void      insertInRecentProjects(const QString& title,
                                                  const QUrl   & fileName);
 
-    Q_INVOKABLE void forgetProject(const QUrl &fileUrl);
+    Q_INVOKABLE void      forgetProject(const QUrl& fileUrl);
+
 private slots:
 
     void insertInRecentProjectsFromAnId(int projectId);
