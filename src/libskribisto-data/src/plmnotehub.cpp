@@ -166,7 +166,6 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int  projectId,
 
             IFOK(error) {
                 emit sheetNoteRelationshipAdded(projectId, sheetId, noteId);
-                emit sheetNoteRelationshipChanged(projectId, sheetId, noteId);
                 emit projectModified(projectId);
             }
         }

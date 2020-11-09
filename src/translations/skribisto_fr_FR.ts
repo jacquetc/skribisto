@@ -591,7 +591,7 @@
     <name>ProjectListItemForm.ui</name>
     <message>
         <source>Text</source>
-        <translation>Texte</translation>
+        <translation type="vanished">Texte</translation>
     </message>
 </context>
 <context>
@@ -1768,7 +1768,7 @@
     </message>
     <message>
         <source>Save as...</source>
-        <translation>Enregistrer sous...</translation>
+        <translation type="vanished">Enregistrer sous...</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as ...</source>
@@ -1868,6 +1868,10 @@
     </message>
     <message>
         <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

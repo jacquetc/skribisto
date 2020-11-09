@@ -2395,7 +2395,7 @@ Please open a .plume file.</source>
     <name>ProjectListItemForm.ui</name>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Testo</translation>
+        <translation type="obsolete">Testo</translation>
     </message>
 </context>
 <context>
@@ -4056,10 +4056,6 @@ Please open a .plume file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save as...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save the &quot;%1&quot; project as ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4141,6 +4137,10 @@ Please open a .plume file.</source>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -421,8 +421,6 @@ TreeListViewForm {
                 }
             }
 
-
-
             Keys.priority: Keys.AfterItem
 
             Keys.onShortcutOverride: {

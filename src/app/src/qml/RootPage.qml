@@ -592,11 +592,18 @@ RootPageForm {
 
                                 SkrToolButton {
                                     id: closeTabFromDropDownMenuButton
-                                    text: "x"
+                                    text: "Close tab"
                                     visible: model.closable
+                                    flat: true
+                                    padding: 0
+                                    topInset: 1
+                                    bottomInset: 1
+                                    leftInset: 1
+                                    rightInset: 1
                                     Layout.fillHeight: true
                                     Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-
+                                    display: AbstractButton.IconOnly
+                                    icon.source: "qrc:///icons/backup/window-close.svg"
                                     onClicked: {
                                         closeTab(model.index)
                                     }
@@ -1264,10 +1271,13 @@ RootPageForm {
                 action: saveAsAction
             }
             SkrMenuItem{
+                action: saveAllAction
+            }
+            SkrMenuItem{
                 action: saveACopyAction
             }
             SkrMenuItem{
-                action: saveAllAction
+                action: backUpAction
             }
 
             MenuSeparator { }
@@ -1316,6 +1326,7 @@ RootPageForm {
 
             SkrMenuItem{
                 action: welcomeWindowAction
+                icon.color: "transparent"
             }
 
             SkrMenuItem{

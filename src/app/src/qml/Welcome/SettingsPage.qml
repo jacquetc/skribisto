@@ -342,7 +342,7 @@ SettingsPageForm {
                     Layout.fillHeight: true
                     Layout.preferredWidth: 30
                     flat: true
-                    icon.source: "qrc:///icons/backup/document-open-folder.svg"
+                    icon.source: "qrc:///icons/backup/document-open.svg"
 
                     onClicked: {
                         backupFolderDialog.open()

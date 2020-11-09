@@ -19,6 +19,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmsheethub.h"
+#include "plmdata.h"
 #include "tasks/plmsqlqueries.h"
 
 PLMSheetHub::PLMSheetHub(QObject *parent) : PLMPaperHub(parent, "tbl_sheet")
@@ -45,4 +46,19 @@ QHash<QString, QVariant>PLMSheetHub::getSheetData(int projectId, int sheetId) co
         emit errorSent(error);
     }
     return result;
+}
+
+// -------------------------------------------------------------
+
+PLMError PLMSheetHub::setTitle(int projectId, int paperId, const QString& newTitle)
+{
+    PLMError error = PLMPaperHub::setTitle(projectId, paperId, newTitle);
+
+    IFOK(error) {
+        // rename related synopsis:
+        int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, paperId);
+
+        error = plmdata->noteHub()->setTitle(projectId, synopsisId, newTitle);
+    }
+    return error;
 }

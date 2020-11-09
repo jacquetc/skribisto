@@ -14,6 +14,7 @@ Item {
     property alias addNoteMenuToolButton: addNoteMenuToolButton
     property alias noteRepeater: noteRepeater
     property alias toolBar: toolBar
+    property alias currentNoteTitleLabel: currentNoteTitleLabel
 
     property bool minimalMode: false
 
@@ -45,6 +46,11 @@ Item {
                     id: rowLayout
                     spacing: 1
                     anchors.fill: parent
+
+
+                    SkrLabel {
+                        id: currentNoteTitleLabel
+                    }
 
                     Item {
                         id: stretcher

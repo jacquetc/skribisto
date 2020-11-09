@@ -1,8 +1,8 @@
 /***************************************************************************
-*   Copyright (C) 2019 by Cyril Jacquet                                 *
+*   Copyright (C) 2020 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmsheetitem.cpp
+*  Filename: skrpaperitem.h
 *                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
@@ -19,23 +19,54 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#include "plmsheetitem.h"
+#include "skrpaperitem.h"
 #include "plmdata.h"
 
-
-PLMSheetItem::PLMSheetItem() :
-    m_invalidatedRoles(), m_isProjectItem(false), m_isRootItem(false)
+SKRPaperItem::SKRPaperItem(SKR::PaperType paperType) :
+    m_paperType(paperType), m_invalidatedRoles(), m_isProjectItem(false), m_isRootItem(
+        false)
 {
+    if (paperType == SKR::Sheet) {
+        m_paperHub    = plmdata->sheetHub();
+        m_propertyHub = plmdata->sheetPropertyHub();
+    }
+    else if (paperType == SKR::Note) {
+        m_paperHub    = plmdata->noteHub();
+        m_propertyHub = plmdata->notePropertyHub();
+    }
+    else {
+        qFatal(this->metaObject()->className(), "Invalid PaperType");
+    }
+
+
     m_data.insert(Roles::ProjectIdRole, -2);
     m_data.insert(Roles::PaperIdRole,   -2);
     m_data.insert(Roles::IndentRole,    -2);
     m_data.insert(Roles::SortOrderRole, 0);
 }
 
-PLMSheetItem::PLMSheetItem(int projectId, int paperId, int indent,
-                           int sortOrder) :
-    m_invalidatedRoles(), m_isProjectItem(false), m_isRootItem(false)
+SKRPaperItem::SKRPaperItem(SKR::PaperType paperType,
+                           int            projectId,
+                           int            paperId,
+                           int            indent,
+                           int            sortOrder) :
+
+    m_paperType(paperType), m_invalidatedRoles(), m_isProjectItem(false), m_isRootItem(
+        false)
 {
+    if (paperType == SKR::Sheet) {
+        m_paperHub    = plmdata->sheetHub();
+        m_propertyHub = plmdata->sheetPropertyHub();
+    }
+    else if (paperType == SKR::Note) {
+        m_paperHub    = plmdata->noteHub();
+        m_propertyHub = plmdata->notePropertyHub();
+    }
+    else {
+        qFatal(this->metaObject()->className(), "Invalid PaperType");
+    }
+
+
     m_data.insert(Roles::ProjectIdRole, projectId);
     m_data.insert(Roles::PaperIdRole,   paperId);
     m_data.insert(Roles::IndentRole,    indent);
@@ -44,29 +75,29 @@ PLMSheetItem::PLMSheetItem(int projectId, int paperId, int indent,
     this->invalidateAllData();
 }
 
-PLMSheetItem::~PLMSheetItem()
+SKRPaperItem::~SKRPaperItem()
 {}
 
 
-void PLMSheetItem::invalidateData(int role)
+void SKRPaperItem::invalidateData(int role)
 {
     m_invalidatedRoles.append(role);
 }
 
-void PLMSheetItem::invalidateAllData()
+void SKRPaperItem::invalidateAllData()
 {
-    QMetaEnum metaEnum = QMetaEnum::fromType<PLMSheetItem::Roles>();
+    QMetaEnum metaEnum = QMetaEnum::fromType<SKRPaperItem::Roles>();
 
     for (int i = 0; i < metaEnum.keyCount(); ++i) {
         m_invalidatedRoles <<   metaEnum.value(i);
-        m_invalidatedRoles.removeAll(PLMSheetItem::Roles::ProjectIdRole);
-        m_invalidatedRoles.removeAll(PLMSheetItem::Roles::PaperIdRole);
+        m_invalidatedRoles.removeAll(SKRPaperItem::Roles::ProjectIdRole);
+        m_invalidatedRoles.removeAll(SKRPaperItem::Roles::PaperIdRole);
     }
 }
 
-QVariant PLMSheetItem::data(int role)
+QVariant SKRPaperItem::data(int role)
 {
-    QMetaEnum metaEnum = QMetaEnum::fromType<PLMSheetItem::Roles>();
+    QMetaEnum metaEnum = QMetaEnum::fromType<SKRPaperItem::Roles>();
 
     //    if (role != IndentRole)
     //        qDebug() << "item data : " << "pr :" <<
@@ -96,79 +127,73 @@ QVariant PLMSheetItem::data(int role)
             break;
 
         case Roles::NameRole:
-            m_data.insert(role, plmdata->sheetHub()->getTitle(projectId, paperId));
+            m_data.insert(role, m_paperHub->getTitle(projectId, paperId));
             break;
 
         case Roles::LabelRole:
             m_data.insert(role,
-                          plmdata->sheetPropertyHub()->getProperty(projectId, paperId,
-                                                                   "label", ""));
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "label"));
             break;
 
         case Roles::IndentRole:
-            m_data.insert(role, plmdata->sheetHub()->getIndent(projectId, paperId));
+            m_data.insert(role, m_paperHub->getIndent(projectId, paperId));
             break;
 
         case Roles::SortOrderRole:
-            m_data.insert(role, plmdata->sheetHub()->getSortOrder(projectId, paperId));
+            m_data.insert(role, m_paperHub->getSortOrder(projectId, paperId));
             break;
 
         case Roles::TrashedRole:
-            m_data.insert(role, plmdata->sheetHub()->getTrashed(projectId, paperId));
+            m_data.insert(role, m_paperHub->getTrashed(projectId, paperId));
             break;
 
         case Roles::CreationDateRole:
-            m_data.insert(role, plmdata->sheetHub()->getCreationDate(projectId, paperId));
+            m_data.insert(role, m_paperHub->getCreationDate(projectId, paperId));
             break;
 
         case Roles::UpdateDateRole:
-            m_data.insert(role, plmdata->sheetHub()->getUpdateDate(projectId, paperId));
+            m_data.insert(role, m_paperHub->getUpdateDate(projectId, paperId));
             break;
 
         case Roles::ContentDateRole:
-            m_data.insert(role, plmdata->sheetHub()->getContentDate(projectId, paperId));
-            break;
-
-        case Roles::HasChildrenRole: //TODO: remove that because doeas not desciminate between trashed ot not
-            m_data.insert(role, plmdata->sheetHub()->hasChildren(projectId, paperId));
+            m_data.insert(role, m_paperHub->getContentDate(projectId, paperId));
             break;
 
         case Roles::CharCountRole:
             m_data.insert(role,
-                          plmdata->sheetPropertyHub()->getProperty(projectId, paperId,
-                                                                   "char_count"));
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "char_count"));
             break;
 
         case Roles::WordCountRole:
             m_data.insert(role,
-                          plmdata->sheetPropertyHub()->getProperty(projectId, paperId,
-                                                                   "word_count"));
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "word_count"));
             break;
 
-        case Roles::SynopsisNoteIdRole:
-            m_data.insert(role,
-                          plmdata->noteHub()->getSynopsisNoteId(projectId, paperId));
-            break;
 
         case Roles::ProjectIsBackupRole:
             m_data.insert(role, plmdata->projectHub()->isThisProjectABackup(projectId));
             break;
 
+
         case Roles::ProjectIsActiveRole:
             m_data.insert(role, plmdata->projectHub()->isThisProjectActive(projectId));
             break;
         }
+
         m_invalidatedRoles.removeAll(role);
     }
     return m_data.value(role);
 }
 
-QList<int>PLMSheetItem::dataRoles() const
+QList<int>SKRPaperItem::dataRoles() const
 {
     return m_data.keys();
 }
 
-PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
+SKRPaperItem * SKRPaperItem::parent(const QList<SKRPaperItem *>& itemList)
 {
     if (this->isRootItem()) {
         return nullptr;
@@ -179,6 +204,7 @@ PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
         return nullptr;
     }
 
+
     int index               = itemList.indexOf(this);
     int indent              = this->indent();
     int possibleParentIndex = index - 1;
@@ -188,7 +214,7 @@ PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
         return nullptr;
     }
 
-    PLMSheetItem *possibleParentItem = itemList.at(possibleParentIndex);
+    SKRPaperItem *possibleParentItem = itemList.at(possibleParentIndex);
 
     while (possibleParentItem->indent() >= indent) {
         possibleParentIndex -= 1;
@@ -202,7 +228,7 @@ PLMSheetItem * PLMSheetItem::parent(const QList<PLMSheetItem *>& itemList)
     return possibleParentItem;
 }
 
-int PLMSheetItem::row(const QList<PLMSheetItem *>& itemList)
+int SKRPaperItem::row(const QList<SKRPaperItem *>& itemList)
 {
     if (this->isRootItem()) {
         return 0;
@@ -221,19 +247,19 @@ int PLMSheetItem::row(const QList<PLMSheetItem *>& itemList)
     int possibleRow = 0;
 
     // create sublist
-    QList<PLMSheetItem *> itemSubList;
+    QList<SKRPaperItem *> itemSubList;
 
     for (int i = 0; i < index; ++i) {
         itemSubList.append(itemList.at(i));
     }
 
 
-    QListIterator<PLMSheetItem *> iterator(itemSubList);
+    QListIterator<SKRPaperItem *> iterator(itemSubList);
 
     iterator.toBack();
 
     while (iterator.hasPrevious()) {
-        PLMSheetItem *previousItem = iterator.previous();
+        SKRPaperItem *previousItem = iterator.previous();
 
         if (previousItem->indent() >= indent) {
             if (previousItem->indent() == indent) {
@@ -249,7 +275,7 @@ int PLMSheetItem::row(const QList<PLMSheetItem *>& itemList)
     return possibleRow;
 }
 
-int PLMSheetItem::childrenCount(const QList<PLMSheetItem *>& itemList) {
+int SKRPaperItem::childrenCount(const QList<SKRPaperItem *>& itemList) {
     if (this->isRootItem()) {
         if (itemList.isEmpty()) {
             return 0;
@@ -261,11 +287,11 @@ int PLMSheetItem::childrenCount(const QList<PLMSheetItem *>& itemList) {
         int parentIndent = -2;
 
 
-        QListIterator<PLMSheetItem *> iterator(itemList);
+        QListIterator<SKRPaperItem *> iterator(itemList);
         iterator.toFront();
 
         while (iterator.hasNext()) {
-            PLMSheetItem *nextItem = iterator.next();
+            SKRPaperItem *nextItem = iterator.next();
 
             if (nextItem->indent() > parentIndent) {
                 if (nextItem->indent() == parentIndent + 1) {
@@ -295,14 +321,14 @@ int PLMSheetItem::childrenCount(const QList<PLMSheetItem *>& itemList) {
         return 0;
     }
 
-    QList<PLMSheetItem *> itemSubList = itemList.mid(nextItemIndex);
+    QList<SKRPaperItem *> itemSubList = itemList.mid(nextItemIndex);
 
-    QListIterator<PLMSheetItem *> iterator(itemSubList);
+    QListIterator<SKRPaperItem *> iterator(itemSubList);
 
     iterator.toFront();
 
     while (iterator.hasNext()) {
-        PLMSheetItem *nextItem = iterator.next();
+        SKRPaperItem *nextItem = iterator.next();
 
         if (nextItem->indent() > indent) {
             if (nextItem->indent() == indent + 1) {
@@ -318,7 +344,7 @@ int PLMSheetItem::childrenCount(const QList<PLMSheetItem *>& itemList) {
     return childrenCount;
 }
 
-PLMSheetItem * PLMSheetItem::child(const QList<PLMSheetItem *>& itemList, int row)
+SKRPaperItem * SKRPaperItem::child(const QList<SKRPaperItem *>& itemList, int row)
 {
     // if this is root item :
     if (this->isRootItem()) {
@@ -327,19 +353,18 @@ PLMSheetItem * PLMSheetItem::child(const QList<PLMSheetItem *>& itemList, int ro
         }
 
         int childrenCount       = 0;
-        PLMSheetItem *childItem = nullptr;
+        SKRPaperItem *childItem = nullptr;
 
         // switch between multiple projects or one project
-
 
         int parentIndent = this->indent(); // = -2
 
 
-        QListIterator<PLMSheetItem *> iterator(itemList);
+        QListIterator<SKRPaperItem *> iterator(itemList);
         iterator.toFront();
 
         while (iterator.hasNext()) {
-            PLMSheetItem *nextItem = iterator.next();
+            SKRPaperItem *nextItem = iterator.next();
 
             if (nextItem->indent() > parentIndent) {
                 if (nextItem->indent() == parentIndent + 1) {
@@ -370,19 +395,19 @@ PLMSheetItem * PLMSheetItem::child(const QList<PLMSheetItem *>& itemList, int ro
     int childrenCount = 0;
     int nextItemIndex = index + 1;
 
-    PLMSheetItem *childItem = nullptr;
+    SKRPaperItem *childItem = nullptr;
 
 
-    QList<PLMSheetItem *> itemSubList = itemList.mid(nextItemIndex);
+    QList<SKRPaperItem *> itemSubList = itemList.mid(nextItemIndex);
 
-    QListIterator<PLMSheetItem *> iterator(itemSubList);
+    QListIterator<SKRPaperItem *> iterator(itemSubList);
 
     iterator.toFront();
 
     while (iterator.hasNext()) {
-        PLMSheetItem *nextItem = iterator.next();
-        QString thisTitle      = this->data(PLMSheetItem::Roles::NameRole).toString();
-        QString nextTitle      = nextItem->data(PLMSheetItem::Roles::NameRole).toString();
+        SKRPaperItem *nextItem = iterator.next();
+        QString thisTitle      = this->data(SKRPaperItem::Roles::NameRole).toString();
+        QString nextTitle      = nextItem->data(SKRPaperItem::Roles::NameRole).toString();
 
         if (nextItem->indent() > indent) {
             if (nextItem->indent() == indent + 1) {
@@ -403,12 +428,12 @@ PLMSheetItem * PLMSheetItem::child(const QList<PLMSheetItem *>& itemList, int ro
     return childItem;
 }
 
-bool PLMSheetItem::isRootItem() const
+bool SKRPaperItem::isRootItem() const
 {
     return m_isRootItem;
 }
 
-void PLMSheetItem::setIsRootItem() // not used
+void SKRPaperItem::setIsRootItem()
 {
     m_isRootItem = true;
 
@@ -419,12 +444,12 @@ void PLMSheetItem::setIsRootItem() // not used
     m_data.insert(Roles::SortOrderRole, -90000000);
 }
 
-bool PLMSheetItem::isProjectItem() const
+bool SKRPaperItem::isProjectItem() const
 {
     return m_isProjectItem;
 }
 
-void PLMSheetItem::setIsProjectItem(int projectId)
+void SKRPaperItem::setIsProjectItem(int projectId)
 {
     m_isProjectItem = true;
 
@@ -444,27 +469,27 @@ void PLMSheetItem::setIsProjectItem(int projectId)
     this->invalidateData(Roles::ProjectIsActiveRole);
 }
 
-int PLMSheetItem::projectId()
+int SKRPaperItem::projectId()
 {
     return data(Roles::ProjectIdRole).toInt();
 }
 
-int PLMSheetItem::paperId()
+int SKRPaperItem::paperId()
 {
     return data(Roles::PaperIdRole).toInt();
 }
 
-int PLMSheetItem::sortOrder()
+int SKRPaperItem::sortOrder()
 {
     return data(Roles::SortOrderRole).toInt();
 }
 
-int PLMSheetItem::indent()
+int SKRPaperItem::indent()
 {
     return data(Roles::IndentRole).toInt();
 }
 
-QString PLMSheetItem::name()
+QString SKRPaperItem::name()
 {
     return data(Roles::NameRole).toString();
 }

@@ -358,7 +358,7 @@ ApplicationWindow {
     Action {
 
         id: saveAsAction
-        text: qsTr("Save as...")
+        text: qsTr("Save As...")
         icon {
             source: "qrc:///icons/backup/document-save-as.svg"
             height: 50

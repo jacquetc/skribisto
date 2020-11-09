@@ -42,12 +42,12 @@ public:
                             const QString& tableName,
                             const QString& paperCodeFieldName);
 
-    QList<int>getAllIdsWithPaperCode(int projectId,
-                                     int paperCode) const;
-    Q_INVOKABLE PLMError  setProperty(int            projectId,
-                          int            paperCode,
-                          const QString& name,
-                          const QString& value);
+    QList<int>           getAllIdsWithPaperCode(int projectId,
+                                                int paperCode) const;
+    Q_INVOKABLE PLMError setProperty(int            projectId,
+                                     int            paperCode,
+                                     const QString& name,
+                                     const QString& value);
     int      getLastAddedId();
     PLMError addProperty(int projectId,
                          int paperCode,
@@ -58,50 +58,50 @@ public:
                              int            propertyId,
                              const QString& name,
                              const QString& value);
-    PLMError  setId(int projectId,
-                    int propertyId,
-                    int newId);
-    PLMError  setValue(int            projectId,
-                       int            propertyId,
-                       const QString& value);
-    Q_INVOKABLE PLMError  setName(int            projectId,
-                      int            propertyId,
-                      const QString& name);
-    QString   getName(int projectId,
-                      int propertyId);
-    PLMError  setPaperCode(int projectId,
-                           int propertyId,
-                           int paperCode);
-    int       getPaperCode(int projectId,
-                           int propertyId);
-    PLMError  setCreationDate(int              projectId,
-                              int              propertyId,
-                              const QDateTime& date);
-    QDateTime getCreationDate(int projectId,
-                              int propertyId) const;
-    PLMError  setModificationDate(int              projectId,
-                                  int              propertyId,
-                                  const QDateTime& date);
-    QDateTime getModificationDate(int projectId,
-                                  int propertyId) const;
-    PLMError  setSystem(int  projectId,
-                        int  propertyId,
-                        bool isSystem);
-    bool      getSystem(int projectId,
-                        int propertyId) const;
-    bool      propertyExists(int            projectId,
-                             int            paperCode,
-                             const QString& name);
-    int       findPropertyId(int            projectId,
-                             int            paperCode,
-                             const QString& name);
-    QString   getProperty(int            projectId,
-                          int            paperCode,
-                          const QString& name) const;
-    QString   getProperty(int            projectId,
-                          int            paperCode,
-                          const QString& name,
-                          const QString& defaultValue) const;
+    PLMError             setId(int projectId,
+                               int propertyId,
+                               int newId);
+    PLMError             setValue(int            projectId,
+                                  int            propertyId,
+                                  const QString& value);
+    Q_INVOKABLE PLMError setName(int            projectId,
+                                 int            propertyId,
+                                 const QString& name);
+    QString              getName(int projectId,
+                                 int propertyId);
+    PLMError             setPaperCode(int projectId,
+                                      int propertyId,
+                                      int paperCode);
+    int                  getPaperCode(int projectId,
+                                      int propertyId);
+    PLMError             setCreationDate(int              projectId,
+                                         int              propertyId,
+                                         const QDateTime& date);
+    QDateTime            getCreationDate(int projectId,
+                                         int propertyId) const;
+    PLMError             setModificationDate(int              projectId,
+                                             int              propertyId,
+                                             const QDateTime& date);
+    QDateTime            getModificationDate(int projectId,
+                                             int propertyId) const;
+    PLMError             setIsSystem(int  projectId,
+                                     int  propertyId,
+                                     bool isSystem);
+    bool                 getIsSystem(int projectId,
+                                     int propertyId) const;
+    bool                 propertyExists(int            projectId,
+                                        int            paperCode,
+                                        const QString& name);
+    int                  findPropertyId(int            projectId,
+                                        int            paperCode,
+                                        const QString& name);
+    QString              getProperty(int            projectId,
+                                     int            paperCode,
+                                     const QString& name) const;
+    QString              getProperty(int            projectId,
+                                     int            paperCode,
+                                     const QString& name,
+                                     const QString& defaultValue) const;
     QString            getPropertyById(int projectId,
                                        int propertyId) const;
     QHash<int, QString>getAllNames(int projectId) const;

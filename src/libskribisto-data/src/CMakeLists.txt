@@ -42,20 +42,19 @@ set(data_SRCS
     models/plmsheetmodel.cpp
     models/plmsheetproxymodel.cpp
     models/plmsheetlistmodel.cpp
-    models/plmsheetlistproxymodel.cpp
     models/plmnotemodel.cpp
     models/plmnotelistmodel.cpp
-    models/plmnotelistproxymodel.cpp
     models/plmnoteproxymodel.cpp
-    models/plmnoteitem.cpp
     models/plmprojectlistmodel.cpp
     models/plmdocumentlistmodel.cpp
     models/plmwritedocumentlistmodel.cpp
     models/plmdocumentlistproxymodel.cpp
     models/plmpropertiesmodel.cpp
     models/plmpropertiesproxymodel.cpp
-    models/plmsheetitem.cpp
+    models/skrpaperitem.cpp
     models/plmmodels.cpp
+    models/skrpaperlistmodel.cpp
+    models/skrsearchpaperlistproxymodel.cpp
     models/skrsearchsheetlistproxymodel.cpp
     models/skrsearchnotelistproxymodel.cpp
     models/skrtagitem.cpp
@@ -80,6 +79,7 @@ set(data_HDR
     plmutils.h
     skribisto_data_global.h
     tools.h
+    skr.h
     skrprojectdicthub.h
     tasks/plmprojectmanager.h
     tasks/plmsqlqueries.h
@@ -98,20 +98,19 @@ set(data_HDR
     models/plmsheetmodel.h
     models/plmsheetproxymodel.h
     models/plmsheetlistmodel.h
-    models/plmsheetlistproxymodel.h
     models/plmnotemodel.h
     models/plmnotelistmodel.h
-    models/plmnotelistproxymodel.h
     models/plmnoteproxymodel.h
-    models/plmnoteitem.h
     models/plmprojectlistmodel.h
     models/plmdocumentlistmodel.h
     models/plmwritedocumentlistmodel.h
     models/plmdocumentlistproxymodel.h
     models/plmpropertiesmodel.h
     models/plmpropertiesproxymodel.h
-    models/plmsheetitem.h
+    models/skrpaperitem.h
     models/plmmodels.h
+    models/skrpaperlistmodel.h
+    models/skrsearchpaperlistproxymodel.h
     models/skrsearchsheetlistproxymodel.h
     models/skrsearchnotelistproxymodel.h
     models/skrtagitem.h

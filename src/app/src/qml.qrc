@@ -3,8 +3,6 @@
         <file>qtquickcontrols2.conf</file>
         <file>qml/Globals.qml</file>
         <file>qml/main.qml</file>
-        <file>qml/ProjectListItem.qml</file>
-        <file>qml/ProjectListItemForm.ui.qml</file>
         <file>qml/qmldir</file>
         <file>qml/RootPage.qml</file>
         <file>qml/RootPageForm.ui.qml</file>

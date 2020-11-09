@@ -61,7 +61,7 @@ public:
     PLMError                        setId(int projectId,
                                           int paperId,
                                           int newId);
-    Q_INVOKABLE PLMError            setTitle(int            projectId,
+    Q_INVOKABLE virtual PLMError    setTitle(int            projectId,
                                              int            paperId,
                                              const QString& newTitle);
     Q_INVOKABLE QString             getTitle(int projectId,
@@ -122,9 +122,9 @@ public:
     Q_INVOKABLE int      getLastAddedId();
     PLMError             addPaper(const QHash<QString, QVariant>& values,
                                   int projectId);
-    Q_INVOKABLE PLMError             addPaperAbove(int projectId,
+    Q_INVOKABLE PLMError addPaperAbove(int projectId,
                                        int targetId);
-    Q_INVOKABLE PLMError             addPaperBelow(int projectId,
+    Q_INVOKABLE PLMError addPaperBelow(int projectId,
                                        int targetId);
     Q_INVOKABLE PLMError addChildPaper(int projectId,
                                        int targetId);
@@ -132,10 +132,10 @@ public:
                                      int targetId);
 
 
-     Q_INVOKABLE PLMError movePaperUp(int projectId,
-                         int paperId);
-     Q_INVOKABLE PLMError movePaperDown(int projectId,
-                           int paperId);
+    Q_INVOKABLE PLMError movePaperUp(int projectId,
+                                     int paperId);
+    Q_INVOKABLE PLMError movePaperDown(int projectId,
+                                       int paperId);
 
 
     //    // settings :
@@ -185,10 +185,10 @@ public:
 
 private:
 
-    PLMError             movePaper(int  projectId,
-                                   int  sourcePaperId,
-                                   int  targetPaperId,
-                                   bool after = false);
+    PLMError movePaper(int  projectId,
+                       int  sourcePaperId,
+                       int  targetPaperId,
+                       bool after = false);
 
     PLMError setTrashedDateToNow(int projectId,
                                  int paperId);

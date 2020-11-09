@@ -35,6 +35,10 @@ public:
 
     QHash<QString, QVariant>getSheetData(int projectId,
                                          int sheetId) const;
+
+    Q_INVOKABLE PLMError    setTitle(int            projectId,
+                                     int            paperId,
+                                     const QString& newTitle);
 };
 
 #endif // PLMSHEETHUB_H

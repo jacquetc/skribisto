@@ -30,8 +30,6 @@ using namespace std;
 #include "skrspellchecker.h"
 #include "plmutils.h"
 #include "skrthemes.h"
-#include "models/plmsheetlistproxymodel.h"
-#include "models/plmnotelistproxymodel.h"
 #include "models/skrtaglistmodel.h"
 #include "models/skrsearchsheetlistproxymodel.h"
 #include "models/skrsearchnotelistproxymodel.h"
@@ -242,17 +240,6 @@ int main(int argc, char *argv[])
         0,
         "PLMWriteDocumentListModel",
         "Can't instantiate PLMWriteDocumentListModel");
-
-
-    qmlRegisterType<PLMSheetListProxyModel>("eu.skribisto.sheetlistproxymodel",
-                                            1,
-                                            0,
-                                            "PLMSheetListProxyModel");
-
-    qmlRegisterType<PLMNoteListProxyModel>("eu.skribisto.notelistproxymodel",
-                                           1,
-                                           0,
-                                           "PLMNoteListProxyModel");
 
     qmlRegisterType<SKRSearchNoteListProxyModel>("eu.skribisto.searchnotelistproxymodel",
                                                  1,

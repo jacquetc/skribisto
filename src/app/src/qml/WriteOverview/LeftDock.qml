@@ -2,7 +2,6 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
-import eu.skribisto.sheetlistproxymodel 1.0
 import eu.skribisto.searchsheetlistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.usersettings 1.0
@@ -102,11 +101,21 @@ LeftDockForm {
     //Navigation List :
     //-----------------------------------------------------------
 
-    PLMSheetListProxyModel {
-        id: proxyModel
+    SKRSearchSheetListProxyModel {
+        id: navigationProxyModel
+        showTrashedFilter: false
+        showNotTrashedFilter: true
     }
 
-    navigation.treeListViewProxyModel: proxyModel
+    navigation.treeListViewProxyModel: navigationProxyModel
+
+    Connections {
+        target: plmData.projectHub()
+        function onActiveProjectChanged(projectId){
+            navigationProxyModel.projectIdFilter = projectId
+            navigationProxyModel.parentIdFilter = -1
+        }
+    }
 
 
     SKRSearchSheetListProxyModel {
@@ -188,7 +197,7 @@ LeftDockForm {
 
 
     function setCurrentPaperId(projectId, paperId) {
-        proxyModel.setCurrentPaperId(projectId, paperId)
+        navigationProxyModel.setCurrentPaperId(projectId, paperId)
     }
 
 

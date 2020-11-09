@@ -470,7 +470,7 @@ QDateTime PLMPropertyHub::getModificationDate(int projectId, int propertyId) con
     return result;
 }
 
-PLMError PLMPropertyHub::setSystem(int projectId, int propertyId, bool isSystem)
+PLMError PLMPropertyHub::setIsSystem(int projectId, int propertyId, bool isSystem)
 {
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -502,7 +502,7 @@ PLMError PLMPropertyHub::setSystem(int projectId, int propertyId, bool isSystem)
 // ---------------------------------------------------------------------
 
 
-bool PLMPropertyHub::getSystem(int projectId, int propertyId) const
+bool PLMPropertyHub::getIsSystem(int projectId, int propertyId) const
 {
     PLMError error;
     bool     result;

@@ -1,8 +1,9 @@
-﻿/***************************************************************************
-*   Copyright (C) 2019 by Cyril Jacquet                                 *
+/***************************************************************************
+*   Copyright (C) 2020 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmsheetmodel.h                                                   *
+*  Filename: skrpaperlistmodel.h
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,20 +19,23 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMSHEETMODEL_H
-#define PLMSHEETMODEL_H
+#ifndef SKRPAPERLISTMODEL_H
+#define SKRPAPERLISTMODEL_H
 
-#include <QAbstractItemModel>
-#include "./skribisto_data_global.h"
+#include <QAbstractListModel>
+#include "plmdata.h"
 #include "skrpaperitem.h"
+#include "skr.h"
+#include "./skribisto_data_global.h"
 
 
-class EXPORT PLMSheetModel : public QAbstractItemModel {
+class EXPORT SKRPaperListModel : public QAbstractListModel {
     Q_OBJECT
 
 public:
 
-    explicit PLMSheetModel(QObject *parent = nullptr);
+    explicit SKRPaperListModel(QObject       *parent,
+                               SKR::PaperType paperType);
 
     // Header:
     QVariant headerData(int             section,
@@ -47,41 +51,25 @@ public:
     QModelIndex index(int                row,
                       int                column,
                       const QModelIndex& parent = QModelIndex()) const override;
-    QModelIndex parent(const QModelIndex& index) const override;
 
-    int         rowCount(const QModelIndex& parent    = QModelIndex()) const override;
-    int         columnCount(const QModelIndex& parent = QModelIndex()) const override;
+    int      rowCount(const QModelIndex& parent = QModelIndex()) const override;
 
-    QVariant    data(const QModelIndex& index,
-                     int                role = Qt::DisplayRole) const override;
+    QVariant data(const QModelIndex& index,
+                  int                role = Qt::DisplayRole) const override;
 
     // Editable:
     bool setData(const QModelIndex& index,
                  const QVariant   & value,
                  int                role = Qt::EditRole) override;
 
-    Qt::ItemFlags flags(const QModelIndex& index) const override;
-
-    // Add data:
-    bool          insertRows(int                row,
-                             int                count,
-                             const QModelIndex& parent = QModelIndex()) override;
-    bool          insertColumns(int                column,
-                                int                count,
-                                const QModelIndex& parent = QModelIndex()) override;
-
-    // Remove data:
-    bool removeRows(int                row,
-                    int                count,
-                    const QModelIndex& parent = QModelIndex()) override;
-    bool removeColumns(int                column,
-                       int                count,
-                       const QModelIndex& parent = QModelIndex()) override;
+    Qt::ItemFlags         flags(const QModelIndex& index) const override;
 
     QHash<int, QByteArray>roleNames() const override;
-
     QModelIndexList       getModelIndex(int projectId,
                                         int paperId);
+    SKRPaperItem        * getParentPaperItem(SKRPaperItem *childItem);
+    SKRPaperItem        * getItem(int projectId,
+                                  int paperId);
 
 private slots:
 
@@ -90,23 +78,40 @@ private slots:
     void exploitSignalFromPLMData(int                 projectId,
                                   int                 paperId,
                                   SKRPaperItem::Roles role);
-    void addPaper(int projectId,
-                  int paperId);
 
-private:
-
-    SKRPaperItem* findPaperItem(int projectId,
+    void refreshAfterDataAddition(int projectId,
+                                  int paperId);
+    void refreshAfterDataRemove(int projectId,
                                 int paperId);
-    void          connectToPLMDataSignals();
-    void          disconnectFromPLMDataSignals();
+    void refreshAfterDataMove(int sourceProjectId,
+                              int sourcePaperId,
+                              int targetProjectId,
+                              int targetPaperId);
+    void refreshAfterTrashedStateChanged(int  projectId,
+                                         int  paperId,
+                                         bool newTrashedState);
+    void refreshAfterProjectIsBackupChanged(int  projectId,
+                                            bool isProjectABackup);
+    void refreshAfterProjectIsActiveChanged(int projectId);
+    void refreshAfterIndentChanged(int projectId,
+                                   int paperId,
+                                   int newIndent);
 
 private:
 
+    void connectToPLMDataSignals();
+    void disconnectFromPLMDataSignals();
+
+private:
+
+    PLMPaperHub *m_paperHub;
+    PLMPropertyHub *m_propertyHub;
+    SKR::PaperType m_paperType;
     SKRPaperItem *m_rootItem;
     QVariant m_headerData;
-    QList<SKRPaperItem *>m_allSheetItems;
+    QList<SKRPaperItem *>m_allPaperItems;
     QList<QMetaObject::Connection>m_dataConnectionsList;
 };
 
 
-#endif // PLMSHEETMODEL_H
+#endif // SKRPAPERLISTMODEL_H

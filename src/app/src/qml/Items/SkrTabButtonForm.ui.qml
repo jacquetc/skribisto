@@ -84,17 +84,24 @@ TabButton {
         }
 
 
-        SkrRoundButton {
+        SkrToolButton {
 
 
             id: closeButton
 
             visible: isCurrent | hoverHandler.hovered ? closable : false
             text: "x"
+            icon.source: "qrc:///icons/backup/window-close.svg"
             focusPolicy: Qt.NoFocus
+            display: AbstractButton.IconOnly
             flat: true
-            implicitHeight: 30
-            implicitWidth: 30
+            implicitHeight: 26
+            implicitWidth: 26
+            padding: 0
+            topInset: 1
+            bottomInset: 1
+            leftInset: 1
+            rightInset: 1
         }
 
         HoverHandler {

@@ -2151,7 +2151,7 @@ not allowed delete a filled book.</source>
     <name>ProjectListItemForm.ui</name>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Texto</translation>
+        <translation type="obsolete">Texto</translation>
     </message>
 </context>
 <context>
@@ -3758,10 +3758,6 @@ not allowed delete a filled book.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save as...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save the &quot;%1&quot; project as ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3843,6 +3839,10 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
