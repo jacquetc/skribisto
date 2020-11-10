@@ -41,6 +41,10 @@ Item {
     property alias headerRowLayout: headerRowLayout
     property alias statusLeftLabel: statusLeftLabel
     property alias statusRightLabel: statusRightLabel
+    property alias welcomeStatusBarButton: welcomeStatusBarButton
+    property alias writeOverviewStatusBarButton: writeOverviewStatusBarButton
+    property alias noteOverviewStatusBarButton: noteOverviewStatusBarButton
+    property alias projectStatusBarButton: projectStatusBarButton
 
     ColumnLayout {
         id: columnLayout
@@ -81,27 +85,41 @@ Item {
                     id: welcomeTab
                     closable: false
                     pageType: welcomePage.pageType
+                    visible: !SkrSettings.interfaceSettings.menuButtonsInStatusBar
+                    width: SkrSettings.interfaceSettings.menuButtonsInStatusBar ? 0 : implicitWidth
+                    textVisible: !SkrSettings.interfaceSettings.minimalistMenuTabs
                 }
                 SkrTabButton {
                     id: writeOverviewTab
                     closable: false
                     pageType: writeOverviewPage.pageType
+                    visible: !SkrSettings.interfaceSettings.menuButtonsInStatusBar
+                    width: SkrSettings.interfaceSettings.menuButtonsInStatusBar ? 0 : implicitWidth
+                    textVisible: !SkrSettings.interfaceSettings.minimalistMenuTabs
                 }
                 SkrTabButton {
                     id: noteOverviewTab
                     closable: false
                     pageType: noteOverviewPage.pageType
+                    visible: !SkrSettings.interfaceSettings.menuButtonsInStatusBar
+                    width: SkrSettings.interfaceSettings.menuButtonsInStatusBar ? 0 : implicitWidth
+                    textVisible: !SkrSettings.interfaceSettings.minimalistMenuTabs
                 }
                 //NOTE: waiting to be implemented
 //                SkrTabButton {
 //                    id: galleryTab
 //                    closable: false
 //                    pageType: galleryPage.pageType
-//              }
+//                    visible: !SkrSettings.interfaceSettings.menuButtonsInStatusBar
+//                    textVisible: !SkrSettings.interfaceSettings.minimalistMenuTabs
+// }
                 SkrTabButton {
                     id: projectTab
                     closable: false
                     pageType: projectsMainPage.pageType
+                    visible: !SkrSettings.interfaceSettings.menuButtonsInStatusBar
+                    width: SkrSettings.interfaceSettings.menuButtonsInStatusBar ? 0 : implicitWidth
+                    textVisible: !SkrSettings.interfaceSettings.minimalistMenuTabs
                 }
             }
 
@@ -276,8 +294,49 @@ Item {
                 }
 
                 SkrToolButton {
+                    id: welcomeStatusBarButton
+                    Layout.preferredWidth: 40
+                    Layout.fillHeight: true
+                    padding: 0
+                    display: AbstractButton.IconOnly
+                    visible: SkrSettings.interfaceSettings.menuButtonsInStatusBar
+                }
+                SkrToolButton {
+                    id: writeOverviewStatusBarButton
+                    Layout.preferredWidth: 40
+                    Layout.fillHeight: true
+                    padding: 0
+                    display: AbstractButton.IconOnly
+                    visible: SkrSettings.interfaceSettings.menuButtonsInStatusBar
+                }
+                SkrToolButton {
+                    id: noteOverviewStatusBarButton
+                    Layout.preferredWidth: 40
+                    Layout.fillHeight: true
+                    padding: 0
+                    display: AbstractButton.IconOnly
+                    visible: SkrSettings.interfaceSettings.menuButtonsInStatusBar
+                }
+                //NOTE: waiting to be implemented
+//                SkrToolButton {
+//                    id: galleryStatusBarButton
+//                    Layout.preferredWidth: 40
+//                    Layout.fillHeight: true
+//                    padding: 0
+//                             display: AbstractButton.IconOnly
+//       visible: SkrSettings.interfaceSettings.menuButtonsInStatusBar
+//  }
+                SkrToolButton {
+                    id: projectStatusBarButton
+                    Layout.preferredWidth: 40
+                    Layout.fillHeight: true
+                    padding: 0
+                    display: AbstractButton.IconOnly
+                    visible: SkrSettings.interfaceSettings.menuButtonsInStatusBar
+                }
+
+                SkrToolButton {
                     id: notificationButton
-                    flat: true
                     Layout.preferredWidth: 40
                     Layout.fillHeight: true
                     padding: 0

@@ -77,6 +77,15 @@ SettingsPageForm {
         restoreMode: Binding.RestoreBindingOrValue
     }
 
+    minimalistMenuTabsSwitch.checked: SkrSettings.interfaceSettings.minimalistMenuTabs
+    Binding {
+        target: SkrSettings.interfaceSettings
+        property: "minimalistMenuTabs"
+        value: minimalistMenuTabsSwitch.checked
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
     // interface languages :
 
 

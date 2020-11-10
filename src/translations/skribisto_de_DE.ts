@@ -1276,6 +1276,17 @@
     </message>
 </context>
 <context>
+    <name>ListItemAttributes</name>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainTree</name>
     <message>
         <source>Plume Creator Tree</source>
@@ -2964,6 +2975,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source>&amp;View</source>
         <translation type="unfinished">&amp;Ansicht</translation>
+    </message>
+    <message>
+        <source>Outlines</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

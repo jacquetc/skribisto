@@ -391,6 +391,17 @@
     </message>
 </context>
 <context>
+    <name>ListItemAttributes</name>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>NewProject</name>
     <message>
         <source>Part </source>
@@ -936,6 +947,10 @@
     </message>
     <message>
         <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outlines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

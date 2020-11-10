@@ -51,12 +51,24 @@ public:
                                                      int sheetId,
                                                      int noteId);
 
-    Q_INVOKABLE  PLMError createSynopsis(int projectId,
-                                         int sheetId);
+    Q_INVOKABLE  PLMError      createSynopsis(int projectId,
+                                              int sheetId);
 
-    Q_INVOKABLE  int      getSynopsisFolderId(int projectId);
-    Q_INVOKABLE  bool     isSynopsis(int projectId,
-                                     int noteId);
+    Q_INVOKABLE  int           getSynopsisFolderId(int projectId);
+    Q_INVOKABLE  bool          isSynopsis(int projectId,
+                                          int noteId);
+
+    Q_INVOKABLE  QList<QString>getAttributes(int projectId,
+                                             int paperId) override;
+    Q_INVOKABLE  bool          hasAttribute(int            projectId,
+                                            int            paperId,
+                                            const QString& attribute) override;
+    Q_INVOKABLE  PLMError      addAttribute(int            projectId,
+                                            int            paperId,
+                                            const QString& attribute) override;
+    Q_INVOKABLE PLMError       removeAttribute(int            projectId,
+                                               int            paperId,
+                                               const QString& attribute) override;
 
 signals:
 

@@ -35,7 +35,8 @@ public:
         CanAddPaperRole     = Qt::UserRole + 18,
         IsTrashableRole     = Qt::UserRole + 19,
         IsOpenableRole      = Qt::UserRole + 20,
-        IsCopyableRole      = Qt::UserRole + 21
+        IsCopyableRole      = Qt::UserRole + 21,
+        AttributesRole      = Qt::UserRole + 22
     };
     Q_ENUM(Roles)
 

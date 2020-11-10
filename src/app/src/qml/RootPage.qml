@@ -34,46 +34,106 @@ RootPageForm {
     }
 
 
-    Action {
-        id: welcomeWindowAction
-        text: qsTr("Welcome")
-        icon {
-            source: "qrc:/pics/skribisto.svg"
-            color: "transparent"
-            height: 100
-            width: 100
+    ActionGroup {
+        Action {
+            id: welcomeWindowAction
+            text: qsTr("Welcome")
+            icon {
+                source: "qrc:/pics/skribisto.svg"
+                color: "transparent"
+                height: 100
+                width: 100
 
+            }
+            checkable: true
+
+            shortcut: "F5"
+            onTriggered: {
+
+                rootSwipeView.currentIndex = 0
+                welcomePage.forceActiveFocus()
+            }
         }
 
-        shortcut: "F5"
-        onTriggered: {
+        Action {
+            id: writeOverviewWindowAction
+            text: qsTr("Write")
+            icon {
+                source: "qrc:///icons/backup/view-media-playlist.svg"
+                color: SkrTheme.buttonIcon
+                height: 100
+                width: 100
+            }
 
-            rootSwipeView.currentIndex = 0
-            welcomePage.forceActiveFocus()
+            checkable: true
+            shortcut: "F6"
+            onTriggered: {
+                rootSwipeView.currentIndex = 1
+                writeOverviewPage.forceActiveFocus()
+            }
+        }
+
+        Action {
+            id: noteOverviewWindowAction
+            text: qsTr("Note")
+            icon {
+                source: "qrc:///icons/backup/story-editor.svg"
+                color: SkrTheme.buttonIcon
+                height: 100
+                width: 100
+            }
+            checkable: true
+
+            shortcut: "F7"
+            onTriggered: {
+                rootSwipeView.currentIndex = 2
+                noteOverviewPage.forceActiveFocus()
+            }
+        }
+
+
+        Action {
+            id: galleryWindowAction
+            text: qsTr("Gallery")
+            icon {
+                source: "qrc:///icons/backup/view-preview.svg"
+                color: SkrTheme.buttonIcon
+                height: 100
+                width: 100
+            }
+            checkable: true
+
+            shortcut: "F8"
+            onTriggered: {
+                //                rootStack.
+                rootSwipeView.currentIndex = 3
+                galleryPage.forceActiveFocus()
+            }
+        }
+
+
+        Action {
+            id: projectWindowAction
+            text: qsTr("Project")
+            icon {
+                source: "qrc:///icons/backup/configure.svg"
+                color: SkrTheme.buttonIcon
+                height: 100
+                width: 100
+            }
+            checkable: true
+
+            shortcut: "F9"
+            onTriggered: {
+                rootSwipeView.currentIndex = 4
+                projectsMainPage.forceActiveFocus()
+            }
         }
     }
-
     Connections {
         target: Globals
         function onShowWelcomePageCalled() {
             welcomeWindowAction.trigger()
-        }
-    }
-
-    Action {
-        id: writeOverviewWindowAction
-        text: qsTr("Write")
-        icon {
-            source: "qrc:///icons/backup/view-media-playlist.svg"
-            color: SkrTheme.buttonIcon
-            height: 100
-            width: 100
-        }
-
-        shortcut: "F6"
-        onTriggered: {
-            rootSwipeView.currentIndex = 1
-            writeOverviewPage.forceActiveFocus()
         }
     }
 
@@ -84,69 +144,16 @@ RootPageForm {
         }
     }
 
-    Action {
-        id: noteOverviewWindowAction
-        text: qsTr("Note")
-        icon {
-            source: "qrc:///icons/backup/story-editor.svg"
-            color: SkrTheme.buttonIcon
-            height: 100
-            width: 100
-        }
-
-        shortcut: "F7"
-        onTriggered: {
-            rootSwipeView.currentIndex = 2
-            noteOverviewPage.forceActiveFocus()
-        }
-    }
-
     Connections {
         target: Globals
         function onShowNoteOverviewPageCalled() {
             noteOverviewWindowAction.trigger()
         }
     }
-
-    Action {
-        id: galleryWindowAction
-        text: qsTr("Gallery")
-        icon {
-            source: "qrc:///icons/backup/view-preview.svg"
-            color: SkrTheme.buttonIcon
-            height: 100
-            width: 100
-        }
-
-        shortcut: "F8"
-        onTriggered: {
-            //                rootStack.
-            rootSwipeView.currentIndex = 3
-            galleryPage.forceActiveFocus()
-        }
-    }
-
     Connections {
         target: Globals
         function onShowGalleryPageCalled() {
             galleryWindowAction.trigger()
-        }
-    }
-
-    Action {
-        id: projectWindowAction
-        text: qsTr("Project")
-        icon {
-            source: "qrc:///icons/backup/configure.svg"
-            color: SkrTheme.buttonIcon
-            height: 100
-            width: 100
-        }
-
-        shortcut: "F9"
-        onTriggered: {
-            rootSwipeView.currentIndex = 4
-            projectsMainPage.forceActiveFocus()
         }
     }
     Connections {
@@ -156,6 +163,19 @@ RootPageForm {
         }
     }
 
+    //---------------------------------------------------------
+
+    welcomeTab.action: welcomeWindowAction
+    welcomeStatusBarButton.action: welcomeWindowAction
+    writeOverviewTab.action: writeOverviewWindowAction
+    writeOverviewStatusBarButton.action: writeOverviewWindowAction
+    noteOverviewTab.action: noteOverviewWindowAction
+    noteOverviewStatusBarButton.action: noteOverviewWindowAction
+    //NOTE: waiting to be implemented
+    //galleryTab.action: galleryWindowAction
+    //galleryStatusBarButton.action: galleryWindowAction
+    projectTab.action: projectWindowAction
+    projectStatusBarButton.action: projectWindowAction
 
     //------------------------------------------------
     // notification :
@@ -674,14 +694,7 @@ RootPageForm {
 
 
 
-    //---------------------------------------------------------
 
-    welcomeTab.action: welcomeWindowAction
-    writeOverviewTab.action: writeOverviewWindowAction
-    noteOverviewTab.action: noteOverviewWindowAction
-    //NOTE: waiting to be implemented
-    //galleryTab.action: galleryWindowAction
-    projectTab.action: projectWindowAction
 
     //---------------------------------------------------------
     //------------Open Sheet-----------------------------

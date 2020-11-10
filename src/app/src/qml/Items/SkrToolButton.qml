@@ -5,7 +5,7 @@ import ".."
 
 ToolButton {
     id: control
-    icon.color: SkrTheme.buttonIcon
+    icon.color: control.action === null ? SkrTheme.buttonIcon : control.action.icon.color
     Material.background: SkrTheme.buttonBackground
     Material.foreground: SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
@@ -13,6 +13,7 @@ ToolButton {
 
     property string tip
     hoverEnabled: true
+    flat: true
 
     SkrToolTip {
         text: control.tip ? control.tip : control.text
@@ -20,6 +21,7 @@ ToolButton {
     }
 
     Rectangle {
+        id: checkedIndicator
 
         anchors.bottom: parent.bottom
         anchors.left: parent.left

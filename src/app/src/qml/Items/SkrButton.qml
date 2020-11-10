@@ -4,7 +4,7 @@ import ".."
 
 Button {
     id: control
-    icon.color: SkrTheme.buttonIcon
+    icon.color: control.action === null ? SkrTheme.buttonIcon : control.action.icon.color
     Material.background: SkrTheme.buttonBackground
     Material.foreground: SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent

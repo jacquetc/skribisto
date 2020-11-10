@@ -224,6 +224,12 @@ QVariant SKRPaperItem::data(int role)
                                                      "is_copyable",
                                                      "true") == "true" ? true : false);
             break;
+
+        case Roles::AttributesRole:
+            m_data.insert(role, m_propertyHub->getProperty(projectId, paperId,
+                                                           "attributes",
+                                                           ""));
+            break;
         }
 
         m_invalidatedRoles.removeAll(role);
@@ -253,7 +259,7 @@ SKRPaperItem * SKRPaperItem::parent(const QList<SKRPaperItem *>& itemList)
     int possibleParentIndex = index - 1;
 
     if (possibleParentIndex == -1) { // first of list, so no real parent, parent
-                                     // is root item
+        // is root item
         return nullptr;
     }
 

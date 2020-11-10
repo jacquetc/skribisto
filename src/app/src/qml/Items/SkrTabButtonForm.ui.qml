@@ -30,7 +30,6 @@ TabButton {
             implicitHeight: 24
             implicitWidth: 24
             Layout.maximumHeight: 30
-            padding: 0
             rightPadding: 0
             bottomPadding: 0
             leftPadding: 2
@@ -45,11 +44,14 @@ TabButton {
             }
             onDownChanged: down = false
             onClicked: base.checked = true
-            onDisplayChanged: r
 
             Item {
                 id : mouseBlocker
                 anchors.fill: parent
+                    TapHandler {
+                        onTapped: eventPoint.accepted = false
+                    }
+
             }
 
         }

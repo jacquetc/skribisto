@@ -280,10 +280,11 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
             folderId = error.getData("paperId", -2).toInt();
 
             // set properties :
-            plmdata->notePropertyHub()->setProperty(projectId,
-                                                    folderId,
-                                                    "is_renamable",
-                                                    "false");
+            //            plmdata->notePropertyHub()->setProperty(projectId,
+            //                                                    folderId,
+            //
+            //                                                  "is_renamable",
+            //                                                    "false");
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
                                                     "is_movable",
@@ -308,6 +309,7 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
                                                     folderId,
                                                     "is_synopsis_folder",
                                                     "true");
+            this->addAttribute(projectId, folderId, "locked");
         }
 
 
@@ -348,6 +350,7 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
                                                         synopsisId,
                                                         "is_trashable",
                                                         "false");
+                this->addAttribute(projectId, synopsisId, "synopsis");
             }
         }
     }
@@ -438,6 +441,7 @@ PLMError PLMNoteHub::createSynopsis(int projectId, int sheetId) {
                                                 lastAddedNoteId,
                                                 "is_trashable",
                                                 "false");
+        this->addAttribute(projectId, lastAddedNoteId, "synopsis");
     }
 
     if (lastAddedNoteId == -2) {
@@ -473,4 +477,74 @@ QHash<QString, QVariant>PLMNoteHub::getNoteData(int projectId, int noteId) const
         emit errorSent(error);
     }
     return result;
+}
+
+// --------------------------------------------------------------------------------
+
+QList<QString>PLMNoteHub::getAttributes(int projectId, int paperId)
+{
+    QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                 paperId,
+                                                                 "attributes",
+                                                                 "");
+
+    return attributes.split(";", Qt::SkipEmptyParts);
+}
+
+// --------------------------------------------------------------------------------
+
+
+bool PLMNoteHub::hasAttribute(int projectId, int paperId, const QString& attribute)
+{
+    QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                 paperId,
+                                                                 "attributes",
+                                                                 "");
+
+    return attributes.split(";", Qt::SkipEmptyParts).contains(attribute);
+}
+
+// --------------------------------------------------------------------------------
+
+PLMError PLMNoteHub::addAttribute(int projectId, int paperId, const QString& attribute)
+{
+    QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                 paperId,
+                                                                 "attributes",
+                                                                 "");
+    QStringList attributeList = attributes.split(";", Qt::SkipEmptyParts);
+
+    if (attributeList.contains(attribute)) {
+        return PLMError();
+    }
+
+    attributeList << attribute;
+    attributeList.sort();
+
+    return plmdata->notePropertyHub()->setProperty(projectId,
+                                                   paperId,
+                                                   "attributes",
+                                                   attributeList.join(";"));
+}
+
+// --------------------------------------------------------------------------------
+
+PLMError PLMNoteHub::removeAttribute(int projectId, int paperId, const QString& attribute)
+{
+    QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                 paperId,
+                                                                 "attributes",
+                                                                 "");
+    QStringList attributeList = attributes.split(";", Qt::SkipEmptyParts);
+
+    if (!attributeList.contains(attribute)) {
+        return PLMError();
+    }
+
+    attributeList.removeAll(attribute);
+
+    return plmdata->notePropertyHub()->setProperty(projectId,
+                                                   paperId,
+                                                   "attributes",
+                                                   attributeList.join(";"));
 }

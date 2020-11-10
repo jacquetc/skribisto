@@ -180,3 +180,73 @@ PLMError PLMSheetHub::removePaper(int projectId, int targetId)
            plmdata->noteHub()->removePaper(projectId, synopsisId));
     return error;
 }
+
+// --------------------------------------------------------------------------------
+
+QList<QString>PLMSheetHub::getAttributes(int projectId, int paperId)
+{
+    QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                 paperId,
+                                                                 "attributes",
+                                                                 "");
+
+    return attributes.split(";", Qt::SkipEmptyParts);
+}
+
+// --------------------------------------------------------------------------------
+
+
+bool PLMSheetHub::hasAttribute(int projectId, int paperId, const QString& attribute)
+{
+    QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                 paperId,
+                                                                 "attributes",
+                                                                 "");
+
+    return attributes.split(";", Qt::SkipEmptyParts).contains(attribute);
+}
+
+// --------------------------------------------------------------------------------
+
+PLMError PLMSheetHub::addAttribute(int projectId, int paperId, const QString& attribute)
+{
+    QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                 paperId,
+                                                                 "attributes",
+                                                                 "");
+    QStringList attributeList = attributes.split(";", Qt::SkipEmptyParts);
+
+    if (attributeList.contains(attribute)) {
+        return PLMError();
+    }
+
+    attributeList << attribute;
+    attributeList.sort();
+
+    return plmdata->notePropertyHub()->setProperty(projectId,
+                                                   paperId,
+                                                   "attributes",
+                                                   attributeList.join(";"));
+}
+
+// --------------------------------------------------------------------------------
+
+PLMError PLMSheetHub::removeAttribute(int projectId, int paperId, const QString& attribute)
+{
+    QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                 paperId,
+                                                                 "attributes",
+                                                                 "");
+    QStringList attributeList = attributes.split(";", Qt::SkipEmptyParts);
+
+    if (!attributeList.contains(attribute)) {
+        return PLMError();
+    }
+
+    attributeList.removeAll(attribute);
+
+    return plmdata->notePropertyHub()->setProperty(projectId,
+                                                   paperId,
+                                                   "attributes",
+                                                   attributeList.join(";"));
+}

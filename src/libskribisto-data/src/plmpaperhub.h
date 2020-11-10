@@ -28,6 +28,7 @@
 #include <QVariant>
 
 #include "plmerror.h"
+#include "plmpropertyhub.h"
 #include "skribisto_data_global.h"
 
 class EXPORT PLMPaperHub : public QObject {
@@ -188,6 +189,19 @@ public:
     Q_INVOKABLE virtual PLMError untrashOnlyOnePaper(int projectId,
                                                      int paperId);
 
+
+    Q_INVOKABLE virtual QList<QString>getAttributes(int projectId,
+                                                    int paperId) = 0;
+    Q_INVOKABLE virtual bool          hasAttribute(int            projectId,
+                                                   int            paperId,
+                                                   const QString& attribute) = 0;
+    Q_INVOKABLE virtual PLMError      addAttribute(int            projectId,
+                                                   int            paperId,
+                                                   const QString& attribute) = 0;
+    Q_INVOKABLE virtual PLMError      removeAttribute(int            projectId,
+                                                      int            paperId,
+                                                      const QString& attribute) = 0;
+
 private:
 
     PLMError movePaper(int  projectId,
@@ -261,6 +275,7 @@ public slots:
 protected:
 
     QString m_tableName, m_paperType;
+    PLMPropertyHub *m_propertyHub;
     PLMError m_error;
     int m_last_added_id;
 };

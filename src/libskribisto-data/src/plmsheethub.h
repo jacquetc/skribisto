@@ -40,20 +40,32 @@ public:
                                      int            paperId,
                                      const QString& newTitle);
 
-    Q_INVOKABLE PLMError addPaperAbove(int projectId,
-                                       int targetId);
-    Q_INVOKABLE PLMError addPaperBelow(int projectId,
-                                       int targetId);
-    Q_INVOKABLE PLMError addChildPaper(int projectId,
-                                       int targetId);
-    Q_INVOKABLE PLMError setTrashedWithChildren(int  projectId,
-                                                int  paperId,
-                                                bool newTrashedState);
-    Q_INVOKABLE PLMError untrashOnlyOnePaper(int projectId,
-                                             int paperId);
+    Q_INVOKABLE PLMError       addPaperAbove(int projectId,
+                                             int targetId);
+    Q_INVOKABLE PLMError       addPaperBelow(int projectId,
+                                             int targetId);
+    Q_INVOKABLE PLMError       addChildPaper(int projectId,
+                                             int targetId);
+    Q_INVOKABLE PLMError       setTrashedWithChildren(int  projectId,
+                                                      int  paperId,
+                                                      bool newTrashedState);
+    Q_INVOKABLE PLMError       untrashOnlyOnePaper(int projectId,
+                                                   int paperId);
 
-    PLMError             removePaper(int projectId,
-                                     int targetId);
+    PLMError                   removePaper(int projectId,
+                                           int targetId);
+
+    Q_INVOKABLE  QList<QString>getAttributes(int projectId,
+                                             int paperId) override;
+    Q_INVOKABLE  bool          hasAttribute(int            projectId,
+                                            int            paperId,
+                                            const QString& attribute) override;
+    Q_INVOKABLE  PLMError      addAttribute(int            projectId,
+                                            int            paperId,
+                                            const QString& attribute) override;
+    Q_INVOKABLE PLMError       removeAttribute(int            projectId,
+                                               int            paperId,
+                                               const QString& attribute) override;
 };
 
 #endif // PLMSHEETHUB_H

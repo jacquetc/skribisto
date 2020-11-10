@@ -1176,6 +1176,17 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
+    <name>ListItemAttributes</name>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainTreeAbstractModel</name>
     <message>
         <source>Titles</source>
@@ -2614,6 +2625,10 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>&amp;View</source>
         <translation type="unfinished">&amp;Vista</translation>
+    </message>
+    <message>
+        <source>Outlines</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -237,6 +237,10 @@ QVariant SKRPaperListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
+    if (role == SKRPaperItem::Roles::AttributesRole) {
+        return item->data(role);
+    }
+
     return QVariant();
 }
 
@@ -393,6 +397,8 @@ QHash<int, QByteArray>SKRPaperListModel::roleNames() const {
     roles[SKRPaperItem::Roles::CanAddPaperRole]     = "canAddPaper";
     roles[SKRPaperItem::Roles::IsTrashableRole]     = "isTrashable";
     roles[SKRPaperItem::Roles::IsOpenableRole]      = "isOpenable";
+    roles[SKRPaperItem::Roles::IsCopyableRole]      = "isCopyable";
+    roles[SKRPaperItem::Roles::AttributesRole]      = "attributes";
     return roles;
 }
 
@@ -918,6 +924,20 @@ void SKRPaperListModel::connectToPLMDataSignals()
         if (name == "is_copyable") this->exploitSignalFromPLMData(projectId, paperCode,
                                                                   SKRPaperItem::Roles::
                                                                   IsCopyableRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "attributes") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                 SKRPaperItem::Roles::
+                                                                 AttributesRole);
     }, Qt::UniqueConnection);
 }
 

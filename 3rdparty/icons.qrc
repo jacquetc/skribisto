@@ -81,5 +81,6 @@
         <file>icons/backup/resizecol.svg</file>
         <file>icons/backup/tag.svg</file>
         <file>icons/backup/tag-new.svg</file>
+        <file>icons/backup/lock.svg</file>
     </qresource>
 </RCC>

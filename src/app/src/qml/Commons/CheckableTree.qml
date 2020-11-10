@@ -605,16 +605,33 @@ ListView {
                                     }
 
                                 }
+                                RowLayout{
+                                    id: labelLayout
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: 5
 
-                                SkrLabel {
-                                    id: labelLabel
+                                    ListItemAttributes{
+                                        id: attributes
+                                        attributes: model.attributes
+                                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                        Layout.leftMargin: 4
+                                        Layout.bottomMargin: 2
 
-                                    //                                text: model.label
-                                    text:  model.label
-                                    Layout.bottomMargin: 2
-                                    Layout.rightMargin: 4
-                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                    elide: Text.ElideRight
+                                    }
+
+
+                                    SkrLabel {
+                                        id: labelLabel
+                                        text:  model.label === undefined ? "" : model.label
+                                        Layout.bottomMargin: 2
+                                        Layout.rightMargin: 4
+                                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                        elide: Text.ElideRight
+                                        horizontalAlignment: Qt.AlignRight
+                                        Layout.fillWidth: true
+
+
+                                    }
                                 }
                             }
                             //                        MouseArea {
@@ -744,7 +761,7 @@ ListView {
                         visible: false
                     }
                     PropertyChanges {
-                        target: labelLabel
+                        target: labelLayout
                         visible: false
                     }
                     PropertyChanges {
@@ -767,7 +784,7 @@ ListView {
                         visible: false
                     }
                     PropertyChanges {
-                        target: labelLabel
+                        target: labelLayout
                         visible: false
                     }
                     PropertyChanges {

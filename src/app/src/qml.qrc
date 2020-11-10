@@ -117,5 +117,6 @@
         <file>qml/Welcome/NewProjectForm.ui.qml</file>
         <file>qml/Welcome/FileMenuPage.qml</file>
         <file>qml/Welcome/FileMenuPageForm.ui.qml</file>
+        <file>qml/Commons/ListItemAttributes.qml</file>
     </qresource>
 </RCC>

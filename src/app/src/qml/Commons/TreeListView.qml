@@ -209,7 +209,7 @@ TreeListViewForm {
         //        MenuSeparator {}
         Action {
             text: qsTr("Paste")
-            enabled: listView.enabled
+            enabled: listView.enabled && currentParent !== -2
             shortcut: StandardKey.Paste
             icon.source: "qrc:///icons/backup/edit-paste.svg"
         }
@@ -652,8 +652,8 @@ TreeListViewForm {
                         } else
                             return false
                     }
-                    icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : (model.canAddPaper ? "qrc:///icons/backup/list-add.svg" : undefined)
-                    text: model.hasChildren ? ">" : (model.canAddPaper ? "+" : undefined)
+                    icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : (model.canAddPaper ? "qrc:///icons/backup/list-add.svg" : "")
+                    text: model.hasChildren ? ">" : (model.canAddPaper ? "+" : "")
                     onTriggered: {
                         console.log("goToChildAction triggered")
 
@@ -878,7 +878,7 @@ TreeListViewForm {
 
                                         //fix bug while new lone child
                                         titleLabel.visible = true
-                                        labelLabel.visible = true
+                                        labelLayout.visible = true
                                     }
 
                                     //Keys.priority: Keys.AfterItem
@@ -931,7 +931,7 @@ TreeListViewForm {
 
                                         //fix bug while new lone child
                                         titleLabel.visible = true
-                                        labelLabel.visible = true
+                                        labelLayout.visible = true
                                     }
 
                                     //Keys.priority: Keys.AfterItem
@@ -956,15 +956,33 @@ TreeListViewForm {
 
                                 }
 
-                                SkrLabel {
-                                    id: labelLabel
-                                    text:  model.label === undefined ? "" : model.label
-                                    Layout.bottomMargin: 2
-                                    Layout.rightMargin: 4
-                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                    elide: Text.ElideRight
+                                RowLayout{
+                                    id: labelLayout
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: 5
+
+                                    ListItemAttributes{
+                                        id: attributes
+                                        attributes: model.attributes
+                                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                        Layout.leftMargin: 4
+                                        Layout.bottomMargin: 2
+
+                                    }
 
 
+                                    SkrLabel {
+                                        id: labelLabel
+                                        text:  model.label === undefined ? "" : model.label
+                                        Layout.bottomMargin: 2
+                                        Layout.rightMargin: 4
+                                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                        elide: Text.ElideRight
+                                        horizontalAlignment: Qt.AlignRight
+                                        Layout.fillWidth: true
+
+
+                                    }
                                 }
                             }
 
@@ -1110,7 +1128,7 @@ TreeListViewForm {
                         visible: false
                     }
                     PropertyChanges {
-                        target: labelLabel
+                        target: labelLayout
                         visible: false
                     }
                     PropertyChanges {
@@ -1137,7 +1155,7 @@ TreeListViewForm {
                         visible: false
                     }
                     PropertyChanges {
-                        target: labelLabel
+                        target: labelLayout
                         visible: false
                     }
                     PropertyChanges {
