@@ -192,7 +192,12 @@ ListView {
             Keys.priority: Keys.AfterItem
 
             Keys.onShortcutOverride: {
-
+                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
+                    event.accepted = true
+                }
+                if((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N){
+                    event.accepted = true
+                }
                 if(copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
                     event.accepted = true
                 }
@@ -211,12 +216,12 @@ ListView {
             }
 
             Keys.onPressed: {
-                if (openActionsEnabled && event.key === Qt.Key_Return){
+                if (model.isOpenable && openActionsEnabled && event.key === Qt.Key_Return){
                     console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
                 }
-                if (openActionsEnabled && (event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
+                if (model.isOpenable && openActionsEnabled && (event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
                     console.log("Alt Return key pressed")
                     openDocumentInNewTabAction.trigger()
                     event.accepted = true
@@ -225,13 +230,13 @@ ListView {
 
                 // rename
 
-                if (renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isRenamable && renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     renameAction.trigger()
                     event.accepted = true
                 }
 
                 // cut
-                if (cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     cutAction.trigger()
                     event.accepted = true
                 }
@@ -808,8 +813,8 @@ ListView {
 
 
                 SkrMenuItem {
-                    height: openActionsEnabled ? undefined : 0
-                    visible: openActionsEnabled
+                    height: model.isOpenable && openActionsEnabled ? undefined : 0
+                    visible: model.isOpenable && openActionsEnabled
                     action: Action {
                         id: openPaperAction
                         text: qsTr("Open")
@@ -827,8 +832,8 @@ ListView {
                 }
 
                 SkrMenuItem {
-                    height: openActionsEnabled ? undefined : 0
-                    visible: openActionsEnabled
+                    height: model.isOpenable && openActionsEnabled ? undefined : 0
+                    visible: model.isOpenable && openActionsEnabled
                     action: Action {
                         id: openPaperInNewTabAction
                         text: qsTr("Open in new tab")
@@ -846,8 +851,8 @@ ListView {
                 }
 
                 SkrMenuItem {
-                    height: openActionsEnabled ? undefined : 0
-                    visible: openActionsEnabled
+                    height: model.isOpenable && openActionsEnabled ? undefined : 0
+                    visible: model.isOpenable && openActionsEnabled
                     action: Action {
                         id: openPaperInNewWindowAction
                         text: qsTr("Open in new window")
@@ -865,13 +870,13 @@ ListView {
                 }
 
                 MenuSeparator {
-                    height: renameActionEnabled  ? undefined : 0
-                    visible: renameActionEnabled
+                    height: model.isRenamable && renameActionEnabled  ? undefined : 0
+                    visible: model.isRenamable && renameActionEnabled
                 }
 
                 SkrMenuItem {
-                    height: renameActionEnabled ? undefined : 0
-                    visible: renameActionEnabled
+                    height: model.isRenamable && renameActionEnabled ? undefined : 0
+                    visible: model.isRenamable && renameActionEnabled
                     action :Action {
                         id: renameAction
                         text: qsTr("Rename")
@@ -890,8 +895,8 @@ ListView {
 
 
                 SkrMenuItem {
-                    height: renameActionEnabled ? undefined : 0
-                    visible: renameActionEnabled
+                    height: model.isRenamable && renameActionEnabled ? undefined : 0
+                    visible: model.isRenamable && renameActionEnabled
                     action :  Action {
                         id: setLabelAction
                         text: qsTr("Set label")
@@ -909,13 +914,13 @@ ListView {
                 }
 
                 MenuSeparator {
-                    height: copyActionEnabled  ? undefined : 0
-                    visible: copyActionEnabled
+                    height: model.isCopyable && copyActionEnabled  ? undefined : 0
+                    visible: model.isCopyable && copyActionEnabled
                 }
 
                 SkrMenuItem {
-                    height: copyActionEnabled ? undefined : 0
-                    visible: copyActionEnabled
+                    height: model.isCopyable && copyActionEnabled ? undefined : 0
+                    visible: model.isCopyable && copyActionEnabled
                     action :Action {
 
                         text: qsTr("Copy")
@@ -934,13 +939,13 @@ ListView {
                 }
 
                 MenuSeparator {
-                    height: sendToTrashActionEnabled || deleteActionEnabled ? undefined : 0
-                    visible: sendToTrashActionEnabled || deleteActionEnabled
+                    height: model.isTrashable && (sendToTrashActionEnabled || deleteActionEnabled) ? undefined : 0
+                    visible: model.isTrashable && (sendToTrashActionEnabled || deleteActionEnabled)
                 }
 
                 SkrMenuItem {
-                    height: sendToTrashActionEnabled ? undefined : 0
-                    visible: sendToTrashActionEnabled
+                    height: model.isTrashable && sendToTrashActionEnabled ? undefined : 0
+                    visible: model.isTrashable && sendToTrashActionEnabled
                     action: Action {
                         text: qsTr("Send to trash")
                         //shortcut: "Del"
@@ -958,8 +963,8 @@ ListView {
                 }
 
                 SkrMenuItem {
-                    height: deleteActionEnabled ? undefined : 0
-                    visible: deleteActionEnabled
+                    height: model.isTrashable && deleteActionEnabled ? undefined : 0
+                    visible: model.isTrashable && deleteActionEnabled
                     action: Action {
                         text: qsTr("Delete definitively")
                         //shortcut: "Del"

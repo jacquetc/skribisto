@@ -105,6 +105,7 @@ LeftDockForm {
         id: navigationProxyModel
         showTrashedFilter: false
         showNotTrashedFilter: true
+        navigateByBranchesEnabled: true
     }
 
     navigation.treeListViewProxyModel: navigationProxyModel

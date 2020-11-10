@@ -132,7 +132,7 @@ int PLMPaperHub::getOverallSize()
 
     QList<int> result;
 
-    for(int projectId : plmProjectManager->projectIdList()) {
+    for (int projectId : plmProjectManager->projectIdList()) {
         PLMSqlQueries queries(projectId, m_tableName);
 
         error = queries.getIds(result);
@@ -440,7 +440,10 @@ QDateTime PLMPaperHub::getContentDate(int projectId, int paperId) const
 
 // ------------------------------------------------------------
 
-bool PLMPaperHub::hasChildren(int projectId, int paperId, bool trashedAreIncluded, bool notTrashedAreIncluded) const
+bool PLMPaperHub::hasChildren(int  projectId,
+                              int  paperId,
+                              bool trashedAreIncluded,
+                              bool notTrashedAreIncluded) const
 {
     PLMError error;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -476,7 +479,7 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId, bool trashedAreInclude
     if (indent == possibleFirstChildIndent - 1) {
         // verify if at least one child is not trashed
         bool haveOneNotTrashedChild = false;
-        bool haveOneTrashedChild = false;
+        bool haveOneTrashedChild    = false;
         int  firstChildIndex        = idList.indexOf(possibleFirstChildId);
 
         for (int i = firstChildIndex; i < idList.count(); i++) {
@@ -496,7 +499,8 @@ bool PLMPaperHub::hasChildren(int projectId, int paperId, bool trashedAreInclude
                 }
             }
         }
-        if(haveOneTrashedChild && trashedAreIncluded){
+
+        if (haveOneTrashedChild && trashedAreIncluded) {
             return true;
         }
 
@@ -1192,15 +1196,15 @@ QList<int>PLMPaperHub::getAllAncestors(int projectId, int paperId) {
 
     // determine ancestors
 
-    int indent      = indentList.value(paperId);
+    int indent = indentList.value(paperId);
 
 
     for (int i = sortedIdList.indexOf(paperId); i >= 0; i--) {
         int id = sortedIdList.at(i);
 
-//        if (id == paperId) {
-//            continue;
-//        }
+        //        if (id == paperId) {
+        //            continue;
+        //        }
 
         int idIndent = indentList.value(id);
 
@@ -1221,78 +1225,73 @@ QList<int>PLMPaperHub::getAllAncestors(int projectId, int paperId) {
 // -----------------------------------------------------------------------------
 
 QList<int>PLMPaperHub::getAllSiblings(int projectId, int paperId) {
-
     QList<int> siblingsList;
 
     // get indents
     QHash<int, int> indentList = getAllIndents(projectId);
     QList<int> sortedIdList    = getAllIds(projectId);
-    int paperSortedIdIndex = sortedIdList.indexOf(paperId);
+    int paperSortedIdIndex     = sortedIdList.indexOf(paperId);
 
 
     // determine siblings
 
-    int indent      = indentList.value(paperId);
+    int indent = indentList.value(paperId);
 
-    //min sibling index
+    // min sibling index
     int minSiblingIndex = paperSortedIdIndex;
+
     for (int i = paperSortedIdIndex; i >= 0; i--) {
         int id = sortedIdList.at(i);
 
-//        if (id == paperId) {
-//            continue;
-//        }
+        //        if (id == paperId) {
+        //            continue;
+        //        }
 
         int idIndent = indentList.value(id);
 
-        if (idIndent == indent - 1 || indent == -1) {
-                break;
-
-
+        if ((idIndent == indent - 1) || (indent == -1)) {
+            break;
         }
         minSiblingIndex = i;
     }
 
-    //min sibling index
+    // min sibling index
     int maxSiblingIndex = paperSortedIdIndex;
+
     for (int i = paperSortedIdIndex; i < sortedIdList.count(); i++) {
         int id = sortedIdList.at(i);
 
-//        if (id == paperId) {
-//            continue;
-//        }
+        //        if (id == paperId) {
+        //            continue;
+        //        }
 
         int idIndent = indentList.value(id);
 
-        if (idIndent == indent - 1 || indent == -1) {
+        if ((idIndent == indent - 1) || (indent == -1)) {
             break;
-
         }
         maxSiblingIndex = i;
-
     }
 
     // alone, so no siblings
-    if(minSiblingIndex == paperSortedIdIndex && maxSiblingIndex == paperSortedIdIndex){
+    if ((minSiblingIndex == paperSortedIdIndex) &&
+        (maxSiblingIndex == paperSortedIdIndex)) {
         return siblingsList;
     }
 
-    //same level
+    // same level
 
     for (int i = minSiblingIndex; i <= maxSiblingIndex; i++) {
         int id = sortedIdList.at(i);
 
-//        if (id == paperId) {
-//            continue;
-//        }
+        //        if (id == paperId) {
+        //            continue;
+        //        }
 
         int idIndent = indentList.value(id);
 
         if (idIndent == indent) {
-
             siblingsList.append(id);
-
-
         }
     }
 
@@ -1577,6 +1576,75 @@ PLMError PLMPaperHub::movePaperDown(int projectId, int paperId)
 
 
     return error;
+}
+
+// -----------------------------------------------------------------------------
+
+PLMError PLMPaperHub::movePaperAsChildOf(int projectId,
+                                         int noteId,
+                                         int targetParentId,
+                                         int wantedSortOrder)
+{
+    PLMError error;
+
+    int validSortOrder = getValidSortOrderAfterPaper(projectId, targetParentId);
+
+    if (wantedSortOrder == -1) {
+        wantedSortOrder = validSortOrder;
+    }
+
+    if (wantedSortOrder > validSortOrder) {
+        error.setSuccess(false);
+        error.setErrorCode("E_PAPERHUB_wantedSortOrder_is_outside_scope_of_parent");
+    }
+    IFOK(error) {
+        error = this->setSortOrder(projectId, noteId, wantedSortOrder);
+    }
+    IFOK(error) {
+        int parentIndent = this->getIndent(projectId, targetParentId);
+
+        error = this->setIndent(projectId, noteId, parentIndent + 1);
+    }
+
+    return error;
+}
+
+// -----------------------------------------------------------------------------
+
+int PLMPaperHub::getParentId(int projectId, int paperId)
+{
+    int parentId = -2;
+
+    // get indents
+    QHash<int, int> indentList = getAllIndents(projectId);
+    QList<int> sortedIdList    = getAllIds(projectId);
+
+
+    // determine direct ancestor
+
+    int indent = indentList.value(paperId);
+
+    if (indent == 0) {
+        return -1;
+    }
+
+    for (int i = sortedIdList.indexOf(paperId); i >= 0; i--) {
+        int id = sortedIdList.at(i);
+
+        //        if (id == paperId) {
+        //            continue;
+        //        }
+
+        int idIndent = indentList.value(id);
+
+        if (idIndent == indent - 1) {
+            parentId = id;
+            break;
+        }
+    }
+
+
+    return parentId;
 }
 
 // -----------------------------------------------------------------------------

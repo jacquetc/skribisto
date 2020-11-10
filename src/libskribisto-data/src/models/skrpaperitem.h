@@ -29,7 +29,13 @@ public:
         CharCountRole       = Qt::UserRole + 12,
         WordCountRole       = Qt::UserRole + 13,
         ProjectIsBackupRole = Qt::UserRole + 14,
-        ProjectIsActiveRole = Qt::UserRole + 15
+        ProjectIsActiveRole = Qt::UserRole + 15,
+        IsRenamableRole     = Qt::UserRole + 16,
+        IsMovableRole       = Qt::UserRole + 17,
+        CanAddPaperRole     = Qt::UserRole + 18,
+        IsTrashableRole     = Qt::UserRole + 19,
+        IsOpenableRole      = Qt::UserRole + 20,
+        IsCopyableRole      = Qt::UserRole + 21
     };
     Q_ENUM(Roles)
 

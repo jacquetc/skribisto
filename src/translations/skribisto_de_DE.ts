@@ -2120,6 +2120,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>

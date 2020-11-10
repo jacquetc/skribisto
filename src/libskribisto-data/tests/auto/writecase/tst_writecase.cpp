@@ -236,7 +236,10 @@ void WriteCase::setTrashed()
 {
     QSignalSpy spy(plmdata->sheetHub(), SIGNAL(trashedChanged(int,int,bool)));
 
-    PLMError error = plmdata->sheetHub()->setTrashedWithChildren(m_currentProjectId, 2, true);
+    PLMError error = plmdata->sheetHub()->setTrashedWithChildren(m_currentProjectId,
+                                                                 2,
+                                                                 true);
+
     QCOMPARE(error.isSuccess(), true);
     QVERIFY(spy.count() > 1);
 
@@ -249,17 +252,14 @@ void WriteCase::setTrashed()
     QCOMPARE(value, true);
 
     QDateTime date = plmdata->sheetHub()->getTrashedDate(m_currentProjectId, 2);
+
     QCOMPARE(date.isValid(), true);
-
-
-
 }
 
 // ------------------------------------------------------------------------------------
 
 void WriteCase::restoring()
 {
-
     setTrashed();
 
     // restoring
@@ -275,14 +275,12 @@ void WriteCase::restoring()
     QVERIFY(arguments.at(2).toBool() == false);
 
     bool value = plmdata->sheetHub()->getTrashed(m_currentProjectId, 2);
+
     QCOMPARE(value, false);
 
     QDateTime date = plmdata->sheetHub()->getTrashedDate(m_currentProjectId, 2);
 
     QCOMPARE(date.isNull(), true);
-
-
-
 }
 
 // ------------------------------------------------------------------------------------
@@ -318,7 +316,7 @@ void WriteCase::getContent()
 {
     QString value = plmdata->sheetHub()->getContent(m_currentProjectId, 1);
 
-    QCOMPARE(value, QString("fir**st** *content*\n\n"));
+    QCOMPARE(value, QString("fir**st** *content* test_project_dict_word badword\n\n"));
 
     // lorem ipsum :
     value = plmdata->sheetHub()->getContent(m_currentProjectId, 6);

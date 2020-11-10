@@ -5,7 +5,8 @@
 SKRSearchPaperListProxyModel::SKRSearchPaperListProxyModel(SKR::PaperType paperType)
     :
     QSortFilterProxyModel(), m_paperType(paperType),
-    m_showTrashedFilter(true), m_showNotTrashedFilter(true), m_textFilter(""),
+    m_showTrashedFilter(true), m_showNotTrashedFilter(true), m_navigateByBranchesEnabled(
+        false), m_textFilter(""),
     m_projectIdFilter(-2), m_parentIdFilter(-2), m_showParentWhenParentIdFilter(false)
 {
     if (paperType == SKR::Sheet) {
@@ -476,6 +477,15 @@ void SKRSearchPaperListProxyModel::setShowParentWhenParentIdFilter(bool showPare
 
 // --------------------------------------------------------------
 
+void SKRSearchPaperListProxyModel::setNavigateByBranchesEnabled(bool navigateByBranches)
+{
+    m_navigateByBranchesEnabled = navigateByBranches;
+
+    emit navigateByBranchesEnabledChanged(navigateByBranches);
+}
+
+// --------------------------------------------------------------
+
 
 bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow,
                                                     const QModelIndex& sourceParent) const
@@ -490,9 +500,25 @@ bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow
     SKRPaperItem *item       = static_cast<SKRPaperItem *>(index.internalPointer());
     SKRPaperListModel *model = static_cast<SKRPaperListModel *>(this->sourceModel());
 
-    // avoid project item
-    if (item->data(SKRPaperItem::Roles::PaperIdRole).toInt() == -1) {
-        result = false;
+    //        // avoid project item
+    //        if (item->data(SKRPaperItem::Roles::PaperIdRole).toInt() == -1) {
+    //            result = false;
+    //        }
+
+    // displays or not project list :
+    if (m_navigateByBranchesEnabled) {
+        if ((m_parentIdFilter == -2) && item->isProjectItem()) {
+            return true;
+        }
+        else if ((m_parentIdFilter != -2) && item->isProjectItem()) {
+            return false;
+        }
+        else if ((m_parentIdFilter == -2) && !item->isProjectItem()) {
+            return false;
+        }
+    }
+    else if ((m_parentIdFilter == -2) && item->isProjectItem()) {
+        return false;
     }
 
     // project filtering :
@@ -792,17 +818,17 @@ void SKRSearchPaperListProxyModel::setCurrentPaperId(int projectId, int paperId)
         item    = this->getItem(projectId, paperId);
     }
 
-    // if (m_parentIdFilter != -2) {
-    SKRPaperItem *parentItem = model->getParentPaperItem(item);
 
-    if (parentItem) {
-        this->setParentFilter(projectId, parentItem->paperId());
-    }
-    else {
-        this->setParentFilter(projectId, -2); // root item
-    }
+    if (m_navigateByBranchesEnabled) {
+        SKRPaperItem *parentItem = model->getParentPaperItem(item);
 
-    // }
+        if (parentItem) {
+            this->setParentFilter(projectId, parentItem->paperId());
+        }
+        else {
+            this->setParentFilter(projectId, -2); // root item
+        }
+    }
 
     this->setForcedCurrentIndex(projectId, paperId);
 }

@@ -56,7 +56,7 @@ RootPageForm {
     Connections {
         target: Globals
         function onShowWelcomePageCalled() {
-          welcomeWindowAction.trigger()
+            welcomeWindowAction.trigger()
         }
     }
 
@@ -80,7 +80,7 @@ RootPageForm {
     Connections {
         target: Globals
         function onShowWriteOverviewPageCalled() {
-          writeOverviewWindowAction.trigger()
+            writeOverviewWindowAction.trigger()
         }
     }
 
@@ -104,7 +104,7 @@ RootPageForm {
     Connections {
         target: Globals
         function onShowNoteOverviewPageCalled() {
-          noteOverviewWindowAction.trigger()
+            noteOverviewWindowAction.trigger()
         }
     }
 
@@ -129,7 +129,7 @@ RootPageForm {
     Connections {
         target: Globals
         function onShowGalleryPageCalled() {
-          galleryWindowAction.trigger()
+            galleryWindowAction.trigger()
         }
     }
 
@@ -152,7 +152,7 @@ RootPageForm {
     Connections {
         target: Globals
         function onShowProjectPageCalled() {
-          projectWindowAction.trigger()
+            projectWindowAction.trigger()
         }
     }
 
@@ -285,6 +285,19 @@ RootPageForm {
                 paperIdForProjectLoading = -2
 
             }
+
+            // renaming synopsis folder to locale:
+
+            var synopsisFolderId = plmData.noteHub().getSynopsisFolderId(projectId)
+            var synopsisTitle = qsTr("Outlines")
+
+            if(plmData.noteHub().getTitle(projectId, synopsisFolderId) !== synopsisTitle){
+                plmData.noteHub().setTitle(projectId, synopsisFolderId, synopsisTitle)
+            }
+
+
+
+            // finally :
             projectLoadingTimer.start()
 
 

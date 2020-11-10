@@ -818,7 +818,7 @@ SheetOverviewTreeForm {
                                                 var error = plmData.noteHub().createSynopsis(projectId, sheetId)
                                                 synopsisId = error.getData("noteId", -2);
                                                 plmData.noteHub().setTitle(projectId, synopsisId, model.name)
-                                                plmData.notePropertyHub().setProperty(projectId, synopsisId, "label", qsTr("Outline"))
+                                                //plmData.notePropertyHub().setProperty(projectId, synopsisId, "label", qsTr("Outline"))
                                                 if(synopsisId === -2){
                                                     console.warn("can't find synopsis of", projectId, sheetId)
                                                     //TODO: add notification

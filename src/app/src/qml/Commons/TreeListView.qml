@@ -75,6 +75,7 @@ TreeListViewForm {
             goUpActionCurrentParent = currentParent
 
             currentParent = proxyModel.goUp()
+            console.log("currentParent", currentParent)
             listView.currentIndex = proxyModel.getLastOfHistory(currentProject)
             proxyModel.removeLastOfHistory(currentProject)
 
@@ -121,20 +122,24 @@ TreeListViewForm {
     onCurrentParentChanged: {
         determineIfGoUpButtonEnabled()
 
-
         if (currentParent !== -2 & currentProject !== -2) {
             currentParentToolButton.text = proxyModel.getItemName(
                         currentProject, currentParent)
             //console.log("onCurrentParentChanged")
-            listView.section.property = ""
+
+            listView.section.delegate = null
+
         }
         // clear :
         if (currentParent === -2 & currentProject === -2 ){
             currentParentToolButton.text = ""
+            listView.section.delegate = null
         }
         // show "projects" section
         else if (currentParent === -2 ){
-            listView.section.property = "indent"
+
+            listView.section.delegate = sectionHeading
+
         }
     }
     onCurrentProjectChanged: {
@@ -159,7 +164,7 @@ TreeListViewForm {
     listView.section.criteria: ViewSection.FullString
     listView.section.labelPositioning: ViewSection.CurrentLabelAtStart |
                                        ViewSection.InlineLabels
-    listView.section.delegate: sectionHeading
+    listView.section.delegate: null
 
     // The delegate for each section header
     Component {
@@ -427,16 +432,16 @@ TreeListViewForm {
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
                     event.accepted = true
                 }
+                if((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N){
+                    event.accepted = true
+                }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
                     event.accepted = true
                 }
-                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
+                if((model.isMovable && event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
                     event.accepted = true
                 }
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
-                    event.accepted = true
-                }
-                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
                     event.accepted = true
                 }
                 if( event.key === Qt.Key_Escape  && (delegateRoot.state == "edit_name" || delegateRoot.state == "edit_label")){
@@ -455,19 +460,19 @@ TreeListViewForm {
                     goUpAction.trigger()
                     event.accepted = true
                 }
-                if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
+                if (model.isOpenable && (event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
                     console.log("Alt Return key pressed")
                     openDocumentInNewTabAction.trigger()
                     event.accepted = true
                 }
-                if (event.key === Qt.Key_Return && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isOpenable && event.key === Qt.Key_Return && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
                 }
                 // rename
 
-                if (event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isRenamable && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     renameAction.trigger()
                     event.accepted = true
                 }
@@ -475,43 +480,43 @@ TreeListViewForm {
 
 
                 // cut
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     cutAction.trigger()
                     event.accepted = true
                 }
 
                 // copy
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isCopyable && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     copyAction.trigger()
                     event.accepted = true
                 }
 
                 // add before
-                if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.canAddPaper && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addBeforeAction.trigger()
                     event.accepted = true
                 }
 
                 // add after
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.canAddPaper && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addAfterAction.trigger()
                     event.accepted = true
                 }
 
                 // move up
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveUpAction.trigger()
                     event.accepted = true
                 }
 
                 // move down
-                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveDownAction.trigger()
                     event.accepted = true
                 }
 
                 // send to trash
-                if (event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isTrashable && event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     sendToTrashAction.trigger()
                     event.accepted = true
                 }
@@ -632,6 +637,10 @@ TreeListViewForm {
                     id: goToChildAction
                     //shortcut: "Right"
                     enabled: {
+                        if(!model.hasChildren && !model.canAddPaper){
+                            return false
+                        }
+
                         if (!listView.enabled){
                             return false
                         }
@@ -643,8 +652,8 @@ TreeListViewForm {
                         } else
                             return false
                     }
-                    icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : "qrc:///icons/backup/list-add.svg"
-                    text: model.hasChildren ? ">" : "+"
+                    icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : (model.canAddPaper ? "qrc:///icons/backup/list-add.svg" : undefined)
+                    text: model.hasChildren ? ">" : (model.canAddPaper ? "+" : undefined)
                     onTriggered: {
                         console.log("goToChildAction triggered")
 
@@ -701,6 +710,10 @@ TreeListViewForm {
                     id: openDocumentAction
                     //shortcut: "Return"
                     enabled: {
+                        if(!model.isOpenable){
+                            return false
+                        }
+
                         if (listView.enabled && titleTextField.visible === false
                                 && listView.currentIndex === model.index) {
                             return true
@@ -721,6 +734,9 @@ TreeListViewForm {
                     id: openDocumentInNewTabAction
                     //shortcut: "Alt+Return"
                     enabled: {
+                        if(!model.isOpenable){
+                            return false
+                        }
                         if (listView.enabled && titleTextField.visible === false
                                 && listView.currentIndex === model.index) {
                             return true
@@ -741,6 +757,9 @@ TreeListViewForm {
                     id: openDocumentInNewWindowAction
                     //shortcut: "Alt+Return"
                     enabled: {
+                        if(!model.isOpenable){
+                            return false
+                        }
                         if (listView.enabled && titleTextField.visible === false
                                 && listView.currentIndex === model.index) {
                             return true
@@ -1162,8 +1181,8 @@ TreeListViewForm {
 
 
                 SkrMenuItem {
-                    visible: model.paperId !== -1
-                    height: model.paperId === -1 ? 0 : undefined
+                    height: !model.isOpenable || model.paperId === -1 ? 0 : undefined
+                    visible: model.isOpenable && model.paperId !== -1
                     action: Action {
                         id: openPaperAction
                         text: qsTr("Open")
@@ -1181,8 +1200,8 @@ TreeListViewForm {
                     }
                 }
                 SkrMenuItem {
-                    visible: model.paperId !== -1
-                    height: model.paperId === -1 ? 0 : undefined
+                    height: !model.isOpenable ||model.paperId === -1 ? 0 : undefined
+                    visible:  model.isOpenable && model.paperId !== -1
 
                     action: Action {
                         id: openPaperInNewTabAction
@@ -1202,8 +1221,8 @@ TreeListViewForm {
 
 
                 SkrMenuItem {
-                    height: model.paperId === -1 ?  0 : undefined
-                    visible: model.paperId !== -1
+                    height: !model.isOpenable || model.paperId === -1 ?  0 : undefined
+                    visible: model.isOpenable && model.paperId !== -1
 
                     action: Action {
                         id: openPaperInNewWindowAction
@@ -1236,27 +1255,35 @@ TreeListViewForm {
                 }
 
 
-                MenuSeparator { }
+                MenuSeparator {
+                    height: model.isRenamable ? undefined : 0
+                    visible: model.isRenamable
+                }
 
-                Action {
-                    id: renameAction
-                    text: qsTr("Rename")
-                    //shortcut: "F2"
-                    icon {
-                        source: "qrc:///icons/backup/edit-rename.svg"
-                    }
-                    enabled: contextMenuItemIndex === model.index && listView.enabled
+                SkrMenuItem {
+                    height: model.isRenamable ? undefined : 0
+                    visible: model.isRenamable
+                    action:
+                        Action {
+                        id: renameAction
+                        text: qsTr("Rename")
+                        //shortcut: "F2"
+                        icon {
+                            source: "qrc:///icons/backup/edit-rename.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && listView.enabled
 
-                    onTriggered: {
-                        console.log("rename action", model.projectId,
-                                    model.paperId)
-                        delegateRoot.editName()
+                        onTriggered: {
+                            console.log("rename action", model.projectId,
+                                        model.paperId)
+                            delegateRoot.editName()
+                        }
                     }
                 }
 
                 SkrMenuItem {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.isRenamable || model.paperId === -1 ? 0: undefined
+                    visible: model.isRenamable && model.paperId !== -1
                     action:
                         Action {
                         id: setLabelAction
@@ -1267,7 +1294,7 @@ TreeListViewForm {
                         }
                         enabled: contextMenuItemIndex === model.index  && listView.enabled
                         onTriggered: {
-                            console.log("from deleted: sel label", model.projectId,
+                            console.log("sel label", model.projectId,
                                         model.paperId)
                             delegateRoot.editLabel()
                         }
@@ -1275,34 +1302,13 @@ TreeListViewForm {
                 }
 
                 MenuSeparator {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.isCopyable || model.paperId === -1 ? 0: undefined
+                    visible: model.isCopyable && model.paperId !== -1
                 }
 
                 SkrMenuItem {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
-                    action:
-                        Action {
-                        id: cutAction
-                        text: qsTr("Cut")
-                        //shortcut: StandardKey.Cut
-                        icon {
-                            source: "qrc:///icons/backup/edit-cut.svg"
-                        }
-                        enabled: contextMenuItemIndex === model.index && listView.enabled
-
-                        onTriggered: {
-                            console.log("cut action", model.projectId,
-                                        model.paperId)
-                            proxyModel.cut(model.projectId, model.paperId, -2)
-                        }
-                    }
-                }
-
-                SkrMenuItem {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.isCopyable || model.paperId === -1 ? 0: undefined
+                    visible: model.isCopyable && model.paperId !== -1
                     action:
                         Action {
 
@@ -1321,14 +1327,36 @@ TreeListViewForm {
                         }
                     }
                 }
+
+                SkrMenuItem {
+                    height: !model.isMovable || model.paperId === -1 ? 0: undefined
+                    visible: model.isMovable && model.paperId !== -1
+                    action:
+                        Action {
+                        id: cutAction
+                        text: qsTr("Cut")
+                        //shortcut: StandardKey.Cut
+                        icon {
+                            source: "qrc:///icons/backup/edit-cut.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && listView.enabled
+
+                        onTriggered: {
+                            console.log("cut action", model.projectId,
+                                        model.paperId)
+                            proxyModel.cut(model.projectId, model.paperId, -2)
+                        }
+                    }
+                }
+
                 MenuSeparator {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.canAddPaper || model.paperId === -1 ? 0: undefined
+                    visible: model.canAddPaper && model.paperId !== -1
                 }
 
                 SkrMenuItem {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.canAddPaper || model.paperId === -1 ? 0: undefined
+                    visible: model.canAddPaper && model.paperId !== -1
                     action:
                         Action {
                         id: addBeforeAction
@@ -1350,8 +1378,8 @@ TreeListViewForm {
                 }
 
                 SkrMenuItem {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.canAddPaper || model.paperId === -1 ? 0: undefined
+                    visible: model.canAddPaper && model.paperId !== -1
                     action:
                         Action {
                         id: addAfterAction
@@ -1374,13 +1402,13 @@ TreeListViewForm {
                 }
 
                 MenuSeparator {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.isMovable || model.paperId === -1 ? 0: undefined
+                    visible: model.isMovable && model.paperId !== -1
                 }
 
                 SkrMenuItem {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.isMovable || model.paperId === -1 ? 0: undefined
+                    visible: model.isMovable && model.paperId !== -1
                     action:
                         Action {
                         id: moveUpAction
@@ -1410,8 +1438,8 @@ TreeListViewForm {
                 }
 
                 SkrMenuItem {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.isMovable || model.paperId === -1 ? 0: undefined
+                    visible: model.isMovable && model.paperId !== -1
                     action:
                         Action {
                         id: moveDownAction
@@ -1441,13 +1469,13 @@ TreeListViewForm {
                 }
 
                 MenuSeparator {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.isTrashable || model.paperId === -1 ? 0: undefined
+                    visible: model.isTrashable && model.paperId !== -1
                 }
 
                 SkrMenuItem {
-                    height: model.paperId === -1 ? 0: undefined
-                    visible: model.paperId !== -1
+                    height: !model.isTrashable || model.paperId === -1 ? 0: undefined
+                    visible: model.isTrashable && model.paperId !== -1
                     action:
                         Action {
                         id: sendToTrashAction

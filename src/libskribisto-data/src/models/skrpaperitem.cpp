@@ -181,6 +181,49 @@ QVariant SKRPaperItem::data(int role)
         case Roles::ProjectIsActiveRole:
             m_data.insert(role, plmdata->projectHub()->isThisProjectActive(projectId));
             break;
+
+        case Roles::IsRenamableRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "is_renamable",
+                                                     "true") == "true" ? true : false);
+            break;
+
+        case Roles::IsMovableRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "is_movable",
+                                                     "true") == "true" ? true : false);
+            break;
+
+        case Roles::CanAddPaperRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "can_add_paper",
+                                                     "true") == "true" ? true : false);
+            break;
+
+
+        case Roles::IsTrashableRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "is_trashable",
+                                                     "true") == "true" ? true : false);
+            break;
+
+        case Roles::IsOpenableRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "is_openable",
+                                                     "true") == "true" ? true : false);
+            break;
+
+        case Roles::IsCopyableRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "is_copyable",
+                                                     "true") == "true" ? true : false);
+            break;
         }
 
         m_invalidatedRoles.removeAll(role);
@@ -214,15 +257,15 @@ SKRPaperItem * SKRPaperItem::parent(const QList<SKRPaperItem *>& itemList)
         return nullptr;
     }
 
-    SKRPaperItem *possibleParentItem = itemList.at(possibleParentIndex);
+    SKRPaperItem *possibleParentItem;
 
-    while (possibleParentItem->indent() >= indent) {
-        possibleParentIndex -= 1;
 
-        if (possibleParentIndex == -1) {
-            return nullptr;
+    for (int i = index - 1; i >= 0; i--) {
+        possibleParentItem = itemList.at(i);
+
+        if (possibleParentItem->indent() == indent - 1) {
+            break;
         }
-        possibleParentItem = itemList.at(possibleParentIndex);
     }
 
     return possibleParentItem;

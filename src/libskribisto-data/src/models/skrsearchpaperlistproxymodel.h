@@ -17,6 +17,8 @@ class SKRSearchPaperListProxyModel : public QSortFilterProxyModel {
     Q_PROPERTY(
         bool showNotTrashedFilter MEMBER m_showNotTrashedFilter WRITE setShowNotTrashedFilter NOTIFY showNotTrashedFilterChanged)
     Q_PROPERTY(
+        bool navigateByBranchesEnabled MEMBER m_navigateByBranchesEnabled WRITE setNavigateByBranchesEnabled NOTIFY navigateByBranchesEnabledChanged)
+    Q_PROPERTY(
         QString textFilter MEMBER m_textFilter WRITE setTextFilter NOTIFY textFilterChanged)
     Q_PROPERTY(
         QList<int>paperIdListFilter MEMBER m_paperIdListFilter WRITE setPaperIdListFilter NOTIFY paperIdListFilterChanged)
@@ -79,6 +81,7 @@ public:
     void                  setShowTrashedFilter(bool showTrashedFilter);
 
     void                  setShowNotTrashedFilter(bool showNotTrashedFilter);
+    void                  setNavigateByBranchesEnabled(bool navigateByBranches);
 
     void                  setTextFilter(const QString& value);
     void                  setParentIdFilter(int projectIdfilter);
@@ -141,6 +144,7 @@ signals:
     void textFilterChanged(const QString& value);
     void showTrashedFilterChanged(bool value);
     void showNotTrashedFilterChanged(bool value);
+    void navigateByBranchesEnabledChanged(bool value);
     void paperIdListFilterChanged(const QList<int>paperIdList);
     void forcedCurrentIndexChanged(int forcedCurrentIndex);
     void parentIdFilterChanged(int paperIdFilter);
@@ -173,6 +177,7 @@ private:
     SKR::PaperType m_paperType;
     bool m_showTrashedFilter;
     bool m_showNotTrashedFilter;
+    bool m_navigateByBranchesEnabled;
     QString m_textFilter;
     int m_projectIdFilter;
     int m_parentIdFilter;

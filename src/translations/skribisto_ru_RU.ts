@@ -1949,6 +1949,10 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>

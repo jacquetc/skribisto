@@ -21,6 +21,8 @@
 #include "plmnotehub.h"
 #include "tasks/plmsqlqueries.h"
 #include "tools.h"
+#include "plmdata.h"
+#include <QDebug>
 
 PLMNoteHub::PLMNoteHub(QObject *parent) : PLMPaperHub(parent, "tbl_note")
 {}
@@ -242,17 +244,200 @@ PLMError PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int
 }
 
 // --------------------------------------------------------------------------------
+///
+/// \brief PLMNoteHub::getSynopsisFolderId
+/// \param projectId
+/// \return
+/// Retrieve note id used as parent of synopsis. Create one if none found and
+// move all
+/// existing synopsis into the folder
+int PLMNoteHub::getSynopsisFolderId(int projectId) {
+    PLMError error;
+    int result = -2;
+
+    // retrieve
+
+    int retrievedId = -2;
+
+    for (const int noteId : getAllIds(projectId)) {
+        QString propertyValue = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                        noteId,
+                                                                        "is_synopsis_folder",
+                                                                        QString());
+
+        if (propertyValue == "true") {
+            retrievedId = noteId;
+            break;
+        }
+    }
+    int folderId = retrievedId;
+
+    // if none, create one
+    if (folderId == -2) {
+        error = this->addChildPaper(projectId, -1);
+
+        IFOK(error) {
+            folderId = error.getData("paperId", -2).toInt();
+
+            // set properties :
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
+                                                    "is_renamable",
+                                                    "false");
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
+                                                    "is_movable",
+                                                    "false");
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
+                                                    "is_trashable",
+                                                    "false");
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
+                                                    "can_add_paper",
+                                                    "false");
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
+                                                    "is_openable",
+                                                    "false");
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
+                                                    "is_copyable",
+                                                    "false");
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
+                                                    "is_synopsis_folder",
+                                                    "true");
+        }
+
+
+        // move all synopsis into the folder
+        IFOK(error) {
+            QList<int> synList;
+
+            for (int noteId : getAllIds(projectId)) {
+                bool syn = isSynopsis(projectId, noteId);
+
+                if (syn) {
+                    int parentId = getParentId(projectId, noteId);
+
+                    if (parentId != folderId) {
+                        synList << noteId;
+                    }
+                }
+            }
+
+            for (int synopsisId : synList) {
+                qDebug() << "synList " << synopsisId;
+                error = this->movePaperAsChildOf(projectId, synopsisId, folderId);
+
+                // set properties :
+                plmdata->notePropertyHub()->setProperty(projectId,
+                                                        synopsisId,
+                                                        "is_renamable",
+                                                        "false");
+                plmdata->notePropertyHub()->setProperty(projectId,
+                                                        synopsisId,
+                                                        "is_movable",
+                                                        "false");
+                plmdata->notePropertyHub()->setProperty(projectId,
+                                                        synopsisId,
+                                                        "can_add_paper",
+                                                        "false");
+                plmdata->notePropertyHub()->setProperty(projectId,
+                                                        synopsisId,
+                                                        "is_trashable",
+                                                        "false");
+            }
+        }
+    }
+
+    IFOK(error) {
+        result = folderId;
+    }
+    IFKO(error) {
+        emit errorSent(error);
+    }
+    return result;
+}
+
+// --------------------------------------------------------------------------------
+
+bool PLMNoteHub::isSynopsis(int projectId, int noteId)
+{
+    PLMError error;
+    QHash<int, QVariant> out;
+
+    QHash<QString, QVariant> where;
+
+    where.insert("l_note_code", noteId);
+    where.insert("b_synopsis",  true);
+
+    QVariant variantResult;
+    PLMSqlQueries queries(projectId, "tbl_sheet_note");
+
+    // verify if the relationship doesn't yet exist
+    error = queries.getValueByIdsWhere("l_sheet_note_id", out, where);
+
+    int key = -2;
+
+    IFOK(error) {
+        QHash<int, int> result = HashIntQVariantConverter::convertToIntInt(out);
+
+        QHash<int, int>::const_iterator i = result.constBegin();
+
+        while (i != result.constEnd()) {
+            key = i.key();
+            ++i;
+        }
+
+        if (result.isEmpty() || (key == -2) || (key == 0)) {
+            return false;
+        }
+        return true;
+    }
+    IFKO(error) {
+        emit errorSent(error);
+
+        return false;
+    }
+
+    return true;
+}
+
+// --------------------------------------------------------------------------------
 
 PLMError PLMNoteHub::createSynopsis(int projectId, int sheetId) {
     PLMError error;
 
-    error = this->addChildPaper(projectId, -1); // add child to project item
+    int synopsisFolderId = this->getSynopsisFolderId(projectId);
+
+    error = this->addChildPaper(projectId, synopsisFolderId); // add child to
+    // project item
     int lastAddedNoteId = -2;
 
     IFOK(error) {
         lastAddedNoteId = this->getLastAddedId();
 
         error = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId, true);
+
+        // set properties :
+        plmdata->notePropertyHub()->setProperty(projectId,
+                                                lastAddedNoteId,
+                                                "is_renamable",
+                                                "false");
+        plmdata->notePropertyHub()->setProperty(projectId,
+                                                lastAddedNoteId,
+                                                "is_movable",
+                                                "false");
+        plmdata->notePropertyHub()->setProperty(projectId,
+                                                lastAddedNoteId,
+                                                "can_add_paper",
+                                                "false");
+        plmdata->notePropertyHub()->setProperty(projectId,
+                                                lastAddedNoteId,
+                                                "is_trashable",
+                                                "false");
     }
 
     if (lastAddedNoteId == -2) {

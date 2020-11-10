@@ -1702,6 +1702,10 @@ not allowed delete a filled book.</source>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>

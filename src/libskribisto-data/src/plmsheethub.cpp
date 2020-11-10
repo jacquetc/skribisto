@@ -62,3 +62,121 @@ PLMError PLMSheetHub::setTitle(int projectId, int paperId, const QString& newTit
     }
     return error;
 }
+
+// -------------------------------------------------------------
+
+PLMError PLMSheetHub::addPaperAbove(int projectId, int targetId)
+{
+    // create sheet
+    PLMError error = PLMPaperHub::addPaperAbove(projectId, targetId);
+
+    // create synopsis
+    IFOK(error) {
+        int sheetId = error.getData("paperId", -2).toInt();
+
+        error = plmdata->noteHub()->createSynopsis(projectId, sheetId);
+    }
+
+    return error;
+}
+
+// -------------------------------------------------------------
+
+PLMError PLMSheetHub::addPaperBelow(int projectId, int targetId)
+{
+    PLMError error;
+
+    // create synopsis
+
+
+    // create sheet
+    error = PLMPaperHub::addPaperBelow(projectId, targetId);
+
+    // create synopsis
+    IFOK(error) {
+        int sheetId = error.getData("paperId", -2).toInt();
+
+        error = plmdata->noteHub()->createSynopsis(projectId, sheetId);
+    }
+
+    return error;
+}
+
+// -------------------------------------------------------------
+
+PLMError PLMSheetHub::addChildPaper(int projectId, int targetId)
+{
+    PLMError error;
+
+    // create synopsis
+
+
+    // create sheet
+    error = PLMPaperHub::addChildPaper(projectId, targetId);
+
+    // create synopsis
+    IFOK(error) {
+        int sheetId = error.getData("paperId", -2).toInt();
+
+        error = plmdata->noteHub()->createSynopsis(projectId, sheetId);
+    }
+
+    return error;
+}
+
+// -------------------------------------------------------------
+
+PLMError PLMSheetHub::setTrashedWithChildren(int  projectId,
+                                             int  paperId,
+                                             bool newTrashedState)
+{
+    PLMError error = PLMPaperHub::setTrashedWithChildren(projectId,
+                                                         paperId,
+                                                         newTrashedState);
+
+    int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, paperId);
+
+    if (synopsisId == -2) {
+        return error;
+    }
+
+    IFOKDO(error,
+           plmdata->noteHub()->setTrashedWithChildren(projectId, synopsisId,
+                                                      newTrashedState));
+
+
+    return error;
+}
+
+// -------------------------------------------------------------
+
+PLMError PLMSheetHub::untrashOnlyOnePaper(int projectId, int paperId)
+{
+    PLMError error = PLMPaperHub::untrashOnlyOnePaper(projectId, paperId);
+
+    int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, paperId);
+
+    if (synopsisId == -2) {
+        return error;
+    }
+    IFOKDO(error,
+           plmdata->noteHub()->untrashOnlyOnePaper(projectId, synopsisId));
+    return error;
+}
+
+// -------------------------------------------------------------
+
+PLMError PLMSheetHub::removePaper(int projectId, int targetId)
+{
+    PLMError error = PLMPaperHub::removePaper(projectId, targetId);
+
+    int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, targetId);
+
+    if (synopsisId == -2) {
+        return error;
+    }
+
+    IFOKDO(error,
+           plmdata->noteHub()->removePaper(projectId, synopsisId));
+    return error;
+}

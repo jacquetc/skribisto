@@ -213,7 +213,27 @@ QVariant SKRPaperListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-    if (role == SKRPaperItem::Roles::ProjectIsActiveRole) {
+    if (role == SKRPaperItem::Roles::IsRenamableRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRPaperItem::Roles::IsMovableRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRPaperItem::Roles::CanAddPaperRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRPaperItem::Roles::IsTrashableRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRPaperItem::Roles::IsOpenableRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRPaperItem::Roles::IsCopyableRole) {
         return item->data(role);
     }
 
@@ -368,6 +388,11 @@ QHash<int, QByteArray>SKRPaperListModel::roleNames() const {
     roles[SKRPaperItem::Roles::CharCountRole]       = "charCount";
     roles[SKRPaperItem::Roles::ProjectIsBackupRole] = "projectIsBackup";
     roles[SKRPaperItem::Roles::ProjectIsActiveRole] = "projectIsActive";
+    roles[SKRPaperItem::Roles::IsRenamableRole]     = "isRenamable";
+    roles[SKRPaperItem::Roles::IsMovableRole]       = "isMovable";
+    roles[SKRPaperItem::Roles::CanAddPaperRole]     = "canAddPaper";
+    roles[SKRPaperItem::Roles::IsTrashableRole]     = "isTrashable";
+    roles[SKRPaperItem::Roles::IsOpenableRole]      = "isOpenable";
     return roles;
 }
 
@@ -401,41 +426,6 @@ void SKRPaperListModel::clear()
     this->beginResetModel();
     qDeleteAll(m_allPaperItems);
     this->endResetModel();
-}
-
-void SKRPaperListModel::exploitSignalFromPLMData(int                 projectId,
-                                                 int                 paperId,
-                                                 SKRPaperItem::Roles role)
-{
-    SKRPaperItem *item = this->getItem(projectId, paperId);
-
-    if (!item) {
-        return;
-    }
-
-    item->invalidateData(role);
-
-    // search for index
-    QModelIndex index;
-    QModelIndexList list =  this->match(this->index(0, 0,
-                                                    QModelIndex()),
-                                        SKRPaperItem::Roles::PaperIdRole,
-                                        paperId,
-                                        -1,
-                                        Qt::MatchFlag::MatchRecursive |
-                                        Qt::MatchFlag::MatchExactly |
-                                        Qt::MatchFlag::MatchWrap);
-
-    for (const QModelIndex& modelIndex : list) {
-        SKRPaperItem *t = static_cast<SKRPaperItem *>(modelIndex.internalPointer());
-
-        if (t)
-            if (t->projectId() == projectId) index = modelIndex;
-    }
-
-    if (index.isValid()) {
-        emit dataChanged(index, index, QVector<int>() << role);
-    }
 }
 
 // --------------------------------------------------------------------
@@ -683,6 +673,43 @@ void SKRPaperListModel::refreshAfterIndentChanged(int projectId, int paperId,
 
 // --------------------------------------------------------------------
 
+void SKRPaperListModel::exploitSignalFromPLMData(int                 projectId,
+                                                 int                 paperId,
+                                                 SKRPaperItem::Roles role)
+{
+    SKRPaperItem *item = this->getItem(projectId, paperId);
+
+    if (!item) {
+        return;
+    }
+
+    item->invalidateData(role);
+
+    // search for index
+    QModelIndex index;
+    QModelIndexList list =  this->match(this->index(0, 0,
+                                                    QModelIndex()),
+                                        SKRPaperItem::Roles::PaperIdRole,
+                                        paperId,
+                                        -1,
+                                        Qt::MatchFlag::MatchRecursive |
+                                        Qt::MatchFlag::MatchExactly |
+                                        Qt::MatchFlag::MatchWrap);
+
+    for (const QModelIndex& modelIndex : list) {
+        SKRPaperItem *t = static_cast<SKRPaperItem *>(modelIndex.internalPointer());
+
+        if (t)
+            if (t->projectId() == projectId) index = modelIndex;
+    }
+
+    if (index.isValid()) {
+        emit dataChanged(index, index, QVector<int>() << role);
+    }
+}
+
+// ---------------------------------------------------------------------------
+
 void SKRPaperListModel::connectToPLMDataSignals()
 {
     m_dataConnectionsList << this->connect(m_paperHub,
@@ -733,14 +760,15 @@ void SKRPaperListModel::connectToPLMDataSignals()
                                        SKRPaperItem::Roles::IndentRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList.append(this->connect(m_paperHub,
-                                               &PLMPaperHub::sortOrderChanged, this,
-                                               [this](int projectId, int paperId,
-                                                      int value) {
+    m_dataConnectionsList << this->connect(m_paperHub,
+                                           &PLMPaperHub::sortOrderChanged, this,
+                                           [this](int projectId, int paperId,
+                                                  int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        SKRPaperItem::Roles::SortOrderRole);
-    }));
+    }, Qt::UniqueConnection);
+
     m_dataConnectionsList << this->connect(m_paperHub,
                                            &PLMPaperHub::contentDateChanged, this,
                                            [this](int projectId, int paperId,
@@ -758,6 +786,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
         this->exploitSignalFromPLMData(projectId, paperId,
                                        SKRPaperItem::Roles::UpdateDateRole);
     }, Qt::UniqueConnection);
+
     m_dataConnectionsList << this->connect(m_paperHub,
                                            &PLMPaperHub::trashedChanged, this,
                                            [this](int projectId, int paperId,
@@ -766,6 +795,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
         this->exploitSignalFromPLMData(projectId, paperId,
                                        SKRPaperItem::Roles::TrashedRole);
     }, Qt::UniqueConnection);
+
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
@@ -779,6 +809,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
                                                                  SKRPaperItem::Roles::
                                                                  CharCountRole);
     }, Qt::UniqueConnection);
+
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
@@ -803,6 +834,90 @@ void SKRPaperListModel::connectToPLMDataSignals()
             this->exploitSignalFromPLMData(projectId, -1,
                                            SKRPaperItem::Roles::ProjectIsActiveRole);
         }
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "is_renamable") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                   SKRPaperItem::Roles::
+                                                                   IsRenamableRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "is_movable") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                 SKRPaperItem::Roles::
+                                                                 IsMovableRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "can_add_paper") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                    SKRPaperItem::Roles::
+                                                                    CanAddPaperRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "is_trashable") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                   SKRPaperItem::Roles::
+                                                                   IsTrashableRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "is_openable") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                  SKRPaperItem::Roles::
+                                                                  IsOpenableRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "is_copyable") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                  SKRPaperItem::Roles::
+                                                                  IsCopyableRole);
     }, Qt::UniqueConnection);
 }
 

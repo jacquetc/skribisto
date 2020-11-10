@@ -39,6 +39,21 @@ public:
     Q_INVOKABLE PLMError    setTitle(int            projectId,
                                      int            paperId,
                                      const QString& newTitle);
+
+    Q_INVOKABLE PLMError addPaperAbove(int projectId,
+                                       int targetId);
+    Q_INVOKABLE PLMError addPaperBelow(int projectId,
+                                       int targetId);
+    Q_INVOKABLE PLMError addChildPaper(int projectId,
+                                       int targetId);
+    Q_INVOKABLE PLMError setTrashedWithChildren(int  projectId,
+                                                int  paperId,
+                                                bool newTrashedState);
+    Q_INVOKABLE PLMError untrashOnlyOnePaper(int projectId,
+                                             int paperId);
+
+    PLMError             removePaper(int projectId,
+                                     int targetId);
 };
 
 #endif // PLMSHEETHUB_H

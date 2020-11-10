@@ -54,6 +54,10 @@ public:
     Q_INVOKABLE  PLMError createSynopsis(int projectId,
                                          int sheetId);
 
+    Q_INVOKABLE  int      getSynopsisFolderId(int projectId);
+    Q_INVOKABLE  bool     isSynopsis(int projectId,
+                                     int noteId);
+
 signals:
 
     void sheetNoteRelationshipChanged(int projectId,

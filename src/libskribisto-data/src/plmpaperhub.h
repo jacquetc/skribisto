@@ -82,7 +82,7 @@ public:
                                                const QString& newContent);
     Q_INVOKABLE QString             getContent(int projectId,
                                                int paperId) const;
-    Q_INVOKABLE PLMError            setTrashedWithChildren(int  projectId,
+    Q_INVOKABLE virtual PLMError    setTrashedWithChildren(int  projectId,
                                                            int  paperId,
                                                            bool newTrashedState);
     Q_INVOKABLE bool                getTrashed(int projectId,
@@ -119,24 +119,29 @@ public:
                  int            paperId,
                  const QString& fieldName) const;
 
-    Q_INVOKABLE int      getLastAddedId();
-    PLMError             addPaper(const QHash<QString, QVariant>& values,
-                                  int projectId);
-    Q_INVOKABLE PLMError addPaperAbove(int projectId,
-                                       int targetId);
-    Q_INVOKABLE PLMError addPaperBelow(int projectId,
-                                       int targetId);
-    Q_INVOKABLE PLMError addChildPaper(int projectId,
-                                       int targetId);
-    PLMError             removePaper(int projectId,
-                                     int targetId);
+    Q_INVOKABLE int              getLastAddedId();
+    PLMError                     addPaper(const QHash<QString, QVariant>& values,
+                                          int projectId);
+    Q_INVOKABLE virtual PLMError addPaperAbove(int projectId,
+                                               int targetId);
+    Q_INVOKABLE virtual PLMError addPaperBelow(int projectId,
+                                               int targetId);
+    Q_INVOKABLE virtual PLMError addChildPaper(int projectId,
+                                               int targetId);
+    virtual PLMError             removePaper(int projectId,
+                                             int targetId);
 
 
     Q_INVOKABLE PLMError movePaperUp(int projectId,
                                      int paperId);
     Q_INVOKABLE PLMError movePaperDown(int projectId,
                                        int paperId);
-
+    Q_INVOKABLE PLMError movePaperAsChildOf(int projectId,
+                                            int noteId,
+                                            int targetParentId,
+                                            int directChildIndex = -1);
+    Q_INVOKABLE int getParentId(int projectId,
+                                int paperId);
 
     //    // settings :
     //    PLMError settings_setStackSetting(Stack           stack,
@@ -166,22 +171,22 @@ public:
     //    int       getChildRowCount(int projectId,
     //                               int parentId) const;
 
-    PLMError              renumberSortOrders(int projectId);
-    int                   getValidSortOrderBeforePaper(int projectId,
-                                                       int paperId) const;
-    int                   getValidSortOrderAfterPaper(int projectId,
-                                                      int paperId) const;
+    PLMError                     renumberSortOrders(int projectId);
+    int                          getValidSortOrderBeforePaper(int projectId,
+                                                              int paperId) const;
+    int                          getValidSortOrderAfterPaper(int projectId,
+                                                             int paperId) const;
 
-    Q_INVOKABLE QList<int>getAllChildren(int projectId,
-                                         int paperId);
-    Q_INVOKABLE QList<int>getAllAncestors(int projectId,
-                                          int paperId);
-    QList<int>            getAllSiblings(int projectId,
-                                         int paperId);
-    Q_INVOKABLE QDateTime getTrashedDate(int projectId,
-                                         int paperId) const;
-    Q_INVOKABLE PLMError  untrashOnlyOnePaper(int projectId,
-                                              int paperId);
+    Q_INVOKABLE QList<int>       getAllChildren(int projectId,
+                                                int paperId);
+    Q_INVOKABLE QList<int>       getAllAncestors(int projectId,
+                                                 int paperId);
+    QList<int>                   getAllSiblings(int projectId,
+                                                int paperId);
+    Q_INVOKABLE QDateTime        getTrashedDate(int projectId,
+                                                int paperId) const;
+    Q_INVOKABLE virtual PLMError untrashOnlyOnePaper(int projectId,
+                                                     int paperId);
 
 private:
 
