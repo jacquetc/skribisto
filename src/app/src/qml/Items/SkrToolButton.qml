@@ -5,7 +5,7 @@ import ".."
 
 ToolButton {
     id: control
-    icon.color: enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled
+    icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) : (control.action.icon.color === "transparent" ? control.action.icon.color : (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
     Material.background: SkrTheme.buttonBackground
     Material.foreground: SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent

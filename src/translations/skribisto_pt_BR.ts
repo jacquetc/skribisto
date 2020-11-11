@@ -2979,6 +2979,10 @@ not allowed delete a filled book.</source>
         <source>Menu background</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Button icon (disabled)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SlimFindReplace</name>

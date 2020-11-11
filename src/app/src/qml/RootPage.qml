@@ -53,6 +53,7 @@ RootPageForm {
                 rootSwipeView.currentIndex = 0
                 welcomePage.forceActiveFocus()
             }
+
         }
 
         Action {

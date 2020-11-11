@@ -95,7 +95,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
 
         // open temp file
         QSqlDatabase sqlDb =
-            QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
+                QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
         sqlDb.setHostName("localhost");
         sqlDb.setDatabaseName(tempFileName);
 
@@ -203,9 +203,35 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
 
     // new project :
     IFOKDO(result, SKRSqlTools::executeSQLFile(":/sql/sqlite_project.sql", sqlDb));
+
+    // fetch db version
+    QString dbVersion = "-2";
+    IFOK(result){
+        QFile    file(":/sql/sqlite_project.sql");
+        file.open(QIODevice::ReadOnly);
+        for(const QString &line : QString(file.readAll()).split("\n")){
+
+            if(line.contains("-- skribisto_db_version:")){
+                QStringList splittedLine = line.split(":");
+                if(splittedLine.count() == 2){
+                    dbVersion = splittedLine.at(1);
+                }
+
+                break;
+            }
+        }
+        file.close();
+
+        if(dbVersion == "-2"){
+            result.setSuccess(false);
+            result.addErrorCode("C_IMPORTER_no_db_version_found_in_sql_file");
+        }
+    }
+
+
     QString sqlString =
-        QString("INSERT INTO tbl_project (dbl_database_version) VALUES (%1)")
-        .arg(1.1);
+            QString("INSERT INTO tbl_project (dbl_database_version) VALUES (%1)")
+            .arg(dbVersion);
 
     IFOKDO(result, SKRSqlTools::executeSQLString(sqlString, sqlDb));
 
@@ -227,7 +253,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
 
         {
             const QString possibleCharacters(
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
             const int randomStringLength = 12;
 
             for (int i = 0; i < randomStringLength; ++i)
@@ -246,7 +272,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
         QSqlQuery query(sqlDb);
         QString   queryStr = "UPDATE tbl_project SET t_project_unique_identifier = :value"
                              " WHERE l_project_id = :id"
-        ;
+                ;
 
         query.prepare(queryStr);
         query.bindValue(":value", value);
@@ -336,14 +362,14 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     while (attendXml.readNextStartElement() && attendXml.name() == "plume-attendance") {
         QStringList rolesNames  = attendXml.attributes().value("rolesNames").toString().split("--", Qt::SkipEmptyParts);
         QStringList levelsNames =
-            attendXml.attributes().value("levelsNames").toString().split("--", Qt::SkipEmptyParts);
+                attendXml.attributes().value("levelsNames").toString().split("--", Qt::SkipEmptyParts);
 
         QStringList box_1Names = attendXml.attributes().value("box_1").toString().split("--", Qt::SkipEmptyParts);
         QStringList box_2Names = attendXml.attributes().value("box_2").toString().split("--", Qt::SkipEmptyParts);
         QStringList box_3Names = attendXml.attributes().value("box_3").toString().split("--", Qt::SkipEmptyParts);
 
         QStringList spinBox_1Names =
-            attendXml.attributes().value("spinBox_1").toString().split("--", Qt::SkipEmptyParts);
+                attendXml.attributes().value("spinBox_1").toString().split("--", Qt::SkipEmptyParts);
 
 
         while (attendXml.readNextStartElement() && attendXml.name() == "group") {
@@ -487,9 +513,9 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
         result.addErrorCode("C_IMPORTER_error_in_tree_xml");
 
         result.addData("xmlError", QString("%1\nLine %2, column %3")
-                      .arg(xml.errorString())
-                      .arg(xml.lineNumber())
-                      .arg(xml.columnNumber()));
+                       .arg(xml.errorString())
+                       .arg(xml.lineNumber())
+                       .arg(xml.columnNumber()));
 
         return result;
     }
@@ -542,9 +568,9 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 }
 
 SKRResult PLMImporter::createPapersAndAssociations(int                     projectId,
-                                                  int                     indent,
-                                                  const QXmlStreamReader& xml,
-                                                  const QString         & tempDirPath)
+                                                   int                     indent,
+                                                   const QXmlStreamReader& xml,
+                                                   const QString         & tempDirPath)
 {
     SKRResult result;
 
@@ -688,7 +714,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
 // -----------------------------------------------------------------------------------------------
 
 SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const QString& name,
-                                 const QString& tempDirPath)
+                                  const QString& tempDirPath)
 {
     SKRResult result;
 
@@ -744,10 +770,10 @@ SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const 
 // -----------------------------------------------------------------------------------------------
 
 SKRResult PLMImporter::createTagsFromAttend(int                     projectId,
-                                           int                     noteId,
-                                           const QXmlStreamReader& xml,
-                                           const QString         & attributeName,
-                                           const QStringList     & values)
+                                            int                     noteId,
+                                            const QXmlStreamReader& xml,
+                                            const QString         & attributeName,
+                                            const QStringList     & values)
 {
     SKRResult result;
 
@@ -774,9 +800,9 @@ SKRResult PLMImporter::createTagsFromAttend(int                     projectId,
         result = plmdata->tagHub()->addTag(projectId, values.at(index));
         IFOK(result) {
             result = plmdata->tagHub()->setTagRelationship(projectId,
-                                                          SKRTagHub::Note,
-                                                          noteId,
-                                                          result.getData("tagId", -2).toInt());
+                                                           SKRTagHub::Note,
+                                                           noteId,
+                                                           result.getData("tagId", -2).toInt());
         }
     }
 
