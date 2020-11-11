@@ -24,7 +24,7 @@
 #include <QObject>
 #include <QVariant>
 #include "skribisto_data_global.h"
-#include "plmerror.h"
+#include "skrresult.h"
 
 struct PLMCommand
 {
@@ -122,7 +122,7 @@ public:
     explicit PLMPluginHub(QObject *parent = nullptr);
 
     void     reloadPlugins();
-    PLMError set(int             projectId,
+    SKRResult set(int             projectId,
                  int             id,
                  const QString & tableName,
                  const QString & fieldName,
@@ -134,13 +134,13 @@ public:
 
     QList<int>getIds(int            projectId,
                      const QString& tableName) const;
-    PLMError  ensureTableExists(int            projectId,
+    SKRResult  ensureTableExists(int            projectId,
                                 const QString& tableName,
                                 const QString& sqlString);
 
 signals:
 
-    void errorSent(const PLMError& error) const;
+    void errorSent(const SKRResult& result) const;
 
     void commandSent(const PLMCommand& command);
 

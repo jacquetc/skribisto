@@ -20,12 +20,20 @@ NotePadForm {
     property string pageType: "note"
 
     onProjectIdChanged: {
-        clearNoteWritingZone()
         populateNoteListModel()
+        openSynopsisTimer.start()
     }
     onSheetIdChanged: {
-        clearNoteWritingZone()
         populateNoteListModel()
+        openSynopsisTimer.start()
+    }
+
+    Timer{
+        id: openSynopsisTimer
+        repeat: false
+        interval: 0
+        onTriggered:  openSynopsisAction.trigger()
+
     }
 
     //-----------------------------------------------------------------------------
@@ -109,7 +117,7 @@ NotePadForm {
                 root.focusedIndex = model.index
             }
 
-             function setSelected(){
+            function setSelected(){
                 if(!multipleSelectionsEnabled && selectionEnabled){
                     root.selectedList = []
                 }
@@ -133,19 +141,19 @@ NotePadForm {
 
             }
 
-             function setDeselected(){
+            function setDeselected(){
 
 
-                 var index = root.selectedList.indexOf(itemBase.itemNoteId)
-                 if(index === -1){
-                     return
-                 }
+                var index = root.selectedList.indexOf(itemBase.itemNoteId)
+                if(index === -1){
+                    return
+                }
 
-                 root.selectedList.splice(index, 1)
-                 root.determineWhichItemIsSelected()
+                root.selectedList.splice(index, 1)
+                root.determineWhichItemIsSelected()
 
 
-             }
+            }
 
 
             function toggleSelected(){
@@ -170,7 +178,7 @@ NotePadForm {
                     }
                 }
 
-               itemBase.isSelected = here
+                itemBase.isSelected = here
             }
 
             TapHandler {
@@ -453,48 +461,48 @@ NotePadForm {
                 }
 
 
-            HoverHandler {
-                id: hoverHandler
+                HoverHandler {
+                    id: hoverHandler
 
-                onHoveredChanged: {
-                    if(hovered){
-                        showRemoveRelationshipButtonTimer.start()
+                    onHoveredChanged: {
+                        if(hovered){
+                            showRemoveRelationshipButtonTimer.start()
+                        }
                     }
+
                 }
 
-            }
+                Timer{
+                    id: showRemoveRelationshipButtonTimer
+                    repeat: false
+                    interval: 1000
 
-            Timer{
-                id: showRemoveRelationshipButtonTimer
-                repeat: false
-                interval: 1000
-
-            }
-
-            state: hoverHandler.hovered && !showRemoveRelationshipButtonTimer.running ? "visible_removeRelationshipButton": ""
-
-            states:[
-                State {
-
-                    name: "visible_removeRelationshipButton"
-                    PropertyChanges { target: removeRelationshipButton; width: noteTitle.height}
-                    PropertyChanges { target: removeRelationshipButton; opacity: 1.0}
                 }
-            ]
 
-            transitions: [
-                Transition {
-                    from: ""
-                    to: "visible_removeRelationshipButton"
-                    reversible: true
-                    ParallelAnimation {
-                        NumberAnimation {target: removeRelationshipButton; property: "opacity";duration: 250; easing.type: Easing.OutCubic }
-                        NumberAnimation {target: removeRelationshipButton; property: "width";duration: 250; easing.type: Easing.OutCubic }
+                state: hoverHandler.hovered && !showRemoveRelationshipButtonTimer.running ? "visible_removeRelationshipButton": ""
+
+                states:[
+                    State {
+
+                        name: "visible_removeRelationshipButton"
+                        PropertyChanges { target: removeRelationshipButton; width: noteTitle.height}
+                        PropertyChanges { target: removeRelationshipButton; opacity: 1.0}
                     }
-                }
-            ]
+                ]
+
+                transitions: [
+                    Transition {
+                        from: ""
+                        to: "visible_removeRelationshipButton"
+                        reversible: true
+                        ParallelAnimation {
+                            NumberAnimation {target: removeRelationshipButton; property: "opacity";duration: 250; easing.type: Easing.OutCubic }
+                            NumberAnimation {target: removeRelationshipButton; property: "width";duration: 250; easing.type: Easing.OutCubic }
+                        }
+                    }
+                ]
+            }
         }
-}
     }
 
     function populateNoteListModel(){
@@ -554,13 +562,13 @@ NotePadForm {
             console.log("notped :", notePadPrivateObject.newText)
 
             //create basic note
-            var error = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
-            if (!error.success){
+            var result = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
+            if (!result.success){
                 //TODO: add notification
                 return
             }
 
-            var noteId = error.getData("noteId", -2)
+            var noteId = result.getData("noteId", -2)
 
             // set title
             var title = titleTextField.text
@@ -574,12 +582,15 @@ NotePadForm {
         }
 
 
-
-
+        // save content :
         if(contentSaveTimer.running){
             contentSaveTimer.stop()
         }
-        contentSaveTimer.start()
+
+        if(notePadPrivateObject.contentSaveTimerEnabled){
+            contentSaveTimer.start()
+        }
+
     }
 
     Timer{
@@ -595,6 +606,7 @@ NotePadForm {
         id: notePadPrivateObject
         property string newText: ""
         property bool creationProtectionEnabled: false
+        property bool contentSaveTimerEnabled: true
 
     }
 
@@ -650,6 +662,7 @@ NotePadForm {
 
     function clearNoteWritingZone(){
         if(currentNoteId !== -2 && projectId !== -2 && !minimalMode){
+            notePadPrivateObject.contentSaveTimerEnabled = false
             saveContent()
             saveCurrentPaperCursorPositionAndY()
             skrTextBridge.unsubscribeTextDocument(pageType, projectId, currentNoteId, noteWritingZone.textArea.objectName, noteWritingZone.textArea.textDocument)
@@ -672,12 +685,7 @@ NotePadForm {
             return
         }
 
-        // save current
-        if(projectId !== -2 && currentNoteId !== -2 ){
-            saveContent()
-            saveCurrentPaperCursorPositionAndY()
-            skrTextBridge.unsubscribeTextDocument(pageType, projectId, currentNoteId, noteWritingZone.textArea.objectName, noteWritingZone.textArea.textDocument)
-        }
+        clearNoteWritingZone()
 
 
         noteWritingZone.text = plmData.noteHub().getContent(_projectId, _noteId)
@@ -701,6 +709,17 @@ NotePadForm {
         noteWritingZone.forceActiveFocus()
         //save :
         //skrUserSettings.setProjectSetting(projectId, "writeCurrentPaperId", _noteId)
+        notePadPrivateObject.contentSaveTimerEnabled = true
+
+
+        var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+        if (synopsisId === currentNoteId){
+            currentNoteTitleLabel.text = qsTr("Outline")
+        }
+        else{
+            currentNoteTitleLabel.text = plmData.noteHub().getTitle(_projectId, _noteId)
+        }
+
 
         // start the timer for automatic position saving
         if(!saveCurrentPaperCursorPositionAndYTimer.running){
@@ -728,7 +747,7 @@ NotePadForm {
 
     function saveCurrentPaperCursorPositionAndY(){
 
-        if(paperId != -2 || currentNoteId != -2){
+        if(sheetId != -2 || currentNoteId != -2){
             //save cursor position of current document :
 
             var previousCursorPosition = noteWritingZone.cursorPosition
@@ -772,6 +791,15 @@ NotePadForm {
                 if (item.itemNoteId === noteId){
 
                     noteListModel.setProperty(i, "title", newTitle)
+
+                    var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+                    if (item.itemNoteId === currentNoteId && synopsisId === currentNoteId){
+                        currentNoteTitleLabel.text = qsTr("Outline")
+                    }
+                    else if (item.itemNoteId === currentNoteId){
+                        currentNoteTitleLabel.text = newTitle
+                    }
+
                     break
                 }
 
@@ -790,6 +818,12 @@ NotePadForm {
         text: qsTr("Show outline")
         icon.source: "qrc:///icons/backup/story-editor.svg"
         onTriggered: {
+            var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+            openDocument(projectId, synopsisId)
+            var i;
+            for(i = 0; i < noteRepeater.count; i++) {
+                noteRepeater.itemAt(i).isOpened = false
+            }
 
         }
     }
@@ -805,11 +839,32 @@ NotePadForm {
         text: qsTr("Open current note in a new tab")
         icon.source: "qrc:///icons/backup/quickopen-file.svg"
         onTriggered: {
-
+            Globals.openNoteInNewTabCalled(projectId, currentNoteId)
         }
     }
     openNoteInNewTabToolButton.action: openNoteInNewTabAction
 
+    //--------------------------------------------
+    //---------- Modify Note------------------------
+    //--------------------------------------------
+
+    Connections{
+        target: plmData.noteHub()
+        function sheetNoteRelationshipChanged(projectId, sheetId, noteId){
+            if(sheetId !== root.sheetId){
+                return
+            }
+            // ignore synopsis
+            var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+            if (synopsisId === noteId){
+                return
+            }
+
+            populateNoteListModel()
+
+        }
+
+    }
     //--------------------------------------------
     //---------- Add Note------------------------
     //--------------------------------------------
@@ -830,6 +885,11 @@ NotePadForm {
         target: plmData.noteHub()
         function onSheetNoteRelationshipAdded(projectId, sheetId, noteId){
             if(sheetId !== root.sheetId){
+                return
+            }
+            // ignore synopsis
+            var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+            if (synopsisId === noteId){
                 return
             }
 
@@ -913,13 +973,13 @@ NotePadForm {
                 onAccepted: {
 
                     //create basic note
-                    var error = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
-                    if (!error.success){
+                    var result = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
+                    if (!result.success){
                         //TODO: add notification
                         return
                     }
 
-                    var noteId = error.getData("noteId", -2)
+                    var noteId = result.getData("noteId", -2)
 
                     // set title
                     var title = titleTextField.text
@@ -995,9 +1055,9 @@ NotePadForm {
                                     //create relationship with note
 
                                     var noteId = model.paperId
-                                    var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                                    var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
-                                    if (!error.success){
+                                    if (!result.success){
                                         //TODO: add notification
                                         eventPoint.accepted = true
                                         return
@@ -1018,9 +1078,9 @@ NotePadForm {
                             //                                //create relationship with note
 
                             //                                var noteId = model.paperId
-                            //                                var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                            //                                var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
-                            //                                if (!error.success){
+                            //                                if (!result.success){
                             //                                    //TODO: add notification
                             //                                    return
                             //                                }
@@ -1041,9 +1101,9 @@ NotePadForm {
                                     //create relationship with note
 
                                     var noteId = model.paperId
-                                    var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                                    var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
-                                    if (!error.success){
+                                    if (!result.success){
                                         //TODO: add notification
                                         event.accepted = true
                                         return

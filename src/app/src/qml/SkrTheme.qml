@@ -188,13 +188,13 @@ QtObject {
         if(!isThemeEditable(themeName)){
             return
         }
-        var result = skrThemes.remove(themeName)
+        var value = skrThemes.remove(themeName)
 
-        if(result){
+        if(value){
             currentThemeName = skrThemes.currentTheme
         }
 
-        return  result
+        return  value
 
 
     }

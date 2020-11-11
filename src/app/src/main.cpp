@@ -21,7 +21,7 @@ using namespace std;
 #include "plmsheethub.h"
 #include "plmnotehub.h"
 #include "skrtaghub.h"
-#include "plmerror.h"
+#include "skrresult.h"
 #include "plmprojecthub.h"
 #include "skrprojectdicthub.h"
 #include "plmpropertyhub.h"
@@ -30,8 +30,6 @@ using namespace std;
 #include "skrspellchecker.h"
 #include "plmutils.h"
 #include "skrthemes.h"
-#include "models/plmsheetlistproxymodel.h"
-#include "models/plmnotelistproxymodel.h"
 #include "models/skrtaglistmodel.h"
 #include "models/skrsearchsheetlistproxymodel.h"
 #include "models/skrsearchnotelistproxymodel.h"
@@ -186,11 +184,11 @@ int main(int argc, char *argv[])
     SKRQMLTools   *skrQMLTools                 = new SKRQMLTools(qApp);
     SKRTextBridge *skrTextBridge               = new SKRTextBridge(qApp);
 
-    qmlRegisterUncreatableType<PLMError>("eu.skribisto.plmerror",
+    qmlRegisterUncreatableType<SKRResult>("eu.skribisto.result",
                                          1,
                                          0,
-                                         "PLMError",
-                                         "Can't instantiate PLMError");
+                                         "SKRResult",
+                                         "Can't instantiate SKRResult");
 
 
     qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",
@@ -242,17 +240,6 @@ int main(int argc, char *argv[])
         0,
         "PLMWriteDocumentListModel",
         "Can't instantiate PLMWriteDocumentListModel");
-
-
-    qmlRegisterType<PLMSheetListProxyModel>("eu.skribisto.sheetlistproxymodel",
-                                            1,
-                                            0,
-                                            "PLMSheetListProxyModel");
-
-    qmlRegisterType<PLMNoteListProxyModel>("eu.skribisto.notelistproxymodel",
-                                           1,
-                                           0,
-                                           "PLMNoteListProxyModel");
 
     qmlRegisterType<SKRSearchNoteListProxyModel>("eu.skribisto.searchnotelistproxymodel",
                                                  1,

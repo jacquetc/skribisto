@@ -694,8 +694,8 @@ WritePageForm {
 
     function saveContent(){
         console.log("saving sheet")
-        var error = plmData.sheetHub().setContent(projectId, paperId, writingZone.text)
-        if (!error.success){
+        var result = plmData.sheetHub().setContent(projectId, paperId, writingZone.text)
+        if (!result.success){
             console.log("saving sheet failed", projectId, paperId)
         }
         else {

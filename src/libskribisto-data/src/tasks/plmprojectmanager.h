@@ -4,7 +4,7 @@
 #include <QObject>
 
 #include "sql/plmproject.h"
-#include "plmerror.h"
+#include "skrresult.h"
 #include "skribisto_data_global.h"
 
 #define plmProjectManager PLMProjectManager::instance()
@@ -21,17 +21,17 @@ public:
         return m_instance;
     }
 
-    PLMError createNewEmptyDatabase(int& projectId);
-    PLMError loadProject(const QUrl& fileName,
+    SKRResult createNewEmptyDatabase(int& projectId);
+    SKRResult loadProject(const QUrl& fileName,
                          int       & projectId);
-    PLMError saveProject(int projectId);
-    PLMError saveProjectAs(int            projectId,
+    SKRResult saveProject(int projectId);
+    SKRResult saveProjectAs(int            projectId,
                            const QString& type,
                            const QUrl   & path,
                            bool           isCopy = false);
     PLMProject* project(int projectId);
     QList<int>  projectIdList();
-    PLMError    closeProject(int projectId);
+    SKRResult    closeProject(int projectId);
 
 signals:
 

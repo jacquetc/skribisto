@@ -22,6 +22,7 @@
 #include "plmsheetmodel.h"
 #include "plmdata.h"
 #include "plmpropertyhub.h"
+#include "skr.h"
 
 
 #include <QDebug>
@@ -29,7 +30,7 @@
 PLMSheetModel::PLMSheetModel(QObject *parent)
     : QAbstractItemModel(parent), m_headerData(QVariant())
 {
-    m_rootItem = new PLMSheetItem();
+    m_rootItem = new SKRPaperItem(SKR::Sheet);
     m_rootItem->setIsRootItem();
 
     connect(plmdata->projectHub(),
@@ -79,13 +80,13 @@ QModelIndex PLMSheetModel::index(int row, int column, const QModelIndex& parent)
 
     // if (column != 0) return QModelIndex();
 
-    PLMSheetItem *parentItem;
+    SKRPaperItem *parentItem;
 
 
     if (!parent.isValid()) parentItem = m_rootItem;
-    else parentItem = static_cast<PLMSheetItem *>(parent.internalPointer());
+    else parentItem = static_cast<SKRPaperItem *>(parent.internalPointer());
 
-    PLMSheetItem *childItem = parentItem->child(m_allSheetItems, row);
+    SKRPaperItem *childItem = parentItem->child(m_allSheetItems, row);
 
     if (childItem) {
         QModelIndex index = createIndex(row, column, childItem);
@@ -100,8 +101,8 @@ QModelIndex PLMSheetModel::parent(const QModelIndex& index) const
     if (!index.isValid()) return QModelIndex();
 
 
-    PLMSheetItem *childItem  = static_cast<PLMSheetItem *>(index.internalPointer());
-    PLMSheetItem *parentItem = childItem->parent(m_allSheetItems);
+    SKRPaperItem *childItem  = static_cast<SKRPaperItem *>(index.internalPointer());
+    SKRPaperItem *parentItem = childItem->parent(m_allSheetItems);
 
     if (parentItem == nullptr) {
         return QModelIndex();
@@ -124,7 +125,7 @@ int PLMSheetModel::rowCount(const QModelIndex& parent) const
     }
 
 
-    PLMSheetItem *parentItem = static_cast<PLMSheetItem *>(parent.internalPointer());
+    SKRPaperItem *parentItem = static_cast<SKRPaperItem *>(parent.internalPointer());
 
 
     return parentItem->childrenCount(m_allSheetItems);
@@ -151,58 +152,58 @@ QVariant PLMSheetModel::data(const QModelIndex& index, int role) const
 
     if (!index.isValid()) return QVariant();
 
-    PLMSheetItem *item = static_cast<PLMSheetItem *>(index.internalPointer());
+    SKRPaperItem *item = static_cast<SKRPaperItem *>(index.internalPointer());
 
 
     if ((role == Qt::DisplayRole) && item->isProjectItem()) {
-        return item->data(PLMSheetItem::Roles::ProjectNameRole);
+        return item->data(SKRPaperItem::Roles::ProjectNameRole);
     }
     else if (role == Qt::DisplayRole) {
-        return item->data(PLMSheetItem::Roles::NameRole);
+        return item->data(SKRPaperItem::Roles::NameRole);
     }
 
 
-    if (role == PLMSheetItem::Roles::ProjectNameRole) {
+    if (role == SKRPaperItem::Roles::ProjectNameRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::NameRole) {
+    if (role == SKRPaperItem::Roles::NameRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::PaperIdRole) {
+    if (role == SKRPaperItem::Roles::PaperIdRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::ProjectIdRole) {
+    if (role == SKRPaperItem::Roles::ProjectIdRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::LabelRole) {
+    if (role == SKRPaperItem::Roles::LabelRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::IndentRole) {
+    if (role == SKRPaperItem::Roles::IndentRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::SortOrderRole) {
+    if (role == SKRPaperItem::Roles::SortOrderRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::CreationDateRole) {
+    if (role == SKRPaperItem::Roles::CreationDateRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::UpdateDateRole) {
+    if (role == SKRPaperItem::Roles::UpdateDateRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::ContentDateRole) {
+    if (role == SKRPaperItem::Roles::ContentDateRole) {
         return item->data(role);
     }
 
-    if (role == PLMSheetItem::Roles::TrashedRole) {
+    if (role == SKRPaperItem::Roles::TrashedRole) {
         return item->data(role);
     }
     return QVariant();
@@ -216,78 +217,80 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
 
 
     if (data(index, role) != value) {
-        PLMSheetItem *item = static_cast<PLMSheetItem *>(index.internalPointer());
+        SKRPaperItem *item = static_cast<SKRPaperItem *>(index.internalPointer());
         int projectId      = item->projectId();
         int paperId        = item->paperId();
-        PLMError error;
+        SKRResult result;
 
         this->disconnectFromPLMDataSignals();
 
         switch (role) {
-        case PLMSheetItem::Roles::ProjectNameRole:
-            error = plmdata->projectHub()->setProjectName(projectId, value.toString());
+        case SKRPaperItem::Roles::ProjectNameRole:
+            result = plmdata->projectHub()->setProjectName(projectId, value.toString());
             break;
 
-        case PLMSheetItem::Roles::ProjectIdRole:
+        case SKRPaperItem::Roles::ProjectIdRole:
 
             // useless
             break;
 
-        case PLMSheetItem::Roles::PaperIdRole:
+        case SKRPaperItem::Roles::PaperIdRole:
 
             // useless
             break;
 
-        case PLMSheetItem::Roles::NameRole:
-            error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
+        case SKRPaperItem::Roles::NameRole:
+            result = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
             break;
 
-        case PLMSheetItem::Roles::LabelRole:
-            error = plmdata->sheetPropertyHub()->setProperty(projectId, paperId,
+        case SKRPaperItem::Roles::LabelRole:
+            result = plmdata->sheetPropertyHub()->setProperty(projectId, paperId,
                                                              "label", value.toString());
             break;
 
-        case PLMSheetItem::Roles::IndentRole:
-            error = plmdata->sheetHub()->setIndent(projectId, paperId, value.toInt());
+        case SKRPaperItem::Roles::IndentRole:
+            result = plmdata->sheetHub()->setIndent(projectId, paperId, value.toInt());
             break;
 
-        case PLMSheetItem::Roles::SortOrderRole:
-            error = plmdata->sheetHub()->setSortOrder(projectId, paperId, value.toInt());
+        case SKRPaperItem::Roles::SortOrderRole:
+            result = plmdata->sheetHub()->setSortOrder(projectId, paperId, value.toInt());
             break;
 
-        case PLMSheetItem::Roles::TrashedRole:
-            error = plmdata->sheetHub()->setTrashedWithChildren(projectId, paperId, value.toBool());
+        case SKRPaperItem::Roles::TrashedRole:
+            result = plmdata->sheetHub()->setTrashedWithChildren(projectId,
+                                                                paperId,
+                                                                value.toBool());
             break;
 
-        case PLMSheetItem::Roles::CreationDateRole:
-            error = plmdata->sheetHub()->setCreationDate(projectId,
+        case SKRPaperItem::Roles::CreationDateRole:
+            result = plmdata->sheetHub()->setCreationDate(projectId,
                                                          paperId,
                                                          value.toDateTime());
             break;
 
-        case PLMSheetItem::Roles::UpdateDateRole:
-            error = plmdata->sheetHub()->setUpdateDate(projectId,
+        case SKRPaperItem::Roles::UpdateDateRole:
+            result = plmdata->sheetHub()->setUpdateDate(projectId,
                                                        paperId,
                                                        value.toDateTime());
             break;
 
-        case PLMSheetItem::Roles::ContentDateRole:
-            error = plmdata->sheetHub()->setContentDate(projectId,
+        case SKRPaperItem::Roles::ContentDateRole:
+            result = plmdata->sheetHub()->setContentDate(projectId,
                                                         paperId,
                                                         value.toDateTime());
             break;
 
-        case PLMSheetItem::Roles::CharCountRole:
-            error = plmdata->sheetPropertyHub()->setProperty(projectId,
+        case SKRPaperItem::Roles::CharCountRole:
+            result = plmdata->sheetPropertyHub()->setProperty(projectId,
                                                              paperId,
                                                              "char_count",
                                                              QString::number(
                                                                  value.toInt()));
             break;
 
-        case PLMSheetItem::Roles::WordCountRole:
+        case SKRPaperItem::Roles::WordCountRole:
 
-            error = plmdata->sheetPropertyHub()->setProperty(projectId,
+            result = plmdata->sheetPropertyHub()->setProperty(projectId,
                                                              paperId,
                                                              "word_count",
                                                              QString::number(
@@ -298,7 +301,7 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
 
         this->connectToPLMDataSignals();
 
-        if (!error.isSuccess()) {
+        if (!result.isSuccess()) {
             return false;
         }
         item->invalidateData(role);
@@ -358,17 +361,17 @@ bool PLMSheetModel::removeColumns(int column, int count, const QModelIndex& pare
 QHash<int, QByteArray>PLMSheetModel::roleNames() const {
     QHash<int, QByteArray> roles;
 
-    roles[PLMSheetItem::Roles::ProjectNameRole]  = "projectName";
-    roles[PLMSheetItem::Roles::PaperIdRole]      = "paperId";
-    roles[PLMSheetItem::Roles::ProjectIdRole]    = "projectId";
-    roles[PLMSheetItem::Roles::NameRole]         = "name";
-    roles[PLMSheetItem::Roles::LabelRole]        = "label";
-    roles[PLMSheetItem::Roles::IndentRole]       = "indent";
-    roles[PLMSheetItem::Roles::SortOrderRole]    = "sortOrder";
-    roles[PLMSheetItem::Roles::CreationDateRole] = "creationDate";
-    roles[PLMSheetItem::Roles::UpdateDateRole]   = "updateDate";
-    roles[PLMSheetItem::Roles::ContentDateRole]  = "contentDate";
-    roles[PLMSheetItem::Roles::TrashedRole]      = "trashed";
+    roles[SKRPaperItem::Roles::ProjectNameRole]  = "projectName";
+    roles[SKRPaperItem::Roles::PaperIdRole]      = "paperId";
+    roles[SKRPaperItem::Roles::ProjectIdRole]    = "projectId";
+    roles[SKRPaperItem::Roles::NameRole]         = "name";
+    roles[SKRPaperItem::Roles::LabelRole]        = "label";
+    roles[SKRPaperItem::Roles::IndentRole]       = "indent";
+    roles[SKRPaperItem::Roles::SortOrderRole]    = "sortOrder";
+    roles[SKRPaperItem::Roles::CreationDateRole] = "creationDate";
+    roles[SKRPaperItem::Roles::UpdateDateRole]   = "updateDate";
+    roles[SKRPaperItem::Roles::ContentDateRole]  = "contentDate";
+    roles[SKRPaperItem::Roles::TrashedRole]      = "trashed";
     return roles;
 }
 
@@ -377,9 +380,10 @@ void PLMSheetModel::populate()
     this->beginResetModel();
 
     m_allSheetItems.clear();
-    for(int projectId : plmdata->projectHub()->getProjectIdList()) {
+
+    for (int projectId : plmdata->projectHub()->getProjectIdList()) {
         if (plmdata->projectHub()->getProjectIdList().count() > 1) {
-            PLMSheetItem *projectItem = new PLMSheetItem();
+            SKRPaperItem *projectItem = new SKRPaperItem(SKR::Sheet);
             projectItem->setIsProjectItem(projectId);
             m_allSheetItems.append(projectItem);
         }
@@ -388,8 +392,8 @@ void PLMSheetModel::populate()
         auto sortOrdersHash = plmdata->sheetHub()->getAllSortOrders(projectId);
         auto indentsHash    = plmdata->sheetHub()->getAllIndents(projectId);
 
-        for(int sheetId : idList) {
-            m_allSheetItems.append(new PLMSheetItem(projectId, sheetId,
+        for (int sheetId : idList) {
+            m_allSheetItems.append(new SKRPaperItem(SKR::Sheet, projectId, sheetId,
                                                     indentsHash.value(sheetId),
                                                     sortOrdersHash.value(sheetId)));
         }
@@ -406,9 +410,9 @@ void PLMSheetModel::clear()
 
 void PLMSheetModel::exploitSignalFromPLMData(int                 projectId,
                                              int                 paperId,
-                                             PLMSheetItem::Roles role)
+                                             SKRPaperItem::Roles role)
 {
-    PLMSheetItem *item = this->findPaperItem(projectId, paperId);
+    SKRPaperItem *item = this->findPaperItem(projectId, paperId);
 
     if (!item) {
         return;
@@ -420,7 +424,7 @@ void PLMSheetModel::exploitSignalFromPLMData(int                 projectId,
     QModelIndex index;
     QModelIndexList list =  this->match(this->index(0, 0,
                                                     QModelIndex()),
-                                        PLMSheetItem::Roles::PaperIdRole,
+                                        SKRPaperItem::Roles::PaperIdRole,
                                         paperId,
                                         -1,
                                         Qt::MatchFlag::MatchRecursive |
@@ -428,7 +432,7 @@ void PLMSheetModel::exploitSignalFromPLMData(int                 projectId,
                                         Qt::MatchFlag::MatchWrap);
 
     for (const QModelIndex& modelIndex : list) {
-        PLMSheetItem *t = static_cast<PLMSheetItem *>(modelIndex.internalPointer());
+        SKRPaperItem *t = static_cast<SKRPaperItem *>(modelIndex.internalPointer());
 
         if (t)
             if (t->projectId() == projectId) index = modelIndex;
@@ -481,13 +485,13 @@ void PLMSheetModel::addPaper(int projectId, int paperId)
 
                 if (modelIndexList.isEmpty()) {
                     qWarning() << Q_FUNC_INFO <<
-                    "if paperIndent == possibleParentIndent => modelIndexList.isEmpty()";
+                        "if paperIndent == possibleParentIndent => modelIndexList.isEmpty()";
                     return;
                 }
                 parentIndex = modelIndexList.first();
 
                 // int parentPaperId =
-                // parentIndex.data(PLMSheetItem::Roles::PaperIdRole).toInt();
+                // parentIndex.data(SKRPaperItem::Roles::PaperIdRole).toInt();
                 row         = paperIndex - i - 1;
                 parentFound = true;
                 break;
@@ -507,12 +511,19 @@ void PLMSheetModel::addPaper(int projectId, int paperId)
     int itemIndex = 0;
 
     if ((plmdata->projectHub()->getProjectIdList().count() == 1) && (paperIndex == 0)) { //
+                                                                                         //
                                                                                          // so
+                                                                                         //
                                                                                          // no
+                                                                                         //
                                                                                          // project
+                                                                                         //
                                                                                          // items
+                                                                                         //
                                                                                          // and
+                                                                                         //
                                                                                          // first
+                                                                                         //
                                                                                          // item
         itemIndex = 0;
     }
@@ -522,7 +533,7 @@ void PLMSheetModel::addPaper(int projectId, int paperId)
         }
 
         int idBefore             = idList.at(paperIndex - 1);
-        PLMSheetItem *itemBefore = this->findPaperItem(projectId, idBefore);
+        SKRPaperItem *itemBefore = this->findPaperItem(projectId, idBefore);
 
         int indexBefore = m_allSheetItems.indexOf(itemBefore);
 
@@ -540,7 +551,7 @@ void PLMSheetModel::addPaper(int projectId, int paperId)
 
     beginInsertRows(parentIndex, row, row);
 
-    m_allSheetItems.insert(itemIndex, new PLMSheetItem(projectId, paperId,
+    m_allSheetItems.insert(itemIndex, new SKRPaperItem(SKR::Sheet, projectId, paperId,
                                                        indentsHash.value(paperId),
                                                        sortOrdersHash.value(paperId)));
     endInsertRows();
@@ -548,20 +559,20 @@ void PLMSheetModel::addPaper(int projectId, int paperId)
 
 // --------------------------------------------------------------------
 
-PLMSheetItem * PLMSheetModel::findPaperItem(int projectId, int paperId)
+SKRPaperItem * PLMSheetModel::findPaperItem(int projectId, int paperId)
 {
     QModelIndexList list =  this->match(this->index(0, 0,
                                                     QModelIndex()),
-                                        PLMSheetItem::Roles::PaperIdRole,
+                                        SKRPaperItem::Roles::PaperIdRole,
                                         paperId,
                                         -1,
                                         Qt::MatchFlag::MatchRecursive |
                                         Qt::MatchFlag::MatchExactly |
                                         Qt::MatchFlag::MatchWrap);
-    PLMSheetItem *item = nullptr;
+    SKRPaperItem *item = nullptr;
 
     for (const QModelIndex& modelIndex : list) {
-        PLMSheetItem *t = static_cast<PLMSheetItem *>(modelIndex.internalPointer());
+        SKRPaperItem *t = static_cast<SKRPaperItem *>(modelIndex.internalPointer());
 
         if (t)
             if (t->projectId() == projectId) item = t;
@@ -577,7 +588,7 @@ void PLMSheetModel::connectToPLMDataSignals()
                                            [this](int projectId, int paperId,
                                                   const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, paperId, PLMSheetItem::Roles::NameRole);
+        this->exploitSignalFromPLMData(projectId, paperId, SKRPaperItem::Roles::NameRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->sheetPropertyHub(),
@@ -590,7 +601,7 @@ void PLMSheetModel::connectToPLMDataSignals()
         Q_UNUSED(propertyId)
 
         if (name == "label") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                            PLMSheetItem::Roles::LabelRole);
+                                                            SKRPaperItem::Roles::LabelRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->sheetHub(),
@@ -599,7 +610,7 @@ void PLMSheetModel::connectToPLMDataSignals()
                                                   int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::PaperIdRole);
+                                       SKRPaperItem::Roles::PaperIdRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->sheetHub(),
@@ -608,7 +619,7 @@ void PLMSheetModel::connectToPLMDataSignals()
                                                   int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::IndentRole);
+                                       SKRPaperItem::Roles::IndentRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList.append(this->connect(plmdata->sheetHub(),
@@ -617,7 +628,7 @@ void PLMSheetModel::connectToPLMDataSignals()
                                                       int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::SortOrderRole);
+                                       SKRPaperItem::Roles::SortOrderRole);
     }));
     m_dataConnectionsList << this->connect(plmdata->sheetHub(),
                                            &PLMSheetHub::contentDateChanged, this,
@@ -625,7 +636,7 @@ void PLMSheetModel::connectToPLMDataSignals()
                                                   const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::ContentDateRole);
+                                       SKRPaperItem::Roles::ContentDateRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->sheetHub(),
@@ -634,7 +645,7 @@ void PLMSheetModel::connectToPLMDataSignals()
                                                   const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::UpdateDateRole);
+                                       SKRPaperItem::Roles::UpdateDateRole);
     }, Qt::UniqueConnection);
     m_dataConnectionsList << this->connect(plmdata->sheetHub(),
                                            &PLMSheetHub::trashedChanged, this,
@@ -642,7 +653,7 @@ void PLMSheetModel::connectToPLMDataSignals()
                                                   bool value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
-                                       PLMSheetItem::Roles::TrashedRole);
+                                       SKRPaperItem::Roles::TrashedRole);
     }, Qt::UniqueConnection);
     m_dataConnectionsList << this->connect(plmdata->sheetPropertyHub(),
                                            &PLMPropertyHub::propertyChanged, this,
@@ -654,7 +665,7 @@ void PLMSheetModel::connectToPLMDataSignals()
         Q_UNUSED(propertyId)
 
         if (name == "char_count") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                                 PLMSheetItem::Roles::
+                                                                 SKRPaperItem::Roles::
                                                                  CharCountRole);
     }, Qt::UniqueConnection);
     m_dataConnectionsList << this->connect(plmdata->sheetPropertyHub(),
@@ -667,7 +678,7 @@ void PLMSheetModel::connectToPLMDataSignals()
         Q_UNUSED(propertyId)
 
         if (name == "word_count") this->exploitSignalFromPLMData(projectId, paperCode,
-                                                                 PLMSheetItem::Roles::
+                                                                 SKRPaperItem::Roles::
                                                                  WordCountRole);
     }, Qt::UniqueConnection);
 }
@@ -690,7 +701,7 @@ QModelIndexList PLMSheetModel::getModelIndex(int projectId, int paperId)
     QModelIndexList list;
     QModelIndexList modelList =  this->match(this->index(0, 0,
                                                          QModelIndex()),
-                                             PLMSheetItem::Roles::ProjectIdRole,
+                                             SKRPaperItem::Roles::ProjectIdRole,
                                              projectId,
                                              -1,
                                              Qt::MatchFlag::MatchExactly |
@@ -698,7 +709,7 @@ QModelIndexList PLMSheetModel::getModelIndex(int projectId, int paperId)
                                              Qt::MatchFlag::MatchRecursive);
 
     for (const QModelIndex& modelIndex : modelList) {
-        int indexPaperId = modelIndex.data(PLMSheetItem::Roles::PaperIdRole).toInt();
+        int indexPaperId = modelIndex.data(SKRPaperItem::Roles::PaperIdRole).toInt();
 
         if (indexPaperId == paperId) {
             list.append(modelIndex);

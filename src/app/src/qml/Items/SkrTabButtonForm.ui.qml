@@ -30,7 +30,6 @@ TabButton {
             implicitHeight: 24
             implicitWidth: 24
             Layout.maximumHeight: 30
-            padding: 0
             rightPadding: 0
             bottomPadding: 0
             leftPadding: 2
@@ -45,11 +44,14 @@ TabButton {
             }
             onDownChanged: down = false
             onClicked: base.checked = true
-            onDisplayChanged: r
 
             Item {
                 id : mouseBlocker
                 anchors.fill: parent
+                    TapHandler {
+                        onTapped: eventPoint.accepted = false
+                    }
+
             }
 
         }
@@ -62,7 +64,7 @@ TabButton {
             bottomPadding: 6
 
 
-            text: base.text === "" ? action.text : base.text
+            text: base.text === "" ? (base.action === null ? base.text : action.text) : base.text
             font.weight: isCurrent ? Font.Bold : Font.Normal
             font.family: base.font.family
             font.pointSize: base.font.pointSize
@@ -84,17 +86,24 @@ TabButton {
         }
 
 
-        SkrRoundButton {
+        SkrToolButton {
 
 
             id: closeButton
 
             visible: isCurrent | hoverHandler.hovered ? closable : false
             text: "x"
+            icon.source: "qrc:///icons/backup/window-close.svg"
             focusPolicy: Qt.NoFocus
+            display: AbstractButton.IconOnly
             flat: true
-            implicitHeight: 30
-            implicitWidth: 30
+            implicitHeight: 26
+            implicitWidth: 26
+            padding: 0
+            topInset: 1
+            bottomInset: 1
+            leftInset: 1
+            rightInset: 1
         }
 
         HoverHandler {

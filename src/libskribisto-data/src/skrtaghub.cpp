@@ -31,28 +31,28 @@ SKRTagHub::SKRTagHub(QObject *parent) : QObject(parent), m_last_added_id(-1)
 
 QList<int>SKRTagHub::getAllTagIds(int projectId) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QList<int> result;
+    QList<int> list;
     QList<int> out;
     PLMSqlQueries queries(projectId, "tbl_tag");
 
-    error = queries.getIds(out);
-    IFOK(error) {
-        result = out;
+    result = queries.getIds(out);
+    IFOK(result) {
+        list = out;
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return list;
 }
 
 // --------------------------------------------------------------------------------
 
 
-PLMError SKRTagHub::addTag(int projectId, const QString& tagName)
+SKRResult SKRTagHub::addTag(int projectId, const QString& tagName)
 {
-    PLMError error;
+    SKRResult result;
 
     int newId = -2;
     QHash<QString, QVariant> values;
@@ -61,82 +61,82 @@ PLMError SKRTagHub::addTag(int projectId, const QString& tagName)
 
     PLMSqlQueries queries(projectId, "tbl_tag");
 
-    error = queries.add(values, newId);
-    IFKO(error) {
+    result = queries.add(values, newId);
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
 
-    IFOK(error) {
+    IFOK(result) {
         m_last_added_id = newId;
-        error.addData("tagId", newId);
+        result.addData("tagId", newId);
         emit tagAdded(projectId, newId);
         emit projectModified(projectId);
     }
 
-    return error;
+    return result;
 }
 
 // --------------------------------------------------------------------------------
 
 
-PLMError SKRTagHub::removeTag(int projectId, int tagId)
+SKRResult SKRTagHub::removeTag(int projectId, int tagId)
 {
-    PLMError error;
+    SKRResult result;
 
     int newId = -2;
 
 
     PLMSqlQueries queries(projectId, "tbl_tag");
 
-    error = queries.remove(tagId);
-    IFKO(error) {
+    result = queries.remove(tagId);
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
 
-    IFOK(error) {
+    IFOK(result) {
         emit tagRemoved(projectId, newId);
         emit projectModified(projectId);
     }
 
-    return error;
+    return result;
 }
 
 int SKRTagHub::getTagIdWithName(int projectId, const QString& tagName)
 {
-    int result = -2;
-    PLMError error;
+    int value = -2;
+    SKRResult result;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, "tbl_tag");
 
-    error = queries.getValueByIds("l_tag_id", out, "t_name", tagName);
-    IFOK(error) {
+    result = queries.getValueByIds("l_tag_id", out, "t_name", tagName);
+    IFOK(result) {
         QHash<int, QVariant>::const_iterator i = out.constBegin();
 
         while (i != out.constEnd()) {
             if (!i.value().isNull()) {
-                result = i.key();
+                value = i.key();
             }
             ++i;
         }
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
 
 
-    return result;
+    return value;
 }
 
 // --------------------------------------------------------------------------------
@@ -150,22 +150,27 @@ QString SKRTagHub::getTagName(int projectId, int tagId) const
 // --------------------------------------------------------------------------------
 
 
-PLMError SKRTagHub::setTagName(int projectId, int tagId, const QString& tagName)
+SKRResult SKRTagHub::setTagName(int projectId, int tagId, const QString& tagName)
 {
-    PLMError error;
+    SKRResult result;
 
     if (tagName.isEmpty()) {
-        error.setSuccess(false);
-        error.setErrorCode("E_TAG_name_is_missing");
+        result.setSuccess(false);
+        result.addErrorCode("C_TAG_name_is_missing");
     }
 
-    IFOKDO(error, set(projectId, tagId, "t_name", tagName));
+    IFOKDO(result, set(projectId, tagId, "t_name", tagName));
 
-    IFOK(error) {
+    IFOK(result) {
         emit nameChanged(projectId, tagId, tagName);
         emit projectModified(projectId);
     }
-    return error;
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return result;
 }
 
 // --------------------------------------------------------------------------------
@@ -173,23 +178,23 @@ PLMError SKRTagHub::setTagName(int projectId, int tagId, const QString& tagName)
 
 bool SKRTagHub::doesTagNameAlreadyExist(int projectId, const QString& tagName)
 {
-    bool result = true;
-    PLMError error;
+    bool value = true;
+    SKRResult result;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, "tbl_tag");
 
-    error = queries.getValueByIds("l_tag_id", out, "t_name", tagName);
-    IFOK(error) {
+    result = queries.getValueByIds("l_tag_id", out, "t_name", tagName);
+    IFOK(result) {
         if (out.isEmpty()) {
-            result = false;
+            value = false;
         }
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
 
 
-    return result;
+    return value;
 }
 
 // --------------------------------------------------------------------------------
@@ -201,29 +206,39 @@ QString SKRTagHub::getTagColor(int projectId, int tagId) const
 
 // --------------------------------------------------------------------------------
 
-PLMError SKRTagHub::setTagColor(int projectId, int tagId, const QString& color)
+SKRResult SKRTagHub::setTagColor(int projectId, int tagId, const QString& color)
 {
-    PLMError error = set(projectId, tagId, "t_color", color);
+    SKRResult result = set(projectId, tagId, "t_color", color);
 
-    IFOK(error) {
+    IFOK(result) {
         emit colorChanged(projectId, tagId, color);
         emit projectModified(projectId);
     }
-    return error;
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return result;
 }
 
 // ------------------------------------------------------------
 
-PLMError SKRTagHub::setCreationDate(int projectId, int tagId,
+SKRResult SKRTagHub::setCreationDate(int projectId, int tagId,
                                     const QDateTime& newDate)
 {
-    PLMError error = set(projectId, tagId, "dt_created", newDate);
+    SKRResult result = set(projectId, tagId, "dt_created", newDate);
 
-    IFOK(error) {
+    IFOK(result) {
         emit creationDateChanged(projectId, tagId, newDate);
         emit projectModified(projectId);
     }
-    return error;
+
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
 }
 
 // ------------------------------------------------------------
@@ -235,15 +250,21 @@ QDateTime SKRTagHub::getCreationDate(int projectId, int tagId) const
 
 // --------------------------------------------------------------------------------
 
-PLMError SKRTagHub::setUpdateDate(int projectId, int tagId, const QDateTime& newDate)
+SKRResult SKRTagHub::setUpdateDate(int projectId, int tagId, const QDateTime& newDate)
 {
-    PLMError error = set(projectId, tagId, "dt_updated", newDate);
+    SKRResult result = set(projectId, tagId, "dt_updated", newDate);
 
-    IFOK(error) {
+    IFOK(result) {
         emit updateDateChanged(projectId, tagId, newDate);
         emit projectModified(projectId);
     }
-    return error;
+
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return result;
 }
 
 // --------------------------------------------------------------------------------
@@ -256,32 +277,32 @@ QDateTime SKRTagHub::getUpdateDate(int projectId, int tagId) const
 // --------------------------------------------------------------------------------
 
 
-PLMError SKRTagHub::set(int             projectId,
+SKRResult SKRTagHub::set(int             projectId,
                         int             tagId,
                         const QString & fieldName,
                         const QVariant& value,
                         bool            setCurrentDateBool)
 {
-    PLMError error;
+    SKRResult result;
     PLMSqlQueries queries(projectId,  "tbl_tag");
 
     queries.beginTransaction();
-    error = queries.set(tagId, fieldName, value);
+    result = queries.set(tagId, fieldName, value);
 
     if (setCurrentDateBool) {
-        IFOKDO(error, queries.setCurrentDate(tagId, "dt_updated"));
+        IFOKDO(result, queries.setCurrentDate(tagId, "dt_updated"));
     }
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return error;
+    return result;
 }
 
 // --------------------------------------------------------------------------------
@@ -289,19 +310,19 @@ PLMError SKRTagHub::set(int             projectId,
 
 QVariant SKRTagHub::get(int projectId, int tagId, const QString& fieldName) const
 {
-    PLMError error;
+    SKRResult result;
     QVariant var;
-    QVariant result;
+    QVariant value;
     PLMSqlQueries queries(projectId, "tbl_tag");
 
-    error = queries.get(tagId, fieldName, var);
-    IFOK(error) {
-        result = var;
+    result = queries.get(tagId, fieldName, var);
+    IFOK(result) {
+        value = var;
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return value;
 }
 
 // --------------------------------------------------------------------------------
@@ -315,14 +336,14 @@ int SKRTagHub::getLastAddedId()
 
 int SKRTagHub::getTopPaperId(int projectId) const
 {
-    int result      = -2;
+    int value      = -2;
     QList<int> list = this->getAllTagIds(projectId);
 
     if (!list.isEmpty()) {
-        result = list.first();
+        value = list.first();
     }
 
-    return result;
+    return value;
 }
 
 // --------------------------------------------------------------------------------
@@ -334,9 +355,9 @@ QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
                                        SKRTagHub::ItemType itemType,
                                        int                 tagId) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QList<int> result;
+    QList<int> list;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -349,15 +370,15 @@ QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
 
     // get l_sheet_code
     if (itemType == SKRTagHub::Sheet) {
-        error = queries.getValueByIdsWhere("l_sheet_code", out, where);
+        result = queries.getValueByIdsWhere("l_sheet_code", out, where);
 
-        IFOK(error) {
+        IFOK(result) {
             // filter null results
             QHash<int, QVariant>::const_iterator i = out.constBegin();
 
             while (i != out.constEnd()) {
                 if (!i.value().isNull()) {
-                    result.append(i.key());
+                    list.append(i.key());
                 }
                 ++i;
             }
@@ -367,32 +388,32 @@ QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
 
     // get l_note_code
     if (itemType == SKRTagHub::Note) {
-        error = queries.getValueByIdsWhere("l_note_code", out, where);
+        result = queries.getValueByIdsWhere("l_note_code", out, where);
 
-        IFOK(error) {
+        IFOK(result) {
             // filter null results
             QHash<int, QVariant>::const_iterator i = out.constBegin();
 
             while (i != out.constEnd()) {
                 if (!i.value().isNull()) {
-                    result.append(i.key());
+                    list.append(i.key());
                 }
                 ++i;
             }
         }
     }
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return list;
 }
 
 QList<int>SKRTagHub::getItemIdsFromTag(int projectId, int tagId, bool addSeparator) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QList<int> result;
+    QList<int> list;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -404,18 +425,18 @@ QList<int>SKRTagHub::getItemIdsFromTag(int projectId, int tagId, bool addSeparat
 
     // get l_sheet_code
     if (addSeparator) {
-        result.append(-30);
+        list.append(-30);
     }
 
-    error = queries.getValueByIdsWhere("l_sheet_code", out, where);
+    result = queries.getValueByIdsWhere("l_sheet_code", out, where);
 
-    IFOK(error) {
+    IFOK(result) {
         // filter null results
         QHash<int, QVariant>::const_iterator i = out.constBegin();
 
         while (i != out.constEnd()) {
             if (!i.value().isNull()) {
-                result.append(i.key());
+                list.append(i.key());
             }
             ++i;
         }
@@ -423,29 +444,29 @@ QList<int>SKRTagHub::getItemIdsFromTag(int projectId, int tagId, bool addSeparat
 
 
     // get l_note_code
-    IFOK(error) {
+    IFOK(result) {
         if (addSeparator) {
-            result.append(-31);
+            list.append(-31);
         }
-        error = queries.getValueByIdsWhere("l_note_code", out, where);
+        result = queries.getValueByIdsWhere("l_note_code", out, where);
 
-        IFOK(error) {
-            // filter null results
+        IFOK(result) {
+            // filter null lists
             QHash<int, QVariant>::const_iterator i = out.constBegin();
 
             while (i != out.constEnd()) {
                 if (!i.value().isNull()) {
-                    result.append(i.key());
+                    list.append(i.key());
                 }
                 ++i;
             }
         }
     }
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return list;
 }
 
 // --------------------------------------------------------------------------------
@@ -455,9 +476,9 @@ QList<int>SKRTagHub::getTagsFromItemId(int                 projectId,
                                        SKRTagHub::ItemType itemType,
                                        int                 itemId) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QList<int> result;
+    QList<int> list;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -473,36 +494,36 @@ QList<int>SKRTagHub::getTagsFromItemId(int                 projectId,
 
     PLMSqlQueries queries(projectId, "tbl_tag_relationship");
 
-    error = queries.getValueByIdsWhere("l_tag_code", out, where);
+    result = queries.getValueByIdsWhere("l_tag_code", out, where);
 
-    IFOK(error) {
+    IFOK(result) {
         // filter null results
         QHash<int, QVariant>::const_iterator i = out.constBegin();
 
         while (i != out.constEnd()) {
             if (!i.value().isNull()) {
-                result.append(i.value().toInt());
+                list.append(i.value().toInt());
             }
             ++i;
         }
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return list;
 }
 
 // --------------------------------------------------------------------------------
 
 
-PLMError SKRTagHub::setTagRelationship(int                 projectId,
+SKRResult SKRTagHub::setTagRelationship(int                 projectId,
                                        SKRTagHub::ItemType itemType,
                                        int                 itemId,
                                        int                 tagId)
 {
-    PLMError error;
+    SKRResult result;
 
-    QHash<int, int> result;
+    QHash<int, int> hash;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -520,11 +541,11 @@ PLMError SKRTagHub::setTagRelationship(int                 projectId,
 
 
     // verify if the relationship doesn't yet exist
-    error = queries.getValueByIdsWhere("l_tag_relationship_id", out, where);
+    result = queries.getValueByIdsWhere("l_tag_relationship_id", out, where);
 
     int key = -2;
 
-    IFOK(error) {
+    IFOK(result) {
         // filter null results
         QHash<int, QVariant>::iterator i = out.begin();
 
@@ -538,16 +559,16 @@ PLMError SKRTagHub::setTagRelationship(int                 projectId,
         }
 
 
-        result = HashIntQVariantConverter::convertToIntInt(out);
+        hash = HashIntQVariantConverter::convertToIntInt(out);
 
-        QHash<int, int>::const_iterator j = result.constBegin();
+        QHash<int, int>::const_iterator j = hash.constBegin();
 
-        while (j != result.constEnd()) {
+        while (j != hash.constEnd()) {
             key = j.key();
             ++j;
         }
 
-        if (result.isEmpty() || (key == -2) || (key == 0)) {
+        if (hash.isEmpty() || (key == -2) || (key == 0)) {
             // no relationship exists, creating one
 
             int newId = -2;
@@ -563,18 +584,18 @@ PLMError SKRTagHub::setTagRelationship(int                 projectId,
             }
             values.insert("l_tag_code", tagId);
 
-            error = queries.add(values, newId);
-            IFKO(error) {
+            result = queries.add(values, newId);
+            IFKO(result) {
                 queries.rollback();
             }
-            IFOK(error) {
+            IFOK(result) {
                 queries.commit();
             }
-            IFKO(error) {
-                emit errorSent(error);
+            IFKO(result) {
+                emit errorSent(result);
             }
 
-            IFOK(error) {
+            IFOK(result) {
                 emit tagRelationshipAdded(projectId, itemType, itemId, tagId);
                 emit tagRelationshipChanged(projectId, itemType, itemId, tagId);
                 emit projectModified(projectId);
@@ -583,19 +604,24 @@ PLMError SKRTagHub::setTagRelationship(int                 projectId,
 
         // relationship exists, do nothing
     }
-    return error;
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return result;
 }
 
 // --------------------------------------------------------------------------------
 
-PLMError SKRTagHub::removeTagRelationship(int                 projectId,
+SKRResult SKRTagHub::removeTagRelationship(int                 projectId,
                                           SKRTagHub::ItemType itemType,
                                           int                 itemId,
                                           int                 tagId)
 {
-    PLMError error;
+    SKRResult result;
 
-    QHash<int, int> result;
+    QHash<int, int> hash;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -609,12 +635,12 @@ PLMError SKRTagHub::removeTagRelationship(int                 projectId,
     }
     PLMSqlQueries queries(projectId,  "tbl_tag_relationship");
 
-    error = queries.getValueByIdsWhere("l_tag_relationship_id", out, where);
+    result = queries.getValueByIdsWhere("l_tag_relationship_id", out, where);
 
     int key = -2;
 
-    IFOK(error) {
-        // filter null results
+    IFOK(result) {
+        // filter null hashs
         QHash<int, QVariant>::iterator i = out.begin();
 
         while (i != out.end()) {
@@ -627,40 +653,41 @@ PLMError SKRTagHub::removeTagRelationship(int                 projectId,
         }
 
 
-        result = HashIntQVariantConverter::convertToIntInt(out);
+        hash = HashIntQVariantConverter::convertToIntInt(out);
 
-        QHash<int, int>::const_iterator j = result.constBegin();
+        QHash<int, int>::const_iterator j = hash.constBegin();
 
-        while (j != result.constEnd()) {
+        while (j != hash.constEnd()) {
             key = j.key();
             ++j;
         }
 
-        if (result.isEmpty() || (key == -2) || (key == 0)) {
-            error.setSuccess(false);
-            error.setErrorCode("E_TAG_no_tag_relationship_to_remove");
-            return error;
+        if (hash.isEmpty() || (key == -2) || (key == 0)) {
+            result.setSuccess(false);
+            result.addErrorCode("C_TAG_no_tag_relationship_to_remove");
+            return result;
         }
     }
 
-    IFOK(error) {
-        error = queries.remove(key);
-        IFKO(error) {
-            queries.rollback();
-        }
-        IFOK(error) {
-            queries.commit();
-        }
-        IFKO(error) {
-            emit errorSent(error);
-        }
+    IFOK(result) {
+        result = queries.remove(key);
     }
-    IFOK(error) {
+    IFKO(result) {
+        queries.rollback();
+    }
+    IFOK(result) {
+        queries.commit();
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    IFOK(result) {
         emit tagRelationshipRemoved(projectId, itemType, itemId, tagId);
         emit projectModified(projectId);
     }
 
-    return error;
+    return result;
 }
 
 // --------------------------------------------------------------------------------

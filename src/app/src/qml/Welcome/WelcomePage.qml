@@ -79,7 +79,7 @@ WelcomePageForm {
         //show Welcome window
 
 
-        //        if (!error.success) {
+        //        if (!result.success) {
         //            messageDialog.title = qsTr("")
         //            messageDialog.text = qsTr("")
         //            messageDialog.informativeText = "inf"

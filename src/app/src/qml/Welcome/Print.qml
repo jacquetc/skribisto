@@ -7,4 +7,11 @@ PrintForm {
     signal goBackButtonClicked()
     goBackToolButton.onClicked: goBackButtonClicked()
 
+
+
+    onActiveFocusChanged: {
+        if (activeFocus) {
+
+        }
+    }
 }

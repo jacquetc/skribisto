@@ -33,11 +33,11 @@
    Delete a directory along with all of its contents.
 
    \param dirName Path of directory to remove.
-   \return true on success; false on error.
+   \return true on success; false on result.
  */
 bool PLMUtils::Dir::removeDir(const QString& dirName)
 {
-    bool result = true;
+    bool value = true;
     QDir dir(dirName);
 
     if (dir.exists(dirName)) {
@@ -47,20 +47,20 @@ bool PLMUtils::Dir::removeDir(const QString& dirName)
                                QDir::AllDirs | QDir::Files,
                                QDir::DirsFirst)) {
             if (info.isDir()) {
-                result = removeDir(info.absoluteFilePath());
+                value = removeDir(info.absoluteFilePath());
             } else {
-                result = QFile::remove(info.absoluteFilePath());
+                value = QFile::remove(info.absoluteFilePath());
             }
 
-            if (!result) {
-                return result;
+            if (!value) {
+                return value;
             }
         }
 
-        result = dir.rmdir(dirName);
+        value = dir.rmdir(dirName);
     }
 
-    return result;
+    return value;
 }
 
 // ------------------------------------------------------------------
@@ -90,7 +90,7 @@ bool PLMUtils::Dir::removeDir(const QString& dirName)
 
 //    if (!infoDomDoc.setContent(infoFile, true, &errorStr, &errorLine,
 //                               &errorColumn)) {
-//        qDebug() << QString("Info File. Parse error at line %1, column
+//        qDebug() << QString("Info File. Parse result at line %1, column
 // %2:\n%3\n")
 //                    .arg(errorLine)
 //                    .arg(errorColumn)
@@ -504,7 +504,7 @@ QHash<QString,
 
 //    if (!infoDomDoc.setContent(infoFile, true, &errorStr, &errorLine,
 //                               &errorColumn)) {
-//        qDebug() << QString("Info File. Parse error at line %1, column
+//        qDebug() << QString("Info File. Parse result at line %1, column
 // %2:\n%3\n")
 //                    .arg(errorLine)
 //                    .arg(errorColumn)

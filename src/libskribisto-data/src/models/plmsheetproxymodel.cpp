@@ -50,7 +50,7 @@ QVariant PLMSheetProxyModel::data(const QModelIndex& index, int role) const
 
     if ((role == Qt::EditRole) && (col == 0)) {
         return this->sourceModel()->data(sourceIndex,
-                                         PLMSheetItem::Roles::NameRole).toString();
+                                         SKRPaperItem::Roles::NameRole).toString();
     }
 
     return QSortFilterProxyModel::data(index, role);
@@ -63,18 +63,18 @@ bool PLMSheetProxyModel::setData(const QModelIndex& index, const QVariant& value
 {
     QModelIndex sourceIndex = this->mapToSource(index);
 
-    PLMSheetItem *item =
-        static_cast<PLMSheetItem *>(sourceIndex.internalPointer());
+    SKRPaperItem *item =
+        static_cast<SKRPaperItem *>(sourceIndex.internalPointer());
 
     if ((role == Qt::EditRole) && (sourceIndex.column() == 0)) {
         if (item->isProjectItem()) {
             return this->sourceModel()->setData(sourceIndex,
                                                 value,
-                                                PLMSheetItem::Roles::ProjectNameRole);
+                                                SKRPaperItem::Roles::ProjectNameRole);
         } else {
             return this->sourceModel()->setData(sourceIndex,
                                                 value,
-                                                PLMSheetItem::Roles::NameRole);
+                                                SKRPaperItem::Roles::NameRole);
         }
     }
     return QSortFilterProxyModel::setData(index, value, role);
@@ -98,7 +98,7 @@ bool PLMSheetProxyModel::filterAcceptsRow(int                sourceRow,
         return false;
     }
     bool indexTrashed =
-        sourceModel()->data(index, PLMSheetItem::Roles::TrashedRole).toBool();
+        sourceModel()->data(index, SKRPaperItem::Roles::TrashedRole).toBool();
 
     if (indexTrashed == m_showTrashed) return true;
 

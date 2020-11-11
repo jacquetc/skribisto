@@ -18,24 +18,25 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMERRORHUB_H
-#define PLMERRORHUB_H
+#ifndef SKRRESULTHUB_H
+#define SKRRESULTHUB_H
 
-#include "plmerror.h"
+#include "skrresult.h"
 
 #include <QObject>
 #include "skribisto_data_global.h"
 
-// class PLMErrorHub;
-// struct PLMError;
+// class SKRErrorHub;
+// struct SKRResult;
 
-// struct PLMError
+// struct SKRResult
 // {
-//    explicit PLMError()
+//    explicit SKRResult()
 //    {
 
 //    }
-//    explicit PLMError(const QString &_errorCode, const QString &_origin, const
+//    explicit SKRResult(const QString &_errorCode, const QString &_origin,
+// const
 // QString &_message)
 //    {
 //        m_errorCode = _errorCode;
@@ -43,13 +44,13 @@
 //        m_message = _message;
 //    }
 
-//    PLMError(const PLMError &other)
+//    SKRResult(const SKRResult &other)
 //    {
 //        m_errorCode = other.errorCode();
 //        m_origin = other.origin();
 //        m_message = other.message();
 //    }
-//    ~PLMError()²²²
+//    ~SKRResult()²²²
 //    {
 
 //    }
@@ -76,36 +77,46 @@
 //    QString m_origin;
 //    QString m_message;
 // };
-// Q_DECLARE_METATYPE(PLMError)
+// Q_DECLARE_METATYPE(SKRResult)
 
 ////--------------------------------------------------------------------------
 
 
-class EXPORT PLMErrorHub : public QObject {
+class EXPORT SKRErrorHub : public QObject {
     Q_OBJECT
 
 public:
 
-    explicit PLMErrorHub(QObject *parent);
+    explicit SKRErrorHub(QObject *parent);
 
     //    QList<QString> getlatestError() const;
     //    QList<QString> getError(int index) const;
     //    int count();
     //    void clear();
 
+public slots:
+
+    void addError(SKRResult result);
+
 signals:
+
+    void sendNotification(SKRResult::Result resultType,
+                          QString           content);
 
     //    void errorSent(const QString &errorCode, const QString &origin, const
     // QString &message);
     //    void errorSent();
-    void errorSent(PLMError error);
 
     // public slots:
 
     //    void addError(const QString &errorCode, const QString &origin, const
     // QString &message);
     // private:
-    //    //QList<PLMError> m_errorList;
+    //    //QList<SKRResult> m_errorList;
+
+private:
+
+    QList<SKRResult>m_resultList;
 };
 
-#endif // PLMERRORHUB_H
+#endif // SKRRESULTHUB_H

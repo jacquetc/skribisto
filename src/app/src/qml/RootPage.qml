@@ -6,7 +6,7 @@ import QtQml 2.15
 import QtQuick.Controls.Material 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.usersettings 1.0
-import eu.skribisto.plmerror 1.0
+import eu.skribisto.result 1.0
 import eu.skribisto.projecthub 1.0
 
 import "Items"
@@ -34,128 +34,148 @@ RootPageForm {
     }
 
 
-    Action {
-        id: welcomeWindowAction
-        text: qsTr("Welcome")
-        icon {
-            source: "qrc:/pics/skribisto.svg"
-            color: "transparent"
-            height: 100
-            width: 100
+    ActionGroup {
+        Action {
+            id: welcomeWindowAction
+            text: qsTr("Welcome")
+            icon {
+                source: "qrc:/pics/skribisto.svg"
+                color: "transparent"
+                height: 100
+                width: 100
 
+            }
+            checkable: true
+
+            shortcut: "F5"
+            onTriggered: {
+
+                rootSwipeView.currentIndex = 0
+                welcomePage.forceActiveFocus()
+            }
         }
 
-        shortcut: "F5"
-        onTriggered: {
+        Action {
+            id: writeOverviewWindowAction
+            text: qsTr("Write")
+            icon {
+                source: "qrc:///icons/backup/view-media-playlist.svg"
+                color: SkrTheme.buttonIcon
+                height: 100
+                width: 100
+            }
 
-            rootSwipeView.currentIndex = 0
-            welcomePage.forceActiveFocus()
+            checkable: true
+            shortcut: "F6"
+            onTriggered: {
+                rootSwipeView.currentIndex = 1
+                writeOverviewPage.forceActiveFocus()
+            }
+        }
+
+        Action {
+            id: noteOverviewWindowAction
+            text: qsTr("Note")
+            icon {
+                source: "qrc:///icons/backup/story-editor.svg"
+                color: SkrTheme.buttonIcon
+                height: 100
+                width: 100
+            }
+            checkable: true
+
+            shortcut: "F7"
+            onTriggered: {
+                rootSwipeView.currentIndex = 2
+                noteOverviewPage.forceActiveFocus()
+            }
+        }
+
+
+        Action {
+            id: galleryWindowAction
+            text: qsTr("Gallery")
+            icon {
+                source: "qrc:///icons/backup/view-preview.svg"
+                color: SkrTheme.buttonIcon
+                height: 100
+                width: 100
+            }
+            checkable: true
+
+            shortcut: "F8"
+            onTriggered: {
+                //                rootStack.
+                rootSwipeView.currentIndex = 3
+                galleryPage.forceActiveFocus()
+            }
+        }
+
+
+        Action {
+            id: projectWindowAction
+            text: qsTr("Project")
+            icon {
+                source: "qrc:///icons/backup/configure.svg"
+                color: SkrTheme.buttonIcon
+                height: 100
+                width: 100
+            }
+            checkable: true
+
+            shortcut: "F9"
+            onTriggered: {
+                rootSwipeView.currentIndex = 4
+                projectsMainPage.forceActiveFocus()
+            }
         }
     }
-
     Connections {
         target: Globals
         function onShowWelcomePageCalled() {
-          welcomeWindowAction.trigger()
-        }
-    }
-
-    Action {
-        id: writeOverviewWindowAction
-        text: qsTr("Write")
-        icon {
-            source: "qrc:///icons/backup/view-media-playlist.svg"
-            color: SkrTheme.buttonIcon
-            height: 100
-            width: 100
-        }
-
-        shortcut: "F6"
-        onTriggered: {
-            rootSwipeView.currentIndex = 1
-            writeOverviewPage.forceActiveFocus()
+            welcomeWindowAction.trigger()
         }
     }
 
     Connections {
         target: Globals
         function onShowWriteOverviewPageCalled() {
-          writeOverviewWindowAction.trigger()
-        }
-    }
-
-    Action {
-        id: noteOverviewWindowAction
-        text: qsTr("Note")
-        icon {
-            source: "qrc:///icons/backup/story-editor.svg"
-            color: SkrTheme.buttonIcon
-            height: 100
-            width: 100
-        }
-
-        shortcut: "F7"
-        onTriggered: {
-            rootSwipeView.currentIndex = 2
-            noteOverviewPage.forceActiveFocus()
+            writeOverviewWindowAction.trigger()
         }
     }
 
     Connections {
         target: Globals
         function onShowNoteOverviewPageCalled() {
-          noteOverviewWindowAction.trigger()
+            noteOverviewWindowAction.trigger()
         }
     }
-
-    Action {
-        id: galleryWindowAction
-        text: qsTr("Gallery")
-        icon {
-            source: "qrc:///icons/backup/view-preview.svg"
-            color: SkrTheme.buttonIcon
-            height: 100
-            width: 100
-        }
-
-        shortcut: "F8"
-        onTriggered: {
-            //                rootStack.
-            rootSwipeView.currentIndex = 3
-            galleryPage.forceActiveFocus()
-        }
-    }
-
     Connections {
         target: Globals
         function onShowGalleryPageCalled() {
-          galleryWindowAction.trigger()
-        }
-    }
-
-    Action {
-        id: projectWindowAction
-        text: qsTr("Project")
-        icon {
-            source: "qrc:///icons/backup/configure.svg"
-            color: SkrTheme.buttonIcon
-            height: 100
-            width: 100
-        }
-
-        shortcut: "F9"
-        onTriggered: {
-            rootSwipeView.currentIndex = 4
-            projectsMainPage.forceActiveFocus()
+            galleryWindowAction.trigger()
         }
     }
     Connections {
         target: Globals
         function onShowProjectPageCalled() {
-          projectWindowAction.trigger()
+            projectWindowAction.trigger()
         }
     }
 
+    //---------------------------------------------------------
+
+    welcomeTab.action: welcomeWindowAction
+    welcomeStatusBarButton.action: welcomeWindowAction
+    writeOverviewTab.action: writeOverviewWindowAction
+    writeOverviewStatusBarButton.action: writeOverviewWindowAction
+    noteOverviewTab.action: noteOverviewWindowAction
+    noteOverviewStatusBarButton.action: noteOverviewWindowAction
+    //NOTE: waiting to be implemented
+    //galleryTab.action: galleryWindowAction
+    //galleryStatusBarButton.action: galleryWindowAction
+    projectTab.action: projectWindowAction
+    projectStatusBarButton.action: projectWindowAction
 
     //------------------------------------------------
     // notification :
@@ -285,6 +305,19 @@ RootPageForm {
                 paperIdForProjectLoading = -2
 
             }
+
+            // renaming synopsis folder to locale:
+
+            var synopsisFolderId = plmData.noteHub().getSynopsisFolderId(projectId)
+            var synopsisTitle = qsTr("Outlines")
+
+            if(plmData.noteHub().getTitle(projectId, synopsisFolderId) !== synopsisTitle){
+                plmData.noteHub().setTitle(projectId, synopsisFolderId, synopsisTitle)
+            }
+
+
+
+            // finally :
             projectLoadingTimer.start()
 
 
@@ -592,11 +625,18 @@ RootPageForm {
 
                                 SkrToolButton {
                                     id: closeTabFromDropDownMenuButton
-                                    text: "x"
+                                    text: "Close tab"
                                     visible: model.closable
+                                    flat: true
+                                    padding: 0
+                                    topInset: 1
+                                    bottomInset: 1
+                                    leftInset: 1
+                                    rightInset: 1
                                     Layout.fillHeight: true
                                     Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-
+                                    display: AbstractButton.IconOnly
+                                    icon.source: "qrc:///icons/backup/window-close.svg"
                                     onClicked: {
                                         closeTab(model.index)
                                     }
@@ -654,14 +694,7 @@ RootPageForm {
 
 
 
-    //---------------------------------------------------------
 
-    welcomeTab.action: welcomeWindowAction
-    writeOverviewTab.action: writeOverviewWindowAction
-    noteOverviewTab.action: noteOverviewWindowAction
-    //NOTE: waiting to be implemented
-    //galleryTab.action: galleryWindowAction
-    projectTab.action: projectWindowAction
 
     //---------------------------------------------------------
     //------------Open Sheet-----------------------------
@@ -1264,10 +1297,13 @@ RootPageForm {
                 action: saveAsAction
             }
             SkrMenuItem{
+                action: saveAllAction
+            }
+            SkrMenuItem{
                 action: saveACopyAction
             }
             SkrMenuItem{
-                action: saveAllAction
+                action: backUpAction
             }
 
             MenuSeparator { }
@@ -1316,6 +1352,7 @@ RootPageForm {
 
             SkrMenuItem{
                 action: welcomeWindowAction
+                icon.color: "transparent"
             }
 
             SkrMenuItem{
@@ -1412,9 +1449,9 @@ RootPageForm {
             console.log("argument : " , arguments[arg])
 
             if (arguments[arg] === "--testProject") {
-                var error = plmData.projectHub().loadProject(
+                var result = plmData.projectHub().loadProject(
                             testProjectFileName)
-                console.log("project loaded : " + error.success)
+                console.log("project loaded : " + result.success)
                 console.log("projectFileName :", testProjectFileName.toString(), "\n")
 
                 //show Write window
@@ -1438,7 +1475,7 @@ RootPageForm {
             }
         }
         //        if(!isTestProject & oneProjectInArgument){
-        //            var error = plmData.projectHub().loadProject(
+        //            var result = plmData.projectHub().loadProject(
         //                        projectInArgument)
         //            //show Write window
         //            //            writeOverviewWindowAction.trigger()

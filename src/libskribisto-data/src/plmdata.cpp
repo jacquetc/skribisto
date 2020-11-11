@@ -6,7 +6,7 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
     m_instance = this;
 
     m_signalHub      = new PLMSignalHub(this);
-    m_errorHub       = new PLMErrorHub(this);
+    m_errorHub       = new SKRErrorHub(this);
     m_projectManager = new PLMProjectManager(this);
     m_projectHub     = new PLMProjectHub(this);
 
@@ -44,6 +44,37 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
             &SKRTagHub::projectModified,
             m_projectHub,
             &PLMProjectHub::setProjectNotSavedAnymore);
+
+
+    // connect errors :
+
+    connect(m_sheetHub,
+            &PLMSheetHub::errorSent,
+            m_errorHub,
+            &SKRErrorHub::addError);
+    connect(m_sheetPropertyHub,
+            &PLMPropertyHub::errorSent,
+            m_errorHub,
+            &SKRErrorHub::addError);
+    connect(m_noteHub,
+            &PLMNoteHub::errorSent,
+            m_errorHub,
+            &SKRErrorHub::addError);
+    connect(m_notePropertyHub,
+            &PLMPropertyHub::errorSent,
+            m_errorHub,
+            &SKRErrorHub::addError);
+    connect(m_tagHub,
+            &SKRTagHub::errorSent,
+            m_errorHub,
+            &SKRErrorHub::addError);
+    connect(m_projectHub,
+            &PLMProjectHub::errorSent,
+            m_errorHub,
+            &SKRErrorHub::addError);
+
+
+
 }
 
 // -----------------------------------------------------------------------------
@@ -60,7 +91,7 @@ PLMSignalHub * PLMData::signalHub()
 
 // -----------------------------------------------------------------------------
 
-PLMErrorHub * PLMData::errorHub()
+SKRErrorHub * PLMData::errorHub()
 {
     return m_errorHub;
 }
@@ -122,7 +153,7 @@ SKRTagHub * PLMData::tagHub()
 
 // -----------------------------------------------------------------------------
 
-SKRProjectDictHub *PLMData::projectDictHub()
+SKRProjectDictHub * PLMData::projectDictHub()
 {
     return m_projectDictHub;
 }

@@ -1000,6 +1000,17 @@
     </message>
 </context>
 <context>
+    <name>ListItemAttributes</name>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainTree</name>
     <message>
         <source>&amp;Delete</source>
@@ -1702,6 +1713,10 @@ not allowed delete a filled book.</source>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
@@ -2151,7 +2166,7 @@ not allowed delete a filled book.</source>
     <name>ProjectListItemForm.ui</name>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Texto</translation>
+        <translation type="obsolete">Texto</translation>
     </message>
 </context>
 <context>
@@ -2344,6 +2359,10 @@ not allowed delete a filled book.</source>
     <message>
         <source>&amp;View</source>
         <translation type="unfinished">&amp;Visualizar</translation>
+    </message>
+    <message>
+        <source>Outlines</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2738,6 +2757,10 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimalist menu tabs</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3758,10 +3781,6 @@ not allowed delete a filled book.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save as...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save the &quot;%1&quot; project as ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3843,6 +3862,10 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

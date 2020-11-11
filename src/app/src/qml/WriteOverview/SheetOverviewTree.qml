@@ -815,10 +815,10 @@ SheetOverviewTreeForm {
                                             var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
 
                                             if(synopsisId === -2){ // no synopsis, create one
-                                                var error = plmData.noteHub().createSynopsis(projectId, sheetId)
-                                                synopsisId = error.getData("noteId", -2);
+                                                var result = plmData.noteHub().createSynopsis(projectId, sheetId)
+                                                synopsisId = result.getData("noteId", -2);
                                                 plmData.noteHub().setTitle(projectId, synopsisId, model.name)
-                                                plmData.notePropertyHub().setProperty(projectId, synopsisId, "label", qsTr("Outline"))
+                                                //plmData.notePropertyHub().setProperty(projectId, synopsisId, "label", qsTr("Outline"))
                                                 if(synopsisId === -2){
                                                     console.warn("can't find synopsis of", projectId, sheetId)
                                                     //TODO: add notification
@@ -945,8 +945,8 @@ SheetOverviewTreeForm {
 
                                         function saveContent(){
                                             //console.log("saving note")
-                                            var error = plmData.noteHub().setContent(projectId, paperId, writingZone.text)
-                                            if (!error.success){
+                                            var result = plmData.noteHub().setContent(projectId, paperId, writingZone.text)
+                                            if (!result.success){
                                                 console.log("saving note failed", projectId, paperId)
                                             }
                                             else {
@@ -1597,10 +1597,10 @@ SheetOverviewTreeForm {
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
                     console.log("add before action", currentProjectId, currentPaperId)
-                    var error = plmData.sheetHub().addPaperAbove(currentProjectId, currentPaperId)
+                    var result = plmData.sheetHub().addPaperAbove(currentProjectId, currentPaperId)
                     // edit it :
-                    if(error){
-                        listView.itemAtIndex(currentIndex).paperIdToEdit = error.getData("sheetId", -2) //start when paperIdToEdit changes
+                    if(result){
+                        listView.itemAtIndex(currentIndex).paperIdToEdit = result.getData("sheetId", -2) //start when paperIdToEdit changes
                     }
                 }
             }
@@ -1621,10 +1621,10 @@ SheetOverviewTreeForm {
                 enabled: listView.enabled && currentPaperId !== -1
                 onTriggered: {
                     console.log("add after action", currentProjectId, currentPaperId)
-                    var error = plmData.sheetHub().addPaperBelow(currentProjectId, currentPaperId)
+                    var result = plmData.sheetHub().addPaperBelow(currentProjectId, currentPaperId)
                     // edit it :
-                    if(error){
-                        listView.itemAtIndex(currentIndex).paperIdToEdit = error.getData("sheetId", -2)
+                    if(result){
+                        listView.itemAtIndex(currentIndex).paperIdToEdit = result.getData("sheetId", -2)
                     }
 
                 }
@@ -1642,10 +1642,10 @@ SheetOverviewTreeForm {
             onTriggered: {
                 console.log("add child action", currentProjectId, currentPaperId)
 
-                var error = plmData.sheetHub().addChildPaper(currentProjectId, currentPaperId)
+                var result = plmData.sheetHub().addChildPaper(currentProjectId, currentPaperId)
                 // edit it :
-                if(error){
-                    listView.itemAtIndex(currentIndex).paperIdToEdit = error.getData("sheetId", -2)
+                if(result){
+                    listView.itemAtIndex(currentIndex).paperIdToEdit = result.getData("sheetId", -2)
                 }
 
 

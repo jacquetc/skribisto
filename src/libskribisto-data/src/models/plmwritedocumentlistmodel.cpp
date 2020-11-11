@@ -28,7 +28,7 @@ QVariant PLMWriteDocumentListModel::getDocumentData(int                         
                                                     PLMDocumentListModel::Roles role)
 const
 {
-    QHash<int, QVariant> result;
+    QHash<int, QVariant> hash;
     QHash<QString, QVariant> where;
 
     where.insert("l_paper_code =", paperId);
@@ -36,19 +36,19 @@ const
 
     QString roleString = this->translateRole(role);
 
-    //    result = plmdata->userHub()->getValueByIdsWhere(projectId,
+    //    hash = plmdata->userHub()->getValueByIdsWhere(projectId,
     // m_tableName, roleString, where);
 
-    if (result.isEmpty()) { // create a new document
+    if (hash.isEmpty()) { // create a new document
         return QVariant();
     }
 
-    return result.values().first();
+    return hash.values().first();
 }
 
 int PLMWriteDocumentListModel::closeDocument(int projectId, int paperId, int subWindowId)
 {
-    QHash<int, QVariant> result;
+    QHash<int, QVariant> hash;
     QHash<QString, QVariant> where;
 
     where.insert("l_paper_code =", paperId);
@@ -56,13 +56,13 @@ int PLMWriteDocumentListModel::closeDocument(int projectId, int paperId, int sub
 
     QString roleString = this->translateRole(PLMDocumentListModel::Roles::PropertyRole);
 
-    //    result = plmdata->userHub()->getValueByIdsWhere(projectId,
+    //    hash = plmdata->userHub()->getValueByIdsWhere(projectId,
     // m_tableName, roleString, where);
 
-    int documentId = result.keys().first();
+    int documentId = hash.keys().first();
 
 
-    if (result.isEmpty()) {
+    if (hash.isEmpty()) {
         return -2;
     }
 

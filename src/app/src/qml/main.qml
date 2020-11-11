@@ -5,7 +5,7 @@ import QtQml 2.15
 //import QtQuick.Dialogs 1.3
 import Qt.labs.settings 1.1
 import Qt.labs.platform 1.1 as LabPlatform
-import eu.skribisto.plmerror 1.0
+import eu.skribisto.result 1.0
 import eu.skribisto.projecthub 1.0
 import QtQuick.Controls.Material 2.15
 import "Commons"
@@ -222,7 +222,7 @@ ApplicationWindow {
             }
             else {
 
-                var error = plmData.projectHub().loadProject(file)
+                var result = plmData.projectHub().loadProject(file)
             }
 
         }
@@ -247,9 +247,9 @@ ApplicationWindow {
         //shortcut: StandardKey.Save
         onTriggered: {
             var projectId = plmData.projectHub().getActiveProject()
-            var error = plmData.projectHub().saveProject(projectId)
+            var result = plmData.projectHub().saveProject(projectId)
 
-            if (error.getErrorCode() === "E_PROJECT_no_path"){
+            if (result.containsErrorCode("W_PROJECT_no_path")){
                 saveAsFileDialog.open()
             }
 
@@ -322,10 +322,10 @@ ApplicationWindow {
             var i;
             for (i = 0; i < projectCount ; i++ ){
                 var projectId = projectIdList[i]
-                var error = plmData.projectHub().saveProject(projectId)
+                var result = plmData.projectHub().saveProject(projectId)
 
-                if (error.getErrorCode() === "E_PROJECT_no_path"){
-                    var errorProjectId = error.getData("projectId", -2);
+                if (result.containsErrorCode("W_PROJECT_no_path")){
+                    var errorProjectId = result.getData("projectId", -2);
                     saveAsFileDialog.projectId = errorProjectId
                     saveAsFileDialog.open()
                 }
@@ -358,7 +358,7 @@ ApplicationWindow {
     Action {
 
         id: saveAsAction
-        text: qsTr("Save as...")
+        text: qsTr("Save As...")
         icon {
             source: "qrc:///icons/backup/document-save-as.svg"
             height: 50
@@ -417,9 +417,9 @@ ApplicationWindow {
                 projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
             }
 
-            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+            if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
                 // Dialog:
                 pathIsReadOnlydialog.open()
 
@@ -498,9 +498,9 @@ ApplicationWindow {
                 projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
             }
 
-            var error = plmData.projectHub().saveAProjectCopy(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = plmData.projectHub().saveAProjectCopy(projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+            if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
                 // Dialog:
                 saveACopyFileDialog.open()
 
@@ -663,9 +663,9 @@ ApplicationWindow {
 
 
 
-                    var error = plmData.projectHub().backupAProject(projectId, "skrib", path)
+                    var result = plmData.projectHub().backupAProject(projectId, "skrib", path)
 
-                    if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+                    if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
 
                     }
 
@@ -792,9 +792,9 @@ ApplicationWindow {
         onAccepted: {
 
 
-            var error = plmData.projectHub().saveProject(projectId)
-            if (error.getErrorCode() === "E_PROJECT_no_path"){
-                var errorProjectId = error.getData("projectId", -2);
+            var result = plmData.projectHub().saveProject(projectId)
+            if (result.containsErrorCode("W_PROJECT_no_path")){
+                var errorProjectId = result.getData("projectId", -2);
                 saveAsBeforeClosingProjectFileDialog.projectId = errorProjectId
                 saveAsBeforeClosingProjectFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
                 saveAsBeforeClosingProjectFileDialog.open()
@@ -838,9 +838,9 @@ ApplicationWindow {
                 projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
             }
 
-            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+            if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
                 // Dialog:
                 pathIsReadOnlydialog.open()
 
@@ -986,9 +986,9 @@ ApplicationWindow {
         onAccepted: {
 
 
-            var error = plmData.projectHub().saveProject(projectId)
-            if (error.getErrorCode() === "E_PROJECT_no_path"){
-                var errorProjectId = error.getData("projectId", -2);
+            var result = plmData.projectHub().saveProject(projectId)
+            if (result.containsErrorCode("W_PROJECT_no_path")){
+                var errorProjectId = result.getData("projectId", -2);
                 saveAsBeforeQuitingFileDialog.projectId = errorProjectId
                 saveAsBeforeQuitingFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
                 saveAsBeforeQuitingFileDialog.open()
@@ -1027,9 +1027,9 @@ ApplicationWindow {
                 projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
             }
 
-            var error = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
+            if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
                 // Dialog:
                 pathIsReadOnlydialog.open()
 

@@ -181,7 +181,7 @@ int SKRSearchTagListProxyModel::findVisualIndex(int projectId, int paperId)
 {
     int rowCount = this->rowCount(QModelIndex());
 
-    int result = -2;
+    int visualIndex = -2;
 
     QModelIndex modelIndex;
 
@@ -192,11 +192,11 @@ int SKRSearchTagListProxyModel::findVisualIndex(int projectId, int paperId)
                         SKRTagItem::Roles::ProjectIdRole).toInt() == projectId)
             && (this->data(modelIndex,
                            SKRTagItem::Roles::TagIdRole).toInt() == paperId)) {
-            result = i;
+            visualIndex = i;
             break;
         }
     }
-    return result;
+    return visualIndex;
 }
 
 // --------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ void SKRSearchTagListProxyModel::setTextFilter(const QString& value)
 bool SKRSearchTagListProxyModel::filterAcceptsRow(int                sourceRow,
                                                   const QModelIndex& sourceParent) const
 {
-    bool result = true;
+    bool value = true;
 
     QModelIndex index = this->sourceModel()->index(sourceRow, 0, sourceParent);
 
@@ -251,40 +251,40 @@ bool SKRSearchTagListProxyModel::filterAcceptsRow(int                sourceRow,
     SKRTagListModel *model = static_cast<SKRTagListModel *>(this->sourceModel());
 
     // project filtering :
-    if (result &&
+    if (value &&
         (item->data(SKRTagItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter)) {
-        result = true;
+        value = true;
     }
-    else if (result) {
-        result = false;
+    else if (value) {
+        value = false;
     }
 
     // sheet or note filtering:
     if (m_sheetIdFilter != -2 ^ m_noteIdFilter != -2) {
-        if (result &&
+        if (value &&
             m_relationshipList.contains(item->data(SKRTagItem::Roles::TagIdRole).toInt()))
         {
-            result = true;
+            value = true;
         }
-        else if (result) {
-            result = false;
+        else if (value) {
+            value = false;
         }
     }
 
 
     // text filtering :
 
-    if (result &&
+    if (value &&
         item->data(SKRTagItem::Roles::NameRole).toString().contains(m_textFilter,
                                                                     Qt::CaseInsensitive))
     {
-        result = true;
+        value = true;
     }
-    else if (result) {
-        result = false;
+    else if (value) {
+        value = false;
     }
 
-    return result;
+    return value;
 }
 
 // --------------------------------------------------------------------------------

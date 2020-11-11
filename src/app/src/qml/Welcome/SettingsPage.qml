@@ -77,6 +77,15 @@ SettingsPageForm {
         restoreMode: Binding.RestoreBindingOrValue
     }
 
+    minimalistMenuTabsSwitch.checked: SkrSettings.interfaceSettings.minimalistMenuTabs
+    Binding {
+        target: SkrSettings.interfaceSettings
+        property: "minimalistMenuTabs"
+        value: minimalistMenuTabsSwitch.checked
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
     // interface languages :
 
 
@@ -342,7 +351,7 @@ SettingsPageForm {
                     Layout.fillHeight: true
                     Layout.preferredWidth: 30
                     flat: true
-                    icon.source: "qrc:///icons/backup/document-open-folder.svg"
+                    icon.source: "qrc:///icons/backup/document-open.svg"
 
                     onClicked: {
                         backupFolderDialog.open()
@@ -568,10 +577,10 @@ SettingsPageForm {
 
                 // back up :
 
-                var error = plmData.projectHub().backupAProject(projectId, "skrib", skrQMLTools.getURLFromLocalFile(path))
+                var result = plmData.projectHub().backupAProject(projectId, "skrib", skrQMLTools.getURLFromLocalFile(path))
 
-                if (error.getErrorCode() === "E_PROJECT_path_is_readonly"){
-
+                if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
+                    //TODO: notification
                 }
 
             }
