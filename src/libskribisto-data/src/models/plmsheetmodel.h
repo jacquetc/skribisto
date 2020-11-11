@@ -22,8 +22,8 @@
 #define PLMSHEETMODEL_H
 
 #include <QAbstractItemModel>
-#include "plmsheetitem.h"
 #include "./skribisto_data_global.h"
+#include "skrpaperitem.h"
 
 
 class EXPORT PLMSheetModel : public QAbstractItemModel {
@@ -80,29 +80,31 @@ public:
 
     QHash<int, QByteArray>roleNames() const override;
 
-    QModelIndexList getModelIndex(int projectId, int paperId);
+    QModelIndexList       getModelIndex(int projectId,
+                                        int paperId);
+
 private slots:
 
     void populate();
     void clear();
     void exploitSignalFromPLMData(int                 projectId,
                                   int                 paperId,
-                                  PLMSheetItem::Roles role);
-    void addPaper(int                 projectId,
-                  int                 paperId);
+                                  SKRPaperItem::Roles role);
+    void addPaper(int projectId,
+                  int paperId);
 
 private:
 
-    PLMSheetItem* findPaperItem(int projectId,
+    SKRPaperItem* findPaperItem(int projectId,
                                 int paperId);
     void          connectToPLMDataSignals();
     void          disconnectFromPLMDataSignals();
 
 private:
 
-    PLMSheetItem *m_rootItem;
+    SKRPaperItem *m_rootItem;
     QVariant m_headerData;
-    QList<PLMSheetItem *>m_allSheetItems;
+    QList<SKRPaperItem *>m_allSheetItems;
     QList<QMetaObject::Connection>m_dataConnectionsList;
 };
 

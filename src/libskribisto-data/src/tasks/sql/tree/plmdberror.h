@@ -37,7 +37,7 @@ public:
     enum Error {
         InvalidType             = 1, // Invalid parameter type.
         InvalidParameter        = 2, // Invalid parameter value.
-        InternalError           = 3, // Internal logic error or unexpected error
+        InternalError           = 3, // Internal logic result or unexpected result
         RequestedRecordNotFound = 4  // Requested record not found
     };
 
@@ -58,8 +58,8 @@ public:
                                                                                           parameter));
         else if (status == InvalidParameter) s_msg = QString(
                 "Invalid parameter value (parameter %1)").arg(QString::number(parameter));
-        else if (status == InternalError) s_msg = "Internal logic error";
-        else s_msg = "Unhandled error";
+        else if (status == InternalError) s_msg = "Internal logic result";
+        else s_msg = "Unhandled result";
 
         if (errorMsg != "") s_msg += ". " + errorMsg;
 

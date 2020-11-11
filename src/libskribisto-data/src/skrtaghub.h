@@ -22,7 +22,7 @@
 #define SKRTAGHUB_H
 
 #include <QObject>
-#include "plmerror.h"
+#include "skrresult.h"
 #include "skribisto_data_global.h"
 
 class EXPORT SKRTagHub : public QObject {
@@ -40,38 +40,38 @@ public:
     explicit SKRTagHub(QObject *parent);
 
     Q_INVOKABLE QList<int>getAllTagIds(int projectId) const;
-    Q_INVOKABLE PLMError  addTag(int            projectId,
+    Q_INVOKABLE SKRResult  addTag(int            projectId,
                                  const QString& tagName);
-    Q_INVOKABLE PLMError  removeTag(int projectId,
+    Q_INVOKABLE SKRResult  removeTag(int projectId,
                                     int tagId);
     Q_INVOKABLE int       getTagIdWithName(int            projectId,
                                            const QString& tagName);
     Q_INVOKABLE QString   getTagName(int projectId,
                                      int tagId) const;
-    Q_INVOKABLE PLMError  setTagName(int            projectId,
+    Q_INVOKABLE SKRResult  setTagName(int            projectId,
                                      int            tagId,
                                      const QString& tagName);
     Q_INVOKABLE bool      doesTagNameAlreadyExist(int            projectId,
                                                   const QString& tagName);
     Q_INVOKABLE QString   getTagColor(int projectId,
                                       int tagId) const;
-    Q_INVOKABLE PLMError  setTagColor(int            projectId,
+    Q_INVOKABLE SKRResult  setTagColor(int            projectId,
                                       int            tagId,
                                       const QString& color);
-    Q_INVOKABLE PLMError  setUpdateDate(int              projectId,
+    Q_INVOKABLE SKRResult  setUpdateDate(int              projectId,
                                         int              paperId,
                                         const QDateTime& newDate);
     Q_INVOKABLE QDateTime getUpdateDate(int projectId,
                                         int tagId) const;
 
 
-    Q_INVOKABLE PLMError  setCreationDate(int              projectId,
+    Q_INVOKABLE SKRResult  setCreationDate(int              projectId,
                                           int              paperId,
                                           const QDateTime& newDate);
     Q_INVOKABLE QDateTime getCreationDate(int projectId,
                                           int tagId) const;
 
-    PLMError              set(int             projectId,
+    SKRResult              set(int             projectId,
                               int             tagId,
                               const QString & fieldName,
                               const QVariant& value,
@@ -92,18 +92,18 @@ public:
     Q_INVOKABLE QList<int>getTagsFromItemId(int                 projectId,
                                             SKRTagHub::ItemType itemType,
                                             int                 itemId) const;
-    Q_INVOKABLE PLMError  setTagRelationship(int                 projectId,
+    Q_INVOKABLE SKRResult  setTagRelationship(int                 projectId,
                                              SKRTagHub::ItemType itemType,
                                              int                 itemId,
                                              int                 tagId);
-    Q_INVOKABLE PLMError removeTagRelationship(int                 projectId,
+    Q_INVOKABLE SKRResult removeTagRelationship(int                 projectId,
                                                SKRTagHub::ItemType itemType,
                                                int                 itemId,
                                                int                 tagId);
 
 signals:
 
-    void errorSent(const PLMError& error) const;
+    void errorSent(const SKRResult& result) const;
     void projectModified(int projectId); // for save
     void tagAdded(int projectId,
                   int newTagId);

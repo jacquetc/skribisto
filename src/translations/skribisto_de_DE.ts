@@ -1276,6 +1276,17 @@
     </message>
 </context>
 <context>
+    <name>ListItemAttributes</name>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainTree</name>
     <message>
         <source>Plume Creator Tree</source>
@@ -2120,6 +2131,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
@@ -2722,7 +2737,7 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <name>ProjectListItemForm.ui</name>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Text</translation>
+        <translation type="obsolete">Text</translation>
     </message>
 </context>
 <context>
@@ -2960,6 +2975,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source>&amp;View</source>
         <translation type="unfinished">&amp;Ansicht</translation>
+    </message>
+    <message>
+        <source>Outlines</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3411,6 +3430,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimalist menu tabs</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4579,10 +4602,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save as...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save the &quot;%1&quot; project as ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4664,6 +4683,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

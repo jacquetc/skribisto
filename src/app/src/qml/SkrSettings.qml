@@ -7,9 +7,7 @@ QtObject {
     property Settings interfaceSettings: Settings{
         category: "interface"
         property bool menuButtonsInStatusBar: false
-        onMenuButtonsInStatusBarChanged: {
-            console.log("menuButtonsInStatusBar", menuButtonsInStatusBar)
-        }
+        property bool minimalistMenuTabs: false
 
     }
 

@@ -1176,6 +1176,17 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
+    <name>ListItemAttributes</name>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainTreeAbstractModel</name>
     <message>
         <source>Titles</source>
@@ -1947,6 +1958,10 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
@@ -2376,7 +2391,7 @@ Have you checked the one(s) you want to look through ?</source>
     <name>ProjectListItemForm.ui</name>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Texto</translation>
+        <translation type="obsolete">Texto</translation>
     </message>
 </context>
 <context>
@@ -2610,6 +2625,10 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>&amp;View</source>
         <translation type="unfinished">&amp;Vista</translation>
+    </message>
+    <message>
+        <source>Outlines</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3105,6 +3124,10 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimalist menu tabs</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4320,10 +4343,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save as...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save the &quot;%1&quot; project as ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4405,6 +4424,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

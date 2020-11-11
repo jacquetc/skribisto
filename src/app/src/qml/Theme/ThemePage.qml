@@ -29,7 +29,7 @@ ThemePageForm {
 
     //--------------------------------------------------------
 
-    removeThemeButton.icon.nsource: "qrc:///icons/backup/edit-delete.svg"
+    removeThemeButton.icon.source: "qrc:///icons/backup/edit-delete.svg"
     removeThemeButton.onClicked: {
         SkrTheme.remove(currentlySelectedTheme)
         populateThemeListModel()

@@ -29,7 +29,7 @@
 #include <QHash>
 #include <QSqlQuery>
 #include <QtSql/QSqlDatabase>
-#include "../plmerror.h"
+#include "../skrresult.h"
 
 
 class PLMSqlQueries : public QObject {
@@ -44,22 +44,22 @@ public:
                            const QString& tableName,
                            const QString& idName);
 
-    PLMError get(int            id,
+    SKRResult get(int            id,
                  const QString& valueName,
-                 QVariant     & result) const;
-    PLMError getMultipleValues(int id,
+                 QVariant     & out) const;
+    SKRResult getMultipleValues(int id,
                                const QStringList& valueList,
-                               QHash<QString, QVariant>& result) const;
-    PLMError getValueByIds(const QString& valueName,
-                           QHash<int, QVariant>& result,
+                               QHash<QString, QVariant>& out) const;
+    SKRResult getValueByIds(const QString& valueName,
+                           QHash<int, QVariant>& out,
                            const QString& where       = QString(),
                            const QVariant& whereValue = QVariant(),
                            bool sorted                = false) const;
-    PLMError getValueByIdsWhere(const QString& valueName,
-                                QHash<int, QVariant>& result,
+    SKRResult getValueByIdsWhere(const QString& valueName,
+                                QHash<int, QVariant>& out,
                                 const QHash<QString, QVariant>& where,
                                 bool sorted = false) const;
-    PLMError set(int             id,
+    SKRResult set(int             id,
                  const QString & valueName,
                  const QVariant& value) const;
 
@@ -68,21 +68,21 @@ public:
     void     commit();
 
 
-    PLMError setCurrentDate(int            id,
+    SKRResult setCurrentDate(int            id,
                             const QString& valueName) const;
-    PLMError getSortedIds(QList<int>& result) const;
-    PLMError getIds(QList<int>& result) const;
+    SKRResult getSortedIds(QList<int>& out) const;
+    SKRResult getIds(QList<int>& out) const;
     bool     idExists(int id) const;
     bool     resultExists(const QHash<QString, QVariant>& where) const;
-    PLMError add(const QHash<QString, QVariant>& values,
+    SKRResult add(const QHash<QString, QVariant>& values,
                  int& newId) const;
-    PLMError removeAll() const;
-    PLMError remove(int id) const;
-    PLMError renumberSortOrder();
-    PLMError setId(int id,
+    SKRResult removeAll() const;
+    SKRResult remove(int id) const;
+    SKRResult renumberSortOrder();
+    SKRResult setId(int id,
                    int newId) const;
 
-    PLMError injectDirectSql(const QString& sqlString);
+    SKRResult injectDirectSql(const QString& sqlString);
 
 private:
 

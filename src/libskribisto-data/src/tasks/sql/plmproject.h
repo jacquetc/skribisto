@@ -31,7 +31,7 @@
 #include "tree/plmtree.h"
 #include "tree/plmsheettree.h"
 #include "tree/plmnotetree.h"
-#include "plmerror.h"
+#include "skrresult.h"
 #include "skribisto_data_global.h"
 
 class EXPORT PLMProject : public QObject {
@@ -57,13 +57,11 @@ public:
     QString       getTempFileName() const;
 
     QUrl          getPath() const;
-    PLMError      setPath(const QUrl& value);
+    SKRResult      setPath(const QUrl& value);
 
 
     QSqlDatabase  getSqlDb() const;
     QString       getIdNameFromTable(const QString& tableName);
-
-    PLMError importPlumeCreatorProject(const QUrl &plumeURL);
 
 signals:
 

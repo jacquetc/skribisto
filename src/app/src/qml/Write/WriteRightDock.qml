@@ -2,7 +2,6 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
-import eu.skribisto.sheetlistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
@@ -202,7 +201,7 @@ WriteRightDockForm {
         notePadFrame.folded = settings.notePadFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
 
-        var result = splitView.restoreState(settings.dockSplitView)
+        var value = splitView.restoreState(settings.dockSplitView)
 
     }
 

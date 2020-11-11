@@ -19,4 +19,9 @@ ImporterForm {
         stackView.pop()
     }
 
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            importFromPlumeToolButton.forceActiveFocus()
+        }
+    }
 }

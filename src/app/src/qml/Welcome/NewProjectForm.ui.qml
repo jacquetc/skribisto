@@ -94,7 +94,7 @@ Item {
                         Layout.fillWidth: true
                     }
 
-                    SkrToolButton {
+                    SkrButton {
                         id: selectProjectPathToolButton
                         text: qsTr("Select")
                     }

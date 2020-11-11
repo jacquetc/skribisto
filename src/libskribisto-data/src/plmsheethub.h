@@ -35,6 +35,37 @@ public:
 
     QHash<QString, QVariant>getSheetData(int projectId,
                                          int sheetId) const;
+
+    Q_INVOKABLE SKRResult    setTitle(int            projectId,
+                                     int            paperId,
+                                     const QString& newTitle);
+
+    Q_INVOKABLE SKRResult       addPaperAbove(int projectId,
+                                             int targetId);
+    Q_INVOKABLE SKRResult       addPaperBelow(int projectId,
+                                             int targetId);
+    Q_INVOKABLE SKRResult       addChildPaper(int projectId,
+                                             int targetId);
+    Q_INVOKABLE SKRResult       setTrashedWithChildren(int  projectId,
+                                                      int  paperId,
+                                                      bool newTrashedState);
+    Q_INVOKABLE SKRResult       untrashOnlyOnePaper(int projectId,
+                                                   int paperId);
+
+    SKRResult                   removePaper(int projectId,
+                                           int targetId);
+
+    Q_INVOKABLE  QList<QString>getAttributes(int projectId,
+                                             int paperId) override;
+    Q_INVOKABLE  bool          hasAttribute(int            projectId,
+                                            int            paperId,
+                                            const QString& attribute) override;
+    Q_INVOKABLE  SKRResult      addAttribute(int            projectId,
+                                            int            paperId,
+                                            const QString& attribute) override;
+    Q_INVOKABLE SKRResult       removeAttribute(int            projectId,
+                                               int            paperId,
+                                               const QString& attribute) override;
 };
 
 #endif // PLMSHEETHUB_H

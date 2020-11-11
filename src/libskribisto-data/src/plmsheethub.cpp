@@ -19,6 +19,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmsheethub.h"
+#include "plmdata.h"
 #include "tasks/plmsqlqueries.h"
 
 PLMSheetHub::PLMSheetHub(QObject *parent) : PLMPaperHub(parent, "tbl_sheet")
@@ -26,10 +27,10 @@ PLMSheetHub::PLMSheetHub(QObject *parent) : PLMPaperHub(parent, "tbl_sheet")
 
 QHash<QString, QVariant>PLMSheetHub::getSheetData(int projectId, int sheetId) const
 {
-    PLMError error;
+    SKRResult result;
 
     QHash<QString, QVariant> var;
-    QHash<QString, QVariant> result;
+    QHash<QString, QVariant> hash;
     QStringList fieldNames;
 
     fieldNames << "l_sheet_id" << "l_dna" << "l_sort_order" << "l_indent" <<
@@ -37,12 +38,249 @@ QHash<QString, QVariant>PLMSheetHub::getSheetData(int projectId, int sheetId) co
         "b_trashed";
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getMultipleValues(sheetId, fieldNames, var);
-    IFOK(error) {
-        result = var;
+    result = queries.getMultipleValues(sheetId, fieldNames, var);
+    IFOK(result) {
+        hash = var;
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return hash;
+}
+
+// -------------------------------------------------------------
+
+SKRResult PLMSheetHub::setTitle(int projectId, int paperId, const QString& newTitle)
+{
+    SKRResult result = PLMPaperHub::setTitle(projectId, paperId, newTitle);
+
+    IFOK(result) {
+        // rename related synopsis:
+        int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, paperId);
+
+        result = plmdata->noteHub()->setTitle(projectId, synopsisId, newTitle);
+    }
+    IFKO(result) {
+        emit errorSent(result);
     }
     return result;
+}
+
+// -------------------------------------------------------------
+
+SKRResult PLMSheetHub::addPaperAbove(int projectId, int targetId)
+{
+    // create sheet
+    SKRResult result = PLMPaperHub::addPaperAbove(projectId, targetId);
+    result.addData("sheetId", result.getData("paperId", -2));
+
+    // create synopsis
+    IFOK(result) {
+        int sheetId = result.getData("paperId", -2).toInt();
+
+        result = plmdata->noteHub()->createSynopsis(projectId, sheetId);
+        result.addData("noteId", result.getData("paperId", -2));
+    }
+    result.addData("paperId", -2);
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// -------------------------------------------------------------
+
+SKRResult PLMSheetHub::addPaperBelow(int projectId, int targetId)
+{
+    SKRResult result;
+
+    // create synopsis
+
+
+    // create sheet
+    result = PLMPaperHub::addPaperBelow(projectId, targetId);
+    result.addData("sheetId", result.getData("paperId", -2));
+
+    // create synopsis
+    IFOK(result) {
+        int sheetId = result.getData("paperId", -2).toInt();
+
+        result = plmdata->noteHub()->createSynopsis(projectId, sheetId);
+        result.addData("noteId", result.getData("paperId", -2));
+    }
+    result.addData("paperId", -2);
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// -------------------------------------------------------------
+
+SKRResult PLMSheetHub::addChildPaper(int projectId, int targetId)
+{
+    SKRResult result;
+
+    // create synopsis
+
+
+    // create sheet
+    result = PLMPaperHub::addChildPaper(projectId, targetId);
+    result.addData("sheetId", result.getData("paperId", -2));
+
+    // create synopsis
+    IFOK(result) {
+        int sheetId = result.getData("paperId", -2).toInt();
+
+        result = plmdata->noteHub()->createSynopsis(projectId, sheetId);
+        result.addData("noteId", result.getData("paperId", -2));
+    }
+    result.addData("paperId", -2);
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// -------------------------------------------------------------
+
+SKRResult PLMSheetHub::setTrashedWithChildren(int  projectId,
+                                             int  paperId,
+                                             bool newTrashedState)
+{
+    SKRResult result = PLMPaperHub::setTrashedWithChildren(projectId,
+                                                         paperId,
+                                                         newTrashedState);
+
+    int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, paperId);
+
+    if (synopsisId == -2) {
+        return result;
+    }
+
+    IFOKDO(result,
+           plmdata->noteHub()->setTrashedWithChildren(projectId, synopsisId,
+                                                      newTrashedState));
+
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// -------------------------------------------------------------
+
+SKRResult PLMSheetHub::untrashOnlyOnePaper(int projectId, int paperId)
+{
+    SKRResult result = PLMPaperHub::untrashOnlyOnePaper(projectId, paperId);
+
+    int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, paperId);
+
+    if (synopsisId == -2) {
+        return result;
+    }
+    IFOKDO(result,
+           plmdata->noteHub()->untrashOnlyOnePaper(projectId, synopsisId));
+
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// -------------------------------------------------------------
+
+SKRResult PLMSheetHub::removePaper(int projectId, int targetId)
+{
+    SKRResult result = PLMPaperHub::removePaper(projectId, targetId);
+
+    int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, targetId);
+
+    if (synopsisId == -2) {
+        return result;
+    }
+
+    IFOKDO(result,
+           plmdata->noteHub()->removePaper(projectId, synopsisId));
+
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// --------------------------------------------------------------------------------
+
+QList<QString>PLMSheetHub::getAttributes(int projectId, int paperId)
+{
+    QString attributes = plmdata->sheetPropertyHub()->getProperty(projectId,
+                                                                  paperId,
+                                                                  "attributes",
+                                                                  "");
+
+    return attributes.split(";", Qt::SkipEmptyParts);
+}
+
+// --------------------------------------------------------------------------------
+
+
+bool PLMSheetHub::hasAttribute(int projectId, int paperId, const QString& attribute)
+{
+    QString attributes = plmdata->sheetPropertyHub()->getProperty(projectId,
+                                                                  paperId,
+                                                                  "attributes",
+                                                                  "");
+
+    return attributes.split(";", Qt::SkipEmptyParts).contains(attribute);
+}
+
+// --------------------------------------------------------------------------------
+
+SKRResult PLMSheetHub::addAttribute(int projectId, int paperId, const QString& attribute)
+{
+    QString attributes = plmdata->sheetPropertyHub()->getProperty(projectId,
+                                                                  paperId,
+                                                                  "attributes",
+                                                                  "");
+    QStringList attributeList = attributes.split(";", Qt::SkipEmptyParts);
+
+    if (attributeList.contains(attribute)) {
+        return SKRResult();
+    }
+
+    attributeList << attribute;
+    attributeList.sort();
+
+    return plmdata->sheetPropertyHub()->setProperty(projectId,
+                                                    paperId,
+                                                    "attributes",
+                                                    attributeList.join(";"));
+}
+
+// --------------------------------------------------------------------------------
+
+SKRResult PLMSheetHub::removeAttribute(int projectId, int paperId, const QString& attribute)
+{
+    QString attributes = plmdata->sheetPropertyHub()->getProperty(projectId,
+                                                                  paperId,
+                                                                  "attributes",
+                                                                  "");
+    QStringList attributeList = attributes.split(";", Qt::SkipEmptyParts);
+
+    if (!attributeList.contains(attribute)) {
+        return SKRResult();
+    }
+
+    attributeList.removeAll(attribute);
+
+    return plmdata->sheetPropertyHub()->setProperty(projectId,
+                                                    paperId,
+                                                    "attributes",
+                                                    attributeList.join(";"));
 }

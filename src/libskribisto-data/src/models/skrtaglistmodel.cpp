@@ -153,7 +153,7 @@ bool SKRTagListModel::setData(const QModelIndex& index, const QVariant& value, i
         SKRTagItem *item = static_cast<SKRTagItem *>(index.internalPointer());
         int projectId    = item->projectId();
         int tagId        = item->tagId();
-        PLMError error;
+        SKRResult result;
 
         this->disconnectFromPLMDataSignals();
 
@@ -170,22 +170,22 @@ bool SKRTagListModel::setData(const QModelIndex& index, const QVariant& value, i
 
         case SKRTagItem::Roles::NameRole:
 
-            error = plmdata->tagHub()->setTagName(projectId, tagId, value.toString());
+            result = plmdata->tagHub()->setTagName(projectId, tagId, value.toString());
             break;
 
         case SKRTagItem::Roles::ColorRole:
 
-            error = plmdata->tagHub()->setTagColor(projectId, tagId, value.toString());
+            result = plmdata->tagHub()->setTagColor(projectId, tagId, value.toString());
             break;
 
         case SKRTagItem::Roles::CreationDateRole:
-            error = plmdata->tagHub()->setCreationDate(projectId,
+            result = plmdata->tagHub()->setCreationDate(projectId,
                                                        tagId,
                                                        value.toDateTime());
             break;
 
         case SKRTagItem::Roles::UpdateDateRole:
-            error = plmdata->tagHub()->setUpdateDate(projectId,
+            result = plmdata->tagHub()->setUpdateDate(projectId,
                                                      tagId,
                                                      value.toDateTime());
             break;
@@ -193,7 +193,7 @@ bool SKRTagListModel::setData(const QModelIndex& index, const QVariant& value, i
 
         this->connectToPLMDataSignals();
 
-        if (!error.isSuccess()) {
+        if (!result.isSuccess()) {
             return false;
         }
         item->invalidateData(role);

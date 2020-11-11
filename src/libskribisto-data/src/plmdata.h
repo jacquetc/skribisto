@@ -23,7 +23,7 @@
 
 #include <QObject>
 
-#include "plmerrorhub.h"
+#include "skrerrorhub.h"
 #include "plmnotehub.h"
 #include "plmprojecthub.h"
 #include "plmpropertyhub.h"
@@ -53,7 +53,7 @@ public:
     }
 
     PLMSignalHub                 * signalHub();
-    Q_INVOKABLE PLMErrorHub      * errorHub();
+    Q_INVOKABLE SKRErrorHub      * errorHub();
     Q_INVOKABLE PLMSheetHub      * sheetHub();
     Q_INVOKABLE PLMPropertyHub   * sheetPropertyHub();
     Q_INVOKABLE PLMNoteHub       * noteHub();
@@ -71,7 +71,7 @@ private:
 
     static PLMData *m_instance;
 
-    PLMErrorHub *m_errorHub;
+    SKRErrorHub *m_errorHub;
     PLMSignalHub *m_signalHub;
     PLMProjectHub *m_projectHub;
     PLMSheetHub *m_sheetHub;

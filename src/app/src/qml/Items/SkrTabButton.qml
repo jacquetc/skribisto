@@ -48,6 +48,10 @@ SkrTabButtonForm {
         control.toggle()
     }
 
+    property bool textVisible: true
+    onTextVisibleChanged: {
+        tabLabel.visible = textVisible
+    }
 
 
 }

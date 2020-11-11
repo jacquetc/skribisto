@@ -33,6 +33,7 @@ Item {
     property alias openThemePageButton: openThemePageButton
     property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
     property alias centerTextCursorSwitch: centerTextCursorSwitch
+    property alias minimalistMenuTabsSwitch: minimalistMenuTabsSwitch
 
     SkrPane {
         id: pane2
@@ -110,6 +111,11 @@ Item {
                         SkrSwitch {
                             id: menuButtonsInStatusBarSwitch
                             text: qsTr("Set main menu in status bar")
+
+                        }
+                        SkrSwitch {
+                            id: minimalistMenuTabsSwitch
+                            text: qsTr("Minimalist menu tabs")
 
                         }
 

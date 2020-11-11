@@ -214,20 +214,20 @@ bool SKRTextBridge::isThereAnyOtherSimilarSyncDoc(const QString& paperType,
                                                   const QString& skrTextAreaUniqueObjectName)
 const
 {
-    bool result = false;
+    bool value = false;
 
     for (const SKRSyncDocument& syncDoc : m_syncDocList) {
-        result =
+        value =
             (syncDoc.paperType() == paperType && syncDoc.projectId() == projectId &&
              syncDoc.paperId() == paperId &&
              syncDoc.skrTextAreaUniqueObjectName() != skrTextAreaUniqueObjectName);
 
-        if (result) {
+        if (value) {
             break;
         }
     }
 
-    return result;
+    return value;
 }
 
 // --------------------------------------------------------------------------------------
@@ -248,17 +248,17 @@ QList<SKRSyncDocument>SKRTextBridge::listOtherSimilarSyncDocs(const QString& pap
                                                               const QString& skrTextAreaUniqueObjectName)
 const
 {
-    QList<SKRSyncDocument> result;
+    QList<SKRSyncDocument> list;
 
     for (const SKRSyncDocument& syncDoc : m_syncDocList) {
         if ((syncDoc.paperType() == paperType) && (syncDoc.projectId() == projectId) &&
             (syncDoc.paperId() == paperId) &&
             (syncDoc.skrTextAreaUniqueObjectName() != skrTextAreaUniqueObjectName)) {
-            result.append(syncDoc);
+            list.append(syncDoc);
         }
     }
 
-    return result;
+    return list;
 }
 
 // --------------------------------------------------------------------------------------

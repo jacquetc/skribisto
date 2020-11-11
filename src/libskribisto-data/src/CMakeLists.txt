@@ -15,8 +15,8 @@ find_package(QuaZip-Qt5 REQUIRED)
 
 set(data_SRCS
     plmdata.cpp
-    plmerror.cpp
-    plmerrorhub.cpp
+    skrresult.cpp
+    skrerrorhub.cpp
     plmnotehub.cpp
     plmpaperhub.cpp
     plmpluginhub.cpp
@@ -29,6 +29,7 @@ set(data_SRCS
     skrprojectdicthub.cpp
     tasks/plmprojectmanager.cpp
     tasks/plmsqlqueries.cpp
+    tasks/sql/skrsqltools.cpp
     tasks/sql/plmexporter.cpp
     tasks/sql/plmimporter.cpp
     tasks/sql/plmproject.cpp
@@ -42,20 +43,19 @@ set(data_SRCS
     models/plmsheetmodel.cpp
     models/plmsheetproxymodel.cpp
     models/plmsheetlistmodel.cpp
-    models/plmsheetlistproxymodel.cpp
     models/plmnotemodel.cpp
     models/plmnotelistmodel.cpp
-    models/plmnotelistproxymodel.cpp
     models/plmnoteproxymodel.cpp
-    models/plmnoteitem.cpp
     models/plmprojectlistmodel.cpp
     models/plmdocumentlistmodel.cpp
     models/plmwritedocumentlistmodel.cpp
     models/plmdocumentlistproxymodel.cpp
     models/plmpropertiesmodel.cpp
     models/plmpropertiesproxymodel.cpp
-    models/plmsheetitem.cpp
+    models/skrpaperitem.cpp
     models/plmmodels.cpp
+    models/skrpaperlistmodel.cpp
+    models/skrsearchpaperlistproxymodel.cpp
     models/skrsearchsheetlistproxymodel.cpp
     models/skrsearchnotelistproxymodel.cpp
     models/skrtagitem.cpp
@@ -66,8 +66,8 @@ set(data_HDR
     plmcoreinterface.h
     plmcoreplugins.h
     plmdata.h
-    plmerror.h
-    plmerrorhub.h
+    skrresult.h
+    skrerrorhub.h
     plmnotehub.h
     plmpaperhub.h
     plmpluginhub.h
@@ -80,9 +80,11 @@ set(data_HDR
     plmutils.h
     skribisto_data_global.h
     tools.h
+    skr.h
     skrprojectdicthub.h
     tasks/plmprojectmanager.h
     tasks/plmsqlqueries.h
+    tasks/sql/skrsqltools.h
     tasks/sql/plmexporter.h
     tasks/sql/plmimporter.h
     tasks/sql/plmproject.h
@@ -98,20 +100,19 @@ set(data_HDR
     models/plmsheetmodel.h
     models/plmsheetproxymodel.h
     models/plmsheetlistmodel.h
-    models/plmsheetlistproxymodel.h
     models/plmnotemodel.h
     models/plmnotelistmodel.h
-    models/plmnotelistproxymodel.h
     models/plmnoteproxymodel.h
-    models/plmnoteitem.h
     models/plmprojectlistmodel.h
     models/plmdocumentlistmodel.h
     models/plmwritedocumentlistmodel.h
     models/plmdocumentlistproxymodel.h
     models/plmpropertiesmodel.h
     models/plmpropertiesproxymodel.h
-    models/plmsheetitem.h
+    models/skrpaperitem.h
     models/plmmodels.h
+    models/skrpaperlistmodel.h
+    models/skrsearchpaperlistproxymodel.h
     models/skrsearchsheetlistproxymodel.h
     models/skrsearchnotelistproxymodel.h
     models/skrtagitem.h

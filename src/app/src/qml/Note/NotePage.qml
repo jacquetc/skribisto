@@ -679,8 +679,8 @@ NotePageForm {
 
     function saveContent(){
         console.log("saving note")
-        var error = plmData.noteHub().setContent(projectId, paperId, writingZone.text)
-        if (!error.success){
+        var result = plmData.noteHub().setContent(projectId, paperId, writingZone.text)
+        if (!result.success){
             console.log("saving note failed", projectId, paperId)
         }
         else {

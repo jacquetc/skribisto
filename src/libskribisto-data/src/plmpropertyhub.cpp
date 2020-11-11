@@ -34,343 +34,343 @@ PLMPropertyHub::PLMPropertyHub(QObject       *parent,
 
 QHash<int, QString>PLMPropertyHub::getAllNames(int projectId) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QHash<int, QString>  result;
+    QHash<int, QString>  hash;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getValueByIds("t_name", out);
+    result = queries.getValueByIds("t_name", out);
 
-    IFOK(error) {
-        result = HashIntQVariantConverter::convertToIntQString(out);
+    IFOK(result) {
+        hash = HashIntQVariantConverter::convertToIntQString(out);
     }
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return hash;
 }
 
 QHash<int, QString>PLMPropertyHub::getAllValues(int projectId) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QHash<int, QString>  result;
+    QHash<int, QString>  hash;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getValueByIds("t_value", out);
+    result = queries.getValueByIds("t_value", out);
 
-    IFOK(error) {
-        result = HashIntQVariantConverter::convertToIntQString(out);
+    IFOK(result) {
+        hash = HashIntQVariantConverter::convertToIntQString(out);
     }
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return hash;
 }
 
 QHash<int, bool>PLMPropertyHub::getAllIsSystems(int projectId) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QHash<int, bool> result;
+    QHash<int, bool> hash;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getValueByIds("b_system", out);
+    result = queries.getValueByIds("b_system", out);
 
-    IFOK(error) {
-        result = HashIntQVariantConverter::convertToIntBool(out);
+    IFOK(result) {
+        hash = HashIntQVariantConverter::convertToIntBool(out);
     }
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return hash;
 }
 
 QHash<int, int>PLMPropertyHub::getAllPaperCodes(int projectId) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QHash<int, int> result;
+    QHash<int, int> hash;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getValueByIds(m_paperCodeFieldName, out);
+    result = queries.getValueByIds(m_paperCodeFieldName, out);
 
-    IFOK(error) {
-        result = HashIntQVariantConverter::convertToIntInt(out);
+    IFOK(result) {
+        hash = HashIntQVariantConverter::convertToIntInt(out);
     }
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return hash;
 }
 
 QList<int>PLMPropertyHub::getAllIds(int projectId) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QList<int> result;
+    QList<int> list;
     QList<int> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getIds(out);
+    result = queries.getIds(out);
 
-    IFOK(error) {
-        result = out;
+    IFOK(result) {
+        list = out;
     }
 
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return list;
 }
 
 QList<int>PLMPropertyHub::getAllIdsWithPaperCode(int projectId, int paperCode) const
 {
-    PLMError error;
+    SKRResult result;
 
-    QList<int> result;
+    QList<int> list;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getValueByIds("l_property_id", out, m_paperCodeFieldName, paperCode);
+    result = queries.getValueByIds("l_property_id", out, m_paperCodeFieldName, paperCode);
 
-    IFOK(error) {
-        result = out.keys();
+    IFOK(result) {
+        list = out.keys();
     }
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return list;
 }
 
-PLMError PLMPropertyHub::setProperty(int            projectId,
+SKRResult PLMPropertyHub::setProperty(int            projectId,
                                      int            paperCode,
                                      const QString& name,
                                      const QString& value)
 {
-    PLMError error;
+    SKRResult result;
     int propertyId = -1;
 
     if (propertyExists(projectId, paperCode, name)) {
         propertyId = findPropertyId(projectId, paperCode, name);
     }
     else {
-        IFOKDO(error, addProperty(projectId, paperCode, propertyId));
-        IFOK(error) {
+        IFOKDO(result, addProperty(projectId, paperCode, propertyId));
+        IFOK(result) {
             propertyId = getLastAddedId();
         }
     }
 
-    IFOKDO(error, setPropertyById(projectId, propertyId, name, value));
+    IFOKDO(result, setPropertyById(projectId, propertyId, name, value));
 
 
-    return error;
+    return result;
 }
 
-PLMError PLMPropertyHub::setPropertyById(int            projectId,
+SKRResult PLMPropertyHub::setPropertyById(int            projectId,
                                          int            propertyId,
                                          const QString& name,
                                          const QString& value)
 {
-    PLMError error;
+    SKRResult result;
 
     PLMSqlQueries queries(projectId, m_tableName);
 
     queries.beginTransaction();
 
-    error = queries.set(propertyId, "t_name", name);
-    IFOKDO(error, queries.set(propertyId, "t_value", value));
-    IFOKDO(error, queries.setCurrentDate(propertyId, "dt_updated"));
-    IFKO(error) {
+    result = queries.set(propertyId, "t_name", name);
+    IFOKDO(result, queries.set(propertyId, "t_value", value));
+    IFOKDO(result, queries.setCurrentDate(propertyId, "dt_updated"));
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    QVariant result;
+    QVariant variant;
 
-    IFOKDO(error, queries.get(propertyId, m_paperCodeFieldName, result));
-    IFOK(error) {
-        emit propertyChanged(projectId, propertyId, result.toInt(), name, value);
+    IFOKDO(result, queries.get(propertyId, m_paperCodeFieldName, variant));
+    IFOK(result) {
+        emit propertyChanged(projectId, propertyId, value.toInt(), name, value);
         emit projectModified(projectId);
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
 
-    return error;
+    return result;
 }
 
 // ---------------------------------------------------------------------
 
-PLMError PLMPropertyHub::setId(int projectId, int propertyId, int newId)
+SKRResult PLMPropertyHub::setId(int projectId, int propertyId, int newId)
 {
     PLMSqlQueries queries(projectId, m_tableName);
 
     queries.beginTransaction();
 
-    PLMError error = queries.setId(propertyId, newId);
+    SKRResult result = queries.setId(propertyId, newId);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    IFOK(error) {
+    IFOK(result) {
         emit idChanged(projectId, propertyId, newId);
         emit projectModified(projectId);
     }
-    return error;
+    return result;
 }
 
 // ---------------------------------------------------------------------
 
-PLMError PLMPropertyHub::setValue(int projectId, int propertyId, const QString& value)
+SKRResult PLMPropertyHub::setValue(int projectId, int propertyId, const QString& value)
 {
     PLMSqlQueries queries(projectId, m_tableName);
-    QVariant result;
+    QVariant variant;
 
-    queries.get(propertyId, "t_name",             result);
-    QString name = result.toString();
+    queries.get(propertyId, "t_name",             variant);
+    QString name = variant.toString();
 
-    queries.get(propertyId, m_paperCodeFieldName, result);
-    int paperCode = result.toInt();
+    queries.get(propertyId, m_paperCodeFieldName, variant);
+    int paperCode = variant.toInt();
 
     queries.beginTransaction();
 
-    PLMError error = queries.set(propertyId, "t_value", value);
+    SKRResult result = queries.set(propertyId, "t_value", value);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    IFOK(error) {
+    IFOK(result) {
         emit propertyChanged(projectId, propertyId, paperCode, name, value);
         emit projectModified(projectId);
     }
-    return error;
+    return result;
 }
 
-PLMError PLMPropertyHub::setName(int projectId, int propertyId, const QString& name)
+SKRResult PLMPropertyHub::setName(int projectId, int propertyId, const QString& name)
 {
     PLMSqlQueries queries(projectId, m_tableName);
-    QVariant result;
+    QVariant variant;
 
-    queries.get(propertyId, "t_value",            result);
-    QString value = result.toString();
+    queries.get(propertyId, "t_value",            variant);
+    QString value = variant.toString();
 
-    queries.get(propertyId, m_paperCodeFieldName, result);
-    int paperCode = result.toInt();
+    queries.get(propertyId, m_paperCodeFieldName, variant);
+    int paperCode = variant.toInt();
 
     queries.beginTransaction();
 
-    PLMError error = queries.set(propertyId, "t_name", name);
+    SKRResult result = queries.set(propertyId, "t_name", name);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    IFOK(error) {
+    IFOK(result) {
         emit propertyChanged(projectId, propertyId, paperCode, name, value);
         emit projectModified(projectId);
     }
-    return error;
+    return result;
 }
 
 // ---------------------------------------------------------------------
 
 QString PLMPropertyHub::getName(int projectId, int propertyId)
 {
-    PLMError error;
-    QString  result;
+    SKRResult result;
+    QString  string;
     QVariant out;
 
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.get(propertyId, "t_name", out);
-    IFKO(error) {
-        emit errorSent(error);
+    result = queries.get(propertyId, "t_name", out);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    result = out.toString();
-    return result;
+    string = out.toString();
+    return string;
 }
 
 // ---------------------------------------------------------------------
 
-PLMError PLMPropertyHub::setPaperCode(int projectId, int propertyId, int paperCode)
+SKRResult PLMPropertyHub::setPaperCode(int projectId, int propertyId, int paperCode)
 {
     PLMSqlQueries queries(projectId, m_tableName);
-    QVariant result;
+    QVariant variant;
 
-    queries.get(propertyId, "t_value", result);
-    QString value = result.toString();
+    queries.get(propertyId, "t_value", variant);
+    QString value = variant.toString();
 
-    queries.get(propertyId, "t_name",  result);
-    QString name = result.toString();
+    queries.get(propertyId, "t_name",  variant);
+    QString name = variant.toString();
 
     queries.beginTransaction();
 
-    PLMError error = queries.set(propertyId, m_paperCodeFieldName, paperCode);
+    SKRResult result = queries.set(propertyId, m_paperCodeFieldName, paperCode);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    IFOK(error) {
+    IFOK(result) {
         emit propertyChanged(projectId, propertyId, paperCode, name, value);
         emit projectModified(projectId);
     }
-    return error;
+    return result;
 }
 
 // ---------------------------------------------------------------------
 
 int PLMPropertyHub::getPaperCode(int projectId, int propertyId)
 {
-    PLMError error;
-    int result;
+    SKRResult result;
+    int value;
     QVariant out;
 
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.get(propertyId, m_paperCodeFieldName, out);
-    IFKO(error) {
-        emit errorSent(error);
+    result = queries.get(propertyId, m_paperCodeFieldName, out);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    result = out.toInt();
-    return result;
+    value = out.toInt();
+    return value;
 }
 
-PLMError PLMPropertyHub::setCreationDate(int              projectId,
+SKRResult PLMPropertyHub::setCreationDate(int              projectId,
                                          int              propertyId,
                                          const QDateTime& date)
 {
@@ -384,44 +384,46 @@ PLMError PLMPropertyHub::setCreationDate(int              projectId,
 
     queries.beginTransaction();
 
-    PLMError error = queries.set(propertyId, "dt_created", date);
+    SKRResult result = queries.set(propertyId, "dt_created", date);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    IFOK(error) {
+    IFOK(result) {
+        emit projectModified(projectId);
+
         // emit propertyChanged(projectId, propertyId, paperCode, name, value);
     }
-    return error;
+    return result;
 }
 
 // ---------------------------------------------------------------------
 
 QDateTime PLMPropertyHub::getCreationDate(int projectId, int propertyId) const
 {
-    PLMError  error;
-    QDateTime result;
+    SKRResult  result;
+    QDateTime date;
     QVariant  out;
 
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.get(propertyId, "dt_created", out);
-    IFKO(error) {
-        emit errorSent(error);
+    result = queries.get(propertyId, "dt_created", out);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    result = out.toDateTime();
-    return result;
+    date = out.toDateTime();
+    return date;
 }
 
 // ---------------------------------------------------------------------
 
-PLMError PLMPropertyHub::setModificationDate(int              projectId,
+SKRResult PLMPropertyHub::setModificationDate(int              projectId,
                                              int              propertyId,
                                              const QDateTime& date)
 {
@@ -435,42 +437,44 @@ PLMError PLMPropertyHub::setModificationDate(int              projectId,
 
     queries.beginTransaction();
 
-    PLMError error = queries.set(propertyId, "dt_updated", date);
+    SKRResult result = queries.set(propertyId, "dt_updated", date);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    IFOK(error) {
+    IFOK(result) {
+        emit projectModified(projectId);
+
         // emit propertyChanged(projectId, propertyId, paperCode, name, value);
     }
-    return error;
+    return result;
 }
 
 // ---------------------------------------------------------------------
 
 QDateTime PLMPropertyHub::getModificationDate(int projectId, int propertyId) const
 {
-    PLMError  error;
-    QDateTime result;
+    SKRResult  result;
+    QDateTime date;
     QVariant  out;
 
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.get(propertyId, "dt_updated", out);
-    IFKO(error) {
-        emit errorSent(error);
+    result = queries.get(propertyId, "dt_updated", out);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    result = out.toDateTime();
-    return result;
+    date = out.toDateTime();
+    return date;
 }
 
-PLMError PLMPropertyHub::setSystem(int projectId, int propertyId, bool isSystem)
+SKRResult PLMPropertyHub::setIsSystem(int projectId, int propertyId, bool isSystem)
 {
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -482,40 +486,42 @@ PLMError PLMPropertyHub::setSystem(int projectId, int propertyId, bool isSystem)
 
     queries.beginTransaction();
 
-    PLMError error = queries.set(propertyId, "b_system", isSystem);
+    SKRResult result = queries.set(propertyId, "b_system", isSystem);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    IFOK(error) {
+    IFOK(result) {
+        emit projectModified(projectId);
+
         // emit propertyChanged(projectId, propertyId, paperCode, name, value);
     }
-    return error;
+    return result;
 }
 
 // ---------------------------------------------------------------------
 
 
-bool PLMPropertyHub::getSystem(int projectId, int propertyId) const
+bool PLMPropertyHub::getIsSystem(int projectId, int propertyId) const
 {
-    PLMError error;
-    bool     result;
+    SKRResult result;
+    bool     value;
     QVariant out;
 
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.get(propertyId, "b_system", out);
-    IFKO(error) {
-        emit errorSent(error);
+    result = queries.get(propertyId, "b_system", out);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    result = out.toBool();
-    return result;
+    value = out.toBool();
+    return value;
 }
 
 // ---------------------------------------------------------------------
@@ -523,8 +529,8 @@ bool PLMPropertyHub::getSystem(int projectId, int propertyId) const
 QString PLMPropertyHub::getProperty(int projectId, int paperCode,
                                     const QString& name) const
 {
-    PLMError error;
-    QString  result;
+    SKRResult result;
+    QString  value;
 
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -532,21 +538,21 @@ QString PLMPropertyHub::getProperty(int projectId, int paperCode,
 
     where.insert(m_paperCodeFieldName, paperCode);
     where.insert("t_name",             name);
-    error = queries.getValueByIdsWhere("t_value", out, where);
+    result = queries.getValueByIdsWhere("t_value", out, where);
 
     if (out.isEmpty()) {
-        return result;
+        return value;
     }
 
-    IFOK(error) {
-        result = out.values().first().toString();
+    IFOK(result) {
+        value = out.values().first().toString();
     }
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
 
-    return result;
+    return value;
 }
 
 // ---------------------------------------------------------------------
@@ -556,30 +562,30 @@ QString PLMPropertyHub::getProperty(int            projectId,
                                     const QString& name,
                                     const QString& defaultValue) const
 {
-    QString result = getProperty(projectId, paperCode, name);
+    QString value = getProperty(projectId, paperCode, name);
 
-    if (result.isNull()) {
-        result = defaultValue;
+    if (value.isNull()) {
+        value = defaultValue;
     }
-    return result;
+    return value;
 }
 
 // ---------------------------------------------------------------------
 
 QString PLMPropertyHub::getPropertyById(int projectId, int propertyId) const
 {
-    PLMError error;
-    QString  result;
+    SKRResult result;
+    QString  value;
     QVariant out;
 
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.get(propertyId, "t_value", out);
-    IFKO(error) {
-        emit errorSent(error);
+    result = queries.get(propertyId, "t_value", out);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    result = out.toString();
-    return result;
+    value = out.toString();
+    return value;
 }
 
 // -----------------------------------------------------------------------------
@@ -592,7 +598,7 @@ int PLMPropertyHub::getLastAddedId()
 // ---------------------------------------------------------------------
 
 
-PLMError PLMPropertyHub::addProperty(int projectId, int paperCode, int imposedPropertyId)
+SKRResult PLMPropertyHub::addProperty(int projectId, int paperCode, int imposedPropertyId)
 {
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -602,40 +608,40 @@ PLMError PLMPropertyHub::addProperty(int projectId, int paperCode, int imposedPr
 
     if (imposedPropertyId != -1) values.insert("l_property_id", imposedPropertyId);
     int newPropertyId = -1;
-    PLMError error    = queries.add(values, newPropertyId);
+    SKRResult result    = queries.add(values, newPropertyId);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
         m_last_added_id = newPropertyId;
         emit propertyAdded(projectId, newPropertyId);
         emit projectModified(projectId);
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return error;
+    return result;
 }
 
-PLMError PLMPropertyHub::removeProperty(int projectId, int propertyId)
+SKRResult PLMPropertyHub::removeProperty(int projectId, int propertyId)
 {
     PLMSqlQueries queries(projectId, m_tableName);
-    PLMError error = queries.remove(propertyId);
+    SKRResult result = queries.remove(propertyId);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
         emit propertyRemoved(projectId, propertyId);
         emit projectModified(projectId);
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return error;
+    return result;
 }
 
 bool PLMPropertyHub::propertyExists(int projectId, int paperCode, const QString& name)
@@ -653,8 +659,8 @@ bool PLMPropertyHub::propertyExists(int projectId, int paperCode, const QString&
 
 int PLMPropertyHub::findPropertyId(int projectId, int paperCode, const QString& name)
 {
-    PLMError error;
-    int result = 0;
+    SKRResult result;
+    int value = 0;
 
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -662,14 +668,14 @@ int PLMPropertyHub::findPropertyId(int projectId, int paperCode, const QString& 
 
     where.insert(m_paperCodeFieldName, paperCode);
     where.insert("t_name",             name);
-    error = queries.getValueByIdsWhere("l_property_id", out, where);
+    result = queries.getValueByIdsWhere("l_property_id", out, where);
 
-    IFOK(error) {
-        result = out.keys().first();
+    IFOK(result) {
+        value = out.keys().first();
     }
 
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return value;
 }

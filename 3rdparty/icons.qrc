@@ -75,5 +75,12 @@
         <file>icons/backup/COPYING-ICONS</file>
         <file>icons/backup/LICENSE</file>
         <file>icons/backup/README.md</file>
+        <file>icons/backup/edit-clear.svg</file>
+        <file>icons/backup/edit-select-all.svg</file>
+        <file>icons/backup/edit-select-none.svg</file>
+        <file>icons/backup/resizecol.svg</file>
+        <file>icons/backup/tag.svg</file>
+        <file>icons/backup/tag-new.svg</file>
+        <file>icons/backup/lock.svg</file>
     </qresource>
 </RCC>
