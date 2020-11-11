@@ -184,7 +184,7 @@ WritingZoneForm {
             if(textArea.selectedText != "" & (eventCursorPosition < selectStart | eventCursorPosition > selectEnd)){
                 textArea.cursorPosition = textArea.positionAt(event.x, event.y)
                 menu.popup(textArea, event.x, event.y)
-                console.log("deselect")
+                //console.log("deselect")
                 return
             }
             else{
@@ -199,7 +199,7 @@ WritingZoneForm {
 
     textArea.onActiveFocusChanged: {
         if(textArea.activeFocus){
-            console.log("activeFocus = true")
+            //console.log("activeFocus = true")
 
 
             //console.log("disconnect", skrEditMenuSignalHub.clearCutConnections())
@@ -589,7 +589,7 @@ WritingZoneForm {
 
 
         highlighter.rehighlight()
-        console.log("langCode :", langCode)
+        //console.log("langCode :", langCode)
     }
 
     function setProjectDictInSpellChecker(projectId){

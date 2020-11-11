@@ -49,7 +49,7 @@ NavigationForm {
     }
 
     function popTrashedListView() {
-        console.log("popTrashedListView")
+        //console.log("popTrashedListView")
         stackView.pop()
     }
 
@@ -131,7 +131,7 @@ NavigationForm {
     }
 
     function popRestoreListView() {
-        console.log("popRestoreListView")
+        //console.log("popRestoreListView")
         stackView.pop()
         root.restoreListViewProxyModel.clearCheckedList()
     }

@@ -20,14 +20,68 @@
 ***************************************************************************/
 #include "skrresult.h"
 
-SKRResult::SKRResult() :  m_success(true)
-{}
+SKRResult::SKRResult() :  m_status(SKRResult::OK)
+{
+   this->addErrorCode("OK");
+
+}
+
+SKRResult::SKRResult(const QObject *object) :  m_status(SKRResult::OK)
+{
+    QString className = object->metaObject()->className();
+    *this = SKRResult(className);
+
+}
+
+SKRResult::SKRResult(const QString &className) :  m_status(SKRResult::OK)
+{
+   this->addErrorCode("OK_" + className.toUpper());
+
+}
 
 SKRResult::SKRResult(const SKRResult& result)
 {
-    m_success       = result.isSuccess();
+    m_status       = result.getStatus();
     m_errorCodeList = result.getErrorCodeList();
-    m_dataHash      = result.getDataHash();
+    m_dataHashList      = result.getDataHashList();
+}
+
+SKRResult::SKRResult(SKRResult::Status status, const QObject *object, const QString &errorCodeEnd)
+{
+    QString className = object->metaObject()->className();
+
+    *this = SKRResult(status, className, errorCodeEnd);
+}
+
+SKRResult::SKRResult(SKRResult::Status status, const QString &className, const QString &errorCodeEnd)
+{
+    m_status = status;
+
+    //whole errorCode:
+    QString errorCode;
+
+    switch (status){
+    case SKRResult::OK:
+        errorCode = "OK_";
+        break;
+    case SKRResult::Warning:
+        errorCode = "W_";
+        break;
+    case SKRResult::Critical:
+        errorCode = "C_";
+        break;
+    case SKRResult::Fatal:
+        errorCode = "F_";
+        break;
+    }
+
+
+
+    errorCode += className.toUpper() + "__";
+
+    errorCode += errorCodeEnd;
+
+    this->addErrorCode(errorCode);
 }
 
 bool SKRResult::operator!() const
@@ -43,9 +97,9 @@ SKRResult::operator bool() const
 SKRResult& SKRResult::operator=(const SKRResult& iResult)
 {
     if (Q_LIKELY(&iResult != this)) {
-        m_success = iResult.isSuccess();
+        m_status = iResult.getStatus();
         m_errorCodeList.append(iResult.getErrorCodeList());
-        m_dataHash.insert(iResult.getDataHash());
+        m_dataHashList.append(iResult.getDataHashList());
     }
 
     // m_success = iError.isSuccess();
@@ -53,32 +107,39 @@ SKRResult& SKRResult::operator=(const SKRResult& iResult)
 }
 
 bool SKRResult::operator==(const SKRResult& otherSKRResult) const {
-    return m_success == otherSKRResult.isSuccess()
-           && m_errorCodeList == otherSKRResult.getErrorCodeList()
-           && m_dataHash == otherSKRResult.getDataHash()
-    ;
+    return m_status == otherSKRResult.getStatus()
+            && m_errorCodeList == otherSKRResult.getErrorCodeList()
+            && m_dataHashList == otherSKRResult.getDataHashList()
+            ;
 }
 
 bool SKRResult::operator!=(const SKRResult& otherSKRResult) const {
-    return m_success != otherSKRResult.isSuccess()
-           || m_errorCodeList != otherSKRResult.getErrorCodeList()
-           || m_dataHash != otherSKRResult.getDataHash()
-    ;
+    return m_status != otherSKRResult.getStatus()
+            || m_errorCodeList != otherSKRResult.getErrorCodeList()
+            || m_dataHashList != otherSKRResult.getDataHashList()
+            ;
 }
 
-void SKRResult::setSuccess(bool value)
-{
-    m_success = value;
-}
 
 bool SKRResult::isSuccess() const
 {
-    return m_success;
+    return m_status == SKRResult::OK;
 }
 
 bool SKRResult::containsErrorCode(const QString& value) const
 {
     return m_errorCodeList.contains(value);
+}
+
+bool SKRResult::containsErrorCodeDetail(const QString& value) const
+{
+    for(const QString &codeString : m_errorCodeList){
+        if(codeString.split("__").last() == value){
+            return true;
+        }
+    }
+
+    return false;
 }
 
 QString SKRResult::getLastErrorCode() const
@@ -100,27 +161,43 @@ void SKRResult::setErrorCodeList(const QStringList& value)
     m_errorCodeList = value;
 }
 
+SKRResult::Status SKRResult::getStatus() const
+{
+    return m_status;
+}
+
+void SKRResult::setStatus(const SKRResult::Status &status)
+{
+    m_status = status;
+}
+
 void SKRResult::addErrorCode(const QString& value)
 {
     m_errorCodeList.append(value);
+
+    QHash<QString, QVariant> emptyHash;
+    m_dataHashList.append(emptyHash);
 }
 
-QHash<QString, QVariant>SKRResult::getDataHash() const
+QList<QHash<QString, QVariant> > SKRResult::getDataHashList() const
 {
-    return m_dataHash;
+    return m_dataHashList;
 }
 
-void SKRResult::setDataHash(const QHash<QString, QVariant>& dataHash)
+void SKRResult::setDataHashList(const QList<QHash<QString, QVariant> >& dataHashList)
 {
-    m_dataHash = dataHash;
+    m_dataHashList = dataHashList;
 }
 
 void SKRResult::addData(const QString& key, const QVariant& value)
 {
-    m_dataHash.insert(key, value);
+    QHash<QString, QVariant> lastHash = m_dataHashList.takeLast();
+    lastHash.insert(key, value);
+    m_dataHashList.append(lastHash);
 }
 
 QVariant SKRResult::getData(const QString& key, const QVariant& defaultValue) const
 {
-    return m_dataHash.value(key, defaultValue);
+    QHash<QString, QVariant> lastHash = m_dataHashList.last();
+    return lastHash.value(key, defaultValue);
 }

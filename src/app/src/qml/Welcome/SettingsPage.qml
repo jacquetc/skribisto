@@ -579,7 +579,7 @@ SettingsPageForm {
 
                 var result = plmData.projectHub().backupAProject(projectId, "skrib", skrQMLTools.getURLFromLocalFile(path))
 
-                if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
+                if (result.containsErrorCodeDetail("path_is_readonly")){
                     //TODO: notification
                 }
 

@@ -28,7 +28,7 @@ SKRResult PLMExporter::exportSQLiteDbTo(PLMProject    *db,
                                        const QString& type,
                                        const QUrl   & fileName)
 {
-    SKRResult result;
+    SKRResult result(this);
     QString  finalType = type;
 
     if (type == "skrib") {
@@ -50,16 +50,14 @@ SKRResult PLMExporter::exportSQLiteDbTo(PLMProject    *db,
         QFile file(fileName.toLocalFile());
 
         if (!tempFile.open(QIODevice::ReadOnly)) {
-            qWarning() << fileName.toLocalFile() + " can't be opened";
-            result.setSuccess(false);
-            result.addErrorCode("C_PROJECT_tempfile_cant_be_opened");
+            result = SKRResult(SKRResult::Critical, this, "tempfile_cant_be_opened");
+            result.addData("fileName", fileName.toLocalFile());
             return result;
         }
 
         if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            qWarning() << fileName.toLocalFile() + " can't be opened";
-            result.setSuccess(false);
-            result.addErrorCode("W_PROJECT_path_is_readonly");
+            result = SKRResult(SKRResult::Warning, this, "path_is_readonly");
+            result.addData("fileName", fileName.toLocalFile());
             return result;
         }
 
@@ -69,6 +67,7 @@ SKRResult PLMExporter::exportSQLiteDbTo(PLMProject    *db,
         return result;
     }
 
-    result.setSuccess(false);
+    result = SKRResult(SKRResult::Critical, this, "unsupported_finalType");
+
     return result;
 }

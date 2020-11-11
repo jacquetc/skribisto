@@ -35,7 +35,7 @@ SKRResult PLMPluginHub::set(int projectId, int id,
                            const QString& fieldName,
                            const QVariant& value)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId, tableName);
 
     queries.beginTransaction();
@@ -58,7 +58,7 @@ QVariant PLMPluginHub::get(int            projectId,
                            const QString& tableName,
                            const QString& fieldName) const
 {
-    SKRResult result;
+    SKRResult result(this);
     QVariant var;
     QVariant value;
     PLMSqlQueries queries(projectId, tableName);
@@ -76,7 +76,7 @@ QVariant PLMPluginHub::get(int            projectId,
 QList<int>PLMPluginHub::getIds(int            projectId,
                                const QString& tableName) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> list;
     QList<int> finalList;
@@ -96,7 +96,7 @@ SKRResult PLMPluginHub::ensureTableExists(int            projectId,
                                          const QString& tableName,
                                          const QString& sqlString)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     // TODO: check if table exist:
 

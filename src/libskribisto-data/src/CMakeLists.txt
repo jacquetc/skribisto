@@ -33,13 +33,7 @@ set(data_SRCS
     tasks/sql/plmexporter.cpp
     tasks/sql/plmimporter.cpp
     tasks/sql/plmproject.cpp
-    tasks/sql/plmproperty.cpp
     tasks/sql/plmupgrader.cpp
-    tasks/sql/tree/plmdbpaper.cpp
-    tasks/sql/tree/plmdbtree.cpp
-    tasks/sql/tree/plmnotetree.cpp
-    tasks/sql/tree/plmsheettree.cpp
-    tasks/sql/tree/plmtree.cpp
     models/plmsheetmodel.cpp
     models/plmsheetproxymodel.cpp
     models/plmsheetlistmodel.cpp
@@ -88,14 +82,7 @@ set(data_HDR
     tasks/sql/plmexporter.h
     tasks/sql/plmimporter.h
     tasks/sql/plmproject.h
-    tasks/sql/plmproperty.h
     tasks/sql/plmupgrader.h
-    tasks/sql/tree/plmdberror.h
-    tasks/sql/tree/plmdbpaper.h
-    tasks/sql/tree/plmdbtree.h
-    tasks/sql/tree/plmnotetree.h
-    tasks/sql/tree/plmsheettree.h
-    tasks/sql/tree/plmtree.h
     plminterfacesettings.h
     models/plmsheetmodel.h
     models/plmsheetproxymodel.h

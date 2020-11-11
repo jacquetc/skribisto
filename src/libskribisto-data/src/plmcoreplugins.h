@@ -6,6 +6,7 @@
 #include "plmcoreinterface.h"
 
 namespace PLMCorePlugins {
+
 void addCorePlugins()
 {
     PLMPluginLoader *loader = PLMPluginLoader::instance();

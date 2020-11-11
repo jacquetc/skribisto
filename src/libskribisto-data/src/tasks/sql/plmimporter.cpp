@@ -74,16 +74,14 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
         QFile file(fileNameString);
 
         if (!file.exists()) {
-            result.setSuccess(false);
-            result.addErrorCode("C_IMPORTER_file_does_not_exist");
+            result = SKRResult(SKRResult::Critical, this, "file_does_not_exist");
             result.addData("filePath", fileNameString);
             qWarning() << fileNameString + " doesn't exist";
             return QSqlDatabase();
         }
 
         if (!file.open(QIODevice::ReadOnly)) {
-            result.setSuccess(false);
-            result.addErrorCode("C_IMPORTER_file_cant_be_opened");
+            result = SKRResult(SKRResult::Critical, this, "file_cant_be_opened");
             result.addData("filePath", fileNameString);
             qWarning() << fileNameString + " can't be opened";
             return QSqlDatabase();
@@ -106,8 +104,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
         bool ok = sqlDb.open();
 
         if (!ok) {
-            result.setSuccess(false);
-            result.addErrorCode("C_IMPORTER_cant_open_database");
+            result = SKRResult(SKRResult::Critical, this, "cant_open_database");
             result.addData("filePath", tempFileName);
 
             return QSqlDatabase();
@@ -116,8 +113,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
         // upgrade :
         IFOKDO(result, PLMUpgrader::upgradeSQLite(sqlDb));
         IFKO(result) {
-            result.setSuccess(false);
-            result.addErrorCode("C_IMPORTER_upgrade_sqlite_failed");
+            result = SKRResult(SKRResult::Critical, this, "upgrade_sqlite_failed");
             result.addData("filePath", fileNameString);
             return QSqlDatabase();
         }
@@ -176,8 +172,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
     bool ok = sqlDb.open();
 
     if (!ok) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_cant_open_database");
+        result = SKRResult(SKRResult::Critical, this, "cant_open_database");
         result.addData("filePath", tempFileName);
         return QSqlDatabase();
     }
@@ -223,8 +218,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
         file.close();
 
         if(dbVersion == "-2"){
-            result.setSuccess(false);
-            result.addErrorCode("C_IMPORTER_no_db_version_found_in_sql_file");
+            result = SKRResult(SKRResult::Critical, this, "no_db_version_found_in_sql_file");
         }
     }
 
@@ -238,8 +232,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
     // upgrade :
     IFOKDO(result, PLMUpgrader::upgradeSQLite(sqlDb));
     IFKO(result) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_upgrade_sqlite_failed");
+        result = SKRResult(SKRResult::Critical, this, "upgrade_sqlite_failed");
         result.addData("filePath", tempFileName);
         return QSqlDatabase();
     }
@@ -309,7 +302,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     }
 
     if(projectId == -2){
-        result.addErrorCode("C_IMPORTER_plume_cant_create_empty_project");
+        result = SKRResult(SKRResult::Critical, this, "plume_cant_create_empty_project");
         return result;
     }
 
@@ -319,8 +312,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     tempDir.setAutoRemove(true);
 
     if (!tempDir.isValid()) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_no_temp_dir");
+        result = SKRResult(SKRResult::Critical, this, "plume_no_temp_dir");
         return result;
     }
 
@@ -336,8 +328,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     QFileInfo attendFileInfo(tempDirPath + "/attendance");
 
     if (!attendFileInfo.exists()) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_no_attend_file");
+        result = SKRResult(SKRResult::Critical, this, "no_attend_file");
         return result;
     }
 
@@ -345,8 +336,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     QFile attendFile(attendFileInfo.absoluteFilePath());
 
     if (!attendFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_cant_open_attend_file");
+        result = SKRResult(SKRResult::Critical, this, "cant_open_attend_file");
         return result;
     }
 
@@ -420,8 +410,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     QFileInfo treeFileInfo(tempDirPath + "/tree");
 
     if (!treeFileInfo.exists()) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_no_tree_file");
+        result = SKRResult(SKRResult::Critical, this, "no_tree_file");
         result.addData("filePath", treeFileInfo.absoluteFilePath());
         return result;
     }
@@ -430,8 +419,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     QFile treeFile(treeFileInfo.absoluteFilePath());
 
     if (!treeFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_cant_open_tree_file");
+        result = SKRResult(SKRResult::Critical, this, "cant_open_tree_file");
         result.addData("filePath", treeFileInfo.absoluteFilePath());
         return result;
     }
@@ -504,13 +492,12 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     }
 
     IFKO(result) {
-        result.addErrorCode("C_IMPORTER_error_while_exploiting_tree");
+        result = SKRResult(SKRResult::Critical, this, "error_while_exploiting_tree");
         return result;
     }
 
     if (xml.hasError()) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_error_in_tree_xml");
+        result = SKRResult(SKRResult::Critical, this, "error_in_tree_xml");
 
         result.addData("xmlError", QString("%1\nLine %2, column %3")
                        .arg(xml.errorString())
@@ -527,8 +514,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     QFileInfo dictFileInfo(tempDirPath + "/dicts/userDict.dict_plume");
 
     if (!dictFileInfo.exists()) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_no_dict_file");
+        result = SKRResult(SKRResult::Critical, this, "no_dict_file");
         result.addData("filePath", dictFileInfo.absoluteFilePath());
         return result;
     }
@@ -537,8 +523,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     QFile dictFile(dictFileInfo.absoluteFilePath());
 
     if (!dictFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_cant_open_dict_file");
+        result = SKRResult(SKRResult::Critical, this, "cant_open_dict_file");
         result.addData("filePath", dictFileInfo.absoluteFilePath());
         result.addData("fileError", dictFile.error());
         return result;
@@ -572,7 +557,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
                                                    const QXmlStreamReader& xml,
                                                    const QString         & tempDirPath)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     int plumeId  = xml.attributes().value("number").toInt();
     QString name = xml.attributes().value("name").toString();
@@ -581,8 +566,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
 
     result = plmdata->sheetHub()->addChildPaper(projectId, -1);
     IFKO(result) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_sheet_creation");
+        result = SKRResult(SKRResult::Critical, this, "sheet_creation");
         return result;
     }
     int sheetId = result.getData("sheetId", -2).toInt();
@@ -597,8 +581,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
     QFileInfo textFileInfo(tempDirPath + "/text/T" + QString::number(plumeId) + ".html");
 
     if (!textFileInfo.exists()) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_no_text_file");
+        result = SKRResult(SKRResult::Critical, this, "no_text_file");
         result.addData("filePath", textFileInfo.absoluteFilePath());
         return result;
     }
@@ -607,8 +590,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
     QFile textFile(textFileInfo.absoluteFilePath());
 
     if (!textFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_cant_open_text_file");
+        result = SKRResult(SKRResult::Critical, this, "cant_open_text_file");
         result.addData("filePath", textFileInfo.absoluteFilePath());
         return result;
     }
@@ -635,7 +617,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
     int  noteId = result.getData("noteId", -2).toInt(&ok);
 
     if (!ok) {
-        result.setSuccess(false);
+        result = SKRResult(SKRResult::Critical, this, "bad_conversion_to_int");
         return result;
     }
 
@@ -652,16 +634,14 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
     int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, sheetId);
 
     if (synopsisId == -2) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_no_synopsis_id");
+        result = SKRResult(SKRResult::Critical, this, "no_synopsis_id");
         return result;
     }
 
     QFileInfo synFileInfo(tempDirPath + "/text/S" + QString::number(plumeId) + ".html");
 
     if (!synFileInfo.exists()) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_no_synopsis_file");
+        result = SKRResult(SKRResult::Critical, this, "no_synopsis_file");
         result.addData("filePath", synFileInfo.absoluteFilePath());
         return result;
     }
@@ -670,8 +650,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
     QFile synFile(synFileInfo.absoluteFilePath());
 
     if (!synFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_cant_open_synopsis_file");
+        result = SKRResult(SKRResult::Critical, this, "cant_open_synopsis_file");
         result.addData("filePath", synFileInfo.absoluteFilePath());
         return result;
     }
@@ -716,13 +695,12 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
 SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const QString& name,
                                   const QString& tempDirPath)
 {
-    SKRResult result;
+    SKRResult result(this);
 
 
     result = plmdata->noteHub()->addChildPaper(projectId, -1);
     IFKO(result) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_note_creation");
+        result = SKRResult(SKRResult::Critical, this, "note_creation");
         return result;
     }
     int noteId = result.getData("paperId", -2).toInt();
@@ -739,8 +717,7 @@ SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const 
     QFileInfo attendFileInfo(tempDirPath + QString::number(plumeId) + ".html");
 
     if (!attendFileInfo.exists()) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_no_attend_file");
+        result = SKRResult(SKRResult::Critical, this, "no_attend_file");
         result.addData("filePath", attendFileInfo.absoluteFilePath());
         return result;
     }
@@ -749,8 +726,7 @@ SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const 
     QFile attendFile(attendFileInfo.absoluteFilePath());
 
     if (!attendFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        result.setSuccess(false);
-        result.addErrorCode("C_IMPORTER_cant_open_attend_file");
+        result = SKRResult(SKRResult::Critical, this, "cant_open_attend_file");
         result.addData("filePath", attendFileInfo.absoluteFilePath());
         return result;
     }
@@ -775,7 +751,7 @@ SKRResult PLMImporter::createTagsFromAttend(int                     projectId,
                                             const QString         & attributeName,
                                             const QStringList     & values)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     if (values.isEmpty()) {
         return result; // return successfully
@@ -786,8 +762,7 @@ SKRResult PLMImporter::createTagsFromAttend(int                     projectId,
     int  index = xml.attributes().value(attributeName).toInt(&ok);
 
     if (!ok) {
-        result.addErrorCode("C_IMPORTER_conversion_to_int");
-        result.setSuccess(false);
+        result = SKRResult(SKRResult::Critical, this, "conversion_to_int");
         return result;
     }
 

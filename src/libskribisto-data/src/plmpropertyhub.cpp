@@ -34,7 +34,7 @@ PLMPropertyHub::PLMPropertyHub(QObject       *parent,
 
 QHash<int, QString>PLMPropertyHub::getAllNames(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, QString>  hash;
     QHash<int, QVariant> out;
@@ -54,7 +54,7 @@ QHash<int, QString>PLMPropertyHub::getAllNames(int projectId) const
 
 QHash<int, QString>PLMPropertyHub::getAllValues(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, QString>  hash;
     QHash<int, QVariant> out;
@@ -74,7 +74,7 @@ QHash<int, QString>PLMPropertyHub::getAllValues(int projectId) const
 
 QHash<int, bool>PLMPropertyHub::getAllIsSystems(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, bool> hash;
     QHash<int, QVariant> out;
@@ -94,7 +94,7 @@ QHash<int, bool>PLMPropertyHub::getAllIsSystems(int projectId) const
 
 QHash<int, int>PLMPropertyHub::getAllPaperCodes(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, int> hash;
     QHash<int, QVariant> out;
@@ -114,7 +114,7 @@ QHash<int, int>PLMPropertyHub::getAllPaperCodes(int projectId) const
 
 QList<int>PLMPropertyHub::getAllIds(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> list;
     QList<int> out;
@@ -135,7 +135,7 @@ QList<int>PLMPropertyHub::getAllIds(int projectId) const
 
 QList<int>PLMPropertyHub::getAllIdsWithPaperCode(int projectId, int paperCode) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> list;
     QHash<int, QVariant> out;
@@ -158,7 +158,7 @@ SKRResult PLMPropertyHub::setProperty(int            projectId,
                                      const QString& name,
                                      const QString& value)
 {
-    SKRResult result;
+    SKRResult result(this);
     int propertyId = -1;
 
     if (propertyExists(projectId, paperCode, name)) {
@@ -182,7 +182,7 @@ SKRResult PLMPropertyHub::setPropertyById(int            projectId,
                                          const QString& name,
                                          const QString& value)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -305,7 +305,7 @@ SKRResult PLMPropertyHub::setName(int projectId, int propertyId, const QString& 
 
 QString PLMPropertyHub::getName(int projectId, int propertyId)
 {
-    SKRResult result;
+    SKRResult result(this);
     QString  string;
     QVariant out;
 
@@ -356,7 +356,7 @@ SKRResult PLMPropertyHub::setPaperCode(int projectId, int propertyId, int paperC
 
 int PLMPropertyHub::getPaperCode(int projectId, int propertyId)
 {
-    SKRResult result;
+    SKRResult result(this);
     int value;
     QVariant out;
 
@@ -510,7 +510,7 @@ SKRResult PLMPropertyHub::setIsSystem(int projectId, int propertyId, bool isSyst
 
 bool PLMPropertyHub::getIsSystem(int projectId, int propertyId) const
 {
-    SKRResult result;
+    SKRResult result(this);
     bool     value;
     QVariant out;
 
@@ -529,7 +529,7 @@ bool PLMPropertyHub::getIsSystem(int projectId, int propertyId) const
 QString PLMPropertyHub::getProperty(int projectId, int paperCode,
                                     const QString& name) const
 {
-    SKRResult result;
+    SKRResult result(this);
     QString  value;
 
     QHash<int, QVariant> out;
@@ -574,7 +574,7 @@ QString PLMPropertyHub::getProperty(int            projectId,
 
 QString PLMPropertyHub::getPropertyById(int projectId, int propertyId) const
 {
-    SKRResult result;
+    SKRResult result(this);
     QString  value;
     QVariant out;
 
@@ -659,7 +659,7 @@ bool PLMPropertyHub::propertyExists(int projectId, int paperCode, const QString&
 
 int PLMPropertyHub::findPropertyId(int projectId, int paperCode, const QString& name)
 {
-    SKRResult result;
+    SKRResult result(this);
     int value = 0;
 
     QHash<int, QVariant> out;

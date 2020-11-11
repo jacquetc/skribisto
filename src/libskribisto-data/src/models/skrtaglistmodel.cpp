@@ -153,7 +153,7 @@ bool SKRTagListModel::setData(const QModelIndex& index, const QVariant& value, i
         SKRTagItem *item = static_cast<SKRTagItem *>(index.internalPointer());
         int projectId    = item->projectId();
         int tagId        = item->tagId();
-        SKRResult result;
+        SKRResult result(this);
 
         this->disconnectFromPLMDataSignals();
 

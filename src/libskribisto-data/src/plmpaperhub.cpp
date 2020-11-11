@@ -52,7 +52,7 @@ QList<QHash<QString, QVariant> >PLMPaperHub::getAll(int projectId) const
 ///
 QHash<int, QString>PLMPaperHub::getAllTitles(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, QString>  hash;
     QHash<int, QVariant> out;
@@ -79,7 +79,7 @@ QHash<int, QString>PLMPaperHub::getAllTitles(int projectId) const
 
 QHash<int, int>PLMPaperHub::getAllIndents(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, int> hash;
     QHash<int, QVariant> out;
@@ -105,7 +105,7 @@ QHash<int, int>PLMPaperHub::getAllIndents(int projectId) const
  */
 QList<int>PLMPaperHub::getAllIds(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> list;
     QList<int> out;
@@ -128,7 +128,7 @@ QList<int>PLMPaperHub::getAllIds(int projectId) const
 ///
 int PLMPaperHub::getOverallSize()
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> list;
 
@@ -152,7 +152,7 @@ int PLMPaperHub::getOverallSize()
 
 QHash<int, int>PLMPaperHub::getAllSortOrders(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, int> hash;
     QHash<int, QVariant> out;
@@ -179,7 +179,7 @@ QHash<int, int>PLMPaperHub::getAllSortOrders(int projectId) const
 /// constraint)
 SKRResult PLMPaperHub::setId(int projectId, int paperId, int newId)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
 
     queries.beginTransaction();
@@ -318,7 +318,7 @@ SKRResult PLMPaperHub::setTrashedWithChildren(int  projectId,
                                              int  paperId,
                                              bool newTrashedState)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> childrenIdList = this->getAllChildren(projectId, paperId);
 
@@ -472,7 +472,7 @@ bool PLMPaperHub::hasChildren(int  projectId,
                               bool trashedAreIncluded,
                               bool notTrashedAreIncluded) const
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
 
     // if last of id list:
@@ -585,7 +585,7 @@ SKRResult PLMPaperHub::set(int             projectId,
                           const QVariant& value,
                           bool            setCurrentDateBool)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
 
     queries.beginTransaction();
@@ -614,7 +614,7 @@ SKRResult PLMPaperHub::set(int             projectId,
 //                                 const QVariant& value,
 //                                 bool            setCurrentDateBool)
 // {
-//    SKRResult result;
+//    SKRResult result(this);
 //    PLMSqlQueries queries(projectId,
 //                          "tbl_user_" + m_paperType + "_setting");
 
@@ -645,7 +645,7 @@ SKRResult PLMPaperHub::set(int             projectId,
 //                                    const QVariant& value,
 //                                    bool            setCurrentDateBool)
 // {
-//    SKRResult result;
+//    SKRResult result(this);
 //    PLMSqlQueries queries(projectId,
 //                          "tbl_user_" + m_paperType + "_doc_list");
 
@@ -673,7 +673,7 @@ SKRResult PLMPaperHub::set(int             projectId,
 
 QVariant PLMPaperHub::get(int projectId, int paperId, const QString& fieldName) const
 {
-    SKRResult result;
+    SKRResult result(this);
     QVariant var;
     QVariant value;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -694,7 +694,7 @@ QVariant PLMPaperHub::get(int projectId, int paperId, const QString& fieldName) 
 // QVariant PLMPaperHub::getSetting(int projectId, const QString& fieldName)
 // const
 // {
-//    SKRResult result;
+//    SKRResult result(this);
 //    QVariant var;
 //    QVariant value;
 //    PLMSqlQueries queries(projectId,
@@ -716,7 +716,7 @@ QVariant PLMPaperHub::get(int projectId, int paperId, const QString& fieldName) 
 // QVariant PLMPaperHub::getDocSetting(int projectId, int paperId,
 //                                    const QString& fieldName) const
 // {
-//    SKRResult result;
+//    SKRResult result(this);
 //    QVariant var;
 //    QVariant value;
 //    PLMSqlQueries queries(projectId,
@@ -743,7 +743,7 @@ int PLMPaperHub::getLastAddedId()
 
 SKRResult PLMPaperHub::renumberSortOrders(int projectId)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId,
                           "tbl_user_" + m_paperType + "_doc_list");
 
@@ -753,280 +753,6 @@ SKRResult PLMPaperHub::renumberSortOrders(int projectId)
     }
     return result;
 }
-
-// -----------------------------------------------------------------------------
-
-/////
-///// \brief PLMPaperHub::getParentList
-///// \param projectId
-///// \param paperId
-///// \return
-///// get a list of the parents' ids
-// QList<int>PLMPaperHub::getParentList(int projectId, int paperId) const
-// {
-//    Q_UNUSED(paperId)
-//    SKRResult result;
-//    QList<int> var;
-//    QList<int> list;
-//    PLMSqlQueries queries(projectId, "tbl_" + m_paperType,
-// PLMSqlQueries::ProjectDB);
-
-//    // find paperId indent
-//    // int paperIdIndent;
-//    // result = queries.get(paperId, "l_indent", paperIdIndent);
-
-
-//    // IFOKDO(result, queries.getValueByIdsWhere())
-
-
-//    IFOK(result) {
-//        list = var;
-//    }
-//    IFKO(result) {
-//        emit errorSent(result);
-//    }
-//    return list;
-// }
-
-//// -----------------------------------------------------------------------------
-
-// int PLMPaperHub::getRowAmongChildren(int projectId, int paperId) const
-// {
-//    int childIndent = getIndent(projectId, paperId);
-
-//    // if child is top level
-//    if (childIndent == 0)
-//    {
-//        return -1;
-//    }
-
-
-//    SKRResult result;
-//    PLMSqlQueries queries(projectId, m_tableName, PLMSqlQueries::ProjectDB);
-//    QList<int>    sortedIds;
-//    result = queries.getSortedIds(sortedIds);
-
-
-//    IFKO(result) {
-//        emit errorSent(result);
-
-//        return -2;
-//    }
-
-//    // if no item
-//    if (sortedIds.count() == 0)
-//    {
-//        return -1;
-//    }
-
-//    int childIndex = sortedIds.indexOf(paperId);
-
-//    // find first child
-//    int indent              = -2;
-//    int possibleParentId    = -2;
-//    int possibleParentIndex = childIndex;
-//    int firstChildIndex     = childIndex;
-
-//    while (indent != childIndent - 1) {
-//        firstChildIndex      = possibleParentIndex;
-//        possibleParentIndex -= 1;
-//        possibleParentId     = sortedIds.at(possibleParentIndex);
-//        indent               = getIndent(projectId, possibleParentId);
-//    }
-
-//    // find last child
-//    indent = -2;
-//    int possibleLastChildId = -2;
-//    int lastChildIndex      = childIndex;
-
-//    while (indent >= childIndent) {
-//        // if last of list
-//        if (sortedIds.count() - 1 == lastChildIndex) break;
-
-//        // else
-//        lastChildIndex     += 1;
-//        possibleLastChildId = sortedIds.at(lastChildIndex);
-//        indent              = getIndent(projectId, possibleLastChildId);
-//    }
-
-//    while (indent == childIndent) {
-//        lastChildIndex     -= 1;
-//        possibleLastChildId = sortedIds.at(lastChildIndex);
-//        indent              = getIndent(projectId, possibleLastChildId);
-//    }
-
-
-//    // find number of children:
-//    int childrenCount = lastChildIndex - firstChildIndex + 1;
-//    Q_UNUSED(childrenCount)
-
-//    int row = childIndex - firstChildIndex;
-
-//    return row;
-// }
-
-//// -----------------------------------------------------------------------------
-
-// int PLMPaperHub::getChildIdFromParentAndRow(int projectId, int parentId, int
-// row) const
-// {
-//    int parentIndent     = getIndent(projectId, parentId);
-//    int firstChildIndent = parentIndent + 1;
-
-
-//    SKRResult result;
-//    PLMSqlQueries queries(projectId, m_tableName, PLMSqlQueries::ProjectDB);
-
-//    QList<int> sortedIds;
-//    result = queries.getSortedIds(sortedIds);
-
-
-//    IFKO(result) {
-//        emit errorSent(result);
-
-//        return -2;
-//    }
-
-//    int parentIndex = sortedIds.indexOf(parentId);
-//    QList<int> listOfDirectChildren;
-//    int indent = firstChildIndent;
-//    int index  = parentIndex;
-
-//    while (indent >= firstChildIndent) {
-//        index += 1;
-
-//        int id = sortedIds.at(index);
-//        indent = getIndent(projectId, id);
-
-//        if (indent == firstChildIndent) {
-//            listOfDirectChildren.append(id);
-//        }
-//    }
-
-
-//    return listOfDirectChildren.at(row);
-// }
-
-//// -----------------------------------------------------------------------------
-
-// int PLMPaperHub::getChildRowCount(int projectId, int parentId) const
-// {
-//    if (parentId == -1) {
-//        SKRResult result;
-//        PLMSqlQueries queries(projectId, m_tableName,
-// PLMSqlQueries::ProjectDB);
-
-//        QList<int> sortedIds;
-//        result = queries.getSortedIds(sortedIds);
-
-
-//        IFKO(result) {
-//            emit errorSent(result);
-
-//            return -2;
-//        }
-
-//        QList<int> listOfDirectChildren;
-//        int indent = 0;
-//        int index  = 0;
-
-//        while (indent >= 0) {
-//            index += 1;
-
-//            if (index >= sortedIds.count()) break;
-
-//            int id = sortedIds.at(index);
-//            indent = getIndent(projectId, id);
-
-//            if (indent == 0) {
-//                listOfDirectChildren.append(id);
-//            }
-//        }
-
-//        return listOfDirectChildren.count();
-//    }
-
-
-//    int parentIndent     = getIndent(projectId, parentId);
-//    int firstChildIndent = parentIndent + 1;
-
-
-//    SKRResult result;
-//    PLMSqlQueries queries(projectId, m_tableName, PLMSqlQueries::ProjectDB);
-
-//    QList<int> sortedIds;
-//    result = queries.getSortedIds(sortedIds);
-
-
-//    IFKO(result) {
-//        emit errorSent(result);
-
-//        return -2;
-//    }
-
-//    int parentIndex = sortedIds.indexOf(parentId);
-//    QList<int> listOfDirectChildren;
-//    int indent = firstChildIndent;
-//    int index  = parentIndex;
-
-//    while (indent >= firstChildIndent) {
-//        index += 1;
-
-//        int id = sortedIds.at(index);
-//        indent = getIndent(projectId, id);
-
-//        if (indent == firstChildIndent) {
-//            listOfDirectChildren.append(id);
-//        }
-//    }
-
-
-//    return listOfDirectChildren.count();
-// }
-
-//// -----------------------------------------------------------------------------
-
-// int PLMPaperHub::getDirectParentId(int projectId, int paperId) const
-// {
-//    int childIndent = getIndent(projectId, paperId);
-
-//    // if child is top level
-//    if (childIndent == 0)
-//    {
-//        return -1;
-//    }
-
-
-//    SKRResult result;
-//    PLMSqlQueries queries(projectId, m_tableName, PLMSqlQueries::ProjectDB);
-//    QList<int>    sortedIds;
-//    result = queries.getSortedIds(sortedIds);
-
-
-//    IFKO(result) {
-//        emit errorSent(result);
-
-//        return -2;
-//    }
-
-//    // if no item
-//    if (sortedIds.count() == 0)
-//    {
-//        return -1;
-//    }
-
-//    int childIndex = sortedIds.indexOf(paperId);
-
-//    int indent              = -1;
-//    int possibleParentId    = -1;
-//    int possibleParentIndex = childIndex;
-
-//    while (indent != childIndent - 1) {
-//        possibleParentId = sortedIds.at(possibleParentIndex - 1);
-//        indent           = getIndent(projectId, possibleParentId);
-//    }
-//    return possibleParentId;
-// }
 
 // -----------------------------------------------------------------------------
 
@@ -1063,7 +789,7 @@ SKRResult PLMPaperHub::addPaperAbove(int projectId, int targetId)
 {
     int target_indent = getIndent(projectId, targetId);
 
-    SKRResult result;
+    SKRResult result(this);
     int finalSortOrder = this->getValidSortOrderBeforePaper(projectId, targetId);
 
     // finally add paper
@@ -1084,7 +810,7 @@ SKRResult PLMPaperHub::addPaperBelow(int projectId, int targetId)
 {
     int target_indent = getIndent(projectId, targetId);
 
-    SKRResult result;
+    SKRResult result(this);
     int finalSortOrder = this->getValidSortOrderAfterPaper(projectId, targetId);
 
     // finally add paper
@@ -1157,7 +883,7 @@ int PLMPaperHub::getValidSortOrderAfterPaper(int projectId, int paperId) const
         IFOKDO(result, queries.getSortedIds(idList));
 
         if (idList.isEmpty()) {
-            result.setSuccess(false);
+            result = SKRResult(SKRResult::Critical, this, "idList_is_empty");
         }
 
         int lastId = idList.last();
@@ -1338,7 +1064,7 @@ QList<int>PLMPaperHub::getAllSiblings(int projectId, int paperId) {
 
 SKRResult PLMPaperHub::addChildPaper(int projectId, int targetId)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
 
 
@@ -1347,7 +1073,7 @@ SKRResult PLMPaperHub::addChildPaper(int projectId, int targetId)
 
     // for invalid parent ("root")
     if (targetId == -2) {
-        result.setSuccess(false);
+        result = SKRResult(SKRResult::Critical, this, "invalid_root_parent");
         return result;
     }
 
@@ -1466,7 +1192,7 @@ SKRResult PLMPaperHub::movePaper(int  sourceProjectId,
                                 int  targetPaperId,
                                 bool after)
 {
-    SKRResult result;
+    SKRResult result(this);
     int targetProjectId = sourceProjectId;
     PLMSqlQueries queries(sourceProjectId, m_tableName);
 
@@ -1496,7 +1222,7 @@ SKRResult PLMPaperHub::movePaper(int  sourceProjectId,
 
 SKRResult PLMPaperHub::movePaperUp(int projectId, int paperId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -1516,7 +1242,7 @@ SKRResult PLMPaperHub::movePaperUp(int projectId, int paperId)
     IFOKDO(result, queries.getSortedIds(idList));
 
     if (idList.first() == paperId) {
-        result.setSuccess(false);
+        result = SKRResult(SKRResult::Critical, this, "first_in_idList_cant_move_up");
     }
     int targetPaperId = -2;
 
@@ -1536,14 +1262,14 @@ SKRResult PLMPaperHub::movePaperUp(int projectId, int paperId)
         }
 
         if (possibleTargetPaperId == -2) {
-            result.setSuccess(false);
+            result = SKRResult(SKRResult::Critical, this, "possibleTargetPaperId_is_-2");
         }
         IFOK(result) {
             int targetIndent = this->getIndent(projectId, targetPaperId);
             int paperIndent  = this->getIndent(projectId, paperId);
 
             if (paperIndent  != targetIndent) {
-                result.setSuccess(false);
+                result = SKRResult(SKRResult::Critical, this, "indents_dont_match");
             }
         }
     }
@@ -1560,7 +1286,7 @@ SKRResult PLMPaperHub::movePaperUp(int projectId, int paperId)
 
 SKRResult PLMPaperHub::movePaperDown(int projectId, int paperId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -1580,7 +1306,7 @@ SKRResult PLMPaperHub::movePaperDown(int projectId, int paperId)
     IFOKDO(result, queries.getSortedIds(idList));
 
     if (idList.last() == paperId) {
-        result.setSuccess(false);
+        result = SKRResult(SKRResult::Critical, this, "last_in_idList_cant_move_down");
     }
     int targetPaperId = -2;
 
@@ -1600,14 +1326,14 @@ SKRResult PLMPaperHub::movePaperDown(int projectId, int paperId)
         }
 
         if (possibleTargetPaperId == -2) {
-            result.setSuccess(false);
+            result = SKRResult(SKRResult::Critical, this, "possibleTargetPaperId_is_-2");
         }
         IFOK(result) {
             int targetIndent = this->getIndent(projectId, targetPaperId);
             int paperIndent  = this->getIndent(projectId, paperId);
 
             if (paperIndent  != targetIndent) {
-                result.setSuccess(false);
+                result = SKRResult(SKRResult::Critical, this, "indents_dont_match");
             }
         }
     }
@@ -1627,7 +1353,7 @@ SKRResult PLMPaperHub::movePaperAsChildOf(int projectId,
                                          int targetParentId,
                                          int wantedSortOrder)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     int validSortOrder = getValidSortOrderAfterPaper(projectId, targetParentId);
 
@@ -1636,8 +1362,7 @@ SKRResult PLMPaperHub::movePaperAsChildOf(int projectId,
     }
 
     if (wantedSortOrder > validSortOrder) {
-        result.setSuccess(false);
-        result.addErrorCode("C_PAPERHUB_wantedSortOrder_is_outside_scope_of_parent");
+        result = SKRResult(SKRResult::Critical, this, "wantedSortOrder_is_outside_scope_of_parent");
     }
     IFOK(result) {
         result = this->setSortOrder(projectId, noteId, wantedSortOrder);
@@ -1698,7 +1423,7 @@ int PLMPaperHub::getParentId(int projectId, int paperId)
 //                                               PLMPaperHub::Setting setting,
 //                                               const QVariant     & value)
 // {
-//    SKRResult result;
+//    SKRResult result(this);
 
 //    foreach(int projectId, plmProjectManager->projectIdList()) {
 //        if (setting == PLMPaperHub::SplitterState) {
@@ -1837,7 +1562,7 @@ int PLMPaperHub::getParentId(int projectId, int paperId)
 //                                             const QVariant              &
 // value)
 // {
-//    SKRResult result;
+//    SKRResult result(this);
 
 //    if (setting == PLMPaperHub::StackNumber) {
 //        result = setDocSetting(projectId, paperId, "l_statck", value, true);

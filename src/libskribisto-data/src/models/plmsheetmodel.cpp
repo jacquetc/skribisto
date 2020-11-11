@@ -220,7 +220,7 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
         SKRPaperItem *item = static_cast<SKRPaperItem *>(index.internalPointer());
         int projectId      = item->projectId();
         int paperId        = item->paperId();
-        SKRResult result;
+        SKRResult result(this);
 
         this->disconnectFromPLMDataSignals();
 

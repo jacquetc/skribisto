@@ -36,19 +36,6 @@ class EXPORT PLMPaperHub : public QObject {
 
 public:
 
-    // TODO: clean all settings
-    // settings
-    //    enum Setting { SplitterState, Minimap, Fit, SpellCheck, StackState,
-    // WindowState, SettingDate };
-    //    Q_ENUM(Setting)
-    //    enum Stack { Zero, One };
-    //    Q_ENUM(Stack)
-
-    //    // opened docs list
-    //    enum OpenedDocSetting { SheetId, StackNumber, Hovering, Visible,
-    // HasFocus,
-    //                            CursorPosition, HoveringGeometry, Date };
-    //    Q_ENUM(OpenedDocSetting)
 
     explicit PLMPaperHub(QObject       *parent,
                          const QString& tableName);

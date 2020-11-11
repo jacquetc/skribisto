@@ -21,7 +21,7 @@ SKRResult SKRProjectDictHub::getError()
 
 QStringList SKRProjectDictHub::getProjectDictList(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
     QHash<int, QVariant> hash;
     QStringList final;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -42,7 +42,7 @@ QStringList SKRProjectDictHub::getProjectDictList(int projectId) const
 SKRResult SKRProjectDictHub::setProjectDictList(int                projectId,
                                                const QStringList& projectDictList)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
 
     queries.beginTransaction();
@@ -80,7 +80,7 @@ SKRResult SKRProjectDictHub::setProjectDictList(int                projectId,
 
 SKRResult SKRProjectDictHub::addWordToProjectDict(int projectId, const QString& newWord)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
     int newId;
     QHash<QString, QVariant> values;
@@ -110,7 +110,7 @@ SKRResult SKRProjectDictHub::addWordToProjectDict(int projectId, const QString& 
 SKRResult SKRProjectDictHub::removeWordFromProjectDict(int            projectId,
                                                       const QString& wordtoRemove)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
 
     // find id :
@@ -123,8 +123,7 @@ SKRResult SKRProjectDictHub::removeWordFromProjectDict(int            projectId,
 
     IFOK(result) {
         if (hash.isEmpty()) {
-            result.setSuccess(false);
-            result.addErrorCode("C_PROJECTDICT_word_missing_from_dict");
+            result = SKRResult(SKRResult::Critical, this, "word_missing_from_dict");
         }
     }
     IFOK(result) {

@@ -3,6 +3,7 @@
 #include <QMetaType>
 #include <QtDebug>
 #include <QMessageLogger>
+#include <QMetaEnum>
 
 SKRErrorHub::SKRErrorHub(QObject *parent) : QObject(parent)
 {
@@ -16,10 +17,49 @@ void SKRErrorHub::addError(SKRResult result)
 
     // sent result signal for notification
 
-    emit sendNotification(SKRResult::Critical, result.getErrorCodeList().join("\n"));
-qCritical() << "\nCRITICAL\n" <<  result.getErrorCodeList().join("\n") << "\n\n"
-            << result.getDataHash().values();
+    QStringList errorCodeList = result.getErrorCodeList();
+    QList<QHash<QString, QVariant> > dataHashList = result.getDataHashList();
 
+    QMetaEnum statusMetaEnum = QMetaEnum::fromType<SKRResult::Status>();
+    QString consoleString = "\n" + QString(statusMetaEnum.valueToKey(result.getStatus())) + " : \n";
+
+    for(int i = 0 ; i < errorCodeList.count(); i++){
+
+        // fill string for console :
+
+        QString errorCode = errorCodeList.at(i);
+
+        consoleString += "    " + errorCode + "\n";
+
+        QHash<QString, QVariant> dataHash = dataHashList.at(i);
+
+
+        QHash<QString, QVariant>::const_iterator h = dataHash.constBegin();
+        while (h != dataHash.constEnd()) {
+
+            QString keyString = h.key();
+
+            QString valueString = h.value().toString();
+
+            if(valueString == ""){
+                valueString = "unreadable value";
+            }
+
+            consoleString += "        " + keyString + " : " + valueString  + "\n";
+
+
+            ++h;
+        }
+        //TODO: create notification  content :
+
+    }
+
+    emit sendNotification(SKRResult::Critical, result.getErrorCodeList().join("\n"));
+
+
+    for(const QString &consoleStr : consoleString.split("\n", Qt::KeepEmptyParts)){
+        qDebug() << consoleStr;
+    }
 }
 
 // QList<QString> SKRErrorHub::getlatestError() const

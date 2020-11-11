@@ -33,6 +33,8 @@
 
 
 class PLMSqlQueries : public QObject {
+    Q_OBJECT
+
 public:
 
     enum DBType { ProjectDB, UserDB };

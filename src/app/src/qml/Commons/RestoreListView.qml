@@ -101,7 +101,7 @@ RestoreListViewForm {
             var paperIdListToBeFinallyRestored = listView.getCheckedPaperIdList()
 
             restoreDocumentList(currentProjectId, paperIdListToBeFinallyRestored)
-            console.log('finally restore list', currentProjectId, paperIdListToBeFinallyRestored)
+            //console.log('finally restore list', currentProjectId, paperIdListToBeFinallyRestored)
 
         }
     }

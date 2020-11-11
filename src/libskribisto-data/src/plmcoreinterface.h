@@ -27,6 +27,7 @@
 #include "plminterfacesettings.h"
 
 class PLMBaseInterface : public PLMInterfaceSettings {
+
 public:
 
     virtual ~PLMBaseInterface() {}

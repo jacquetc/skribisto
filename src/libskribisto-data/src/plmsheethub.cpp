@@ -27,7 +27,7 @@ PLMSheetHub::PLMSheetHub(QObject *parent) : PLMPaperHub(parent, "tbl_sheet")
 
 QHash<QString, QVariant>PLMSheetHub::getSheetData(int projectId, int sheetId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<QString, QVariant> var;
     QHash<QString, QVariant> hash;
@@ -93,7 +93,7 @@ SKRResult PLMSheetHub::addPaperAbove(int projectId, int targetId)
 
 SKRResult PLMSheetHub::addPaperBelow(int projectId, int targetId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     // create synopsis
 
@@ -121,7 +121,7 @@ SKRResult PLMSheetHub::addPaperBelow(int projectId, int targetId)
 
 SKRResult PLMSheetHub::addChildPaper(int projectId, int targetId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     // create synopsis
 
