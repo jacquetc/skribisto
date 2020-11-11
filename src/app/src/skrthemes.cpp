@@ -170,6 +170,8 @@ void SKRThemes::applyTheme(const QString& themeName)
         normalObject.value("buttonForeground").toString("").toLower();
     m_buttonIcon =
         normalObject.value("buttonIcon").toString("").toLower();
+    m_buttonIconDisabled =
+        normalObject.value("buttonIconDisabled").toString("").toLower();
     m_accent     =  normalObject.value("accent").toString("").toLower();
     m_spellcheck =
         normalObject.value("spellcheck").toString("").toLower();
@@ -196,8 +198,8 @@ void SKRThemes::applyTheme(const QString& themeName)
         "buttonBackground").toString("").toLower();
     m_distractionFree_buttonForeground =  distractionFreeObject.value(
         "buttonForeground").toString("").toLower();
-    m_distractionFree_buttonIcon =  distractionFreeObject.value(
-        "buttonIcon").toString("").toLower();
+    m_distractionFree_buttonIcon =  distractionFreeObject.value("buttonIcon").toString("").toLower();
+    m_distractionFree_buttonIconDisabled =  distractionFreeObject.value("buttonIconDisabled").toString("").toLower();
     m_distractionFree_accent =
         distractionFreeObject.value("accent").toString("").toLower();
     m_distractionFree_spellcheck =  distractionFreeObject.value(
@@ -274,6 +276,7 @@ void SKRThemes::saveTheme(const QString& themeName) {
     normalObject.insert("buttonBackground",            m_buttonBackground);
     normalObject.insert("buttonForeground",            m_buttonForeground);
     normalObject.insert("buttonIcon",                  m_buttonIcon);
+    normalObject.insert("buttonIconDisabled",                  m_buttonIconDisabled);
     normalObject.insert("accent",                      m_accent);
     normalObject.insert("spellcheck",                  m_spellcheck);
     normalObject.insert("toolBarBackground",           m_toolBarBackground);
@@ -299,8 +302,8 @@ void SKRThemes::saveTheme(const QString& themeName) {
                                            m_distractionFree_buttonBackground);
     distractionFreeObject.insert("buttonForeground",
                                            m_distractionFree_buttonForeground);
-    distractionFreeObject.insert("buttonIcon",
-                                           m_distractionFree_buttonIcon);
+    distractionFreeObject.insert("buttonIcon", m_distractionFree_buttonIcon);
+    distractionFreeObject.insert("buttonIconDisabled", m_distractionFree_buttonIconDisabled);
     distractionFreeObject.insert("accent", m_distractionFree_accent);
     distractionFreeObject.insert("spellcheck",
                                  m_distractionFree_spellcheck);

@@ -306,7 +306,7 @@ RootPageForm {
 
             }
 
-            // renaming synopsis folder to locale:
+            // renaming synopsis folder to locale (if needed):
 
             var synopsisFolderId = plmData.noteHub().getSynopsisFolderId(projectId)
             var synopsisTitle = qsTr("Outlines")

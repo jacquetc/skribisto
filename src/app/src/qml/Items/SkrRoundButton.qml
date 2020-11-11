@@ -4,7 +4,7 @@ import ".."
 
 RoundButton {
     id: control
-    icon.color: control.action === null ? SkrTheme.buttonIcon : control.action.icon.color
+    icon.color: enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled
     Material.background: SkrTheme.buttonBackground
     Material.foreground: SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent

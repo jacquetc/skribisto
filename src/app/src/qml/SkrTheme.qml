@@ -16,6 +16,7 @@ QtObject {
     readonly property var buttonBackground:  Globals.fullScreen ? skrThemes.distractionFree_buttonBackground : skrThemes.buttonBackground
     readonly property var buttonForeground:  Globals.fullScreen ? skrThemes.distractionFree_buttonForeground : skrThemes.buttonForeground
     readonly property var buttonIcon:  Globals.fullScreen ?  skrThemes.distractionFree_buttonIcon : skrThemes.buttonIcon
+    readonly property var buttonIconDisabled:  Globals.fullScreen ?  skrThemes.distractionFree_buttonIconDisabled : skrThemes.buttonIconDisabled
     readonly property var accent:  Globals.fullScreen ? skrThemes.distractionFree_accent : skrThemes.accent
     readonly property var spellcheck:  Globals.fullScreen ? skrThemes.distractionFree_spellcheck : skrThemes.spellcheck
     readonly property var toolBarBackground:  Globals.fullScreen ? skrThemes.distractionFree_toolBarBackground : skrThemes.toolBarBackground
@@ -93,6 +94,8 @@ QtObject {
         list.push(skrThemes.distractionFree_buttonForeground)
         list.push(skrThemes.buttonIcon)
         list.push(skrThemes.distractionFree_buttonIcon)
+        list.push(skrThemes.buttonIconDisabled)
+        list.push(skrThemes.distractionFree_buttonIconDisabled)
         list.push(skrThemes.accent)
         list.push(skrThemes.distractionFree_accent)
         list.push(skrThemes.spellcheck)
@@ -126,6 +129,8 @@ QtObject {
         list.push("distractionFree_buttonForeground")
         list.push("buttonIcon")
         list.push("distractionFree_buttonIcon")
+        list.push("buttonIconDisabled")
+        list.push("distractionFree_buttonIconDisabled")
         list.push("accent")
         list.push("distractionFree_accent")
         list.push("spellcheck")
@@ -161,6 +166,8 @@ QtObject {
         list.push(qsTr("Button foreground"))
         list.push(qsTr("Button icon"))
         list.push(qsTr("Button icon"))
+        list.push(qsTr("Button icon (disabled)"))
+        list.push(qsTr("Button icon (disabled)"))
         list.push(qsTr("Accent"))
         list.push(qsTr("Accent"))
         list.push(qsTr("Spellcheck"))
@@ -250,6 +257,12 @@ QtObject {
             break;
         case "distractionFree_buttonIcon":
             skrThemes.distractionFree_buttonIcon = color
+            break;
+        case "buttonIconDisabled":
+            skrThemes.buttonIconDisabled = color
+            break;
+        case "distractionFree_buttonIconDisabled":
+            skrThemes.distractionFree_buttonIconDisabled = color
             break;
         case "accent":
             skrThemes.accent = color
