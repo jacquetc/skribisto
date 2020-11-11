@@ -220,13 +220,13 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
         SKRPaperItem *item = static_cast<SKRPaperItem *>(index.internalPointer());
         int projectId      = item->projectId();
         int paperId        = item->paperId();
-        PLMError error;
+        SKRResult result;
 
         this->disconnectFromPLMDataSignals();
 
         switch (role) {
         case SKRPaperItem::Roles::ProjectNameRole:
-            error = plmdata->projectHub()->setProjectName(projectId, value.toString());
+            result = plmdata->projectHub()->setProjectName(projectId, value.toString());
             break;
 
         case SKRPaperItem::Roles::ProjectIdRole:
@@ -240,48 +240,48 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
             break;
 
         case SKRPaperItem::Roles::NameRole:
-            error = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
+            result = plmdata->sheetHub()->setTitle(projectId, paperId, value.toString());
             break;
 
         case SKRPaperItem::Roles::LabelRole:
-            error = plmdata->sheetPropertyHub()->setProperty(projectId, paperId,
+            result = plmdata->sheetPropertyHub()->setProperty(projectId, paperId,
                                                              "label", value.toString());
             break;
 
         case SKRPaperItem::Roles::IndentRole:
-            error = plmdata->sheetHub()->setIndent(projectId, paperId, value.toInt());
+            result = plmdata->sheetHub()->setIndent(projectId, paperId, value.toInt());
             break;
 
         case SKRPaperItem::Roles::SortOrderRole:
-            error = plmdata->sheetHub()->setSortOrder(projectId, paperId, value.toInt());
+            result = plmdata->sheetHub()->setSortOrder(projectId, paperId, value.toInt());
             break;
 
         case SKRPaperItem::Roles::TrashedRole:
-            error = plmdata->sheetHub()->setTrashedWithChildren(projectId,
+            result = plmdata->sheetHub()->setTrashedWithChildren(projectId,
                                                                 paperId,
                                                                 value.toBool());
             break;
 
         case SKRPaperItem::Roles::CreationDateRole:
-            error = plmdata->sheetHub()->setCreationDate(projectId,
+            result = plmdata->sheetHub()->setCreationDate(projectId,
                                                          paperId,
                                                          value.toDateTime());
             break;
 
         case SKRPaperItem::Roles::UpdateDateRole:
-            error = plmdata->sheetHub()->setUpdateDate(projectId,
+            result = plmdata->sheetHub()->setUpdateDate(projectId,
                                                        paperId,
                                                        value.toDateTime());
             break;
 
         case SKRPaperItem::Roles::ContentDateRole:
-            error = plmdata->sheetHub()->setContentDate(projectId,
+            result = plmdata->sheetHub()->setContentDate(projectId,
                                                         paperId,
                                                         value.toDateTime());
             break;
 
         case SKRPaperItem::Roles::CharCountRole:
-            error = plmdata->sheetPropertyHub()->setProperty(projectId,
+            result = plmdata->sheetPropertyHub()->setProperty(projectId,
                                                              paperId,
                                                              "char_count",
                                                              QString::number(
@@ -290,7 +290,7 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
 
         case SKRPaperItem::Roles::WordCountRole:
 
-            error = plmdata->sheetPropertyHub()->setProperty(projectId,
+            result = plmdata->sheetPropertyHub()->setProperty(projectId,
                                                              paperId,
                                                              "word_count",
                                                              QString::number(
@@ -301,7 +301,7 @@ bool PLMSheetModel::setData(const QModelIndex& index, const QVariant& value, int
 
         this->connectToPLMDataSignals();
 
-        if (!error.isSuccess()) {
+        if (!result.isSuccess()) {
             return false;
         }
         item->invalidateData(role);

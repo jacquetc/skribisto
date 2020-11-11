@@ -7,7 +7,7 @@
 #include <QList>
 #include <QVariant>
 
-#include "plmerror.h"
+#include "skrresult.h"
 #include "skribisto_data_global.h"
 
 class EXPORT SKRProjectDictHub : public QObject
@@ -16,20 +16,20 @@ class EXPORT SKRProjectDictHub : public QObject
 public:
     explicit SKRProjectDictHub(QObject *parent);
 
-    Q_INVOKABLE PLMError                        getError();
+    Q_INVOKABLE SKRResult                        getError();
 
     Q_INVOKABLE QStringList getProjectDictList(int projectId) const;
-    Q_INVOKABLE PLMError setProjectDictList(int projectId, const QStringList &projectDictList);
+    Q_INVOKABLE SKRResult setProjectDictList(int projectId, const QStringList &projectDictList);
 
-    Q_INVOKABLE PLMError addWordToProjectDict(int projectId, const QString &newWord);
-    Q_INVOKABLE PLMError removeWordFromProjectDict(int projectId, const QString &wordtoRemove);
+    Q_INVOKABLE SKRResult addWordToProjectDict(int projectId, const QString &newWord);
+    Q_INVOKABLE SKRResult removeWordFromProjectDict(int projectId, const QString &wordtoRemove);
 private slots:
 
-    void setError(const PLMError& error);
+    void setError(const SKRResult& result);
 
 signals:
 
-    void             errorSent(const PLMError& error) const;
+    void             errorSent(const SKRResult& result) const;
     void projectDictFullyChanged(int projectId, const QStringList &projectDictList);
     void projectDictWordRemoved(int projectId, const QString &removedWord);
     void projectDictWordAdded(int projectId, const QString &addedWord);
@@ -37,7 +37,7 @@ signals:
 
 private:
     QString m_tableName;
-    PLMError m_error;
+    SKRResult m_error;
 
 
 };

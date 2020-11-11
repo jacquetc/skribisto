@@ -562,13 +562,13 @@ NotePadForm {
             console.log("notped :", notePadPrivateObject.newText)
 
             //create basic note
-            var error = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
-            if (!error.success){
+            var result = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
+            if (!result.success){
                 //TODO: add notification
                 return
             }
 
-            var noteId = error.getData("noteId", -2)
+            var noteId = result.getData("noteId", -2)
 
             // set title
             var title = titleTextField.text
@@ -973,13 +973,13 @@ NotePadForm {
                 onAccepted: {
 
                     //create basic note
-                    var error = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
-                    if (!error.success){
+                    var result = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
+                    if (!result.success){
                         //TODO: add notification
                         return
                     }
 
-                    var noteId = error.getData("noteId", -2)
+                    var noteId = result.getData("noteId", -2)
 
                     // set title
                     var title = titleTextField.text
@@ -1055,9 +1055,9 @@ NotePadForm {
                                     //create relationship with note
 
                                     var noteId = model.paperId
-                                    var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                                    var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
-                                    if (!error.success){
+                                    if (!result.success){
                                         //TODO: add notification
                                         eventPoint.accepted = true
                                         return
@@ -1078,9 +1078,9 @@ NotePadForm {
                             //                                //create relationship with note
 
                             //                                var noteId = model.paperId
-                            //                                var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                            //                                var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
-                            //                                if (!error.success){
+                            //                                if (!result.success){
                             //                                    //TODO: add notification
                             //                                    return
                             //                                }
@@ -1101,9 +1101,9 @@ NotePadForm {
                                     //create relationship with note
 
                                     var noteId = model.paperId
-                                    var error = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                                    var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
-                                    if (!error.success){
+                                    if (!result.success){
                                         //TODO: add notification
                                         event.accepted = true
                                         return

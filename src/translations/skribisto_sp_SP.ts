@@ -3126,6 +3126,10 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Center vertically the text cursor</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Minimalist menu tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Sheet</name>

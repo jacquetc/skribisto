@@ -12,7 +12,7 @@ PLMProjectManager::PLMProjectManager(QObject *parent) : QObject(parent)
 
 // -----------------------------------------------------------------------------
 
-PLMError PLMProjectManager::createNewEmptyDatabase(int& projectId)
+SKRResult PLMProjectManager::createNewEmptyDatabase(int& projectId)
 {
     return loadProject(QUrl(), projectId);
 }
@@ -24,31 +24,31 @@ PLMProjectManager *PLMProjectManager::m_instance = 0;
 // -----------------------------------------------------------------------------
 
 
-PLMError PLMProjectManager::loadProject(const QUrl& fileName, int& projectId)
+SKRResult PLMProjectManager::loadProject(const QUrl& fileName, int& projectId)
 {
-    PLMError error;
+    SKRResult result;
 
     m_projectIdIncrement += 1;
     projectId             = m_projectIdIncrement;
     PLMProject *project = new PLMProject(this, projectId, fileName);
 
-    // if error :
+    // if result :
     if (project->id() == -1) {
-        // emit plmTaskError->errorSent("E_PROJECT_PROJECTNOTLOADED",
+        // emit plmTaskError->errorSent("C_PROJECT_PROJECTNOTLOADED",
         // Q_FUNC_INFO, "");
         project->deleteLater();
         projectId = -1;
-        error.setSuccess(false);
-        return error;
+        result.setSuccess(false);
+        return result;
     }
 
     m_projectForIntMap.insert(projectId, project);
-    return error;
+    return result;
 }
 
 // -----------------------------------------------------------------------------
 
-PLMError PLMProjectManager::saveProject(int projectId)
+SKRResult PLMProjectManager::saveProject(int projectId)
 {
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
@@ -57,41 +57,41 @@ PLMError PLMProjectManager::saveProject(int projectId)
 
 // -----------------------------------------------------------------------------
 
-PLMError PLMProjectManager::saveProjectAs(int projectId,
+SKRResult PLMProjectManager::saveProjectAs(int projectId,
                                           const QString& type,
                                           const QUrl& path, bool isCopy)
 {
-    PLMError error;
+    SKRResult result;
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {
-        // emit plmTaskError->errorSent("E_PROJECT_PROJECTMISSING", Q_FUNC_INFO,
+        // emit plmTaskError->errorSent("C_PROJECT_PROJECTMISSING", Q_FUNC_INFO,
         // "No project with the id " + QString::number(projectId));
-        error.setErrorCode("E_PROJECT_project_missing");
-        error.addData("projectId", projectId);
-        error.setSuccess(false);
-        return error;
+        result.addErrorCode("C_PROJECT_project_missing");
+        result.addData("projectId", projectId);
+        result.setSuccess(false);
+        return result;
     }
 
     if (path.isEmpty()) {
-        // emit plmTaskError->errorSent("E_PROJECT_NOPATH", Q_FUNC_INFO, "No
+        // emit plmTaskError->errorSent("C_PROJECT_NOPATH", Q_FUNC_INFO, "No
         // project path set");
-        error.setErrorCode("E_PROJECT_no_path");
-        error.addData("projectId", projectId);
-        error.setSuccess(false);
-        return error;
+        result.addErrorCode("C_PROJECT_no_path");
+        result.addData("projectId", projectId);
+        result.setSuccess(false);
+        return result;
     }
 
     PLMExporter exporter(this);
 
-    IFOKDO(error, exporter.exportSQLiteDbTo(project, type, path));
-    IFOK(error) {
+    IFOKDO(result, exporter.exportSQLiteDbTo(project, type, path));
+    IFOK(result) {
         // if it's a true save and not a copy :
         if (!isCopy) {
             project->setPath(path);
         }
     }
-    return error;
+    return result;
 }
 
 PLMProject * PLMProjectManager::project(int projectId)
@@ -102,7 +102,7 @@ PLMProject * PLMProjectManager::project(int projectId)
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {
-        // emit plmTaskError->errorSent("E_PROJECTMISSING", Q_FUNC_INFO, "No
+        // emit plmTaskError->errorSent("C_PROJECTMISSING", Q_FUNC_INFO, "No
         // project with the id " + QString::number(projectId));
 
         qDebug() << "project not found : " << projectId;
@@ -120,14 +120,14 @@ QList<int>PLMProjectManager::projectIdList()
 
 // -----------------------------------------------------------------------------
 
-PLMError PLMProjectManager::closeProject(int projectId)
+SKRResult PLMProjectManager::closeProject(int projectId)
 {
-    PLMError error;
+    SKRResult result;
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {
-        error.setSuccess(false);
-        return error;
+        result.setSuccess(false);
+        return result;
     }
 
     m_projectForIntMap.remove(projectId);
@@ -138,8 +138,8 @@ PLMError PLMProjectManager::closeProject(int projectId)
         delete project;
         QSqlDatabase::removeDatabase(QString::number(projectId));
     }
-    error.setSuccess(true);
-    return error;
+    result.setSuccess(true);
+    return result;
 }
 
 // -----------------------------------------------------------------------------

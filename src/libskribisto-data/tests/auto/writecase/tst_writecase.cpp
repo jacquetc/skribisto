@@ -9,7 +9,7 @@
 
 
 #include "plmdata.h"
-#include "plmerror.h"
+#include "skrresult.h"
 
 class WriteCase : public QObject {
     Q_OBJECT
@@ -236,11 +236,11 @@ void WriteCase::setTrashed()
 {
     QSignalSpy spy(plmdata->sheetHub(), SIGNAL(trashedChanged(int,int,bool)));
 
-    PLMError error = plmdata->sheetHub()->setTrashedWithChildren(m_currentProjectId,
+    SKRResult result = plmdata->sheetHub()->setTrashedWithChildren(m_currentProjectId,
                                                                  2,
                                                                  true);
 
-    QCOMPARE(error.isSuccess(), true);
+    QCOMPARE(result.isSuccess(), true);
     QVERIFY(spy.count() > 1);
 
     // make sure the signal was emitted exactly one time
@@ -265,9 +265,9 @@ void WriteCase::restoring()
     // restoring
     QSignalSpy spy(plmdata->sheetHub(), SIGNAL(trashedChanged(int,int,bool)));
 
-    PLMError error = plmdata->sheetHub()->untrashOnlyOnePaper(m_currentProjectId, 2);
+    SKRResult result = plmdata->sheetHub()->untrashOnlyOnePaper(m_currentProjectId, 2);
 
-    QCOMPARE(error.isSuccess(), true);
+    QCOMPARE(result.isSuccess(), true);
 
     QVERIFY(spy.count() == 1);
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
@@ -442,25 +442,25 @@ void WriteCase::missingProjectError()
 
 void WriteCase::addPaper()
 {
-    PLMError error = plmdata->sheetHub()->addPaperBelow(m_currentProjectId, 1);
+    SKRResult result = plmdata->sheetHub()->addPaperBelow(m_currentProjectId, 1);
     int lastId     = plmdata->sheetHub()->getLastAddedId();
 
-    QVERIFY(error.isSuccess() == true);
+    QVERIFY(result.isSuccess() == true);
     QVERIFY(lastId > 1);
     int sortOrder1 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, 1);
     int sortOrder2 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, lastId);
 
     QVERIFY(sortOrder1 + 1000 == sortOrder2);
-    error  = plmdata->sheetHub()->addPaperBelow(m_currentProjectId, 100);
+    result  = plmdata->sheetHub()->addPaperBelow(m_currentProjectId, 100);
     lastId = plmdata->sheetHub()->getLastAddedId();
-    QVERIFY(error.isSuccess() == true);
+    QVERIFY(result.isSuccess() == true);
     QVERIFY(lastId > 1);
     sortOrder1 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, 100);
     sortOrder2 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, lastId);
     QVERIFY(sortOrder1 + 1000 == sortOrder2);
-    error  = plmdata->sheetHub()->addChildPaper(m_currentProjectId, 1);
+    result  = plmdata->sheetHub()->addChildPaper(m_currentProjectId, 1);
     lastId = plmdata->sheetHub()->getLastAddedId();
-    QVERIFY(error.isSuccess() == true);
+    QVERIFY(result.isSuccess() == true);
     QVERIFY(lastId > 1);
 }
 
@@ -468,9 +468,9 @@ void WriteCase::addPaper()
 
 void WriteCase::removePaper()
 {
-    PLMError error = plmdata->sheetHub()->removePaper(m_currentProjectId, 1);
+    SKRResult result = plmdata->sheetHub()->removePaper(m_currentProjectId, 1);
 
-    QVERIFY(error.isSuccess() == true);
+    QVERIFY(result.isSuccess() == true);
 }
 
 // ------------------------------------------------------------------------------------

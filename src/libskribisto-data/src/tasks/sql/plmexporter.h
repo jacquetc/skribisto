@@ -39,7 +39,7 @@ class PLMExporter : public QObject {
 public:
 
     explicit PLMExporter(QObject *parent = 0);
-    PLMError exportSQLiteDbTo(PLMProject    *db,
+    SKRResult exportSQLiteDbTo(PLMProject    *db,
                               const QString& type,
                               const QUrl   & fileName);
 

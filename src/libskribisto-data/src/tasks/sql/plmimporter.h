@@ -28,7 +28,7 @@
 #include <QUrl>
 #include <QXmlStreamReader>
 
-#include "plmerror.h"
+#include "skrresult.h"
 
 class PLMImporter : public QObject {
     Q_OBJECT
@@ -40,11 +40,12 @@ public:
     QSqlDatabase createSQLiteDbFrom(const QString& type,
                                     const QUrl   & fileName,
                                     int            projectId,
-                                    PLMError     & error);
+                                    SKRResult     & result);
     QSqlDatabase createEmptySQLiteProject(int       projectId,
-                                          PLMError& error);
+                                          SKRResult& result);
 
-    PLMError importPlumeCreatorProject(int projectId, const QUrl& plumeFileName);
+    SKRResult     importPlumeCreatorProject(const QUrl& plumeFileName,
+                                           const QUrl& skribistoFileName);
 
 signals:
 
@@ -53,19 +54,27 @@ public slots:
 private:
 
     //    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
-    // projectId, PLMError &error);
-    PLMError executeSQLFile(const QString& fileName,
-                            QSqlDatabase & sqlDB);
-    PLMError executeSQLString(const QString& sqlString,
-                              QSqlDatabase & sqlDB);
-    PLMError createPapersAndAssociations(int projectId, int indent, const QXmlStreamReader &xml, const QString &tempDirPath);
-    PLMError createNote(int projectId, int indent, int plumeId, const QString &name, const QString &tempDirPath);
-    PLMError createTagsFromAttend(int projectId, int noteId, const QXmlStreamReader &xml, const QString &attributeName, const QStringList &values);
+    // projectId, SKRResult &result);
+
+    SKRResult createPapersAndAssociations(int                     projectId,
+                                         int                     indent,
+                                         const QXmlStreamReader& xml,
+                                         const QString         & tempDirPath);
+    SKRResult createNote(int            projectId,
+                        int            indent,
+                        int            plumeId,
+                        const QString& name,
+                        const QString& tempDirPath);
+    SKRResult createTagsFromAttend(int                     projectId,
+                                  int                     noteId,
+                                  const QXmlStreamReader& xml,
+                                  const QString         & attributeName,
+                                  const QStringList     & values);
 
 private:
 
     // used to track old plume id with new skribisto note id
-    QHash<int,int> m_attendanceConversionHash;
+    QHash<int, int>m_attendanceConversionHash;
 };
 
 #endif // PLMIMPORTER_H

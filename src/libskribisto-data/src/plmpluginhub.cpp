@@ -30,27 +30,27 @@ PLMPluginHub::PLMPluginHub(QObject *parent) : QObject(parent)
 void     PLMPluginHub::reloadPlugins()
 {}
 
-PLMError PLMPluginHub::set(int projectId, int id,
+SKRResult PLMPluginHub::set(int projectId, int id,
                            const QString& tableName,
                            const QString& fieldName,
                            const QVariant& value)
 {
-    PLMError error;
+    SKRResult result;
     PLMSqlQueries queries(projectId, tableName);
 
     queries.beginTransaction();
-    error = queries.set(id, fieldName, value);
+    result = queries.set(id, fieldName, value);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return error;
+    return result;
 }
 
 QVariant PLMPluginHub::get(int            projectId,
@@ -58,45 +58,45 @@ QVariant PLMPluginHub::get(int            projectId,
                            const QString& tableName,
                            const QString& fieldName) const
 {
-    PLMError error;
+    SKRResult result;
     QVariant var;
-    QVariant result;
+    QVariant value;
     PLMSqlQueries queries(projectId, tableName);
 
-    error = queries.get(id, fieldName, var);
-    IFOK(error) {
-        result = var;
+    result = queries.get(id, fieldName, var);
+    IFOK(result) {
+        value = var;
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return value;
 }
 
 QList<int>PLMPluginHub::getIds(int            projectId,
                                const QString& tableName) const
 {
-    PLMError error;
+    SKRResult result;
 
     QList<int> list;
-    QList<int> result;
+    QList<int> finalList;
     PLMSqlQueries queries(projectId, tableName);
 
-    error = queries.getIds(list);
-    IFOK(error) {
-        result = list;
+    result = queries.getIds(list);
+    IFOK(result) {
+        finalList = list;
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return finalList;
 }
 
-PLMError PLMPluginHub::ensureTableExists(int            projectId,
+SKRResult PLMPluginHub::ensureTableExists(int            projectId,
                                          const QString& tableName,
                                          const QString& sqlString)
 {
-    PLMError error;
+    SKRResult result;
 
     // TODO: check if table exist:
 
@@ -106,16 +106,16 @@ PLMError PLMPluginHub::ensureTableExists(int            projectId,
 
     PLMSqlQueries queries(projectId, tableName);
 
-    error = queries.injectDirectSql(sqlString);
+    result = queries.injectDirectSql(sqlString);
 
-    IFKO(error) {
+    IFKO(result) {
         queries.rollback();
     }
-    IFOK(error) {
+    IFOK(result) {
         queries.commit();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return error;
+    return result;
 }

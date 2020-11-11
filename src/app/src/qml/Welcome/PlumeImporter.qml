@@ -3,7 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.platform 1.1 as LabPlatform
 import QtQml 2.15
-import eu.skribisto.plmerror 1.0
+import eu.skribisto.result 1.0
 import "../Items"
 import "../Commons"
 import ".."
@@ -52,4 +52,13 @@ PlumeImporterForm {
         }
     }
 
+
+
+
+
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            selectPlumeProjectFileToolButton.forceActiveFocus()
+        }
+    }
 }

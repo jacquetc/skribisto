@@ -309,18 +309,18 @@ void SKRSearchPaperListProxyModel::setTagIdListFilter(const QList<int>& tagIdLis
 // --------------------------------------------------------------
 
 QList<int>SKRSearchPaperListProxyModel::getCheckedIdsList() {
-    QList<int> result;
+    QList<int> list;
 
     QHash<int, Qt::CheckState>::const_iterator i = m_checkedIdsHash.constBegin();
 
     while (i != m_checkedIdsHash.constEnd()) {
         if ((i.value() == Qt::Checked) || (i.value() == Qt::PartiallyChecked)) {
-            result << i.key();
+            list << i.key();
             ++i;
         }
     }
 
-    return result;
+    return list;
 }
 
 // --------------------------------------------------------------
@@ -412,7 +412,7 @@ void SKRSearchPaperListProxyModel::setCheckedIdsList(const QList<int>checkedIdsL
 /// more or less 1 second between items' trashed dates
 QList<int>SKRSearchPaperListProxyModel::findIdsTrashedAtTheSameTimeThan(int projectId,
                                                                         int paperId) {
-    QList<int> result;
+    QList<int> list;
 
     QDateTime parentDate = m_paperHub->getTrashedDate(projectId, paperId);
 
@@ -422,7 +422,7 @@ QList<int>SKRSearchPaperListProxyModel::findIdsTrashedAtTheSameTimeThan(int proj
             QDateTime childDate = m_paperHub->getTrashedDate(projectId, id);
 
             if (qAbs(childDate.secsTo(parentDate)) < 1) {
-                result.append(id);
+                list.append(id);
             }
         }
     }
@@ -436,13 +436,13 @@ QList<int>SKRSearchPaperListProxyModel::findIdsTrashedAtTheSameTimeThan(int proj
             QDateTime childDate = m_paperHub->getTrashedDate(projectId, id);
 
             if (qAbs(childDate.secsTo(parentDate)) < 1) {
-                result.append(id);
+                list.append(id);
             }
         }
     }
 
 
-    return result;
+    return list;
 }
 
 // --------------------------------------------------------------
@@ -490,7 +490,7 @@ void SKRSearchPaperListProxyModel::setNavigateByBranchesEnabled(bool navigateByB
 bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow,
                                                     const QModelIndex& sourceParent) const
 {
-    bool result = true;
+    bool value = true;
 
     QModelIndex index = this->sourceModel()->index(sourceRow, 0, sourceParent);
 
@@ -502,7 +502,7 @@ bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow
 
     //        // avoid project item
     //        if (item->data(SKRPaperItem::Roles::PaperIdRole).toInt() == -1) {
-    //            result = false;
+    //            value = false;
     //        }
 
     // displays or not project list :
@@ -522,55 +522,55 @@ bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow
     }
 
     // project filtering :
-    if (result &&
+    if (value &&
         (item->data(SKRPaperItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter)) {
-        result = true;
+        value = true;
     }
-    else if (result) {
-        result = false;
+    else if (value) {
+        value = false;
     }
 
     // trashed filtering :
-    if (result && (item->data(SKRPaperItem::Roles::TrashedRole).toBool() == true)) {
-        result = m_showTrashedFilter;
+    if (value && (item->data(SKRPaperItem::Roles::TrashedRole).toBool() == true)) {
+        value = m_showTrashedFilter;
     }
 
     // 'not trashed' filtering :
-    if (result && (item->data(SKRPaperItem::Roles::TrashedRole).toBool() == false)) {
-        result = m_showNotTrashedFilter;
+    if (value && (item->data(SKRPaperItem::Roles::TrashedRole).toBool() == false)) {
+        value = m_showNotTrashedFilter;
     }
 
 
-    if (result &&
+    if (value &&
         item->data(SKRPaperItem::Roles::NameRole).toString().contains(m_textFilter,
                                                                       Qt::CaseInsensitive))
     {
-        result = true;
+        value = true;
     }
-    else if (result) {
-        result = false;
+    else if (value) {
+        value = false;
     }
 
 
     // paperIdListFiltering :
     if (!m_paperIdListFilter.isEmpty()) {
-        if (result &&
+        if (value &&
             m_paperIdListFilter.contains(item->data(
                                              SKRPaperItem::Roles::PaperIdRole).toInt()))
         {
-            result = true;
+            value = true;
         }
-        else if (result) {
-            result = false;
+        else if (value) {
+            value = false;
         }
     }
 
 
     // parentId filtering :
-    if (result && (m_parentIdFilter != -2)) {
+    if (value && (m_parentIdFilter != -2)) {
         if (m_showParentWhenParentIdFilter &&
             (m_parentIdFilter == item->data(SKRPaperItem::Roles::PaperIdRole).toInt())) {
-            result = true;
+            value = true;
         }
         else {
             SKRPaperListModel *model =
@@ -579,10 +579,10 @@ bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow
 
             if (parentItem) {
                 if (parentItem->paperId() == m_parentIdFilter) {
-                    result = true;
+                    value = true;
                 }
                 else {
-                    result = false;
+                    value = false;
                 }
             }
         }
@@ -590,14 +590,14 @@ bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow
 
     // tagId filtering
 
-    if (result && !m_tagIdListFilter.isEmpty() && (m_projectIdFilter != -2)) {
+    if (value && !m_tagIdListFilter.isEmpty() && (m_projectIdFilter != -2)) {
         QList<int> tagIds = plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter,
                                                                  SKRTagHub::Note,
                                                                  item->data(SKRPaperItem::
                                                                             Roles::
                                                                             PaperIdRole).toInt());
 
-        result = false;
+        value = false;
 
         int tagCountGoal = m_tagIdListFilter.count();
         int tagCount     = 0;
@@ -609,11 +609,11 @@ bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow
         }
 
         if (tagCount == tagCountGoal) {
-            result = true;
+            value = true;
         }
     }
 
-    return result;
+    return value;
 }
 
 void SKRSearchPaperListProxyModel::setProjectIdFilter(int projectIdFilter)
@@ -956,7 +956,7 @@ int SKRSearchPaperListProxyModel::findVisualIndex(int projectId, int paperId)
 {
     int rowCount = this->rowCount(QModelIndex());
 
-    int result = -2;
+    int visualIndex = -2;
 
     QModelIndex modelIndex;
 
@@ -967,11 +967,11 @@ int SKRSearchPaperListProxyModel::findVisualIndex(int projectId, int paperId)
                         SKRPaperItem::Roles::ProjectIdRole).toInt() == projectId)
             && (this->data(modelIndex,
                            SKRPaperItem::Roles::PaperIdRole).toInt() == paperId)) {
-            result = i;
+            visualIndex = i;
             break;
         }
     }
-    return result;
+    return visualIndex;
 }
 
 // --------------------------------------------------------------
@@ -1034,7 +1034,7 @@ void SKRSearchPaperListProxyModel::addChildItem(int projectId,
                                                 int parentPaperId,
                                                 int visualIndex)
 {
-    PLMError error = m_paperHub->addChildPaper(projectId, parentPaperId);
+    SKRResult result = m_paperHub->addChildPaper(projectId, parentPaperId);
 
     this->setForcedCurrentIndex(visualIndex);
 }
@@ -1045,7 +1045,7 @@ void SKRSearchPaperListProxyModel::addItemAbove(int projectId,
                                                 int parentPaperId,
                                                 int visualIndex)
 {
-    PLMError error = m_paperHub->addPaperAbove(projectId, parentPaperId);
+    SKRResult result = m_paperHub->addPaperAbove(projectId, parentPaperId);
 
     this->setForcedCurrentIndex(visualIndex);
 }
@@ -1056,7 +1056,7 @@ void SKRSearchPaperListProxyModel::addItemBelow(int projectId,
                                                 int parentPaperId,
                                                 int visualIndex)
 {
-    PLMError error = m_paperHub->addPaperBelow(projectId, parentPaperId);
+    SKRResult result = m_paperHub->addPaperBelow(projectId, parentPaperId);
 
     this->setForcedCurrentIndex(visualIndex);
 }
@@ -1070,7 +1070,7 @@ void SKRSearchPaperListProxyModel::moveUp(int projectId, int paperId, int visual
     if (!item) {
         return;
     }
-    PLMError error = m_paperHub->movePaperUp(projectId, paperId);
+    SKRResult result = m_paperHub->movePaperUp(projectId, paperId);
 
     this->setForcedCurrentIndex(visualIndex - 1);
 }
@@ -1084,7 +1084,7 @@ void SKRSearchPaperListProxyModel::moveDown(int projectId, int paperId, int visu
     if (!item) {
         return;
     }
-    PLMError error = m_paperHub->movePaperDown(projectId, paperId);
+    SKRResult result = m_paperHub->movePaperDown(projectId, paperId);
 
     this->setForcedCurrentIndex(visualIndex + 1);
 }
@@ -1158,7 +1158,7 @@ void SKRSearchPaperListProxyModel::moveItem(int from, int to) {
 
     // beginMoveRows(QModelIndex(), modelFrom, modelFrom, QModelIndex(),
     // modelTo);
-    // PLMError error = m_paperHub->movePaper(fromProjectId,
+    // SKRResult result = m_paperHub->movePaper(fromProjectId,
     // fromPaperId, toPaperId);
     this->setData(fromIndex, finalSortOrder, SKRPaperItem::Roles::SortOrderRole);
 

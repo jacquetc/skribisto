@@ -27,7 +27,7 @@
 #include <QList>
 #include <QVariant>
 
-#include "plmerror.h"
+#include "skrresult.h"
 #include "plmpropertyhub.h"
 #include "skribisto_data_global.h"
 
@@ -59,46 +59,46 @@ public:
     QHash<int, int>                 getAllIndents(int projectId) const;
     Q_INVOKABLE QList<int>          getAllIds(int projectId) const;
     int                             getOverallSize();
-    PLMError                        setId(int projectId,
+    SKRResult                        setId(int projectId,
                                           int paperId,
                                           int newId);
-    Q_INVOKABLE virtual PLMError    setTitle(int            projectId,
+    Q_INVOKABLE virtual SKRResult    setTitle(int            projectId,
                                              int            paperId,
                                              const QString& newTitle);
     Q_INVOKABLE QString             getTitle(int projectId,
                                              int paperId) const;
 
-    PLMError                        setIndent(int projectId,
+    SKRResult                        setIndent(int projectId,
                                               int paperId,
                                               int newIndent);
     int                             getIndent(int projectId,
                                               int paperId) const;
-    PLMError                        setSortOrder(int projectId,
+    SKRResult                        setSortOrder(int projectId,
                                                  int paperId,
                                                  int newSortOrder);
     int                             getSortOrder(int projectId,
                                                  int paperId) const;
-    Q_INVOKABLE PLMError            setContent(int            projectId,
+    Q_INVOKABLE SKRResult            setContent(int            projectId,
                                                int            paperId,
                                                const QString& newContent);
     Q_INVOKABLE QString             getContent(int projectId,
                                                int paperId) const;
-    Q_INVOKABLE virtual PLMError    setTrashedWithChildren(int  projectId,
+    Q_INVOKABLE virtual SKRResult    setTrashedWithChildren(int  projectId,
                                                            int  paperId,
                                                            bool newTrashedState);
     Q_INVOKABLE bool                getTrashed(int projectId,
                                                int paperId) const;
-    PLMError                        setCreationDate(int              projectId,
+    SKRResult                        setCreationDate(int              projectId,
                                                     int              paperId,
                                                     const QDateTime& newDate);
     QDateTime                       getCreationDate(int projectId,
                                                     int paperId) const;
-    PLMError                        setUpdateDate(int              projectId,
+    SKRResult                        setUpdateDate(int              projectId,
                                                   int              paperId,
                                                   const QDateTime& newDate);
     QDateTime                       getUpdateDate(int projectId,
                                                   int paperId) const;
-    PLMError                        setContentDate(int              projectId,
+    SKRResult                        setContentDate(int              projectId,
                                                    int              paperId,
                                                    const QDateTime& newDate);
     QDateTime                       getContentDate(int projectId,
@@ -110,8 +110,8 @@ public:
 
     Q_INVOKABLE int getTopPaperId(int projectId) const;
 
-    PLMError        getError();
-    PLMError        set(int             projectId,
+    SKRResult        getError();
+    SKRResult        set(int             projectId,
                         int             paperId,
                         const QString & fieldName,
                         const QVariant& value,
@@ -121,23 +121,23 @@ public:
                  const QString& fieldName) const;
 
     Q_INVOKABLE int              getLastAddedId();
-    PLMError                     addPaper(const QHash<QString, QVariant>& values,
+    SKRResult                     addPaper(const QHash<QString, QVariant>& values,
                                           int projectId);
-    Q_INVOKABLE virtual PLMError addPaperAbove(int projectId,
+    Q_INVOKABLE virtual SKRResult addPaperAbove(int projectId,
                                                int targetId);
-    Q_INVOKABLE virtual PLMError addPaperBelow(int projectId,
+    Q_INVOKABLE virtual SKRResult addPaperBelow(int projectId,
                                                int targetId);
-    Q_INVOKABLE virtual PLMError addChildPaper(int projectId,
+    Q_INVOKABLE virtual SKRResult addChildPaper(int projectId,
                                                int targetId);
-    virtual PLMError             removePaper(int projectId,
+    virtual SKRResult             removePaper(int projectId,
                                              int targetId);
 
 
-    Q_INVOKABLE PLMError movePaperUp(int projectId,
+    Q_INVOKABLE SKRResult movePaperUp(int projectId,
                                      int paperId);
-    Q_INVOKABLE PLMError movePaperDown(int projectId,
+    Q_INVOKABLE SKRResult movePaperDown(int projectId,
                                        int paperId);
-    Q_INVOKABLE PLMError movePaperAsChildOf(int projectId,
+    Q_INVOKABLE SKRResult movePaperAsChildOf(int projectId,
                                             int noteId,
                                             int targetParentId,
                                             int directChildIndex = -1);
@@ -145,14 +145,14 @@ public:
                                 int paperId);
 
     //    // settings :
-    //    PLMError settings_setStackSetting(Stack           stack,
+    //    SKRResult settings_setStackSetting(Stack           stack,
     //                                      Setting         setting,
     //                                      const QVariant& value);
     //    QVariant settings_getStackSetting(Stack   stack,
     //                                      Setting setting) const;
 
     //    // opened docs settings :
-    //    PLMError settings_setDocSetting(int              projectId,
+    //    SKRResult settings_setDocSetting(int              projectId,
     //                                    int              paperId,
     //                                    OpenedDocSetting setting,
     //                                    const QVariant & value);
@@ -172,7 +172,7 @@ public:
     //    int       getChildRowCount(int projectId,
     //                               int parentId) const;
 
-    PLMError                     renumberSortOrders(int projectId);
+    SKRResult                     renumberSortOrders(int projectId);
     int                          getValidSortOrderBeforePaper(int projectId,
                                                               int paperId) const;
     int                          getValidSortOrderAfterPaper(int projectId,
@@ -186,7 +186,7 @@ public:
                                                 int paperId);
     Q_INVOKABLE QDateTime        getTrashedDate(int projectId,
                                                 int paperId) const;
-    Q_INVOKABLE virtual PLMError untrashOnlyOnePaper(int projectId,
+    Q_INVOKABLE virtual SKRResult untrashOnlyOnePaper(int projectId,
                                                      int paperId);
 
 
@@ -195,32 +195,32 @@ public:
     Q_INVOKABLE virtual bool          hasAttribute(int            projectId,
                                                    int            paperId,
                                                    const QString& attribute) = 0;
-    Q_INVOKABLE virtual PLMError      addAttribute(int            projectId,
+    Q_INVOKABLE virtual SKRResult      addAttribute(int            projectId,
                                                    int            paperId,
                                                    const QString& attribute) = 0;
-    Q_INVOKABLE virtual PLMError      removeAttribute(int            projectId,
+    Q_INVOKABLE virtual SKRResult      removeAttribute(int            projectId,
                                                       int            paperId,
                                                       const QString& attribute) = 0;
 
 private:
 
-    PLMError movePaper(int  projectId,
+    SKRResult movePaper(int  projectId,
                        int  sourcePaperId,
                        int  targetPaperId,
                        bool after = false);
 
-    PLMError setTrashedDateToNow(int projectId,
+    SKRResult setTrashedDateToNow(int projectId,
                                  int paperId);
-    PLMError setTrashedDateToNull(int projectId,
+    SKRResult setTrashedDateToNull(int projectId,
                                   int paperId);
 
 private slots:
 
-    void setError(const PLMError& error);
+    void setError(const SKRResult& result);
 
 signals:
 
-    void             errorSent(const PLMError& error) const;
+    void             errorSent(const SKRResult& result) const;
     void             projectModified(int projectId); // for save
     void             paperIdChanged(int projectId,
                                     int paperId,
@@ -276,7 +276,7 @@ protected:
 
     QString m_tableName, m_paperType;
     PLMPropertyHub *m_propertyHub;
-    PLMError m_error;
+    SKRResult m_error;
     int m_last_added_id;
 };
 

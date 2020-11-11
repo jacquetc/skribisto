@@ -35,8 +35,8 @@ PLMSqlQueries::PLMSqlQueries(int            projectId,
     PLMProject *project = plmProjectManager->project(m_projectId);
 
     if (!project) {
-        qDebug() << "PLMSqlQueries: error tableName" << tableName;
-        qDebug() << "PLMSqlQueries: error projectId" << m_projectId;
+        qDebug() << "PLMSqlQueries: result tableName" << tableName;
+        qDebug() << "PLMSqlQueries: result projectId" << m_projectId;
         return;
     }
 
@@ -67,9 +67,9 @@ void PLMSqlQueries::commit()
     m_sqlDB.commit();
 }
 
-PLMError PLMSqlQueries::get(int id, const QString& valueName, QVariant& result) const
+SKRResult PLMSqlQueries::get(int id, const QString& valueName, QVariant& out) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
         QSqlQuery query(m_sqlDB);
@@ -79,27 +79,27 @@ PLMError PLMSqlQueries::get(int id, const QString& valueName, QVariant& result) 
         ;
         query.prepare(queryStr);
         query.bindValue(":id", id);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
 
         while (query.next()) {
-            result = query.value(0);
+            out = query.value(0);
         }
 
         if (query.size() == 0) {
-            error.setSuccess(false);
+            result.setSuccess(false);
         }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
-                                          QHash<QString, QVariant>& result) const
+SKRResult PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
+                                          QHash<QString, QVariant>& out) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
-        result.clear();
+        out.clear();
         QSqlQuery query(m_sqlDB);
         QString   valuesStr;
 
@@ -122,75 +122,75 @@ PLMError PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
         ;
         query.prepare(queryStr);
         query.bindValue(":id", id);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
 
         while (query.next()) {
             for(const QString& valueName : valueList) {
-                result.insert(valueName, query.value(valueName));
+                out.insert(valueName, query.value(valueName));
             }
         }
 
         if (query.size() == 0) {
-            error.setSuccess(false);
+            result.setSuccess(false);
         }
 
         //        if(result.isEmpty()){
-        //            error.setSuccess(false);
+        //            result.setSuccess(false);
         //        }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::getSortedIds(QList<int>& result) const
+SKRResult PLMSqlQueries::getSortedIds(QList<int>& out) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
-        result.clear();
+        out.clear();
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "SELECT " + m_idName
                              + " FROM " + m_tableName
                              + " ORDER BY l_sort_order"
         ;
         query.prepare(queryStr);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
 
         while (query.next()) {
-            result.append(query.value(0).toInt());
+            out.append(query.value(0).toInt());
         }
 
         if (query.size() == 0) {
-            error.setSuccess(false);
+            result.setSuccess(false);
         }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::getIds(QList<int>& result) const
+SKRResult PLMSqlQueries::getIds(QList<int>& out) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
-        result.clear();
+        out.clear();
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "SELECT " + m_idName
                              + " FROM " + m_tableName
         ;
         query.prepare(queryStr);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
 
         while (query.next()) {
-            result.append(query.value(0).toInt());
+            out.append(query.value(0).toInt());
         }
 
         if (query.size() == 0) {
-            error.setSuccess(false);
+            result.setSuccess(false);
         }
     }
 
-    return error;
+    return result;
 }
 
 bool PLMSqlQueries::idExists(int id) const
@@ -218,17 +218,17 @@ bool PLMSqlQueries::idExists(int id) const
 /// \param sorted
 /// \return
 /// You can use "id" as 'where' ; result QHash isn't garantied to keep the same order ! Use getSortedIds to have the sort order
-PLMError PLMSqlQueries::getValueByIds(const QString& valueName,
-                                      QHash<int, QVariant>& result,
+SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
+                                      QHash<int, QVariant>& out,
                                       const QString& where,
                                       const QVariant& whereValue,
                                       bool sorted) const
 {
-    result.clear();
-    PLMError error;
+    out.clear();
+    SKRResult result;
 
     {
-        result.clear();
+        out.clear();
         QSqlQuery query(m_sqlDB);
         QString   whereStr;
         QString   wh = where;
@@ -257,33 +257,33 @@ PLMError PLMSqlQueries::getValueByIds(const QString& valueName,
             query.bindValue(":whereValue", whereValue);
         }
 
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
         }
 
         while (query.next()) {
-            result.insert(query.value(0).toInt(), query.value(1));
+            out.insert(query.value(0).toInt(), query.value(1));
         }
 
         if (query.size() == 0) {
-            error.setSuccess(false);
+            result.setSuccess(false);
         }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
-                                           QHash<int, QVariant>& result,
+SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
+                                           QHash<int, QVariant>& out,
                                            const QHash<QString, QVariant>& where,
                                            bool sorted) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
-        result.clear();
+        out.clear();
         QSqlQuery query(m_sqlDB);
         QHash<QString, QVariant> finalWhereHash;
         QString whereStr                           = " WHERE ";
@@ -325,28 +325,28 @@ PLMError PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
             ++i;
         }
 
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
         }
 
         while (query.next()) {
-            result.insert(query.value(0).toInt(), query.value(1));
+            out.insert(query.value(0).toInt(), query.value(1));
         }
 
         if (query.size() == 0) {
-            error.setSuccess(false);
+            result.setSuccess(false);
         }
     }
 
-    return error;
+    return result;
 }
 
 bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
 {
-    PLMError error;
-    bool     result;
+    SKRResult result;
+    bool     value;
 
     {
         QSqlQuery query(m_sqlDB);
@@ -375,7 +375,7 @@ bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
             ++i;
         }
 
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
@@ -387,15 +387,15 @@ bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
             out.insert(query.value(0).toInt(), query.value(1));
         }
 
-        out.size() > 0 ? result = true : result = false;
+        out.size() > 0 ? value = true : value = false;
     }
 
     return result;
 }
 
-PLMError PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) const
+SKRResult PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
         QSqlQuery   query(m_sqlDB);
@@ -427,7 +427,7 @@ PLMError PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) 
             ++i;
         }
 
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
@@ -435,30 +435,30 @@ PLMError PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) 
         newId = query.lastInsertId().toInt();
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::removeAll() const
+SKRResult PLMSqlQueries::removeAll() const
 {
-    PLMError error;
+    SKRResult result;
 
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "DELETE * FROM " + m_tableName;
         query.prepare(queryStr);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
         }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::remove(int id) const
+SKRResult PLMSqlQueries::remove(int id) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
         QSqlQuery query(m_sqlDB);
@@ -467,19 +467,19 @@ PLMError PLMSqlQueries::remove(int id) const
         ;
         query.prepare(queryStr);
         query.bindValue(":id", id);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
         }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::set(int id, const QString& valueName, const QVariant& value) const
+SKRResult PLMSqlQueries::set(int id, const QString& valueName, const QVariant& value) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
         QSqlQuery query(m_sqlDB);
@@ -490,19 +490,19 @@ PLMError PLMSqlQueries::set(int id, const QString& valueName, const QVariant& va
         query.prepare(queryStr);
         query.bindValue(":id",    id);
         query.bindValue(":value", value);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
         }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::setId(int id, int newId) const
+SKRResult PLMSqlQueries::setId(int id, int newId) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
         QSqlQuery query(m_sqlDB);
@@ -513,37 +513,37 @@ PLMError PLMSqlQueries::setId(int id, int newId) const
         query.prepare(queryStr);
         query.bindValue(":id",    id);
         query.bindValue(":value", newId);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
         }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::injectDirectSql(const QString& sqlString)
+SKRResult PLMSqlQueries::injectDirectSql(const QString& sqlString)
 {
-    PLMError error;
+    SKRResult result;
 
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = sqlString;
         query.prepare(queryStr);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
         }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
+SKRResult PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
 {
-    PLMError error;
+    SKRResult result;
 
     {
         QSqlQuery query(m_sqlDB);
@@ -553,19 +553,19 @@ PLMError PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
         ;
         query.prepare(queryStr);
         query.bindValue(":id", id);
-        query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
         if(query.lastError().isValid()){
             qDebug() << "SQL Error" << query.lastError();
             qDebug() << "SQL Error" << query.lastError().text();
         }
     }
 
-    return error;
+    return result;
 }
 
-PLMError PLMSqlQueries::renumberSortOrder()
+SKRResult PLMSqlQueries::renumberSortOrder()
 {
-    PLMError error;
+    SKRResult result;
     int renumInterval = 1000;
 
     // Renumber all non-trashed paper in this version. DOES NOT COMMIT - Caller
@@ -580,7 +580,7 @@ PLMError PLMSqlQueries::renumberSortOrder()
 
     //    qDebug() << "prepareOk" << prepareOk;
     //    qDebug() << query.lastError().text();
-    query.exec() ? error.setSuccess(true) : error.setSuccess(false);
+    query.exec() ? result.setSuccess(true) : result.setSuccess(false);
     if(query.lastError().isValid()){
         qDebug() << "SQL Error" << query.lastError();
         qDebug() << "SQL Error" << query.lastError().text();
@@ -598,9 +598,9 @@ PLMError PLMSqlQueries::renumberSortOrder()
     for (int& id : list) {
         // For each note to renumber, pass it to the renum function.. For speed
         // we commit after all rows renumbered
-        IFOKDO(error, set(id, "l_sort_order", dest));
+        IFOKDO(result, set(id, "l_sort_order", dest));
         dest += renumInterval;
     }
 
-    return error;
+    return result;
 }

@@ -35,7 +35,7 @@ public:
 
     QHash<QString, QVariant>getNoteData(int projectId,
                                         int noteId) const;
-    Q_INVOKABLE  PLMError   addNoteRelatedToSheet(int projectId,
+    Q_INVOKABLE  SKRResult   addNoteRelatedToSheet(int projectId,
                                                   int sheetId);
     Q_INVOKABLE int         getSynopsisNoteId(int projectId,
                                               int sheetId) const;
@@ -43,15 +43,15 @@ public:
                                                 int sheetId) const;
     Q_INVOKABLE QList<int>  getSheetsFromNoteId(int projectId,
                                                 int noteId) const;
-    Q_INVOKABLE PLMError    setSheetNoteRelationship(int  projectId,
+    Q_INVOKABLE SKRResult    setSheetNoteRelationship(int  projectId,
                                                      int  sheetId,
                                                      int  noteId,
                                                      bool isSynopsis = false);
-    Q_INVOKABLE PLMError removeSheetNoteRelationship(int projectId,
+    Q_INVOKABLE SKRResult removeSheetNoteRelationship(int projectId,
                                                      int sheetId,
                                                      int noteId);
 
-    Q_INVOKABLE  PLMError      createSynopsis(int projectId,
+    Q_INVOKABLE  SKRResult      createSynopsis(int projectId,
                                               int sheetId);
 
     Q_INVOKABLE  int           getSynopsisFolderId(int projectId);
@@ -63,10 +63,10 @@ public:
     Q_INVOKABLE  bool          hasAttribute(int            projectId,
                                             int            paperId,
                                             const QString& attribute) override;
-    Q_INVOKABLE  PLMError      addAttribute(int            projectId,
+    Q_INVOKABLE  SKRResult      addAttribute(int            projectId,
                                             int            paperId,
                                             const QString& attribute) override;
-    Q_INVOKABLE PLMError       removeAttribute(int            projectId,
+    Q_INVOKABLE SKRResult       removeAttribute(int            projectId,
                                                int            paperId,
                                                const QString& attribute) override;
 

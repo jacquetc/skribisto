@@ -320,26 +320,26 @@ QList<int>PLMDocumentListModel::getDocumentId(int projectId, int paperId, int su
 
 QList<int>PLMDocumentListModel::getDocumentIdEverywhere(int projectId, int paperId)
 {
-    QList<int> result;
+    QList<int> list;
 
     for (int subWindowId : this->getSubWindowIdList(projectId, paperId)) {
-        result.append(getDocumentId(projectId, paperId, subWindowId));
+        list.append(getDocumentId(projectId, paperId, subWindowId));
     }
 
-    return result;
+    return list;
 }
 
 QString PLMDocumentListModel::translateRole(PLMDocumentListModel::Roles role) const
 {
-    QString result;
+    QString string;
 
     switch (role) {
     case PLMDocumentListModel::Roles::DocumentIdRole:
-        result = "l_document_id";
+        string = "l_document_id";
         break;
 
     case PLMDocumentListModel::Roles::PaperCodeRole:
-        result = "l_paper_code";
+        string = "l_paper_code";
         break;
 
     case PLMDocumentListModel::Roles::ProjectIdRole:
@@ -347,38 +347,38 @@ QString PLMDocumentListModel::translateRole(PLMDocumentListModel::Roles role) co
         break;
 
     case PLMDocumentListModel::Roles::NameRole:
-        result = "t_title";
+        string = "t_title";
         break;
 
 
     case PLMDocumentListModel::Roles::TypeRole:
-        result = "t_type";
+        string = "t_type";
         break;
 
     case PLMDocumentListModel::Roles::SubWindowRole:
-        result = "l_subwindow";
+        string = "l_subwindow";
         break;
 
     case PLMDocumentListModel::Roles::CursorPosRole:
-        result =  "l_cursor_pos";
+        string =  "l_cursor_pos";
         break;
 
     case PLMDocumentListModel::Roles::PropertyRole:
-        result =  "t_property";
+        string =  "t_property";
         break;
 
     case PLMDocumentListModel::Roles::UpdateDateRole:
-        result =  "dt_updated";
+        string =  "dt_updated";
         break;
 
     case PLMDocumentListModel::Roles::LasFocusedDateRole:
-        result =  "dt_last_focused";
+        string =  "dt_last_focused";
         break;
 
     default:
         break;
 
-        return result;
+        return string;
     }
 }
 

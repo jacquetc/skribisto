@@ -21,7 +21,7 @@ using namespace std;
 #include "plmsheethub.h"
 #include "plmnotehub.h"
 #include "skrtaghub.h"
-#include "plmerror.h"
+#include "skrresult.h"
 #include "plmprojecthub.h"
 #include "skrprojectdicthub.h"
 #include "plmpropertyhub.h"
@@ -184,11 +184,11 @@ int main(int argc, char *argv[])
     SKRQMLTools   *skrQMLTools                 = new SKRQMLTools(qApp);
     SKRTextBridge *skrTextBridge               = new SKRTextBridge(qApp);
 
-    qmlRegisterUncreatableType<PLMError>("eu.skribisto.plmerror",
+    qmlRegisterUncreatableType<SKRResult>("eu.skribisto.result",
                                          1,
                                          0,
-                                         "PLMError",
-                                         "Can't instantiate PLMError");
+                                         "SKRResult",
+                                         "Can't instantiate SKRResult");
 
 
     qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",

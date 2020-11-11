@@ -6,7 +6,7 @@ import QtQml 2.15
 import QtQuick.Controls.Material 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.usersettings 1.0
-import eu.skribisto.plmerror 1.0
+import eu.skribisto.result 1.0
 import eu.skribisto.projecthub 1.0
 
 import "Items"
@@ -1449,9 +1449,9 @@ RootPageForm {
             console.log("argument : " , arguments[arg])
 
             if (arguments[arg] === "--testProject") {
-                var error = plmData.projectHub().loadProject(
+                var result = plmData.projectHub().loadProject(
                             testProjectFileName)
-                console.log("project loaded : " + error.success)
+                console.log("project loaded : " + result.success)
                 console.log("projectFileName :", testProjectFileName.toString(), "\n")
 
                 //show Write window
@@ -1475,7 +1475,7 @@ RootPageForm {
             }
         }
         //        if(!isTestProject & oneProjectInArgument){
-        //            var error = plmData.projectHub().loadProject(
+        //            var result = plmData.projectHub().loadProject(
         //                        projectInArgument)
         //            //show Write window
         //            //            writeOverviewWindowAction.trigger()

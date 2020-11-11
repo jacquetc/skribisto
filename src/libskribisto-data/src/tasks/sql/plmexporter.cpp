@@ -19,16 +19,16 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmexporter.h"
-#include "plmerror.h"
+#include "skrresult.h"
 
 PLMExporter::PLMExporter(QObject *parent) : QObject(parent)
 {}
 
-PLMError PLMExporter::exportSQLiteDbTo(PLMProject    *db,
+SKRResult PLMExporter::exportSQLiteDbTo(PLMProject    *db,
                                        const QString& type,
                                        const QUrl   & fileName)
 {
-    PLMError error;
+    SKRResult result;
     QString  finalType = type;
 
     if (type == "skrib") {
@@ -51,24 +51,24 @@ PLMError PLMExporter::exportSQLiteDbTo(PLMProject    *db,
 
         if (!tempFile.open(QIODevice::ReadOnly)) {
             qWarning() << fileName.toLocalFile() + " can't be opened";
-            error.setSuccess(false);
-            error.setErrorCode("E_PROJECT_tempfile_cant_be_opened");
-            return error;
+            result.setSuccess(false);
+            result.addErrorCode("C_PROJECT_tempfile_cant_be_opened");
+            return result;
         }
 
         if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             qWarning() << fileName.toLocalFile() + " can't be opened";
-            error.setSuccess(false);
-            error.setErrorCode("E_PROJECT_path_is_readonly");
-            return error;
+            result.setSuccess(false);
+            result.addErrorCode("W_PROJECT_path_is_readonly");
+            return result;
         }
 
         QByteArray array(tempFile.readAll());
         file.write(array);
         file.close();
-        return error;
+        return result;
     }
 
-    error.setSuccess(false);
-    return error;
+    result.setSuccess(false);
+    return result;
 }

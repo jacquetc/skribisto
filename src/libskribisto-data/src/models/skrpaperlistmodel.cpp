@@ -255,13 +255,13 @@ bool SKRPaperListModel::setData(const QModelIndex& index, const QVariant& value,
         SKRPaperItem *item = static_cast<SKRPaperItem *>(index.internalPointer());
         int projectId      = item->projectId();
         int paperId        = item->paperId();
-        PLMError error;
+        SKRResult result;
 
         this->disconnectFromPLMDataSignals();
 
         switch (role) {
         case SKRPaperItem::Roles::ProjectNameRole:
-            error = plmdata->projectHub()->setProjectName(projectId, value.toString());
+            result = plmdata->projectHub()->setProjectName(projectId, value.toString());
             break;
 
         case SKRPaperItem::Roles::ProjectIdRole:
@@ -275,22 +275,22 @@ bool SKRPaperListModel::setData(const QModelIndex& index, const QVariant& value,
             break;
 
         case SKRPaperItem::Roles::NameRole:
-            error = m_paperHub->setTitle(projectId, paperId, value.toString());
+            result = m_paperHub->setTitle(projectId, paperId, value.toString());
 
             break;
 
         case SKRPaperItem::Roles::LabelRole:
-            error = m_propertyHub->setProperty(projectId, paperId,
+            result = m_propertyHub->setProperty(projectId, paperId,
                                                "label", value.toString());
             break;
 
         case SKRPaperItem::Roles::IndentRole:
-            error = m_paperHub->setIndent(projectId, paperId, value.toInt());
+            result = m_paperHub->setIndent(projectId, paperId, value.toInt());
             break;
 
         case SKRPaperItem::Roles::SortOrderRole:
-            error = m_paperHub->setSortOrder(projectId, paperId, value.toInt());
-            IFOKDO(error, m_paperHub->renumberSortOrders(projectId));
+            result = m_paperHub->setSortOrder(projectId, paperId, value.toInt());
+            IFOKDO(result, m_paperHub->renumberSortOrders(projectId));
 
             for (SKRPaperItem *item : m_allPaperItems) {
                 item->invalidateData(role);
@@ -300,25 +300,25 @@ bool SKRPaperListModel::setData(const QModelIndex& index, const QVariant& value,
             break;
 
         case SKRPaperItem::Roles::TrashedRole:
-            error = m_paperHub->setTrashedWithChildren(projectId,
+            result = m_paperHub->setTrashedWithChildren(projectId,
                                                        paperId,
                                                        value.toBool());
             break;
 
         case SKRPaperItem::Roles::CreationDateRole:
-            error = m_paperHub->setCreationDate(projectId,
+            result = m_paperHub->setCreationDate(projectId,
                                                 paperId,
                                                 value.toDateTime());
             break;
 
         case SKRPaperItem::Roles::UpdateDateRole:
-            error = m_paperHub->setUpdateDate(projectId,
+            result = m_paperHub->setUpdateDate(projectId,
                                               paperId,
                                               value.toDateTime());
             break;
 
         case SKRPaperItem::Roles::ContentDateRole:
-            error = m_paperHub->setContentDate(projectId,
+            result = m_paperHub->setContentDate(projectId,
                                                paperId,
                                                value.toDateTime());
             break;
@@ -328,7 +328,7 @@ bool SKRPaperListModel::setData(const QModelIndex& index, const QVariant& value,
             break;
 
         case SKRPaperItem::Roles::CharCountRole:
-            error = m_propertyHub->setProperty(projectId,
+            result = m_propertyHub->setProperty(projectId,
                                                paperId,
                                                "char_count",
                                                QString::number(
@@ -337,7 +337,7 @@ bool SKRPaperListModel::setData(const QModelIndex& index, const QVariant& value,
 
         case SKRPaperItem::Roles::WordCountRole:
 
-            error = m_propertyHub->setProperty(projectId,
+            result = m_propertyHub->setProperty(projectId,
                                                paperId,
                                                "word_count",
                                                QString::number(
@@ -353,7 +353,7 @@ bool SKRPaperListModel::setData(const QModelIndex& index, const QVariant& value,
 
         this->connectToPLMDataSignals();
 
-        if (!error.isSuccess()) {
+        if (!result.isSuccess()) {
             return false;
         }
         item->invalidateData(role);

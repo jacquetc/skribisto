@@ -173,19 +173,19 @@ bool DocumentHandler::italic() const
         int start = m_selectionCursor.anchor() + 1;
         int end   = m_selectionCursor.position();
 
-        bool result = true;
+        bool value = true;
         QTextCursor cursor(m_textDoc->textDocument());
 
         for (int i = start; i <= end; i++) {
             cursor.setPosition(i);
-            result = cursor.charFormat().fontItalic();
+            value = cursor.charFormat().fontItalic();
 
-            if (!result) {
+            if (!value) {
                 break;
             }
         }
 
-        return result;
+        return value;
     }
 }
 
@@ -237,19 +237,19 @@ bool DocumentHandler::bold() const
         int start = m_selectionCursor.anchor() + 1;
         int end   = m_selectionCursor.position();
 
-        bool result = true;
+        bool value = true;
         QTextCursor cursor(m_textDoc->textDocument());
 
         for (int i = start; i <= end; i++) {
             cursor.setPosition(i);
-            result = cursor.charFormat().fontWeight() >= QFont::Bold;
+            value = cursor.charFormat().fontWeight() >= QFont::Bold;
 
-            if (!result) {
+            if (!value) {
                 break;
             }
         }
 
-        return result;
+        return value;
     }
 }
 
@@ -280,19 +280,19 @@ bool DocumentHandler::underline() const
         int start = m_selectionCursor.anchor() + 1;
         int end   = m_selectionCursor.position();
 
-        bool result = true;
+        bool value = true;
         QTextCursor cursor(m_textDoc->textDocument());
 
         for (int i = start; i <= end; i++) {
             cursor.setPosition(i);
-            result = cursor.charFormat().fontUnderline();
+            value = cursor.charFormat().fontUnderline();
 
-            if (!result) {
+            if (!value) {
                 break;
             }
         }
 
-        return result;
+        return value;
     }
 }
 
@@ -320,19 +320,19 @@ bool DocumentHandler::strikeout() const
         int start = m_selectionCursor.anchor() + 1;
         int end   = m_selectionCursor.position();
 
-        bool result = true;
+        bool value = true;
         QTextCursor cursor(m_textDoc->textDocument());
 
         for (int i = start; i <= end; i++) {
             cursor.setPosition(i);
-            result = cursor.charFormat().fontStrikeOut();
+            value = cursor.charFormat().fontStrikeOut();
 
-            if (!result) {
+            if (!value) {
                 break;
             }
         }
 
-        return result;
+        return value;
     }
 }
 

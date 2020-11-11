@@ -38,7 +38,7 @@ public:
     void       setCommit(bool value);
     bool       getCommit();
     void       renumAll();
-    PLMDbError error();
+    PLMDbError result();
     int        moveList(QList<int>idList,
                         int       paperId);
     int        copyList(QList<int>idList);

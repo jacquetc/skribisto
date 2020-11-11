@@ -45,7 +45,7 @@ void SKRThemes::populate()
 
             if (jsonError.error != QJsonParseError::NoError) {
                 qDebug() << "Error JSON in theme" << fileInfo.absoluteFilePath() <<
-                "error :" << jsonError.errorString();
+                "result :" << jsonError.errorString();
             }
 
             if (jsonDoc.isNull()) {
@@ -142,7 +142,7 @@ void SKRThemes::applyTheme(const QString& themeName)
 
     if (jsonError.error != QJsonParseError::NoError) {
         qDebug() << "Error JSON in theme" << m_fileByThemeNameHash.value(theme) <<
-        "error :" << jsonError.errorString();
+        "result :" << jsonError.errorString();
     }
 
     if (jsonDoc.isNull()) {
@@ -239,7 +239,7 @@ void SKRThemes::saveTheme(const QString& themeName) {
     QJsonDocument   jsonDoc = QJsonDocument::fromJson(line, &jsonError);
 
     if (jsonError.error != QJsonParseError::NoError) {
-        qDebug() << "Error JSON in theme" << fileInfo.absoluteFilePath() << "error :" <<
+        qDebug() << "Error JSON in theme" << fileInfo.absoluteFilePath() << "result :" <<
         jsonError.errorString();
     }
 
@@ -355,7 +355,7 @@ bool SKRThemes::duplicate(const QString& themeName, const QString& newThemeName)
     QJsonDocument   jsonDoc = QJsonDocument::fromJson(lines, &jsonError);
 
     if (jsonError.error != QJsonParseError::NoError) {
-        qDebug() << "Error JSON in theme" << fileInfo.absoluteFilePath() << "error :" <<
+        qDebug() << "Error JSON in theme" << fileInfo.absoluteFilePath() << "result :" <<
         jsonError.errorString();
     }
 
@@ -416,12 +416,12 @@ bool SKRThemes::remove(const QString& themeName) {
     }
 
     QFile file(m_fileByThemeNameHash.value(themeName));
-    bool  result = file.remove();
+    bool  value = file.remove();
 
-    if (result) {
+    if (value) {
         m_fileByThemeNameHash.remove(themeName);
         m_isEditableByThemeNameHash.remove(themeName);
     }
 
-    return result;
+    return value;
 }

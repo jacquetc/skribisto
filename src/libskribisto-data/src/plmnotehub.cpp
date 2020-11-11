@@ -27,69 +27,72 @@
 PLMNoteHub::PLMNoteHub(QObject *parent) : PLMPaperHub(parent, "tbl_note")
 {}
 
-PLMError PLMNoteHub::addNoteRelatedToSheet(int projectId, int sheetId) {
-    PLMError error;
+SKRResult PLMNoteHub::addNoteRelatedToSheet(int projectId, int sheetId) {
+    SKRResult result;
 
-    error = this->addChildPaper(projectId, -1); // add child to project item
+    result = this->addChildPaper(projectId, -1); // add child to project item
 
 
-    IFOK(error) {
+    IFOK(result) {
         int lastAddedNoteId = this->getLastAddedId();
 
-        error = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId);
+        result = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId);
 
-        error.addData("noteId", lastAddedNoteId);
+        result.addData("noteId", lastAddedNoteId);
     }
-    return error;
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
 }
 
 // --------------------------------------------------------------------------------
 
 QList<int>PLMNoteHub::getNotesFromSheetId(int projectId, int sheetId) const
 {
-    PLMError   error;
-    QList<int> result;
+    SKRResult   result;
+    QList<int> list;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, "tbl_sheet_note");
 
-    error = queries.getValueByIds("l_note_code", out, "l_sheet_code", sheetId);
+    result = queries.getValueByIds("l_note_code", out, "l_sheet_code", sheetId);
 
-    IFOK(error) {
-        result = HashIntQVariantConverter::convertToIntInt(out).values();
+    IFOK(result) {
+        list = HashIntQVariantConverter::convertToIntInt(out).values();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return list;
 }
 
 // --------------------------------------------------------------------------------
 
 QList<int>PLMNoteHub::getSheetsFromNoteId(int projectId, int noteId) const
 {
-    PLMError   error;
-    QList<int> result;
+    SKRResult   result;
+    QList<int> list;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, "tbl_sheet_note");
 
-    error = queries.getValueByIds("l_sheet_code", out, "l_note_code", noteId);
+    result = queries.getValueByIds("l_sheet_code", out, "l_note_code", noteId);
 
-    IFOK(error) {
-        result = HashIntQVariantConverter::convertToIntInt(out).values();
+    IFOK(result) {
+        list = HashIntQVariantConverter::convertToIntInt(out).values();
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return list;
 }
 
 // --------------------------------------------------------------------------------
 
 int PLMNoteHub::getSynopsisNoteId(int projectId, int sheetId) const
 {
-    PLMError error;
+    SKRResult result;
     int final = -2;
-    QHash<int, int> result;
+    QHash<int, int> hash;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -99,38 +102,38 @@ int PLMNoteHub::getSynopsisNoteId(int projectId, int sheetId) const
 
     PLMSqlQueries queries(projectId, "tbl_sheet_note");
 
-    error = queries.getValueByIdsWhere("l_note_code", out, where);
+    result = queries.getValueByIdsWhere("l_note_code", out, where);
 
-    IFOK(error) {
-        result = HashIntQVariantConverter::convertToIntInt(out);
+    IFOK(result) {
+        hash = HashIntQVariantConverter::convertToIntInt(out);
 
-        QHash<int, int>::const_iterator i = result.constBegin();
+        QHash<int, int>::const_iterator i = hash.constBegin();
 
-        while (i != result.constEnd()) {
+        while (i != hash.constEnd()) {
             final = i.value();
             ++i;
         }
 
-        if (result.isEmpty() || (final == 0)) {
+        if (hash.isEmpty() || (final == 0)) {
             final = -2;
         }
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
     return final;
 }
 
 // --------------------------------------------------------------------------------
 
-PLMError PLMNoteHub::setSheetNoteRelationship(int  projectId,
+SKRResult PLMNoteHub::setSheetNoteRelationship(int  projectId,
                                               int  sheetId,
                                               int  noteId,
                                               bool isSynopsis)
 {
-    PLMError error;
+    SKRResult result;
 
-    QHash<int, int> result;
+    QHash<int, int> hash;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -142,21 +145,21 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int  projectId,
 
 
     // verify if the relationship doesn't yet exist
-    error = queries.getValueByIdsWhere("l_sheet_note_id", out, where);
+    result = queries.getValueByIdsWhere("l_sheet_note_id", out, where);
 
     int key = -2;
 
-    IFOK(error) {
-        result = HashIntQVariantConverter::convertToIntInt(out);
+    IFOK(result) {
+        hash = HashIntQVariantConverter::convertToIntInt(out);
 
-        QHash<int, int>::const_iterator i = result.constBegin();
+        QHash<int, int>::const_iterator i = hash.constBegin();
 
-        while (i != result.constEnd()) {
+        while (i != hash.constEnd()) {
             key = i.key();
             ++i;
         }
 
-        if (result.isEmpty() || (key == -2) || (key == 0)) {
+        if (hash.isEmpty() || (key == -2) || (key == 0)) {
             // no relationship exists, creating one
 
             int newId = -2;
@@ -164,9 +167,9 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int  projectId,
             values.insert("l_sheet_code", sheetId);
             values.insert("l_note_code",  noteId);
             values.insert("b_synopsis",   isSynopsis);
-            error = queries.add(values, newId);
+            result = queries.add(values, newId);
 
-            IFOK(error) {
+            IFOK(result) {
                 emit sheetNoteRelationshipAdded(projectId, sheetId, noteId);
                 emit projectModified(projectId);
             }
@@ -175,34 +178,34 @@ PLMError PLMNoteHub::setSheetNoteRelationship(int  projectId,
             // relationship exists, verifying b_synopsis
 
             QVariant variantResult;
-            error = queries.get(key, "b_synopsis", variantResult);
+            result = queries.get(key, "b_synopsis", variantResult);
 
             if (variantResult.toBool() == isSynopsis) {
                 // nothing to do, quiting
-                return error;
+                return result;
             }
             else {
                 // set b_synopsis:
 
-                error =  queries.set(key, "b_synopsis", isSynopsis);
+                result =  queries.set(key, "b_synopsis", isSynopsis);
 
-                IFOK(error) {
+                IFOK(result) {
                     emit sheetNoteRelationshipChanged(projectId, sheetId, noteId);
                     emit projectModified(projectId);
                 }
             }
         }
     }
-    return error;
+    return result;
 }
 
 // --------------------------------------------------------------------------------
 
-PLMError PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int noteId)
+SKRResult PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int noteId)
 {
-    PLMError error;
+    SKRResult result;
 
-    QHash<int, int> result;
+    QHash<int, int> hash;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -211,36 +214,38 @@ PLMError PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int
 
     PLMSqlQueries queries(projectId, "tbl_sheet_note");
 
-    error = queries.getValueByIdsWhere("l_note_code", out, where);
+    result = queries.getValueByIdsWhere("l_note_code", out, where);
 
     int key = -2;
 
-    IFOK(error) {
-        result = HashIntQVariantConverter::convertToIntInt(out);
+    IFOK(result) {
+        hash = HashIntQVariantConverter::convertToIntInt(out);
 
-        QHash<int, int>::const_iterator i = result.constBegin();
+        QHash<int, int>::const_iterator i = hash.constBegin();
 
-        while (i != result.constEnd()) {
+        while (i != hash.constEnd()) {
             key = i.key();
             ++i;
         }
 
-        if (result.isEmpty() || (key == -2) || (key == 0)) {
-            error.setSuccess(false);
-            error.setErrorCode("E_TAG_no_note_sheet_relationship_to_remove");
-            return error;
+        if (hash.isEmpty() || (key == -2) || (key == 0)) {
+            result.setSuccess(false);
+            result.addErrorCode("C_TAG_no_note_sheet_relationship_to_remove");
         }
     }
 
-    IFOK(error) {
-        error = queries.remove(key);
+    IFOK(result) {
+        result = queries.remove(key);
     }
-    IFOK(error) {
+    IFOK(result) {
         emit sheetNoteRelationshipRemoved(projectId, sheetId, noteId);
         emit projectModified(projectId);
     }
+    IFKO(result) {
+        emit errorSent(result);
+    }
 
-    return error;
+    return result;
 }
 
 // --------------------------------------------------------------------------------
@@ -252,8 +257,8 @@ PLMError PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int
 // move all
 /// existing synopsis into the folder
 int PLMNoteHub::getSynopsisFolderId(int projectId) {
-    PLMError error;
-    int result = -2;
+    SKRResult result;
+    int value = -2;
 
     // retrieve
 
@@ -274,17 +279,17 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
 
     // if none, create one
     if (folderId == -2) {
-        error = this->addChildPaper(projectId, -1);
+        result = this->addChildPaper(projectId, -1);
 
-        IFOK(error) {
-            folderId = error.getData("paperId", -2).toInt();
+        IFOK(result) {
+            folderId = result.getData("paperId", -2).toInt();
 
             // set properties :
-            //            plmdata->notePropertyHub()->setProperty(projectId,
-            //                                                    folderId,
-            //
-            //                                                  "is_renamable",
-            //                                                    "false");
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
+
+                                                    "is_renamable",
+                                                    "false");
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
                                                     "is_movable",
@@ -314,7 +319,7 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
 
 
         // move all synopsis into the folder
-        IFOK(error) {
+        IFOK(result) {
             QList<int> synList;
 
             for (int noteId : getAllIds(projectId)) {
@@ -331,7 +336,7 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
 
             for (int synopsisId : synList) {
                 qDebug() << "synList " << synopsisId;
-                error = this->movePaperAsChildOf(projectId, synopsisId, folderId);
+                result = this->movePaperAsChildOf(projectId, synopsisId, folderId);
 
                 // set properties :
                 plmdata->notePropertyHub()->setProperty(projectId,
@@ -355,20 +360,20 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
         }
     }
 
-    IFOK(error) {
-        result = folderId;
+    IFOK(result) {
+        value = folderId;
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return value;
 }
 
 // --------------------------------------------------------------------------------
 
 bool PLMNoteHub::isSynopsis(int projectId, int noteId)
 {
-    PLMError error;
+    SKRResult result;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -380,27 +385,27 @@ bool PLMNoteHub::isSynopsis(int projectId, int noteId)
     PLMSqlQueries queries(projectId, "tbl_sheet_note");
 
     // verify if the relationship doesn't yet exist
-    error = queries.getValueByIdsWhere("l_sheet_note_id", out, where);
+    result = queries.getValueByIdsWhere("l_sheet_note_id", out, where);
 
     int key = -2;
 
-    IFOK(error) {
-        QHash<int, int> result = HashIntQVariantConverter::convertToIntInt(out);
+    IFOK(result) {
+        QHash<int, int> hash = HashIntQVariantConverter::convertToIntInt(out);
 
-        QHash<int, int>::const_iterator i = result.constBegin();
+        QHash<int, int>::const_iterator i = hash.constBegin();
 
-        while (i != result.constEnd()) {
+        while (i != hash.constEnd()) {
             key = i.key();
             ++i;
         }
 
-        if (result.isEmpty() || (key == -2) || (key == 0)) {
+        if (hash.isEmpty() || (key == -2) || (key == 0)) {
             return false;
         }
         return true;
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
 
         return false;
     }
@@ -410,19 +415,19 @@ bool PLMNoteHub::isSynopsis(int projectId, int noteId)
 
 // --------------------------------------------------------------------------------
 
-PLMError PLMNoteHub::createSynopsis(int projectId, int sheetId) {
-    PLMError error;
+SKRResult PLMNoteHub::createSynopsis(int projectId, int sheetId) {
+    SKRResult result;
 
     int synopsisFolderId = this->getSynopsisFolderId(projectId);
 
-    error = this->addChildPaper(projectId, synopsisFolderId); // add child to
+    result = this->addChildPaper(projectId, synopsisFolderId); // add child to
     // project item
     int lastAddedNoteId = -2;
 
-    IFOK(error) {
+    IFOK(result) {
         lastAddedNoteId = this->getLastAddedId();
 
-        error = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId, true);
+        result = this->setSheetNoteRelationship(projectId, sheetId, lastAddedNoteId, true);
 
         // set properties :
         plmdata->notePropertyHub()->setProperty(projectId,
@@ -445,12 +450,15 @@ PLMError PLMNoteHub::createSynopsis(int projectId, int sheetId) {
     }
 
     if (lastAddedNoteId == -2) {
-        error.setSuccess(false);
+        result.setSuccess(false);
     }
-    IFOK(error) {
-        error.addData("noteId", lastAddedNoteId);
+    IFOK(result) {
+        result.addData("noteId", lastAddedNoteId);
     }
-    return error;
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
 }
 
 // --------------------------------------------------------------------------------
@@ -458,10 +466,10 @@ PLMError PLMNoteHub::createSynopsis(int projectId, int sheetId) {
 // useful ?
 QHash<QString, QVariant>PLMNoteHub::getNoteData(int projectId, int noteId) const
 {
-    PLMError error;
+    SKRResult result;
 
     QHash<QString, QVariant> var;
-    QHash<QString, QVariant> result;
+    QHash<QString, QVariant> hash;
     QStringList fieldNames;
 
     fieldNames << "l_note_id" << "l_dna" << "l_sort_order" << "l_indent" <<
@@ -469,14 +477,14 @@ QHash<QString, QVariant>PLMNoteHub::getNoteData(int projectId, int noteId) const
         "b_trashed";
     PLMSqlQueries queries(projectId, m_tableName);
 
-    error = queries.getMultipleValues(noteId, fieldNames, var);
-    IFOK(error) {
-        result = var;
+    result = queries.getMultipleValues(noteId, fieldNames, var);
+    IFOK(result) {
+        hash = var;
     }
-    IFKO(error) {
-        emit errorSent(error);
+    IFKO(result) {
+        emit errorSent(result);
     }
-    return result;
+    return hash;
 }
 
 // --------------------------------------------------------------------------------
@@ -506,7 +514,7 @@ bool PLMNoteHub::hasAttribute(int projectId, int paperId, const QString& attribu
 
 // --------------------------------------------------------------------------------
 
-PLMError PLMNoteHub::addAttribute(int projectId, int paperId, const QString& attribute)
+SKRResult PLMNoteHub::addAttribute(int projectId, int paperId, const QString& attribute)
 {
     QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
                                                                  paperId,
@@ -515,7 +523,7 @@ PLMError PLMNoteHub::addAttribute(int projectId, int paperId, const QString& att
     QStringList attributeList = attributes.split(";", Qt::SkipEmptyParts);
 
     if (attributeList.contains(attribute)) {
-        return PLMError();
+        return SKRResult();
     }
 
     attributeList << attribute;
@@ -529,7 +537,7 @@ PLMError PLMNoteHub::addAttribute(int projectId, int paperId, const QString& att
 
 // --------------------------------------------------------------------------------
 
-PLMError PLMNoteHub::removeAttribute(int projectId, int paperId, const QString& attribute)
+SKRResult PLMNoteHub::removeAttribute(int projectId, int paperId, const QString& attribute)
 {
     QString attributes = plmdata->notePropertyHub()->getProperty(projectId,
                                                                  paperId,
@@ -538,7 +546,7 @@ PLMError PLMNoteHub::removeAttribute(int projectId, int paperId, const QString& 
     QStringList attributeList = attributes.split(";", Qt::SkipEmptyParts);
 
     if (!attributeList.contains(attribute)) {
-        return PLMError();
+        return SKRResult();
     }
 
     attributeList.removeAll(attribute);

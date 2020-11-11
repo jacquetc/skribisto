@@ -201,7 +201,7 @@ WriteRightDockForm {
         notePadFrame.folded = settings.notePadFrameFolded
         tagPadFrame.folded = settings.tagPadFrameFolded
 
-        var result = splitView.restoreState(settings.dockSplitView)
+        var value = splitView.restoreState(settings.dockSplitView)
 
     }
 

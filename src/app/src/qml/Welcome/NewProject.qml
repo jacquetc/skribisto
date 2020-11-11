@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import Qt.labs.platform 1.1 as LabPlatform
 import QtQml 2.15
-import eu.skribisto.plmerror 1.0
+import eu.skribisto.result 1.0
 import "../Items"
 import ".."
 
@@ -83,9 +83,7 @@ NewProjectForm {
 
         folderNameURL = skrQMLTools.setURLScheme(Qt.resolvedUrl(projectPathTextField.text), "file")
 
-        var result = Qt.resolvedUrl(folderNameURL + "/" + projectFileTextField.text + ".skrib")
-        //result.protocol = "file"
-        fileName = result
+        fileName = Qt.resolvedUrl(folderNameURL + "/" + projectFileTextField.text + ".skrib")
     }
 
 
@@ -102,7 +100,11 @@ NewProjectForm {
         //TODO: test fileName
 
 
-        plmData.projectHub().createNewEmptyProject(fileName)
+       var result = plmData.projectHub().createNewEmptyProject(fileName)
+
+        if(!result){
+          return
+        }
 
         var projetId = plmData.projectHub().getLastLoaded()
         console.log("new project : getLastLoaded : ", projetId)
@@ -110,8 +112,8 @@ NewProjectForm {
 
         var firstSheetId = -2
         for(var i = 1; i <= partSpinBox.value ; ++i){
-            var error = plmData.sheetHub().addChildPaper(projetId, -1)
-            console.log("new project : add sheet : ", error.isSuccess())
+            var result = plmData.sheetHub().addChildPaper(projetId, -1)
+            console.log("new project : add sheet : ", result.isSuccess())
             var sheetId = plmData.sheetHub().getLastAddedId()
             plmData.sheetHub().setTitle(projetId, sheetId, qsTr("Part ") + i)
 
@@ -121,7 +123,6 @@ NewProjectForm {
 
         }
 
-        swipeView.currentIndex = 0
         //root_stack.currentIndex = 1
         Globals.openSheetInNewTabCalled(projetId, firstSheetId)
 
@@ -130,6 +131,7 @@ NewProjectForm {
         projectFileTextField.text = ""
         projectFileTextFiledEdited = false
         projectPathTextField.text = skrQMLTools.translateURLToLocalFile(LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation))
+        goBackButtonClicked()
     }
 
 
@@ -138,7 +140,7 @@ NewProjectForm {
 
     onActiveFocusChanged: {
         if (activeFocus) {
-            newProjectButton.forceActiveFocus()
+            projectTitleTextField.forceActiveFocus()
         }
     }
 

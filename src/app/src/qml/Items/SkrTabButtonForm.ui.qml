@@ -64,7 +64,7 @@ TabButton {
             bottomPadding: 6
 
 
-            text: base.text === "" ? action.text : base.text
+            text: base.text === "" ? (base.action === null ? base.text : action.text) : base.text
             font.weight: isCurrent ? Font.Bold : Font.Normal
             font.family: base.font.family
             font.pointSize: base.font.pointSize

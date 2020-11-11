@@ -37,7 +37,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
 {
     qRegisterMetaType<PLMProject::DBType>("PLMProject::DBType");
     m_projectId = projectId;
-    PLMError error;
+    SKRResult result;
 
     if (!fileName.isEmpty()) {
         QFileInfo info;
@@ -50,37 +50,37 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
         }
 
         if (!info.exists()) {
-            error.setSuccess(false);
+            result.setSuccess(false);
         }
 
         if (!info.isReadable()) {
-            error.setSuccess(false);
+            result.setSuccess(false);
         }
 
-        IFOKDO(error, setPath(fileName))
+        IFOKDO(result, setPath(fileName))
     }
 
 
-    IFOK(error) {
+    IFOK(result) {
         PLMImporter importer;
 
         if (fileName.isEmpty()) { // virgin project
-            m_sqlDb = importer.createEmptySQLiteProject(projectId, error);
+            m_sqlDb = importer.createEmptySQLiteProject(projectId, result);
 
-            IFKO(error) {
-                // qWarning << error.getMessage()
+            IFKO(result) {
+                // qWarning << result.getMessage()
                 m_projectId = -1;
                 qCritical() << "New project not created";
 
                 return;
             }
         } else {
-            m_sqlDb = importer.createSQLiteDbFrom("SQLITE", fileName, projectId, error);
+            m_sqlDb = importer.createSQLiteDbFrom("SQLITE", fileName, projectId, result);
         }
         this->setPath(fileName);
     }
     setType("skrib");
-    IFOK(error) {
+    IFOK(result) {
         // sheet and note sql tree :
         m_sheetTree = new PLMSheetTree(this, "tbl_sheet", "l_sheet_id", m_sqlDb);
         m_plmTreeForTableNameHash.insert("tbl_sheet", m_sheetTree);
@@ -115,7 +115,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
     }
 
 
-    IFKO(error) {
+    IFKO(result) {
         m_projectId = -1;
     }
 }
@@ -208,18 +208,13 @@ QUrl PLMProject::getPath() const
     return m_path;
 }
 
-PLMError PLMProject::setPath(const QUrl& value)
+SKRResult PLMProject::setPath(const QUrl& value)
 {
-    PLMError error;
+    SKRResult result;
 
     // TODO: check for file rights, etc...
-    IFOK(error) {
+    IFOK(result) {
         m_path = value;
     }
-    return error;
-}
-
-PLMError PLMProject::importPlumeCreatorProject(const QUrl &plumeURL){
-    PLMImporter importer;
-    return importer.importPlumeCreatorProject(this->id(), plumeURL);
+    return result;
 }

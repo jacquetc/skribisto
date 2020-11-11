@@ -24,7 +24,7 @@
 #include <QObject>
 #include <QSqlDatabase>
 
-#include "plmerror.h"
+#include "skrresult.h"
 
 class PLMUpgrader : public QObject {
     Q_OBJECT
@@ -32,9 +32,9 @@ class PLMUpgrader : public QObject {
 public:
 
     explicit PLMUpgrader(QObject *parent = nullptr);
-    static PLMError upgradeSQLite(QSqlDatabase sqlDb);
+    static SKRResult upgradeSQLite(QSqlDatabase sqlDb);
 
-    static PLMError setDbVersion(QSqlDatabase sqlDb, double newVersion);
+    static SKRResult setDbVersion(QSqlDatabase sqlDb, double newVersion);
 signals:
 
 public slots:

@@ -97,20 +97,20 @@ TagPadForm {
         target: root
         function onCallAddTagRelationship(projectId, itemId, tagName){
 
-            var error;
+            var result;
             // verify if name doesn't already exist :
             var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
 
             if(tagId === -2){
                 //if not, create tag
-                error = plmData.tagHub().addTag(projectId, tagName)
+                result = plmData.tagHub().addTag(projectId, tagName)
                 tagId = plmData.tagHub().getLastAddedId()
             }
 
             // set relationship
-            error = plmData.tagHub().setTagRelationship(projectId, itemType, itemId, tagId)
-            if (!error.success){
-                console.log("error onCallAddTagRelationship")
+            result = plmData.tagHub().setTagRelationship(projectId, itemType, itemId, tagId)
+            if (!result.success){
+                console.log("result onCallAddTagRelationship")
                 //TODO: add notification
                 return
             }
@@ -711,9 +711,9 @@ TagPadForm {
                             //                                //create relationship with tag
 
                             //                                var tagId = model.paperId
-                            //                                var error = plmData.tagHub().setPaperTagRelationship(model.projectId, paperId, tagId )
+                            //                                var result = plmData.tagHub().setPaperTagRelationship(model.projectId, paperId, tagId )
 
-                            //                                if (!error.success){
+                            //                                if (!result.success){
                             //                                    //TODO: add notification
                             //                                    return
                             //                                }

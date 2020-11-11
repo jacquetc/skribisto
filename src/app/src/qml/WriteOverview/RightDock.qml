@@ -164,20 +164,20 @@ RightDockForm {
     Connections{
         target: tagPadView
         function onCallAddTagRelationship(projectId, itemId, tagName){
-            var error;
+            var result;
             // verify if name doesn't already exist :
             var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
 
             if(tagId === -2){
                 //if not, create tag
-                error = plmData.tagHub().addTag(projectId, tagName)
+                result = plmData.tagHub().addTag(projectId, tagName)
                 tagId = plmData.tagHub().getLastAddedId()
             }
 
             // set relationship
-            error = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Note, itemId, tagId)
-            if (!error.success){
-                console.log("error onCallAddTagRelationship")
+            result = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Note, itemId, tagId)
+            if (!result.success){
+                console.log("result onCallAddTagRelationship")
                 //TODO: add notification
                 return
             }

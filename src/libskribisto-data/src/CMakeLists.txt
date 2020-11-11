@@ -15,8 +15,8 @@ find_package(QuaZip-Qt5 REQUIRED)
 
 set(data_SRCS
     plmdata.cpp
-    plmerror.cpp
-    plmerrorhub.cpp
+    skrresult.cpp
+    skrerrorhub.cpp
     plmnotehub.cpp
     plmpaperhub.cpp
     plmpluginhub.cpp
@@ -29,6 +29,7 @@ set(data_SRCS
     skrprojectdicthub.cpp
     tasks/plmprojectmanager.cpp
     tasks/plmsqlqueries.cpp
+    tasks/sql/skrsqltools.cpp
     tasks/sql/plmexporter.cpp
     tasks/sql/plmimporter.cpp
     tasks/sql/plmproject.cpp
@@ -65,8 +66,8 @@ set(data_HDR
     plmcoreinterface.h
     plmcoreplugins.h
     plmdata.h
-    plmerror.h
-    plmerrorhub.h
+    skrresult.h
+    skrerrorhub.h
     plmnotehub.h
     plmpaperhub.h
     plmpluginhub.h
@@ -83,6 +84,7 @@ set(data_HDR
     skrprojectdicthub.h
     tasks/plmprojectmanager.h
     tasks/plmsqlqueries.h
+    tasks/sql/skrsqltools.h
     tasks/sql/plmexporter.h
     tasks/sql/plmimporter.h
     tasks/sql/plmproject.h
