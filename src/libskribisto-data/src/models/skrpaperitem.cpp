@@ -516,6 +516,13 @@ void SKRPaperItem::setIsProjectItem(int projectId)
     this->invalidateData(Roles::HasChildrenRole);
     this->invalidateData(Roles::ProjectIsBackupRole);
     this->invalidateData(Roles::ProjectIsActiveRole);
+    m_data.insert(Roles::IsMovableRole, false);
+    m_data.insert(Roles::CanAddPaperRole, false);
+    m_data.insert(Roles::IsTrashableRole, false);
+    m_data.insert(Roles::IsOpenableRole, false);
+    m_data.insert(Roles::IsCopyableRole, false);
+    m_data.insert(Roles::IsRenamableRole, false);
+    m_data.insert(Roles::AttributesRole, "");
 }
 
 int SKRPaperItem::projectId()

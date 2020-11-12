@@ -28,6 +28,8 @@
 #include <QTextCursor>
 #include "skrhighlighter.h"
 
+
+
 class DocumentHandler : public QObject {
     Q_OBJECT
     Q_PROPERTY(QStringList allFontFamilies READ allFontFamilies CONSTANT)
@@ -119,7 +121,7 @@ public:
     bool                numberedList() const;
     void                setNumberedList(bool numberedList);
 
-    void                setId(const int projectId,
+    Q_INVOKABLE void                setId(const int projectId,
                               const int paperId);
     int                 paperId() const;
 
@@ -159,6 +161,10 @@ signals:
     void topMarginEverywhereChanged(qreal topMargin);
     void indentEverywhereChanged(qreal indent);
 
+    void charCountChanged(int count);
+    void wordCountChanged(int count);
+
+
 private:
 
     QQuickTextDocument *m_textDoc;
@@ -175,6 +181,7 @@ private:
     qreal m_indentEverywhere;
 
     SKRHighlighter *m_highlighter;
+
 };
 
 #endif // DOCUMENTHANDLER_H

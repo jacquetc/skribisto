@@ -66,8 +66,19 @@ WritingZoneForm {
 
     //-------------------------------------------------
 
-    property int paperId: -2
     property int projectId: -2
+    onProjectIdChanged: {
+        documentHandler.setId(projectId, paperId)
+
+        if(!spellCheckerKilled){
+            determineSpellCheckerLanguageCode()
+        }
+
+    }
+    property int paperId: -2
+    onPaperIdChanged: {
+        documentHandler.setId(projectId, paperId)
+    }
 
     function clear(){
         textArea.clear()
@@ -496,8 +507,6 @@ WritingZoneForm {
         selectionStart: textArea.selectionStart
         selectionEnd: textArea.selectionEnd
 
-        projectId: root.projectId
-
         Component.onCompleted: {
 
             if(!spellCheckerKilled){
@@ -598,13 +607,6 @@ WritingZoneForm {
         var projectDictList = plmData.projectDictHub().getProjectDictList(projectId)
         highlighter.spellChecker.setUserDict(projectDictList)
     }
-
-    onProjectIdChanged: {
-        if(!spellCheckerKilled){
-            determineSpellCheckerLanguageCode()
-        }
-    }
-
 
 
     //-----------------------------------------------------------------------------

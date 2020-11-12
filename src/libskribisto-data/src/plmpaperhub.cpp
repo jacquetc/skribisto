@@ -2,6 +2,7 @@
 #include "tasks/plmsqlqueries.h"
 #include "tools.h"
 #include "tasks/plmprojectmanager.h"
+#include "plmdata.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -10,25 +11,45 @@
 /// \brief PLMPaperHub::PLMPaperHub
 /// \param parent
 //
-PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName)
-    : QObject(parent), m_tableName(tableName), m_last_added_id(-1)
+PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName, const SKR::PaperType &paperType)
+    : QObject(parent), m_tableName(tableName), m_paperType(paperType), m_last_added_id(-1), m_wordMeter(new SKRWordMeter(this))
 {
+    qRegisterMetaType<SKR::PaperType>("SKR::PaperType");
     //    qRegisterMetaType<Setting>(         "Setting");
     //    qRegisterMetaType<Stack>(           "Stack");
     //    qRegisterMetaType<OpenedDocSetting>("OpenedDocSetting");
 
     // connection for 'getxxx' functions to have a way to get errors.
-    connect(this,
-            &PLMPaperHub::errorSent,
-            this,
-            &PLMPaperHub::setError,
-            Qt::DirectConnection);
+    connect(this, &PLMPaperHub::errorSent, this, &PLMPaperHub::setError, Qt::DirectConnection);
 
-    if (m_tableName.contains("note")) {
-        m_paperType = "note";
-    } else if (m_tableName.contains("sheet")) {
-        m_paperType = "sheet";
-    }
+    //connect(m_wordMeter, )
+
+
+    connect(m_wordMeter, &SKRWordMeter::wordCountCalculated, [](SKR::PaperType paperType, int projectId, int paperId, int wordCount){
+        switch(paperType){
+        case SKR::Sheet:
+            plmdata->sheetPropertyHub()->setProperty(projectId, paperId, "word_count", QString::number(wordCount));
+            break;
+        case SKR::Note:
+            plmdata->notePropertyHub()->setProperty(projectId, paperId, "word_count", QString::number(wordCount));
+            break;
+        }
+    });
+
+    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, [](SKR::PaperType paperType, int projectId, int paperId, int characterCount){
+        switch(paperType){
+        case SKR::Sheet:
+            plmdata->sheetPropertyHub()->setProperty(projectId, paperId, "char_count", QString::number(characterCount));
+            break;
+        case SKR::Note:
+            plmdata->notePropertyHub()->setProperty(projectId, paperId, "char_count", QString::number(characterCount));
+            break;
+        }
+    });
+
+
+
+
 }
 
 ///
@@ -279,6 +300,14 @@ int PLMPaperHub::getSortOrder(int projectId, int paperId) const
 
 SKRResult PLMPaperHub::setContent(int projectId, int paperId, const QString& newContent)
 {
+    if(plmdata->projectHub()->isProjectToBeClosed(projectId) ){
+        m_wordMeter->countText(m_paperType, projectId, paperId, newContent, true);
+    }
+    else{
+        m_wordMeter->countText(m_paperType, projectId, paperId, newContent, false);
+    }
+
+
     SKRResult result = set(projectId, paperId, "m_content", newContent);
 
     IFOK(result) {
@@ -315,8 +344,8 @@ SKRResult PLMPaperHub::untrashOnlyOnePaper(int projectId, int paperId) {
 
 // ------------------------------------------------------------
 SKRResult PLMPaperHub::setTrashedWithChildren(int  projectId,
-                                             int  paperId,
-                                             bool newTrashedState)
+                                              int  paperId,
+                                              bool newTrashedState)
 {
     SKRResult result(this);
 
@@ -398,7 +427,7 @@ QDateTime PLMPaperHub::getTrashedDate(int projectId, int paperId) const
 // ------------------------------------------------------------
 
 SKRResult PLMPaperHub::setCreationDate(int projectId, int paperId,
-                                      const QDateTime& newDate)
+                                       const QDateTime& newDate)
 {
     SKRResult result = set(projectId, paperId, "dt_created", newDate);
 
@@ -580,10 +609,10 @@ void PLMPaperHub::setError(const SKRResult& result)
 // ------------------------------------------------------------
 
 SKRResult PLMPaperHub::set(int             projectId,
-                          int             paperId,
-                          const QString & fieldName,
-                          const QVariant& value,
-                          bool            setCurrentDateBool)
+                           int             paperId,
+                           const QString & fieldName,
+                           const QVariant& value,
+                           bool            setCurrentDateBool)
 {
     SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
@@ -744,8 +773,7 @@ int PLMPaperHub::getLastAddedId()
 SKRResult PLMPaperHub::renumberSortOrders(int projectId)
 {
     SKRResult result(this);
-    PLMSqlQueries queries(projectId,
-                          "tbl_user_" + m_paperType + "_doc_list");
+    PLMSqlQueries queries(projectId, m_tableName);
 
     result = queries.renumberSortOrder();
     IFKO(result) {
@@ -1034,7 +1062,7 @@ QList<int>PLMPaperHub::getAllSiblings(int projectId, int paperId) {
 
     // alone, so no siblings
     if ((minSiblingIndex == paperSortedIdIndex) &&
-        (maxSiblingIndex == paperSortedIdIndex)) {
+            (maxSiblingIndex == paperSortedIdIndex)) {
         return siblingsList;
     }
 
@@ -1084,10 +1112,10 @@ SKRResult PLMPaperHub::addChildPaper(int projectId, int targetId)
         // get the highest sort order
         QHash<int, QVariant> sortOrderResult;
         result = queries.getValueByIds("l_sort_order",
-                                      sortOrderResult,
-                                      QString(),
-                                      QVariant(),
-                                      true);
+                                       sortOrderResult,
+                                       QString(),
+                                       QVariant(),
+                                       true);
 
         target_sort_order = 0;
 
@@ -1169,7 +1197,7 @@ SKRResult PLMPaperHub::removePaper(int projectId, int targetId)
     SKRResult result = queries.remove(targetId);
 
     IFOKDO(result, queries.renumberSortOrder())
-    IFKO(result) {
+            IFKO(result) {
         queries.rollback();
     }
     IFOK(result) {
@@ -1188,9 +1216,9 @@ SKRResult PLMPaperHub::removePaper(int projectId, int targetId)
 // -----------------------------------------------------------------------------
 
 SKRResult PLMPaperHub::movePaper(int  sourceProjectId,
-                                int  sourcePaperId,
-                                int  targetPaperId,
-                                bool after)
+                                 int  sourcePaperId,
+                                 int  targetPaperId,
+                                 bool after)
 {
     SKRResult result(this);
     int targetProjectId = sourceProjectId;
@@ -1203,7 +1231,7 @@ SKRResult PLMPaperHub::movePaper(int  sourceProjectId,
     targetSortOrder = targetSortOrder + (after ? 1 : -1);
     result           = setSortOrder(sourceProjectId, sourcePaperId, targetSortOrder);
     IFOKDO(result, queries.renumberSortOrder())
-    IFKO(result) {
+            IFKO(result) {
         queries.rollback();
     }
     IFKO(result) {
@@ -1231,10 +1259,10 @@ SKRResult PLMPaperHub::movePaperUp(int projectId, int paperId)
     QHash<int, QVariant> sortOrderResult;
 
     result = queries.getValueByIds("l_sort_order",
-                                  sortOrderResult,
-                                  QString(),
-                                  QVariant(),
-                                  true);
+                                   sortOrderResult,
+                                   QString(),
+                                   QVariant(),
+                                   true);
 
 
     QList<int> idList;
@@ -1255,7 +1283,7 @@ SKRResult PLMPaperHub::movePaperUp(int projectId, int paperId)
 
             if (this->getIndent(projectId,
                                 possibleTargetPaperId) ==
-                this->getIndent(projectId, paperId)) {
+                    this->getIndent(projectId, paperId)) {
                 targetPaperId = possibleTargetPaperId;
                 break;
             }
@@ -1276,7 +1304,7 @@ SKRResult PLMPaperHub::movePaperUp(int projectId, int paperId)
     IFOKDO(result, this->movePaper(projectId, paperId, targetPaperId))
 
 
-    IFKO(result) {
+            IFKO(result) {
         emit errorSent(result);
     }
     return result;
@@ -1295,10 +1323,10 @@ SKRResult PLMPaperHub::movePaperDown(int projectId, int paperId)
     QHash<int, QVariant> sortOrderResult;
 
     result = queries.getValueByIds("l_sort_order",
-                                  sortOrderResult,
-                                  QString(),
-                                  QVariant(),
-                                  true);
+                                   sortOrderResult,
+                                   QString(),
+                                   QVariant(),
+                                   true);
 
 
     QList<int> idList;
@@ -1319,7 +1347,7 @@ SKRResult PLMPaperHub::movePaperDown(int projectId, int paperId)
 
             if (this->getIndent(projectId,
                                 possibleTargetPaperId) ==
-                this->getIndent(projectId, paperId)) {
+                    this->getIndent(projectId, paperId)) {
                 targetPaperId = possibleTargetPaperId;
                 break;
             }
@@ -1340,7 +1368,7 @@ SKRResult PLMPaperHub::movePaperDown(int projectId, int paperId)
     IFOKDO(result, this->movePaper(projectId, paperId, targetPaperId, true))
 
 
-    IFKO(result) {
+            IFKO(result) {
         emit errorSent(result);
     }
     return result;
@@ -1349,9 +1377,9 @@ SKRResult PLMPaperHub::movePaperDown(int projectId, int paperId)
 // -----------------------------------------------------------------------------
 
 SKRResult PLMPaperHub::movePaperAsChildOf(int projectId,
-                                         int noteId,
-                                         int targetParentId,
-                                         int wantedSortOrder)
+                                          int noteId,
+                                          int targetParentId,
+                                          int wantedSortOrder)
 {
     SKRResult result(this);
 

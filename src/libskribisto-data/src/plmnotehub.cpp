@@ -22,9 +22,10 @@
 #include "tasks/plmsqlqueries.h"
 #include "tools.h"
 #include "plmdata.h"
+#include "skr.h"
 #include <QDebug>
 
-PLMNoteHub::PLMNoteHub(QObject *parent) : PLMPaperHub(parent, "tbl_note")
+PLMNoteHub::PLMNoteHub(QObject *parent) : PLMPaperHub(parent, "tbl_note", SKR::Note)
 {}
 
 SKRResult PLMNoteHub::addNoteRelatedToSheet(int projectId, int sheetId) {

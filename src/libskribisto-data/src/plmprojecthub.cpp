@@ -9,9 +9,10 @@
 #include "tasks/plmprojectmanager.h"
 #include "tasks/plmsqlqueries.h"
 #include <tasks/sql/plmimporter.h>
+#include "plmdata.h"
 
 PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent),
-    m_tableName("tbl_project")
+    m_tableName("tbl_project"), m_isProjectToBeClosed(-2)
 {
     // connection for 'getxxx' functions to have a way to get errors.
     connect(this,
@@ -24,12 +25,14 @@ PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent),
 SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath)
 {
     // qDebug() << "loading project";
-    int projectId  = -1;
+    int projectId    = -1;
     SKRResult result = plmProjectManager->loadProject(urlFilePath, projectId);
+
     result.addData("projectId", projectId);
 
     IFOK(result) {
-        this->setActiveProject(projectId);
+        plmdata->noteHub()->renumberSortOrders(projectId);
+        plmdata->sheetHub()->renumberSortOrders(projectId);
         m_projectsNotModifiedOnceList.append(projectId);
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
@@ -47,12 +50,14 @@ SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath)
 
 SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path)
 {
-    int projectId  = -1;
+    int projectId    = -1;
     SKRResult result = plmProjectManager->createNewEmptyDatabase(projectId);
+
     result.addData("projectId", projectId);
 
     IFOK(result) {
-        this->setActiveProject(projectId);
+        plmdata->noteHub()->renumberSortOrders(projectId);
+        plmdata->sheetHub()->renumberSortOrders(projectId);
         m_projectsNotModifiedOnceList.append(projectId);
         emit projectLoaded(projectId);
         emit projectCountChanged(this->getProjectCount());
@@ -124,8 +129,8 @@ QList<int>PLMProjectHub::projectsNotSaved() {
 }
 
 SKRResult PLMProjectHub::saveProjectAs(int            projectId,
-                                      const QString& type,
-                                      const QUrl   & path)
+                                       const QString& type,
+                                       const QUrl   & path)
 {
     SKRResult result(this);
 
@@ -156,8 +161,8 @@ SKRResult PLMProjectHub::saveProjectAs(int            projectId,
 // ----------------------------------------------------------------------------
 
 SKRResult PLMProjectHub::saveAProjectCopy(int            projectId,
-                                         const QString& type,
-                                         const QUrl   & path)
+                                          const QString& type,
+                                          const QUrl   & path)
 {
     SKRResult result(this);
 
@@ -180,8 +185,8 @@ SKRResult PLMProjectHub::saveAProjectCopy(int            projectId,
 // ----------------------------------------------------------------------------
 
 SKRResult PLMProjectHub::backupAProject(int            projectId,
-                                       const QString& type,
-                                       const QUrl   & folderPath) {
+                                        const QString& type,
+                                        const QUrl   & folderPath) {
     SKRResult result(this);
 
     QUrl projectPath = this->getPath(projectId);
@@ -317,7 +322,9 @@ bool PLMProjectHub::doesBackupOfTheDayExistAtPath(int projectId, const QUrl& fol
 SKRResult PLMProjectHub::closeProject(int projectId)
 {
     SKRResult result(this);
-    emit     projectToBeClosed(projectId);
+
+    m_isProjectToBeClosed = projectId;
+    emit projectToBeClosed(projectId);
 
     result = plmProjectManager->closeProject(projectId);
     IFOK(result) {
@@ -332,9 +339,11 @@ SKRResult PLMProjectHub::closeProject(int projectId)
         }
         m_projectsNotModifiedOnceList.removeAll(projectId);
         m_projectsNotSavedList.removeAll(projectId);
+        m_isProjectToBeClosed = -2;
     }
 
     IFKO(result) {
+        m_isProjectToBeClosed = -2;
         emit errorSent(result);
     }
 
@@ -369,6 +378,13 @@ SKRResult PLMProjectHub::closeAllProjects()
 
 // ----------------------------------------------------------------------------
 
+bool PLMProjectHub::isProjectToBeClosed(int projectId) const
+{
+    return m_isProjectToBeClosed == projectId;
+}
+
+// ----------------------------------------------------------------------------
+
 
 QList<int>PLMProjectHub::getProjectIdList()
 {
@@ -387,7 +403,7 @@ int PLMProjectHub::getProjectCount()
 QUrl PLMProjectHub::getPath(int projectId) const
 {
     SKRResult result(this);
-    QUrl     url;
+    QUrl url;
     PLMProject *project = plmProjectManager->project(projectId);
 
     if (!project) {
@@ -409,12 +425,12 @@ QUrl PLMProjectHub::getPath(int projectId) const
 
 SKRResult PLMProjectHub::setPath(int projectId, const QUrl& newUrlPath)
 {
-    SKRResult result(this);
+    SKRResult   result(this);
     PLMProject *project = plmProjectManager->project(projectId);
 
     if (!project) {
         result = SKRResult(SKRResult::Critical, this, "project_not_found");
-   }
+    }
 
     IFOKDO(result, project->setPath(newUrlPath))
     IFOK(result) {
@@ -493,8 +509,8 @@ bool PLMProjectHub::isThisProjectABackup(int projectId)
 
 QString PLMProjectHub::getProjectType(int projectId) const
 {
-    SKRResult result(this);
-    QString  value;
+    SKRResult   result(this);
+    QString     value;
     PLMProject *project = plmProjectManager->project(projectId);
 
     if (!project) {
@@ -602,7 +618,6 @@ QString PLMProjectHub::getProjectUniqueId(int projectId) const
 
 SKRResult PLMProjectHub::importPlumeCreatorProject(const QUrl& plumeURL, const QUrl& skribistoFileURL)
 {
-
     PLMImporter importer;
 
     SKRResult result =  importer.importPlumeCreatorProject(plumeURL, skribistoFileURL);
@@ -617,9 +632,9 @@ SKRResult PLMProjectHub::importPlumeCreatorProject(const QUrl& plumeURL, const Q
 // ----------------------------------------------------------------------------
 
 SKRResult PLMProjectHub::set(int             projectId,
-                            const QString & fieldName,
-                            const QVariant& value,
-                            bool            setCurrentDateBool)
+                             const QString & fieldName,
+                             const QVariant& value,
+                             bool            setCurrentDateBool)
 {
     SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
@@ -647,8 +662,8 @@ SKRResult PLMProjectHub::set(int             projectId,
 QVariant PLMProjectHub::get(int projectId, const QString& fieldName) const
 {
     SKRResult result(this);
-    QVariant var;
-    QVariant value;
+    QVariant  var;
+    QVariant  value;
     int id = 1;
     PLMSqlQueries queries(projectId, m_tableName);
 

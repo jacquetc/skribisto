@@ -81,7 +81,6 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKR
     }
     setType("skrib");
     IFOK(*result) {
-
     }
 
 

@@ -20,9 +20,10 @@
 ***************************************************************************/
 #include "plmsheethub.h"
 #include "plmdata.h"
+#include "skr.h"
 #include "tasks/plmsqlqueries.h"
 
-PLMSheetHub::PLMSheetHub(QObject *parent) : PLMPaperHub(parent, "tbl_sheet")
+PLMSheetHub::PLMSheetHub(QObject *parent) : PLMPaperHub(parent, "tbl_sheet", SKR::Sheet)
 {}
 
 QHash<QString, QVariant>PLMSheetHub::getSheetData(int projectId, int sheetId) const

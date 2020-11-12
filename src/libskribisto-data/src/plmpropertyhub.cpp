@@ -171,24 +171,13 @@ SKRResult PLMPropertyHub::setProperty(int            projectId,
         }
     }
 
-    IFOKDO(result, setPropertyById(projectId, propertyId, name, value));
 
-
-    return result;
-}
-
-SKRResult PLMPropertyHub::setPropertyById(int            projectId,
-                                         int            propertyId,
-                                         const QString& name,
-                                         const QString& value)
-{
-    SKRResult result(this);
 
     PLMSqlQueries queries(projectId, m_tableName);
 
     queries.beginTransaction();
 
-    result = queries.set(propertyId, "t_name", name);
+    IFOKDO(result, queries.set(propertyId, "t_name", name));
     IFOKDO(result, queries.set(propertyId, "t_value", value));
     IFOKDO(result, queries.setCurrentDate(propertyId, "dt_updated"));
     IFKO(result) {
@@ -201,7 +190,7 @@ SKRResult PLMPropertyHub::setPropertyById(int            projectId,
 
     IFOKDO(result, queries.get(propertyId, m_paperCodeFieldName, variant));
     IFOK(result) {
-        emit propertyChanged(projectId, propertyId, value.toInt(), name, value);
+        emit propertyChanged(projectId, propertyId, paperCode, name, value);
         emit projectModified(projectId);
     }
     IFKO(result) {

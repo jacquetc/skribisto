@@ -29,6 +29,7 @@ set(data_SRCS
     skrprojectdicthub.cpp
     tasks/plmprojectmanager.cpp
     tasks/plmsqlqueries.cpp
+    tasks/skrwordmeter.cpp
     tasks/sql/skrsqltools.cpp
     tasks/sql/plmexporter.cpp
     tasks/sql/plmimporter.cpp
@@ -78,6 +79,7 @@ set(data_HDR
     skrprojectdicthub.h
     tasks/plmprojectmanager.h
     tasks/plmsqlqueries.h
+    tasks/skrwordmeter.h
     tasks/sql/skrsqltools.h
     tasks/sql/plmexporter.h
     tasks/sql/plmimporter.h

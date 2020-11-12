@@ -8,6 +8,7 @@
 #include <QTextList>
 #include <QImageReader>
 #include <QTextDocumentWriter>
+#include <QTextDocumentFragment>
 
 
 // #include "plmdata.h"
@@ -44,9 +45,9 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 this,
                 &DocumentHandler::canRedoChanged);
         m_textCursor =
-            textDocument->textDocument()->rootFrame()->firstCursorPosition();
+                textDocument->textDocument()->rootFrame()->firstCursorPosition();
         m_selectionCursor =
-            textDocument->textDocument()->rootFrame()->firstCursorPosition();
+                textDocument->textDocument()->rootFrame()->firstCursorPosition();
 
         m_highlighter = new SKRHighlighter(m_textDoc->textDocument());
         m_highlighter->setProjectId(m_projectId);
@@ -54,7 +55,7 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 &DocumentHandler::projectIdChanged,
                 m_highlighter,
                 &SKRHighlighter::setProjectId);
-    } else {
+     } else {
         m_textCursor.setPosition(0);
     }
     emit cursorPositionChanged();
@@ -401,7 +402,7 @@ void DocumentHandler::setAlignment(Qt::Alignment alignment)
 bool DocumentHandler::bulletList() const
 {
     return m_textCursor.currentList() &&
-           m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
+            m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
 }
 
 void DocumentHandler::setBulletList(bool bulletList)
@@ -422,7 +423,7 @@ void DocumentHandler::setBulletList(bool bulletList)
 bool DocumentHandler::numberedList() const
 {
     return m_textCursor.currentList() &&
-           m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
+            m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
 }
 
 void DocumentHandler::setNumberedList(bool numberedList)
@@ -455,7 +456,7 @@ void DocumentHandler::setId(const int projectId, const int paperId)
 
     //    QString text = plmdata->sheetHub()->getContent(projectId, paperId);
 
-    m_selectionCursor.select(QTextCursor::Document);
+    //m_selectionCursor.select(QTextCursor::Document);
 
     //    m_selectionCursor.insertHtml(text);
 
