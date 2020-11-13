@@ -346,8 +346,8 @@ ListView {
 
                     text: "Open document"
                     onTriggered: {
-                        console.log("model.openedProjectId", openedProjectId)
-                        console.log("model.projectId", model.projectId)
+                        //console.log("model.openedProjectId", openedProjectId)
+                        //console.log("model.projectId", model.projectId)
                         root.openDocument(openedProjectId, openedPaperId, model.projectId,
                                           model.paperId)
                     }
@@ -419,7 +419,7 @@ ListView {
                             onCheckStateChanged: {
 
                                 if(root.currentIndex === model.index){
-                                    console.log("model.hasChildren", model.hasChildren)
+                                    //console.log("model.hasChildren", model.hasChildren)
                                     if(checkState === Qt.PartiallyChecked && !proxyModel.hasChildren(model.projectId, model.paperId)){
                                         model.checkState = Qt.Checked
                                     }
@@ -536,7 +536,7 @@ ListView {
                                         //if (!activeFocus) {
                                         //accepted()
                                         //}
-                                        console.log("editing label finished")
+                                        //console.log("editing label finished")
                                         model.label = text
                                         delegateRoot.state = ""
                                     }

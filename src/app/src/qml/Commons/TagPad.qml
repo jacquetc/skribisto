@@ -187,7 +187,7 @@ TagPadForm {
 
                     if(!here){
                         root.selectedList.push(itemBase.tagId)
-                        console.log(" root.selectedList",  root.selectedList)
+                        //console.log(" root.selectedList",  root.selectedList)
                         root.determineWhichItemIsSelected()
                     }
                 }

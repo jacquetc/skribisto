@@ -32,12 +32,12 @@
 #include <QFileInfo>
 #include <QTimer>
 
-PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
+PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKRResult *result) :
     QObject(parent)
 {
     qRegisterMetaType<PLMProject::DBType>("PLMProject::DBType");
     m_projectId = projectId;
-    SKRResult result;
+
 
     if (!fileName.isEmpty()) {
         QFileInfo info;
@@ -50,24 +50,24 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
         }
 
         if (!info.exists()) {
-            result.setSuccess(false);
+            *result = SKRResult(SKRResult::Critical, this, "file_not_existing");
         }
 
         if (!info.isReadable()) {
-            result.setSuccess(false);
+            *result = SKRResult(SKRResult::Critical, this, "file_not_readable");
         }
 
-        IFOKDO(result, setPath(fileName))
+        IFOKDO(*result, setPath(fileName))
     }
 
 
-    IFOK(result) {
+    IFOK(*result) {
         PLMImporter importer;
 
         if (fileName.isEmpty()) { // virgin project
-            m_sqlDb = importer.createEmptySQLiteProject(projectId, result);
+            m_sqlDb = importer.createEmptySQLiteProject(projectId, *result);
 
-            IFKO(result) {
+            IFKO(*result) {
                 // qWarning << result.getMessage()
                 m_projectId = -1;
                 qCritical() << "New project not created";
@@ -75,47 +75,17 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName) :
                 return;
             }
         } else {
-            m_sqlDb = importer.createSQLiteDbFrom("SQLITE", fileName, projectId, result);
+            m_sqlDb = importer.createSQLiteDbFrom("SQLITE", fileName, projectId, *result);
         }
         this->setPath(fileName);
     }
     setType("skrib");
-    IFOK(result) {
-        // sheet and note sql tree :
-        m_sheetTree = new PLMSheetTree(this, "tbl_sheet", "l_sheet_id", m_sqlDb);
-        m_plmTreeForTableNameHash.insert("tbl_sheet", m_sheetTree);
-        m_noteTree = new PLMNoteTree(this, "tbl_note", "l_note_id", m_sqlDb);
-        m_plmTreeForTableNameHash.insert("tbl_note",  m_noteTree);
-        PLMProperty *sheetProperty = new PLMProperty(this,
-                                                     "tbl_sheet_property",
-                                                     "l_sheet_code",
-                                                     m_sqlDb);
-
-        m_plmPropertyForTableNameHash.insert("tbl_sheet_property", sheetProperty);
-        PLMProperty *noteProperty = new PLMProperty(this,
-                                                    "tbl_note_property",
-                                                    "l_note_code",
-                                                    m_sqlDb);
-
-        m_plmPropertyForTableNameHash.insert("tbl_note_property", noteProperty);
-        PLMProperty *sheetSystemProperty = new PLMProperty(this,
-                                                           "tbl_sheet_property",
-                                                           "l_sheet_code",
-                                                           m_sqlDb);
-
-        m_plmPropertyForTableNameHash.insert("tbl_sheet_system_property",
-                                             sheetSystemProperty);
-        PLMProperty *noteSystemProperty = new PLMProperty(this,
-                                                          "tbl_note_property",
-                                                          "l_note_code",
-                                                          m_sqlDb);
-
-        m_plmPropertyForTableNameHash.insert("tbl_note_system_property",
-                                             noteSystemProperty);
+    IFOK(*result) {
     }
 
 
-    IFKO(result) {
+    IFKO(*result) {
+        *result = SKRResult(SKRResult::Critical, this, "project_creation_failed");
         m_projectId = -1;
     }
 }
@@ -168,25 +138,25 @@ QString PLMProject::getTempFileName() const
     return m_sqlDb.databaseName();
 }
 
-PLMProperty * PLMProject::getProperty(const QString& tableName)
-{
-    return m_plmPropertyForTableNameHash.value(tableName);
-}
+//PLMProperty * PLMProject::getProperty(const QString& tableName)
+//{
+//    return m_plmPropertyForTableNameHash.value(tableName);
+//}
 
-PLMTree * PLMProject::getTree(const QString& tableName)
-{
-    return m_plmTreeForTableNameHash.value(tableName);
-}
+//PLMTree * PLMProject::getTree(const QString& tableName)
+//{
+//    return m_plmTreeForTableNameHash.value(tableName);
+//}
 
-PLMSheetTree * PLMProject::sheetTree()
-{
-    return m_sheetTree;
-}
+//PLMSheetTree * PLMProject::sheetTree()
+//{
+//    return m_sheetTree;
+//}
 
-PLMNoteTree * PLMProject::noteTree()
-{
-    return m_noteTree;
-}
+//PLMNoteTree * PLMProject::noteTree()
+//{
+//    return m_noteTree;
+//}
 
 QString PLMProject::getType() const
 {
@@ -210,7 +180,7 @@ QUrl PLMProject::getPath() const
 
 SKRResult PLMProject::setPath(const QUrl& value)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     // TODO: check for file rights, etc...
     IFOK(result) {

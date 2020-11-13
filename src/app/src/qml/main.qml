@@ -249,7 +249,7 @@ ApplicationWindow {
             var projectId = plmData.projectHub().getActiveProject()
             var result = plmData.projectHub().saveProject(projectId)
 
-            if (result.containsErrorCode("W_PROJECT_no_path")){
+            if (result.containsErrorCodeDetail("no_path")){
                 saveAsFileDialog.open()
             }
 
@@ -324,7 +324,7 @@ ApplicationWindow {
                 var projectId = projectIdList[i]
                 var result = plmData.projectHub().saveProject(projectId)
 
-                if (result.containsErrorCode("W_PROJECT_no_path")){
+                if (result.containsErrorCodeDetail("no_path")){
                     var errorProjectId = result.getData("projectId", -2);
                     saveAsFileDialog.projectId = errorProjectId
                     saveAsFileDialog.open()
@@ -419,7 +419,7 @@ ApplicationWindow {
 
             var result = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
+            if (result.containsErrorCodeDetail("path_is_readonly")){
                 // Dialog:
                 pathIsReadOnlydialog.open()
 
@@ -500,7 +500,7 @@ ApplicationWindow {
 
             var result = plmData.projectHub().saveAProjectCopy(projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
+            if (result.containsErrorCodeDetail("path_is_readonly")){
                 // Dialog:
                 saveACopyFileDialog.open()
 
@@ -665,7 +665,7 @@ ApplicationWindow {
 
                     var result = plmData.projectHub().backupAProject(projectId, "skrib", path)
 
-                    if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
+                    if (result.containsErrorCodeDetail("path_is_readonly")){
 
                     }
 
@@ -764,7 +764,6 @@ ApplicationWindow {
             saveOrNotBeforeClosingProjectDialog.projectId = projectId
             saveOrNotBeforeClosingProjectDialog.projectName = plmData.projectHub().getProjectName(projectId)
             saveOrNotBeforeClosingProjectDialog.open()
-            saveOrNotBeforeClosingProjectDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         }
     }
 
@@ -793,7 +792,7 @@ ApplicationWindow {
 
 
             var result = plmData.projectHub().saveProject(projectId)
-            if (result.containsErrorCode("W_PROJECT_no_path")){
+            if (result.containsErrorCodeDetail("no_path")){
                 var errorProjectId = result.getData("projectId", -2);
                 saveAsBeforeClosingProjectFileDialog.projectId = errorProjectId
                 saveAsBeforeClosingProjectFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
@@ -840,7 +839,7 @@ ApplicationWindow {
 
             var result = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
+            if (result.containsErrorCodeDetail("path_is_readonly")){
                 // Dialog:
                 pathIsReadOnlydialog.open()
 
@@ -987,7 +986,7 @@ ApplicationWindow {
 
 
             var result = plmData.projectHub().saveProject(projectId)
-            if (result.containsErrorCode("W_PROJECT_no_path")){
+            if (result.containsErrorCodeDetail("no_path")){
                 var errorProjectId = result.getData("projectId", -2);
                 saveAsBeforeQuitingFileDialog.projectId = errorProjectId
                 saveAsBeforeQuitingFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
@@ -1029,7 +1028,7 @@ ApplicationWindow {
 
             var result = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (result.containsErrorCode("W_PROJECT_path_is_readonly")){
+            if (result.containsErrorCodeDetail("path_is_readonly")){
                 // Dialog:
                 pathIsReadOnlydialog.open()
 

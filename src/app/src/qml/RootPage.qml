@@ -53,6 +53,7 @@ RootPageForm {
                 rootSwipeView.currentIndex = 0
                 welcomePage.forceActiveFocus()
             }
+
         }
 
         Action {
@@ -306,7 +307,7 @@ RootPageForm {
 
             }
 
-            // renaming synopsis folder to locale:
+            // renaming synopsis folder to locale (if needed):
 
             var synopsisFolderId = plmData.noteHub().getSynopsisFolderId(projectId)
             var synopsisTitle = qsTr("Outlines")
@@ -446,8 +447,8 @@ RootPageForm {
     //---------------------------------------------------------
 
     function closeTab(index) {
-        if(rootSwipeView.itemAt(index).runActionsBedoreDestruction){
-            rootSwipeView.itemAt(index).runActionsBedoreDestruction()
+        if(rootSwipeView.itemAt(index).runActionsBeforeDestruction){
+            rootSwipeView.itemAt(index).runActionsBeforeDestruction()
         }
         rootSwipeView.removeItem(rootSwipeView.itemAt(index))
         rootTabBar.removeItem(rootTabBar.itemAt(index))
@@ -733,7 +734,7 @@ RootPageForm {
             var j;
             for (j = 0; j < rootTabBar.count; j++) {
 
-                console.log(rootTabBar.itemAt(j).tabId)
+                //console.log(rootTabBar.itemAt(j).tabId)
                 if (rootTabBar.itemAt(j).tabId === senderTabId){
 
                     rootSwipeView.itemAt(j).openDocument(projectId, paperId)
@@ -964,7 +965,7 @@ RootPageForm {
 
     function unsuscribeSubWindow(subWindow){
         var newList = []
-        console.log("subscribedSubWindows before", privateObject.subscribedSubWindows)
+        //console.log("subscribedSubWindows before", privateObject.subscribedSubWindows)
 
         var i
         for(i = 0 ; i < privateObject.subscribedSubWindows.length ; i++){
@@ -1446,7 +1447,7 @@ RootPageForm {
             if(arg === 0 ){
                 continue
             }
-            console.log("argument : " , arguments[arg])
+            //console.log("argument : " , arguments[arg])
 
             if (arguments[arg] === "--testProject") {
                 var result = plmData.projectHub().loadProject(
@@ -1465,9 +1466,9 @@ RootPageForm {
 
                     oneProjectInArgument = true
 
-                    console.log("argument skrib : " , arguments[arg])
+                    //console.log("argument skrib : " , arguments[arg])
                     var url = skrQMLTools.getURLFromLocalFile(arguments[arg])
-                    console.log("argument skrib url : " , url)
+                    //console.log("argument skrib url : " , url)
 
                     projectInArgument = plmData.projectHub().loadProject(url)
 

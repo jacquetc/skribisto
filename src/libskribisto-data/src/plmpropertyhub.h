@@ -54,10 +54,6 @@ public:
                          int imposedPropertyId = -1);
     SKRResult removeProperty(int projectId,
                             int propertyId);
-    SKRResult setPropertyById(int            projectId,
-                             int            propertyId,
-                             const QString& name,
-                             const QString& value);
     SKRResult             setId(int projectId,
                                int propertyId,
                                int newId);

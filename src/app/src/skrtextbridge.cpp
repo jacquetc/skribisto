@@ -343,7 +343,7 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
     selectionCursor.setPosition(position,              QTextCursor::MoveAnchor);
     selectionCursor.setPosition(position + charsAdded, QTextCursor::KeepAnchor);
 
-    qDebug() << "selectionCursor" << selectionCursor.selectedText();
+    //qDebug() << "selectionCursor" << selectionCursor.selectedText();
 
     QTextDocumentFragment docFragment = selectionCursor.selection();
 

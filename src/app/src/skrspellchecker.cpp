@@ -56,6 +56,9 @@ void SKRSpellChecker::setDict(const QString& dictionaryPath)
 
     //    m_isActive = true;
 }
+bool SKRSpellChecker::isHunspellLaunched() const{
+    return m_hunspellLaunched;
+}
 
 bool SKRSpellChecker::spell(const QString& word)
 {
@@ -275,6 +278,9 @@ QStringList SKRSpellChecker::dictsPaths()
 
     QDir dir;
     dir.setPath("/usr/share/hunspell/");
+    list.append(dir.path());
+
+    dir.setPath("/usr/share/myspell/");
     list.append(dir.path());
 
 #endif // ifdef Q_OS_LINUX

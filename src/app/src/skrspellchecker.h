@@ -44,6 +44,7 @@ public:
     SKRSpellChecker(QObject *parent = nullptr);
     ~SKRSpellChecker();
     Q_INVOKABLE void                         setDict(const QString& dictionaryPath);
+    bool                                     isHunspellLaunched() const;
 
     Q_INVOKABLE bool                         spell(const QString& word);
     Q_INVOKABLE QStringList                  suggest(const QString& word);

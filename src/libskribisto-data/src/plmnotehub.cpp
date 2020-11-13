@@ -22,13 +22,14 @@
 #include "tasks/plmsqlqueries.h"
 #include "tools.h"
 #include "plmdata.h"
+#include "skr.h"
 #include <QDebug>
 
-PLMNoteHub::PLMNoteHub(QObject *parent) : PLMPaperHub(parent, "tbl_note")
+PLMNoteHub::PLMNoteHub(QObject *parent) : PLMPaperHub(parent, "tbl_note", SKR::Note)
 {}
 
 SKRResult PLMNoteHub::addNoteRelatedToSheet(int projectId, int sheetId) {
-    SKRResult result;
+    SKRResult result(this);
 
     result = this->addChildPaper(projectId, -1); // add child to project item
 
@@ -90,7 +91,7 @@ QList<int>PLMNoteHub::getSheetsFromNoteId(int projectId, int noteId) const
 
 int PLMNoteHub::getSynopsisNoteId(int projectId, int sheetId) const
 {
-    SKRResult result;
+    SKRResult result(this);
     int final = -2;
     QHash<int, int> hash;
     QHash<int, QVariant> out;
@@ -131,7 +132,7 @@ SKRResult PLMNoteHub::setSheetNoteRelationship(int  projectId,
                                               int  noteId,
                                               bool isSynopsis)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, int> hash;
     QHash<int, QVariant> out;
@@ -203,7 +204,7 @@ SKRResult PLMNoteHub::setSheetNoteRelationship(int  projectId,
 
 SKRResult PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, int noteId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, int> hash;
     QHash<int, QVariant> out;
@@ -229,8 +230,7 @@ SKRResult PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, in
         }
 
         if (hash.isEmpty() || (key == -2) || (key == 0)) {
-            result.setSuccess(false);
-            result.addErrorCode("C_TAG_no_note_sheet_relationship_to_remove");
+            result = SKRResult(SKRResult::Critical, this, "no_note_sheet_relationship_to_remove");
         }
     }
 
@@ -257,7 +257,7 @@ SKRResult PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, in
 // move all
 /// existing synopsis into the folder
 int PLMNoteHub::getSynopsisFolderId(int projectId) {
-    SKRResult result;
+    SKRResult result(this);
     int value = -2;
 
     // retrieve
@@ -373,7 +373,7 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
 
 bool PLMNoteHub::isSynopsis(int projectId, int noteId)
 {
-    SKRResult result;
+    SKRResult result(this);
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -416,7 +416,7 @@ bool PLMNoteHub::isSynopsis(int projectId, int noteId)
 // --------------------------------------------------------------------------------
 
 SKRResult PLMNoteHub::createSynopsis(int projectId, int sheetId) {
-    SKRResult result;
+    SKRResult result(this);
 
     int synopsisFolderId = this->getSynopsisFolderId(projectId);
 
@@ -450,7 +450,7 @@ SKRResult PLMNoteHub::createSynopsis(int projectId, int sheetId) {
     }
 
     if (lastAddedNoteId == -2) {
-        result.setSuccess(false);
+        result = SKRResult(SKRResult::Critical, this, "createSynopsis");
     }
     IFOK(result) {
         result.addData("noteId", lastAddedNoteId);
@@ -466,7 +466,7 @@ SKRResult PLMNoteHub::createSynopsis(int projectId, int sheetId) {
 // useful ?
 QHash<QString, QVariant>PLMNoteHub::getNoteData(int projectId, int noteId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<QString, QVariant> var;
     QHash<QString, QVariant> hash;

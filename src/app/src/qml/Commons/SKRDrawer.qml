@@ -169,7 +169,7 @@ Item {
 
         onActiveFocusChanged: {
             if(!activeFocus && root.interactive && root.position === 1.0 ){
-                console.log("!activeFocus")
+                //console.log("!activeFocus")
                 root.position = 1.0
             }
         }
@@ -190,7 +190,7 @@ Item {
             enabled: interactive && root.position === 0
 
             onTapped: {
-                console.log("rightTapHandler")
+                //console.log("rightTapHandler")
                 root.position = 1.0
             }
             // grab:
@@ -285,7 +285,7 @@ Item {
                 enabled: root.interactive && root.position === 1.0
 
                 onTapped: {
-                    console.log('overlay pressed')
+                    //console.log('overlay pressed')
                     root.position = 0.0
                     eventPoint.accepted = false
                 }

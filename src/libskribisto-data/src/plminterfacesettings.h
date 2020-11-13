@@ -26,6 +26,7 @@
 #include <QSettings>
 
 class PLMInterfaceSettings {
+
 public:
 
     virtual ~PLMInterfaceSettings() {}

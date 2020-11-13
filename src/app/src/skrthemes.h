@@ -39,6 +39,9 @@ class SKRThemes : public QObject {
     Q_PROPERTY(QString buttonIcon MEMBER m_buttonIcon NOTIFY colorsChanged)
     Q_PROPERTY(
         QString distractionFree_buttonIcon MEMBER m_distractionFree_buttonIcon NOTIFY colorsChanged)
+    Q_PROPERTY(QString buttonIconDisabled MEMBER m_buttonIconDisabled NOTIFY colorsChanged)
+    Q_PROPERTY(
+        QString distractionFree_buttonIconDisabled MEMBER m_distractionFree_buttonIconDisabled NOTIFY colorsChanged)
     Q_PROPERTY(QString accent MEMBER m_accent NOTIFY colorsChanged)
     Q_PROPERTY(
         QString distractionFree_accent MEMBER m_distractionFree_accent NOTIFY colorsChanged)
@@ -96,6 +99,7 @@ private:
     QString m_buttonBackground, m_distractionFree_buttonBackground;
     QString m_buttonForeground, m_distractionFree_buttonForeground;
     QString m_buttonIcon, m_distractionFree_buttonIcon;
+    QString m_buttonIconDisabled, m_distractionFree_buttonIconDisabled;
     QString m_accent, m_distractionFree_accent;
     QString m_spellcheck, m_distractionFree_spellcheck;
     QString m_toolBarBackground, m_distractionFree_toolBarBackground;

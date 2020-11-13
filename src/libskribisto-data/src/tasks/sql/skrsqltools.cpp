@@ -12,7 +12,7 @@ SKRSqlTools::SKRSqlTools(QObject *parent) : QObject(parent)
 // -----------------------------------------------------------------------------------------------
 
 SKRResult SKRSqlTools::executeSQLFile(const QString& fileName, QSqlDatabase& sqlDB) {
-    SKRResult result;
+    SKRResult result("SKRSqlTools::executeSQLFile");
     QFile    file(fileName);
 
     // Read query file content
@@ -27,7 +27,7 @@ SKRResult SKRSqlTools::executeSQLFile(const QString& fileName, QSqlDatabase& sql
 
 SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& sqlDB)
 {
-    SKRResult result;
+    SKRResult result("SKRSqlTools::executeSQLString");
 
     QSqlQuery query(sqlDB);
 
@@ -74,7 +74,6 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
         if (!isStartedWithTransaction) sqlDB.transaction();
 
         // Execute each individual queries
-        bool success = true;
 
 
         for (const QString& s : qList) {
@@ -88,14 +87,11 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
                 query.exec(s);
 
                 if (query.lastError().type() != QSqlError::NoError) {
-                    qDebug() << query.lastError().text();
-                    qDebug() << s;
+                    result = SKRResult(SKRResult::Critical, "SKRSqlTools::executeSQLString", "sql_error");
                     result.addData("SQLError", query.lastError().text());
-                    result.addData("SQLError_string", s);
-                    result.setSuccess(false);
+                    result.addData("SQL string", s);
                     sqlDB.rollback();
 
-                    success = false;
                     return result;
 
                     //
@@ -103,12 +99,8 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
             }
         }
 
-        if (!isStartedWithTransaction && success) sqlDB.commit();
+        if (!isStartedWithTransaction) sqlDB.commit();
 
-        if (success == false) {
-            result.setSuccess(false);
-            return result;
-        }
 
         // Sql Driver doesn't supports transaction
     } else {
@@ -129,9 +121,9 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
             query.exec(s);
 
             if (query.lastError().type() != QSqlError::NoError) {
-                qDebug() << query.lastError().text();
+                result = SKRResult(SKRResult::Critical, "SKRSqlTools::executeSQLString", "sql_error");
                 result.addData("SQLError", query.lastError().text());
-                result.setSuccess(false);
+                result.addData("SQL string", s);
                 sqlDB.rollback();
                 return result;
             }

@@ -86,7 +86,7 @@ ThemePageForm {
             }
 
             onDoubleTapped: {
-                console.log("double tapped")
+                //console.log("double tapped")
                 themeListView.currentIndex = model.index
                 currentlySelectedTheme = model.text
                 SkrTheme.currentThemeName = model.text
@@ -238,7 +238,7 @@ ThemePageForm {
             }
 
             onDoubleTapped: {
-                console.log("double tapped")
+                //console.log("double tapped")
                 propertiesListView.currentIndex = model.index
                 currentProperty = model.propertyExactName
                 colorCodeTextField.text = model.color

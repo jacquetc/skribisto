@@ -49,48 +49,65 @@
 struct EXPORT SKRResult
 {
     Q_GADGET
-    Q_PROPERTY(bool success MEMBER m_success)
+    Q_PROPERTY(bool success READ isSuccess)
     Q_PROPERTY(QString errorCode READ getLastErrorCode)
 
 public:
-    enum Result{
+
+    enum Status {
         OK,
         Warning,
         Critical,
         Fatal
     };
-    Q_ENUM(Result)
+    Q_ENUM(Status)
 
     explicit SKRResult();
+    SKRResult(const QObject *object);
+    SKRResult(const QString &className);
     SKRResult(const SKRResult& result);
-    Q_INVOKABLE bool                    operator!() const;
-    Q_INVOKABLE                         operator bool() const;
-    Q_INVOKABLE SKRResult              & operator=(const SKRResult& iResult);
-    bool                                operator==(const SKRResult& otherSKRResult) const;
-    bool                                operator!=(const SKRResult& otherSKRResult) const;
 
-    Q_INVOKABLE void                    setSuccess(bool value);
-    Q_INVOKABLE bool                    isSuccess() const;
+    SKRResult(SKRResult::Status status,
+              const QObject    *object,
+              const QString   & errorCodeEnd);
+    SKRResult(SKRResult::Status status,
+              const QString   & className,
+              const QString   & errorCodeEnd);
 
-    Q_INVOKABLE bool                    containsErrorCode(const QString& value) const;
-    Q_INVOKABLE QString                 getLastErrorCode() const;
-    Q_INVOKABLE QStringList             getErrorCodeList() const;
-    void                                setErrorCodeList(const QStringList& value);
-    Q_INVOKABLE void                    addErrorCode(const QString& value);
+    Q_INVOKABLE bool                            operator!() const;
+    Q_INVOKABLE                                 operator bool() const;
+    Q_INVOKABLE SKRResult                     & operator=(const SKRResult& iResult);
+    bool                                        operator==(const SKRResult& otherSKRResult) const;
+    bool                                        operator!=(const SKRResult& otherSKRResult) const;
 
-    Q_INVOKABLE QHash<QString, QVariant>getDataHash() const;
-    void                                setDataHash(const QHash<QString, QVariant>& dataHash);
-    void                                addData(const QString & key,
-                                                const QVariant& value);
+    Q_INVOKABLE bool                            isSuccess() const;
 
-    Q_INVOKABLE QVariant                getData(const QString & key,
-                                                const QVariant& defaultValue) const;
+    Q_INVOKABLE bool                            containsErrorCode(const QString& value) const;
+    Q_INVOKABLE bool                            containsErrorCodeDetail(const QString& value) const;
+    Q_INVOKABLE QString                         getLastErrorCode() const;
+    Q_INVOKABLE QStringList                     getErrorCodeList() const;
+
+    Q_INVOKABLE QList<QHash<QString, QVariant> >getDataHashList() const;
+    void                                        addData(const QString & key,
+                                                        const QVariant& value);
+
+    Q_INVOKABLE QVariant                        getData(const QString & key,
+                                                        const QVariant& defaultValue) const;
+
+    SKRResult::Status                           getStatus() const;
 
 private:
 
-    QStringList             m_errorCodeList;
-    bool                    m_success;
-    QHash<QString, QVariant>m_dataHash;
+    void addErrorCode(const QString& value);
+    void setDataHashList(const  QList<QHash<QString, QVariant> >& dataHashList);
+    void setErrorCodeList(const QStringList& value);
+    void setStatus(const SKRResult::Status& status);
+
+private:
+
+    QStringList                     m_errorCodeList;
+    QList<QHash<QString, QVariant> >m_dataHashList;
+    SKRResult::Status               m_status;
 };
 
 #endif // SKRRESULT_H

@@ -107,16 +107,28 @@ WritePageForm {
 
     //---------------------------------------------------------
 
-    function runActionsBedoreDestruction() {
+    function clearNoteWritingZone(){
+        if(paperId !== -2 && projectId !== -2){
+            contentSaveTimer.stop()
+            saveContent()
+            saveCurrentPaperCursorPositionAndYTimer.stop()
+            saveCurrentPaperCursorPositionAndY()
+            skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
-        saveCurrentPaperCursorPositionAndY()
-        contentSaveTimer.stop()
-        saveContent()
-        skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+            root.projectId = -2
+            root.paperId = -2
+        }
+
+        writingZone.clear()
     }
+    //---------------------------------------------------------
+
+    function runActionsBeforeDestruction() {
+         clearNoteWritingZone()
+     }
 
     Component.onDestruction: {
-        runActionsBedoreDestruction()
+        runActionsBeforeDestruction()
     }
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
@@ -302,9 +314,7 @@ WritePageForm {
     function openDocument(_projectId, _paperId) {
         // save current
         if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
-            saveContent()
-            saveCurrentPaperCursorPositionAndY()
-            skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+            clearNoteWritingZone()
         }
 
         paperId = _paperId
@@ -332,6 +342,10 @@ WritePageForm {
         if(!saveCurrentPaperCursorPositionAndYTimer.running){
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
+        if(!contentSaveTimer.running){
+            contentSaveTimer.start()
+        }
+
 
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)
@@ -346,7 +360,7 @@ WritePageForm {
         //get Y
         var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
                     projectId, "writeSheetYHash", paperId, 0)
-        console.log("newCursorPosition", position)
+        //console.log("newCursorPosition", position)
 
         // set positions :
         writingZone.setCursorPosition(position)
@@ -357,7 +371,7 @@ WritePageForm {
 
     function saveCurrentPaperCursorPositionAndY(){
 
-        if(paperId != -2 || projectId != -2){
+        if(paperId !== -2 || projectId !== -2){
             //save cursor position of current document :
 
             var previousCursorPosition = writingZone.cursorPosition
@@ -693,13 +707,13 @@ WritePageForm {
     }
 
     function saveContent(){
-        console.log("saving sheet")
+        //console.log("saving sheet")
         var result = plmData.sheetHub().setContent(projectId, paperId, writingZone.text)
         if (!result.success){
             console.log("saving sheet failed", projectId, paperId)
         }
         else {
-            console.log("saving sheet success", projectId, paperId)
+            //console.log("saving sheet success", projectId, paperId)
 
         }
     }
@@ -711,18 +725,18 @@ WritePageForm {
 
 
     //    // project to be closed :
-    //    Connections{
-    //        target: plmData.projectHub()
-    //        function onProjectToBeClosed(projectId) {
+//        Connections{
+//            target: plmData.projectHub()
+//            function onProjectToBeClosed(projectId) {
 
-    //            if (projectId === this.projectId){
-    //                // save
-    //                saveContent()
-    //                saveCurrentPaperCursorPositionAndY()
+//                if (projectId === this.projectId){
+//                    // save
+//                    saveContent()
+//                    saveCurrentPaperCursorPositionAndY()
 
-    //            }
-    //        }
-    //    }
+//                }
+//            }
+//        }
 
     //    // projectClosed :
     //    Connections {

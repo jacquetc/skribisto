@@ -31,7 +31,7 @@ SKRTagHub::SKRTagHub(QObject *parent) : QObject(parent), m_last_added_id(-1)
 
 QList<int>SKRTagHub::getAllTagIds(int projectId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> list;
     QList<int> out;
@@ -52,7 +52,7 @@ QList<int>SKRTagHub::getAllTagIds(int projectId) const
 
 SKRResult SKRTagHub::addTag(int projectId, const QString& tagName)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     int newId = -2;
     QHash<QString, QVariant> values;
@@ -87,7 +87,7 @@ SKRResult SKRTagHub::addTag(int projectId, const QString& tagName)
 
 SKRResult SKRTagHub::removeTag(int projectId, int tagId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     int newId = -2;
 
@@ -116,7 +116,7 @@ SKRResult SKRTagHub::removeTag(int projectId, int tagId)
 int SKRTagHub::getTagIdWithName(int projectId, const QString& tagName)
 {
     int value = -2;
-    SKRResult result;
+    SKRResult result(this);
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, "tbl_tag");
 
@@ -152,11 +152,10 @@ QString SKRTagHub::getTagName(int projectId, int tagId) const
 
 SKRResult SKRTagHub::setTagName(int projectId, int tagId, const QString& tagName)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     if (tagName.isEmpty()) {
-        result.setSuccess(false);
-        result.addErrorCode("C_TAG_name_is_missing");
+        result = SKRResult(SKRResult::Critical, this, "name_is_missing");
     }
 
     IFOKDO(result, set(projectId, tagId, "t_name", tagName));
@@ -179,7 +178,7 @@ SKRResult SKRTagHub::setTagName(int projectId, int tagId, const QString& tagName
 bool SKRTagHub::doesTagNameAlreadyExist(int projectId, const QString& tagName)
 {
     bool value = true;
-    SKRResult result;
+    SKRResult result(this);
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, "tbl_tag");
 
@@ -283,7 +282,7 @@ SKRResult SKRTagHub::set(int             projectId,
                         const QVariant& value,
                         bool            setCurrentDateBool)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMSqlQueries queries(projectId,  "tbl_tag");
 
     queries.beginTransaction();
@@ -310,7 +309,7 @@ SKRResult SKRTagHub::set(int             projectId,
 
 QVariant SKRTagHub::get(int projectId, int tagId, const QString& fieldName) const
 {
-    SKRResult result;
+    SKRResult result(this);
     QVariant var;
     QVariant value;
     PLMSqlQueries queries(projectId, "tbl_tag");
@@ -355,7 +354,7 @@ QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
                                        SKRTagHub::ItemType itemType,
                                        int                 tagId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> list;
     QHash<int, QVariant> out;
@@ -411,7 +410,7 @@ QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
 
 QList<int>SKRTagHub::getItemIdsFromTag(int projectId, int tagId, bool addSeparator) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> list;
     QHash<int, QVariant> out;
@@ -476,7 +475,7 @@ QList<int>SKRTagHub::getTagsFromItemId(int                 projectId,
                                        SKRTagHub::ItemType itemType,
                                        int                 itemId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QList<int> list;
     QHash<int, QVariant> out;
@@ -521,7 +520,7 @@ SKRResult SKRTagHub::setTagRelationship(int                 projectId,
                                        int                 itemId,
                                        int                 tagId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, int> hash;
     QHash<int, QVariant> out;
@@ -619,7 +618,7 @@ SKRResult SKRTagHub::removeTagRelationship(int                 projectId,
                                           int                 itemId,
                                           int                 tagId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     QHash<int, int> hash;
     QHash<int, QVariant> out;
@@ -663,8 +662,7 @@ SKRResult SKRTagHub::removeTagRelationship(int                 projectId,
         }
 
         if (hash.isEmpty() || (key == -2) || (key == 0)) {
-            result.setSuccess(false);
-            result.addErrorCode("C_TAG_no_tag_relationship_to_remove");
+            result = SKRResult(SKRResult::Critical, this, "no_tag_relationship_to_remove");
             return result;
         }
     }

@@ -35,29 +35,30 @@ class EXPORT PLMProjectHub : public QObject {
 public:
 
     explicit PLMProjectHub(QObject *parent);
-    Q_INVOKABLE SKRResult  loadProject(const QUrl& urlFilePath);
-    Q_INVOKABLE SKRResult  createNewEmptyProject(const QUrl& path);
-    Q_INVOKABLE SKRResult  saveProject(int projectId);
-    Q_INVOKABLE SKRResult  saveProjectAs(int            projectId,
+    Q_INVOKABLE SKRResult loadProject(const QUrl& urlFilePath);
+    Q_INVOKABLE SKRResult createNewEmptyProject(const QUrl& path);
+    Q_INVOKABLE SKRResult saveProject(int projectId);
+    Q_INVOKABLE SKRResult saveProjectAs(int            projectId,
                                         const QString& type,
                                         const QUrl   & path);
-    Q_INVOKABLE SKRResult  saveAProjectCopy(int            projectId,
+    Q_INVOKABLE SKRResult saveAProjectCopy(int            projectId,
                                            const QString& type,
                                            const QUrl   & path);
-    Q_INVOKABLE SKRResult  backupAProject(int            projectId,
+    Q_INVOKABLE SKRResult backupAProject(int            projectId,
                                          const QString& type,
                                          const QUrl   & folderPath);
     Q_INVOKABLE bool      doesBackupOfTheDayExistAtPath(int         projectId,
                                                         const QUrl& folderPath);
-    Q_INVOKABLE SKRResult  closeProject(int projectId);
-    Q_INVOKABLE SKRResult  closeAllProjects();
+    Q_INVOKABLE SKRResult closeProject(int projectId);
+    Q_INVOKABLE SKRResult closeAllProjects();
+    Q_INVOKABLE bool      isProjectToBeClosed(int projectId) const;
     Q_INVOKABLE QList<int>getProjectIdList();
     Q_INVOKABLE int       getProjectCount();
     Q_INVOKABLE QUrl      getPath(int projectId) const;
-    SKRResult              setPath(int         projectId,
+    SKRResult             setPath(int         projectId,
                                   const QUrl& newUrlPath);
     Q_INVOKABLE int       getLastLoaded() const;
-    SKRResult              getError();
+    SKRResult             getError();
     Q_INVOKABLE bool      isThereAnyLoadedProject();
     Q_INVOKABLE bool      isURLAlreadyLoaded(const QUrl& newUrlPath);
 
@@ -73,19 +74,21 @@ public:
 
 
     Q_INVOKABLE QString   getProjectName(int projectId) const;
-    Q_INVOKABLE SKRResult  setProjectName(int            projectId,
+    Q_INVOKABLE SKRResult setProjectName(int            projectId,
                                          const QString& projectName);
 
-    Q_INVOKABLE QString getLangCode(int projectId) const;
-    Q_INVOKABLE SKRResult setLangCode(int projectId, const QString &langCode);
+    Q_INVOKABLE QString   getLangCode(int projectId) const;
+    Q_INVOKABLE SKRResult setLangCode(int            projectId,
+                                      const QString& langCode);
 
     QString               getProjectUniqueId(int projectId) const;
     Q_INVOKABLE bool      isThisProjectABackup(int projectId);
 
-    QString getProjectType(int projectId) const;
-    Q_INVOKABLE SKRResult importPlumeCreatorProject(const QUrl &plumeURL, const QUrl &skribistoFileURL);
+    QString               getProjectType(int projectId) const;
+    Q_INVOKABLE SKRResult importPlumeCreatorProject(const QUrl& plumeURL,
+                                                    const QUrl& skribistoFileURL);
 
-    SKRResult              set(int             projectId,
+    SKRResult             set(int             projectId,
                               const QString & fieldName,
                               const QVariant& value,
                               bool            setCurrentDateBool = true);
@@ -113,7 +116,7 @@ signals:
     Q_INVOKABLE void projectNameChanged(int            projectId,
                                         const QString& newProjectName);
     Q_INVOKABLE void langCodeChanged(int            projectId,
-                                        const QString& newProjectName);
+                                     const QString& newProjectName);
     Q_INVOKABLE void projectSaved(int projectId);
     Q_INVOKABLE void projectNotSavedAnymore(int projectId);
     Q_INVOKABLE void projectCountChanged(int count);
@@ -135,6 +138,7 @@ private:
     QList<int>m_projectsNotModifiedOnceList, m_projectsNotSavedList;
     QString m_tableName;
     int m_activeProject;
+    int m_isProjectToBeClosed;
 };
 
 #endif // PLMPROJECTHUB_H
