@@ -14,9 +14,9 @@ void SKRWordMeterWorker::countWords()
     textDocument.setMarkdown(m_text);
     QString plainText = textDocument.toPlainText();
 
-    plainText.replace(QRegularExpression("\\n*|\\t"), " ");
+    plainText.replace(QRegularExpression("\\n+|\\t+"), " ");
 
-    int wordCount = plainText.count(" ");
+    int wordCount = plainText.count(" ") + 1;
 
     emit wordCountCalculated(m_paperType, m_projectId, m_paperId, wordCount);
 }

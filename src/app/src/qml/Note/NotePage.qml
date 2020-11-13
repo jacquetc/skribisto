@@ -292,6 +292,15 @@ NotePageForm {
 
     //---------------------------------------------------------
 
+    QtObject {
+        id: documentPrivate
+        property bool contentSaveTimerAllowedToStart: true
+        property bool saveCurrentPaperCursorPositionAndYTimerAllowedToStart: true
+    }
+
+    //---------------------------------------------------------
+
+
 
     SKRUserSettings {
         id: skrUserSettings
@@ -302,6 +311,9 @@ NotePageForm {
         if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
             clearNoteWritingZone()
         }
+
+        documentPrivate.contentSaveTimerAllowedToStart = false
+        documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = false
 
         paperId = _paperId
         projectId = _projectId
@@ -325,9 +337,12 @@ NotePageForm {
         skrUserSettings.setProjectSetting(projectId, "noteCurrentPaperId", paperId)
 
         // start the timer for automatic position saving
+        documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = true
         if(!saveCurrentPaperCursorPositionAndYTimer.running){
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
+
+        documentPrivate.contentSaveTimerAllowedToStart = true
         if(!contentSaveTimer.running){
             contentSaveTimer.start()
         }
@@ -682,7 +697,10 @@ NotePageForm {
         if(contentSaveTimer.running){
             contentSaveTimer.stop()
         }
-        contentSaveTimer.start()
+        if(documentPrivate.contentSaveTimerAllowedToStart){
+            contentSaveTimer.start()
+        }
+
     }
     Timer{
         id: contentSaveTimer
