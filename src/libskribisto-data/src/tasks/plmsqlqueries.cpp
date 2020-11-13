@@ -418,7 +418,7 @@ bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
         out.size() > 0 ? value = true : value = false;
     }
 
-    return result;
+    return value;
 }
 
 SKRResult PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) const
