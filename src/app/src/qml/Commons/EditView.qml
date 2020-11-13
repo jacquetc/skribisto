@@ -177,7 +177,7 @@ EditViewForm {
     // go back when losing focus
 
     swipeView.onActiveFocusChanged: {
-        console.log('activeFocus', swipeView.activeFocus)
+        //console.log('activeFocus', swipeView.activeFocus)
         if(!swipeView.activeFocus){
             goBackAction.trigger()
         }

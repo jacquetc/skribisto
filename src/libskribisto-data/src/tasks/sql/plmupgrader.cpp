@@ -30,7 +30,7 @@ PLMUpgrader::PLMUpgrader(QObject *parent) : QObject(parent)
 
 SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 {
-    SKRResult result;
+    SKRResult result("SKRSqlTools::upgradeSQLite");
 
     // find DB version :
     double dbVersion = -1;
@@ -47,8 +47,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     }
 
     if (dbVersion == -1) {
-        result.setSuccess(false);
-        result.addErrorCode("C_UPGRADER_no_version_found");
+        result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "no_version_found");
         return result;
     }
 
@@ -66,11 +65,12 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
             "CREATE TABLE tbl_project_dict (l_project_dict_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ON CONFLICT ROLLBACK UNIQUE ON CONFLICT ROLLBACK, t_word TEXT UNIQUE ON CONFLICT REPLACE NOT NULL ON CONFLICT ROLLBACK);"
         ;
         query.prepare(queryStr);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
 
-        if (query.lastError().isValid()) {
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+        if(query.lastError().isValid()){
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
 
         IFOK(result) {
@@ -78,7 +78,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
         }
 
         IFKO(result) {
-            result.addErrorCode("C_UPGRADER_cant_upgrade");
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "cant_upgrade");
             result.addData("dbVersion", newDbVersion);
             result.addData("SQLError",  query.lastError().text());
         }
@@ -142,7 +142,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 
 
         IFKO(result) {
-            result.addErrorCode("C_UPGRADER_cant_upgrade");
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "cant_upgrade");
             result.addData("dbVersion", newDbVersion);
         }
 
@@ -169,7 +169,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 }
 
 SKRResult PLMUpgrader::setDbVersion(QSqlDatabase sqlDb, double newVersion) {
-    SKRResult result;
+    SKRResult result("SKRSqlTools::setDbVersion");
 
     sqlDb.transaction();
     QSqlQuery query(sqlDb);
@@ -177,13 +177,25 @@ SKRResult PLMUpgrader::setDbVersion(QSqlDatabase sqlDb, double newVersion) {
 
     query.prepare(queryStr);
     query.bindValue(":newVersion", newVersion);
-    query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+    query.exec();
+
+    if(query.lastError().isValid()){
+        result = SKRResult(SKRResult::Critical, "PLMUpgrader::setDbVersion", "sql_error");
+        result.addData("SQLError", query.lastError().text());
+        result.addData("SQL string", queryStr);
+    }
 
     // update date
     IFOK(result) {
         queryStr = "UPDATE tbl_project SET dt_updated = CURRENT_TIMESTAMP;";
         query.prepare(queryStr);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
+        if(query.lastError().isValid()){
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::setDbVersion", "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
+        }
     }
 
 

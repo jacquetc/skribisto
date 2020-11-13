@@ -254,7 +254,7 @@ void SKRHighlighter::setProjectId(int projectId)
     }
 
     // set user dict
-    if (m_spellChecker && m_spellChecker->isActive() && (projectId != -2)) {
+    if (m_spellChecker && m_spellChecker->isHunspellLaunched() && (projectId != -2)) {
         m_spellChecker->setUserDict(m_userDictList);
     }
 

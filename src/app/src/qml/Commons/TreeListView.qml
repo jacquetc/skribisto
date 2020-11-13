@@ -75,7 +75,7 @@ TreeListViewForm {
             goUpActionCurrentParent = currentParent
 
             currentParent = proxyModel.goUp()
-            console.log("currentParent", currentParent)
+            //console.log("currentParent", currentParent)
             listView.currentIndex = proxyModel.getLastOfHistory(currentProject)
             proxyModel.removeLastOfHistory(currentProject)
 
@@ -350,7 +350,7 @@ TreeListViewForm {
             }
 
             onDropped: {
-                console.log("dropped : ", moveSourceInt, content.visualIndex)
+                //console.log("dropped : ", moveSourceInt, content.visualIndex)
                 proxyModel.moveItem(moveSourceInt, content.visualIndex)
             }
             property int visualIndex: {
@@ -580,7 +580,7 @@ TreeListViewForm {
                     }
 
                     onDoubleTapped: {
-                        console.log("double tapped")
+                        //console.log("double tapped")
                         listView.currentIndex = model.index
                         openDocumentAction.trigger()
                         eventPoint.accepted = true
@@ -723,8 +723,8 @@ TreeListViewForm {
 
                     text: qsTr("Open document")
                     onTriggered: {
-                        console.log("model.openedProjectId", openedProjectId)
-                        console.log("model.projectId", model.projectId)
+                        //console.log("model.openedProjectId", openedProjectId)
+                        //console.log("model.projectId", model.projectId)
                         root.openDocument(openedProjectId, openedPaperId, model.projectId,
                                           model.paperId)
                     }

@@ -69,7 +69,7 @@ void PLMSqlQueries::commit()
 
 SKRResult PLMSqlQueries::get(int id, const QString& valueName, QVariant& out) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         QSqlQuery query(m_sqlDB);
@@ -79,14 +79,20 @@ SKRResult PLMSqlQueries::get(int id, const QString& valueName, QVariant& out) co
         ;
         query.prepare(queryStr);
         query.bindValue(":id", id);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
+        if(query.lastError().isValid()){
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
+        }
 
         while (query.next()) {
             out = query.value(0);
         }
 
         if (query.size() == 0) {
-            result.setSuccess(false);
+            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
         }
     }
 
@@ -96,7 +102,7 @@ SKRResult PLMSqlQueries::get(int id, const QString& valueName, QVariant& out) co
 SKRResult PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
                                           QHash<QString, QVariant>& out) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         out.clear();
@@ -122,7 +128,14 @@ SKRResult PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
         ;
         query.prepare(queryStr);
         query.bindValue(":id", id);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
+        if(query.lastError().isValid()){
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
+        }
+
 
         while (query.next()) {
             for(const QString& valueName : valueList) {
@@ -131,12 +144,9 @@ SKRResult PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
         }
 
         if (query.size() == 0) {
-            result.setSuccess(false);
+            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
         }
 
-        //        if(result.isEmpty()){
-        //            result.setSuccess(false);
-        //        }
     }
 
     return result;
@@ -144,7 +154,7 @@ SKRResult PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
 
 SKRResult PLMSqlQueries::getSortedIds(QList<int>& out) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         out.clear();
@@ -154,14 +164,20 @@ SKRResult PLMSqlQueries::getSortedIds(QList<int>& out) const
                              + " ORDER BY l_sort_order"
         ;
         query.prepare(queryStr);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
+        if(query.lastError().isValid()){
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
+        }
 
         while (query.next()) {
             out.append(query.value(0).toInt());
         }
 
         if (query.size() == 0) {
-            result.setSuccess(false);
+            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
         }
     }
 
@@ -170,7 +186,7 @@ SKRResult PLMSqlQueries::getSortedIds(QList<int>& out) const
 
 SKRResult PLMSqlQueries::getIds(QList<int>& out) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         out.clear();
@@ -179,14 +195,20 @@ SKRResult PLMSqlQueries::getIds(QList<int>& out) const
                              + " FROM " + m_tableName
         ;
         query.prepare(queryStr);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
+        if(query.lastError().isValid()){
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
+        }
 
         while (query.next()) {
             out.append(query.value(0).toInt());
         }
 
         if (query.size() == 0) {
-            result.setSuccess(false);
+            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
         }
     }
 
@@ -225,7 +247,7 @@ SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
                                       bool sorted) const
 {
     out.clear();
-    SKRResult result;
+    SKRResult result(this);
 
     {
         out.clear();
@@ -257,10 +279,12 @@ SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
             query.bindValue(":whereValue", whereValue);
         }
 
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
 
         while (query.next()) {
@@ -268,7 +292,7 @@ SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
         }
 
         if (query.size() == 0) {
-            result.setSuccess(false);
+            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
         }
     }
 
@@ -280,7 +304,7 @@ SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
                                            const QHash<QString, QVariant>& where,
                                            bool sorted) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         out.clear();
@@ -325,10 +349,12 @@ SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
             ++i;
         }
 
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
 
         while (query.next()) {
@@ -336,7 +362,7 @@ SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
         }
 
         if (query.size() == 0) {
-            result.setSuccess(false);
+            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
         }
     }
 
@@ -345,7 +371,7 @@ SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
 
 bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
 {
-    SKRResult result;
+    SKRResult result(this);
     bool     value;
 
     {
@@ -375,10 +401,12 @@ bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
             ++i;
         }
 
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
 
         QHash<int, QVariant> out;
@@ -395,7 +423,7 @@ bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
 
 SKRResult PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         QSqlQuery   query(m_sqlDB);
@@ -427,11 +455,14 @@ SKRResult PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId)
             ++i;
         }
 
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
+
         newId = query.lastInsertId().toInt();
     }
 
@@ -440,16 +471,18 @@ SKRResult PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId)
 
 SKRResult PLMSqlQueries::removeAll() const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = "DELETE * FROM " + m_tableName;
         query.prepare(queryStr);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
     }
 
@@ -458,7 +491,7 @@ SKRResult PLMSqlQueries::removeAll() const
 
 SKRResult PLMSqlQueries::remove(int id) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         QSqlQuery query(m_sqlDB);
@@ -467,10 +500,12 @@ SKRResult PLMSqlQueries::remove(int id) const
         ;
         query.prepare(queryStr);
         query.bindValue(":id", id);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
     }
 
@@ -479,7 +514,7 @@ SKRResult PLMSqlQueries::remove(int id) const
 
 SKRResult PLMSqlQueries::set(int id, const QString& valueName, const QVariant& value) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         QSqlQuery query(m_sqlDB);
@@ -490,10 +525,12 @@ SKRResult PLMSqlQueries::set(int id, const QString& valueName, const QVariant& v
         query.prepare(queryStr);
         query.bindValue(":id",    id);
         query.bindValue(":value", value);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
     }
 
@@ -502,7 +539,7 @@ SKRResult PLMSqlQueries::set(int id, const QString& valueName, const QVariant& v
 
 SKRResult PLMSqlQueries::setId(int id, int newId) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         QSqlQuery query(m_sqlDB);
@@ -513,10 +550,12 @@ SKRResult PLMSqlQueries::setId(int id, int newId) const
         query.prepare(queryStr);
         query.bindValue(":id",    id);
         query.bindValue(":value", newId);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
     }
 
@@ -525,16 +564,18 @@ SKRResult PLMSqlQueries::setId(int id, int newId) const
 
 SKRResult PLMSqlQueries::injectDirectSql(const QString& sqlString)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         QSqlQuery query(m_sqlDB);
         QString   queryStr = sqlString;
         query.prepare(queryStr);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
     }
 
@@ -543,7 +584,7 @@ SKRResult PLMSqlQueries::injectDirectSql(const QString& sqlString)
 
 SKRResult PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
 {
-    SKRResult result;
+    SKRResult result(this);
 
     {
         QSqlQuery query(m_sqlDB);
@@ -553,10 +594,12 @@ SKRResult PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
         ;
         query.prepare(queryStr);
         query.bindValue(":id", id);
-        query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+        query.exec();
+
         if(query.lastError().isValid()){
-            qDebug() << "SQL Error" << query.lastError();
-            qDebug() << "SQL Error" << query.lastError().text();
+            result = SKRResult(SKRResult::Critical, this, "sql_error");
+            result.addData("SQLError", query.lastError().text());
+            result.addData("SQL string", queryStr);
         }
     }
 
@@ -565,7 +608,7 @@ SKRResult PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
 
 SKRResult PLMSqlQueries::renumberSortOrder()
 {
-    SKRResult result;
+    SKRResult result(this);
     int renumInterval = 1000;
 
     // Renumber all non-trashed paper in this version. DOES NOT COMMIT - Caller
@@ -580,10 +623,12 @@ SKRResult PLMSqlQueries::renumberSortOrder()
 
     //    qDebug() << "prepareOk" << prepareOk;
     //    qDebug() << query.lastError().text();
-    query.exec() ? result.setSuccess(true) : result.setSuccess(false);
+    query.exec();
+
     if(query.lastError().isValid()){
-        qDebug() << "SQL Error" << query.lastError();
-        qDebug() << "SQL Error" << query.lastError().text();
+        result = SKRResult(SKRResult::Critical, this, "sql_error");
+        result.addData("SQLError", query.lastError().text());
+        result.addData("SQL string", queryStr);
     }
 
     //    qDebug() << query.lastError().text();

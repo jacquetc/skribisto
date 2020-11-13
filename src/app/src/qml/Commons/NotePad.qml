@@ -134,7 +134,7 @@ NotePadForm {
 
                     if(!here){
                         root.selectedList.push(itemBase.itemNoteId)
-                        console.log(" root.selectedList",  root.selectedList)
+                        //console.log(" root.selectedList",  root.selectedList)
                         root.determineWhichItemIsSelected()
                     }
                 }
@@ -544,6 +544,10 @@ NotePadForm {
     // save content once after writing:
     noteWritingZone.textArea.onTextChanged: {
 
+        if(projectId === -2 || sheetId === -2){
+            return
+        }
+
         if(minimalMode){
             return
         }
@@ -559,7 +563,7 @@ NotePadForm {
             newOnTheFlyNoteCreationProtectionTimer.start()
 
             notePadPrivateObject.newText = noteWritingZone.text
-            console.log("notped :", notePadPrivateObject.newText)
+            //console.log("notped :", notePadPrivateObject.newText)
 
             //create basic note
             var result = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
@@ -633,8 +637,8 @@ NotePadForm {
     }
 
     function saveContent(){
-        if(projectId !== -2 && currentNoteId !== -2 && !minimalMode){
-            console.log("saving note in notepad")
+        if(projectId !== -2 && currentNoteId !== -2 && sheetId !== -2 && !minimalMode){
+            //console.log("saving note in notepad", "projectId", projectId,  "currentNoteId", currentNoteId, "sheetId", sheetId)
             plmData.noteHub().setContent(projectId, currentNoteId, noteWritingZone.text)
         }
     }
@@ -651,11 +655,9 @@ NotePadForm {
         target: plmData.projectHub()
         function onProjectToBeClosed(projectId) {
 
-            if (projectId === this.projectId){
+            if (projectId === root.projectId){
                 // save
-                saveContent()
-                //TODO: saveCurrentPaperCursorPositionAndY()
-
+                clearNoteWritingZone()
             }
         }
     }
@@ -663,9 +665,14 @@ NotePadForm {
     function clearNoteWritingZone(){
         if(currentNoteId !== -2 && projectId !== -2 && !minimalMode){
             notePadPrivateObject.contentSaveTimerEnabled = false
+            contentSaveTimer.stop()
             saveContent()
+            saveCurrentPaperCursorPositionAndYTimer.stop()
             saveCurrentPaperCursorPositionAndY()
             skrTextBridge.unsubscribeTextDocument(pageType, projectId, currentNoteId, noteWritingZone.textArea.objectName, noteWritingZone.textArea.textDocument)
+
+            root.projectId = -2
+            root.currentNoteId = -2
         }
 
         noteWritingZone.clear()
@@ -725,6 +732,9 @@ NotePadForm {
         if(!saveCurrentPaperCursorPositionAndYTimer.running){
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
+        if(!contentSaveTimer.running){
+            contentSaveTimer.start()
+        }
 
     }
 
@@ -736,7 +746,7 @@ NotePadForm {
         //get Y
         var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
                     projectId, "notePadYHash", currentNoteId, 0)
-        console.log("newCursorPosition", position)
+        //console.log("newCursorPosition", position)
 
         // set positions :
         writingZone.setCursorPosition(position)
@@ -747,13 +757,15 @@ NotePadForm {
 
     function saveCurrentPaperCursorPositionAndY(){
 
-        if(sheetId != -2 || currentNoteId != -2){
+        if(sheetId === -2 || currentNoteId === -2 ||  sheetId === -2 || minimalMode){
+            return
+        }
             //save cursor position of current document :
 
             var previousCursorPosition = noteWritingZone.cursorPosition
-            console.log("previousCursorPosition", previousCursorPosition)
+            //console.log("previousCursorPosition", previousCursorPosition)
             var previousY = noteWritingZone.flickable.contentY
-            console.log("previousContentY", previousY)
+            //console.log("previousContentY", previousY)
             skrUserSettings.insertInProjectSettingHash(
                         projectId, "notePadPositionHash", currentNoteId,
                         previousCursorPosition)
@@ -761,7 +773,7 @@ NotePadForm {
                                                        "notePadYHash",
                                                        currentNoteId,
                                                        previousY)
-        }
+
     }
 
     Timer{
@@ -818,6 +830,10 @@ NotePadForm {
         text: qsTr("Show outline")
         icon.source: "qrc:///icons/backup/story-editor.svg"
         onTriggered: {
+            if(projectId  === -2|| sheetId === -2){
+                return
+            }
+
             var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
             openDocument(projectId, synopsisId)
             var i;
@@ -1195,13 +1211,13 @@ NotePadForm {
             if(sheetId !== root.sheetId){
                 return
             }
-            console.log("removing")
+            //console.log("removing")
             var i;
             for(i=0; i < noteListModel.count; i++){
                 var item = noteListModel.get(i)
 
                 if (item.itemNoteId === noteId){
-                    console.log("removing " + i)
+                    //console.log("removing " + i)
                     noteListModel.remove(i)
 
                     // clear:

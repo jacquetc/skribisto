@@ -270,7 +270,6 @@ Item {
                     Layout.preferredWidth: 30
                     focusPolicy: Qt.NoFocus
                     display: AbstractButton.IconOnly
-                    icon.color: SkrTheme.buttonIcon
                 }
 
                 SkrLabel {

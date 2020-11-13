@@ -27,31 +27,21 @@
 #include <QList>
 #include <QVariant>
 
+#include "tasks/skrwordmeter.h"
+
 #include "skrresult.h"
 #include "plmpropertyhub.h"
 #include "skribisto_data_global.h"
+#include "skr.h"
 
 class EXPORT PLMPaperHub : public QObject {
     Q_OBJECT
 
 public:
 
-    // TODO: clean all settings
-    // settings
-    //    enum Setting { SplitterState, Minimap, Fit, SpellCheck, StackState,
-    // WindowState, SettingDate };
-    //    Q_ENUM(Setting)
-    //    enum Stack { Zero, One };
-    //    Q_ENUM(Stack)
-
-    //    // opened docs list
-    //    enum OpenedDocSetting { SheetId, StackNumber, Hovering, Visible,
-    // HasFocus,
-    //                            CursorPosition, HoveringGeometry, Date };
-    //    Q_ENUM(OpenedDocSetting)
 
     explicit PLMPaperHub(QObject       *parent,
-                         const QString& tableName);
+                         const QString& tableName, const SKR::PaperType &paperType);
 
     QList<QHash<QString, QVariant> >getAll(int projectId) const;
     QHash<int, QString>             getAllTitles(int projectId) const;
@@ -274,10 +264,12 @@ public slots:
 
 protected:
 
-    QString m_tableName, m_paperType;
+    QString m_tableName;
+    SKR::PaperType m_paperType;
     PLMPropertyHub *m_propertyHub;
     SKRResult m_error;
     int m_last_added_id;
+    SKRWordMeter *m_wordMeter;
 };
 
 #endif // PLMWRITEHUB_H

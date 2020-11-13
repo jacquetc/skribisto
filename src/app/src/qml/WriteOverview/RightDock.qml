@@ -176,7 +176,7 @@ RightDockForm {
 
             // set relationship
             result = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Note, itemId, tagId)
-            if (!result.success){
+            if (!result){
                 console.log("result onCallAddTagRelationship")
                 //TODO: add notification
                 return

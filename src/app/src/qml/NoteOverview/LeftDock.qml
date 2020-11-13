@@ -146,7 +146,7 @@ LeftDockForm {
         }
 
 
-       console.log("restored: note:", noteIdList)
+       //console.log("restored: note:", noteIdList)
     }
 
 

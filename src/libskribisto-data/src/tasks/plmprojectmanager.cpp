@@ -26,11 +26,11 @@ PLMProjectManager *PLMProjectManager::m_instance = 0;
 
 SKRResult PLMProjectManager::loadProject(const QUrl& fileName, int& projectId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
     m_projectIdIncrement += 1;
     projectId             = m_projectIdIncrement;
-    PLMProject *project = new PLMProject(this, projectId, fileName);
+    PLMProject *project = new PLMProject(this, projectId, fileName, &result);
 
     // if result :
     if (project->id() == -1) {
@@ -38,11 +38,14 @@ SKRResult PLMProjectManager::loadProject(const QUrl& fileName, int& projectId)
         // Q_FUNC_INFO, "");
         project->deleteLater();
         projectId = -1;
-        result.setSuccess(false);
+        result = SKRResult(SKRResult::Critical, this, "project_not_loaded");
         return result;
     }
 
-    m_projectForIntMap.insert(projectId, project);
+    IFOK(result){
+        m_projectForIntMap.insert(projectId, project);
+    }
+
     return result;
 }
 
@@ -61,24 +64,22 @@ SKRResult PLMProjectManager::saveProjectAs(int projectId,
                                           const QString& type,
                                           const QUrl& path, bool isCopy)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {
         // emit plmTaskError->errorSent("C_PROJECT_PROJECTMISSING", Q_FUNC_INFO,
         // "No project with the id " + QString::number(projectId));
-        result.addErrorCode("C_PROJECT_project_missing");
+        result = SKRResult(SKRResult::Critical, this, "project_missing");
         result.addData("projectId", projectId);
-        result.setSuccess(false);
         return result;
     }
 
     if (path.isEmpty()) {
         // emit plmTaskError->errorSent("C_PROJECT_NOPATH", Q_FUNC_INFO, "No
         // project path set");
-        result.addErrorCode("C_PROJECT_no_path");
+        result = SKRResult(SKRResult::Critical, this, "no_path");
         result.addData("projectId", projectId);
-        result.setSuccess(false);
         return result;
     }
 
@@ -122,11 +123,11 @@ QList<int>PLMProjectManager::projectIdList()
 
 SKRResult PLMProjectManager::closeProject(int projectId)
 {
-    SKRResult result;
+    SKRResult result(this);
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {
-        result.setSuccess(false);
+        result = SKRResult(SKRResult::Critical, this, "project_not_found");
         return result;
     }
 
@@ -138,7 +139,6 @@ SKRResult PLMProjectManager::closeProject(int projectId)
         delete project;
         QSqlDatabase::removeDatabase(QString::number(projectId));
     }
-    result.setSuccess(true);
     return result;
 }
 

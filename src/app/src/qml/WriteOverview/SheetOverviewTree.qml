@@ -369,8 +369,8 @@ SheetOverviewTreeForm {
 
                     text: qsTr("Open document")
                     onTriggered: {
-                        console.log("model.openedProjectId", openedProjectId)
-                        console.log("model.projectId", model.projectId)
+                        //console.log("model.openedProjectId", openedProjectId)
+                        //console.log("model.projectId", model.projectId)
                         root.openDocument(openedProjectId, openedPaperId, model.projectId,
                                           model.paperId)
                     }
@@ -459,7 +459,7 @@ SheetOverviewTreeForm {
                         }
 
                         onDoubleTapped: {
-                            console.log("double tapped")
+                            //console.log("double tapped")
                             listView.currentIndex = model.index
                             openDocumentAction.trigger()
                             eventPoint.accepted = true
@@ -478,7 +478,7 @@ SheetOverviewTreeForm {
                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                         acceptedButtons: Qt.RightButton
                         onTapped: {
-                            console.log("right clicked")
+                            //console.log("right clicked")
                             if(menu.visible){
                                 menu.close()
                                 return
@@ -774,6 +774,7 @@ SheetOverviewTreeForm {
                                 }
 
 
+
                                 Component {
                                     id: noteWritingZoneComponent
 
@@ -806,8 +807,32 @@ SheetOverviewTreeForm {
                                             openSynopsisFromSheetId(model.projectId, model.paperId)
                                         }
 
-                                        Component.onDestruction: {
-                                            skrTextBridge.unsubscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+
+                                        // project to be closed :
+                                        Connections{
+                                            target: plmData.projectHub()
+                                            function onProjectToBeClosed(projectId) {
+
+                                                if (projectId === currentProjectId){
+                                                    // save
+                                                    writingZone.clearNoteWritingZone()
+                                                }
+                                            }
+                                        }
+
+                                        function clearNoteWritingZone(){
+                                            if(paperId !== -2 && projectId !== -2){
+                                                contentSaveTimer.stop()
+                                                saveContent()
+                                                saveCurrentPaperCursorPositionAndYTimer.stop()
+                                                saveCurrentPaperCursorPositionAndY()
+                                                skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                                projectId = -2
+                                                paperId = -2
+
+                                            }
+
+                                            writingZone.clear()
                                         }
 
 
@@ -834,16 +859,12 @@ SheetOverviewTreeForm {
                                         function openSynopsis(_projectId, _paperId){
                                             // save current
                                             if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
-                                                saveContent()
-                                                saveCurrentPaperCursorPositionAndY()
-                                                skrTextBridge.unsubscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+                                                    clearNoteWritingZone()
                                             }
 
 
                                             paperId = _paperId
                                             projectId = _projectId
-                                            writingZone.paperId = _paperId
-                                            writingZone.projectId = _projectId
 
                                             console.log("opening note :", _projectId, _paperId)
                                             writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
@@ -864,6 +885,9 @@ SheetOverviewTreeForm {
                                             // start the timer for automatic position saving
                                             if(!saveCurrentPaperCursorPositionAndYTimer.running){
                                                 saveCurrentPaperCursorPositionAndYTimer.start()
+                                            }
+                                            if(!contentSaveTimer.running){
+                                                contentSaveTimer.start()
                                             }
 
 
@@ -891,7 +915,7 @@ SheetOverviewTreeForm {
 
                                         function saveCurrentPaperCursorPositionAndY(){
 
-                                            if(paperId != -2 || projectId != -2){
+                                            if(paperId !== -2 || projectId !== -2){
                                                 //save cursor position of current document :
 
                                                 var previousCursorPosition = writingZone.cursorPosition
@@ -944,13 +968,18 @@ SheetOverviewTreeForm {
                                         }
 
                                         function saveContent(){
+                                            if(paperId === -2 || projectId === -2){
+                                                return
+                                            }
+
+
                                             //console.log("saving note")
                                             var result = plmData.noteHub().setContent(projectId, paperId, writingZone.text)
                                             if (!result.success){
                                                 console.log("saving note failed", projectId, paperId)
                                             }
                                             else {
-                                                console.log("saving note success", projectId, paperId)
+                                                //console.log("saving note success", projectId, paperId)
 
                                             }
                                         }

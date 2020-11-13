@@ -27,10 +27,6 @@
 #include <QtSql/QSqlDatabase>
 #include <QUrl>
 
-#include "plmproperty.h"
-#include "tree/plmtree.h"
-#include "tree/plmsheettree.h"
-#include "tree/plmnotetree.h"
 #include "skrresult.h"
 #include "skribisto_data_global.h"
 
@@ -44,12 +40,8 @@ public:
 
     explicit PLMProject(QObject    *parent,
                         int         projectId,
-                        const QUrl& fileName);
+                        const QUrl& fileName, SKRResult *result);
     ~PLMProject();
-    PLMProperty * getProperty(const QString& tableName);
-    PLMTree     * getTree(const QString& tableName);
-    PLMSheetTree* sheetTree();
-    PLMNoteTree * noteTree();
     QString       getType() const;
     void          setType(const QString& value);
     int           id() const;
@@ -69,12 +61,8 @@ public slots:
 
 private:
 
-    QHash<QString, PLMProperty *>m_plmPropertyForTableNameHash;
-    QHash<QString, PLMTree *>m_plmTreeForTableNameHash;
     QSqlDatabase m_sqlDb;
     int m_projectId;
-    PLMSheetTree *m_sheetTree;
-    PLMNoteTree *m_noteTree;
     QString m_type;
     QUrl m_path;
 };

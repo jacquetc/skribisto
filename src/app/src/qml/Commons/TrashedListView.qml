@@ -113,7 +113,7 @@ TrashedListViewForm {
             var name =  plmData.projectHub().getProjectName(projectId)
 
             projectComboBoxModel.append({projectId: projectId, name: name})
-            console.log("projectList")
+            //console.log("projectList")
 
         }
 
@@ -126,7 +126,7 @@ TrashedListViewForm {
         }
     }
     trashProjectComboBox.onCurrentIndexChanged: {
-        console.log("onCurrentIndexChanged")
+        //console.log("onCurrentIndexChanged")
 
         if(trashProjectComboBox.currentValue === undefined){
 

@@ -3659,6 +3659,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>Menu background</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Button icon (disabled)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SlimFindReplace</name>

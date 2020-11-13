@@ -88,7 +88,7 @@ NewProjectForm {
 
 
     onFileNameChanged: {
-        console.log("onFileNameChanged",fileName.toString() )
+        //console.log("onFileNameChanged",fileName.toString() )
         projectDetailPathLabel.text = skrQMLTools.translateURLToLocalFile(fileName)
     }
 
@@ -107,13 +107,13 @@ NewProjectForm {
         }
 
         var projetId = plmData.projectHub().getLastLoaded()
-        console.log("new project : getLastLoaded : ", projetId)
+        //console.log("new project : getLastLoaded : ", projetId)
         plmData.projectHub().setProjectName(projetId, projectTitleTextField.text)
 
         var firstSheetId = -2
         for(var i = 1; i <= partSpinBox.value ; ++i){
             var result = plmData.sheetHub().addChildPaper(projetId, -1)
-            console.log("new project : add sheet : ", result.isSuccess())
+            //console.log("new project : add sheet : ", result.isSuccess())
             var sheetId = plmData.sheetHub().getLastAddedId()
             plmData.sheetHub().setTitle(projetId, sheetId, qsTr("Part ") + i)
 
