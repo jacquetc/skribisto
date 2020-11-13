@@ -25,11 +25,13 @@ using namespace std;
 #include "plmprojecthub.h"
 #include "skrprojectdicthub.h"
 #include "plmpropertyhub.h"
+#include "skrstathub.h"
 #include "documenthandler.h"
 #include "skrhighlighter.h"
 #include "skrspellchecker.h"
 #include "plmutils.h"
 #include "skrthemes.h"
+#include "skr.h"
 #include "models/skrtaglistmodel.h"
 #include "models/skrsearchsheetlistproxymodel.h"
 #include "models/skrsearchnotelistproxymodel.h"
@@ -226,6 +228,18 @@ int main(int argc, char *argv[])
                                                0,
                                                "PLMProjectDictHub",
                                                "Can't instantiate PLMPropertyHub");
+
+    qmlRegisterUncreatableType<SKRStatHub>("eu.skribisto.stathub",
+                                               1,
+                                               0,
+                                               "SKRStatHub",
+                                               "Can't instantiate SKRStatHub");
+
+    qmlRegisterUncreatableType<SKR>("eu.skribisto.skr",
+                                               1,
+                                               0,
+                                               "SKR",
+                                               "Can't instantiate SKR");
 
     qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
                                           1,

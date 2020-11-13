@@ -25,6 +25,7 @@ set(data_SRCS
     plmpropertyhub.cpp
     skrtaghub.cpp
     plmsheethub.cpp
+    skrstathub.cpp
     plmutils.cpp
     skrprojectdicthub.cpp
     tasks/plmprojectmanager.cpp
@@ -72,6 +73,7 @@ set(data_HDR
     skrtaghub.h
     plmsheethub.h
     plmsignalhub.h
+    skrstathub.h
     plmutils.h
     skribisto_data_global.h
     tools.h
