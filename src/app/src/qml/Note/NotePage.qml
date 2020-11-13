@@ -98,7 +98,7 @@ NotePageForm {
     //---------------------------------------------------------
 
     function clearNoteWritingZone(){
-        if(currentNoteId !== -2 && projectId !== -2){
+        if(paperId !== -2 && projectId !== -2){
             contentSaveTimer.stop()
             saveContent()
             saveCurrentPaperCursorPositionAndYTimer.stop()
@@ -106,10 +106,10 @@ NotePageForm {
             skrTextBridge.unsubscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
             root.projectId = -2
-            root.currentNoteId = -2
+            root.paperId = -2
         }
 
-        noteWritingZone.clear()
+        writingZone.clear()
     }
 
     //---------------------------------------------------------
