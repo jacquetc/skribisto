@@ -835,6 +835,7 @@ SheetOverviewTreeForm {
                                             writingZone.clear()
                                         }
 
+                                        //---------------------------------------------------------
 
                                         function openSynopsisFromSheetId(projectId, sheetId){
                                             var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
@@ -856,11 +857,24 @@ SheetOverviewTreeForm {
 
                                         }
 
+                                        //---------------------------------------------------------
+
+                                        QtObject {
+                                            id: documentPrivate
+                                            property bool contentSaveTimerAllowedToStart: true
+                                            property bool saveCurrentPaperCursorPositionAndYTimerAllowedToStart: true
+                                        }
+                                        //---------------------------------------------------------
+
+
                                         function openSynopsis(_projectId, _paperId){
                                             // save current
                                             if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
                                                     clearNoteWritingZone()
                                             }
+
+                                            documentPrivate.contentSaveTimerAllowedToStart = false
+                                            documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = false
 
 
                                             paperId = _paperId
@@ -883,9 +897,11 @@ SheetOverviewTreeForm {
                                             skrUserSettings.setProjectSetting(projectId, "overViewTreeNoteCurrentPaperId", paperId)
 
                                             // start the timer for automatic position saving
+                                            documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = true
                                             if(!saveCurrentPaperCursorPositionAndYTimer.running){
                                                 saveCurrentPaperCursorPositionAndYTimer.start()
                                             }
+                                            documentPrivate.contentSaveTimerAllowedToStart = true
                                             if(!contentSaveTimer.running){
                                                 contentSaveTimer.start()
                                             }
@@ -958,7 +974,9 @@ SheetOverviewTreeForm {
                                             if(contentSaveTimer.running){
                                                 contentSaveTimer.stop()
                                             }
+                                            if(documentPrivate.contentSaveTimerAllowedToStart){
                                             contentSaveTimer.start()
+                                            }
                                         }
                                         Timer{
                                             id: contentSaveTimer

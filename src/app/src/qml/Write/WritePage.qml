@@ -124,8 +124,8 @@ WritePageForm {
     //---------------------------------------------------------
 
     function runActionsBeforeDestruction() {
-         clearNoteWritingZone()
-     }
+        clearNoteWritingZone()
+    }
 
     Component.onDestruction: {
         runActionsBeforeDestruction()
@@ -157,27 +157,27 @@ WritePageForm {
         }
         restoreMode: Binding.RestoreBindingOrValue
     }
-//    property int rightOffset: rightDrawer.width * rightDrawer.position
-//        Binding on rightBasePreferredWidth {
-//            value:  {
-//                var value = 0
-//                if (Globals.compactMode === true){
-//                    value = -1;
-//                }
-//                else {
+    //    property int rightOffset: rightDrawer.width * rightDrawer.position
+    //        Binding on rightBasePreferredWidth {
+    //            value:  {
+    //                var value = 0
+    //                if (Globals.compactMode === true){
+    //                    value = -1;
+    //                }
+    //                else {
 
-//                    value = writingZone.wantedCenteredWritingZoneLeftPos - rightOffset - 100
-//                    if (value < 0) {
-//                        value = 0
-//                    }
-//                    //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
-//                    //                console.debug("right offset :: ", offset)
-//                    //                console.debug("right value :: ", value)
+    //                    value = writingZone.wantedCenteredWritingZoneLeftPos - rightOffset - 100
+    //                    if (value < 0) {
+    //                        value = 0
+    //                    }
+    //                    //                console.debug("right writingZone.wantedCenteredWritingZoneLeftPos :: ", writingZone.wantedCenteredWritingZoneLeftPos)
+    //                    //                console.debug("right offset :: ", offset)
+    //                    //                console.debug("right value :: ", value)
 
-//                }
-//                rightBasePreferredWidth = value
-//            }
-//        }
+    //                }
+    //                rightBasePreferredWidth = value
+    //            }
+    //        }
     //    Binding on leftBaseMaximumWidth {
     //        when: SkrSettings.rootSettings.onLeftDockWidthChanged || Globals.onCompactModeChanged || writingZone.onWidthChanged
     //            value:  {
@@ -303,7 +303,13 @@ WritePageForm {
     }
 
 
+    //---------------------------------------------------------
 
+    QtObject {
+        id: documentPrivate
+        property bool contentSaveTimerAllowedToStart: true
+        property bool saveCurrentPaperCursorPositionAndYTimerAllowedToStart: true
+    }
     //---------------------------------------------------------
 
 
@@ -316,6 +322,9 @@ WritePageForm {
         if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
             clearNoteWritingZone()
         }
+
+        documentPrivate.contentSaveTimerAllowedToStart = false
+        documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = false
 
         paperId = _paperId
         projectId = _projectId
@@ -339,9 +348,12 @@ WritePageForm {
         skrUserSettings.setProjectSetting(projectId, "writeCurrentPaperId", paperId)
 
         // start the timer for automatic position saving
+        documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = true
         if(!saveCurrentPaperCursorPositionAndYTimer.running){
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
+
+        documentPrivate.contentSaveTimerAllowedToStart = true
         if(!contentSaveTimer.running){
             contentSaveTimer.start()
         }
@@ -697,7 +709,9 @@ WritePageForm {
         if(contentSaveTimer.running){
             contentSaveTimer.stop()
         }
-        contentSaveTimer.start()
+        if(documentPrivate.contentSaveTimerAllowedToStart){
+            contentSaveTimer.start()
+        }
     }
     Timer{
         id: contentSaveTimer
@@ -725,18 +739,18 @@ WritePageForm {
 
 
     //    // project to be closed :
-//        Connections{
-//            target: plmData.projectHub()
-//            function onProjectToBeClosed(projectId) {
+    //        Connections{
+    //            target: plmData.projectHub()
+    //            function onProjectToBeClosed(projectId) {
 
-//                if (projectId === this.projectId){
-//                    // save
-//                    saveContent()
-//                    saveCurrentPaperCursorPositionAndY()
+    //                if (projectId === this.projectId){
+    //                    // save
+    //                    saveContent()
+    //                    saveCurrentPaperCursorPositionAndY()
 
-//                }
-//            }
-//        }
+    //                }
+    //            }
+    //        }
 
     //    // projectClosed :
     //    Connections {

@@ -433,7 +433,9 @@ RootPageForm {
 
 
             rootTabBar.insertItem(insertionIndex, tabIncubator)
-            page.onTitleChangedString.connect(tabIncubator.object.setTitle)
+            if(page.onTitleChangedString){
+                page.onTitleChangedString.connect(tabIncubator.object.setTitle)
+            }
             tabIncubator.object.onCloseCalled.connect(closeTab)
 
         }
