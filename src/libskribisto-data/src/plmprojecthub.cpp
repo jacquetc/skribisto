@@ -39,6 +39,9 @@ SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath)
         emit isThereAnyLoadedProjectChanged(true);
 
         this->setActiveProject(projectId);
+        if(urlFilePath.isEmpty()){
+            this->setProjectNotSavedAnymore(projectId);
+        }
     }
 
     IFKO(result) {
@@ -63,8 +66,8 @@ SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path)
         emit projectCountChanged(this->getProjectCount());
         emit isThereAnyLoadedProjectChanged(true);
 
-        this->setProjectNotSavedAnymore(projectId);
         this->setActiveProject(projectId);
+        this->setProjectNotSavedAnymore(projectId);
     }
     IFOK(result) {
         if (path.isValid()) {

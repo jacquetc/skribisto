@@ -510,14 +510,12 @@ void SKRPaperItem::setIsProjectItem(int projectId)
     m_data.insert(Roles::IndentRole,    -1);
     m_data.insert(Roles::SortOrderRole, -1000);
 
-    // TODO: add infoHub->getProjectName(projectId)
-    // m_data.insert(Roles::NameRole, /*plmdata->infoHub()->*/ );
     this->invalidateData(Roles::ProjectNameRole);
     this->invalidateData(Roles::HasChildrenRole);
     this->invalidateData(Roles::ProjectIsBackupRole);
     this->invalidateData(Roles::ProjectIsActiveRole);
     m_data.insert(Roles::IsMovableRole, false);
-    m_data.insert(Roles::CanAddPaperRole, false);
+    m_data.insert(Roles::CanAddPaperRole, true);
     m_data.insert(Roles::IsTrashableRole, false);
     m_data.insert(Roles::IsOpenableRole, false);
     m_data.insert(Roles::IsCopyableRole, false);

@@ -205,11 +205,23 @@ QVariant SKRPaperListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
+    if (role == SKRPaperItem::Roles::CharCountRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRPaperItem::Roles::WordCountRole) {
+        return item->data(role);
+    }
+
     if (role == SKRPaperItem::Roles::TrashedRole) {
         return item->data(role);
     }
 
     if (role == SKRPaperItem::Roles::ProjectIsBackupRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRPaperItem::Roles::ProjectIsActiveRole) {
         return item->data(role);
     }
 
@@ -836,8 +848,8 @@ void SKRPaperListModel::connectToPLMDataSignals()
                                            [this](int projectId) {
         Q_UNUSED(projectId)
 
-        for (int projectId : plmdata->projectHub()->getProjectIdList()) {
-            this->exploitSignalFromPLMData(projectId, -1,
+        for (int _projectId : plmdata->projectHub()->getProjectIdList()) {
+            this->exploitSignalFromPLMData(_projectId, -1,
                                            SKRPaperItem::Roles::ProjectIsActiveRole);
         }
     }, Qt::UniqueConnection);
