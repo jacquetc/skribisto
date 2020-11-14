@@ -168,7 +168,7 @@ Item {
                 id: groupBox3
                 focusPolicy: Qt.TabFocus
                 Layout.fillWidth: true
-                title: qsTr("")
+                title: qsTr("Share")
 
                 ColumnLayout {
                     id: columnLayout4

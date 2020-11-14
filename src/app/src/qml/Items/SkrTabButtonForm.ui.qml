@@ -10,7 +10,6 @@ TabButton {
     width: fillTabBarWidth ? undefined : implicitWidth
     property alias closeButton: closeButton
     property alias tabLabel: tabLabel
-    property alias tapHandler: tapHandler
     property bool closable: true
     property bool fillTabBarWidth: false
     property string iconSource: base.action === null ? "" : base.action.icon.source
@@ -19,7 +18,15 @@ TabButton {
 
     padding: 2
 
-    contentItem: RowLayout {
+    contentItem:
+        //        Item {
+        //        anchors.fill: parent
+        //        MouseArea {
+        //            id: mouseArea
+        //            anchors.fill: parent
+        //            hoverEnabled: true
+
+        RowLayout {
         spacing: 2
         anchors.fill: parent
 
@@ -42,17 +49,7 @@ TabButton {
                 height: 24
                 width: 24
             }
-            onDownChanged: down = false
             onClicked: base.checked = true
-
-            Item {
-                id : mouseBlocker
-                anchors.fill: parent
-                    TapHandler {
-                        onTapped: eventPoint.accepted = false
-                    }
-
-            }
 
         }
 
@@ -82,7 +79,6 @@ TabButton {
 
 
 
-
         }
 
 
@@ -104,16 +100,15 @@ TabButton {
             bottomInset: 1
             leftInset: 1
             rightInset: 1
-        }
 
-        HoverHandler {
+
+
+        }
+        HoverHandler{
             id: hoverHandler
         }
-
-        TapHandler {
-            id: tapHandler
-        }
     }
+
 
     background: Item {
         id: element

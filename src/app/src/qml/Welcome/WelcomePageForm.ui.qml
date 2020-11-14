@@ -28,7 +28,6 @@ Item {
 
         SkrTabBar {
             id: tabBar
-            width: 240
             Layout.preferredHeight: 40
             Layout.fillWidth: true
 
@@ -67,8 +66,6 @@ Item {
 
             SkrPane {
                 id: mainButtonsPane
-                width: 200
-                height: 200
                 Layout.minimumWidth: 200
                 Layout.maximumWidth: 300
                 Layout.preferredWidth: 200
@@ -104,8 +101,6 @@ Item {
 
                     Item {
                         id: element
-                        width: 200
-                        height: 200
                         Layout.preferredWidth: 10
                         Layout.fillHeight: true
                     }
@@ -114,17 +109,13 @@ Item {
 
             Rectangle {
                 id: separator
-                width: 200
-                height: 200
-                color: "#4e4e4e"
+                color: SkrTheme.divider
                 Layout.maximumWidth: 2
                 Layout.fillHeight: true
             }
 
             StackLayout {
                 id: stackLayout
-                width: 100
-                height: 100
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
@@ -146,46 +137,7 @@ Item {
 
             }
         }
-    }
-
-    //    ListView {
-    //        id: listView
-    //        anchors.fill: parent
-    //        model: projectListModel
-    //        delegate: projectItemDelegate
-
-    //    }
-
-    //    ListModel {
-    //        id: projectListModel
-    //        ListElement {
-    //            name: "Grey"
-    //            colorCode: "grey"
-    //        }
-
-    //        ListElement {
-    //            name: "Red"
-    //            colorCode: "red"
-    //        }
-
-    //        ListElement {
-    //            name: "Blue"
-    //            colorCode: "blue"
-    //        }
-
-    //        ListElement {
-    //            name: "Green"
-    //            colorCode: "green"
-    //        }
-    //    }
-    //    Component {
-    //        id: projectItemDelegate
-    //        Row {
-    //            spacing: 10
-    //            Text { text: name }
-    //            Text { text: '$' + cost }
-    //        }
-    //    }
+    }    
 }
 
 /*##^##

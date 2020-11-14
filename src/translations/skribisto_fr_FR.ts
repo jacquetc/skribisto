@@ -348,6 +348,10 @@
         <source>Export</source>
         <translation type="unfinished">Exporter</translation>
     </message>
+    <message>
+        <source>Share</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ImporterForm.ui</name>

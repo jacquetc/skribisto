@@ -44,9 +44,6 @@ SkrTabButtonForm {
         return false
     }
 
-    tapHandler.onTapped: {
-        control.toggle()
-    }
 
     property bool textVisible: true
     onTextVisibleChanged: {

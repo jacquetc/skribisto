@@ -584,10 +584,7 @@ ApplicationWindow {
 
 
 
-    //    Component{
-    //        id: rootPage
     RootPage {
-        //window: rootWindow
         anchors.fill: parent
     }
 
