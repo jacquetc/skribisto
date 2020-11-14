@@ -3,13 +3,13 @@
 --
 -- Text encoding used: UTF-8
 --
--- skribisto_db_version:1.2
+-- skribisto_db_version:1.3
 
 PRAGMA foreign_keys = off;
 BEGIN TRANSACTION;
 
--- Table: tbl_history
-CREATE TABLE tbl_history (dt_saved DATETIME, l_char_count INTEGER, l_word_count INTEGER);
+-- Table: tbl_stat_history
+CREATE TABLE tbl_stat_history (l_stat_history_id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT UNIQUE ON CONFLICT ROLLBACK NOT NULL ON CONFLICT ROLLBACK, dt_saved DATETIME, l_sheet_char_count INTEGER, l_sheet_word_count INTEGER, l_note_char_count INTEGER, l_note_word_count INTEGER);
 
 -- Table: tbl_note
 CREATE TABLE tbl_note (l_note_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, t_title TEXT, l_sort_order INTEGER NOT NULL ON CONFLICT ROLLBACK DEFAULT (9999999999), l_indent INTEGER DEFAULT (0) NOT NULL ON CONFLICT ROLLBACK, l_version INTEGER, l_dna INTEGER, l_xpos INTEGER, l_ypos INTEGER, m_content BLOB, dt_created DATETIME DEFAULT (CURRENT_TIMESTAMP) NOT NULL ON CONFLICT ROLLBACK, dt_updated DATETIME NOT NULL ON CONFLICT ROLLBACK DEFAULT (CURRENT_TIMESTAMP), dt_content DATETIME DEFAULT (CURRENT_TIMESTAMP) NOT NULL ON CONFLICT ROLLBACK, dt_trashed DATETIME, b_trashed BOOLEAN DEFAULT (0) NOT NULL ON CONFLICT ROLLBACK, l_word_count INTEGER, l_char_count INTEGER, l_size INTEGER);

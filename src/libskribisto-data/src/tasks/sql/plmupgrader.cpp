@@ -163,6 +163,75 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     if (dbVersion == 1.2) {
         double newDbVersion = 1.3;
 
+        QSqlQuery query(sqlDb);
+        QString   queryStr =
+            R""""(
+            PRAGMA foreign_keys = 0;
+
+            CREATE TABLE tbl_stat_history (
+                l_stat_history_id  INTEGER  PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT
+                                            UNIQUE ON CONFLICT ROLLBACK
+                                            NOT NULL ON CONFLICT ROLLBACK,
+                dt_saved           DATETIME,
+                l_sheet_char_count INTEGER,
+                l_sheet_word_count INTEGER,
+                l_note_char_count  INTEGER,
+                l_note_word_count  INTEGER
+            );
+
+            INSERT INTO tbl_stat_history (
+                                             dt_saved,
+                                             l_sheet_char_count,
+                                             l_sheet_word_count
+                                         )
+                                         SELECT dt_saved,
+                                                l_char_count,
+                                                l_word_count
+                                           FROM tbl_history;
+
+            DROP TABLE tbl_history;
+
+            PRAGMA foreign_keys = 1;
+
+                )"""";
+
+
+        result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
+
+
+        IFKO(result) {
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "cant_upgrade");
+            result.addData("dbVersion", newDbVersion);
+        }
+
+        IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
+
+        IFOK(result) {
+            dbVersion = newDbVersion;
+        }
+    }
+
+    IFKO(result) {
+        return result;
+    }
+    // ---------------------------------
+
+    // from 1.3 to 1.4
+    if (dbVersion == 1.3) {
+        double newDbVersion = 1.4;
+
+        // fill here
+    }
+
+    IFKO(result) {
+        return result;
+    }
+    // ---------------------------------
+
+    // from 1.4 to 1.5
+    if (dbVersion == 1.4) {
+        double newDbVersion = 1.5;
+
         // fill here
     }
     return result;
