@@ -93,12 +93,12 @@ public:
                                           bool getNotTrashed);
 
 
-    QList<int>getAncestorsList(int  projectId,
+    Q_INVOKABLE QList<int>getAncestorsList(int  projectId,
                                int  paperId,
                                bool getTrashed,
                                bool getNotTrashed);
 
-    QList<int>getSiblingsList(int  projectId,
+    Q_INVOKABLE QList<int>getSiblingsList(int  projectId,
                               int  paperId,
                               bool getTrashed,
                               bool getNotTrashed);
