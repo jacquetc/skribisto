@@ -43,7 +43,12 @@ ApplicationWindow {
 
     Component.onCompleted: {
         SkrTheme // instanciate singleton
+
+        if(rootWindow.visibility === Window.FullScreen){
+            fullscreenAction.checked = true
+        }
     }
+
 
 
     //------------------------------------------------------------------
