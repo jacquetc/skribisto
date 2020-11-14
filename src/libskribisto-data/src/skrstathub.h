@@ -20,8 +20,8 @@ public:
     Q_INVOKABLE int getNoteTotalCount(SKRStatHub::StatType type, int project);
 
 private slots:
-    void updateWordStats(SKR::PaperType paperType, int projectId, int paperId, int wordCount);
-    void updateCharacterStats(SKR::PaperType paperType, int projectId, int paperId, int characterCount);
+    void updateWordStats(SKR::PaperType paperType, int projectId, int paperId, int wordCount = -1);
+    void updateCharacterStats(SKR::PaperType paperType, int projectId, int paperId, int characterCount = -1);
     void setSheetTrashed(int projectId, int sheetId, bool isTrashed);
     void setNoteTrashed(int projectId, int noteId, bool isTrashed);
     void removeSheetFromStat(int projectId, int sheetId);

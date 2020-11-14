@@ -316,9 +316,10 @@ QList<int>SKRSearchPaperListProxyModel::getCheckedIdsList() {
     while (i != m_checkedIdsHash.constEnd()) {
         if ((i.value() == Qt::Checked) || (i.value() == Qt::PartiallyChecked)) {
             list << i.key();
-            ++i;
         }
+        ++i;
     }
+
 
     return list;
 }
