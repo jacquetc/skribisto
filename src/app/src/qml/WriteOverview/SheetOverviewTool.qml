@@ -163,6 +163,31 @@ SheetOverviewToolForm {
         restoreMode: Binding.RestoreBindingOrValue
     }
 
+    // showCharacterCountSwitch
+
+    showCharacterCountSwitch.checked: SkrSettings.overviewTreeSettings.characterCountBoxVisible
+
+    Binding {
+        target: SkrSettings.overviewTreeSettings
+        property: "characterCountBoxVisible"
+        value: showCharacterCountSwitch.checked
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    // showWordCountSwitch
+
+    showWordCountSwitch.checked: SkrSettings.overviewTreeSettings.wordCountBoxVisible
+
+    Binding {
+        target: SkrSettings.overviewTreeSettings
+        property: "wordCountBoxVisible"
+        value: showWordCountSwitch.checked
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
     //focus
     onActiveFocusChanged: {
         if (activeFocus) {

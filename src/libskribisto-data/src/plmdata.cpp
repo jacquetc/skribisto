@@ -22,6 +22,7 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
     m_tagHub         = new SKRTagHub(this);
     m_projectDictHub = new SKRProjectDictHub(this);
     m_pluginHub      = new PLMPluginHub(this);
+    m_statHub      = new SKRStatHub(this);
 
 
     connect(m_sheetHub,
@@ -156,4 +157,11 @@ SKRTagHub * PLMData::tagHub()
 SKRProjectDictHub * PLMData::projectDictHub()
 {
     return m_projectDictHub;
+}
+
+// -----------------------------------------------------------------------------
+
+SKRStatHub *PLMData::statHub()
+{
+    return m_statHub;
 }

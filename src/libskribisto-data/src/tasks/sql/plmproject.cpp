@@ -22,6 +22,7 @@
 #include "plmproject.h"
 #include "plmimporter.h"
 #include "plmexporter.h"
+#include "skrsqltools.h"
 #include <QtSql/QSqlError>
 #include <QDebug>
 #include <QString>
@@ -81,6 +82,32 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKR
     }
     setType("skrib");
     IFOK(*result) {
+
+        //verify if db version is usable by this version of Skribisto :
+        bool ok;
+        double dbTemplateVersion = SKRSqlTools::getProjectTemplateDBVersion(result).toDouble(&ok);
+
+        if(!ok){
+            *result = SKRResult(SKRResult::Critical, this, "string_to_double_conversion_failed");
+        }
+
+        IFOK(result){
+            double dbVersion =  SKRSqlTools::getProjectDBVersion(result, m_sqlDb);
+
+            IFOK(result){
+
+                if(dbTemplateVersion <  dbVersion){
+                    //means that Skribisto can't use this db
+                    *result = SKRResult(SKRResult::Critical, this, "db_version_higher_than_skribisto_can_read");
+                }
+            }
+
+
+        }
+
+
+
+
     }
 
 

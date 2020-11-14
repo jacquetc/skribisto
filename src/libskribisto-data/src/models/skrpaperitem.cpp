@@ -172,6 +172,18 @@ QVariant SKRPaperItem::data(int role)
                                                      "word_count"));
             break;
 
+        case Roles::CharCountWithChildrenRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "char_count_with_children"));
+            break;
+
+        case Roles::WordCountWithChildrenRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "word_count_with_children"));
+            break;
+
 
         case Roles::ProjectIsBackupRole:
             m_data.insert(role, plmdata->projectHub()->isThisProjectABackup(projectId));

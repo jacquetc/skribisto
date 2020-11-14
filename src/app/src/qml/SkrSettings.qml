@@ -95,6 +95,8 @@ QtObject {
         property bool synopsisBoxVisible: true
         property bool noteBoxVisible: true
         property bool tagBoxVisible: true
+        property bool characterCountBoxVisible: true
+        property bool wordCountBoxVisible: true
     }
 
 

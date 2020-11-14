@@ -39,9 +39,9 @@ class EXPORT PLMPaperHub : public QObject {
 
 public:
 
-
-    explicit PLMPaperHub(QObject       *parent,
-                         const QString& tableName, const SKR::PaperType &paperType);
+    explicit PLMPaperHub(QObject              *parent,
+                         const QString       & tableName,
+                         const SKR::PaperType& paperType);
 
     QList<QHash<QString, QVariant> >getAll(int projectId) const;
     QHash<int, QString>             getAllTitles(int projectId) const;
@@ -49,46 +49,46 @@ public:
     QHash<int, int>                 getAllIndents(int projectId) const;
     Q_INVOKABLE QList<int>          getAllIds(int projectId) const;
     int                             getOverallSize();
-    SKRResult                        setId(int projectId,
+    SKRResult                       setId(int projectId,
                                           int paperId,
                                           int newId);
-    Q_INVOKABLE virtual SKRResult    setTitle(int            projectId,
+    Q_INVOKABLE virtual SKRResult   setTitle(int            projectId,
                                              int            paperId,
                                              const QString& newTitle);
     Q_INVOKABLE QString             getTitle(int projectId,
                                              int paperId) const;
 
-    SKRResult                        setIndent(int projectId,
+    SKRResult                       setIndent(int projectId,
                                               int paperId,
                                               int newIndent);
     int                             getIndent(int projectId,
                                               int paperId) const;
-    SKRResult                        setSortOrder(int projectId,
+    SKRResult                       setSortOrder(int projectId,
                                                  int paperId,
                                                  int newSortOrder);
     int                             getSortOrder(int projectId,
                                                  int paperId) const;
-    Q_INVOKABLE SKRResult            setContent(int            projectId,
+    Q_INVOKABLE SKRResult           setContent(int            projectId,
                                                int            paperId,
                                                const QString& newContent);
     Q_INVOKABLE QString             getContent(int projectId,
                                                int paperId) const;
-    Q_INVOKABLE virtual SKRResult    setTrashedWithChildren(int  projectId,
+    Q_INVOKABLE virtual SKRResult   setTrashedWithChildren(int  projectId,
                                                            int  paperId,
                                                            bool newTrashedState);
     Q_INVOKABLE bool                getTrashed(int projectId,
                                                int paperId) const;
-    SKRResult                        setCreationDate(int              projectId,
+    SKRResult                       setCreationDate(int              projectId,
                                                     int              paperId,
                                                     const QDateTime& newDate);
     QDateTime                       getCreationDate(int projectId,
                                                     int paperId) const;
-    SKRResult                        setUpdateDate(int              projectId,
+    SKRResult                       setUpdateDate(int              projectId,
                                                   int              paperId,
                                                   const QDateTime& newDate);
     QDateTime                       getUpdateDate(int projectId,
                                                   int paperId) const;
-    SKRResult                        setContentDate(int              projectId,
+    SKRResult                       setContentDate(int              projectId,
                                                    int              paperId,
                                                    const QDateTime& newDate);
     QDateTime                       getContentDate(int projectId,
@@ -100,8 +100,8 @@ public:
 
     Q_INVOKABLE int getTopPaperId(int projectId) const;
 
-    SKRResult        getError();
-    SKRResult        set(int             projectId,
+    SKRResult       getError();
+    SKRResult       set(int             projectId,
                         int             paperId,
                         const QString & fieldName,
                         const QVariant& value,
@@ -110,27 +110,27 @@ public:
                  int            paperId,
                  const QString& fieldName) const;
 
-    Q_INVOKABLE int              getLastAddedId();
+    Q_INVOKABLE int               getLastAddedId();
     SKRResult                     addPaper(const QHash<QString, QVariant>& values,
-                                          int projectId);
+                                           int projectId);
     Q_INVOKABLE virtual SKRResult addPaperAbove(int projectId,
-                                               int targetId);
+                                                int targetId);
     Q_INVOKABLE virtual SKRResult addPaperBelow(int projectId,
-                                               int targetId);
+                                                int targetId);
     Q_INVOKABLE virtual SKRResult addChildPaper(int projectId,
-                                               int targetId);
+                                                int targetId);
     virtual SKRResult             removePaper(int projectId,
-                                             int targetId);
+                                              int targetId);
 
 
     Q_INVOKABLE SKRResult movePaperUp(int projectId,
-                                     int paperId);
+                                      int paperId);
     Q_INVOKABLE SKRResult movePaperDown(int projectId,
-                                       int paperId);
+                                        int paperId);
     Q_INVOKABLE SKRResult movePaperAsChildOf(int projectId,
-                                            int noteId,
-                                            int targetParentId,
-                                            int directChildIndex = -1);
+                                             int noteId,
+                                             int targetParentId,
+                                             int directChildIndex = -1);
     Q_INVOKABLE int getParentId(int projectId,
                                 int paperId);
 
@@ -163,21 +163,21 @@ public:
     //                               int parentId) const;
 
     SKRResult                     renumberSortOrders(int projectId);
-    int                          getValidSortOrderBeforePaper(int projectId,
+    int                           getValidSortOrderBeforePaper(int projectId,
+                                                               int paperId) const;
+    int                           getValidSortOrderAfterPaper(int projectId,
                                                               int paperId) const;
-    int                          getValidSortOrderAfterPaper(int projectId,
-                                                             int paperId) const;
 
-    Q_INVOKABLE QList<int>       getAllChildren(int projectId,
-                                                int paperId);
-    Q_INVOKABLE QList<int>       getAllAncestors(int projectId,
+    Q_INVOKABLE QList<int>        getAllChildren(int projectId,
                                                  int paperId);
-    QList<int>                   getAllSiblings(int projectId,
-                                                int paperId);
-    Q_INVOKABLE QDateTime        getTrashedDate(int projectId,
-                                                int paperId) const;
+    Q_INVOKABLE QList<int>        getAllAncestors(int projectId,
+                                                  int paperId);
+    QList<int>                    getAllSiblings(int projectId,
+                                                 int paperId);
+    Q_INVOKABLE QDateTime         getTrashedDate(int projectId,
+                                                 int paperId) const;
     Q_INVOKABLE virtual SKRResult untrashOnlyOnePaper(int projectId,
-                                                     int paperId);
+                                                      int paperId);
 
 
     Q_INVOKABLE virtual QList<QString>getAttributes(int projectId,
@@ -185,24 +185,24 @@ public:
     Q_INVOKABLE virtual bool          hasAttribute(int            projectId,
                                                    int            paperId,
                                                    const QString& attribute) = 0;
-    Q_INVOKABLE virtual SKRResult      addAttribute(int            projectId,
+    Q_INVOKABLE virtual SKRResult     addAttribute(int            projectId,
                                                    int            paperId,
                                                    const QString& attribute) = 0;
-    Q_INVOKABLE virtual SKRResult      removeAttribute(int            projectId,
+    Q_INVOKABLE virtual SKRResult     removeAttribute(int            projectId,
                                                       int            paperId,
                                                       const QString& attribute) = 0;
 
 private:
 
     SKRResult movePaper(int  projectId,
-                       int  sourcePaperId,
-                       int  targetPaperId,
-                       bool after = false);
+                        int  sourcePaperId,
+                        int  targetPaperId,
+                        bool after = false);
 
     SKRResult setTrashedDateToNow(int projectId,
-                                 int paperId);
-    SKRResult setTrashedDateToNull(int projectId,
                                   int paperId);
+    SKRResult setTrashedDateToNull(int projectId,
+                                   int paperId);
 
 private slots:
 
@@ -247,6 +247,14 @@ signals:
                                 int sourcePaperId,
                                 int targetProjectId,
                                 int targetPaperId);
+    void wordCountChanged(SKR::PaperType paperType,
+                          int            projectId,
+                          int            paperId,
+                          int            wordCount);
+    void characterCountChanged(SKR::PaperType paperType,
+                               int            projectId,
+                               int            paperId,
+                               int            charCount);
 
 
     // settings :

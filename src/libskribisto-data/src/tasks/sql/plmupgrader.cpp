@@ -33,24 +33,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     SKRResult result("SKRSqlTools::upgradeSQLite");
 
     // find DB version :
-    double dbVersion = -1;
-
-    QSqlQuery query(sqlDb);
-    QString   queryStr = "SELECT dbl_database_version FROM tbl_project";
-
-
-    query.prepare(queryStr);
-    query.exec();
-
-    while (query.next()) {
-        dbVersion = query.value(0).toDouble();
-    }
-
-    if (dbVersion == -1) {
-        result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "no_version_found");
-        return result;
-    }
-
+    double dbVersion =  SKRSqlTools::getProjectDBVersion(&result, sqlDb);
 
     // ---------------------------------
 
@@ -62,8 +45,8 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 
         QSqlQuery query(sqlDb);
         QString   queryStr =
-            "CREATE TABLE tbl_project_dict (l_project_dict_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ON CONFLICT ROLLBACK UNIQUE ON CONFLICT ROLLBACK, t_word TEXT UNIQUE ON CONFLICT REPLACE NOT NULL ON CONFLICT ROLLBACK);"
-        ;
+                "CREATE TABLE tbl_project_dict (l_project_dict_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ON CONFLICT ROLLBACK UNIQUE ON CONFLICT ROLLBACK, t_word TEXT UNIQUE ON CONFLICT REPLACE NOT NULL ON CONFLICT ROLLBACK);"
+                ;
         query.prepare(queryStr);
         query.exec();
 
@@ -102,7 +85,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 
         QSqlQuery query(sqlDb);
         QString   queryStr =
-            R""""(PRAGMA foreign_keys = 0;
+                R""""(PRAGMA foreign_keys = 0;
 
                 CREATE TABLE temp_table AS SELECT * FROM tbl_sheet_note;
 
@@ -138,7 +121,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
                 )"""";
 
 
-        result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
+                result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
 
 
         IFKO(result) {
@@ -162,6 +145,75 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     // from 1.2 to 1.3
     if (dbVersion == 1.2) {
         double newDbVersion = 1.3;
+
+        QSqlQuery query(sqlDb);
+        QString   queryStr =
+                R""""(
+                PRAGMA foreign_keys = 0;
+
+                CREATE TABLE tbl_stat_history (
+                l_stat_history_id  INTEGER  PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT
+                UNIQUE ON CONFLICT ROLLBACK
+                NOT NULL ON CONFLICT ROLLBACK,
+                dt_saved           DATETIME,
+                l_sheet_char_count INTEGER,
+                l_sheet_word_count INTEGER,
+                l_note_char_count  INTEGER,
+                l_note_word_count  INTEGER
+                );
+
+                INSERT INTO tbl_stat_history (
+                dt_saved,
+                l_sheet_char_count,
+                l_sheet_word_count
+                )
+                SELECT dt_saved,
+                l_char_count,
+                l_word_count
+                FROM tbl_history;
+
+                DROP TABLE tbl_history;
+
+                PRAGMA foreign_keys = 1;
+
+                )"""";
+
+
+                result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
+
+
+        IFKO(result) {
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "cant_upgrade");
+            result.addData("dbVersion", newDbVersion);
+        }
+
+        IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
+
+        IFOK(result) {
+            dbVersion = newDbVersion;
+        }
+    }
+
+    IFKO(result) {
+        return result;
+    }
+    // ---------------------------------
+
+    // from 1.3 to 1.4
+    if (dbVersion == 1.3) {
+        double newDbVersion = 1.4;
+
+        // fill here
+    }
+
+    IFKO(result) {
+        return result;
+    }
+    // ---------------------------------
+
+    // from 1.4 to 1.5
+    if (dbVersion == 1.4) {
+        double newDbVersion = 1.5;
 
         // fill here
     }
