@@ -934,7 +934,7 @@ SheetOverviewTreeForm {
                                             if(paperId !== -2 || projectId !== -2){
                                                 //save cursor position of current document :
 
-                                                var previousCursorPosition = writingZone.cursorPosition
+                                                var previousCursorPosition = writingZone.textArea.cursorPosition
                                                 //console.log("previousCursorPosition", previousCursorPosition)
                                                 var previousY = writingZone.flickable.contentY
                                                 //console.log("previousContentY", previousY)

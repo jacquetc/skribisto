@@ -6,8 +6,6 @@ import "../Commons"
 import ".."
 
 Item {
-    width: 400
-    height: 400
 
     property alias stackView: stackView
 

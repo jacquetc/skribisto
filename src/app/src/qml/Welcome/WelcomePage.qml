@@ -5,11 +5,6 @@ import ".."
 WelcomePageForm {
     property string pageType: "welcome"
 
-    //    Connections {
-    //        target: plmData.projectHub()
-    //        onProjectLoaded: console.log("loaded !!")
-    //    }
-
     // pages :
     projectPageButton.onClicked: {
         stackLayout.currentIndex = 0
@@ -53,6 +48,7 @@ WelcomePageForm {
         stackLayout.itemAt(3).forceActiveFocus()
 
     }
+
     //compact mode :
     tabBar.visible: Globals.compactMode
     mainButtonsPane.visible: !Globals.compactMode
@@ -73,19 +69,6 @@ WelcomePageForm {
 
 
     function init() {
-        //leftBase.onBaseWidthChanged.connect(changeLeftBaseWidth)
-        //rightBase.onBaseWidthChanged.connect(changeRightBaseWidth)
-
-        //show Welcome window
-
-
-        //        if (!result.success) {
-        //            messageDialog.title = qsTr("")
-        //            messageDialog.text = qsTr("")
-        //            messageDialog.informativeText = "inf"
-        //            messageDialog.detailedText = "det"
-        //            messageDialog.visible = true
-        //        }
 
         welcomeWindowAction.trigger()
 
@@ -95,7 +78,12 @@ WelcomePageForm {
 
     onActiveFocusChanged: {
         if (activeFocus) {
-            projectPageButton.forceActiveFocus()
+            if(Globals.compactMode){
+                projectPageTabButton.forceActiveFocus()
+            }
+            else{
+                projectPageButton.forceActiveFocus()
+            }
         }
     }
 

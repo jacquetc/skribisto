@@ -835,6 +835,10 @@ NotePadForm {
             }
 
             var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+            if(synopsisId === currentNoteId){
+                return;
+            }
+
             openDocument(projectId, synopsisId)
             var i;
             for(i = 0; i < noteRepeater.count; i++) {

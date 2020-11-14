@@ -43,7 +43,12 @@ ApplicationWindow {
 
     Component.onCompleted: {
         SkrTheme // instanciate singleton
+
+        if(rootWindow.visibility === Window.FullScreen){
+            fullscreenAction.checked = true
+        }
     }
+
 
 
     //------------------------------------------------------------------
@@ -579,10 +584,7 @@ ApplicationWindow {
 
 
 
-    //    Component{
-    //        id: rootPage
     RootPage {
-        //window: rootWindow
         anchors.fill: parent
     }
 

@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.5.0)
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++11  -pedantic -Wno-deprecated-declarations -fstrict-aliasing -pedantic-errors -Wno-unused-variable")
 #
 # Populate a CMake variable with the sources
@@ -9,7 +9,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 project(skribisto-data LANGUAGES CXX VERSION ${VERSION} )
 add_definitions(-DSKRIBISTO_DATA_LIBRARY)
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
 find_package(QuaZip-Qt5 REQUIRED)
 
 
@@ -115,12 +116,12 @@ set(QRC
     tasks/sql/sql.qrc
     )
 
-qt5_add_resources(RESOURCES ${QRC})
+qt_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
 add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${models_SRCS} ${RESOURCES})
 
-target_link_libraries(skribisto-data Qt5::Core Qt5::Gui Qt5::Network Qt5::Sql Qt5::Xml QuaZip::QuaZip)
+target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml QuaZip::QuaZip)
 
 
 install(TARGETS skribisto-data LIBRARY DESTINATION ${KDE_INSTALL_LIBDIR})
