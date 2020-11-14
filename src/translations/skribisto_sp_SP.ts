@@ -2415,6 +2415,14 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Write this project&apos;s new name</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Character count : %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Word count : %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProjectSupPageForm.ui</name>
@@ -3184,6 +3192,14 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Project</source>
         <translation type="unfinished">Proyecto</translation>
     </message>
+    <message>
+        <source>Show character count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SheetOverviewTree</name>
@@ -3289,6 +3305,22 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Add child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>c: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>all c: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>w: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>all w: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

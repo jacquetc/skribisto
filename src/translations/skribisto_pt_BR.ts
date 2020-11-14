@@ -2186,6 +2186,14 @@ not allowed delete a filled book.</source>
         <source>Write this project&apos;s new name</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Character count : %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Word count : %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProjectSupPageForm.ui</name>
@@ -2817,6 +2825,14 @@ not allowed delete a filled book.</source>
         <source>Project</source>
         <translation type="unfinished">Projeto</translation>
     </message>
+    <message>
+        <source>Show character count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SheetOverviewTree</name>
@@ -2922,6 +2938,22 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>Add child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>c: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>all c: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>w: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>all w: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
