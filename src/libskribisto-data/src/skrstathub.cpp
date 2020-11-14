@@ -285,6 +285,10 @@ void SKRStatHub::setNoteTrashed(int projectId, int noteId, bool isTrashed)
 
 void SKRStatHub::removeSheetFromStat(int projectId, int sheetId)
 {
+    // if not done, trash it, needed for cleaner calculation
+    setSheetTrashed(projectId, sheetId, true);
+
+    // delete ref to paperId
     QHash<int, QHash<QString, int> > projectHash = m_sheetHashByProjectHash.value(projectId);
 
     projectHash.remove(sheetId);
@@ -295,6 +299,10 @@ void SKRStatHub::removeSheetFromStat(int projectId, int sheetId)
 
 void SKRStatHub::removeNoteFromStat(int projectId, int noteId)
 {
+    // if not done, trash it, needed for cleaner calculation
+    setNoteTrashed(projectId, noteId, true);
+
+    // delete ref to paperId
     QHash<int, QHash<QString, int> > projectHash = m_noteHashByProjectHash.value(projectId);
 
     projectHash.remove(noteId);
