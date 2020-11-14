@@ -18,6 +18,8 @@ public:
     static SKRResult executeSQLString(const QString& sqlString,
                                      QSqlDatabase & sqlDB);
 
+    static QString getProjectTemplateDBVersion(SKRResult *result);
+    static double getProjectDBVersion(SKRResult *result, QSqlDatabase &sqlDb);
 signals:
 };
 

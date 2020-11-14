@@ -38,16 +38,16 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
     if (sqlDB.driver()->hasFeature(QSqlDriver::Transactions)) {
         // protect TRIGGER's END
         queryStr =
-            queryStr.replace(QRegularExpression("(;.*END)",
-                                                QRegularExpression::CaseInsensitiveOption
-                                                | QRegularExpression::MultilineOption),
-                             "$END");
+                queryStr.replace(QRegularExpression("(;.*END)",
+                                                    QRegularExpression::CaseInsensitiveOption
+                                                    | QRegularExpression::MultilineOption),
+                                 "$END");
         // Replace comments and tabs and new lines with space
         queryStr =
-            queryStr.replace(QRegularExpression("(\\/\\*(.)*?\\*\\/|^--.*\\n|\\t|\\n)",
-                                                QRegularExpression::CaseInsensitiveOption
-                                                | QRegularExpression::MultilineOption),
-                             " ");
+                queryStr.replace(QRegularExpression("(\\/\\*(.)*?\\*\\/|^--.*\\n|\\t|\\n)",
+                                                    QRegularExpression::CaseInsensitiveOption
+                                                    | QRegularExpression::MultilineOption),
+                                 " ");
         queryStr = queryStr.replace(";", ";\n");
         queryStr = queryStr.replace("$END", ";END");
 
@@ -107,11 +107,11 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
         // ...so we need to remove special queries (`begin transaction` and
         // `commit`)
         queryStr =
-            queryStr.replace(QRegularExpression(
-                                 "(\\bbegin.transaction.*;|\\bcommit.*;|\\/\\*(.|\\n)*?\\*\\/|^--.*\\n|\\t|\\n)",
-                                 QRegularExpression::CaseInsensitiveOption
-                                 | QRegularExpression::MultilineOption),
-                             " ");
+                queryStr.replace(QRegularExpression(
+                                     "(\\bbegin.transaction.*;|\\bcommit.*;|\\/\\*(.|\\n)*?\\*\\/|^--.*\\n|\\t|\\n)",
+                                     QRegularExpression::CaseInsensitiveOption
+                                     | QRegularExpression::MultilineOption),
+                                 " ");
         queryStr = queryStr.trimmed();
 
         // Execute each individual queries
@@ -131,4 +131,52 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
         sqlDB.commit();
     }
     return result;
+}
+
+//------------------------------------------------------------------
+
+QString SKRSqlTools::getProjectTemplateDBVersion(SKRResult *result){
+    QString dbVersion = "-2";
+    QFile    file(":/sql/sqlite_project.sql");
+    file.open(QIODevice::ReadOnly);
+    for(const QString &line : QString(file.readAll()).split("\n")){
+
+        if(line.contains("-- skribisto_db_version:")){
+            QStringList splittedLine = line.split(":");
+            if(splittedLine.count() == 2){
+                dbVersion = splittedLine.at(1);
+            }
+
+            break;
+        }
+    }
+    file.close();
+
+    if(dbVersion == "-2"){
+        *result = SKRResult(SKRResult::Critical, "SKRSqlTools::getProjectTemplateVersion", "no_db_version_found_in_sql_file");
+    }
+
+    return dbVersion;
+}
+//------------------------------------------------------------------
+
+double SKRSqlTools::getProjectDBVersion(SKRResult *result, QSqlDatabase& sqlDb){
+    double dbVersion = -1;
+
+    QSqlQuery query(sqlDb);
+    QString   queryStr = "SELECT dbl_database_version FROM tbl_project";
+
+
+    query.prepare(queryStr);
+    query.exec();
+
+    while (query.next()) {
+        dbVersion = query.value(0).toDouble();
+    }
+
+    if (dbVersion == -1) {
+        *result = SKRResult(SKRResult::Critical, "PLMUpgrader::getProjectDBVersion", "no_version_found");
+    }
+
+    return dbVersion;
 }
