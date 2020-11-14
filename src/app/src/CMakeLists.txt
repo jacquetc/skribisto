@@ -1,12 +1,12 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.5.0)
 
 # Populate a CMake variable with the sources
 
 project(app LANGUAGES CXX VERSION ${VERSION})
 
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 CONFIG REQUIRED)
-#find_package(KF5Kirigami2)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 REQUIRED)
 find_package(hunspell REQUIRED)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -39,7 +39,7 @@ set(TS_FILES
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_sp_SP.ts
     )
 #set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION ${CMAKE_SOURCE_DIR}/src/translations/)
-qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 configure_file(${CMAKE_SOURCE_DIR}/src/translations/translations.qrc ${CMAKE_BINARY_DIR}/src/app/src COPYONLY)
 
 set(app_SRCS 
@@ -103,18 +103,18 @@ set(QRC pics.qrc
 
 # needed to allow qML debugging :
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    find_package(Qt5QuickCompiler)
+    find_package(Qt${QT_VERSION_MAJOR}QuickCompiler)
     qtquick_compiler_add_resources(RESOURCES ${QML})
-    qt5_add_resources(RESOURCES ${QRC})
+    qt_add_resources(RESOURCES ${QRC})
 endif (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    qt5_add_resources(RESOURCES ${QRC} ${QML})
+    qt_add_resources(RESOURCES ${QRC} ${QML})
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Tell CMake to create the executable
 
 if(ANDROID)
-    add_library(skribisto ${app_SRCS} ${RESOURCES} ${QRC} )
+    add_library(skribisto SHARED ${app_SRCS} ${RESOURCES} ${QRC} )
 else()
     add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC} )
 endif()
@@ -122,7 +122,7 @@ endif()
 target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
-target_link_libraries(skribisto skribisto-data Qt5::Core Qt5::Quick Qt5::Network Qt5::Gui Qt5::Widgets Qt5::Svg Qt5::QuickControls2
+target_link_libraries(skribisto PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2
     ${HUNSPELL_LIBRARIES})
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 target_include_directories(skribisto SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
