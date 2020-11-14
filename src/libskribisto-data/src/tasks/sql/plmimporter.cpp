@@ -200,27 +200,12 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
     IFOKDO(result, SKRSqlTools::executeSQLFile(":/sql/sqlite_project.sql", sqlDb));
 
     // fetch db version
+
     QString dbVersion = "-2";
     IFOK(result){
-        QFile    file(":/sql/sqlite_project.sql");
-        file.open(QIODevice::ReadOnly);
-        for(const QString &line : QString(file.readAll()).split("\n")){
-
-            if(line.contains("-- skribisto_db_version:")){
-                QStringList splittedLine = line.split(":");
-                if(splittedLine.count() == 2){
-                    dbVersion = splittedLine.at(1);
-                }
-
-                break;
-            }
-        }
-        file.close();
-
-        if(dbVersion == "-2"){
-            result = SKRResult(SKRResult::Critical, this, "no_db_version_found_in_sql_file");
-        }
+        dbVersion = SKRSqlTools::getProjectTemplateDBVersion(&result);
     }
+
 
 
     QString sqlString =

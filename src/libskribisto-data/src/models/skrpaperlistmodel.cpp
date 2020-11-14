@@ -213,6 +213,14 @@ QVariant SKRPaperListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
+    if (role == SKRPaperItem::Roles::CharCountWithChildrenRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRPaperItem::Roles::WordCountWithChildrenRole) {
+        return item->data(role);
+    }
+
     if (role == SKRPaperItem::Roles::TrashedRole) {
         return item->data(role);
     }
@@ -402,6 +410,8 @@ QHash<int, QByteArray>SKRPaperListModel::roleNames() const {
     roles[SKRPaperItem::Roles::TrashedRole]         = "trashed";
     roles[SKRPaperItem::Roles::WordCountRole]       = "wordCount";
     roles[SKRPaperItem::Roles::CharCountRole]       = "charCount";
+    roles[SKRPaperItem::Roles::WordCountWithChildrenRole]       = "wordCountWithChildren";
+    roles[SKRPaperItem::Roles::CharCountWithChildrenRole]       = "charCountWithChildren";
     roles[SKRPaperItem::Roles::ProjectIsBackupRole] = "projectIsBackup";
     roles[SKRPaperItem::Roles::ProjectIsActiveRole] = "projectIsActive";
     roles[SKRPaperItem::Roles::IsRenamableRole]     = "isRenamable";
@@ -842,6 +852,33 @@ void SKRPaperListModel::connectToPLMDataSignals()
                                                                  WordCountRole);
     }, Qt::UniqueConnection);
 
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "char_count_with_children") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                 SKRPaperItem::Roles::
+                                                                 CharCountWithChildrenRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "word_count_with_children") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                 SKRPaperItem::Roles::
+                                                                 WordCountWithChildrenRole);
+    }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->projectHub(),
                                            &PLMProjectHub::activeProjectChanged, this,

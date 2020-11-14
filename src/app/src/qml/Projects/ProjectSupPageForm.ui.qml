@@ -14,6 +14,8 @@ Item {
     property alias titleLabel: titleLabel
     property alias editTitleTextFieldLoader: editTitleTextFieldLoader
     property alias locationLabel: locationLabel
+    property alias charCountLabel: charCountLabel
+    property alias wordCountLabel: wordCountLabel
     readonly property int columnWidth: 550
 
     SkrPane {
@@ -147,10 +149,17 @@ Item {
                             height: 200
                             title: qsTr("Statistics")
 
-                            RowLayout {
-                                id: rowLayout4
-                                width: 100
-                                height: 100
+                            ColumnLayout {
+
+                                SkrLabel{
+                                    id: charCountLabel
+                                    Layout.fillWidth: true
+                                }
+                                SkrLabel{
+                                    id: wordCountLabel
+                                    Layout.fillWidth: true
+                                }
+
                             }
 
                         }

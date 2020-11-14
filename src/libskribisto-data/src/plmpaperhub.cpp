@@ -25,28 +25,22 @@ PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName, const SKR::P
     //connect(m_wordMeter, )
 
 
-    connect(m_wordMeter, &SKRWordMeter::wordCountCalculated, [](SKR::PaperType paperType, int projectId, int paperId, int wordCount){
-        switch(paperType){
-        case SKR::Sheet:
-            plmdata->sheetPropertyHub()->setProperty(projectId, paperId, "word_count", QString::number(wordCount));
-            break;
-        case SKR::Note:
-            plmdata->notePropertyHub()->setProperty(projectId, paperId, "word_count", QString::number(wordCount));
-            break;
-        }
-    });
+    connect(m_wordMeter, &SKRWordMeter::wordCountCalculated,
+            this, &PLMPaperHub::wordCountChanged);
 
-    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, [](SKR::PaperType paperType, int projectId, int paperId, int characterCount){
-        switch(paperType){
-        case SKR::Sheet:
-            plmdata->sheetPropertyHub()->setProperty(projectId, paperId, "char_count", QString::number(characterCount));
-            break;
-        case SKR::Note:
-            plmdata->notePropertyHub()->setProperty(projectId, paperId, "char_count", QString::number(characterCount));
-            break;
-        }
-    });
+    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated,
+            this, &PLMPaperHub::characterCountChanged);
 
+    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, [this](int projectId){
+         QList<int> allIds = this->getAllIds(projectId);
+        for(int i = allIds.count() - 1 ; i >= 0  ; i--){
+            int paperId = allIds.at(i);
+
+            QString content = this->getContent(projectId, paperId);
+            m_wordMeter->countText(m_paperType, projectId, paperId, content, false);
+        }
+
+    });
 
 
 
@@ -300,6 +294,8 @@ int PLMPaperHub::getSortOrder(int projectId, int paperId) const
 
 SKRResult PLMPaperHub::setContent(int projectId, int paperId, const QString& newContent)
 {
+    // count char and words, threading if needed
+
     if(plmdata->projectHub()->isProjectToBeClosed(projectId) ){
         m_wordMeter->countText(m_paperType, projectId, paperId, newContent, true);
     }
@@ -324,7 +320,9 @@ SKRResult PLMPaperHub::setContent(int projectId, int paperId, const QString& new
 
 QString PLMPaperHub::getContent(int projectId, int paperId) const
 {
-    return get(projectId, paperId, "m_content").toString();
+    QString content = get(projectId, paperId, "m_content").toString();
+
+    return content;
 }
 
 // ------------------------------------------------------------

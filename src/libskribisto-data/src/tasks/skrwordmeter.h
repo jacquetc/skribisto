@@ -18,18 +18,18 @@ public slots:
     void countWords();
     void countCharacters();
 
-        signals:
-void wordCountCalculated(SKR::PaperType paperType, int projectId, int paperId, int wordCount);
-void characterCountCalculated(SKR::PaperType paperType, int projectId, int paperId, int charCount);
-void finished();
+signals:
+    void wordCountCalculated(SKR::PaperType paperType, int projectId, int paperId, int wordCount);
+    void characterCountCalculated(SKR::PaperType paperType, int projectId, int paperId, int charCount);
+    void finished();
 
 private:
-void run() override;
+    void run() override;
 
-SKR::PaperType m_paperType;
-int m_projectId;
-int m_paperId;
-QString m_text;
+    SKR::PaperType m_paperType;
+    int m_projectId;
+    int m_paperId;
+    QString m_text;
 };
 
 class SKRWordMeter : public QObject

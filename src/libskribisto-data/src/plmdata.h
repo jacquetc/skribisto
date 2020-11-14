@@ -33,6 +33,7 @@
 #include "plmpluginhub.h"
 #include "skrprojectdicthub.h"
 #include "skribisto_data_global.h"
+#include "skrstathub.h"
 #include "tasks/plmprojectmanager.h"
 
 #define plmdata PLMData::instance()
@@ -61,6 +62,7 @@ public:
     Q_INVOKABLE PLMProjectHub    * projectHub();
     Q_INVOKABLE SKRTagHub        * tagHub();
     Q_INVOKABLE SKRProjectDictHub* projectDictHub();
+    Q_INVOKABLE SKRStatHub       * statHub();
     PLMPluginHub                 * pluginHub();
 
 signals:
@@ -81,6 +83,7 @@ private:
     SKRTagHub *m_tagHub;
     PLMPluginHub *m_pluginHub;
     SKRProjectDictHub *m_projectDictHub;
+    SKRStatHub *m_statHub;
 };
 
 #endif // PLMDATA_H

@@ -1,6 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import eu.skribisto.spellchecker 1.0
+import eu.skribisto.stathub 1.0
+import eu.skribisto.skr 1.0
 import "../Items"
 
 ProjectSupPageForm {
@@ -178,6 +180,32 @@ ProjectSupPageForm {
         }
     }
 
+
+
+    //---------------------------------------------------------------
+    //----Stats---------------------------------------------------
+    //---------------------------------------------------------------
+
+    Connections {
+        target: plmData.statHub()
+        function onStatsChanged(statType, paperType, projectId, count){
+            if(projectId !== root.projectId){
+                return
+            }
+
+            if(paperType === SKR.Note){
+                return
+            }
+            var countString = skrRootItem.toLocaleIntString(count)
+            if(statType === SKRStatHub.Character){
+                charCountLabel.text = qsTr("Character count : %1").arg(countString)
+            }
+            if(statType === SKRStatHub.Word){
+                wordCountLabel.text = qsTr("Word count : %1").arg(countString)
+            }
+
+        }
+    }
 
 
 

@@ -78,15 +78,15 @@ NavigationForm {
 
         // if get children :
         var trashedChildrenList = trashedListViewProxyModel.getChildrenList(projectId, paperId, true, false)
-
+        var trashedAncestorsList = trashedListViewProxyModel.getAncestorsList(projectId, paperId, true, false)
         // if no children :
-        if(trashedChildrenList.length === 0){
+        if(trashedChildrenList.length === 0 && trashedAncestorsList === 0){
             restoreDocumentList(projectId, [paperId])
             return
         }
         else {
 
-            pushRestoreListView(projectId, paperId, trashedChildrenList)
+            pushRestoreListView(projectId, paperId, trashedChildrenList.concat(trashedAncestorsList))
         }
 
 
