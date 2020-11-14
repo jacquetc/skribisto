@@ -45,6 +45,7 @@ public:
 
     Q_INVOKABLE QString skribistoVersion() const;
     Q_INVOKABLE QString toLocaleDateTimeFormat(const QDateTime& dateTime) const;
+    Q_INVOKABLE QString toLocaleIntString(int number) const;
 
 signals:
 

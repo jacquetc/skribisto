@@ -14,29 +14,33 @@ public:
 
     enum Roles {
         // papers :
-        ProjectNameRole     = Qt::UserRole,
-        ProjectIdRole       = Qt::UserRole + 1,
-        PaperIdRole         = Qt::UserRole + 2,
-        NameRole            = Qt::UserRole + 3,
-        LabelRole           = Qt::UserRole + 4,
-        IndentRole          = Qt::UserRole + 5,
-        SortOrderRole       = Qt::UserRole + 6,
-        TrashedRole         = Qt::UserRole + 7,
-        CreationDateRole    = Qt::UserRole + 8,
-        UpdateDateRole      = Qt::UserRole + 9,
-        ContentDateRole     = Qt::UserRole + 10,
-        HasChildrenRole     = Qt::UserRole + 11, // implemented in list proxy
-        CharCountRole       = Qt::UserRole + 12,
-        WordCountRole       = Qt::UserRole + 13,
-        ProjectIsBackupRole = Qt::UserRole + 14,
-        ProjectIsActiveRole = Qt::UserRole + 15,
-        IsRenamableRole     = Qt::UserRole + 16,
-        IsMovableRole       = Qt::UserRole + 17,
-        CanAddPaperRole     = Qt::UserRole + 18,
-        IsTrashableRole     = Qt::UserRole + 19,
-        IsOpenableRole      = Qt::UserRole + 20,
-        IsCopyableRole      = Qt::UserRole + 21,
-        AttributesRole      = Qt::UserRole + 22
+        ProjectNameRole  = Qt::UserRole,
+        ProjectIdRole    = Qt::UserRole + 1,
+        PaperIdRole      = Qt::UserRole + 2,
+        NameRole         = Qt::UserRole + 3,
+        LabelRole        = Qt::UserRole + 4,
+        IndentRole       = Qt::UserRole + 5,
+        SortOrderRole    = Qt::UserRole + 6,
+        TrashedRole      = Qt::UserRole + 7,
+        CreationDateRole = Qt::UserRole + 8,
+        UpdateDateRole   = Qt::UserRole + 9,
+        ContentDateRole  = Qt::UserRole + 10,
+
+        // implemented in list proxy :
+        HasChildrenRole           = Qt::UserRole + 11,
+        CharCountRole             = Qt::UserRole + 12,
+        WordCountRole             = Qt::UserRole + 13,
+        CharCountWithChildrenRole = Qt::UserRole + 14,
+        WordCountWithChildrenRole = Qt::UserRole + 15,
+        ProjectIsBackupRole       = Qt::UserRole + 16,
+        ProjectIsActiveRole       = Qt::UserRole + 17,
+        IsRenamableRole           = Qt::UserRole + 18,
+        IsMovableRole             = Qt::UserRole + 19,
+        CanAddPaperRole           = Qt::UserRole + 20,
+        IsTrashableRole           = Qt::UserRole + 21,
+        IsOpenableRole            = Qt::UserRole + 22,
+        IsCopyableRole            = Qt::UserRole + 23,
+        AttributesRole            = Qt::UserRole + 24
     };
     Q_ENUM(Roles)
 

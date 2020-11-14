@@ -733,7 +733,7 @@ SheetOverviewTreeForm {
                             Layout.fillHeight: true
                             Layout.fillWidth: true
                             Layout.minimumWidth: 100
-                            Layout.maximumWidth: 600
+                            //Layout.maximumWidth: 600
 
                             property var writingZone: noteWritingZoneLoader.item
 
@@ -1076,6 +1076,10 @@ SheetOverviewTreeForm {
 
                         }
 
+                        //-----------------------------------------------------------
+                        //---------------Tags :---------------------------------------------
+                        //-----------------------------------------------------------
+
                         RowLayout{
                             id: tagBox
                             Layout.minimumWidth: 50
@@ -1127,10 +1131,6 @@ SheetOverviewTreeForm {
                                 Layout.fillWidth: true
 
 
-                                //-----------------------------------------------------------
-                                //---------------Tags :---------------------------------------------
-                                //-----------------------------------------------------------
-
                                 minimalMode: true
                                 projectId: model.projectId
                                 itemId: model.paperId
@@ -1146,11 +1146,73 @@ SheetOverviewTreeForm {
                                 tagListModel: tagProxyModel
                                 itemType: SKRTagHub.Sheet
 
-
-                                //---------------------------------------------------------
-                                //---------------------------------------------------------
-                                //---------------------------------------------------------
                             }
+                        }
+
+
+                        //-----------------------------------------------------------
+                        //---------------Counts :---------------------------------------------
+                        //-----------------------------------------------------------
+
+                        ColumnLayout{
+                            id: countBox
+                            visible: SkrSettings.overviewTreeSettings.characterCountBoxVisible || SkrSettings.overviewTreeSettings.wordCountBoxVisible
+                            //Layout.minimumWidth: 50
+                            //Layout.maximumWidth: 100
+                            Layout.fillHeight: true
+                            Layout.fillWidth: false
+
+                            ColumnLayout{
+                                id: characterCountLayout
+                                visible: SkrSettings.overviewTreeSettings.characterCountBoxVisible
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
+
+                                SkrLabel{
+                                    id: characterCountLabel
+                                    Layout.fillHeight: true
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+                                    text: qsTr("c: %1").arg(skrRootItem.toLocaleIntString(model.charCount))
+                                    verticalAlignment: Qt.AlignVCenter
+                                }
+                                SkrLabel{
+                                    id: characterCountWithChildrenLabel
+                                    visible: model.hasChildren
+                                    Layout.fillHeight: true
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+                                    text: qsTr("all c: %1").arg(skrRootItem.toLocaleIntString(model.charCountWithChildren))
+                                    verticalAlignment: Qt.AlignVCenter
+                                }
+                            }
+
+                            ColumnLayout{
+                                id: wordCountLayout
+                                visible: SkrSettings.overviewTreeSettings.wordCountBoxVisible
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
+
+                                SkrLabel{
+                                    id: wordCountLabel
+                                    Layout.fillHeight: true
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+                                    text: qsTr("w: %1").arg(skrRootItem.toLocaleIntString(model.wordCount))
+                                    verticalAlignment: Qt.AlignVCenter
+                                }
+                                SkrLabel{
+                                    id: wordCountWithChildrenLabel
+                                    visible: model.hasChildren
+                                    Layout.fillHeight: true
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+                                    text: qsTr("all w: %1").arg(skrRootItem.toLocaleIntString(model.wordCountWithChildren))
+                                    verticalAlignment: Qt.AlignVCenter
+                                }
+                            }
+
+
                         }
 
                         RowLayout{

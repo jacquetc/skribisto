@@ -101,7 +101,10 @@ QString SKRRootItem::skribistoVersion() const {
 
 QString SKRRootItem::toLocaleDateTimeFormat(const QDateTime& dateTime) const {
     QLocale locale(m_langCode);
-
-
     return dateTime.toString(locale.dateTimeFormat());
+}
+
+QString SKRRootItem::toLocaleIntString(int number) const{
+    QLocale locale(m_langCode);
+    return locale.toString(number);
 }

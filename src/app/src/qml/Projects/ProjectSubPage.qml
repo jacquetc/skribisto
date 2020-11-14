@@ -196,12 +196,12 @@ ProjectSupPageForm {
             if(paperType === SKR.Note){
                 return
             }
-
+            var countString = skrRootItem.toLocaleIntString(count)
             if(statType === SKRStatHub.Character){
-                charCountLabel.text = qsTr("Character count : %1").arg(count)
+                charCountLabel.text = qsTr("Character count : %1").arg(countString)
             }
             if(statType === SKRStatHub.Word){
-                wordCountLabel.text = qsTr("Word count : %1").arg(count)
+                wordCountLabel.text = qsTr("Word count : %1").arg(countString)
             }
 
         }
