@@ -26,9 +26,9 @@ Short term goal is to rejoin its ancestor Plume Creator feature-wise. A few outs
 - **spellcheking**
 - **color themes**
 - **overview of all texts**
+- **character/word count**
 - advanced search/replace
 - display quickly the end of the previous text and the beginning of the next text
-- character/word count
 - character/word goal
 - exporting to .txt/.odt/.PDF
 - printing
@@ -84,7 +84,22 @@ Needed sources and libs :
 
 ### Linux
 
-#### Flatpak prerequisites
+#### By hand, for development
+
+Needed sources and libs :
+- hunspell (devel)
+- zlib (devel)
+- quazip (devel), version 1.1 minimum needed. Install it by hand.
+
+Minimum Qt : 5.15
+If you have not Qt 5.15, use the Qt installer found at [Qt website](https://www.qt.io/download-open-source)
+Install 5.15 Desktop or superior with Qt Creator
+Open the project using the CMakeLists.txt file
+
+
+#### Flatpak
+
+##### Flatpak prerequisites
 
 - make sure to have *flatpak* and *flatpak-builder* installed on your system
 
@@ -94,7 +109,9 @@ flatpak install flathub org.kde.Sdk//5.15
 flatpak install flathub org.kde.Platform//5.15
 ```
 
-#### Flatpak from GitHub master branch :
+Older flatpak-builder doesn't support YAML manifest files. Convert it to JSON using one of the online website easily found, then place the new file by eu.skribisto.skribisto.yml. Adapt the flatpak commands to point to this new file instead of the .yml file.
+
+##### Flatpak from GitHub master branch :
 
 - type in a terminal :
 
@@ -126,7 +143,7 @@ cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/eu.sk
 ```
 
 
-#### Flatpak from local source code:
+##### Flatpak from local source code:
 
 You can copy/paste in ~/Devel/ the file *eu.skribisto.skribisto* found in \[skribisto-repo\]/package/flatpak/local/
 
