@@ -88,7 +88,7 @@ TabButton {
             id: closeButton
 
             visible: isCurrent | hoverHandler.hovered ? closable : false
-            text: "x"
+            text: qsTr("Close")
             icon.source: "qrc:///icons/backup/window-close.svg"
             focusPolicy: Qt.NoFocus
             display: AbstractButton.IconOnly

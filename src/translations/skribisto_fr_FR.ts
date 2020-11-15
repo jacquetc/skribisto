@@ -806,6 +806,13 @@
     </message>
 </context>
 <context>
+    <name>ProjectTabForm.ui</name>
+    <message>
+        <source>Close project</source>
+        <translation type="unfinished">Fermer le projet</translation>
+    </message>
+</context>
+<context>
     <name>RestoreListView</name>
     <message>
         <source>Trash: %1</source>
@@ -1314,6 +1321,13 @@
     </message>
     <message>
         <source>all w: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SkrTabButtonForm.ui</name>
+    <message>
+        <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

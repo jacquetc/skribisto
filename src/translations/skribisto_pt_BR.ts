@@ -2251,6 +2251,13 @@ not allowed delete a filled book.</source>
     </message>
 </context>
 <context>
+    <name>ProjectTabForm.ui</name>
+    <message>
+        <source>Close project</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <source>No Title</source>
@@ -2975,6 +2982,13 @@ not allowed delete a filled book.</source>
     <message>
         <source>all w: %1</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SkrTabButtonForm.ui</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Fechar</translation>
     </message>
 </context>
 <context>

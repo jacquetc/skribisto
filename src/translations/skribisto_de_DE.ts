@@ -2822,6 +2822,13 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
 </context>
 <context>
+    <name>ProjectTabForm.ui</name>
+    <message>
+        <source>Close project</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <source>XML problem : parseFolderElement(const QDomElement &amp;element, QTreeWidgetItem *parentItem)</source>
@@ -3655,6 +3662,13 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source>Form</source>
         <translation type="obsolete">Maske</translation>
+    </message>
+</context>
+<context>
+    <name>SkrTabButtonForm.ui</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Schließen</translation>
     </message>
 </context>
 <context>
