@@ -22,7 +22,7 @@
 
 SKRResult::SKRResult() :  m_status(SKRResult::OK)
 {
-   this->addErrorCode("OK");
+    this->addErrorCode("OK");
 
 }
 
@@ -35,7 +35,7 @@ SKRResult::SKRResult(const QObject *object) :  m_status(SKRResult::OK)
 
 SKRResult::SKRResult(const QString &className) :  m_status(SKRResult::OK)
 {
-   this->addErrorCode("OK_" + className.toUpper());
+    this->addErrorCode("OK_" + className.toUpper());
 
 }
 
@@ -198,6 +198,22 @@ void SKRResult::addData(const QString& key, const QVariant& value)
 
 QVariant SKRResult::getData(const QString& key, const QVariant& defaultValue) const
 {
-    QHash<QString, QVariant> lastHash = m_dataHashList.last();
-    return lastHash.value(key, defaultValue);
+    QVariant final = -2;
+
+    QList<QHash<QString, QVariant> >::const_reverse_iterator i;
+    for (i = m_dataHashList.crbegin(); i != m_dataHashList.crend(); ++i){
+
+        QHash<QString, QVariant> hash = *i;
+        final = hash.value(key, -2);
+        if(final != -2){
+            break;
+        }
+    }
+
+    if(final == -2){
+        final = defaultValue;
+    }
+
+    return final;
+
 }

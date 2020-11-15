@@ -421,57 +421,16 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
         IFOKDO(result, plmdata->projectHub()->setProjectName(projectId, projectName));
 
 
-        while (xml.readNextStartElement() && xml.name() == "book") {
-            IFOKDO(result, this->createPapersAndAssociations(projectId, 0, xml, tempDirPath));
-
-            while (xml.readNextStartElement()) {
-                if (xml.name() == "act") {
-                    // qDebug() << "a name" << xml.name();
-                    IFOKDO(result, this->createPapersAndAssociations(projectId, 1, xml, tempDirPath));
-
-                    while (xml.readNextStartElement() && xml.name() == "chapter") {
-                        // qDebug() << "c name" << xml.name();
-                        IFOKDO(result, this->createPapersAndAssociations(projectId, 2, xml, tempDirPath));
 
 
-                        while (xml.readNextStartElement() && xml.name() == "scene") {
-                            // qDebug() << "s name" << xml.name();
-                            IFOKDO(result, this->createPapersAndAssociations(projectId, 3, xml, tempDirPath));
-                            xml.readElementText();
+        while (xml.readNextStartElement()){
+            if(xml.name() == "trash") {
+                xml.skipCurrentElement();
+                continue;
+            }
+            if(xml.name() == "book") {
+                IFOKDO(result, this->readXMLRecursivelyAndCreatePaper(projectId, 0, &xml, tempDirPath));
 
-                            //            for(const QXmlStreamAttribute
-                            // &attribute : xml.attributes()){
-                            //                qDebug() << "attr" <<
-                            // attribute.name() << ":" << attribute.value();
-                            //            }
-
-                            // qDebug() << "decl" <<
-                            // xml.namespaceDeclarations().first().namespaceUri();
-                        }
-                    }
-                }
-                else if (xml.name() == "chapter") {
-                    // qDebug() << "c name" << xml.name();
-                    IFOKDO(result, this->createPapersAndAssociations(projectId, 1, xml, tempDirPath));
-
-
-                    while (xml.readNextStartElement() && xml.name() == "scene") {
-                        // qDebug() << "s name" << xml.name();
-                        IFOKDO(result, this->createPapersAndAssociations(projectId, 2, xml, tempDirPath));
-                        xml.readElementText();
-
-                        // qDebug() << "read" << xml.readElementText();
-
-                        //            for(const QXmlStreamAttribute &attribute :
-                        // xml.attributes()){
-                        //                qDebug() << "attr" << attribute.name()
-                        // << ":" << attribute.value();
-                        //            }
-
-                        // qDebug() << "decl" <<
-                        // xml.namespaceDeclarations().first().namespaceUri();
-                    }
-                }
             }
         }
     }
@@ -536,6 +495,31 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
     return result;
 }
+
+SKRResult PLMImporter::readXMLRecursivelyAndCreatePaper(int                     projectId,
+                                                        int                     indent,
+                                                        QXmlStreamReader *xml,
+                                                        const QString         & tempDirPath)
+{
+    SKRResult result;
+
+    if(!xml->readNextStartElement()){
+        xml->readElementText();
+        return result;
+    }
+    else {
+        IFOKDO(result, this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath));
+        IFOKDO(result, readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath));
+    }
+
+    while (xml->readNextStartElement()) {
+
+        IFOKDO(result, this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath));
+        IFOKDO(result, readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath));
+
+    }
+}
+
 
 SKRResult PLMImporter::createPapersAndAssociations(int                     projectId,
                                                    int                     indent,

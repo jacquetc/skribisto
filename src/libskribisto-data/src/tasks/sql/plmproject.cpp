@@ -91,10 +91,10 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKR
             *result = SKRResult(SKRResult::Critical, this, "string_to_double_conversion_failed");
         }
 
-        IFOK(result){
+        IFOK(*result){
             double dbVersion =  SKRSqlTools::getProjectDBVersion(result, m_sqlDb);
 
-            IFOK(result){
+            IFOK(*result){
 
                 if(dbTemplateVersion <  dbVersion){
                     //means that Skribisto can't use this db

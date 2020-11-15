@@ -2495,6 +2495,13 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
+    <name>ProjectTabForm.ui</name>
+    <message>
+        <source>Close project</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <source>XML problem : parseFolderElement(const QDomElement &amp;element, QTreeWidgetItem *parentItem)</source>
@@ -3243,6 +3250,13 @@ Please open a .plume file.</source>
     <message>
         <source>Form</source>
         <translation type="obsolete">Modulo</translation>
+    </message>
+</context>
+<context>
+    <name>SkrTabButtonForm.ui</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -2483,6 +2483,13 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
+    <name>ProjectTabForm.ui</name>
+    <message>
+        <source>Close project</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <source>No Title</source>
@@ -3356,6 +3363,13 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>...</source>
         <translation type="obsolete">...</translation>
+    </message>
+</context>
+<context>
+    <name>SkrTabButtonForm.ui</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Закрыть</translation>
     </message>
 </context>
 <context>

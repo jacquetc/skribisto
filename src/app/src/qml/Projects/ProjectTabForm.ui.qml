@@ -56,14 +56,21 @@ TabButton {
 
             Layout.fillHeight: true
         }
-        SkrRoundButton {
+        SkrToolButton {
             id: closeButton
             visible: isCurrent | hoverHandler.hovered ? closable : false
-            text: "x"
+            text: qsTr("Close project")
+            icon.source: "qrc:///icons/backup/window-close.svg"
+            display: AbstractButton.IconOnly
             focusPolicy: Qt.NoFocus
             flat: true
             implicitHeight: 30
             implicitWidth: 30
+            padding: 0
+            topInset: 1
+            bottomInset: 1
+            leftInset: 1
+            rightInset: 1
         }
 
         HoverHandler {
