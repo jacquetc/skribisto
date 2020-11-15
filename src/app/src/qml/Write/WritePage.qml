@@ -354,9 +354,6 @@ WritePageForm {
         }
 
         documentPrivate.contentSaveTimerAllowedToStart = true
-        if(!contentSaveTimer.running){
-            contentSaveTimer.start()
-        }
 
 
         leftDock.setCurrentPaperId(projectId, paperId)

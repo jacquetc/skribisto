@@ -343,9 +343,6 @@ NotePageForm {
         }
 
         documentPrivate.contentSaveTimerAllowedToStart = true
-        if(!contentSaveTimer.running){
-            contentSaveTimer.start()
-        }
 
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)

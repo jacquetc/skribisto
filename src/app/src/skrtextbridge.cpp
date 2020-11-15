@@ -356,17 +356,25 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
 
         QTextDocument *otherTextDocument = syncDoc.qQuickTextDocument()->textDocument();
 
-        QTextCursor selectionCursor =
+        QTextCursor otherDocSelectionCursor =
             otherTextDocument->rootFrame()->firstCursorPosition();
 
         // remove
-        selectionCursor.setPosition(position,                QTextCursor::MoveAnchor);
-        selectionCursor.setPosition(position + charsRemoved, QTextCursor::KeepAnchor);
-        selectionCursor.removeSelectedText();
+        otherDocSelectionCursor.setPosition(position,                QTextCursor::MoveAnchor);
+        otherDocSelectionCursor.setPosition(position + charsRemoved, QTextCursor::KeepAnchor);
+        otherDocSelectionCursor.removeSelectedText();
 
         // add
-        selectionCursor.setPosition(position, QTextCursor::MoveAnchor);
-        selectionCursor.insertFragment(docFragment);
+        otherDocSelectionCursor.setPosition(position, QTextCursor::MoveAnchor);
+        otherDocSelectionCursor.insertFragment(docFragment);
+
+
+        //fail safe :
+        otherDocSelectionCursor.setPosition(position + charsAdded, QTextCursor::MoveAnchor);
+        if(otherDocSelectionCursor.block().text().size() != selectionCursor.block().text().size()){
+            otherTextDocument->setMarkdown(textDocument->toMarkdown());
+            qDebug() << "failsafe used for " << senderSyncDoc.paperType() << senderSyncDoc.projectId() << senderSyncDoc.paperId();
+        }
 
         this->connectContentsChangeSignal(syncDoc);
     }

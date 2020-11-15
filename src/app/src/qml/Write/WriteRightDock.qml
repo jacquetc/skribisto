@@ -172,6 +172,7 @@ WriteRightDockForm {
     }
     onPaperIdChanged: {
         notePadView.sheetId = paperId
+        notePadView.openSynopsis()
         tagPadView.itemId = paperId
     }
 

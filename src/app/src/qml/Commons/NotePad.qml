@@ -21,10 +21,12 @@ NotePadForm {
 
     onProjectIdChanged: {
         populateNoteListModel()
-        openSynopsisTimer.start()
     }
     onSheetIdChanged: {
         populateNoteListModel()
+    }
+
+    function openSynopsis(){
         openSynopsisTimer.start()
     }
 
@@ -732,9 +734,6 @@ NotePadForm {
         if(!saveCurrentPaperCursorPositionAndYTimer.running){
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
-        if(!contentSaveTimer.running){
-            contentSaveTimer.start()
-        }
 
     }
 
@@ -749,8 +748,8 @@ NotePadForm {
         //console.log("newCursorPosition", position)
 
         // set positions :
-        writingZone.setCursorPosition(position)
-        writingZone.flickable.contentY = visibleAreaY
+        noteWritingZone.setCursorPosition(position)
+        noteWritingZone.flickable.contentY = visibleAreaY
 
     }
 
@@ -762,7 +761,7 @@ NotePadForm {
         }
             //save cursor position of current document :
 
-            var previousCursorPosition = noteWritingZone.cursorPosition
+            var previousCursorPosition = noteWritingZone.textArea.cursorPosition
             //console.log("previousCursorPosition", previousCursorPosition)
             var previousY = noteWritingZone.flickable.contentY
             //console.log("previousContentY", previousY)
@@ -840,10 +839,13 @@ NotePadForm {
             }
 
             openDocument(projectId, synopsisId)
+            root.focusedIndex = -2
             var i;
             for(i = 0; i < noteRepeater.count; i++) {
                 noteRepeater.itemAt(i).isOpened = false
             }
+
+            noteWritingZone.forceActiveFocus();
 
         }
     }
