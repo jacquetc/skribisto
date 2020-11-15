@@ -433,6 +433,11 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
             }
         }
+        while (xml.readNext() != QXmlStreamReader::EndDocument){
+
+        }
+
+
     }
 
     IFKO(result) {
@@ -440,7 +445,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
         return result;
     }
 
-    if (xml.hasError()) {
+    if (xml.hasError() && xml.error() != QXmlStreamReader::PrematureEndOfDocumentError) {
         result = SKRResult(SKRResult::Critical, this, "error_in_tree_xml");
 
         result.addData("xmlError", QString("%1\nLine %2, column %3")
@@ -508,16 +513,27 @@ SKRResult PLMImporter::readXMLRecursivelyAndCreatePaper(int                     
         return result;
     }
     else {
-        IFOKDO(result, this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath));
-        IFOKDO(result, readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath));
+        if(xml->name() == "separator"){
+            xml->skipCurrentElement();
+        }
+        else {
+            IFOKDO(result, this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath));
+            IFOKDO(result, readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath));
+        }
     }
 
     while (xml->readNextStartElement()) {
 
+        if(xml->name() == "separator"){
+            xml->skipCurrentElement();
+            continue;
+        }
         IFOKDO(result, this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath));
         IFOKDO(result, readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath));
 
     }
+
+    return result;
 }
 
 
