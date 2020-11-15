@@ -3024,10 +3024,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show list of tabs</source>
         <translation type="unfinished"></translation>
     </message>

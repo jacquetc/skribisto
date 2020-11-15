@@ -2660,10 +2660,6 @@ Please open a .plume file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show list of tabs</source>
         <translation type="unfinished"></translation>
     </message>

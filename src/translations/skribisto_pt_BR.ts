@@ -2408,10 +2408,6 @@ not allowed delete a filled book.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show list of tabs</source>
         <translation type="unfinished"></translation>
     </message>

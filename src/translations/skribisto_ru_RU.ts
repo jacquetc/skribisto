@@ -2677,10 +2677,6 @@ Have you checked the one(s) you want to look through ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show list of tabs</source>
         <translation type="unfinished"></translation>
     </message>

@@ -15,7 +15,9 @@
   </releases>
   <screenshots>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/develop/resources/skribisto_screenshot.png</image>
+      <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot1.png</image>
+      <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot2.png</image>
+      <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot3.png</image>
     </screenshot>
   </screenshots>
   <categories>

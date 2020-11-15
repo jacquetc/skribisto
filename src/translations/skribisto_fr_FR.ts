@@ -994,7 +994,7 @@
     </message>
     <message>
         <source>Label</source>
-        <translation>Libelé</translation>
+        <translation type="vanished">Libelé</translation>
     </message>
     <message>
         <source>Main menu</source>
