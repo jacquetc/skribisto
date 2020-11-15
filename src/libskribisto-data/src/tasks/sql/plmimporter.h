@@ -71,6 +71,7 @@ private:
                                   const QString         & attributeName,
                                   const QStringList     & values);
 
+    SKRResult readXMLRecursivelyAndCreatePaper(int projectId, int indent, QXmlStreamReader *xml, const QString &tempDirPath);
 private:
 
     // used to track old plume id with new skribisto note id
