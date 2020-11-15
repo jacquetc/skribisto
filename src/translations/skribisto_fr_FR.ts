@@ -374,6 +374,29 @@
     </message>
 </context>
 <context>
+    <name>HelpPageForm.ui</name>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">Aide</translation>
+    </message>
+    <message>
+        <source>FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ImporterForm.ui</name>
     <message>
         <source>Go back</source>
@@ -974,7 +997,7 @@
     </message>
     <message>
         <source>&amp;About</source>
-        <translation>&amp;A propos</translation>
+        <translation type="vanished">&amp;A propos</translation>
     </message>
     <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
@@ -1957,7 +1980,7 @@
     </message>
     <message>
         <source>&amp;About</source>
-        <translation type="vanished">&amp;A propos</translation>
+        <translation>&amp;A propos</translation>
     </message>
     <message>
         <source>&amp;Check spelling</source>
@@ -1969,6 +1992,18 @@
     </message>
     <message>
         <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About &amp;Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Contents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

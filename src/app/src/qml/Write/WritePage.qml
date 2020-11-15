@@ -53,20 +53,8 @@ WritePageForm {
     writingZone.textTopMargin: SkrSettings.writeSettings.textTopMargin
 
     writingZone.stretch: Globals.compactMode
-    writingZone.name: "write-0" //useful ?
 
-    Connections {
-        target: plmData.projectHub()
-        function onProjectCountChanged(count){
-            if(count === 0){
-                writingZone.enabled = false
-            }
-            else {
-                writingZone.enabled = true
-            }
 
-        }
-    }
     // focus
     Connections {
         enabled: writingZone.enabled

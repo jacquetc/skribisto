@@ -1173,6 +1173,25 @@
     </message>
 </context>
 <context>
+    <name>HelpPageForm.ui</name>
+    <message>
+        <source>FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About</source>
+        <translation type="unfinished">About</translation>
+    </message>
+    <message>
+        <source>About Qt</source>
+        <translation type="unfinished">Über Qt</translation>
+    </message>
+    <message>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Hub</name>
     <message>
         <source>Plume creator</source>
@@ -3000,10 +3019,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <translation type="unfinished">&amp;Hilfe</translation>
     </message>
     <message>
-        <source>&amp;About</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4757,6 +4772,22 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About &amp;Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Contents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

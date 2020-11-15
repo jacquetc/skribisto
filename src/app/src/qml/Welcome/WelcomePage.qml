@@ -65,6 +65,32 @@ WelcomePageForm {
     }
 
 
+    Connections {
+        target: Globals
+        function onShowExamplePageCalled() {
+            stackLayout.currentIndex = 1
+            stackLayout.itemAt(1).forceActiveFocus()
+        }
+    }
+
+    Connections {
+        target: Globals
+        function onShowExamplePageCalled() {
+            stackLayout.currentIndex = 2
+            stackLayout.itemAt(2).forceActiveFocus()
+        }
+    }
+
+    Connections {
+        target: Globals
+        function onShowHelpPageCalled() {
+            stackLayout.currentIndex = 3
+            stackLayout.itemAt(3).forceActiveFocus()
+        }
+    }
+
+
+
 
 
 

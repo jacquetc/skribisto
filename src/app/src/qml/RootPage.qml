@@ -1393,9 +1393,21 @@ RootPageForm {
             objectName: "helpMenu"
             title: qsTr("&Help")
 
+            SkrMenuItem {
+                action: showHelpContentAction
+            }
 
+            SkrMenuItem {
+                action: showFaqAction
+            }
 
-            Action { text: qsTr("&About") }
+            SkrMenuItem {
+                action: showAboutAction
+            }
+
+            SkrMenuItem {
+                action: showAboutQtAction
+            }
         }
 
     }

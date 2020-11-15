@@ -1006,6 +1006,25 @@
     </message>
 </context>
 <context>
+    <name>HelpPageForm.ui</name>
+    <message>
+        <source>FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About</source>
+        <translation type="unfinished">Riguardo</translation>
+    </message>
+    <message>
+        <source>About Qt</source>
+        <translation type="unfinished">Riguardo Qt</translation>
+    </message>
+    <message>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ImporterForm.ui</name>
     <message>
         <source>Go back</source>
@@ -2636,10 +2655,6 @@ Please open a .plume file.</source>
         <translation type="unfinished">Aiuto (&amp;H)</translation>
     </message>
     <message>
-        <source>&amp;About</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4234,6 +4249,22 @@ Please open a .plume file.</source>
     </message>
     <message>
         <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About &amp;Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Contents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

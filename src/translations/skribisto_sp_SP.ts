@@ -1038,6 +1038,25 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
+    <name>HelpPageForm.ui</name>
+    <message>
+        <source>FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About</source>
+        <translation type="unfinished">Sobre</translation>
+    </message>
+    <message>
+        <source>About Qt</source>
+        <translation type="unfinished">Sobre Qt</translation>
+    </message>
+    <message>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Hub</name>
     <message>
         <source>Plume creator</source>
@@ -2648,10 +2667,6 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>&amp;Help</source>
         <translation type="unfinished">&amp;Ayuda</translation>
-    </message>
-    <message>
-        <source>&amp;About</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
@@ -4498,6 +4513,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About &amp;Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Contents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

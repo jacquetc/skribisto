@@ -122,6 +122,103 @@ ApplicationWindow {
     }
 
     //------------------------------------------------------------------
+    //---------Help Content---------------------------------------------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: showHelpContentAction
+        text: qsTr("&Contents")
+        icon {
+            source: "qrc:///icons/backup/system-help.svg"
+            height: 50
+            width: 50
+        }
+
+        onTriggered: {
+            console.log("show help content")
+            Globals.showWelcomePageCalled()
+            Globals.showHelpPageCalled()
+            Globals.showHelpContentsCalled()
+        }
+
+
+    }
+    Shortcut {
+        sequence:  StandardKey.HelpContents
+        context: Qt.ApplicationShortcut
+        onActivated: showHelpAction.trigger()
+    }
+
+    //------------------------------------------------------------------
+    //---------FAQ---------------------------------------------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: showFaqAction
+        text: qsTr("&FAQ")
+//        icon {
+//            source: "qrc:///icons/backup/system-help.svg"
+//            height: 50
+//            width: 50
+//        }
+
+        onTriggered: {
+            console.log("show FAQ")
+            Globals.showWelcomePageCalled()
+            Globals.showHelpPageCalled()
+            Globals.showFaqCalled()
+        }
+
+    }
+    //------------------------------------------------------------------
+    //--------- About---------------------------------------------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: showAboutAction
+        text: qsTr("&About")
+        icon {
+            source: "qrc:///icons/backup/help-about.svg"
+            height: 50
+            width: 50
+        }
+
+        onTriggered: {
+            console.log("show about")
+            Globals.showWelcomePageCalled()
+            Globals.showHelpPageCalled()
+            Globals.showAboutCalled()
+        }
+
+    }
+
+    //------------------------------------------------------------------
+    //--------- About Qt---------------------------------------------
+    //------------------------------------------------------------------
+
+    Action {
+
+        id: showAboutQtAction
+        text: qsTr("About &Qt")
+//        icon {
+//            source: "qrc:///icons/backup/system-help.svg"
+//            height: 50
+//            width: 50
+//        }
+
+        onTriggered: {
+            console.log("show about Qt")
+            Globals.showWelcomePageCalled()
+            Globals.showHelpPageCalled()
+            Globals.showAboutQtCalled()
+        }
+
+    }
+
+    //------------------------------------------------------------------
     //---------New project---------------------------------------------
     //------------------------------------------------------------------
 

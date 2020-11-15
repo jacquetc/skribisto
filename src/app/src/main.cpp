@@ -139,7 +139,6 @@ int main(int argc, char *argv[])
 
 
     QApplication app(argc, argv);
-
     // icons :
     // qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
 

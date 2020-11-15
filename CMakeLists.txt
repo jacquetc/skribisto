@@ -28,6 +28,7 @@ add_compile_definitions(SKR_VERSION_MAJOR=${VERSION_MAJOR})
 add_compile_definitions(SKR_VERSION_MINOR=${VERSION_MINOR})
 add_compile_definitions(SKR_VERSION_PATCH=${VERSION_PATCH})
 
+
 project(skribisto LANGUAGES CXX VERSION ${VERSION})
 
 # Include GNUInstallDirs, which sets sensible defaults for install directories.

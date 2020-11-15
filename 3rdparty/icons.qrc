@@ -82,5 +82,7 @@
         <file>icons/backup/tag.svg</file>
         <file>icons/backup/tag-new.svg</file>
         <file>icons/backup/lock.svg</file>
+        <file>icons/backup/help-about.svg</file>
+        <file>icons/backup/system-help.svg</file>
     </qresource>
 </RCC>
