@@ -50,12 +50,11 @@ Item {
 
                     SkrLabel {
                         id: currentNoteTitleLabel
-                    }
-
-                    Item {
-                        id: stretcher
+                        elide: Text.ElideRight
+                        verticalAlignment: Qt.AlignVCenter
                         Layout.fillHeight: true
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
                     }
 
                     SkrToolButton {

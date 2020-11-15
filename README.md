@@ -26,9 +26,9 @@ Short term goal is to rejoin its ancestor Plume Creator feature-wise. A few outs
 - **spellcheking**
 - **color themes**
 - **overview of all texts**
+- **character/word count**
 - advanced search/replace
 - display quickly the end of the previous text and the beginning of the next text
-- character/word count
 - character/word goal
 - exporting to .txt/.odt/.PDF
 - printing
@@ -84,17 +84,36 @@ Needed sources and libs :
 
 ### Linux
 
-#### Flatpak prerequisites
+#### By hand, for development
+
+Needed sources and libs :
+- hunspell (devel)
+- zlib (devel)
+- quazip (devel), version 1.1 minimum needed. Install it by hand.
+
+Minimum Qt : 5.15
+If you have not Qt 5.15, use the Qt installer found at [Qt website](https://www.qt.io/download-open-source)
+Install 5.15 Desktop or superior and Qt Creator
+Open the project using the CMakeLists.txt file
+Build and run it
+
+
+#### Flatpak
+
+##### Flatpak prerequisites
 
 - make sure to have *flatpak* and *flatpak-builder* installed on your system
 
 Prerequisites (>1Go):
 ```
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install flathub org.kde.Sdk//5.15
 flatpak install flathub org.kde.Platform//5.15
 ```
 
-#### Flatpak from GitHub master branch :
+Older flatpak-builder doesn't support YAML manifest files. Convert it to JSON using one of the online website easily found, then place the new file by eu.skribisto.skribisto.yml. Adapt the flatpak commands to point to this new file instead of the .yml file.
+
+##### Flatpak from GitHub master branch :
 
 - type in a terminal :
 
@@ -102,10 +121,10 @@ flatpak install flathub org.kde.Platform//5.15
 
 Compile :
 ```
-mkdir Devel
+mkdir ~/Devel
 cd ~/Devel
 git clone https://github.com/jacquetc/skribisto.git
-flatpak-builder --user --repo=local-repo build-dir skribisto/eu.skribisto.skribisto.yml --force-clean
+flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/eu.skribisto.skribisto.yml --force-clean
 ```
 
 Run only once :
@@ -117,16 +136,16 @@ flatpak --user remote-add --no-gpg-verify local-repo local-repo
 Install :
 
 ```
-flatpak install eu.skribisto.skribisto -y --reinstall
+flatpak install local-repo eu.skribisto.skribisto -y --reinstall
 ```
 
 Later, when a new version is online, you can update with this single line:
 ```
-cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/eu.skribisto.skribisto.yml --force-clean && flatpak install eu.skribisto.skribisto -y --reinstall
+cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/eu.skribisto.skribisto.yml --force-clean && flatpak install local-repo eu.skribisto.skribisto -y --reinstall
 ```
 
 
-#### Flatpak from local source code:
+##### Flatpak from local source code:
 
 You can copy/paste in ~/Devel/ the file *eu.skribisto.skribisto* found in \[skribisto-repo\]/package/flatpak/local/
 
@@ -135,10 +154,10 @@ Near the end of the file, in **skribisto** build module, adapt **path:** to your
 
 
 ```
-mkdir Devel
+mkdir ~/Devel
 cd ~/Devel
 git clone https://github.com/jacquetc/skribisto.git
-flatpak-builder --user --repo=local-repo build-dir eu.skribisto.skribisto.yml --force-clean
+flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/local/eu.skribisto.skribisto.yml --force-clean
 ```
 
 Run only once :
@@ -147,19 +166,17 @@ flatpak build-update-repo local-repo
 flatpak --user remote-add --no-gpg-verify local-repo local-repo
 ```
 
-
-
 Install :
 ```
-flatpak install eu.skribisto.skribisto -y --reinstall
+flatpak install local-repo eu.skribisto.skribisto -y --reinstall
 ```
 
 
 After you modified the code you want in whichever git branch you want, type this command :
 
 ```
-flatpak-builder --user --repo=local-repo build-dir eu.skribisto.skribisto.yml --force-clean
-flatpak install eu.skribisto.skribisto -y --reinstall
+cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/local/eu.skribisto.skribisto.yml --force-clean
+flatpak install local-repo eu.skribisto.skribisto -y --reinstall
 ```
 
 ## To contact me :

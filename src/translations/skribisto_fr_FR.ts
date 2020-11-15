@@ -270,6 +270,26 @@
         <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Sheets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished">Notes</translation>
+    </message>
+    <message>
+        <source>Destination file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished">Sélectionner</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished">Exporter</translation>
+    </message>
 </context>
 <context>
     <name>FileMenuPage</name>
@@ -974,7 +994,7 @@
     </message>
     <message>
         <source>Label</source>
-        <translation>Libelé</translation>
+        <translation type="vanished">Libelé</translation>
     </message>
     <message>
         <source>Main menu</source>

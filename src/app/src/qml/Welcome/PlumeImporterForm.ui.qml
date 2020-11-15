@@ -50,56 +50,56 @@ Item {
 
 
 
-        SKRPillarLayout {
-            id: pillarLayout
-            columns: ((pillarLayout.width / columnWidth) | 0 )
-            width: scrollView.width
-            maxColumns: 1
+            SKRPillarLayout {
+                id: pillarLayout
+                columns: ((pillarLayout.width / columnWidth) | 0 )
+                width: scrollView.width
+                maxColumns: 1
 
-            RowLayout {
-                id: rowLayout
-                Layout.fillWidth: true
-                Layout.maximumWidth: 800
-
-                SkrLabel {
-                    id: plumeProjectFileLabel
-                    text: qsTr("Plume project file (*.plume) :")
-                }
-                SkrTextField {
-
-                    id: plumeProjectFileTextField
-                    placeholderText: qsTr("plume project file")
-                    Layout.columnSpan: 2
+                RowLayout {
+                    id: rowLayout
                     Layout.fillWidth: true
-                }
-                SkrButton {
-                    id: selectPlumeProjectFileToolButton
-                    text: qsTr("Select")
-                }
-            }
-            ColumnLayout {
-                id: columnLayout8
-                SkrLabel {
-                    id: plumeProjectDetailLabel
-                    text: qsTr(
-                              "This project will be imported as : ")
-                }
-                SkrLabel {
-                    id: plumeProjectDetailPathLabel
-                }
-            }
-            RowLayout {
-                id: rowLayout8
-                Layout.alignment: Qt.AlignHCenter
+                    Layout.maximumWidth: 800
 
-                SkrButton {
-                    id: importPlumeProjectButton
-                    text: qsTr("Import")
-                    icon.color: SkrTheme.buttonIcon
-                }
-            }
+                    SkrLabel {
+                        id: plumeProjectFileLabel
+                        text: qsTr("Plume project file (*.plume) :")
+                    }
+                    SkrTextField {
 
-        }
+                        id: plumeProjectFileTextField
+                        placeholderText: qsTr("plume project file")
+                        Layout.columnSpan: 2
+                        Layout.fillWidth: true
+                    }
+                    SkrButton {
+                        id: selectPlumeProjectFileToolButton
+                        text: qsTr("Select")
+                    }
+                }
+                ColumnLayout {
+                    id: columnLayout8
+                    SkrLabel {
+                        id: plumeProjectDetailLabel
+                        text: qsTr(
+                                  "This project will be imported as : ")
+                    }
+                    SkrLabel {
+                        id: plumeProjectDetailPathLabel
+                    }
+                }
+                RowLayout {
+                    id: rowLayout8
+                    Layout.alignment: Qt.AlignHCenter
+
+                    SkrButton {
+                        id: importPlumeProjectButton
+                        text: qsTr("Import")
+                        icon.color: SkrTheme.buttonIcon
+                    }
+                }
+
+            }
         }
 
 

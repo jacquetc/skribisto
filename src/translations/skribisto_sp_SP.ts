@@ -573,6 +573,26 @@
         <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Sheets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished">Notas</translation>
+    </message>
+    <message>
+        <source>Destination file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>FileMenuPage</name>
@@ -2651,10 +2671,6 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -902,9 +902,6 @@ SheetOverviewTreeForm {
                                                 saveCurrentPaperCursorPositionAndYTimer.start()
                                             }
                                             documentPrivate.contentSaveTimerAllowedToStart = true
-                                            if(!contentSaveTimer.running){
-                                                contentSaveTimer.start()
-                                            }
 
 
                                         }

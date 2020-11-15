@@ -287,7 +287,6 @@ Item {
 
                 SkrLabel {
                     id: statusRightLabel
-                    text: qsTr("Label")
                     verticalAlignment: Text.AlignVCenter
                     Layout.fillHeight: true
                 }

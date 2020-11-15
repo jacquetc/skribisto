@@ -8,7 +8,6 @@ cmake_minimum_required(VERSION 3.5.0)
 #endif()
 set(QT_MIN_VERSION "5.15.0")
 
-
 find_package(ECM REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
 
@@ -44,7 +43,7 @@ include(CMakePackageConfigHelpers)
 include(ECMOptionalAddSubdirectory)
 
 
-include_directories(${Qt5Core_PRIVATE_INCLUDE_DIRS})
+include_directories(${Qt${QT_VERSION_MAJOR}Core_PRIVATE_INCLUDE_DIRS})
 
 # forbid some old things
 add_definitions(-DQT_NO_FOREACH)
@@ -59,7 +58,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 
-set(BREEZEICONS_DIR ${CMAKE_SOURCE_DIR}/3rdparty/breeze-icons/)
+#set(BREEZEICONS_DIR ${CMAKE_SOURCE_DIR}/3rdparty/breeze-icons/)
 
 set(CMAKE_CXX_STANDARD 14)
 #set(CMAKE_CXX_EXTENSIONS OFF)
