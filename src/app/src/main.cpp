@@ -24,6 +24,7 @@ using namespace std;
 #include "skrresult.h"
 #include "plmprojecthub.h"
 #include "skrprojectdicthub.h"
+#include "skrerrorhub.h"
 #include "plmpropertyhub.h"
 #include "skrstathub.h"
 #include "documenthandler.h"
@@ -233,6 +234,13 @@ int main(int argc, char *argv[])
                                                0,
                                                "SKRStatHub",
                                                "Can't instantiate SKRStatHub");
+
+    qmlRegisterUncreatableType<SKRErrorHub>("eu.skribisto.errorhub",
+                                               1,
+                                               0,
+                                               "SKRStatHub",
+                                               "Can't instantiate SKRErrorHub");
+
 
     qmlRegisterUncreatableType<SKR>("eu.skribisto.skr",
                                                1,

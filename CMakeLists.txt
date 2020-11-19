@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.5.0)
 #    cmake_policy(SET CMP0071 NEW)
 #endif()
 set(QT_MIN_VERSION "5.15.0")
+set(QT_DEFAULT_MAJOR_VERSION 5)
 
 find_package(ECM REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})

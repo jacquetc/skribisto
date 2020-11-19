@@ -17,17 +17,17 @@ Item {
         ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
 
-    TextArea{
-        id: textArea
-        width:  scrollView.width
-        readOnly: true
-        color: SkrTheme.buttonForeground
-        font.pointSize: 20
-        wrapMode: TextEdit.WordWrap
-        background: SkrPane{
+        TextArea{
+            id: textArea
+            width:  scrollView.width
+            readOnly: true
+            color: SkrTheme.buttonForeground
+            font.pointSize: 20
+            wrapMode: TextEdit.WordWrap
+            background: SkrPane{
+
+            }
 
         }
-
-    }
     }
 }

@@ -84,5 +84,9 @@
         <file>icons/backup/lock.svg</file>
         <file>icons/backup/help-about.svg</file>
         <file>icons/backup/system-help.svg</file>
+        <file>icons/backup/data-error.svg</file>
+        <file>icons/backup/data-information.svg</file>
+        <file>icons/backup/data-warning.svg</file>
+        <file>icons/backup/emblem-checked.svg</file>
     </qresource>
 </RCC>
