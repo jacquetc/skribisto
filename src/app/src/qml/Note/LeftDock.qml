@@ -209,9 +209,9 @@ LeftDockForm {
     Action{
         id: documentViewAction
         checkable: true
-        text: qsTr( "Show recent documents")
+        text: qsTr( "Show recent notes")
         icon {
-            source: "qrc:///icons/backup/story-editor.svg"
+            source: "qrc:///icons/backup/document-open-recent.svg"
             height: 50
             width: 50
         }
