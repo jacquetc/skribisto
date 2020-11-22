@@ -37,11 +37,6 @@ WriteOverviewPageForm {
     //-------Sheet Overview------------------------------------------
     //-------------------------------------------------------------
 
-
-
-    //--------------------------------------------------------------------------
-
-
     SKRSearchSheetListProxyModel {
         id: sheetOverviewProxyModel
         showTrashedFilter: false

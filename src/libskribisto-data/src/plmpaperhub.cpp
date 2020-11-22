@@ -37,7 +37,7 @@ PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName, const SKR::P
             int paperId = allIds.at(i);
 
             QString content = this->getContent(projectId, paperId);
-            m_wordMeter->countText(m_paperType, projectId, paperId, content, false);
+            m_wordMeter->countText(m_paperType, projectId, paperId, content, false, false);
         }
 
     });

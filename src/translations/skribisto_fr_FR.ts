@@ -374,6 +374,29 @@
     </message>
 </context>
 <context>
+    <name>HelpPageForm.ui</name>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">Aide</translation>
+    </message>
+    <message>
+        <source>FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ImporterForm.ui</name>
     <message>
         <source>Go back</source>
@@ -974,7 +997,7 @@
     </message>
     <message>
         <source>&amp;About</source>
-        <translation>&amp;A propos</translation>
+        <translation type="vanished">&amp;A propos</translation>
     </message>
     <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
@@ -991,6 +1014,22 @@
     <message>
         <source>Outlines</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation type="unfinished">Attention</translation>
+    </message>
+    <message>
+        <source>Critical</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1758,16 +1797,24 @@
         <source>&amp;Documents</source>
         <translation>&amp;Documents</translation>
     </message>
+    <message>
+        <source>Show navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show recent documents</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>WriteLeftDockForm.ui</name>
     <message>
         <source>Navigation</source>
-        <translation>Navigation</translation>
+        <translation type="vanished">Navigation</translation>
     </message>
     <message>
         <source>Opened documents</source>
-        <translation>Documents ouverts</translation>
+        <translation type="vanished">Documents ouverts</translation>
     </message>
 </context>
 <context>
@@ -1817,20 +1864,32 @@
         <source>&amp;Notes</source>
         <translation>&amp;Notes</translation>
     </message>
+    <message>
+        <source>Show edit tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>WriteRightDockForm.ui</name>
     <message>
         <source>Edit</source>
-        <translation>Editer</translation>
+        <translation type="vanished">Editer</translation>
     </message>
     <message>
         <source>Tags</source>
-        <translation>Etiquettes</translation>
+        <translation type="vanished">Etiquettes</translation>
     </message>
     <message>
         <source>Notes</source>
-        <translation>Notes</translation>
+        <translation type="vanished">Notes</translation>
     </message>
 </context>
 <context>
@@ -1957,7 +2016,7 @@
     </message>
     <message>
         <source>&amp;About</source>
-        <translation type="vanished">&amp;A propos</translation>
+        <translation>&amp;A propos</translation>
     </message>
     <message>
         <source>&amp;Check spelling</source>
@@ -1969,6 +2028,18 @@
     </message>
     <message>
         <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About &amp;Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Contents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

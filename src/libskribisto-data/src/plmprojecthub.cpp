@@ -22,7 +22,7 @@ PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent),
             Qt::DirectConnection);
 }
 
-SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath)
+SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath, bool hidden)
 {
     // qDebug() << "loading project";
     int projectId    = -1;
@@ -33,14 +33,16 @@ SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath)
     IFOK(result) {
         plmdata->noteHub()->renumberSortOrders(projectId);
         plmdata->sheetHub()->renumberSortOrders(projectId);
-        m_projectsNotModifiedOnceList.append(projectId);
-        emit projectLoaded(projectId);
-        emit projectCountChanged(this->getProjectCount());
-        emit isThereAnyLoadedProjectChanged(true);
+        if(!hidden){
+            m_projectsNotModifiedOnceList.append(projectId);
+            emit projectLoaded(projectId);
+            emit projectCountChanged(this->getProjectCount());
+            emit isThereAnyLoadedProjectChanged(true);
 
-        this->setActiveProject(projectId);
-        if(urlFilePath.isEmpty()){
-            this->setProjectNotSavedAnymore(projectId);
+            this->setActiveProject(projectId);
+            if(urlFilePath.isEmpty()){
+                this->setProjectNotSavedAnymore(projectId);
+            }
         }
     }
 
@@ -51,7 +53,7 @@ SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath)
     return result;
 }
 
-SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path)
+SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path, bool hidden)
 {
     int projectId    = -1;
     SKRResult result = plmProjectManager->createNewEmptyDatabase(projectId);
@@ -61,13 +63,15 @@ SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path)
     IFOK(result) {
         plmdata->noteHub()->renumberSortOrders(projectId);
         plmdata->sheetHub()->renumberSortOrders(projectId);
-        m_projectsNotModifiedOnceList.append(projectId);
-        emit projectLoaded(projectId);
-        emit projectCountChanged(this->getProjectCount());
-        emit isThereAnyLoadedProjectChanged(true);
+        if(!hidden){
+            m_projectsNotModifiedOnceList.append(projectId);
+            emit projectLoaded(projectId);
+            emit projectCountChanged(this->getProjectCount());
+            emit isThereAnyLoadedProjectChanged(true);
 
-        this->setActiveProject(projectId);
-        this->setProjectNotSavedAnymore(projectId);
+            this->setActiveProject(projectId);
+            this->setProjectNotSavedAnymore(projectId);
+        }
     }
     IFOK(result) {
         if (path.isValid()) {
@@ -246,10 +250,10 @@ SKRResult PLMProjectHub::backupAProject(int            projectId,
     // then create a copy
     IFOK(result) {
         result =
-            plmProjectManager->saveProjectAs(projectId,
-                                             type,
-                                             QUrl::fromLocalFile(backupFile),
-                                             true);
+                plmProjectManager->saveProjectAs(projectId,
+                                                 type,
+                                                 QUrl::fromLocalFile(backupFile),
+                                                 true);
     }
 
     IFKO(result) {
@@ -436,7 +440,7 @@ SKRResult PLMProjectHub::setPath(int projectId, const QUrl& newUrlPath)
     }
 
     IFOKDO(result, project->setPath(newUrlPath))
-    IFOK(result) {
+            IFOK(result) {
         emit projectPathChanged(projectId, newUrlPath);
     }
 

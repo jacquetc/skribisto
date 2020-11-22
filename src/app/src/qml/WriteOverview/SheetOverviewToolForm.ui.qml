@@ -16,6 +16,8 @@ Item {
     property alias treeIndentationSlider: treeIndentationSlider
     property alias projectGroupBox: projectGroupBox
 
+    implicitHeight: columnLayout.childrenRect.height + columnLayout.spacing
+
     SkrPane {
         id: pane
         anchors.fill: parent
@@ -23,7 +25,10 @@ Item {
 
 
         ColumnLayout {
-            anchors.fill: parent
+            id: columnLayout
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
 
             SkrGroupBox {
                 id: projectGroupBox
@@ -32,7 +37,7 @@ Item {
                 title: qsTr("Project")
 
                 ColumnLayout {
-                    id: columnLayout
+                    id: columnLayout2
                     anchors.fill: parent
 
                     SkrComboBox {

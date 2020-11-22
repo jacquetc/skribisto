@@ -279,7 +279,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
 SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, const QUrl& skribistoFileName)
 {
 
-    SKRResult result = plmdata->projectHub()->createNewEmptyProject(skribistoFileName);
+    SKRResult result = plmdata->projectHub()->createNewEmptyProject(skribistoFileName, true);
 
     int projectId = -2;
     IFOK(result){

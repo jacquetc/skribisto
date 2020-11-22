@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
+import QtQml 2.15
 import eu.skribisto.searchsheetlistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.usersettings 1.0
@@ -16,26 +17,6 @@ WriteLeftDockForm {
         id: skrUserSettings
     }
 
-    splitView.handle: Item {
-        id: handle
-        implicitHeight: 8
-        property bool hovered: SplitHandle.hovered
-
-        RowLayout {
-            anchors.fill: parent
-            Rectangle {
-                Layout.preferredWidth: 20
-                Layout.preferredHeight: 5
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: hoverHandler.hovered ? SkrTheme.accent : SkrTheme.divider
-
-                HoverHandler {
-                    id: hoverHandler
-                    cursorShape: Qt.SplitVCursor
-                }
-            }
-        }
-    }
 
 
     //-----------------------------------------------------------
@@ -74,8 +55,8 @@ WriteLeftDockForm {
                         if(Globals.compactMode){
                             leftDrawer.open()
                         }
-                        navigationFrame.folded = false
-                        navigation.forceActiveFocus()
+                        navigationViewToolButton.checked = true
+                        navigationView.forceActiveFocus()
                     }
                 }
 
@@ -85,7 +66,7 @@ WriteLeftDockForm {
                         if(Globals.compactMode){
                             leftDrawer.open()
                         }
-                        documentFrame.folded = false
+                        documentViewToolButton.checked = true
                         documentView.forceActiveFocus()
                     }
                 }
@@ -93,8 +74,76 @@ WriteLeftDockForm {
         }
     ]
 
-    //Navigation List :
     //-----------------------------------------------------------
+    //--------------- toolBoxes Behavior------------------------
+    //-----------------------------------------------------------
+
+    Settings {
+        id: settings
+        category: "writeLeftDock"
+
+        property bool navigationViewVisible: true
+        property bool documentViewVisible: true
+    }
+
+    function loadConf(){
+
+        navigationViewToolButton.checked = settings.navigationViewVisible
+        documentViewToolButton.checked = settings.documentViewVisible
+
+    }
+
+    function resetConf(){
+        settings.navigationViewVisible = true
+        settings.documentViewVisible = true
+    }
+
+    Component.onCompleted: {
+        loadConf()
+        initNavigationView()
+        Globals.resetDockConfCalled.connect(resetConf)
+
+    }
+
+    Component.onDestruction: {
+        settings.navigationViewVisible = navigationViewToolButton.checked
+        settings.documentViewVisible = documentViewToolButton.checked
+
+    }
+
+
+
+    //-----------------------------------------------------------
+    //------- Navigation List : ---------------------------------
+    //-----------------------------------------------------------
+
+    Action{
+        id: navigationViewAction
+        checkable: true
+        text: qsTr( "Show navigation")
+        icon {
+            source: "qrc:///icons/backup/object-rows.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            navigationView.visible = navigationViewAction.checked
+        }
+
+        Binding on checked{
+            value: navigationView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+    }
+    navigationViewToolButton.action: navigationViewAction
+
+    function initNavigationView(){
+        navigationView.openDocument.connect(Globals.openSheetCalled)
+        navigationView.openDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
+        navigationView.openDocumentInNewWindow.connect(Globals.openSheetInNewWindowCalled)
+        navigationView.restoreDocumentList.connect(root.restoreSheetList)
+    }
 
     SKRSearchSheetListProxyModel {
         id: navigationProxyModel
@@ -103,14 +152,14 @@ WriteLeftDockForm {
         navigateByBranchesEnabled: true
     }
 
-    navigation.treeListViewProxyModel: navigationProxyModel
+    navigationView.treeListViewProxyModel: navigationProxyModel
 
     SKRSearchSheetListProxyModel {
         id: trashedSheetProxyModel
         showTrashedFilter: true
         showNotTrashedFilter: false
     }
-    navigation.trashedListViewProxyModel: trashedSheetProxyModel
+    navigationView.trashedListViewProxyModel: trashedSheetProxyModel
 
 
     SKRSearchSheetListProxyModel {
@@ -118,7 +167,7 @@ WriteLeftDockForm {
         showTrashedFilter: true
         showNotTrashedFilter: false
     }
-    navigation.restoreListViewProxyModel: restoreSheetProxyModel
+    navigationView.restoreListViewProxyModel: restoreSheetProxyModel
 
 
 
@@ -150,93 +199,47 @@ WriteLeftDockForm {
 
 
     //-----------------------------------------------------------
-
-    //Document List :
+    //---------Document List : ----------------------------------
     //-----------------------------------------------------------
+
+    Action{
+        id: documentViewAction
+        checkable: true
+        text: qsTr( "Show recent sheets")
+        icon {
+            source: "qrc:///icons/backup/document-open-recent.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            documentView.visible = documentViewAction.checked
+        }
+
+        Binding on checked{
+            value: documentView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+    }
+    documentViewToolButton.action: documentViewAction
+
+
+
     documentView.model: plmModels.writeDocumentListModel()
     documentView.documentModel: plmModels.writeDocumentListModel()
 
     //-----------------------------------------------------------
-
-
+    //-----------------------------------------------------------
     //-----------------------------------------------------------
 
-    //-----------------------------------------------------------
-    transitions: [
-        Transition {
-
-            PropertyAnimation {
-                properties: "implicitWidth"
-                easing.type: Easing.InOutQuad
-                duration: 500
-            }
-        }
-    ]
-
-    property alias settings: settings
-
-    Settings {
-        id: settings
-        category: "writeLeftDock"
-        property var dockSplitView
-        property bool navigationFrameFolded: navigationFrame.folded
-        property bool documentFrameFolded: documentFrame.folded
-    }
 
     function setCurrentPaperId(projectId, paperId) {
         navigationProxyModel.setCurrentPaperId(projectId, paperId)
     }
     function setOpenedPaperId(projectId, paperId) {
-        navigation.openedProjectId = projectId
-        navigation.openedPaperId = paperId
+        navigationView.openedProjectId = projectId
+        navigationView.openedPaperId = paperId
     }
 
 
-    PropertyAnimation {
-        target: navigationFrame
-        property: "SplitView.preferredHeight"
-        duration: 500
-        easing.type: Easing.InOutQuad
-    }
-
-
-    function loadConf(){
-
-        navigationFrame.folded = settings.navigationFrameFolded
-        documentFrame.folded = settings.documentFrameFolded
-        splitView.restoreState(settings.dockSplitView)
-
-
-    }
-
-    function resetConf(){
-        navigationFrame.folded = false
-        documentFrame.folded = false
-        splitView.restoreState("")
-
-    }
-
-    Component.onCompleted: {
-
-
-        loadConf()
-        navigation.openDocument.connect(Globals.openSheetCalled)
-        navigation.openDocumentInNewTab.connect(Globals.openSheetInNewTabCalled)
-        navigation.openDocumentInNewWindow.connect(Globals.openSheetInNewWindowCalled)
-        navigation.restoreDocumentList.connect(root.restoreSheetList)
-        Globals.resetDockConfCalled.connect(resetConf)
-
-
-    }
-    Component.onDestruction: {
-
-        settings.dockSplitView = splitView.saveState()
-
-    }
-
-    onEnabledChanged: {
-        if(enabled){
-
-        }
-    }
 }

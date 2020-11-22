@@ -43,7 +43,7 @@ QtObject {
     property Settings behaviorSettings: Settings{
         category: "behavior"
         property bool createEmptyProjectAtStart: false
-        property bool centerTextCursor: true
+        property bool centerTextCursor: false
     }
 
     property Settings spellCheckingSettings: Settings{

@@ -108,3 +108,7 @@ QString SKRRootItem::toLocaleIntString(int number) const{
     QLocale locale(m_langCode);
     return locale.toString(number);
 }
+
+QString SKRRootItem::getQtVersion() const{
+    return QString(QT_VERSION_STR);
+}

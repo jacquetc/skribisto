@@ -647,10 +647,9 @@ TreeListViewForm {
 
                         if (listView.enabled && listView.currentIndex === model.index) {
                             return true
-                        } else if (hoverHandler.hovered) {
-                            return true
-                        } else
-                            return false
+                        }
+
+                        return true
                     }
                     icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : (model.canAddPaper ? "qrc:///icons/backup/list-add.svg" : "")
                     text: model.hasChildren ? ">" : (model.canAddPaper ? "+" : "")

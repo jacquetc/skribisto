@@ -100,7 +100,7 @@ public slots:
 
 signals:
 
-    void sendNotification(SKRResult::Status resultType,
+    void sendNotification(int resultType,
                           QString           content);
 
     //    void errorSent(const QString &errorCode, const QString &origin, const
