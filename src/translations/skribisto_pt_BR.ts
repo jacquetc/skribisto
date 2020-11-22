@@ -3780,15 +3780,12 @@ not allowed delete a filled book.</source>
         <source>&amp;Documents</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>WriteLeftDockForm.ui</name>
     <message>
-        <source>Navigation</source>
+        <source>Show navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opened documents</source>
+        <source>Show recent documents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3824,20 +3821,24 @@ not allowed delete a filled book.</source>
         <source>&amp;Notes</source>
         <translation type="unfinished">&amp;Notas</translation>
     </message>
+    <message>
+        <source>Show edit tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>WriteRightDockForm.ui</name>
     <message>
-        <source>Edit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Notes</source>
-        <translation type="unfinished">Notas</translation>
+        <translation type="obsolete">Notas</translation>
     </message>
 </context>
 <context>

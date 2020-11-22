@@ -4594,15 +4594,12 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>&amp;Documents</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>WriteLeftDockForm.ui</name>
     <message>
-        <source>Navigation</source>
+        <source>Show navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opened documents</source>
+        <source>Show recent documents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4638,20 +4635,24 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>&amp;Notes</source>
         <translation type="unfinished">&amp;Notizen</translation>
     </message>
+    <message>
+        <source>Show edit tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>WriteRightDockForm.ui</name>
     <message>
-        <source>Edit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Notes</source>
-        <translation type="unfinished">Notizen</translation>
+        <translation type="obsolete">Notizen</translation>
     </message>
 </context>
 <context>

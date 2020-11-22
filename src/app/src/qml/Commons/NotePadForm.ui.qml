@@ -15,9 +15,11 @@ Item {
     property alias noteRepeater: noteRepeater
     property alias toolBar: toolBar
     property alias currentNoteTitleLabel: currentNoteTitleLabel
+    property alias noteFlowFocusScope: noteFlowFocusScope
 
     property bool minimalMode: false
 
+    implicitHeight: columnLayout.childrenRect.height
 
     SkrPane {
         id: pane
@@ -27,7 +29,9 @@ Item {
         ColumnLayout {
             id: columnLayout
             spacing: 0
-            anchors.fill: parent
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
 
             SkrToolBar {
                 id: toolBar
@@ -83,38 +87,43 @@ Item {
                 }
             }
 
-            ScrollView {
-                id: scrollView
-                //Layout.fillHeight: minimalMode ? false : true
-                Layout.minimumHeight: 40
-                focusPolicy: Qt.StrongFocus
+            FocusScope {
+                id: noteFlowFocusScope
+                Layout.fillHeight: true
+                Layout.minimumHeight: noteFlow.height +10 < 200 ? noteFlow.height +10 : 200
                 Layout.fillWidth: true
-                clip: true
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                Flickable {
-                    boundsBehavior: Flickable.StopAtBounds
-                    contentWidth: scrollView.width
-                    contentHeight: noteFlow.height
-                    Flow {
-                        id: noteFlow
-                        width: scrollView.width
-                        spacing: 10
-                        padding: 2
-                        antialiasing: true
-                        clip: true
-                        focus: true
+                ScrollView {
+                    id: scrollView
+                    anchors.fill: parent
+                    focusPolicy: Qt.StrongFocus
+                    clip: true
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                        Repeater {
-                            id: noteRepeater
-                            delegate: noteFlowComponent
+                    Flickable {
+                        boundsBehavior: Flickable.StopAtBounds
+                        contentWidth: scrollView.width
+                        contentHeight: noteFlow.height
+                        Flow {
+                            id: noteFlow
+                            width: scrollView.width
+                            spacing: 10
+                            padding: 2
+                            antialiasing: true
+                            clip: true
+                            focus: true
 
+                            Repeater {
+                                id: noteRepeater
+                                delegate: noteFlowComponent
+
+                            }
+
+                            Accessible.role: Accessible.List
+                            Accessible.name: qsTr("Notes list")
+                            Accessible.description: "Empty list of related notes"
                         }
-
-                        Accessible.role: Accessible.List
-                        Accessible.name: qsTr("Notes list")
-                        Accessible.description: "Empty list of related notes"
                     }
                 }
             }
@@ -124,6 +133,7 @@ Item {
                 placeholderText: qsTr("Type your note here...")
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.preferredHeight: 400
                 stretch: true
                 leftScrollItemVisible: false
                 visible: !minimalMode

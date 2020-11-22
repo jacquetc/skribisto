@@ -67,6 +67,12 @@ NotePadForm {
         selectedList = []
         determineWhichItemIsSelected()
     }
+
+    noteFlowFocusScope.onActiveFocusChanged: {
+        if(!noteFlowFocusScope.activeFocus){
+            focusedIndex = -2
+        }
+    }
     //-----------------------------------------------------------------------------
 
     ListModel {

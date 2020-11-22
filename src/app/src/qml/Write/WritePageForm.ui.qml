@@ -36,7 +36,7 @@ Item {
         spacing: 0
         anchors.fill: parent
         anchors.leftMargin: Globals.compactMode ? undefined : leftDrawer.width
-                                                  * leftDrawer.position + 10
+                                                  * leftDrawer.position - 10
         anchors.rightMargin: Globals.compactMode ? undefined : rightDrawer.width
                                                    * rightDrawer.position + 10
 

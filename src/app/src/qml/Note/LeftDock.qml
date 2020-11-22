@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
+import QtQml 2.15
 import eu.skribisto.searchnotelistproxymodel 1.0
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.usersettings 1.0
@@ -15,29 +16,6 @@ LeftDockForm {
     SKRUserSettings {
         id: skrUserSettings
     }
-
-
-    splitView.handle: Item {
-        id: handle
-        implicitHeight: 8
-        property bool hovered: SplitHandle.hovered
-
-        RowLayout {
-            anchors.fill: parent
-            Rectangle {
-                Layout.preferredWidth: 20
-                Layout.preferredHeight: 5
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: hoverHandler.hovered ? SkrTheme.accent : SkrTheme.divider
-
-                HoverHandler {
-                    id: hoverHandler
-                    cursorShape: Qt.SplitVCursor
-                }
-            }
-        }
-    }
-
 
 
     //-----------------------------------------------------------
@@ -80,8 +58,8 @@ LeftDockForm {
                         if(Globals.compactMode){
                             leftDrawer.open()
                         }
-                        navigationFrame.folded = false
-                        navigation.forceActiveFocus()
+                        navigationViewToolButton.checked = true
+                        navigationView.forceActiveFocus()
                     }
                 }
 
@@ -91,15 +69,89 @@ LeftDockForm {
                         if(Globals.compactMode){
                             leftDrawer.open()
                         }
-                        documentFrame.folded = false
+                        documentViewToolButton.checked = true
                         documentView.forceActiveFocus()
                     }
                 }
             }
         }
     ]
-    //Navigation List :
+
+
+
     //-----------------------------------------------------------
+    //--------------- toolBoxes Behavior------------------------
+    //-----------------------------------------------------------
+
+    Settings {
+        id: settings
+        category: "noteLeftDock"
+
+        property bool navigationViewVisible: true
+        property bool documentViewVisible: true
+    }
+
+    function loadConf(){
+
+        navigationViewToolButton.checked = settings.navigationViewVisible
+        documentViewToolButton.checked = settings.documentViewVisible
+
+    }
+
+    function resetConf(){
+        settings.navigationViewVisible = true
+        settings.documentViewVisible = true
+    }
+
+    Component.onCompleted: {
+        loadConf()
+        initNavigationView()
+        Globals.resetDockConfCalled.connect(resetConf)
+
+    }
+
+    Component.onDestruction: {
+        settings.navigationViewVisible = navigationViewToolButton.checked
+        settings.documentViewVisible = documentViewToolButton.checked
+
+    }
+
+
+
+
+    //-----------------------------------------------------------
+    //------- Navigation List : ---------------------------------
+    //-----------------------------------------------------------
+
+    Action{
+        id: navigationViewAction
+        checkable: true
+        text: qsTr( "Show navigation")
+        icon {
+            source: "qrc:///icons/backup/object-rows.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            navigationView.visible = navigationViewAction.checked
+        }
+
+        Binding on checked{
+            value: navigationView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+    }
+    navigationViewToolButton.action: navigationViewAction
+
+
+
+    function initNavigationView(){
+    navigation.openDocument.connect(Globals.openNoteCalled)
+    navigation.openDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+    navigation.openDocumentInNewWindow.connect(Globals.openNoteInNewWindowCalled)
+    navigation.restoreDocumentList.connect(root.restoreNoteList)
+    }
 
     SKRSearchNoteListProxyModel {
         id: navigationProxyModel
@@ -108,7 +160,7 @@ LeftDockForm {
         navigateByBranchesEnabled: true
     }
 
-    navigation.treeListViewProxyModel: navigationProxyModel
+    navigationView.treeListViewProxyModel: navigationProxyModel
 
 
     SKRSearchNoteListProxyModel {
@@ -116,7 +168,7 @@ LeftDockForm {
         showTrashedFilter: true
         showNotTrashedFilter: false
     }
-    navigation.trashedListViewProxyModel: trashedNoteProxyModel
+    navigationView.trashedListViewProxyModel: trashedNoteProxyModel
 
 
     SKRSearchNoteListProxyModel {
@@ -124,7 +176,7 @@ LeftDockForm {
         showTrashedFilter: true
         showNotTrashedFilter: false
     }
-    navigation.restoreListViewProxyModel: restoreNoteProxyModel
+    navigationView.restoreListViewProxyModel: restoreNoteProxyModel
 
 
 
@@ -151,38 +203,38 @@ LeftDockForm {
 
 
     //-----------------------------------------------------------
-
-    //Document List :
+    //---------Document List : ----------------------------------
     //-----------------------------------------------------------
+
+    Action{
+        id: documentViewAction
+        checkable: true
+        text: qsTr( "Show recent documents")
+        icon {
+            source: "qrc:///icons/backup/story-editor.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            documentView.visible = documentViewAction.checked
+        }
+
+        Binding on checked{
+            value: documentView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+    }
+    documentViewToolButton.action: documentViewAction
+
+
+
 //    documentView.model: plmModels.noteDocumentListModel()
 //    documentView.documentModel: plmModels.noteDocumentListModel()
 
     //-----------------------------------------------------------
-
-
     //-----------------------------------------------------------
-
     //-----------------------------------------------------------
-    transitions: [
-        Transition {
-
-            PropertyAnimation {
-                properties: "implicitWidth"
-                easing.type: Easing.InOutQuad
-                duration: 500
-            }
-        }
-    ]
-
-    property alias settings: settings
-
-    Settings {
-        id: settings
-        category: "noteLeftDock"
-        property var dockSplitView
-        property bool navigationFrameFolded: navigationFrame.folded
-        property bool documentFrameFolded: documentFrame.folded
-    }
 
     function setCurrentPaperId(projectId, paperId) {
         navigationProxyModel.setCurrentPaperId(projectId, paperId)
@@ -193,46 +245,5 @@ LeftDockForm {
     }
 
 
-        PropertyAnimation {
-            target: navigationFrame
-            property: "SplitView.preferredHeight"
-            duration: 500
-            easing.type: Easing.InOutQuad
-        }
 
-    function loadConf(){
-        navigationFrame.folded = settings.navigationFrameFolded
-        documentFrame.folded = settings.documentFrameFolded
-        splitView.restoreState(settings.dockSplitView)
-    }
-
-    function resetConf(){
-        navigationFrame.folded = false
-        documentFrame.folded = false
-        splitView.restoreState("")
-
-    }
-
-    Component.onCompleted: {
-
-        loadConf()
-        navigation.openDocument.connect(Globals.openNoteCalled)
-        navigation.openDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
-        navigation.openDocumentInNewWindow.connect(Globals.openNoteInNewWindowCalled)
-        navigation.restoreDocumentList.connect(root.restoreNoteList)
-        Globals.resetDockConfCalled.connect(resetConf)
-
-    }
-
-    Component.onDestruction: {
-
-        settings.dockSplitView = splitView.saveState()
-
-    }
-
-    onEnabledChanged: {
-        if(enabled){
-
-        }
-    }
 }

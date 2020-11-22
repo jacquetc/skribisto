@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
+import QtQml 2.15
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
@@ -19,26 +20,7 @@ WriteRightDockForm {
     }
 
 
-    splitView.handle: Item {
-        id: handle
-        implicitHeight: 8
-        property bool hovered: SplitHandle.hovered
 
-        RowLayout {
-            anchors.fill: parent
-            Rectangle {
-                Layout.preferredWidth: 20
-                Layout.preferredHeight: 5
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: hoverHandler.hovered ? SkrTheme.accent : SkrTheme.divider
-
-                HoverHandler {
-                    id: hoverHandler
-                    cursorShape: Qt.SplitVCursor
-                }
-            }
-        }
-    }
 
 
     //-----------------------------------------------------------
@@ -75,7 +57,7 @@ WriteRightDockForm {
                         if(Globals.compactMode){
                             rightDrawer.open()
                         }
-                        editFrame.folded = false
+                        editViewToolButton.checked = true
                         editView.forceActiveFocus()
                     }
                 }
@@ -88,7 +70,7 @@ WriteRightDockForm {
                         if(Globals.compactMode){
                             rightDrawer.open()
                         }
-                        tagPadFrame.folded = false
+                        tagPadViewToolButton.checked = true
                         tagPadView.forceActiveFocus()
                     }
                 }
@@ -100,7 +82,7 @@ WriteRightDockForm {
                         if(Globals.compactMode){
                             rightDrawer.open()
                         }
-                        notePadFrame.folded = false
+                        notePadViewToolButton.checked = true
                         notePadView.forceActiveFocus()
                     }
                 }
@@ -108,10 +90,80 @@ WriteRightDockForm {
         }
     ]
 
+    //-----------------------------------------------------------
+    //--------------- toolBoxes Behavior------------------------
+    //-----------------------------------------------------------
+
+
+    Settings {
+        id: settings
+        category: "writeRightDock"
+
+        property bool editViewVisible: true
+        property bool tagPadVisible: true
+        property bool notePadVisible: true
+    }
+
+    function loadConf(){
+
+        editViewToolButton.checked = settings.editViewVisible
+        tagPadViewToolButton.checked = settings.tagPadVisible
+        notePadViewToolButton.checked = settings.notePadVisible
+
+    }
+
+    function resetConf(){
+        settings.editViewVisible = true
+        settings.tagPadVisible = true
+        settings.notePadVisible = true
+    }
+
+    Component.onCompleted: {
+        loadConf()
+        Globals.resetDockConfCalled.connect(resetConf)
+
+    }
+
+    Component.onDestruction: {
+        settings.editViewVisible = editViewToolButton.checked
+        settings.tagPadVisible = tagPadViewToolButton.checked
+        settings.notePadVisible = notePadViewToolButton.checked
+
+    }
+
+
+
+
 
     //-----------------------------------------------------------
     //---------------Edit---------------------------------------------
     //-----------------------------------------------------------
+
+    Action{
+        id: editViewAction
+        checkable: true
+        text: qsTr( "Show edit tool box")
+        icon {
+            source: "qrc:///icons/backup/format-text-italic.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            editView.visible = editViewAction.checked
+
+        }
+
+
+        Binding on checked{
+            value: editView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+
+    }
+
+
+    editViewToolButton.action: editViewAction
 
 
     editView.skrSettingsGroup: SkrSettings.writeSettings
@@ -123,6 +175,27 @@ WriteRightDockForm {
     //-----------------------------------------------------------
     //---------------Tags :---------------------------------------------
     //-----------------------------------------------------------
+
+    Action{
+        id: tagPadViewAction
+        checkable: true
+        text: qsTr( "Show tags tool box")
+        icon {
+            source: "qrc:///icons/backup/tag.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            tagPadView.visible = tagPadViewAction.checked
+        }
+
+        Binding on checked{
+            value: tagPadView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+    }
+    tagPadViewToolButton.action: tagPadViewAction
 
 
     //proxy model for tag list :
@@ -136,33 +209,36 @@ WriteRightDockForm {
     tagPadView.itemType: SKRTagHub.Sheet
 
 
+    //-----------------------------------------------------------
+    //------- Notes------------------------------------------
+    //-----------------------------------------------------------
 
-    //-----------------------------------------------------------
-    //-----------------------------------------------------------
-    //-----------------------------------------------------------
-    transitions: [
-        Transition {
-
-            PropertyAnimation {
-                properties: "implicitWidth"
-                easing.type: Easing.InOutQuad
-                duration: 500
-            }
+    Action{
+        id: notePadViewAction
+        checkable: true
+        text: qsTr( "Show notes tool box")
+        icon {
+            source: "qrc:///icons/backup/story-editor.svg"
+            height: 50
+            width: 50
         }
-    ]
+        onCheckedChanged: {
+            notePadView.visible = notePadViewAction.checked
+        }
 
-
-    property alias settings: settings
-
-    Settings {
-        id: settings
-        category: "writeRightDock"
-        property var dockSplitView
-        property bool editFrameFolded: editFrame.folded
-        property bool notePadFrameFolded: notePadFrame.folded
-        property bool tagPadFrameFolded: tagPadFrame.folded
-        //        property bool documentFrameFolded: documentFrame.folded ? true : false
+        Binding on checked{
+            value: notePadView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
     }
+    notePadViewToolButton.action: notePadViewAction
+
+
+
+    //-----------------------------------------------------------
+    //-----------------------------------------------------------
+    //-----------------------------------------------------------
 
 
     onProjectIdChanged: {
@@ -177,57 +253,5 @@ WriteRightDockForm {
     }
 
 
-    PropertyAnimation {
-        target: editFrame
-        property: "SplitView.preferredHeight"
-        duration: 500
-        easing.type: Easing.InOutQuad
-    }
-    PropertyAnimation {
-        target: notePadFrame
-        property: "SplitView.preferredHeight"
-        duration: 500
-        easing.type: Easing.InOutQuad
-    }
-    PropertyAnimation {
-        target: tagPadFrame
-        property: "SplitView.preferredHeight"
-        duration: 500
-        easing.type: Easing.InOutQuad
-    }
 
-    function loadConf(){
-
-        editFrame.folded = settings.editFrameFolded
-        notePadFrame.folded = settings.notePadFrameFolded
-        tagPadFrame.folded = settings.tagPadFrameFolded
-
-        var value = splitView.restoreState(settings.dockSplitView)
-
-    }
-
-    function resetConf(){
-        editFrame.folded = false
-        notePadFrame.folded = false
-        tagPadFrame.folded = false
-        splitView.restoreState("")
-
-    }
-
-    Component.onCompleted: {
-        loadConf()
-        Globals.resetDockConfCalled.connect(resetConf)
-
-    }
-
-    Component.onDestruction: {
-        settings.dockSplitView = splitView.saveState()
-
-    }
-
-    onEnabledChanged: {
-        if(enabled){
-
-        }
-    }
 }

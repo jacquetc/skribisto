@@ -88,5 +88,6 @@
         <file>icons/backup/data-information.svg</file>
         <file>icons/backup/data-warning.svg</file>
         <file>icons/backup/emblem-checked.svg</file>
+        <file>icons/backup/object-rows.svg</file>
     </qresource>
 </RCC>

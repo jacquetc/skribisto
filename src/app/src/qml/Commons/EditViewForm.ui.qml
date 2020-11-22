@@ -24,182 +24,195 @@ Item {
     property alias themesToolButton: themesToolButton
     property alias centerTextCursorToolButton: centerTextCursorToolButton
 
-    SwipeView {
-        id: swipeView
-        interactive: false
-        anchors.fill: parent
+    implicitHeight: sizePageLayout.childrenRect.height
 
-        Item {
-            id: mainPage
 
-            ColumnLayout {
-                anchors.fill: parent
+        SwipeView {
+            id: swipeView
+            interactive: false
+            anchors.fill: parent
 
-                SkrGroupBox {
-                    id: groupBox
-                    padding: 5
-                    Layout.fillWidth: true
-                    title: qsTr("Edit text")
 
-                    GridLayout {
-                        id: gridLayout
-                        columns: gridLayout.width / italicToolButton.width - 1
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        columnSpacing: 5
-                        rowSpacing: 5
+            SkrPane {
+                id: mainPage
 
-                        SkrToolButton {
-                            id: italicToolButton
-                            text: qsTr("Italic")
-                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                            display: AbstractButton.IconOnly
+                ColumnLayout {
+                    id: mainPageLayout
+                    anchors.fill: parent
 
-                        }
-                        SkrToolButton {
-                            id: boldToolButton
-                            text: qsTr("Bold")
-                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                            display: AbstractButton.IconOnly
+                    SkrGroupBox {
+                        id: groupBox
+                        padding: 5
+                        Layout.fillWidth: true
+                        title: qsTr("Edit text")
 
-                        }
-                        SkrToolButton {
-                            id: strikeToolButton
-                            text: qsTr("Strike")
-                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                            display: AbstractButton.IconOnly
+                        GridLayout {
+                            id: gridLayout
+                            columns: gridLayout.width / italicToolButton.width - 1
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            columnSpacing: 5
+                            rowSpacing: 5
 
-                        }
+                            SkrToolButton {
+                                id: italicToolButton
+                                text: qsTr("Italic")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                display: AbstractButton.IconOnly
 
-                        SkrToolButton {
-                            id: underlineToolButton
-                            text: qsTr("Underline")
-                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                            display: AbstractButton.IconOnly
+                            }
+                            SkrToolButton {
+                                id: boldToolButton
+                                text: qsTr("Bold")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                display: AbstractButton.IconOnly
 
-                        }
-                    }
-                }
-                SkrGroupBox {
-                    id: groupBox2
-                    padding: 5
-                    Layout.fillWidth: true
-                    title: qsTr("Display")
+                            }
+                            SkrToolButton {
+                                id: strikeToolButton
+                                text: qsTr("Strike")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                display: AbstractButton.IconOnly
 
-                    GridLayout {
-                        id: gridLayout2
-                        columnSpacing: 5
-                        rowSpacing: 5
-                        columns: gridLayout.width / fullScreenToolButton.width - 1
-                        anchors.left: parent.left
-                        anchors.right: parent.right
+                            }
 
-                        SkrToolButton {
-                            id: fullScreenToolButton
-                            text: qsTr("Full screen")
-                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                            display: AbstractButton.IconOnly
-                        }
+                            SkrToolButton {
+                                id: underlineToolButton
+                                text: qsTr("Underline")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                display: AbstractButton.IconOnly
 
-                        SkrToolButton {
-                            id: sizeToolButton
-                            text: qsTr("Size")
-                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                            display: AbstractButton.IconOnly
-                        }
-                        SkrToolButton {
-                            id: themesToolButton
-                            text: qsTr("Full screen Colors")
-                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                            display: AbstractButton.IconOnly
-                        }
-                        SkrToolButton {
-                            id: checkSpellingToolButton
-                            text: qsTr("Check spelling")
-                            display: AbstractButton.IconOnly
-                        }
-                        SkrToolButton {
-                            id: centerTextCursorToolButton
-                            text: qsTr("Center vertically the text cursor ")
-                            display: AbstractButton.IconOnly
+                            }
                         }
                     }
-                }
+                    SkrGroupBox {
+                        id: groupBox2
+                        padding: 5
+                        Layout.fillWidth: true
+                        title: qsTr("Display")
 
-                Item {
-                    id: stretcher
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
+                        GridLayout {
+                            id: gridLayout2
+                            columnSpacing: 5
+                            rowSpacing: 5
+                            columns: gridLayout.width / fullScreenToolButton.width - 1
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+
+                            SkrToolButton {
+                                id: fullScreenToolButton
+                                text: qsTr("Full screen")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                display: AbstractButton.IconOnly
+                            }
+
+                            SkrToolButton {
+                                id: sizeToolButton
+                                text: qsTr("Size")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                display: AbstractButton.IconOnly
+                            }
+                            SkrToolButton {
+                                id: themesToolButton
+                                text: qsTr("Full screen Colors")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                display: AbstractButton.IconOnly
+                            }
+                            SkrToolButton {
+                                id: checkSpellingToolButton
+                                text: qsTr("Check spelling")
+                                display: AbstractButton.IconOnly
+                            }
+                            SkrToolButton {
+                                id: centerTextCursorToolButton
+                                text: qsTr("Center vertically the text cursor ")
+                                display: AbstractButton.IconOnly
+                            }
+                        }
+                    }
+
+                    Item {
+                        id: stretcher
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                    }
+                }
+            }
+
+            SkrPane {
+                id: sizePage
+                ColumnLayout {
+                    id: sizePageLayout
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+
+                    SkrToolButton {
+                        id: goBackToolButton
+                        text: qsTr("Go back")
+                        display: AbstractButton.IconOnly
+                        icon.source: "qrc:///icons/backup/go-previous.svg"
+                    }
+
+                    SkrLabel {
+                        id: textWidthLabel
+                        text: qsTr("Text width :")
+                    }
+
+                    Slider {
+                        id: textWidthSlider
+                        from: 400
+                        to: Screen.width
+                        Layout.fillWidth: true
+                    }
+
+                    SkrLabel {
+                        text: qsTr("Text size :")
+                    }
+
+                    Slider {
+                        id: textPointSizeSlider
+                        snapMode: Slider.SnapOnRelease
+                        stepSize: 1
+                        from: 8
+                        to: 40
+                        Layout.fillWidth: true
+                    }
+
+                    SkrComboBox {
+                        id: fontFamilyComboBox
+                        wheelEnabled: true
+                        Layout.fillWidth: true
+                    }
+                    SkrLabel {
+                        text: qsTr("Text indent :")
+                    }
+
+                    Slider {
+                        id: textIndentSlider
+                        snapMode: Slider.SnapOnRelease
+                        stepSize: 1
+                        from: 0
+                        to: 200
+                        Layout.fillWidth: true
+                    }
+
+                    SkrLabel {
+                        text: qsTr("Top margin :")
+                    }
+
+                    Slider {
+                        id: textTopMarginSlider
+                        snapMode: Slider.SnapOnRelease
+                        stepSize: 1
+                        from: 0
+                        to: 30
+                        Layout.fillWidth: true
+                    }
                 }
             }
         }
 
-        Item {
-            id: sizePage
-            ColumnLayout {
-                anchors.fill: parent
-
-                SkrToolButton {
-                    id: goBackToolButton
-                    text: qsTr("Go back")
-                    display: AbstractButton.IconOnly
-                    icon.source: "qrc:///icons/backup/go-previous.svg"
-                }
-
-                SkrLabel {
-                    id: textWidthLabel
-                    text: qsTr("Text width :")
-                }
-
-                Slider {
-                    id: textWidthSlider
-                    from: 400
-                    to: Screen.width
-                }
-
-                SkrLabel {
-                    text: qsTr("Text size :")
-                }
-
-                Slider {
-                    id: textPointSizeSlider
-                    snapMode: Slider.SnapOnRelease
-                    stepSize: 1
-                    from: 8
-                    to: 40
-                }
-
-                SkrComboBox {
-                    id: fontFamilyComboBox
-                    wheelEnabled: true
-                    Layout.fillWidth: true
-                }
-                SkrLabel {
-                    text: qsTr("Text indent :")
-                }
-
-                Slider {
-                    id: textIndentSlider
-                    snapMode: Slider.SnapOnRelease
-                    stepSize: 1
-                    from: 0
-                    to: 200
-                }
-
-                SkrLabel {
-                    text: qsTr("Top margin :")
-                }
-
-                Slider {
-                    id: textTopMarginSlider
-                    snapMode: Slider.SnapOnRelease
-                    stepSize: 1
-                    from: 0
-                    to: 30
-                }
-            }
-        }
-    }
 }
 
 /*##^##

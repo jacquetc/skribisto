@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
+import QtQml 2.15
 import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
@@ -19,27 +20,6 @@ RightDockForm {
         id: skrUserSettings
     }
 
-    splitView.handle: Item {
-        id: handle
-        implicitHeight: 8
-        property bool hovered: SplitHandle.hovered
-
-        RowLayout {
-            anchors.fill: parent
-            Rectangle {
-                Layout.preferredWidth: 20
-                Layout.preferredHeight: 5
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                color: hoverHandler.hovered ? SkrTheme.accent : SkrTheme.divider
-
-                HoverHandler {
-                    id: hoverHandler
-                    cursorShape: Qt.SplitVCursor
-                }
-            }
-        }
-
-    }
 
     //-----------------------------------------------------------
 
@@ -79,7 +59,7 @@ RightDockForm {
                         if(Globals.compactMode){
                             rightDrawer.open()
                         }
-                        editFrame.folded = false
+                        editViewToolButton.checked = true
                         editView.forceActiveFocus()
                     }
                 }
@@ -92,7 +72,7 @@ RightDockForm {
                         if(Globals.compactMode){
                             rightDrawer.open()
                         }
-                        tagPadFrame.folded = false
+                        tagPadViewToolButton.checked = true
                         tagPadView.forceActiveFocus()
                     }
                 }
@@ -102,14 +82,75 @@ RightDockForm {
 
 
 
+
+
     //-----------------------------------------------------------
+    //--------------- toolBoxes Behavior------------------------
+    //-----------------------------------------------------------
+
+
+    Settings {
+        id: settings
+        category: "noteRightDock"
+
+        property bool editViewVisible: true
+        property bool tagPadVisible: true
+    }
+
+    function loadConf(){
+
+        editViewToolButton.checked = settings.editViewVisible
+        tagPadViewToolButton.checked = settings.tagPadVisible
+
+    }
+
+    function resetConf(){
+        settings.editViewVisible = true
+        settings.tagPadVisible = true
+    }
+
+    Component.onCompleted: {
+        loadConf()
+        Globals.resetDockConfCalled.connect(resetConf)
+
+    }
+
+    Component.onDestruction: {
+        settings.editViewVisible = editViewToolButton.checked
+        settings.tagPadVisible = tagPadViewToolButton.checked
+
+    }
 
 
 
     //-----------------------------------------------------------
     //---------------Edit---------------------------------------------
     //-----------------------------------------------------------
+    Action{
+        id: editViewAction
+        checkable: true
+        text: qsTr( "Show edit tool box")
+        icon {
+            source: "qrc:///icons/backup/format-text-italic.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            editView.visible = editViewAction.checked
 
+        }
+
+
+        Binding on checked{
+            value: editView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+
+    }
+
+
+    editViewToolButton.action: editViewAction
 
     editView.skrSettingsGroup: SkrSettings.noteSettings
 
@@ -119,6 +160,27 @@ RightDockForm {
     //-----------------------------------------------------------
     //---------------Tags :---------------------------------------------
     //-----------------------------------------------------------
+
+    Action{
+        id: tagPadViewAction
+        checkable: true
+        text: qsTr( "Show tags tool box")
+        icon {
+            source: "qrc:///icons/backup/tag.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            tagPadView.visible = tagPadViewAction.checked
+        }
+
+        Binding on checked{
+            value: tagPadView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+    }
+    tagPadViewToolButton.action: tagPadViewAction
 
 
     //proxy model for tag list :
@@ -132,6 +194,10 @@ RightDockForm {
     tagPadView.itemType: SKRTagHub.Note
 
 
+    //-----------------------------------------------------------
+    //-----------------------------------------------------------
+    //-----------------------------------------------------------
+
     onProjectIdChanged: {
         tagPadView.projectId = projectId
         tagPadView.itemId = -2
@@ -140,73 +206,6 @@ RightDockForm {
         tagPadView.itemId = paperId
     }
 
-    //-----------------------------------------------------------
-    //-----------------------------------------------------------
-    //-----------------------------------------------------------
-    transitions: [
-        Transition {
-
-            PropertyAnimation {
-                properties: "implicitWidth"
-                easing.type: Easing.InOutQuad
-                duration: 500
-            }
-        }
-    ]
-
-    property alias settings: settings
-
-    Settings {
-        id: settings
-        category: "noteRightDock"
-        property var dockSplitView
-        property bool editFrameFolded: editFrame.folded
-        property bool tagPadFrameFolded: tagPadFrame.folded
-        //        property bool documentFrameFolded: documentFrame.folded ? true : false
-    }
 
 
-
-    PropertyAnimation {
-        target: editFrame
-        property: "SplitView.preferredHeight"
-        duration: 500
-        easing.type: Easing.InOutQuad
-    }
-    PropertyAnimation {
-        target: tagPadFrame
-        property: "SplitView.preferredHeight"
-        duration: 500
-        easing.type: Easing.InOutQuad
-    }
-
-    function loadConf(){
-
-        editFrame.folded = settings.editFrameFolded
-        tagPadFrame.folded = settings.tagPadFrameFolded
-
-        splitView.restoreState(settings.dockSplitView)
-
-    }
-
-    function resetConf(){
-        editFrame.folded = false
-        tagPadFrame.folded = false
-        splitView.restoreState("")
-
-    }
-
-    Component.onCompleted: {
-        loadConf()
-        Globals.resetDockConfCalled.connect(resetConf)
-    }
-
-    Component.onDestruction: {
-        settings.dockSplitView = splitView.saveState()
-    }
-
-    onEnabledChanged: {
-        if(enabled){
-        }
-    }
 }
