@@ -118,5 +118,11 @@
         <file>qml/Welcome/FileMenuPage.qml</file>
         <file>qml/Welcome/FileMenuPageForm.ui.qml</file>
         <file>qml/Commons/ListItemAttributes.qml</file>
+        <file>qml/Welcome/HelpContents.qml</file>
+        <file>qml/Welcome/HelpContentsForm.ui.qml</file>
+        <file>qml/Welcome/FAQ.qml</file>
+        <file>qml/Welcome/FAQForm.ui.qml</file>
+        <file>qml/Welcome/About.qml</file>
+        <file>qml/Welcome/AboutForm.ui.qml</file>
     </qresource>
 </RCC>

@@ -25,7 +25,7 @@ Item {
         clip: false
         spacing: 0
         anchors.fill: parent
-        anchors.leftMargin: Globals.compactMode ? undefined : leftDrawer.width * leftDrawer.position
+        anchors.leftMargin: Globals.compactMode ? undefined : leftDrawer.width * leftDrawer.position - 10
 
 
         RowLayout {

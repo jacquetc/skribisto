@@ -250,11 +250,13 @@ signals:
     void wordCountChanged(SKR::PaperType paperType,
                           int            projectId,
                           int            paperId,
-                          int            wordCount);
+                          int            wordCount,
+                          bool triggerProjectModifiedSignal);
     void characterCountChanged(SKR::PaperType paperType,
                                int            projectId,
                                int            paperId,
-                               int            charCount);
+                               int            charCount,
+                               bool triggerProjectModifiedSignal);
 
 
     // settings :

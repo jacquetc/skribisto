@@ -7,237 +7,97 @@ import "../Items"
 
 Item {
     id: base
-    //implicitWidth: 300
-    property int fixedWidth: 300
-    //    property alias dockPane: rightDockPane
-    property alias splitView: splitView
-    property alias editFrame: editFrame
+    property alias editViewToolButton: editViewToolButton
+    property alias tagPadViewToolButton: tagPadViewToolButton
+    property alias notePadViewToolButton: notePadViewToolButton
+
     property alias editView: editView
-    property alias notePadFrame: notePadFrame
     property alias notePadView: notePadView
-    property alias tagPadFrame: tagPadFrame
     property alias tagPadView: tagPadView
 
+    property alias scrollView: scrollView
+    property alias toolBoxLayout: toolBoxLayout
+
     SkrPane {
-        id: rightDockPane
+        id: dockPane
         anchors.fill: parent
+        padding: 1
 
         ColumnLayout {
-            id: columnLayout2
+            id: columnLayout
             spacing: 0
             anchors.fill: parent
-            Item {
-                id: scrollViewBase
-                Layout.fillHeight: true
+
+            RowLayout{
                 Layout.fillWidth: true
-                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                 Item {
-                    id: foldableScrollViewBase
+                    Layout.fillWidth: true
+                }
+
+                SkrToolButton{
+                    id: editViewToolButton
+                    display: AbstractButton.IconOnly
+                }
+                SkrToolButton{
+                    id: tagPadViewToolButton
+                    display: AbstractButton.IconOnly
+                }
+                SkrToolButton{
+                    id: notePadViewToolButton
+                    display: AbstractButton.IconOnly
+                }
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
+
+            ScrollView {
+                id: scrollView
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
+                Flickable {
+                    boundsBehavior: Flickable.StopAtBounds
+                    contentWidth: scrollView.width
+                    contentHeight: toolBoxLayout.childrenRect.height
                     clip: true
-                    anchors.fill: parent
 
-                    ScrollView {
-                        id: scrollView
+
+                    Column {
+                        id: toolBoxLayout
+                        spacing: 0
                         anchors.fill: parent
-                        anchors.rightMargin: 10
 
+                        EditView {
+                            id: editView
+                            clip: true
 
-                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                            width: scrollView.width
+                            height: editView.implicitHeight
+                        }
 
+                        TagPad {
+                            id: tagPadView
+                            clip: true
 
-                        Flickable {
-                            id: flickable
-                            boundsBehavior: Flickable.StopAtBounds
-                            contentWidth: splitView.width
-                            contentHeight: splitView.height
+                            width: scrollView.width
+                            height: tagPadView.implicitHeight
+                        }
 
-                            SplitView {
-                                id: splitView
-                                orientation: Qt.Vertical
-                                implicitWidth: scrollView.width
-                                implicitHeight: base.height > 1000 ?  base.height - 25 : 1000
+                        NotePad {
+                            id: notePadView
+                            clip: true
 
-
-                                width: scrollView.width
-
-                                ToolFrame {
-                                    id: editFrame
-                                    folded: false
-                                    title: qsTr("Edit")
-                                    edge: Qt.RightEdge
-
-                                    SplitView.preferredHeight: folded ? dynamicHeight : 400
-                                    SplitView.minimumHeight: folded ? dynamicHeight : 300
-
-
-                                    minimumContentHeight: SplitView.minimumHeight
-                                    contentHeight: SplitView.preferredHeight
-                                    maximumContentHeight: SplitView.maximumHeight
-
-
-
-
-                                    EditView {
-                                        id: editView
-                                        clip: true
-                                    }
-                                }
-                                ToolFrame {
-
-                                    id: tagPadFrame
-                                    folded: true
-                                    title: qsTr("Tags")
-                                    edge: Qt.RightEdge
-
-                                    SplitView.preferredHeight: folded ? dynamicHeight : 200
-                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
-
-
-                                    minimumContentHeight: SplitView.minimumHeight
-                                    contentHeight: SplitView.preferredHeight
-                                    maximumContentHeight: SplitView.maximumHeight
-
-                                    TagPad {
-                                        id: tagPadView
-                                        clip: true
-                                    }
-                                }
-
-                                ToolFrame {
-                                    id: notePadFrame
-                                    folded: true
-                                    title: qsTr("Notes")
-                                    edge: Qt.RightEdge
-
-                                    SplitView.fillHeight: true
-                                    SplitView.preferredHeight: folded ? dynamicHeight : 400
-                                    SplitView.minimumHeight: folded ? dynamicHeight : 200
-
-
-                                    minimumContentHeight: SplitView.minimumHeight
-                                    contentHeight: SplitView.preferredHeight
-                                    maximumContentHeight: SplitView.maximumHeight
-
-                                    NotePad {
-                                        id: notePadView
-                                        clip: true
-                                    }
-                                }
-
-                                //                            Loader{
-                                //                                id: writeTreeViewHeader
-                                //                                sourceComponent: toolHeaderComp
-                                //                                width: scrollview.contentWidth
-                                //                                property string headerText: qsTr("Navigation")
-
-                                //                            }
-                                //                            WriteTreeView {
-                                //                                id: writeTreeView
-                                //                                width: scrollview.contentWidth
-                                //                                height: 600
-
-                                //                            }
-                                //                            Loader{
-                                //                                id: toolsHeader
-                                //                                sourceComponent: toolHeaderComp
-                                //                                width: scrollview.contentWidth
-                                //                                property string headerText: qsTr("Tools")
-
-                                //                            }
-                                //                            Flow{
-                                //                                width: scrollview.contentWidth
-
-                                //                                SkrToolButton {
-                                //                                    flat: true
-                                //                                    action: fullscreenAction
-
-                                //                                }
-                                //                                SkrToolButton {
-                                //                                    flat: true
-                                //                                    action: fullscreenAction
-                                //                                }
-                                //                                SkrToolButton {
-                                //                                    flat: true
-                                //                                    action: fullscreenAction
-                                //                                }
-                                //                                SkrToolButton {
-                                //                                    flat: true
-                                //                                    action: fullscreenAction
-                                //                                }
-                                //                            }
-                            }
-                            //contentWidth: width
-
-                            //                    ColumnLayout {
-                            //                        id: columnLayout
-                            //                        //width: scrollview.contentWidth
-
-                            //                        Component{
-                            //                            id: toolHeaderComp
-                            //                            RowLayout {
-
-                            //                                Text{
-                            //                                    id: headerText
-
-                            //                                }
-                            //                            }
-
-                            //                        }
-                            //                        Loader{
-                            //                            id: writeTreeViewHeader
-                            //                            sourceComponent: toolHeaderComp
-                            //                            //Layout.fillWidth: true
-                            //                            property string headerText: qsTr("Navigation")
-
-                            //                        }
-                            //                        WriteTreeView {
-                            //                            Layout.fillWidth: true
-                            //                            Layout.fillHeight: true
-
-                            //                        }
-
-                            //                    }
-
-                            //                    //                        Rectangle {
-                            //                    //                            id: rectangle
-                            //                    //                            width: 200
-                            //                    //                            height: 200
-                            //                    //                            color: "#ff1b1b"
-                            //                    //                            Layout.fillWidth: true
-                            //                    //                        }
-
-                            //                }
+                            width: scrollView.width
+                            height: notePadView.implicitHeight
                         }
                     }
                 }
             }
         }
     }
-
-    states: [
-        State {
-            name: "dockFolded"
-
-            PropertyChanges {
-                target: base
-                implicitWidth: 0
-            }
-            //            PropertyChanges {
-            //                restoreEntryValues: true
-            //                target: base
-            //                implicitWidth: 0
-
-            //            }
-        },
-        State {
-            name: "dockUnfolded"
-
-            PropertyChanges {
-                target: base
-                implicitWidth: fixedWidth
-            }
-        }
-    ]
 }
 
 /*##^##

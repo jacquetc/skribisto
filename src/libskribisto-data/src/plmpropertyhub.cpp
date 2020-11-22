@@ -29,7 +29,7 @@ PLMPropertyHub::PLMPropertyHub(QObject       *parent,
                                const QString& tableName,
                                const QString& paperCodeFieldName)
     : QObject(parent), m_tableName(tableName), m_paperCodeFieldName(paperCodeFieldName),
-    m_last_added_id(-1)
+      m_last_added_id(-1)
 {}
 
 QHash<int, QString>PLMPropertyHub::getAllNames(int projectId) const
@@ -154,9 +154,10 @@ QList<int>PLMPropertyHub::getAllIdsWithPaperCode(int projectId, int paperCode) c
 }
 
 SKRResult PLMPropertyHub::setProperty(int            projectId,
-                                     int            paperCode,
-                                     const QString& name,
-                                     const QString& value)
+                                      int            paperCode,
+                                      const QString& name,
+                                      const QString& value,
+                                      bool triggerProjectModifiedSignal)
 {
     SKRResult result(this);
     int propertyId = -1;
@@ -191,7 +192,9 @@ SKRResult PLMPropertyHub::setProperty(int            projectId,
     IFOKDO(result, queries.get(propertyId, m_paperCodeFieldName, variant));
     IFOK(result) {
         emit propertyChanged(projectId, propertyId, paperCode, name, value);
-        emit projectModified(projectId);
+        if(triggerProjectModifiedSignal){
+            emit projectModified(projectId);
+        }
     }
     IFKO(result) {
         emit errorSent(result);
@@ -360,8 +363,8 @@ int PLMPropertyHub::getPaperCode(int projectId, int propertyId)
 }
 
 SKRResult PLMPropertyHub::setCreationDate(int              projectId,
-                                         int              propertyId,
-                                         const QDateTime& date)
+                                          int              propertyId,
+                                          const QDateTime& date)
 {
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -413,8 +416,8 @@ QDateTime PLMPropertyHub::getCreationDate(int projectId, int propertyId) const
 // ---------------------------------------------------------------------
 
 SKRResult PLMPropertyHub::setModificationDate(int              projectId,
-                                             int              propertyId,
-                                             const QDateTime& date)
+                                              int              propertyId,
+                                              const QDateTime& date)
 {
     PLMSqlQueries queries(projectId, m_tableName);
 

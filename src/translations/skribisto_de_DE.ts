@@ -1173,6 +1173,25 @@
     </message>
 </context>
 <context>
+    <name>HelpPageForm.ui</name>
+    <message>
+        <source>FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About</source>
+        <translation type="unfinished">About</translation>
+    </message>
+    <message>
+        <source>About Qt</source>
+        <translation type="unfinished">Über Qt</translation>
+    </message>
+    <message>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Hub</name>
     <message>
         <source>Plume creator</source>
@@ -3000,10 +3019,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <translation type="unfinished">&amp;Hilfe</translation>
     </message>
     <message>
-        <source>&amp;About</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3018,6 +3033,22 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source>Outlines</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished">OK</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Critical</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -4563,15 +4594,12 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>&amp;Documents</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>WriteLeftDockForm.ui</name>
     <message>
-        <source>Navigation</source>
+        <source>Show navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opened documents</source>
+        <source>Show recent documents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4607,20 +4635,24 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>&amp;Notes</source>
         <translation type="unfinished">&amp;Notizen</translation>
     </message>
+    <message>
+        <source>Show edit tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>WriteRightDockForm.ui</name>
     <message>
-        <source>Edit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Notes</source>
-        <translation type="unfinished">Notizen</translation>
+        <translation type="obsolete">Notizen</translation>
     </message>
 </context>
 <context>
@@ -4757,6 +4789,22 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About &amp;Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Contents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

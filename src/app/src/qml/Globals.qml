@@ -76,11 +76,22 @@ QtObject {
     signal showGalleryPageCalled()
     signal showProjectPageCalled()
 
+    // project:
     signal showWelcomeProjectPageCalled()
     signal showNewProjectWizardCalled()
     signal showPrintWizardCalled()
     signal showImportWizardCalled()
     signal showExportWizardCalled()
+    // examples:
+    signal showExamplePageCalled()
+    // settings:
+    signal showSettingsPageCalled()
+    // help:
+    signal showHelpPageCalled()
+    signal showHelpContentsCalled()
+    signal showFaqCalled()
+    signal showAboutCalled()
+    signal showAboutQtCalled()
 
     Component.onCompleted: {
         plmData.projectHub().onProjectLoaded.connect(setMultipleProject)

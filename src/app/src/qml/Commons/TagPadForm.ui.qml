@@ -11,6 +11,7 @@ Item {
     property alias tagRepeater: tagRepeater
     property alias tagFlowFocusScope: tagFlowFocusScope
     property bool minimalMode: false
+    implicitHeight: columnLayout.childrenRect.height
 
     SkrPane {
         id: pane
@@ -20,7 +21,9 @@ Item {
         ColumnLayout {
             id: columnLayout
             spacing: 0
-            anchors.fill: parent
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
 
             SkrToolBar {
                 id: toolBar
@@ -40,11 +43,16 @@ Item {
                     spacing: 1
                     anchors.fill: parent
 
-                    Item {
-                        id: stretcher
+                    SkrLabel {
+                        id: tagPadLabel
+                        text: qsTr("Tags")
+                        elide: Text.ElideRight
+                        verticalAlignment: Qt.AlignVCenter
                         Layout.fillHeight: true
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
                     }
+
 
                     SkrToolButton {
                         id: addTagMenuToolButton
@@ -58,7 +66,7 @@ Item {
             FocusScope {
                 id: tagFlowFocusScope
                 Layout.fillHeight: true
-                Layout.minimumHeight: 40
+                Layout.minimumHeight: tagFlow.height +10 < 200 ? tagFlow.height +10 : 200
                 Layout.fillWidth: true
 
                 ScrollView {

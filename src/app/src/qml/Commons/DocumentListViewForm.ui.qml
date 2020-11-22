@@ -10,14 +10,18 @@ Item {
     width: 400
     height: 400
 
+    implicitHeight: columnLayout.childrenRect.height
+
     SkrPane {
         id: pane
         clip: true
         anchors.fill: parent
         padding: 0
         ColumnLayout {
-            id: columnLayout
-            anchors.fill: parent
+            id: columnLayout            
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
 
             ScrollView {
                 focusPolicy: Qt.WheelFocus

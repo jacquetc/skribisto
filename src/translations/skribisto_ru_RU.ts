@@ -1037,6 +1037,25 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
+    <name>HelpPageForm.ui</name>
+    <message>
+        <source>FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About</source>
+        <translation type="unfinished">О программе</translation>
+    </message>
+    <message>
+        <source>About Qt</source>
+        <translation type="unfinished">О Qt</translation>
+    </message>
+    <message>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Hub</name>
     <message>
         <source>Plume creator</source>
@@ -2653,10 +2672,6 @@ Have you checked the one(s) you want to look through ?</source>
         <translation type="unfinished">Помо&amp;щь</translation>
     </message>
     <message>
-        <source>&amp;About</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2671,6 +2686,22 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source>Outlines</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished">ОК</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Critical</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source></source>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -4303,15 +4334,12 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Documents</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>WriteLeftDockForm.ui</name>
     <message>
-        <source>Navigation</source>
+        <source>Show navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opened documents</source>
+        <source>Show recent documents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4347,20 +4375,24 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Notes</source>
         <translation type="unfinished">&amp;Заметки</translation>
     </message>
+    <message>
+        <source>Show edit tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>WriteRightDockForm.ui</name>
     <message>
-        <source>Edit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Notes</source>
-        <translation type="unfinished">Заметки</translation>
+        <translation type="obsolete">Заметки</translation>
     </message>
 </context>
 <context>
@@ -4501,6 +4533,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About &amp;Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Contents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

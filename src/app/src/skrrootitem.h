@@ -47,6 +47,7 @@ public:
     Q_INVOKABLE QString toLocaleDateTimeFormat(const QDateTime& dateTime) const;
     Q_INVOKABLE QString toLocaleIntString(int number) const;
 
+    Q_INVOKABLE QString getQtVersion() const;
 signals:
 
     void currentTranslationLanguageCodeChanged(const QString& langCode);

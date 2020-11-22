@@ -6,8 +6,9 @@ SKRWordMeterWorker::SKRWordMeterWorker(QObject              *parent,
                                        const SKR::PaperType& paperType,
                                        int                   projectId,
                                        int                   paperId,
-                                       const QString       & text) :
-    QThread(parent), m_paperType(paperType), m_projectId(projectId), m_paperId(paperId), m_text(text)
+                                       const QString       & text,
+                                       bool triggerProjectModifiedSignal) :
+    QThread(parent), m_paperType(paperType), m_projectId(projectId), m_paperId(paperId), m_text(text),  m_triggerProjectModifiedSignal(triggerProjectModifiedSignal)
 {}
 
 void SKRWordMeterWorker::countWords()
@@ -33,7 +34,7 @@ void SKRWordMeterWorker::countWords()
         wordCount += 1;
     }
 
-    emit wordCountCalculated(m_paperType, m_projectId, m_paperId, wordCount);
+    emit wordCountCalculated(m_paperType, m_projectId, m_paperId, wordCount, m_triggerProjectModifiedSignal);
 }
 
 void SKRWordMeterWorker::countCharacters()
@@ -45,7 +46,7 @@ void SKRWordMeterWorker::countCharacters()
 
     int charCount = plainText.count();
 
-    emit characterCountCalculated(m_paperType, m_projectId, m_paperId, charCount);
+    emit characterCountCalculated(m_paperType, m_projectId, m_paperId, charCount,  m_triggerProjectModifiedSignal);
 }
 
 void SKRWordMeterWorker::run()
@@ -62,9 +63,10 @@ void SKRWordMeter::countText(const SKR::PaperType& paperType,
                              int                   projectId,
                              int                   paperId,
                              const QString       & text,
-                             bool                  sameThread)
+                             bool                  sameThread,
+                             bool triggerProjectModifiedSignal)
 {
-    SKRWordMeterWorker *worker = new SKRWordMeterWorker(this, paperType, projectId, paperId, text);
+    SKRWordMeterWorker *worker = new SKRWordMeterWorker(this, paperType, projectId, paperId, text, triggerProjectModifiedSignal);
 
     if (sameThread) {
         connect(worker,

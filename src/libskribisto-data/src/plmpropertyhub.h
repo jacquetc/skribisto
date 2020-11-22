@@ -47,7 +47,7 @@ public:
     Q_INVOKABLE SKRResult setProperty(int            projectId,
                                      int            paperCode,
                                      const QString& name,
-                                     const QString& value);
+                                     const QString& value, bool triggerProjectModifiedSignal = true);
     int      getLastAddedId();
     SKRResult addProperty(int projectId,
                          int paperCode,

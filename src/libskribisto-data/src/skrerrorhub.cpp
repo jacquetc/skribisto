@@ -54,7 +54,7 @@ void SKRErrorHub::addError(SKRResult result)
 
     }
 
-    emit sendNotification(SKRResult::Critical, result.getErrorCodeList().join("\n"));
+    emit sendNotification(SKRResult::Critical, consoleString);
 
 
     for(const QString &consoleStr : consoleString.split("\n", Qt::KeepEmptyParts)){
