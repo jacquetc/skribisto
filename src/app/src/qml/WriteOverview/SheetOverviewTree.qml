@@ -646,16 +646,33 @@ SheetOverviewTreeForm {
 
                                     }
 
-                                    SkrLabel {
-                                        id: labelLabel
-                                        text:  model.label === undefined ? "" : model.label
-                                        Layout.bottomMargin: 2
-                                        Layout.rightMargin: 4
-                                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                        elide: Text.ElideRight
-                                        visible: text.length === 0 ? false : true
-                                        font.italic: true
+                                    RowLayout{
+                                        id: labelLayout
                                         Layout.fillWidth: true
+                                        Layout.leftMargin: 5
+
+                                        ListItemAttributes{
+                                            id: attributes
+                                            attributes: model.attributes
+                                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                            Layout.leftMargin: 4
+                                            Layout.bottomMargin: 2
+
+                                        }
+
+
+                                        SkrLabel {
+                                            id: labelLabel
+                                            text:  model.label === undefined ? "" : model.label
+                                            Layout.bottomMargin: 2
+                                            Layout.rightMargin: 4
+                                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                            elide: Text.ElideRight
+                                            visible: text.length === 0 ? false : true
+                                            font.italic: true
+                                            horizontalAlignment: Qt.AlignRight
+                                            Layout.fillWidth: true
+                                        }
                                     }
                                 }
 
@@ -871,7 +888,7 @@ SheetOverviewTreeForm {
                                         function openSynopsis(_projectId, _paperId){
                                             // save current
                                             if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
-                                                    clearNoteWritingZone()
+                                                clearNoteWritingZone()
                                             }
 
                                             documentPrivate.contentSaveTimerAllowedToStart = false
@@ -973,7 +990,7 @@ SheetOverviewTreeForm {
                                                 contentSaveTimer.stop()
                                             }
                                             if(documentPrivate.contentSaveTimerAllowedToStart){
-                                            contentSaveTimer.start()
+                                                contentSaveTimer.start()
                                             }
                                         }
                                         Timer{
@@ -1263,7 +1280,7 @@ SheetOverviewTreeForm {
 
 
                                         if(menu.visible){
-                                          menu.close()
+                                            menu.close()
                                             return
                                         }
                                         menu.popup(menuButton, menuButton.x, menuButton.height)

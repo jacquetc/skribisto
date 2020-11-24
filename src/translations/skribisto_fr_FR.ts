@@ -582,6 +582,10 @@
         <source>Locked</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Favorite</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NewProject</name>
@@ -1110,6 +1114,14 @@
     <message>
         <source>Show overview tool box</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show properties tool box</source>
+        <translation type="unfinished">Montrer la boîte à outils des propriétés</translation>
     </message>
 </context>
 <context>
@@ -2092,6 +2104,10 @@
     <message>
         <source>Show properties tool box</source>
         <translation type="unfinished">Montrer la boîte à outils des propriétés</translation>
+    </message>
+    <message>
+        <source>&amp;Properties</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

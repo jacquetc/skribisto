@@ -63,6 +63,17 @@ WriteRightDockForm {
                     }
                 }
 
+                SkrMenuItem {
+                    text: qsTr( "&Properties")
+                    onTriggered: {
+
+                        if(Globals.compactMode){
+                            rightDrawer.open()
+                        }
+                        propertyPadViewToolButton.checked = true
+                        propertyPadView.forceActiveFocus()
+                    }
+                }
 
                 SkrMenuItem {
                     text: qsTr( "&Tags")

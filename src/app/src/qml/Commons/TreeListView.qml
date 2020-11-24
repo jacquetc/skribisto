@@ -973,6 +973,7 @@ TreeListViewForm {
                                     SkrLabel {
                                         id: labelLabel
                                         text:  model.label === undefined ? "" : model.label
+                                        visible: text.length === 0 ? false : true
                                         Layout.bottomMargin: 2
                                         Layout.rightMargin: 4
                                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter

@@ -1333,6 +1333,10 @@ Have you checked the one(s) you want to look through ?</source>
         <source>Locked</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Favorite</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainTreeAbstractModel</name>
@@ -2748,6 +2752,14 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Show overview tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show properties tool box</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4558,6 +4570,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show properties tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Properties</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

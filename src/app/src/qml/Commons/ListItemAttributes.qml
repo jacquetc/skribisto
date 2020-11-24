@@ -48,9 +48,16 @@ Item {
             text = qsTr("Locked")
             break;
 
+        case "favorite":
+            iconSource = "qrc:///icons/backup/favorite.svg"
+            text = qsTr("Favorite")
+            break;
+
+
         default:
             iconSource = ""
             text = ""
+            console.warn("no icon for visual attribute:", attribute)
         }
 
 

@@ -104,6 +104,13 @@ PropertyPadForm {
 
         var childrenList = paperHub.getAllChildren(projectId, paperId)
 
+        if(!modifiableToolButton.checked){
+            paperHub.addAttribute(projectId, paperId, "locked")
+        }
+        else {
+            paperHub.removeAttribute(projectId, paperId, "locked")
+        }
+
         childrenList.forEach(function(childId, index, array) {
             propertyHub.setProperty(projectId, childId, "modifiable", checked)
         })
@@ -115,23 +122,38 @@ PropertyPadForm {
 
     // favoriteToolButton :
 
+
+    Action{
+        id: favoriteAction
+        checkable: true
+        icon.source: "qrc:///icons/backup/favorite.svg"
+        onCheckedChanged: {
+            if(switchPrivate.updateBlocked){
+                return
+            }
+            var checked = favoriteAction.checked ? "true" : "false"
+            propertyHub.setProperty(projectId, paperId, "favorite", checked)
+
+            if(favoriteAction.checked){
+                paperHub.addAttribute(projectId, paperId, "favorite")
+            }
+            else {
+                paperHub.removeAttribute(projectId, paperId, "favorite")
+            }
+
+        }
+    }
+    favoriteToolButton.action: favoriteAction
+
     function determineFavoriteToolButton(){
         switchPrivate.updateBlocked = true
 
-        favoriteToolButton.checked = propertyHub.getProperty(projectId, paperId, "favorite", "false") === "true"
+        favoriteAction.checked = propertyHub.getProperty(projectId, paperId, "favorite", "false") === "true"
 
         switchPrivate.updateBlocked = false
     }
 
-    favoriteToolButton.onCheckedChanged: {
-        if(switchPrivate.updateBlocked){
-            return
-        }
-        var checked = favoriteToolButton.checked ? "true" : "false"
-        propertyHub.setProperty(projectId, paperId, "favorite", checked)
-    }
 
-    favoriteToolButton.icon.source: "qrc:///icons/backup/favorite.svg"
 
 
 }

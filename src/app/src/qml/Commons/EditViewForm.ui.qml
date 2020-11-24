@@ -25,8 +25,11 @@ Item {
     property alias centerTextCursorToolButton: centerTextCursorToolButton
     property alias quickPrintToolButton: quickPrintToolButton
 
-    implicitHeight:  sizePageLayout.childrenRect.height > mainPageLayout.childrenRect.height ? sizePageLayout.childrenRect.height : mainPageLayout.childrenRect.height
 
+    readonly property int sizePageLayoutHeight: sizePageLayout.childrenRect.height + sizePage.padding * 2
+    readonly property int mainPageLayoutHeight: mainPageLayout.childrenRect.height + mainPage.padding * 2
+
+    implicitHeight:  sizePageLayoutHeight > mainPageLayoutHeight ? sizePageLayoutHeight : mainPageLayoutHeight
 
         SwipeView {
             id: swipeView
@@ -36,6 +39,7 @@ Item {
 
             SkrPane {
                 id: mainPage
+                padding: 2
 
                 ColumnLayout {
                     id: mainPageLayout
@@ -170,6 +174,7 @@ Item {
 
             SkrPane {
                 id: sizePage
+                padding: 2
                 ColumnLayout {
                     id: sizePageLayout
                     anchors.top: parent.top
