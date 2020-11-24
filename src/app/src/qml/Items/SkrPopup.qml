@@ -1,3 +1,4 @@
+import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 import ".."
@@ -8,9 +9,9 @@ Popup {
 
     readonly property int  windowWidth : Overlay.overlay === null ? 0 : Overlay.overlay.width
     readonly property int  windowHeight :  Overlay.overlay === null ? 0 : Overlay.overlay.height
-    onAboutToShow: {
 
 
+    onOpened: {
         // verify if popup appears outside the window
 
         var popupX = parent.mapToItem(Overlay.overlay, root.x, root.y).x
@@ -34,6 +35,22 @@ Popup {
         if(popupY < 0){
             //move down
             root.y = root.y + (0 - popupY)
+        }
+    }
+
+    Behavior on x {
+        SpringAnimation {
+            spring: 5
+            mass: 0.2
+            damping: 0.2
+        }
+    }
+
+    Behavior on y {
+        SpringAnimation {
+            spring: 5
+            mass: 0.2
+            damping: 0.2
         }
     }
 }

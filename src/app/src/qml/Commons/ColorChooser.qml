@@ -101,8 +101,9 @@ Item {
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     color: model.colorCode
-                    border.width: root.colorCode === model.colorCode ? 2 : 0
+                    border.width: root.colorCode === model.colorCode ? 3 : 0
                     border.color: SkrTheme.accent
+                    radius: 5
 
                     Accessible.name: qsTr("Color: %1").arg(model.colorName)
 

@@ -152,19 +152,29 @@ SKRResult PLMSheetHub::setTrashedWithChildren(int  projectId,
                                              int  paperId,
                                              bool newTrashedState)
 {
+
+    QList<int> childrenSheets = this->getAllChildren(projectId, paperId);
+
     SKRResult result = PLMPaperHub::setTrashedWithChildren(projectId,
                                                          paperId,
                                                          newTrashedState);
 
-    int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, paperId);
 
-    if (synopsisId == -2) {
-        return result;
+
+    IFOK(result) {
+        childrenSheets.prepend(paperId);
+
+        for(int sheetId : childrenSheets){
+            int synopsisId = plmdata->noteHub()->getSynopsisNoteId(projectId, sheetId);
+
+            if (synopsisId == -2) {
+                return result;
+            }
+            plmdata->noteHub()->setTrashedWithChildren(projectId, synopsisId, newTrashedState);
+
+        }
+
     }
-
-    IFOKDO(result,
-           plmdata->noteHub()->setTrashedWithChildren(projectId, synopsisId,
-                                                      newTrashedState));
 
 
     IFKO(result) {

@@ -678,10 +678,14 @@ RootPageForm {
 
     SkrPopup {
         id: dropDownTabMenuPopup
-        x: showTabListButton.x
-        y: showTabListButton.y + showTabListButton.height
-        width: 200
-        height: 200
+
+
+        onAboutToShow: {
+            x = showTabListButton.x
+            y = showTabListButton.y + showTabListButton.height
+            width = 200
+            height = 200
+        }
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         padding: 0
@@ -822,6 +826,7 @@ RootPageForm {
                             Behavior on y {
                                 SpringAnimation {
                                     spring: 5
+                                    mass: 0.2
                                     damping: 0.2
                                 }
                             }

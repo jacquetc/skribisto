@@ -154,7 +154,7 @@ TagPadForm {
             id: itemBase
             width: childrenRect.width + 10
             height: childrenRect.height + 10
-            border.color: isSelected ? SkrTheme.accent : "lightskyblue"
+            border.color: isSelected ? SkrTheme.accent :  SkrTheme.buttonBackground
             border.width: 2
             radius : height / 2
             property int projectId: model.projectId
@@ -708,7 +708,7 @@ TagPadForm {
 
                             Item {
                                 id: delegateRoot
-                                height: 30
+                                height: itemBase.height
 
 
                                 anchors {
@@ -776,11 +776,35 @@ TagPadForm {
                                     }
 
                                 }
-                                SkrLabel {
-                                    text: model.name
-                                    anchors.fill: parent
-                                    horizontalAlignment: Qt.AlignLeft
-                                    verticalAlignment: Qt.AlignVCenter
+
+                                Rectangle {
+                                    id: itemBase
+                                    width: childrenRect.width + 10
+                                    height: childrenRect.height + 10
+                                    border.color: SkrTheme.buttonBackground
+                                    border.width: 2
+                                    radius : height / 2
+                                    color: model.color
+
+                                    RowLayout{
+                                        id: tagLayout
+                                        anchors.left: parent.left
+                                        anchors.top: parent.top
+
+                                        anchors.margins : 5
+                                        SkrLabel {
+                                            text: model.name
+                                            horizontalAlignment: Qt.AlignHCenter
+                                            verticalAlignment: Qt.AlignHCenter
+                                            Layout.minimumWidth: 20
+                                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+
+                                            color: model.textColor
+                                        }
+                                    }
+
                                 }
                             }
                         }
@@ -790,12 +814,13 @@ TagPadForm {
                             Rectangle {
 
                                 radius: 5
-                                border.color:  "lightsteelblue"
+                                border.color:  SkrTheme.accent
                                 border.width: 2
                                 visible: searchResultList.activeFocus
                                 Behavior on y {
                                     SpringAnimation {
-                                        spring: 3
+                                        spring: 5
+                                        mass: 0.2
                                         damping: 0.2
                                     }
                                 }
@@ -815,13 +840,14 @@ TagPadForm {
                             Rectangle {
                                 width: searchResultList.width
                                 height: childrenRect.height
-                                color: "lightsteelblue"
+                                color: SkrTheme.buttonBackground
 
                                 required property string section
 
                                 SkrLabel {
                                     text: qsTr("Existing tags")
                                     font.bold: true
+                                    color: SkrTheme.buttonForeground
                                     //font.pixelSize: 20
                                 }
                             }
