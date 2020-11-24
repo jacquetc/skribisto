@@ -35,8 +35,9 @@ public:
         ProjectIdRole    = Qt::UserRole + 1,
         TagIdRole      = Qt::UserRole + 2,
         ColorRole      = Qt::UserRole + 3,
-        CreationDateRole = Qt::UserRole + 4,
-        UpdateDateRole   = Qt::UserRole + 5
+        TextColorRole      = Qt::UserRole + 4,
+        CreationDateRole = Qt::UserRole + 5,
+        UpdateDateRole   = Qt::UserRole + 6
     };
     Q_ENUM(Roles)
 
@@ -56,6 +57,7 @@ public:
     int           tagId();
     Q_INVOKABLE QString       name();
     QString color();
+    QString textColor();
 
     QVariant      data(int role);
     QList<int>    dataRoles() const;

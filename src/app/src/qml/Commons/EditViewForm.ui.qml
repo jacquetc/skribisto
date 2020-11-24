@@ -52,6 +52,7 @@ Item {
                         padding: 5
                         Layout.fillWidth: true
                         title: qsTr("Edit text")
+                        bigTitleEnabled: false
 
                         GridLayout {
                             id: gridLayout
@@ -97,6 +98,7 @@ Item {
                         padding: 5
                         Layout.fillWidth: true
                         title: qsTr("Display")
+                        bigTitleEnabled: false
 
                         GridLayout {
                             id: gridLayout2
@@ -145,6 +147,7 @@ Item {
                         padding: 5
                         Layout.fillWidth: true
                         title: qsTr("Share")
+                        bigTitleEnabled: false
 
                         GridLayout {
                             id: gridLayout3

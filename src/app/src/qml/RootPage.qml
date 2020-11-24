@@ -1605,7 +1605,7 @@ RootPageForm {
 
     }
 
-    property url testProjectFileName: "qrc:/testfiles/skribisto_test_project.sqlite"
+    property url testProjectFileName: "qrc:/testfiles/skribisto_test_project.skrib"
     function openArgument(){
 
 

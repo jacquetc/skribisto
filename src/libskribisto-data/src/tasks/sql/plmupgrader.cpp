@@ -203,7 +203,65 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     if (dbVersion == 1.3) {
         double newDbVersion = 1.4;
 
-        // fill here
+
+        QSqlQuery query(sqlDb);
+        QString   queryStr =
+                R""""(PRAGMA foreign_keys = 0;
+
+                CREATE TABLE sqlitestudio_temp_table AS SELECT *
+                FROM tbl_tag;
+
+                DROP TABLE tbl_tag;
+
+                CREATE TABLE tbl_tag (
+                l_tag_id     INTEGER  PRIMARY KEY ASC ON CONFLICT ROLLBACK AUTOINCREMENT
+                UNIQUE ON CONFLICT ROLLBACK
+                NOT NULL ON CONFLICT ROLLBACK,
+                t_name       TEXT     NOT NULL
+                UNIQUE ON CONFLICT ROLLBACK,
+                t_color      TEXT,
+                t_text_color TEXT,
+                dt_created   DATETIME NOT NULL ON CONFLICT ROLLBACK
+                DEFAULT (CURRENT_TIMESTAMP),
+                dt_updated   DATETIME NOT NULL ON CONFLICT ROLLBACK
+                DEFAULT (CURRENT_TIMESTAMP)
+                );
+
+                INSERT INTO tbl_tag (
+                l_tag_id,
+                t_name,
+                t_color,
+                dt_created,
+                dt_updated
+                )
+                SELECT l_tag_id,
+                t_name,
+                t_color,
+                dt_created,
+                dt_updated
+                FROM sqlitestudio_temp_table;
+
+                DROP TABLE sqlitestudio_temp_table;
+
+                PRAGMA foreign_keys = 1;
+
+                )"""";
+
+
+                result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
+
+
+        IFKO(result) {
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "cant_upgrade");
+            result.addData("dbVersion", newDbVersion);
+        }
+
+        IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
+
+        IFOK(result) {
+            dbVersion = newDbVersion;
+        }
+
     }
 
     IFKO(result) {

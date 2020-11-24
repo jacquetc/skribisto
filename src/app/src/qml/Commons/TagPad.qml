@@ -20,9 +20,9 @@ TagPadForm {
     property var itemType: SKR.Sheet
     property var tagListModel: undefined
 
-    signal callAddTagRelationship(int projectId, int itemId, string tagName)
+    signal callAddTagRelationship(int projectId, int itemId, string tagName, string colorCode, string textColorCode)
     signal callRemoveTagRelationship(int projectId,int itemId, int tagId)
-    signal callAddTag(int projectId, string tagName)
+    signal callAddTag(int projectId, string tagName, string colorCode, string textColorCode)
     signal callRemoveTag(int projectId,int tagId)
     signal tagTapped(int projectId,int tagId)
     signal tagDoubleTapped(int projectId,int tagId)
@@ -96,7 +96,7 @@ TagPadForm {
 
     Connections{
         target: root
-        function onCallAddTagRelationship(projectId, itemId, tagName){
+        function onCallAddTagRelationship(projectId, itemId, tagName, colorCode, textColorCode){
 
             var result;
             // verify if name doesn't already exist :
@@ -106,6 +106,11 @@ TagPadForm {
                 //if not, create tag
                 result = plmData.tagHub().addTag(projectId, tagName)
                 tagId = plmData.tagHub().getLastAddedId()
+            }
+            // set color if different
+            if(colorCode !== plmData.tagHub().getTagColor(projectId, tagId)){
+                plmData.tagHub().setTagColor(projectId, tagId, colorCode)
+                plmData.tagHub().setTagTextColor(projectId, tagId, textColorCode)
             }
 
             // set relationship
@@ -122,8 +127,14 @@ TagPadForm {
 
     Connections{
         target: root
-        function onCallAddTag(projectId, tagName){
-            plmData.tagHub().addTag(projectId, tagName)
+        function onCallAddTag(projectId, tagName, colorCode, textColorCode){
+            var result = plmData.tagHub().addTag(projectId, tagName)
+            var tagId = result.getData("tagId", -2)
+
+            if(tagId !== -2){
+                plmData.tagHub().setTagColor(projectId, tagId, colorCode)
+                plmData.tagHub().setTagTextColor(projectId, tagId, textColorCode)
+            }
         }
     }
 
@@ -152,26 +163,25 @@ TagPadForm {
             property bool isSelected: false
             property bool isFocused: root.focusedIndex === model.index
 
-            //TODO: adapt to tag color
-            //temporary:
-            color: SkrTheme.buttonBackground
+
+            color: model.color
 
 
             focus: true
-//            onActiveFocusChanged: {
-//                if(activeFocus){
-//                    setFocused()
-//                }
-////                else {
-////                    root.focusedIndex = -2
-////                }
-//            }
+            //            onActiveFocusChanged: {
+            //                if(activeFocus){
+            //                    setFocused()
+            //                }
+            ////                else {
+            ////                    root.focusedIndex = -2
+            ////                }
+            //            }
 
             function setFocused(){
                 root.focusedIndex = model.index
             }
 
-             function setSelected(){
+            function setSelected(){
                 if(!multipleSelectionsEnabled && selectionEnabled){
                     root.selectedList = []
                 }
@@ -195,19 +205,19 @@ TagPadForm {
 
             }
 
-             function setDeselected(){
+            function setDeselected(){
 
 
-                 var index = root.selectedList.indexOf(itemBase.tagId)
-                 if(index === -1){
-                     return
-                 }
+                var index = root.selectedList.indexOf(itemBase.tagId)
+                if(index === -1){
+                    return
+                }
 
-                 root.selectedList.splice(index, 1)
-                 root.determineWhichItemIsSelected()
+                root.selectedList.splice(index, 1)
+                root.determineWhichItemIsSelected()
 
 
-             }
+            }
 
 
             function toggleSelected(){
@@ -232,7 +242,7 @@ TagPadForm {
                     }
                 }
 
-               itemBase.isSelected = here
+                itemBase.isSelected = here
             }
 
             TapHandler {
@@ -482,7 +492,7 @@ TagPadForm {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    color: SkrTheme.buttonForeground
+                    color: model.textColor
 
                     SkrRoundButton {
                         id: removeRelationshipButton
@@ -597,201 +607,230 @@ TagPadForm {
         id: titleEditPopup
         x: addTagMenuToolButton.x - 200
         y: addTagMenuToolButton.y + addTagMenuToolButton.height
-        width: 200
+        width: 400
         height: 400
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
         padding: 0
 
-        ColumnLayout {
+        onOpened: {
+            titleTextField.clear()
+            colorChooser.selectRandomColor()
+        }
+
+        RowLayout{
             anchors.fill: parent
-            SkrTextField {
-                id: titleTextField
-                Layout.fillWidth: true
 
-                selectByMouse: true
-
-                placeholderText: qsTr("Tag name")
-
-
-                onVisibleChanged: {
-                    if (visible){
-                        titleTextField.forceActiveFocus()
-                        titleTextField.selectAll()
-                    }
-                }
-
-                onAccepted: {
-                    if(itemId === -2){
-                        callAddTag(projectId, titleTextField.text)
-                    }
-                    else {
-                        callAddTagRelationship(projectId, itemId, titleTextField.text)
-                    }
-                    titleEditPopup.close()
-                }
-
-                onTextChanged: {
-                    searchProxyModel.textFilter = text
-                }
-
-
-                Keys.priority: Keys.BeforeItem
-
-                Keys.onPressed: {
-                    if (event.key === Qt.Key_Down){
-                        if(searchResultList.count > 0){
-                            searchResultList.itemAtIndex(0).forceActiveFocus()
-                        }
-                    }
-
-                }
-
-
-            }
-
-            ScrollView {
-                id: searchListScrollView
-                focusPolicy: Qt.StrongFocus
-                Layout.fillWidth: true
+            ColumnLayout {
                 Layout.fillHeight: true
-                clip: true
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                Layout.preferredWidth: titleEditPopup.width / 2
 
-                ListView {
-                    id: searchResultList
-                    smooth: true
-                    focus: true
-                    boundsBehavior: Flickable.StopAtBounds
+                ColorChooser {
+                    id: colorChooser
 
-                    model: searchProxyModel
-                    interactive: true
-                    spacing: 1
-                    delegate: Component {
-                        id: itemDelegate
-
-                        Item {
-                            id: delegateRoot
-                            height: 30
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
 
 
-                            anchors {
-                                left: Qt.isQtObject(parent) ? parent.left : undefined
-                                right: Qt.isQtObject(parent) ? parent.right : undefined
-                                leftMargin: 5
-                                rightMargin: 5
+                    onColorCodeChanged: titleTextField.forceActiveFocus()
+
+                }
+            }
+            ColumnLayout {
+                Layout.fillHeight: true
+                Layout.preferredWidth: titleEditPopup.width / 2
+
+                SkrTextField {
+                    id: titleTextField
+                    Layout.fillWidth: true
+
+                    selectByMouse: true
+
+                    placeholderText: qsTr("Tag name")
+
+
+                    onVisibleChanged: {
+                        if (visible){
+                            titleTextField.forceActiveFocus()
+                            titleTextField.selectAll()
+                        }
+                    }
+
+                    onAccepted: {
+                        if(itemId === -2){
+                            callAddTag(projectId, titleTextField.text, colorChooser.colorCode, colorChooser.textColorCode)
+                        }
+                        else {
+                            callAddTagRelationship(projectId, itemId, titleTextField.text, colorChooser.colorCode, colorChooser.textColorCode)
+                        }
+                        titleEditPopup.close()
+                    }
+
+                    onTextChanged: {
+                        searchProxyModel.textFilter = text
+                    }
+
+
+                    Keys.priority: Keys.BeforeItem
+
+                    Keys.onPressed: {
+                        if (event.key === Qt.Key_Down){
+                            if(searchResultList.count > 0){
+                                searchResultList.itemAtIndex(0).forceActiveFocus()
                             }
+                        }
 
-                            TapHandler {
-                                id: tapHandler
-                                onSingleTapped: {
-                                    searchResultList.currentIndex = model.index
-                                    delegateRoot.forceActiveFocus()
-                                    eventPoint.accepted = true
+                    }
+
+
+                }
+
+                ScrollView {
+                    id: searchListScrollView
+                    focusPolicy: Qt.StrongFocus
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                    ListView {
+                        id: searchResultList
+                        smooth: true
+                        focus: true
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        model: searchProxyModel
+                        interactive: true
+                        spacing: 1
+                        delegate: Component {
+                            id: itemDelegate
+
+                            Item {
+                                id: delegateRoot
+                                height: 30
+
+
+                                anchors {
+                                    left: Qt.isQtObject(parent) ? parent.left : undefined
+                                    right: Qt.isQtObject(parent) ? parent.right : undefined
+                                    leftMargin: 5
+                                    rightMargin: 5
                                 }
-                                onDoubleTapped: {
 
-                                    if(itemId === -2){
-                                        callAddTag(model.projectId, model.name)
+                                TapHandler {
+                                    id: tapHandler
+                                    onSingleTapped: {
+                                        searchResultList.currentIndex = model.index
+                                        delegateRoot.forceActiveFocus()
+                                        colorChooser.selectColor(model.color)
+
+                                        eventPoint.accepted = true
                                     }
-                                    else {
+                                    onDoubleTapped: {
+
+                                        if(itemId === -2){
+                                            callAddTag(model.projectId, model.name, model.color, model.textColor)
+                                        }
+                                        else {
+                                            //create relationship with tag
+                                            callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
+
+                                        }
+                                        titleEditPopup.close()
+                                        eventPoint.accepted = true
+                                    }
+                                }
+
+                                //                        Shortcut {
+                                //                            sequences: ["Return", "Space"]
+                                //                            onActivated: {
+
+                                //                                //create relationship with tag
+
+                                //                                var tagId = model.paperId
+                                //                                var result = plmData.tagHub().setPaperTagRelationship(model.projectId, paperId, tagId )
+
+                                //                                if (!result.success){
+                                //                                    //TODO: add notification
+                                //                                    return
+                                //                                }
+
+                                //                                titleEditPopup.close()
+
+                                //                            }
+
+                                //                            //enabled: listView.activeFocus
+                                //                        }
+
+                                Keys.onPressed: {
+                                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
+                                        console.log("Return key pressed title")
+
                                         //create relationship with tag
-                                        callAddTagRelationship(model.projectId, itemId, model.name)
+                                        callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
+                                        titleEditPopup.close()
 
+
+                                        event.accepted = true
                                     }
-                                    titleEditPopup.close()
-                                    eventPoint.accepted = true
+
                                 }
-                            }
-
-                            //                        Shortcut {
-                            //                            sequences: ["Return", "Space"]
-                            //                            onActivated: {
-
-                            //                                //create relationship with tag
-
-                            //                                var tagId = model.paperId
-                            //                                var result = plmData.tagHub().setPaperTagRelationship(model.projectId, paperId, tagId )
-
-                            //                                if (!result.success){
-                            //                                    //TODO: add notification
-                            //                                    return
-                            //                                }
-
-                            //                                titleEditPopup.close()
-
-                            //                            }
-
-                            //                            //enabled: listView.activeFocus
-                            //                        }
-
-                            Keys.onPressed: {
-                                if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
-                                    console.log("Return key pressed title")
-
-                                    //create relationship with tag
-                                    callAddTagRelationship(model.projectId, itemId, model.name)
-                                    titleEditPopup.close()
-
-
-                                    event.accepted = true
-                                }
-
-                            }
-                            SkrLabel {
-                                text: model.name
-                                anchors.fill: parent
-                                horizontalAlignment: Qt.AlignLeft
-                                verticalAlignment: Qt.AlignVCenter
-                            }
-                        }
-                    }
-
-                    highlight:  Component {
-                        id: highlight
-                        Rectangle {
-
-                            radius: 5
-                            border.color:  "lightsteelblue"
-                            border.width: 2
-                            visible: searchResultList.activeFocus
-                            Behavior on y {
-                                SpringAnimation {
-                                    spring: 3
-                                    damping: 0.2
+                                SkrLabel {
+                                    text: model.name
+                                    anchors.fill: parent
+                                    horizontalAlignment: Qt.AlignLeft
+                                    verticalAlignment: Qt.AlignVCenter
                                 }
                             }
                         }
-                    }
+
+                        highlight:  Component {
+                            id: highlight
+                            Rectangle {
+
+                                radius: 5
+                                border.color:  "lightsteelblue"
+                                border.width: 2
+                                visible: searchResultList.activeFocus
+                                Behavior on y {
+                                    SpringAnimation {
+                                        spring: 3
+                                        damping: 0.2
+                                    }
+                                }
+                            }
+                        }
 
 
-                    section.property: "projectId"
-                    section.criteria: ViewSection.FullString
-                    section.labelPositioning: ViewSection.CurrentLabelAtStart |
-                                              ViewSection.InlineLabels
-                    section.delegate: sectionHeading
+                        section.property: "projectId"
+                        section.criteria: ViewSection.FullString
+                        section.labelPositioning: ViewSection.CurrentLabelAtStart |
+                                                  ViewSection.InlineLabels
+                        section.delegate: sectionHeading
 
-                    // The delegate for each section header
-                    Component {
-                        id: sectionHeading
-                        Rectangle {
-                            width: searchResultList.width
-                            height: childrenRect.height
-                            color: "lightsteelblue"
+                        // The delegate for each section header
+                        Component {
+                            id: sectionHeading
+                            Rectangle {
+                                width: searchResultList.width
+                                height: childrenRect.height
+                                color: "lightsteelblue"
 
-                            required property string section
+                                required property string section
 
-                            SkrLabel {
-                                text: qsTr("Existing tags")
-                                font.bold: true
-                                //font.pixelSize: 20
+                                SkrLabel {
+                                    text: qsTr("Existing tags")
+                                    font.bold: true
+                                    //font.pixelSize: 20
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
     }
 
 

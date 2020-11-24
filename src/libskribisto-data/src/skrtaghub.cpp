@@ -221,6 +221,31 @@ SKRResult SKRTagHub::setTagColor(int projectId, int tagId, const QString& color)
     return result;
 }
 
+// --------------------------------------------------------------------------------
+
+QString SKRTagHub::getTagTextColor(int projectId, int tagId) const
+{
+    return get(projectId, tagId, "t_text_color").toString();
+}
+
+// --------------------------------------------------------------------------------
+
+SKRResult SKRTagHub::setTagTextColor(int projectId, int tagId, const QString& color)
+{
+    SKRResult result = set(projectId, tagId, "t_text_color", color);
+
+    IFOK(result) {
+        emit textColorChanged(projectId, tagId, color);
+        emit projectModified(projectId);
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return result;
+}
+
 // ------------------------------------------------------------
 
 SKRResult SKRTagHub::setCreationDate(int projectId, int tagId,

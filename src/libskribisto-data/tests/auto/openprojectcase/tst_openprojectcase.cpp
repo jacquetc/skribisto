@@ -49,7 +49,7 @@ OpenProjectCase::OpenProjectCase()
 
 void OpenProjectCase::initTestCase()
 {
-    m_testProjectPath = "qrc:/testfiles/skribisto_test_project.sqlite";
+    m_testProjectPath = "qrc:/testfiles/skribisto_test_project.skrib";
     m_tempFile1       = new QTemporaryFile();
 
     // needed to have a fileName :

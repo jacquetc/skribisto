@@ -31,42 +31,46 @@ class EXPORT SKRTagHub : public QObject {
 
 public:
 
-
     explicit SKRTagHub(QObject *parent);
 
     Q_INVOKABLE QList<int>getAllTagIds(int projectId) const;
-    Q_INVOKABLE SKRResult  addTag(int            projectId,
+    Q_INVOKABLE SKRResult addTag(int            projectId,
                                  const QString& tagName);
-    Q_INVOKABLE SKRResult  removeTag(int projectId,
+    Q_INVOKABLE SKRResult removeTag(int projectId,
                                     int tagId);
     Q_INVOKABLE int       getTagIdWithName(int            projectId,
                                            const QString& tagName);
     Q_INVOKABLE QString   getTagName(int projectId,
                                      int tagId) const;
-    Q_INVOKABLE SKRResult  setTagName(int            projectId,
+    Q_INVOKABLE SKRResult setTagName(int            projectId,
                                      int            tagId,
                                      const QString& tagName);
     Q_INVOKABLE bool      doesTagNameAlreadyExist(int            projectId,
                                                   const QString& tagName);
     Q_INVOKABLE QString   getTagColor(int projectId,
                                       int tagId) const;
-    Q_INVOKABLE SKRResult  setTagColor(int            projectId,
+    Q_INVOKABLE SKRResult setTagColor(int            projectId,
                                       int            tagId,
                                       const QString& color);
-    Q_INVOKABLE SKRResult  setUpdateDate(int              projectId,
+    Q_INVOKABLE QString   getTagTextColor(int projectId,
+                                          int tagId) const;
+    Q_INVOKABLE SKRResult setTagTextColor(int            projectId,
+                                          int            tagId,
+                                          const QString& color);
+    Q_INVOKABLE SKRResult setUpdateDate(int              projectId,
                                         int              paperId,
                                         const QDateTime& newDate);
     Q_INVOKABLE QDateTime getUpdateDate(int projectId,
                                         int tagId) const;
 
 
-    Q_INVOKABLE SKRResult  setCreationDate(int              projectId,
+    Q_INVOKABLE SKRResult setCreationDate(int              projectId,
                                           int              paperId,
                                           const QDateTime& newDate);
     Q_INVOKABLE QDateTime getCreationDate(int projectId,
                                           int tagId) const;
 
-    SKRResult              set(int             projectId,
+    SKRResult             set(int             projectId,
                               int             tagId,
                               const QString & fieldName,
                               const QVariant& value,
@@ -78,23 +82,23 @@ public:
     Q_INVOKABLE int       getTopPaperId(int projectId) const;
 
     // relationship :
-    Q_INVOKABLE QList<int>getItemIdsFromTag(int  projectId,
+    Q_INVOKABLE QList<int>getItemIdsFromTag(int           projectId,
                                             SKR::ItemType itemType,
-                                            int  tagId) const;
+                                            int           tagId) const;
     Q_INVOKABLE QList<int>getItemIdsFromTag(int  projectId,
                                             int  tagId,
                                             bool haveSeparator = false) const;
-    Q_INVOKABLE QList<int>getTagsFromItemId(int                 projectId,
+    Q_INVOKABLE QList<int>getTagsFromItemId(int           projectId,
                                             SKR::ItemType itemType,
-                                            int                 itemId) const;
-    Q_INVOKABLE SKRResult  setTagRelationship(int                 projectId,
+                                            int           itemId) const;
+    Q_INVOKABLE SKRResult setTagRelationship(int           projectId,
                                              SKR::ItemType itemType,
-                                             int                 itemId,
-                                             int                 tagId);
-    Q_INVOKABLE SKRResult removeTagRelationship(int                 projectId,
-                                               SKR::ItemType itemType,
-                                               int                 itemId,
-                                               int                 tagId);
+                                             int           itemId,
+                                             int           tagId);
+    Q_INVOKABLE SKRResult removeTagRelationship(int           projectId,
+                                                SKR::ItemType itemType,
+                                                int           itemId,
+                                                int           tagId);
 
 signals:
 
@@ -108,32 +112,35 @@ signals:
                     int tagId);
 
 
-    Q_INVOKABLE void nameChanged(int            projectId,
-                                 int            tagId,
-                                 const QString& newName);
-    void             colorChanged(int            projectId,
-                                  int            tagId,
-                                  const QString& newColor);
-    void             creationDateChanged(int              projectId,
-                                         int              paperId,
-                                         const QDateTime& newDate);
-    void             updateDateChanged(int              projectId,
-                                       int              tagId,
-                                       const QDateTime& newDate);
+    void nameChanged(int            projectId,
+                     int            tagId,
+                     const QString& newName);
+    void colorChanged(int            projectId,
+                      int            tagId,
+                      const QString& newColor);
+    void textColorChanged(int            projectId,
+                          int            tagId,
+                          const QString& newColor);
+    void creationDateChanged(int              projectId,
+                             int              paperId,
+                             const QDateTime& newDate);
+    void updateDateChanged(int              projectId,
+                           int              tagId,
+                           const QDateTime& newDate);
 
 
-    void tagRelationshipChanged(int                 projectId,
+    void tagRelationshipChanged(int           projectId,
                                 SKR::ItemType itemType,
-                                int                 itemId,
-                                int                 tagId);
-    void tagRelationshipRemoved(int                 projectId,
+                                int           itemId,
+                                int           tagId);
+    void tagRelationshipRemoved(int           projectId,
                                 SKR::ItemType itemType,
-                                int                 itemId,
-                                int                 tagId);
-    void tagRelationshipAdded(int                 projectId,
+                                int           itemId,
+                                int           tagId);
+    void tagRelationshipAdded(int           projectId,
                               SKR::ItemType itemType,
-                              int                 itemId,
-                              int                 tagId);
+                              int           itemId,
+                              int           tagId);
 
 private:
 

@@ -79,7 +79,7 @@ WriteCase::~WriteCase()
 void WriteCase::initTestCase()
 {
     m_data            = new PLMData(this);
-    m_testProjectPath = "qrc:/testfiles/skribisto_test_project.sqlite";
+    m_testProjectPath = "qrc:/testfiles/skribisto_test_project.skrib";
 }
 
 void WriteCase::cleanupTestCase()
@@ -202,7 +202,7 @@ void WriteCase::getTitle()
 {
     QString title = plmdata->sheetHub()->getTitle(m_currentProjectId, 1);
 
-    QCOMPARE(title, QString("first_title"));
+    QCOMPARE(title, QString("First title"));
 }
 
 void WriteCase::setIndent()

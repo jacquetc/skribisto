@@ -97,10 +97,8 @@ Item {
                         id: columnLayout5
                         anchors.fill: parent
 
-                        RowLayout {
+                        ColumnLayout {
                             id: rowLayout4
-                            width: 100
-                            height: 100
 
                             SkrLabel {
                                 id: langLabel
@@ -110,6 +108,7 @@ Item {
                             SkrComboBox {
                                 id: langComboBox
                                 wheelEnabled: true
+                                Layout.minimumWidth: 200
                             }
                         }
                         SkrSwitch {
@@ -202,6 +201,7 @@ Item {
                             id: groupBox1
                             title: qsTr("Backup paths :")
                             focusPolicy: Qt.TabFocus
+                            bigTitleEnabled: false
 
                             ColumnLayout {
                                 id: columnLayout1

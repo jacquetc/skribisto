@@ -978,6 +978,9 @@ NotePadForm {
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
         padding: 0
 
+        onOpened: {
+            titleTextField.clear()
+        }
 
         ColumnLayout {
             anchors.fill: parent

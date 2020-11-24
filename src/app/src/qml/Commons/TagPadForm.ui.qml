@@ -17,6 +17,7 @@ Item {
         id: pane
         clip: true
         anchors.fill: parent
+        padding: minimalMode ? 0 : undefined
 
         ColumnLayout {
             id: columnLayout
@@ -24,6 +25,7 @@ Item {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
+            anchors.bottom:  minimalMode ? parent.bottom : undefined
 
             SkrToolBar {
                 id: toolBar
@@ -66,8 +68,8 @@ Item {
             FocusScope {
                 id: tagFlowFocusScope
                 Layout.fillHeight: true
-                Layout.minimumHeight: tagFlow.height +10 < 200 ? tagFlow.height +10 : 200
                 Layout.fillWidth: true
+                Layout.preferredHeight: minimalMode ? -1 : tagFlow.height + flickable.topMargin + flickable.bottomMargin
 
                 ScrollView {
                     id: scrollView
@@ -78,13 +80,14 @@ Item {
                     ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
                     Flickable {
+                        id: flickable
                         boundsBehavior: Flickable.StopAtBounds
                         contentWidth: scrollView.width
                         contentHeight: tagFlow.height
                         Flow {
                             id: tagFlow
                             width: scrollView.width
-                            spacing: 10
+                            spacing: 5
                             padding: 2
                             antialiasing: true
                             clip: true

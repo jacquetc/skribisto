@@ -130,6 +130,10 @@ QVariant SKRTagListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
+    if (role == SKRTagItem::Roles::TextColorRole) {
+        return item->data(role);
+    }
+
     if (role == SKRTagItem::Roles::CreationDateRole) {
         return item->data(role);
     }
@@ -176,6 +180,11 @@ bool SKRTagListModel::setData(const QModelIndex& index, const QVariant& value, i
         case SKRTagItem::Roles::ColorRole:
 
             result = plmdata->tagHub()->setTagColor(projectId, tagId, value.toString());
+            break;
+
+        case SKRTagItem::Roles::TextColorRole:
+
+            result = plmdata->tagHub()->setTagTextColor(projectId, tagId, value.toString());
             break;
 
         case SKRTagItem::Roles::CreationDateRole:
@@ -239,6 +248,7 @@ QHash<int, QByteArray>SKRTagListModel::roleNames() const
     roles[SKRTagItem::Roles::ProjectIdRole]    = "projectId";
     roles[SKRTagItem::Roles::NameRole]         = "name";
     roles[SKRTagItem::Roles::ColorRole]        = "color";
+    roles[SKRTagItem::Roles::TextColorRole]    = "textColor";
     roles[SKRTagItem::Roles::CreationDateRole] = "creationDate";
     roles[SKRTagItem::Roles::UpdateDateRole]   = "updateDate";
     return roles;
@@ -370,6 +380,14 @@ void SKRTagListModel::connectToPLMDataSignals()
                                                   const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, tagId, SKRTagItem::Roles::ColorRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(plmdata->tagHub(),
+                                           &SKRTagHub::textColorChanged, this,
+                                           [this](int projectId, int tagId,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        this->exploitSignalFromPLMData(projectId, tagId, SKRTagItem::Roles::TextColorRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(plmdata->tagHub(),

@@ -31,6 +31,7 @@ Item {
                 padding: 5
                 Layout.fillWidth: true
                 title: qsTr("Properties")
+                bigTitleEnabled: false
 
                 GridLayout {
                     id: gridLayout

@@ -35,6 +35,7 @@ Item {
                 focusPolicy: Qt.TabFocus
                 Layout.fillWidth: true
                 title: qsTr("Project")
+                bigTitleEnabled: false
 
                 ColumnLayout {
                     id: columnLayout2
@@ -54,6 +55,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignTop
                 title: qsTr("Display")
+                bigTitleEnabled: false
 
                 ColumnLayout {
                     anchors.fill: parent

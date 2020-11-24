@@ -123,5 +123,6 @@
         <file>qml/Welcome/AboutForm.ui.qml</file>
         <file>qml/Commons/PropertyPad.qml</file>
         <file>qml/Commons/PropertyPadForm.ui.qml</file>
+        <file>qml/Commons/ColorChooser.qml</file>
     </qresource>
 </RCC>

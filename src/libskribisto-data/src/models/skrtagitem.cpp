@@ -73,6 +73,11 @@ QString SKRTagItem::color()
     return data(Roles::ColorRole).toString();
 }
 
+QString SKRTagItem::textColor()
+{
+    return data(Roles::TextColorRole).toString();
+}
+
 QVariant SKRTagItem::data(int role)
 {
     QMetaEnum metaEnum = QMetaEnum::fromType<SKRTagItem::Roles>();
@@ -100,6 +105,10 @@ QVariant SKRTagItem::data(int role)
 
         case Roles::ColorRole:
             m_data.insert(role, plmdata->tagHub()->getTagColor(projectId, tagId));
+            break;
+
+        case Roles::TextColorRole:
+            m_data.insert(role, plmdata->tagHub()->getTagTextColor(projectId, tagId));
             break;
 
         case Roles::CreationDateRole:

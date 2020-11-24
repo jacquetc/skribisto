@@ -1035,6 +1035,11 @@ SheetOverviewTreeForm {
 
                         }
 
+                        //-----------------------------------------------------------
+                        //-------------- Notes :---------------------------------------------
+                        //-----------------------------------------------------------
+
+
                         RowLayout{
                             id: noteBox
                             Layout.minimumWidth: 50
@@ -1078,9 +1083,9 @@ SheetOverviewTreeForm {
 
                             NotePad {
                                 id: notePad
-                                Layout.fillHeight: true
                                 Layout.fillWidth: true
 
+                                Layout.alignment: Qt.AlignVCenter
 
                                 minimalMode: true
                                 projectId: model.projectId
@@ -1142,8 +1147,8 @@ SheetOverviewTreeForm {
                             TagPad{
                                 id: tagPad
 
-                                Layout.fillHeight: true
                                 Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignVCenter
 
 
                                 minimalMode: true

@@ -42,7 +42,7 @@ SettingsCase::SettingsCase()
 void SettingsCase::initTestCase()
 {
     m_data            = new PLMData(this);
-    m_testProjectPath = "qrc:/testfiles/skribisto_test_project.sqlite";
+    m_testProjectPath = "qrc:/testfiles/skribisto_test_project.skrib";
 }
 
 void SettingsCase::cleanupTestCase()
