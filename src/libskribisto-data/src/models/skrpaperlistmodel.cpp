@@ -21,7 +21,7 @@
 ***************************************************************************/
 #include "skrpaperlistmodel.h"
 
-SKRPaperListModel::SKRPaperListModel(QObject *parent, SKR::PaperType paperType)
+SKRPaperListModel::SKRPaperListModel(QObject *parent, SKR::ItemType paperType)
     : QAbstractListModel(parent), m_paperType(paperType), m_headerData(QVariant())
 {
     if (paperType == SKR::Sheet) {
@@ -33,7 +33,7 @@ SKRPaperListModel::SKRPaperListModel(QObject *parent, SKR::PaperType paperType)
         m_propertyHub = plmdata->notePropertyHub();
     }
     else {
-        qFatal(this->metaObject()->className(), "Invalid PaperType");
+        qFatal(this->metaObject()->className(), "Invalid ItemType");
     }
 
 

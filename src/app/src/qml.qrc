@@ -56,9 +56,6 @@
         <file>qml/Commons/SKRTextArea.qml</file>
         <file>qml/Commons/TagPad.qml</file>
         <file>qml/Commons/TagPadForm.ui.qml</file>
-        <file>qml/Commons/ToolFrame.qml</file>
-        <file>qml/Commons/ToolHeader.qml</file>
-        <file>qml/Commons/ToolHeaderForm.ui.qml</file>
         <file>qml/Commons/SKRDrawer.qml</file>
         <file>qml/Commons/RestoreListView.qml</file>
         <file>qml/Commons/RestoreListViewForm.ui.qml</file>
@@ -124,5 +121,7 @@
         <file>qml/Welcome/FAQForm.ui.qml</file>
         <file>qml/Welcome/About.qml</file>
         <file>qml/Welcome/AboutForm.ui.qml</file>
+        <file>qml/Commons/PropertyPad.qml</file>
+        <file>qml/Commons/PropertyPadForm.ui.qml</file>
     </qresource>
 </RCC>

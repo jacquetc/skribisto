@@ -7,6 +7,7 @@ import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
+import eu.skribisto.skr 1.0
 import ".."
 import "../Items"
 
@@ -174,6 +175,7 @@ RightDockForm {
     //---------------Edit---------------------------------------------
     //-----------------------------------------------------------
 
+    editView.paperType: SKR.Sheet
 
     Action{
         id: editViewAction
@@ -243,7 +245,7 @@ RightDockForm {
     Connections{
         target: tagPadView
         function onCallRemoveTagRelationship(projectId, itemId, tagId){
-            plmData.tagHub().removeTagRelationship(projectId, SKRTagHub.Note , itemId, tagId)
+            plmData.tagHub().removeTagRelationship(projectId, SKR.Note , itemId, tagId)
         }
     }
 
@@ -261,7 +263,7 @@ RightDockForm {
             }
 
             // set relationship
-            result = plmData.tagHub().setTagRelationship(projectId, SKRTagHub.Note, itemId, tagId)
+            result = plmData.tagHub().setTagRelationship(projectId, SKR.Note, itemId, tagId)
             if (!result){
                 console.log("result onCallAddTagRelationship")
                 //TODO: add notification
@@ -271,10 +273,12 @@ RightDockForm {
     }
 
     onProjectIdChanged: {
+        editView.projectId = projectId
         tagPadView.projectId = projectId
         tagPadView.itemId = -2
     }
     onPaperIdChanged: {
+        editView.paperId = paperId
         tagPadView.itemId = paperId
     }
 

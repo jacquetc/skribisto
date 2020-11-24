@@ -35,7 +35,7 @@ class EXPORT SKRPaperListModel : public QAbstractListModel {
 public:
 
     explicit SKRPaperListModel(QObject       *parent,
-                               SKR::PaperType paperType);
+                               SKR::ItemType paperType);
 
     // Header:
     QVariant headerData(int             section,
@@ -106,7 +106,7 @@ private:
 
     PLMPaperHub *m_paperHub;
     PLMPropertyHub *m_propertyHub;
-    SKR::PaperType m_paperType;
+    SKR::ItemType m_paperType;
     SKRPaperItem *m_rootItem;
     QVariant m_headerData;
     QList<SKRPaperItem *>m_allPaperItems;

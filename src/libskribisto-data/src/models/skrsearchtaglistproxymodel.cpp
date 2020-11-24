@@ -341,14 +341,14 @@ void SKRSearchTagListProxyModel::populateRelationshipList()
 
     if (m_sheetIdFilter != -2) {
         m_relationshipList.append(plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter,
-                                                                       SKRTagHub::ItemType
+                                                                       SKR::ItemType
                                                                        ::Sheet,
                                                                        m_sheetIdFilter));
     }
 
     if (m_noteIdFilter != -2) {
         m_relationshipList.append(plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter,
-                                                                       SKRTagHub::ItemType
+                                                                       SKR::ItemType
                                                                        ::Note,
                                                                        m_noteIdFilter));
     }

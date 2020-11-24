@@ -1,13 +1,16 @@
 import QtQuick 2.15
 import QtQml 2.15
 import QtQuick.Controls 2.15
+import eu.skribisto.skr 1.0
+import eu.skribisto.exporter 1.0
 import '..'
 
 EditViewForm {
     id: root
-    property int minimumHeight: 500
 
-
+    property int projectId: -2
+    property int paperId: -2
+    property int paperType: SKR.Sheet
 
     // must be set :
     property var skrSettingsGroup
@@ -137,7 +140,10 @@ EditViewForm {
         var index = fontFamilyComboBox.find(fontFamily, Qt.MatchFixedString)
         //console.log("index", index)
         if(index === -1){
-            index = fontFamilyComboBox.find(Qt.application.font.family, Qt.MatchFixedString)
+            index = fontFamilyComboBox.find("Liberation Serif", Qt.MatchFixedString)
+        }
+        if(index === -1){
+            index = fontFamilyComboBox.find(Qt.application.font.family, Qt.MatchContains)
         }
         //console.log("index", index)
 
@@ -146,7 +152,7 @@ EditViewForm {
     }
 
     // Indent :
-     textIndentSlider.value: skrSettingsGroup.textIndent
+    textIndentSlider.value: skrSettingsGroup.textIndent
 
     Binding {
         target: skrSettingsGroup
@@ -157,7 +163,7 @@ EditViewForm {
     }
 
     // Margins :
-     textTopMarginSlider.value: skrSettingsGroup.textTopMargin
+    textTopMarginSlider.value: skrSettingsGroup.textTopMargin
 
     Binding {
         target: skrSettingsGroup
@@ -172,6 +178,65 @@ EditViewForm {
         loadFontFamily()
     }
 
+
+    //--------------------------------------------------------------
+    //----Print-----------------------------------------------------
+    //--------------------------------------------------------------
+
+    quickPrintToolButton.visible: skrRootItem.hasPrintSupport()
+
+    Action{
+        id: quickPrintAction
+        text: qsTr("Quick print")
+        icon {
+            source: "qrc:///icons/backup/document-print-direct.svg"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.
+        onTriggered: {
+            if(root.paperType === SKR.Sheet){
+                exporter.sheetIdList = [root.paperId]
+            }
+            else if(root.paperType === SKR.Note){
+                exporter.noteIdList = [root.paperId]
+            }
+            else{
+                return
+            }
+
+
+            exporter.run()
+
+        }
+
+    }
+    quickPrintToolButton.action: quickPrintAction
+
+
+
+    SKRExporter{
+        id: exporter
+        projectId: root.projectId
+        quick: true
+        outputType: SKRExporter.Printer
+        includeSynopsis: SkrSettings.quickPrintSettings.includeSynopsis
+        numbered: false
+        tagsEnabled: SkrSettings.quickPrintSettings.tagsEnabled
+        indentWithTitle: 5
+        fontFamily: SkrSettings.quickPrintSettings.textFontFamily
+        fontPointSize: SkrSettings.quickPrintSettings.textPointSize
+        textIndent: SkrSettings.quickPrintSettings.textIndent
+        textTopMargin: SkrSettings.quickPrintSettings.textTopMargin
+    }
+
+
+
+
+    //--------------------------------------------------------------
+    //---------------------------------------------------------
+    //--------------------------------------------------------------
 
 
     // go back when losing focus

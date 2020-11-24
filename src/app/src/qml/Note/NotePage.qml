@@ -10,6 +10,7 @@ import ".."
 NotePageForm {
 
     id: root
+    clip: true
 
 
     property string title: {return getTitle()}
@@ -69,6 +70,8 @@ NotePageForm {
 
         //title = getTitle()
         plmData.noteHub().titleChanged.connect(changeTitle)
+
+        determineModifiable()
     }
 
     //---------------------------------------------------------
@@ -107,6 +110,34 @@ NotePageForm {
     Component.onDestruction: {
         runActionsBeforeDestruction()
     }
+
+
+    //---------------------------------------------------------
+    // modifiable :
+
+    property bool isModifiable: true
+
+    Connections{
+        target: plmData.notePropertyHub()
+        function onPropertyChanged(projectId, propertyId, paperId, name, value){
+            if(projectId === root.projectId && paperId === root.paperId){
+
+                if(name === "modifiable"){
+                    determineModifiable()
+                }
+            }
+        }
+    }
+    function determineModifiable(){
+
+        root.isModifiable = plmData.notePropertyHub().getProperty(projectId, paperId, "modifiable", "true") === "true"
+
+        saveCurrentPaperCursorPositionAndY()
+         writingZone.textArea.readOnly = !root.isModifiable
+        restoreCurrentPaperCursorPositionAndY()
+    }
+
+
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------

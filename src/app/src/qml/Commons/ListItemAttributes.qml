@@ -89,6 +89,7 @@ Item {
                 leftInset: 0
                 rightInset: 0
                 display: AbstractButton.IconOnly
+                focusPolicy: Qt.NoFocus
 
                 Item{
                     id: overlay

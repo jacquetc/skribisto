@@ -8,10 +8,12 @@ import "../Items"
 Item {
     id: base
     property alias editViewToolButton: editViewToolButton
+    property alias propertyPadViewToolButton: propertyPadViewToolButton
     property alias tagPadViewToolButton: tagPadViewToolButton
     property alias notePadViewToolButton: notePadViewToolButton
 
     property alias editView: editView
+    property alias propertyPadView: propertyPadView
     property alias notePadView: notePadView
     property alias tagPadView: tagPadView
 
@@ -36,6 +38,10 @@ Item {
 
                 SkrToolButton{
                     id: editViewToolButton
+                    display: AbstractButton.IconOnly
+                }
+                SkrToolButton{
+                    id: propertyPadViewToolButton
                     display: AbstractButton.IconOnly
                 }
                 SkrToolButton{
@@ -76,6 +82,15 @@ Item {
 
                             width: scrollView.width
                             height: editView.implicitHeight
+                        }
+
+                        PropertyPad{
+                            id: propertyPadView
+                            clip: true
+
+                            width: scrollView.width
+                            height: propertyPadView.implicitHeight
+
                         }
 
                         TagPad {

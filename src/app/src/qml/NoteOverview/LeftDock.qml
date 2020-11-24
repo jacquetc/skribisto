@@ -152,9 +152,9 @@ LeftDockForm {
 
 
     function initNavigationView(){
-        navigation.openDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
-        navigation.openDocumentInNewWindow.connect(Globals.openNoteInNewWindowCalled)
-        navigation.restoreDocumentList.connect(root.restoreNoteList)
+        navigationView.openDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+        navigationView.openDocumentInNewWindow.connect(Globals.openNoteInNewWindowCalled)
+        navigationView.restoreDocumentList.connect(root.restoreNoteList)
     }
 
     SKRSearchNoteListProxyModel {

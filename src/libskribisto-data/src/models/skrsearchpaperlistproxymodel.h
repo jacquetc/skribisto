@@ -33,7 +33,7 @@ class SKRSearchPaperListProxyModel : public QSortFilterProxyModel {
 
 public:
 
-    explicit SKRSearchPaperListProxyModel(SKR::PaperType paperType);
+    explicit SKRSearchPaperListProxyModel(SKR::ItemType paperType);
 
 
     Qt::ItemFlags flags(const QModelIndex& index) const;
@@ -123,6 +123,7 @@ public:
 
     Q_INVOKABLE void      clearCheckedList();
     Q_INVOKABLE void      checkAll();
+    Q_INVOKABLE void      checkAllButNonPrintable();
     Q_INVOKABLE void      checkNone();
     Q_INVOKABLE QList<int>getCheckedIdsList();
     Q_INVOKABLE void      setCheckedIdsList(const QList<int>checkedIdsList);
@@ -174,7 +175,8 @@ private slots:
 private:
 
     PLMPaperHub *m_paperHub;
-    SKR::PaperType m_paperType;
+    PLMPropertyHub *m_propertyHub;
+    SKR::ItemType m_paperType;
     bool m_showTrashedFilter;
     bool m_showNotTrashedFilter;
     bool m_navigateByBranchesEnabled;

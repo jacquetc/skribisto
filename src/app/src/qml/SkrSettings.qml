@@ -58,7 +58,7 @@ QtObject {
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
-        property string textFontFamily: Qt.application.font.family
+        property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
     property Settings noteSettings: Settings{
@@ -67,7 +67,7 @@ QtObject {
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
-        property string textFontFamily: Qt.application.font.family
+        property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
     property Settings notePadSettings: Settings{
@@ -76,7 +76,7 @@ QtObject {
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
-        property string textFontFamily: Qt.application.font.family
+        property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
     property Settings overviewTreeNoteSettings: Settings{
@@ -85,7 +85,7 @@ QtObject {
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
-        property string textFontFamily: Qt.application.font.family
+        property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
     property Settings overviewTreeSettings: Settings{
@@ -97,6 +97,16 @@ QtObject {
         property bool tagBoxVisible: true
         property bool characterCountBoxVisible: true
         property bool wordCountBoxVisible: true
+    }
+
+    property Settings quickPrintSettings: Settings{
+        category: "quickPrint"
+        property string textFontFamily: skrRootItem.defaultFontFamily()
+        property int textPointSize: Qt.application.font.pointSize
+        property real textIndent: 2
+        property real textTopMargin: 2
+        property bool includeSynopsis: false
+        property bool tagsEnabled: false
     }
 
 

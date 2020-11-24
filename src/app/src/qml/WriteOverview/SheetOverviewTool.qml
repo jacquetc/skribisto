@@ -116,6 +116,7 @@ SheetOverviewToolForm {
 
     // textWidthSlider :
 
+
     treeIndentationSlider.value: SkrSettings.overviewTreeSettings.treeIndentation
 
     Binding {

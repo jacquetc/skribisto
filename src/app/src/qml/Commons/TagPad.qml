@@ -5,18 +5,19 @@ import QtQuick.Layouts 1.15
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
+import eu.skribisto.skr 1.0
 import "../Items"
 import ".."
 
 
 TagPadForm {
     id: root
-    property int minimumHeight: 200 //mandatory for ToolFrame
+
 
     property int projectId: -2
     // we use the term itemId instead of paperId to not be constrained if we want to tag more than papers in the future
     property int itemId: -2
-    property var itemType: SKRTagHub.Sheet
+    property var itemType: SKR.Sheet
     property var tagListModel: undefined
 
     signal callAddTagRelationship(int projectId, int itemId, string tagName)

@@ -9,6 +9,7 @@ import ".."
 
 WritePageForm {
     id: root
+    clip: true
 
     property string title: {return getTitle()}
 
@@ -81,6 +82,7 @@ WritePageForm {
 
         //title = getTitle()
         plmData.sheetHub().titleChanged.connect(changeTitle)
+        determineModifiable()
 
     }
 
@@ -118,6 +120,34 @@ WritePageForm {
     Component.onDestruction: {
         runActionsBeforeDestruction()
     }
+
+    //---------------------------------------------------------
+    // modifiable :
+
+    property bool isModifiable: true
+
+    Connections{
+        target: plmData.sheetPropertyHub()
+        function onPropertyChanged(projectId, propertyId, paperId, name, value){
+            if(projectId === root.projectId && paperId === root.paperId){
+
+                if(name === "modifiable"){
+                    determineModifiable()
+                }
+            }
+        }
+    }
+    function determineModifiable(){
+
+        root.isModifiable = plmData.sheetPropertyHub().getProperty(projectId, paperId, "modifiable", "true") === "true"
+
+        saveCurrentPaperCursorPositionAndY()
+         writingZone.textArea.readOnly = !root.isModifiable
+   restoreCurrentPaperCursorPositionAndY()
+    }
+
+
+
     //--------------------------------------------------------
     //---Left Scroll Area-----------------------------------------
     //--------------------------------------------------------
@@ -640,7 +670,6 @@ WritePageForm {
         edge: Qt.LeftEdge
 
 
-
         WriteLeftDock {
             id: leftDock
             anchors.fill: parent
@@ -662,8 +691,6 @@ WritePageForm {
         dockModeEnabled: !Globals.compactMode
         settingsCategory: "writeRightDrawer"
         edge: Qt.RightEdge
-
-
 
 
         WriteRightDock {
@@ -876,8 +903,8 @@ WritePageForm {
         function onFullScreenCalled(value) {
             if(value){
                 //save previous conf
-                fullscreen_left_drawer_visible = leftDrawer.visible
-                fullscreen_right_drawer_visible = rightDrawer.visible
+                fullscreen_left_drawer_visible = leftDrawer.isVisible
+                fullscreen_right_drawer_visible = rightDrawer.isVisible
                 leftDrawer.isVisible = false
                 rightDrawer.isVisible = false
             }

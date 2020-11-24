@@ -7,6 +7,7 @@ import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
+import eu.skribisto.skr 1.0
 import ".."
 import "../Items"
 
@@ -100,6 +101,7 @@ WriteRightDockForm {
         category: "writeRightDock"
 
         property bool editViewVisible: true
+        property bool propertyPadVisible: true
         property bool tagPadVisible: true
         property bool notePadVisible: true
     }
@@ -107,6 +109,7 @@ WriteRightDockForm {
     function loadConf(){
 
         editViewToolButton.checked = settings.editViewVisible
+        propertyPadViewToolButton.checked = settings.propertyPadVisible
         tagPadViewToolButton.checked = settings.tagPadVisible
         notePadViewToolButton.checked = settings.notePadVisible
 
@@ -114,6 +117,7 @@ WriteRightDockForm {
 
     function resetConf(){
         settings.editViewVisible = true
+        settings.propertyPadVisible = true
         settings.tagPadVisible = true
         settings.notePadVisible = true
     }
@@ -126,6 +130,7 @@ WriteRightDockForm {
 
     Component.onDestruction: {
         settings.editViewVisible = editViewToolButton.checked
+        settings.propertyPadVisible = propertyPadViewToolButton.checked
         settings.tagPadVisible = tagPadViewToolButton.checked
         settings.notePadVisible = notePadViewToolButton.checked
 
@@ -139,6 +144,8 @@ WriteRightDockForm {
     //---------------Edit---------------------------------------------
     //-----------------------------------------------------------
 
+    editView.paperType: SKR.Sheet
+
     Action{
         id: editViewAction
         checkable: true
@@ -149,8 +156,7 @@ WriteRightDockForm {
             width: 50
         }
         onCheckedChanged: {
-            editView.visible = editViewAction.checked
-
+            editView.visible = checked
         }
 
 
@@ -171,6 +177,36 @@ WriteRightDockForm {
 
 
 
+    //-----------------------------------------------------------
+    //---------------properties :--------------------------------
+    //-----------------------------------------------------------
+
+
+
+    Action{
+        id: propertyPadViewAction
+        checkable: true
+        text: qsTr( "Show properties tool box")
+        icon {
+            source: "qrc:///icons/backup/configure.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            propertyPadView.visible = checked
+        }
+
+        Binding on checked{
+            value: propertyPadView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+    }
+    propertyPadViewToolButton.action: propertyPadViewAction
+
+    propertyPadView.propertyHub: plmData.sheetPropertyHub()
+    propertyPadView.paperHub: plmData.sheetHub()
+
 
     //-----------------------------------------------------------
     //---------------Tags :---------------------------------------------
@@ -186,7 +222,7 @@ WriteRightDockForm {
             width: 50
         }
         onCheckedChanged: {
-            tagPadView.visible = tagPadViewAction.checked
+            tagPadView.visible = checked
         }
 
         Binding on checked{
@@ -206,7 +242,7 @@ WriteRightDockForm {
         sheetIdFilter: paperId
     }
     tagPadView.tagListModel: tagProxyModel
-    tagPadView.itemType: SKRTagHub.Sheet
+    tagPadView.itemType: SKR.Sheet
 
 
     //-----------------------------------------------------------
@@ -223,7 +259,7 @@ WriteRightDockForm {
             width: 50
         }
         onCheckedChanged: {
-            notePadView.visible = notePadViewAction.checked
+            notePadView.visible = checked
         }
 
         Binding on checked{
@@ -242,14 +278,18 @@ WriteRightDockForm {
 
 
     onProjectIdChanged: {
+        editView.projectId = projectId
         notePadView.projectId = projectId
         tagPadView.projectId = projectId
         tagPadView.itemId = -2
+        propertyPadView.projectId = projectId
     }
     onPaperIdChanged: {
+        editView.paperId = paperId
         notePadView.sheetId = paperId
         notePadView.openSynopsis()
         tagPadView.itemId = paperId
+        propertyPadView.paperId = paperId
     }
 
 

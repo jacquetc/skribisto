@@ -61,6 +61,7 @@ Item {
                         flat: true
                         text: qsTr("Navigation menu")
                         display: AbstractButton.IconOnly
+                        KeyNavigation.tab: listView
                     }
                 }
             }

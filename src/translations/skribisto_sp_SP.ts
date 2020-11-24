@@ -233,6 +233,18 @@
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>partially checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unchecked</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DockedTextTreeWidget</name>
@@ -289,11 +301,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Themes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Themes</source>
+        <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -364,7 +380,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Center vertically the text cursor </source>
+        <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -388,15 +412,15 @@
     </message>
     <message>
         <source>.html</source>
-        <translation type="obsolete">.html</translation>
+        <translation type="unfinished">.html</translation>
     </message>
     <message>
         <source>.odt</source>
-        <translation type="obsolete">.odt</translation>
+        <translation type="unfinished">.odt</translation>
     </message>
     <message>
         <source>.txt</source>
-        <translation type="obsolete">.txt</translation>
+        <translation type="unfinished">.txt</translation>
     </message>
     <message>
         <source>.csv</source>
@@ -404,7 +428,7 @@
     </message>
     <message>
         <source>.pdf</source>
-        <translation type="obsolete">.pdf</translation>
+        <translation type="unfinished">.pdf</translation>
     </message>
     <message>
         <source>Options :</source>
@@ -562,6 +586,26 @@
         <source>scene break</source>
         <translation type="obsolete">quiebre de escena</translation>
     </message>
+    <message>
+        <source>Select none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>.md</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export &quot;%1&quot; project as ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Levels with titles: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ExporterForm.ui</name>
@@ -591,6 +635,66 @@
     </message>
     <message>
         <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sheets : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenDocument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text</source>
+        <translation type="unfinished">Texto</translation>
+    </message>
+    <message>
+        <source>Markdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include outline in each sheet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Numbered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HTML</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation type="unfinished">Vista preliminar</translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation type="unfinished">Imprimir</translation>
+    </message>
+    <message>
+        <source>Text size :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text indent :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Top margin :</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1206,15 +1310,16 @@ Have you checked the one(s) you want to look through ?</source>
         <source>&amp;Documents</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>LeftDockForm.ui</name>
     <message>
-        <source>Navigation</source>
+        <source>Show navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opened documents</source>
+        <source>Show recent notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show recent sheets</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2506,6 +2611,25 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
 </context>
 <context>
+    <name>PropertyPadForm.ui</name>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Printable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modifiable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Favorite</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message>
         <source>No Title</source>
@@ -2614,19 +2738,16 @@ Have you checked the one(s) you want to look through ?</source>
         <source>&amp;Overview</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>RightDockForm.ui</name>
     <message>
-        <source>Edit</source>
+        <source>Show edit tool box</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tags</source>
+        <source>Show tags tool box</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Overview</source>
+        <source>Show overview tool box</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2713,6 +2834,29 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Show list of tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SKRExporter</name>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished">Notas</translation>
+    </message>
+    <message>
+        <source>Outline:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outlines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tags:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3194,6 +3338,30 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Minimalist menu tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Quick print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text size :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text indent :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Top margin :</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3711,6 +3879,10 @@ Have you checked the one(s) you want to look through ?</source>
     <name>TagPadForm.ui</name>
     <message>
         <source>Tags list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4336,7 +4508,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show recent documents</source>
+        <source>Show recent sheets</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4382,6 +4554,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show notes tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show properties tool box</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

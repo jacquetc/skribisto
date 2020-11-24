@@ -44,8 +44,8 @@ public:
     };
     Q_ENUM(Roles)
 
-    explicit SKRPaperItem(SKR::PaperType paperType);
-    explicit SKRPaperItem(SKR::PaperType paperType,
+    explicit SKRPaperItem(SKR::ItemType paperType);
+    explicit SKRPaperItem(SKR::ItemType paperType,
                           int            projectId,
                           int            paperId,
                           int            indent,
@@ -86,7 +86,7 @@ private:
 
     PLMPaperHub *m_paperHub;
     PLMPropertyHub *m_propertyHub;
-    SKR::PaperType m_paperType;
+    SKR::ItemType m_paperType;
     QHash<int, QVariant>m_data;
     QList<int>m_invalidatedRoles;
     bool m_isProjectItem, m_isRootItem;

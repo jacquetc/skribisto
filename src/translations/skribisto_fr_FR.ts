@@ -67,6 +67,18 @@
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>partially checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unchecked</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DeletedListView</name>
@@ -180,6 +192,10 @@
         <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Quick print</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>EditViewForm.ui</name>
@@ -256,7 +272,54 @@
         <translation>Vérifie l&apos;orthographe</translation>
     </message>
     <message>
-        <source>Center vertically the text cursor </source>
+        <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Quick print</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Exporter</name>
+    <message>
+        <source>Select none</source>
+        <translation type="unfinished">Ne rien sélectionner</translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation type="unfinished">Tout sélectionner</translation>
+    </message>
+    <message>
+        <source>.odt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>.txt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>.md</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>.html</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export &quot;%1&quot; project as ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>.pdf</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Levels with titles: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -289,6 +352,66 @@
     <message>
         <source>Export</source>
         <translation type="unfinished">Exporter</translation>
+    </message>
+    <message>
+        <source>Sheets : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenDocument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text</source>
+        <translation type="unfinished">Texte</translation>
+    </message>
+    <message>
+        <source>Markdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include outline in each sheet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Numbered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HTML</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation type="unfinished">Imprimer</translation>
+    </message>
+    <message>
+        <source>Text size :</source>
+        <translation type="unfinished">Taille du texte :</translation>
+    </message>
+    <message>
+        <source>Text indent :</source>
+        <translation type="unfinished">Indentation du texte :</translation>
+    </message>
+    <message>
+        <source>Top margin :</source>
+        <translation type="unfinished">Marge supérieure du texte :</translation>
     </message>
 </context>
 <context>
@@ -425,16 +548,28 @@
         <source>&amp;Documents</source>
         <translation>&amp;Documents</translation>
     </message>
+    <message>
+        <source>Show navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show recent notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show recent sheets</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>LeftDockForm.ui</name>
     <message>
         <source>Navigation</source>
-        <translation>Navigation</translation>
+        <translation type="vanished">Navigation</translation>
     </message>
     <message>
         <source>Opened documents</source>
-        <translation>Documents ouverts</translation>
+        <translation type="vanished">Documents ouverts</translation>
     </message>
 </context>
 <context>
@@ -836,6 +971,25 @@
     </message>
 </context>
 <context>
+    <name>PropertyPadForm.ui</name>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Printable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modifiable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Favorite</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>RestoreListView</name>
     <message>
         <source>Trash: %1</source>
@@ -945,20 +1099,28 @@
         <source>&amp;Overview</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show edit tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show overview tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RightDockForm.ui</name>
     <message>
         <source>Edit</source>
-        <translation>Editer</translation>
+        <translation type="vanished">Editer</translation>
     </message>
     <message>
         <source>Tags</source>
-        <translation>Etiquettes</translation>
-    </message>
-    <message>
-        <source>Overview</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Etiquettes</translation>
     </message>
 </context>
 <context>
@@ -1052,6 +1214,29 @@
     </message>
     <message>
         <source>Show list of tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SKRExporter</name>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished">Notes</translation>
+    </message>
+    <message>
+        <source>Outline:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outlines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tags:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1183,6 +1368,30 @@
     <message>
         <source>Minimalist menu tabs</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Quick print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text size :</source>
+        <translation type="unfinished">Taille du texte :</translation>
+    </message>
+    <message>
+        <source>Text indent :</source>
+        <translation type="unfinished">Indentation du texte :</translation>
+    </message>
+    <message>
+        <source>Top margin :</source>
+        <translation type="unfinished">Marge supérieure du texte :</translation>
     </message>
 </context>
 <context>
@@ -1474,6 +1683,10 @@
     <message>
         <source>Tags list</source>
         <translation>Liste d&apos;étiquettes</translation>
+    </message>
+    <message>
+        <source>Tags</source>
+        <translation type="unfinished">Etiquettes</translation>
     </message>
 </context>
 <context>
@@ -1802,7 +2015,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show recent documents</source>
+        <source>Show recent sheets</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1875,6 +2088,10 @@
     <message>
         <source>Show notes tool box</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show properties tool box</source>
+        <translation type="unfinished">Montrer la boîte à outils des propriétés</translation>
     </message>
 </context>
 <context>

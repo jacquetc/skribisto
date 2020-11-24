@@ -6,6 +6,7 @@ import ".."
 ProjectsMainPageForm {
     property string pageType: "projects"
 
+    clip: true
 
     tabBar.currentIndex: projectSwipeView.currentIndex
 

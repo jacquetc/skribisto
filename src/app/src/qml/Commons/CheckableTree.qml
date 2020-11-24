@@ -84,8 +84,6 @@ ListView {
         Item {
             id: delegateRoot
 
-
-
             Accessible.name: {
 
                 var levelText
@@ -95,6 +93,12 @@ ListView {
 
                 var titleText = titleLabel.text
 
+                var checkedText
+                if(checkButtonsVisible){
+                    checkedText = model.checkState === Qt.PartiallyChecked ? qsTr("partially checked") :
+                                                                             model.checkState === Qt.Checked ? qsTr("checked") :
+                                                                                                               model.checkState === Qt.Unchecked ? qsTr("unchecked") : ""
+                }
 
                 var labelText = ""
                 if(labelLabel.text.length > 0){
@@ -106,7 +110,7 @@ ListView {
                     hasChildrenText = qsTr("has children")
                 }
 
-                return levelText + " " + titleText + " " + labelText + " " + hasChildrenText
+                return levelText + " " + titleText + " " + checkedText + " " + labelText + " " + hasChildrenText
 
             }
             Accessible.role: Accessible.ListItem
@@ -226,6 +230,16 @@ ListView {
                     openDocumentInNewTabAction.trigger()
                     event.accepted = true
                 }
+
+                // checked :
+                if(checkButtonsVisible){
+                    if (event.key === Qt.Key_Space){
+                        console.log("Space pressed")
+                        selectionCheckBox.toggle()
+                        event.accepted = true
+                    }
+                }
+
 
 
                 // rename
@@ -411,6 +425,7 @@ ListView {
                             //Layout.preferredWidth: 5
                             visible: checkButtonsVisible
                             tristate: true
+                            focusPolicy: Qt.NoFocus
 
                             onPressed: {
                                 root.currentIndex = model.index

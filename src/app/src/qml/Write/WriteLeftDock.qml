@@ -127,7 +127,7 @@ WriteLeftDockForm {
             width: 50
         }
         onCheckedChanged: {
-            navigationView.visible = navigationViewAction.checked
+            navigationView.visible = checked
         }
 
         Binding on checked{
@@ -212,7 +212,7 @@ WriteLeftDockForm {
             width: 50
         }
         onCheckedChanged: {
-            documentView.visible = documentViewAction.checked
+            documentView.visible = checked
         }
 
         Binding on checked{

@@ -23,18 +23,13 @@
 
 #include <QObject>
 #include "skrresult.h"
+#include "skr.h"
 #include "skribisto_data_global.h"
 
 class EXPORT SKRTagHub : public QObject {
     Q_OBJECT
 
 public:
-
-    enum ItemType {
-        Sheet,
-        Note
-    };
-    Q_ENUM(ItemType)
 
 
     explicit SKRTagHub(QObject *parent);
@@ -84,20 +79,20 @@ public:
 
     // relationship :
     Q_INVOKABLE QList<int>getItemIdsFromTag(int  projectId,
-                                            SKRTagHub::ItemType itemType,
+                                            SKR::ItemType itemType,
                                             int  tagId) const;
     Q_INVOKABLE QList<int>getItemIdsFromTag(int  projectId,
                                             int  tagId,
                                             bool haveSeparator = false) const;
     Q_INVOKABLE QList<int>getTagsFromItemId(int                 projectId,
-                                            SKRTagHub::ItemType itemType,
+                                            SKR::ItemType itemType,
                                             int                 itemId) const;
     Q_INVOKABLE SKRResult  setTagRelationship(int                 projectId,
-                                             SKRTagHub::ItemType itemType,
+                                             SKR::ItemType itemType,
                                              int                 itemId,
                                              int                 tagId);
     Q_INVOKABLE SKRResult removeTagRelationship(int                 projectId,
-                                               SKRTagHub::ItemType itemType,
+                                               SKR::ItemType itemType,
                                                int                 itemId,
                                                int                 tagId);
 
@@ -128,15 +123,15 @@ signals:
 
 
     void tagRelationshipChanged(int                 projectId,
-                                SKRTagHub::ItemType itemType,
+                                SKR::ItemType itemType,
                                 int                 itemId,
                                 int                 tagId);
     void tagRelationshipRemoved(int                 projectId,
-                                SKRTagHub::ItemType itemType,
+                                SKR::ItemType itemType,
                                 int                 itemId,
                                 int                 tagId);
     void tagRelationshipAdded(int                 projectId,
-                              SKRTagHub::ItemType itemType,
+                              SKR::ItemType itemType,
                               int                 itemId,
                               int                 tagId);
 

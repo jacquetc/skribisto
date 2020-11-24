@@ -7,6 +7,7 @@ import eu.skribisto.writedocumentlistmodel 1.0
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
+import eu.skribisto.skr 1.0
 import "../Commons"
 import "../Items"
 import ".."
@@ -126,6 +127,8 @@ RightDockForm {
     //-----------------------------------------------------------
     //---------------Edit---------------------------------------------
     //-----------------------------------------------------------
+    editView.paperType: SKR.Note
+
     Action{
         id: editViewAction
         checkable: true
@@ -191,7 +194,7 @@ RightDockForm {
         noteIdFilter: paperId
     }
     tagPadView.tagListModel: tagProxyModel
-    tagPadView.itemType: SKRTagHub.Note
+    tagPadView.itemType: SKR.Note
 
 
     //-----------------------------------------------------------
@@ -199,10 +202,12 @@ RightDockForm {
     //-----------------------------------------------------------
 
     onProjectIdChanged: {
+        editView.projectId = projectId
         tagPadView.projectId = projectId
         tagPadView.itemId = -2
     }
     onPaperIdChanged: {
+        editView.paperId = paperId
         tagPadView.itemId = paperId
     }
 

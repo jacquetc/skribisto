@@ -3,6 +3,7 @@
 #include <QLibraryInfo>
 #include <QApplication>
 #include <QSettings>
+#include <QFont>
 
 SKRRootItem::SKRRootItem(QObject *parent) : QObject(parent)
 {
@@ -111,4 +112,16 @@ QString SKRRootItem::toLocaleIntString(int number) const{
 
 QString SKRRootItem::getQtVersion() const{
     return QString(QT_VERSION_STR);
+}
+
+bool SKRRootItem::hasPrintSupport() const {
+#ifdef SKR_PRINT_SUPPORT
+   return true;
+#else
+    return false;
+#endif // SKR_PRINT_SUPPORT
+}
+QString SKRRootItem::defaultFontFamily() const {
+
+return qGuiApp->font().family().replace(", ","");
 }

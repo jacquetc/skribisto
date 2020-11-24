@@ -238,7 +238,7 @@ Item {
             isVisible = true
         }
 
-        dockBase.visible = position > 0.0
+        dockBase.enabled = position > 0.0
     }
 
 

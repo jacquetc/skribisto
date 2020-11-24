@@ -75,7 +75,7 @@ int SKRStatHub::getNoteTotalCount(SKRStatHub::StatType type, int project)
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::updateWordStats(SKR::PaperType paperType, int projectId, int paperId, int wordCount, bool triggerProjectModifiedSignal)
+void SKRStatHub::updateWordStats(SKR::ItemType paperType, int projectId, int paperId, int wordCount, bool triggerProjectModifiedSignal)
 {
     QHash<int, QHash<QString, int> > projectHash;
     PLMPropertyHub *propertyHub = nullptr;
@@ -98,7 +98,7 @@ void SKRStatHub::updateWordStats(SKR::PaperType paperType, int projectId, int pa
     // ------------- update word_count
 
     if (wordCount != -1) {
-        propertyHub->setProperty(projectId, paperId, "word_count", QString::number(wordCount), triggerProjectModifiedSignal);
+        propertyHub->setProperty(projectId, paperId, "word_count", QString::number(wordCount), true, triggerProjectModifiedSignal);
     }
 
     // ------------- update general stats
@@ -164,13 +164,13 @@ void SKRStatHub::updateWordStats(SKR::PaperType paperType, int projectId, int pa
         // set property
 
         propertyHub->setProperty(projectId, ancestorId, "word_count_with_children",
-                                 QString::number(totalChildrenCount), triggerProjectModifiedSignal);
+                                 QString::number(totalChildrenCount), true, triggerProjectModifiedSignal);
     }
 }
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::updateCharacterStats(SKR::PaperType paperType, int projectId, int paperId, int characterCount, bool triggerProjectModifiedSignal)
+void SKRStatHub::updateCharacterStats(SKR::ItemType paperType, int projectId, int paperId, int characterCount, bool triggerProjectModifiedSignal)
 {
     QHash<int, QHash<QString, int> > projectHash;
     PLMPropertyHub *propertyHub = nullptr;
@@ -193,7 +193,7 @@ void SKRStatHub::updateCharacterStats(SKR::PaperType paperType, int projectId, i
     // ------------- update char_count
 
     if (characterCount != -1) {
-        propertyHub->setProperty(projectId, paperId, "char_count", QString::number(characterCount), triggerProjectModifiedSignal);
+        propertyHub->setProperty(projectId, paperId, "char_count", QString::number(characterCount), true, triggerProjectModifiedSignal);
     }
 
     // ------------- update general stats
@@ -259,7 +259,7 @@ void SKRStatHub::updateCharacterStats(SKR::PaperType paperType, int projectId, i
         // set property
 
         propertyHub->setProperty(projectId, ancestorId, "char_count_with_children",
-                                 QString::number(totalChildrenCount), triggerProjectModifiedSignal);
+                                 QString::number(totalChildrenCount), true, triggerProjectModifiedSignal);
     }
 }
 

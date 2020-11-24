@@ -4,9 +4,25 @@ cmake_minimum_required(VERSION 3.5.0)
 
 project(app LANGUAGES CXX VERSION ${VERSION})
 
+
+if(ANDROID)
+    set(SKR_PRINT_SUPPORT false)
+    add_compile_definitions(SKR_PRINT_SUPPORT=false)
+else()
+    set(SKR_PRINT_SUPPORT true)
+    add_compile_definitions(SKR_PRINT_SUPPORT=true)
+endif()
+
+
+if(${SKR_PRINT_SUPPORT})
+    set(PRINTPACKAGE PrintSupport)
+else()
+    set(PRINTPACKAGE "")
+endif()
+
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 ${PRINTPACKAGE} REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 ${PRINTPACKAGE} REQUIRED)
 find_package(hunspell REQUIRED)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -68,6 +84,8 @@ set(app_SRCS
     skrtextbridge.h
     skrthemes.cpp
     skrthemes.h
+    skrexporter.cpp
+    skrexporter.h
 )
 
 set(QML qml.qrc
@@ -122,8 +140,14 @@ endif()
 target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
+if(${SKR_PRINT_SUPPORT})
+    set(PRINT Qt${QT_VERSION_MAJOR}::PrintSupport)
+else()
+    set(PRINT "")
+endif()
+
 target_link_libraries(skribisto PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2
-    ${HUNSPELL_LIBRARIES})
+    ${PRINT} ${HUNSPELL_LIBRARIES})
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 target_include_directories(skribisto SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
 
