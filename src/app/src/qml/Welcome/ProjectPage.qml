@@ -19,6 +19,7 @@ ProjectPageForm {
         function onShowNewProjectWizardCalled() {
             stackView.pop()
             var item = stackView.push(Qt.createComponent("NewProject.qml"))
+            item.forceActiveFocus()
             item.goBackButtonClicked.connect(function () {stackView.pop()})
         }
     }
@@ -28,7 +29,8 @@ ProjectPageForm {
         target: Globals
         function onShowPrintWizardCalled() {
             stackView.pop()
-            var item = stackView.push(Qt.createComponent("Print.qml"))
+            var item = stackView.push(Qt.createComponent("Exporter.qml"), {"printEnabled": true})
+            item.forceActiveFocus()
             item.goBackButtonClicked.connect(function () {stackView.pop()})
         }
     }
@@ -39,6 +41,7 @@ ProjectPageForm {
         function onShowImportWizardCalled() {
             stackView.pop()
             var item = stackView.push(Qt.createComponent("Importer.qml"))
+            item.forceActiveFocus()
             item.goBackButtonClicked.connect(function () {stackView.pop()})
         }
     }
@@ -47,6 +50,7 @@ ProjectPageForm {
         function onShowExportWizardCalled() {
             stackView.pop()
             var item = stackView.push(Qt.createComponent("Exporter.qml"))
+            item.forceActiveFocus()
             item.goBackButtonClicked.connect(function () {stackView.pop()})
         }
     }

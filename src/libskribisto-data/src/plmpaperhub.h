@@ -41,7 +41,7 @@ public:
 
     explicit PLMPaperHub(QObject              *parent,
                          const QString       & tableName,
-                         const SKR::PaperType& paperType);
+                         const SKR::ItemType& paperType);
 
     QList<QHash<QString, QVariant> >getAll(int projectId) const;
     QHash<int, QString>             getAllTitles(int projectId) const;
@@ -247,12 +247,12 @@ signals:
                                 int sourcePaperId,
                                 int targetProjectId,
                                 int targetPaperId);
-    void wordCountChanged(SKR::PaperType paperType,
+    void wordCountChanged(SKR::ItemType paperType,
                           int            projectId,
                           int            paperId,
                           int            wordCount,
                           bool triggerProjectModifiedSignal);
-    void characterCountChanged(SKR::PaperType paperType,
+    void characterCountChanged(SKR::ItemType paperType,
                                int            projectId,
                                int            paperId,
                                int            charCount,
@@ -275,7 +275,7 @@ public slots:
 protected:
 
     QString m_tableName;
-    SKR::PaperType m_paperType;
+    SKR::ItemType m_paperType;
     PLMPropertyHub *m_propertyHub;
     SKRResult m_error;
     int m_last_added_id;

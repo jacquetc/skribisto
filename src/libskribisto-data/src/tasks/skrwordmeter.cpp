@@ -3,7 +3,7 @@
 #include <QTextDocument>
 
 SKRWordMeterWorker::SKRWordMeterWorker(QObject              *parent,
-                                       const SKR::PaperType& paperType,
+                                       const SKR::ItemType& paperType,
                                        int                   projectId,
                                        int                   paperId,
                                        const QString       & text,
@@ -59,7 +59,7 @@ void SKRWordMeterWorker::run()
 SKRWordMeter::SKRWordMeter(QObject *parent) : QObject(parent)
 {}
 
-void SKRWordMeter::countText(const SKR::PaperType& paperType,
+void SKRWordMeter::countText(const SKR::ItemType& paperType,
                              int                   projectId,
                              int                   paperId,
                              const QString       & text,

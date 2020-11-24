@@ -11,6 +11,7 @@ import "../Items"
 ThemePageForm {
     property string pageType: "theme"
     property string title: "Themes"
+    clip: true
 
     Component.onCompleted: {
         populateThemeListModel()

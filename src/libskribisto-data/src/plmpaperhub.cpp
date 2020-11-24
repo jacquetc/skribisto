@@ -11,10 +11,10 @@
 /// \brief PLMPaperHub::PLMPaperHub
 /// \param parent
 //
-PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName, const SKR::PaperType &paperType)
+PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName, const SKR::ItemType &paperType)
     : QObject(parent), m_tableName(tableName), m_paperType(paperType), m_last_added_id(-1), m_wordMeter(new SKRWordMeter(this))
 {
-    qRegisterMetaType<SKR::PaperType>("SKR::PaperType");
+    qRegisterMetaType<SKR::ItemType>("SKR::ItemType");
     //    qRegisterMetaType<Setting>(         "Setting");
     //    qRegisterMetaType<Stack>(           "Stack");
     //    qRegisterMetaType<OpenedDocSetting>("OpenedDocSetting");

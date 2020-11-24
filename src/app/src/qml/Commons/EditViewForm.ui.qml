@@ -23,8 +23,9 @@ Item {
     property alias fullScreenToolButton: fullScreenToolButton
     property alias themesToolButton: themesToolButton
     property alias centerTextCursorToolButton: centerTextCursorToolButton
+    property alias quickPrintToolButton: quickPrintToolButton
 
-    implicitHeight: sizePageLayout.childrenRect.height
+    implicitHeight:  sizePageLayout.childrenRect.height > mainPageLayout.childrenRect.height ? sizePageLayout.childrenRect.height : mainPageLayout.childrenRect.height
 
 
         SwipeView {
@@ -38,7 +39,9 @@ Item {
 
                 ColumnLayout {
                     id: mainPageLayout
-                    anchors.fill: parent
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
 
                     SkrGroupBox {
                         id: groupBox
@@ -51,8 +54,8 @@ Item {
                             columns: gridLayout.width / italicToolButton.width - 1
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            columnSpacing: 5
-                            rowSpacing: 5
+                            columnSpacing: 3
+                            rowSpacing: 3
 
                             SkrToolButton {
                                 id: italicToolButton
@@ -93,9 +96,9 @@ Item {
 
                         GridLayout {
                             id: gridLayout2
-                            columnSpacing: 5
-                            rowSpacing: 5
-                            columns: gridLayout.width / fullScreenToolButton.width - 1
+                            columnSpacing: 3
+                            rowSpacing: 3
+                            columns: gridLayout2.width / fullScreenToolButton.width - 1
                             anchors.left: parent.left
                             anchors.right: parent.right
 
@@ -121,21 +124,47 @@ Item {
                             SkrToolButton {
                                 id: checkSpellingToolButton
                                 text: qsTr("Check spelling")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
                             }
                             SkrToolButton {
                                 id: centerTextCursorToolButton
-                                text: qsTr("Center vertically the text cursor ")
+                                text: qsTr("Center vertically the text cursor")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
                             }
                         }
                     }
 
-                    Item {
-                        id: stretcher
-                        Layout.fillHeight: true
+                    SkrGroupBox {
+                        id: groupBox3
+                        padding: 5
                         Layout.fillWidth: true
+                        title: qsTr("Share")
+
+                        GridLayout {
+                            id: gridLayout3
+                            columnSpacing: 3
+                            rowSpacing: 3
+                            columns: gridLayout2.width / quickPrintToolButton.width - 1
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+
+                            SkrToolButton {
+                                id: quickPrintToolButton
+                                text: qsTr("Quick print")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                display: AbstractButton.IconOnly
+                            }
+
+                        }
                     }
+
+//                    Item {
+//                        id: stretcher
+//                        Layout.fillHeight: true
+//                        Layout.fillWidth: true
+//                    }
                 }
             }
 

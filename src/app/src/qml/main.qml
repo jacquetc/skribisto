@@ -785,8 +785,8 @@ ApplicationWindow {
             height: 50
             width: 50
         }
+        enabled: skrRootItem.hasPrintSupport()
 
-        shortcut: StandardKey.Print
         onTriggered: {
             Globals.showWelcomePageCalled()
             Globals.showWelcomeProjectPageCalled()
@@ -796,6 +796,7 @@ ApplicationWindow {
     }
 
     Shortcut {
+        enabled: skrRootItem.hasPrintSupport()
         sequence: StandardKey.Print
         context: Qt.ApplicationShortcut
         onActivated: printAction.trigger()

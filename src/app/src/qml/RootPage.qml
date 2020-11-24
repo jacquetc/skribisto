@@ -1440,6 +1440,8 @@ RootPageForm {
             }
             MenuSeparator { }
             SkrMenuItem{
+                height: skrRootItem.hasPrintSupport() ? undefined : 0
+                visible: skrRootItem.hasPrintSupport()
                 action: printAction
             }
             SkrMenuItem{

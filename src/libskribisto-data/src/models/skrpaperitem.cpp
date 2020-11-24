@@ -22,7 +22,7 @@
 #include "skrpaperitem.h"
 #include "plmdata.h"
 
-SKRPaperItem::SKRPaperItem(SKR::PaperType paperType) :
+SKRPaperItem::SKRPaperItem(SKR::ItemType paperType) :
     m_paperType(paperType), m_invalidatedRoles(), m_isProjectItem(false), m_isRootItem(
         false)
 {
@@ -35,7 +35,7 @@ SKRPaperItem::SKRPaperItem(SKR::PaperType paperType) :
         m_propertyHub = plmdata->notePropertyHub();
     }
     else {
-        qFatal(this->metaObject()->className(), "Invalid PaperType");
+        qFatal(this->metaObject()->className(), "Invalid ItemType");
     }
 
 
@@ -45,7 +45,7 @@ SKRPaperItem::SKRPaperItem(SKR::PaperType paperType) :
     m_data.insert(Roles::SortOrderRole, 0);
 }
 
-SKRPaperItem::SKRPaperItem(SKR::PaperType paperType,
+SKRPaperItem::SKRPaperItem(SKR::ItemType paperType,
                            int            projectId,
                            int            paperId,
                            int            indent,
@@ -63,7 +63,7 @@ SKRPaperItem::SKRPaperItem(SKR::PaperType paperType,
         m_propertyHub = plmdata->notePropertyHub();
     }
     else {
-        qFatal(this->metaObject()->className(), "Invalid PaperType");
+        qFatal(this->metaObject()->className(), "Invalid ItemType");
     }
 
 

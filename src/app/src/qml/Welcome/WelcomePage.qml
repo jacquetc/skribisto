@@ -4,6 +4,7 @@ import ".."
 
 WelcomePageForm {
     property string pageType: "welcome"
+    clip: true
 
     // pages :
     projectPageButton.onClicked: {

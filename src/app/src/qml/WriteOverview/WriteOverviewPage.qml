@@ -14,6 +14,7 @@ WriteOverviewPageForm {
 
     property int currentProjectId : Globals.sheetOverviewCurrentProjectId
 
+    clip: true
 
     Component.onCompleted: {
         connectToSheetOverviewTree()
@@ -36,6 +37,14 @@ WriteOverviewPageForm {
     //-------------------------------------------------------------
     //-------Sheet Overview------------------------------------------
     //-------------------------------------------------------------
+
+    sheetOverviewTree.onCurrentProjectIdChanged: {
+        rightDock.projectId = sheetOverviewTree.currentProjectId
+    }
+
+    sheetOverviewTree.onCurrentPaperIdChanged: {
+        rightDock.paperId = sheetOverviewTree.currentPaperId
+    }
 
     SKRSearchSheetListProxyModel {
         id: sheetOverviewProxyModel

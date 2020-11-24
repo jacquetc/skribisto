@@ -760,7 +760,7 @@ SKRResult PLMImporter::createTagsFromAttend(int                     projectId,
         result = plmdata->tagHub()->addTag(projectId, values.at(index));
         IFOK(result) {
             result = plmdata->tagHub()->setTagRelationship(projectId,
-                                                           SKRTagHub::Note,
+                                                           SKR::Note,
                                                            noteId,
                                                            result.getData("tagId", -2).toInt());
         }

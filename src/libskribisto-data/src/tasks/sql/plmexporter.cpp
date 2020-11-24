@@ -24,7 +24,7 @@
 PLMExporter::PLMExporter(QObject *parent) : QObject(parent)
 {}
 
-SKRResult PLMExporter::exportSQLiteDbTo(PLMProject    *db,
+SKRResult PLMExporter::exportWholeSQLiteDbTo(PLMProject    *db,
                                        const QString& type,
                                        const QUrl   & fileName)
 {

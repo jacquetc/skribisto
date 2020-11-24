@@ -85,7 +85,7 @@ SKRResult PLMProjectManager::saveProjectAs(int projectId,
 
     PLMExporter exporter(this);
 
-    IFOKDO(result, exporter.exportSQLiteDbTo(project, type, path));
+    IFOKDO(result, exporter.exportWholeSQLiteDbTo(project, type, path));
     IFOK(result) {
         // if it's a true save and not a copy :
         if (!isCopy) {

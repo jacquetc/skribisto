@@ -11,6 +11,7 @@ NoteOverviewPageForm {
     id: root
     property string pageType: "noteOverview"
 
+    clip: true
 
     Component.onCompleted: {
 

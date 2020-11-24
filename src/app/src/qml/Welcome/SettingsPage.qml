@@ -24,6 +24,7 @@ SettingsPageForm {
         populateCheckSpellingComboBox()
         checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(SkrSettings.spellCheckingSettings.spellCheckingLangCode)
 
+        loadFontFamily()
     }
 
 
@@ -130,6 +131,7 @@ SettingsPageForm {
         target: SkrSettings.behaviorSettings
         property: "createEmptyProjectAtStart"
         value: createEmpyProjectAtStartSwitch.checked
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
 
@@ -139,6 +141,7 @@ SettingsPageForm {
         target: SkrSettings.behaviorSettings
         property: "centerTextCursor"
         value: centerTextCursorSwitch.checked
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
 
@@ -643,6 +646,85 @@ SettingsPageForm {
             saveAction.trigger()
         }
     }
+    // --------------------------------------------
+    // ---- Quick print --------------------------------
+    // --------------------------------------------
+
+
+
+    // textPointSizeSlider :
+
+    textPointSizeSlider.value: SkrSettings.quickPrintSettings.textPointSize
+
+
+    Binding {
+        target: SkrSettings.quickPrintSettings
+        property: "textPointSize"
+        value: textPointSizeSlider.value
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    // Font family combo :
+    fontFamilyComboBox.model: skrFonts.fontFamilies()
+
+    Binding {
+        target: SkrSettings.quickPrintSettings
+        property: "textFontFamily"
+        value: fontFamilyComboBox.currentText
+        when:  fontFamilyLoaded
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
+    property bool fontFamilyLoaded: false
+
+    function loadFontFamily(){
+        var fontFamily = SkrSettings.quickPrintSettings.textFontFamily
+        //console.log("fontFamily", fontFamily)
+        //console.log("application fontFamily", Qt.application.font.family)
+
+        var index = fontFamilyComboBox.find(fontFamily, Qt.MatchFixedString)
+        //console.log("index", index)
+        if(index === -1){
+            index = fontFamilyComboBox.find("Liberation Serif", Qt.MatchFixedString)
+        }
+        if(index === -1){
+            index = fontFamilyComboBox.find(skrRootItem.defaultFontFamily(), Qt.MatchContains)
+        }
+        //console.log("index", index)
+
+        fontFamilyComboBox.currentIndex = index
+        fontFamilyLoaded = true
+    }
+
+    // Indent :
+    textIndentSlider.value: SkrSettings.quickPrintSettings.textIndent
+
+    Binding {
+        target: SkrSettings.quickPrintSettings
+        property: "textIndent"
+        value: textIndentSlider.value
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    // Margins :
+    textTopMarginSlider.value: SkrSettings.quickPrintSettings.textTopMargin
+
+    Binding {
+        target: SkrSettings.quickPrintSettings
+        property: "textTopMargin"
+        value: textTopMarginSlider.value
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
+
+
+
 
     // --------------------------------------------
     // ---- special E-Paper --------------------------------

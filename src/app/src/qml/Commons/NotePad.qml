@@ -11,8 +11,6 @@ import ".."
 
 NotePadForm {
     id: root
-    property int minimumHeight: 300  //mandatory for ToolFrame
-
 
     property int projectId: -2
     property int sheetId: -2

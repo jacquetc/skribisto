@@ -48,6 +48,8 @@ public:
     Q_INVOKABLE QString toLocaleIntString(int number) const;
 
     Q_INVOKABLE QString getQtVersion() const;
+    Q_INVOKABLE bool hasPrintSupport() const;
+    Q_INVOKABLE QString defaultFontFamily() const;
 signals:
 
     void currentTranslationLanguageCodeChanged(const QString& langCode);

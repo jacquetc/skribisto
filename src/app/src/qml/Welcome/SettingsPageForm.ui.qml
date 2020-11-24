@@ -34,6 +34,10 @@ Item {
     property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
     property alias centerTextCursorSwitch: centerTextCursorSwitch
     property alias minimalistMenuTabsSwitch: minimalistMenuTabsSwitch
+    property alias textPointSizeSlider: textPointSizeSlider
+    property alias fontFamilyComboBox: fontFamilyComboBox
+    property alias textTopMarginSlider: textTopMarginSlider
+    property alias textIndentSlider: textIndentSlider
 
     SkrPane {
         id: pane2
@@ -346,6 +350,88 @@ Item {
 
 
                 SkrGroupBox {
+                    id: quickPrintGroupBox
+                    Layout.rowSpan: 2
+                    Layout.fillWidth: true
+                    focusPolicy: Qt.TabFocus
+                    title: qsTr("Quick print")
+
+                    ColumnLayout {
+                        id: columnLayout4
+                        anchors.fill: parent
+
+                        RowLayout {
+                            id: rowLayout8
+                            Layout.fillHeight: true
+                            Layout.fillWidth: true
+
+                            SkrSwitch {
+                                id: includeSynopsisCheckBox
+                                text: qsTr("Include outline")
+
+                            }
+                            SkrSwitch {
+                                id: tagsEnabledCheckBox
+                                text: qsTr("Add tags")
+
+                            }
+
+                        }
+                        ColumnLayout {
+                            Layout.fillHeight: true
+                            Layout.fillWidth: true
+
+
+                            SkrLabel {
+                                text: qsTr("Text size :")
+                            }
+
+                            Slider {
+                                id: textPointSizeSlider
+                                snapMode: Slider.SnapOnRelease
+                                stepSize: 1
+                                from: 8
+                                to: 40
+                                Layout.fillWidth: true
+                            }
+
+                            SkrComboBox {
+                                id: fontFamilyComboBox
+                                wheelEnabled: true
+                                Layout.fillWidth: true
+                            }
+                            SkrLabel {
+                                text: qsTr("Text indent :")
+                            }
+
+                            Slider {
+                                id: textIndentSlider
+                                snapMode: Slider.SnapOnRelease
+                                stepSize: 1
+                                from: 0
+                                to: 200
+                                Layout.fillWidth: true
+                            }
+
+                            SkrLabel {
+                                text: qsTr("Top margin :")
+                            }
+
+                            Slider {
+                                id: textTopMarginSlider
+                                snapMode: Slider.SnapOnRelease
+                                stepSize: 1
+                                from: 0
+                                to: 30
+                                Layout.fillWidth: true
+                            }
+
+
+                        }
+                    }
+                }
+
+                SkrGroupBox {
                     id: specialEPaperGroupBox
                     width: 200
                     height: 200
@@ -374,7 +460,7 @@ Item {
                         anchors.fill: parent
 
                         ColumnLayout {
-                            id: columnLayout4
+                            id: columnLayout7
                             width: 100
                             height: 100
 

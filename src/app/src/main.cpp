@@ -32,6 +32,7 @@ using namespace std;
 #include "skrspellchecker.h"
 #include "plmutils.h"
 #include "skrthemes.h"
+#include "skrexporter.h"
 #include "skr.h"
 #include "models/skrtaglistmodel.h"
 #include "models/skrsearchsheetlistproxymodel.h"
@@ -175,6 +176,7 @@ int main(int argc, char *argv[])
 
     // -----------------------------------------------------------------------
 
+
     SKRRootItem *rootItem = new SKRRootItem(qApp);
     rootItem->applyLanguageFromSettings();
 
@@ -308,6 +310,12 @@ int main(int argc, char *argv[])
                                1,
                                0,
                                "SKRThemes");
+
+    qmlRegisterType<SKRExporter>("eu.skribisto.exporter",
+                               1,
+                               0,
+                               "SKRExporter");
+
 
     QQmlApplicationEngine engine(qApp);
     const QUrl url(QStringLiteral("qrc:/qml/main.qml"));

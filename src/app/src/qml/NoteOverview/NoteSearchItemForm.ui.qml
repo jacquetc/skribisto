@@ -3,6 +3,7 @@ import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import eu.skribisto.taghub 1.0
+import eu.skribisto.skr 1.0
 import "../Commons"
 import "../Items"
 
@@ -96,7 +97,7 @@ Item {
                     id: searchTagPad
                     anchors.fill: parent
                     minimalMode: true
-                    itemType: SKRTagHub.Note
+                    itemType: SKR.Note
                     selectionEnabled: true
                     multipleSelectionsEnabled: true
                 }

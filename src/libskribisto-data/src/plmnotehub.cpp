@@ -287,33 +287,39 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
             // set properties :
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
-
                                                     "is_renamable",
-                                                    "false");
+                                                    "false",
+                                                    true);
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
                                                     "is_movable",
-                                                    "false");
+                                                    "false",
+                                                    true);
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
                                                     "is_trashable",
-                                                    "false");
+                                                    "false",
+                                                    true);
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
                                                     "can_add_paper",
-                                                    "false");
+                                                    "false",
+                                                    true);
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
                                                     "is_openable",
-                                                    "false");
+                                                    "false",
+                                                    true);
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
                                                     "is_copyable",
-                                                    "false");
+                                                    "false",
+                                                    true);
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
                                                     "is_synopsis_folder",
-                                                    "true");
+                                                    "true",
+                                                    true);
             this->addAttribute(projectId, folderId, "locked");
         }
 
@@ -342,19 +348,23 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
                 plmdata->notePropertyHub()->setProperty(projectId,
                                                         synopsisId,
                                                         "is_renamable",
-                                                        "false");
+                                                        "false",
+                                                        true);
                 plmdata->notePropertyHub()->setProperty(projectId,
                                                         synopsisId,
                                                         "is_movable",
-                                                        "false");
+                                                        "false",
+                                                        true);
                 plmdata->notePropertyHub()->setProperty(projectId,
                                                         synopsisId,
                                                         "can_add_paper",
-                                                        "false");
+                                                        "false",
+                                                        true);
                 plmdata->notePropertyHub()->setProperty(projectId,
                                                         synopsisId,
                                                         "is_trashable",
-                                                        "false");
+                                                        "false",
+                                                        true);
                 this->addAttribute(projectId, synopsisId, "synopsis");
             }
         }
@@ -433,19 +443,23 @@ SKRResult PLMNoteHub::createSynopsis(int projectId, int sheetId) {
         plmdata->notePropertyHub()->setProperty(projectId,
                                                 lastAddedNoteId,
                                                 "is_renamable",
-                                                "false");
+                                                "false",
+                                                true);
         plmdata->notePropertyHub()->setProperty(projectId,
                                                 lastAddedNoteId,
                                                 "is_movable",
-                                                "false");
+                                                "false",
+                                                true);
         plmdata->notePropertyHub()->setProperty(projectId,
                                                 lastAddedNoteId,
                                                 "can_add_paper",
-                                                "false");
+                                                "false",
+                                                true);
         plmdata->notePropertyHub()->setProperty(projectId,
                                                 lastAddedNoteId,
                                                 "is_trashable",
-                                                "false");
+                                                "false",
+                                                true);
         this->addAttribute(projectId, lastAddedNoteId, "synopsis");
     }
 

@@ -7,6 +7,7 @@ import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
+import eu.skribisto.skr 1.0
 import "../Commons"
 import "../Items"
 import ".."
@@ -1141,7 +1142,7 @@ SheetOverviewTreeForm {
                                     sheetIdFilter: paperId
                                 }
                                 tagListModel: tagProxyModel
-                                itemType: SKRTagHub.Sheet
+                                itemType: SKR.Sheet
 
                             }
                         }

@@ -157,6 +157,7 @@ SKRResult PLMPropertyHub::setProperty(int            projectId,
                                       int            paperCode,
                                       const QString& name,
                                       const QString& value,
+                                      bool isSystem,
                                       bool triggerProjectModifiedSignal)
 {
     SKRResult result(this);
@@ -180,6 +181,7 @@ SKRResult PLMPropertyHub::setProperty(int            projectId,
 
     IFOKDO(result, queries.set(propertyId, "t_name", name));
     IFOKDO(result, queries.set(propertyId, "t_value", value));
+    IFOKDO(result, queries.set(propertyId, "b_system", isSystem));
     IFOKDO(result, queries.setCurrentDate(propertyId, "dt_updated"));
     IFKO(result) {
         queries.rollback();
@@ -202,6 +204,8 @@ SKRResult PLMPropertyHub::setProperty(int            projectId,
 
     return result;
 }
+
+
 
 // ---------------------------------------------------------------------
 

@@ -10,24 +10,26 @@ Item {
     property alias projectSwipeView: projectSwipeView
     property alias tabBar: tabBar
 
-
-
-    ColumnLayout {
-        id: columnLayout
+    SkrPane{
         anchors.fill: parent
 
-        SkrTabBar {
-            id: tabBar
-            Layout.fillWidth: true
-        }
+        ColumnLayout {
+            id: columnLayout
+            anchors.fill: parent
 
-        SwipeView {
-            id: projectSwipeView
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-            interactive: false
-            clip: true
+            SkrTabBar {
+                id: tabBar
+                Layout.fillWidth: true
+            }
 
+            SwipeView {
+                id: projectSwipeView
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                interactive: false
+                clip: true
+
+            }
         }
     }
 }
