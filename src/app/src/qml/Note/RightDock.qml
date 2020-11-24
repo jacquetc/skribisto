@@ -65,6 +65,17 @@ RightDockForm {
                     }
                 }
 
+                SkrMenuItem {
+                    text: qsTr( "&Properties")
+                    onTriggered: {
+
+                        if(Globals.compactMode){
+                            rightDrawer.open()
+                        }
+                        propertyPadViewToolButton.checked = true
+                        propertyPadView.forceActiveFocus()
+                    }
+                }
 
                 SkrMenuItem {
                     text: qsTr( "&Tags")
@@ -161,6 +172,37 @@ RightDockForm {
 
 
     //-----------------------------------------------------------
+    //---------------properties :--------------------------------
+    //-----------------------------------------------------------
+
+
+
+    Action{
+        id: propertyPadViewAction
+        checkable: true
+        text: qsTr( "Show properties tool box")
+        icon {
+            source: "qrc:///icons/backup/configure.svg"
+            height: 50
+            width: 50
+        }
+        onCheckedChanged: {
+            propertyPadView.visible = checked
+        }
+
+        Binding on checked{
+            value: propertyPadView.visible
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+    }
+    propertyPadViewToolButton.action: propertyPadViewAction
+
+    propertyPadView.propertyHub: plmData.notePropertyHub()
+    propertyPadView.paperHub: plmData.noteHub()
+
+
+    //-----------------------------------------------------------
     //---------------Tags :---------------------------------------------
     //-----------------------------------------------------------
 
@@ -205,10 +247,12 @@ RightDockForm {
         editView.projectId = projectId
         tagPadView.projectId = projectId
         tagPadView.itemId = -2
+        propertyPadView.projectId = projectId
     }
     onPaperIdChanged: {
         editView.paperId = paperId
         tagPadView.itemId = paperId
+        propertyPadView.paperId = paperId
     }
 
 

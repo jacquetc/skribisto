@@ -9,10 +9,12 @@ Item {
     id: base
     property alias sheetOverviewToolViewToolButton: sheetOverviewToolViewToolButton
     property alias editViewToolButton: editViewToolButton
+    property alias propertyPadViewToolButton: propertyPadViewToolButton
     property alias tagPadViewToolButton: tagPadViewToolButton
 
     property alias sheetOverviewToolView: sheetOverviewToolView
     property alias editView: editView
+    property alias propertyPadView: propertyPadView
     property alias tagPadView: tagPadView
 
     property alias scrollView: scrollView
@@ -41,6 +43,10 @@ Item {
                 }
                 SkrToolButton{
                     id: editViewToolButton
+                    display: AbstractButton.IconOnly
+                }
+                SkrToolButton{
+                    id: propertyPadViewToolButton
                     display: AbstractButton.IconOnly
                 }
                 SkrToolButton{
@@ -87,6 +93,15 @@ Item {
 
                             width: scrollView.width
                             height: editView.implicitHeight
+
+                        }
+
+                        PropertyPad{
+                            id: propertyPadView
+                            clip: true
+
+                            width: scrollView.width
+                            height: propertyPadView.implicitHeight
 
                         }
 

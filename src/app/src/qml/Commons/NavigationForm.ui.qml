@@ -7,7 +7,7 @@ Item {
     id: base
     property alias  stackView: stackView
 
-    implicitHeight: Window.window.height * 3/4
+    implicitHeight: Window.window === null ? 300 : Window.window.height * 3/4
 
 
     StackView {

@@ -1199,6 +1199,10 @@
         <source>Locked</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Favorite</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainTree</name>
@@ -2738,6 +2742,14 @@ Please open a .plume file.</source>
     </message>
     <message>
         <source>Show overview tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show properties tool box</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4313,6 +4325,10 @@ Please open a .plume file.</source>
     </message>
     <message>
         <source>Show properties tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Properties</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

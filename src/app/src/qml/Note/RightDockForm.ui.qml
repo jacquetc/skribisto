@@ -8,9 +8,11 @@ import "../Commons"
 Item {
     id: base
     property alias editViewToolButton: editViewToolButton
+    property alias propertyPadViewToolButton: propertyPadViewToolButton
     property alias tagPadViewToolButton: tagPadViewToolButton
 
     property alias editView: editView
+    property alias propertyPadView: propertyPadView
     property alias tagPadView: tagPadView
 
     property alias scrollView: scrollView
@@ -34,6 +36,10 @@ Item {
 
                 SkrToolButton{
                     id: editViewToolButton
+                    display: AbstractButton.IconOnly
+                }
+                SkrToolButton{
+                    id: propertyPadViewToolButton
                     display: AbstractButton.IconOnly
                 }
                 SkrToolButton{
@@ -72,6 +78,14 @@ Item {
                             height: editView.implicitHeight
                         }
 
+                        PropertyPad{
+                            id: propertyPadView
+                            clip: true
+
+                            width: scrollView.width
+                            height: propertyPadView.implicitHeight
+
+                        }
                         TagPad {
                             id: tagPadView
                             clip: true

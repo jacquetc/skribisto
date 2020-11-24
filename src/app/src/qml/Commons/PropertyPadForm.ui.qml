@@ -12,12 +12,12 @@ Item {
     property alias printableToolButton: printableToolButton
 
 
-    implicitHeight: mainPageLayout.childrenRect.height
+    implicitHeight: mainPageLayout.childrenRect.height + mainPage.padding * 2
 
     SkrPane {
         id: mainPage
         anchors.fill: parent
-        padding: 0
+        padding: 2
 
         ColumnLayout {
             id: mainPageLayout
@@ -59,7 +59,6 @@ Item {
 
                     SkrToolButton {
                         id: favoriteToolButton
-                        visible: false //TODO: unhide and implement
                         text: qsTr("Favorite")
                         checkable: true
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter

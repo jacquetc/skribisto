@@ -147,10 +147,10 @@ LeftDockForm {
 
 
     function initNavigationView(){
-    navigation.openDocument.connect(Globals.openNoteCalled)
-    navigation.openDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
-    navigation.openDocumentInNewWindow.connect(Globals.openNoteInNewWindowCalled)
-    navigation.restoreDocumentList.connect(root.restoreNoteList)
+    navigationView.openDocument.connect(Globals.openNoteCalled)
+    navigationView.openDocumentInNewTab.connect(Globals.openNoteInNewTabCalled)
+    navigationView.openDocumentInNewWindow.connect(Globals.openNoteInNewWindowCalled)
+    navigationView.restoreDocumentList.connect(root.restoreNoteList)
     }
 
     SKRSearchNoteListProxyModel {
@@ -240,8 +240,8 @@ LeftDockForm {
         navigationProxyModel.setCurrentPaperId(projectId, paperId)
     }
     function setOpenedPaperId(projectId, paperId) {
-        navigation.openedProjectId = projectId
-        navigation.openedPaperId = paperId
+        navigationView.openedProjectId = projectId
+        navigationView.openedPaperId = paperId
     }
 
 
