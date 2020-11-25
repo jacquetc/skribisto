@@ -32,7 +32,7 @@ PLMPaperHub::PLMPaperHub(QObject *parent, const QString& tableName, const SKR::I
             this, &PLMPaperHub::characterCountChanged);
 
     connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, [this](int projectId){
-         QList<int> allIds = this->getAllIds(projectId);
+        QList<int> allIds = this->getAllIds(projectId);
         for(int i = allIds.count() - 1 ; i >= 0  ; i--){
             int paperId = allIds.at(i);
 
@@ -1220,14 +1220,25 @@ SKRResult PLMPaperHub::movePaper(int  sourceProjectId,
 {
     SKRResult result(this);
     int targetProjectId = sourceProjectId;
-    PLMSqlQueries queries(sourceProjectId, m_tableName);
 
+    QList<int> childrenList = this->getAllChildren(sourceProjectId, sourcePaperId);
+
+    PLMSqlQueries queries(sourceProjectId, m_tableName);
 
     // int sourceSortOrder = this->getSortOrder(sourceProjectId, sourcePaperId);
     int targetSortOrder = this->getSortOrder(sourceProjectId, targetPaperId);
 
-    targetSortOrder = targetSortOrder + (after ? 1 : -1);
+    targetSortOrder = targetSortOrder + (after ? 1 : - (childrenList.count() + 1) );
     result           = setSortOrder(sourceProjectId, sourcePaperId, targetSortOrder);
+
+    for(int childId : childrenList){
+        targetSortOrder += 1;
+        result           = setSortOrder(sourceProjectId, childId, targetSortOrder);
+        emit paperMoved(sourceProjectId, childId, targetProjectId, targetPaperId);
+    }
+
+
+
     IFOKDO(result, queries.renumberSortOrder())
             IFKO(result) {
         queries.rollback();
@@ -1238,7 +1249,9 @@ SKRResult PLMPaperHub::movePaper(int  sourceProjectId,
     IFOK(result) {
         emit paperMoved(sourceProjectId, sourcePaperId, targetProjectId, targetPaperId);
         emit projectModified(sourceProjectId);
-        emit projectModified(targetProjectId);
+        if(sourceProjectId != targetProjectId){
+            emit projectModified(targetProjectId);
+        }
     }
 
     return result;
