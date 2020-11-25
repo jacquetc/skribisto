@@ -241,7 +241,11 @@ QVariant SKRPaperListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-    if (role == SKRPaperItem::Roles::CanAddPaperRole) {
+    if (role == SKRPaperItem::Roles::CanAddSiblingPaperRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRPaperItem::Roles::CanAddChildPaperRole) {
         return item->data(role);
     }
 
@@ -416,7 +420,8 @@ QHash<int, QByteArray>SKRPaperListModel::roleNames() const {
     roles[SKRPaperItem::Roles::ProjectIsActiveRole] = "projectIsActive";
     roles[SKRPaperItem::Roles::IsRenamableRole]     = "isRenamable";
     roles[SKRPaperItem::Roles::IsMovableRole]       = "isMovable";
-    roles[SKRPaperItem::Roles::CanAddPaperRole]     = "canAddPaper";
+    roles[SKRPaperItem::Roles::CanAddSiblingPaperRole]     = "canAddSiblingPaper";
+    roles[SKRPaperItem::Roles::CanAddChildPaperRole]     = "canAddChildPaper";
     roles[SKRPaperItem::Roles::IsTrashableRole]     = "isTrashable";
     roles[SKRPaperItem::Roles::IsOpenableRole]      = "isOpenable";
     roles[SKRPaperItem::Roles::IsCopyableRole]      = "isCopyable";
@@ -928,9 +933,23 @@ void SKRPaperListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "can_add_paper") this->exploitSignalFromPLMData(projectId, paperCode,
+        if (name == "can_add_sibling_paper") this->exploitSignalFromPLMData(projectId, paperCode,
                                                                     SKRPaperItem::Roles::
-                                                                    CanAddPaperRole);
+                                                                    CanAddSiblingPaperRole);
+    }, Qt::UniqueConnection);
+
+    m_dataConnectionsList << this->connect(m_propertyHub,
+                                           &PLMPropertyHub::propertyChanged, this,
+                                           [this](int projectId, int propertyId,
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
+        Q_UNUSED(value)
+        Q_UNUSED(propertyId)
+
+        if (name == "can_add_child_paper") this->exploitSignalFromPLMData(projectId, paperCode,
+                                                                    SKRPaperItem::Roles::
+                                                                    CanAddChildPaperRole);
     }, Qt::UniqueConnection);
 
     m_dataConnectionsList << this->connect(m_propertyHub,

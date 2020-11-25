@@ -79,6 +79,26 @@
         <source>unchecked</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished">Couper</translation>
+    </message>
+    <message>
+        <source>Add before</source>
+        <translation type="unfinished">Ajouter avant</translation>
+    </message>
+    <message>
+        <source>Add after</source>
+        <translation type="unfinished">Ajouter après</translation>
+    </message>
+    <message>
+        <source>Add child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished">Coller</translation>
+    </message>
 </context>
 <context>
     <name>ColorChooser</name>
@@ -2091,6 +2111,18 @@
     <message>
         <source>Projects</source>
         <translation type="unfinished">Projets</translation>
+    </message>
+    <message>
+        <source>Add a child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>See children</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add child</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

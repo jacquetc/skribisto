@@ -245,6 +245,26 @@
         <source>unchecked</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ColorChooser</name>
@@ -4467,6 +4487,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>See children</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add child</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -208,10 +208,18 @@ QVariant SKRPaperItem::data(int role)
                                                      "true") == "true" ? true : false);
             break;
 
-        case Roles::CanAddPaperRole:
+        case Roles::CanAddSiblingPaperRole:
             m_data.insert(role,
                           m_propertyHub->getProperty(projectId, paperId,
-                                                     "can_add_paper",
+                                                     "can_add_sibling_paper",
+                                                     "true") == "true" ? true : false);
+            break;
+
+
+        case Roles::CanAddChildPaperRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, paperId,
+                                                     "can_add_child_paper",
                                                      "true") == "true" ? true : false);
             break;
 
@@ -527,7 +535,8 @@ void SKRPaperItem::setIsProjectItem(int projectId)
     this->invalidateData(Roles::ProjectIsBackupRole);
     this->invalidateData(Roles::ProjectIsActiveRole);
     m_data.insert(Roles::IsMovableRole, false);
-    m_data.insert(Roles::CanAddPaperRole, true);
+    m_data.insert(Roles::CanAddSiblingPaperRole, false);
+    m_data.insert(Roles::CanAddChildPaperRole, true);
     m_data.insert(Roles::IsTrashableRole, false);
     m_data.insert(Roles::IsOpenableRole, false);
     m_data.insert(Roles::IsCopyableRole, false);

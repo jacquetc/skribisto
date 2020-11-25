@@ -51,10 +51,13 @@ public:
                                                      int sheetId,
                                                      int noteId);
 
+    Q_INVOKABLE int  getSheetFromSynopsisId(int projectId,
+                                                int synopsisId) const;
     Q_INVOKABLE  SKRResult      createSynopsis(int projectId,
                                               int sheetId);
 
     Q_INVOKABLE  int           getSynopsisFolderId(int projectId);
+      SKRResult cleanUpSynopsis(int projectId);
     Q_INVOKABLE  bool          isSynopsis(int projectId,
                                           int noteId);
 
@@ -81,6 +84,9 @@ signals:
     void sheetNoteRelationshipAdded(int projectId,
                                     int sheetId,
                                     int noteId);
+
+private slots:
+
 };
 
 #endif // PLMNOTEHUB_H

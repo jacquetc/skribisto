@@ -57,6 +57,9 @@ ListView {
     property bool cutActionEnabled: false
     property bool copyActionEnabled: false
     property bool pasteActionEnabled: false
+    property bool addSiblingPaperActionEnabled: false
+    property bool addChildPaperActionEnabled: false
+    property bool moveActionEnabled: false
     property bool elevationEnabled: false
 
     //tree-like onTreelikeIndents
@@ -258,6 +261,48 @@ ListView {
                 // copy
                 if (copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     copyAction.trigger()
+                    event.accepted = true
+                }
+
+                // paste
+                if (model.canAddChildPaper && addChildPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    pasteAction.trigger()
+                    event.accepted = true
+                }
+
+                // add before
+                if (model.canAddSiblingPaper && addSiblingPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    addBeforeAction.trigger()
+                    event.accepted = true
+                }
+
+                // add after
+                if (model.canAddSiblingPaper && addSiblingPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    addAfterAction.trigger()
+                    event.accepted = true
+                }
+
+                // add child
+                if (model.canAddChildPaper && addChildPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Space && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    addChildAction.trigger()
+                    event.accepted = true
+                }
+
+                // move up
+                if (model.isMovable && moveActionEnabled  && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    moveUpAction.trigger()
+                    event.accepted = true
+                }
+
+                // move down
+                if (model.isMovable && moveActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    moveDownAction.trigger()
+                    event.accepted = true
+                }
+
+                // send to trash
+                if (model.isTrashable && sendToTrashActionEnabled && event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    sendToTrashAction.trigger()
                     event.accepted = true
                 }
 
@@ -950,15 +995,36 @@ ListView {
                 }
 
                 MenuSeparator {
-                    height: model.isCopyable && copyActionEnabled  ? undefined : 0
-                    visible: model.isCopyable && copyActionEnabled
+                    height: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildPaper && pasteActionEnabled) ? undefined : 0
+                    visible: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildPaper && pasteActionEnabled)
+                }
+
+                SkrMenuItem {
+                    height: model.isMovable && cutActionEnabled ? undefined : 0
+                    visible: model.isMovable && cutActionEnabled
+                    action:
+                        Action {
+                        id: cutAction
+                        text: qsTr("Cut")
+                        //shortcut: StandardKey.Cut
+                        icon {
+                            source: "qrc:///icons/backup/edit-cut.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && root.enabled
+
+                        onTriggered: {
+                            console.log("cut action", model.projectId,
+                                        model.paperId)
+                            proxyModel.cut(model.projectId, model.paperId)
+                        }
+                    }
                 }
 
                 SkrMenuItem {
                     height: model.isCopyable && copyActionEnabled ? undefined : 0
                     visible: model.isCopyable && copyActionEnabled
                     action :Action {
-
+                        id: copyAction
                         text: qsTr("Copy")
                         //shortcut: StandardKey.Copy
                         icon {
@@ -969,11 +1035,118 @@ ListView {
                         onTriggered: {
                             console.log("copy action", model.projectId,
                                         model.paperId)
-                            copyCalled(model.projectId, model.paperId)
+                            proxyModel.copy(model.projectId, model.paperId)
                         }
                     }
                 }
 
+                SkrMenuItem {
+                    height: model.canAddChildPaper && pasteActionEnabled ? undefined : 0
+                    visible: model.canAddChildPaper && pasteActionEnabled
+                    action :Action {
+                        id: pasteAction
+                        text: qsTr("Paste")
+                        //shortcut: StandardKey.Copy
+                        icon {
+                            source: "qrc:///icons/backup/edit-paste.svg"
+                        }
+                        enabled: pasteActionEnabled && contextMenuItemIndex === model.index  && root.enabled
+
+                        onTriggered: {
+                            console.log("paste action", model.projectId,
+                                        model.paperId)
+                            proxyModel.paste(model.projectId, model.paperId)
+                        }
+                    }
+                }
+
+                MenuSeparator {
+                    height: (model.canAddSiblingPaper || model.canAddChildPaper)
+                            && (addChildPaperActionEnabled || addSiblingPaperActionEnabled)?
+                                undefined : 0
+                    visible: (model.canAddSiblingPaper || model.canAddChildPaper)
+                             && (addChildPaperActionEnabled || addSiblingPaperActionEnabled)
+                }
+
+                SkrMenuItem {
+                    height: model.canAddSiblingPaper && addSiblingPaperActionEnabled ? undefined : 0
+                    visible: model.canAddSiblingPaper && addSiblingPaperActionEnabled
+                    action:
+                        Action {
+                        id: addBeforeAction
+                        text: qsTr("Add before")
+                        //shortcut: "Ctrl+Shift+N"
+                        icon {
+                            source: "qrc:///icons/backup/document-new.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        onTriggered: {
+                            console.log("add before action", model.projectId,
+                                        model.paperId)
+
+                            var visualIndex = root.currentIndex
+                            proxyModel.addItemAbove(model.projectId, model.paperId, visualIndex)
+                            root.itemAtIndex(visualIndex).editName()
+                        }
+                    }
+                }
+
+                SkrMenuItem {
+                    height: model.canAddSiblingPaper && addSiblingPaperActionEnabled ? undefined : 0
+                    visible: model.canAddSiblingPaper && addSiblingPaperActionEnabled
+                    action:
+                        Action {
+                        id: addAfterAction
+                        text: qsTr("Add after")
+                        //shortcut: "Ctrl+N"
+                        icon {
+                            source: "qrc:///icons/backup/document-new.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        onTriggered: {
+                            console.log("add after action", model.projectId,
+                                        model.paperId)
+
+                            var childrenList = proxyModel.getChildrenList(model.projectId, model.paperId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)
+                            var visualIndex = root.currentIndex + childrenList + 1
+                            proxyModel.addItemBelow(model.projectId, model.paperId, visualIndex)
+                            root.itemAtIndex(visualIndex).editName()
+                        }
+                    }
+
+                }
+
+                SkrMenuItem {
+                    height: model.canAddChildPaper && addChildPaperActionEnabled ? undefined : 0
+                    visible: model.canAddChildPaper && addChildPaperActionEnabled
+                    action:
+                        Action {
+                        id: addChildAction
+                        text: qsTr("Add child")
+                        //shortcut: "Ctrl+N"
+                        icon {
+                            source: "qrc:///icons/backup/document-new.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        onTriggered: {
+                            console.log("add child action", model.projectId,
+                                        model.paperId)
+
+                                proxyModel.addChildItem(model.projectId,
+                                                         model.paperId, 0)
+
+
+                                // edit it :
+                            var childrenList = proxyModel.getChildrenList(model.projectId, model.paperId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)
+                            var visualIndex = root.currentIndex + childrenList.length
+                                root.itemAtIndex(visualIndex).editName()
+
+
+
+                        }
+                    }
+
+                }
                 MenuSeparator {
                     height: model.isTrashable && (sendToTrashActionEnabled || deleteActionEnabled) ? undefined : 0
                     visible: model.isTrashable && (sendToTrashActionEnabled || deleteActionEnabled)

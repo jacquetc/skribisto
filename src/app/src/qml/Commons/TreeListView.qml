@@ -325,6 +325,7 @@ TreeListViewForm {
 
     property bool goToChildActionToBeTriggered :false
     property int goToChildActionCurrentIndent: -2
+    property int newPaperVisualIndex : 0
     property bool newPaperAdded :false
 
 
@@ -491,15 +492,27 @@ TreeListViewForm {
                     event.accepted = true
                 }
 
+                // paste
+                if (model.canAddChildPaper && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    copyAction.trigger()
+                    event.accepted = true
+                }
+
                 // add before
-                if (model.canAddPaper && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.canAddSiblingPaper && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addBeforeAction.trigger()
                     event.accepted = true
                 }
 
                 // add after
-                if (model.canAddPaper && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.canAddSiblingPaper && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     addAfterAction.trigger()
+                    event.accepted = true
+                }
+
+                // add child
+                if (model.canAddChildPaper && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Space && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    addChildAction.trigger()
                     event.accepted = true
                 }
 
@@ -611,10 +624,10 @@ TreeListViewForm {
 
                     onLongPressed: { // needed to activate the grab handler
 
-//                        if(content.dragging){
-//                            eventPoint.accepted = false
-//                            return
-//                        }
+                        //                        if(content.dragging){
+                        //                            eventPoint.accepted = false
+                        //                            return
+                        //                        }
 
 
                         content.dragging = true
@@ -682,7 +695,7 @@ TreeListViewForm {
                     id: goToChildAction
                     //shortcut: "Right"
                     enabled: {
-                        if(!model.hasChildren && !model.canAddPaper){
+                        if(!model.hasChildren && !model.canAddChildPaper){
                             return false
                         }
 
@@ -696,8 +709,8 @@ TreeListViewForm {
 
                         return true
                     }
-                    icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : (model.canAddPaper ? "qrc:///icons/backup/list-add.svg" : "")
-                    text: model.hasChildren ? ">" : (model.canAddPaper ? "+" : "")
+                    icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : (model.canAddChildPaper ? "qrc:///icons/backup/list-add.svg" : "")
+                    text: model.hasChildren ? ">" : (model.canAddChildPaper ? qsTr("Add a child") : qsTr("See children"))
                     onTriggered: {
                         console.log("goToChildAction triggered")
 
@@ -737,8 +750,15 @@ TreeListViewForm {
                     }
                 }
 
-                property int paperIdToEdit: -2
                 Timer{
+                    property int paperIdToEdit: -2
+                    onPaperIdToEditChanged: {
+                        if(paperIdToEdit !== -2){
+                            editNameTimer.start()
+                        }
+                    }
+
+
                     id: editNameTimer
                     repeat: false
                     interval: animationDuration
@@ -747,8 +767,33 @@ TreeListViewForm {
                         if(index !== -2){
                             listView.itemAtIndex(index).editName()
                         }
+                        paperIdToEdit = -2
                     }
                 }
+
+
+                Timer{
+                    property int paperIndexToEdit: -2
+                    onPaperIndexToEditChanged: {
+                        if(paperIdToEdit !== -2){
+                            editNameWithIndexTimer.start()
+                        }
+                    }
+
+
+                    id: editNameWithIndexTimer
+                    repeat: false
+                    interval: animationDuration
+                    onTriggered: {
+                        if(paperIndexToEdit !== -2){
+                            listView.itemAtIndex(paperIndexToEdit).editName()
+                        }
+                        paperIndexToEdit = -2
+                    }
+                }
+
+
+
 
                 Action {
                     id: openDocumentAction
@@ -1365,8 +1410,29 @@ TreeListViewForm {
                 }
 
                 MenuSeparator {
-                    height: !model.isCopyable || model.paperId === -1 ? 0: undefined
-                    visible: model.isCopyable && model.paperId !== -1
+                    height: !model.isCopyable || !model.canAddChildPaper || model.paperId === -1 ? 0: undefined
+                    visible: model.isCopyable && model.canAddChildPaper && model.paperId !== -1
+                }
+
+                SkrMenuItem {
+                    height: !model.isMovable || model.paperId === -1 ? 0: undefined
+                    visible: model.isMovable && model.paperId !== -1
+                    action:
+                        Action {
+                        id: cutAction
+                        text: qsTr("Cut")
+                        //shortcut: StandardKey.Cut
+                        icon {
+                            source: "qrc:///icons/backup/edit-cut.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && listView.enabled
+
+                        onTriggered: {
+                            console.log("cut action", model.projectId,
+                                        model.paperId)
+                            proxyModel.cut(model.projectId, model.paperId)
+                        }
+                    }
                 }
 
                 SkrMenuItem {
@@ -1391,35 +1457,37 @@ TreeListViewForm {
                     }
                 }
 
+
                 SkrMenuItem {
-                    height: !model.isMovable || model.paperId === -1 ? 0: undefined
-                    visible: model.isMovable && model.paperId !== -1
+                    height: !model.canAddChildPaper || model.paperId === -1 ? 0: undefined
+                    visible: model.canAddChildPaper && model.paperId !== -1
                     action:
                         Action {
-                        id: cutAction
-                        text: qsTr("Cut")
-                        //shortcut: StandardKey.Cut
+
+                        id: pasteAction
+                        text: qsTr("Paste")
+                        //shortcut: StandardKey.Copy
                         icon {
-                            source: "qrc:///icons/backup/edit-cut.svg"
+                            source: "qrc:///icons/backup/edit-paste.svg"
                         }
                         enabled: contextMenuItemIndex === model.index && listView.enabled
 
                         onTriggered: {
-                            console.log("cut action", model.projectId,
+                            console.log("paste action", model.projectId,
                                         model.paperId)
-                            proxyModel.cut(model.projectId, model.paperId, -2)
+                            proxyModel.paste(model.projectId, model.paperId)
                         }
                     }
                 }
 
                 MenuSeparator {
-                    height: !model.canAddPaper || model.paperId === -1 ? 0: undefined
-                    visible: model.canAddPaper && model.paperId !== -1
+                    height: !(model.canAddSiblingPaper && model.canAddChildPaper) || model.paperId === -1 ? 0: undefined
+                    visible: (model.canAddSiblingPaper || model.canAddChildPaper) && model.paperId !== -1
                 }
 
                 SkrMenuItem {
-                    height: !model.canAddPaper || model.paperId === -1 ? 0: undefined
-                    visible: model.canAddPaper && model.paperId !== -1
+                    height: !model.canAddSiblingPaper || model.paperId === -1 ? 0: undefined
+                    visible: model.canAddSiblingPaper && model.paperId !== -1
                     action:
                         Action {
                         id: addBeforeAction
@@ -1441,8 +1509,8 @@ TreeListViewForm {
                 }
 
                 SkrMenuItem {
-                    height: !model.canAddPaper || model.paperId === -1 ? 0: undefined
-                    visible: model.canAddPaper && model.paperId !== -1
+                    height: !model.canAddSiblingPaper || model.paperId === -1 ? 0: undefined
+                    visible: model.canAddSiblingPaper && model.paperId !== -1
                     action:
                         Action {
                         id: addAfterAction
@@ -1464,6 +1532,56 @@ TreeListViewForm {
 
                 }
 
+                SkrMenuItem {
+                    height: !model.canAddChildPaper || model.paperId === -1 ? 0: undefined
+                    visible: model.canAddChildPaper && model.paperId !== -1
+                    action:
+                        Action {
+                        id: addChildAction
+                        text: qsTr("Add child")
+                        //shortcut: "Ctrl+N"
+                        icon {
+                            source: "qrc:///icons/backup/document-new.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && listView.enabled
+                        onTriggered: {
+                            console.log("add child action", model.projectId,
+                                        model.paperId)
+
+
+                            goToChildActionToBeTriggered = true
+                            goToChildActionCurrentIndent =  model.indent
+
+
+                            var _proxyModel = proxyModel
+                            currentProject = model.projectId
+                            currentParent = model.paperId
+                            var _currentProject = currentProject
+                            var _currentParent = currentParent
+                            var _index = model.index
+
+                            var _listView = listView
+
+
+                            // change level
+                            _proxyModel.setParentFilter(_currentProject,
+                                                        _currentParent)
+                            _proxyModel.addHistory(_currentProject, _index)
+
+                            newPaperVisualIndex = _listView.count
+                            newPaperAdded = true // triggers editName()
+                            _proxyModel.addChildItem(_currentProject,
+                                                     _currentParent, _listView.count)
+
+                            // edit it :
+
+
+
+
+                        }
+                    }
+
+                }
                 MenuSeparator {
                     height: !model.isMovable || model.paperId === -1 ? 0: undefined
                     visible: model.isMovable && model.paperId !== -1
@@ -1692,7 +1810,8 @@ TreeListViewForm {
 
                 ScriptAction {
                     script: if(newPaperAdded === true){
-                                listView.itemAtIndex(0).editName()
+                                listView.itemAtIndex(newPaperVisualIndex).editName()
+                                newPaperVisualIndex = 0
                                 newPaperAdded = false
                             }
                 }

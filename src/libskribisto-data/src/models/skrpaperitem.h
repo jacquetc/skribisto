@@ -36,11 +36,12 @@ public:
         ProjectIsActiveRole       = Qt::UserRole + 17,
         IsRenamableRole           = Qt::UserRole + 18,
         IsMovableRole             = Qt::UserRole + 19,
-        CanAddPaperRole           = Qt::UserRole + 20,
-        IsTrashableRole           = Qt::UserRole + 21,
-        IsOpenableRole            = Qt::UserRole + 22,
-        IsCopyableRole            = Qt::UserRole + 23,
-        AttributesRole            = Qt::UserRole + 24
+        CanAddSiblingPaperRole    = Qt::UserRole + 20,
+        CanAddChildPaperRole      = Qt::UserRole + 21,
+        IsTrashableRole           = Qt::UserRole + 22,
+        IsOpenableRole            = Qt::UserRole + 23,
+        IsCopyableRole            = Qt::UserRole + 24,
+        AttributesRole            = Qt::UserRole + 25
     };
     Q_ENUM(Roles)
 

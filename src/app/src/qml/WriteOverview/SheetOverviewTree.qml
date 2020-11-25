@@ -270,6 +270,12 @@ SheetOverviewTreeForm {
                     event.accepted = true
                 }
 
+                // add child
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Space && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    addChildAction.trigger()
+                    event.accepted = true
+                }
+
                 // move up
                 if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveUpAction.trigger()

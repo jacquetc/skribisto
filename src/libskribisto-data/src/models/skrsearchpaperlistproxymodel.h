@@ -139,6 +139,9 @@ public:
                                      int paperId);
     Q_INVOKABLE void      clearHistory(int projectId);
 
+    Q_INVOKABLE void cut(int projectId, int paperId);
+    Q_INVOKABLE void copy(int projectId, int paperId);
+    Q_INVOKABLE void paste(int targetProjectId, int targetParentId);
 signals:
 
     void projectIdFilterChanged(int projectIdFilter);

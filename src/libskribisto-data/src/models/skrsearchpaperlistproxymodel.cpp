@@ -1333,3 +1333,21 @@ void SKRSearchPaperListProxyModel::addHistory(int projectId, int paperId)
     list.append(paperId);
     m_historyList.insert(projectId, list);
 }
+
+// --------------------------------------------------------------
+
+void SKRSearchPaperListProxyModel::cut(int projectId, int paperId){
+
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchPaperListProxyModel::copy(int projectId, int paperId){
+
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchPaperListProxyModel::paste(int targetProjectId, int targetParentId){
+
+}
