@@ -5,6 +5,7 @@ import QtQml.Models 2.15
 import QtQml 2.15
 import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
+import eu.skribisto.result 1.0
 import "../Items"
 import ".."
 
@@ -1084,9 +1085,13 @@ ListView {
                             console.log("add before action", model.projectId,
                                         model.paperId)
 
-                            var visualIndex = root.currentIndex
-                            proxyModel.addItemAbove(model.projectId, model.paperId, visualIndex)
-                            root.itemAtIndex(visualIndex).editName()
+                            var result =  proxyModel.addItemAbove(model.projectId,
+                                                       model.paperId, 0)
+
+                            // edit it :
+                            root.itemAtIndex(currentIndex).paperIdToEdit = result.getData("paperId", -2)
+
+
                         }
                     }
                 }
@@ -1107,10 +1112,12 @@ ListView {
                             console.log("add after action", model.projectId,
                                         model.paperId)
 
-                            var childrenList = proxyModel.getChildrenList(model.projectId, model.paperId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)
-                            var visualIndex = root.currentIndex + childrenList + 1
-                            proxyModel.addItemBelow(model.projectId, model.paperId, visualIndex)
-                            root.itemAtIndex(visualIndex).editName()
+                            var result =  proxyModel.addItemBelow(model.projectId,
+                                                       model.paperId, 0)
+
+                            // edit it :
+                            root.itemAtIndex(currentIndex).paperIdToEdit = result.getData("paperId", -2)
+
                         }
                     }
 
@@ -1132,14 +1139,11 @@ ListView {
                             console.log("add child action", model.projectId,
                                         model.paperId)
 
-                                proxyModel.addChildItem(model.projectId,
+                              var result =  proxyModel.addChildItem(model.projectId,
                                                          model.paperId, 0)
 
-
-                                // edit it :
-                            var childrenList = proxyModel.getChildrenList(model.projectId, model.paperId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)
-                            var visualIndex = root.currentIndex + childrenList.length
-                                root.itemAtIndex(visualIndex).editName()
+                            // edit it :
+                            root.itemAtIndex(currentIndex).paperIdToEdit = result.getData("paperId", -2)
 
 
 
@@ -1147,6 +1151,56 @@ ListView {
                     }
 
                 }
+
+
+                MenuSeparator {
+                    height: model.isMovable && moveActionEnabled ? undefined : 0
+                    visible: model.isMovable && moveActionEnabled
+                }
+
+                SkrMenuItem {
+                    height: model.isMovable && moveActionEnabled ? undefined : 0
+                    visible: model.isMovable && moveActionEnabled
+                    action: Action {
+                        id: moveUpAction
+                        text: qsTr("Move up")
+                        //shortcut: "Ctrl+Up"
+                        icon {
+                            source: "qrc:///icons/backup/object-order-raise.svg"
+                        }
+                        enabled:root.enabled && currentIndex !== 0  && root.enabled && currentPaperId !== -1
+                        onTriggered: {
+                            console.log("move up action", currentProjectId, currentPaperId)
+
+                            proxyModel.moveUp(currentProjectId, currentPaperId, currentIndex)
+
+                        }
+                    }
+                }
+
+                SkrMenuItem {
+                    height: model.isMovable && moveActionEnabled ? undefined : 0
+                    visible: model.isMovable && moveActionEnabled
+                    action:
+                        Action {
+                        id: moveDownAction
+                        text: qsTr("Move down")
+                        //shortcut: "Ctrl+Down"
+                        icon {
+                            source: "qrc:///icons/backup/object-order-lower.svg"
+                        }
+                        enabled: currentIndex !== visualModel.items.count - 1  && root.enabled && currentPaperId !== -1
+
+                        onTriggered: {
+                            console.log("move down action", currentProjectId, currentPaperId)
+
+                            proxyModel.moveDown(currentProjectId, currentPaperId, currentIndex)
+                        }
+                    }
+                }
+
+
+
                 MenuSeparator {
                     height: model.isTrashable && (sendToTrashActionEnabled || deleteActionEnabled) ? undefined : 0
                     visible: model.isTrashable && (sendToTrashActionEnabled || deleteActionEnabled)
@@ -1228,8 +1282,30 @@ ListView {
                 }
             }
 
-            // move :
+            // edit name  :
+            property int paperIdToEdit: -2
+            onPaperIdToEditChanged: {
+                if(paperIdToEdit !== -2){
+                    editNameTimer.start()
+                }
+            }
+
+            Timer{
+                id: editNameTimer
+                repeat: false
+                interval: 250 //draggableContent.transitionAnimationDuration
+                onTriggered: {
+                    var index = proxyModel.findVisualIndex(model.projectId, paperIdToEdit)
+                    if(index !== -2){
+                        root.itemAtIndex(index).editName()
+                    }
+                    paperIdToEdit = -2
+                }
+
+            }
         }
+
+
     }
 
 

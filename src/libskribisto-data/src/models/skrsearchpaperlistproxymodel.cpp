@@ -1100,67 +1100,102 @@ int SKRSearchPaperListProxyModel::getItemIndent(int projectId, int paperId)
 
 // -----------------------------------------------------------------
 
-void SKRSearchPaperListProxyModel::addChildItem(int projectId,
+SKRResult SKRSearchPaperListProxyModel::addChildItem(int projectId,
                                                 int parentPaperId,
                                                 int visualIndex)
 {
     SKRResult result = m_paperHub->addChildPaper(projectId, parentPaperId);
 
-    this->setForcedCurrentIndex(visualIndex);
+    IFOK(result){
+        int newPaperId =  m_paperHub->getLastAddedId();
+        result.addData("paperId", newPaperId);
+
+
+        sort(0);
+        int newVisualIndex = this->findVisualIndex(projectId, newPaperId);
+
+        this->setForcedCurrentIndex(newVisualIndex);
+    }
+    return result;
 }
 
 // -----------------------------------------------------------------
 
-void SKRSearchPaperListProxyModel::addItemAbove(int projectId,
+SKRResult SKRSearchPaperListProxyModel::addItemAbove(int projectId,
                                                 int parentPaperId,
                                                 int visualIndex)
 {
     SKRResult result = m_paperHub->addPaperAbove(projectId, parentPaperId);
 
-    this->setForcedCurrentIndex(visualIndex);
-}
+    IFOK(result){
+        int newPaperId =  m_paperHub->getLastAddedId();
+        result.addData("paperId", newPaperId);
+
+
+        sort(0);
+        int newVisualIndex = this->findVisualIndex(projectId, newPaperId);
+
+        this->setForcedCurrentIndex(newVisualIndex);
+    }
+    return result;}
 
 // -----------------------------------------------------------------
 
-void SKRSearchPaperListProxyModel::addItemBelow(int projectId,
+SKRResult SKRSearchPaperListProxyModel::addItemBelow(int projectId,
                                                 int parentPaperId,
                                                 int visualIndex)
 {
     SKRResult result = m_paperHub->addPaperBelow(projectId, parentPaperId);
+    IFOK(result){
+        int newPaperId =  m_paperHub->getLastAddedId();
+        result.addData("paperId", newPaperId);
 
-    this->setForcedCurrentIndex(visualIndex);
+
+        sort(0);
+        int newVisualIndex = this->findVisualIndex(projectId, newPaperId);
+
+        this->setForcedCurrentIndex(newVisualIndex);
+    }
+    return result;
+
 }
 
 // --------------------------------------------------------------
 
-void SKRSearchPaperListProxyModel::moveUp(int projectId, int paperId, int visualIndex)
+SKRResult SKRSearchPaperListProxyModel::moveUp(int projectId, int paperId, int visualIndex)
 {
     SKRPaperItem *item = this->getItem(projectId, paperId);
 
     if (!item) {
-        return;
+        return SKRResult();
     }
     SKRResult result = m_paperHub->movePaperUp(projectId, paperId);
+    IFOK(result){
     sort(0);
     int newVisualIndex = this->findVisualIndex(projectId, paperId);
 
     this->setForcedCurrentIndex(newVisualIndex);
+    }
+    return result;
 }
 
 // --------------------------------------------------------------
 
-void SKRSearchPaperListProxyModel::moveDown(int projectId, int paperId, int visualIndex)
+SKRResult SKRSearchPaperListProxyModel::moveDown(int projectId, int paperId, int visualIndex)
 {
     SKRPaperItem *item = this->getItem(projectId, paperId);
 
     if (!item) {
-        return;
+        return SKRResult();
     }
     SKRResult result = m_paperHub->movePaperDown(projectId, paperId);
+    IFOK(result){
     sort(0);
     int newVisualIndex = this->findVisualIndex(projectId, paperId);
 
     this->setForcedCurrentIndex(newVisualIndex);
+    }
+    return result;
 }
 
 // --------------------------------------------------------------
@@ -1172,6 +1207,7 @@ void SKRSearchPaperListProxyModel::moveDown(int projectId, int paperId, int visu
 /// \param to target item index number
 /// Carefull, this is only used for manually moving a visual item
 void SKRSearchPaperListProxyModel::moveItem(int from, int to) {
+    //TODO: adapt it to trees
     if (from == to) return;
 
     int modelFrom = from;
