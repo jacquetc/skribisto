@@ -46,11 +46,11 @@ GroupBox {
                 orientation: Qt.Horizontal
                 GradientStop {
                     position: 0.10;
-                    color: "#9e9e9e";
+                    color: SkrTheme.accent;
                 }
                 GradientStop {
                     position: 1.00;
-                    color: "#ffffff";
+                    color: "transparent";
                 }
             }
 

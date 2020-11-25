@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQml.Models 2.15
+import QtQml 2.15
 import QtQuick.Layouts 1.15
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
@@ -83,6 +84,18 @@ TagPadForm {
         }
 
     }
+
+    //----------------------------------------------------------------
+    //needed to center vertically in overview tree
+
+
+    Binding on tagFlickable.contentY {
+        value: tagFlow.height < tagFlickable.height ? -(tagFlickable.height / 2  - tagFlow.height / 2) : 0
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
 
     //----------------------------------------------------------------
 
@@ -710,7 +723,7 @@ TagPadForm {
                                 id: delegateRoot
                                 height: itemBase.height
 
-
+                                width: itemBase.width
                                 anchors {
                                     left: Qt.isQtObject(parent) ? parent.left : undefined
                                     right: Qt.isQtObject(parent) ? parent.right : undefined
@@ -720,14 +733,14 @@ TagPadForm {
 
                                 TapHandler {
                                     id: tapHandler
-                                    onSingleTapped: {
-                                        searchResultList.currentIndex = model.index
-                                        delegateRoot.forceActiveFocus()
-                                        colorChooser.selectColor(model.color)
+//                                    onSingleTapped: {
+//                                        searchResultList.currentIndex = model.index
+//                                        delegateRoot.forceActiveFocus()
+//                                        colorChooser.selectColor(model.color)
 
-                                        eventPoint.accepted = true
-                                    }
-                                    onDoubleTapped: {
+//                                        eventPoint.accepted = true
+//                                    }
+                                    onSingleTapped: {
 
                                         if(itemId === -2){
                                             callAddTag(model.projectId, model.name, model.color, model.textColor)
@@ -740,6 +753,11 @@ TagPadForm {
                                         titleEditPopup.close()
                                         eventPoint.accepted = true
                                     }
+
+                                    onGrabChanged: {
+                                        point.accepted = false
+                                    }
+
                                 }
 
                                 //                        Shortcut {
@@ -781,7 +799,7 @@ TagPadForm {
                                     id: itemBase
                                     width: childrenRect.width + 10
                                     height: childrenRect.height + 10
-                                    border.color: SkrTheme.buttonBackground
+                                    border.color: searchResultList.currentIndex === model.index ? SkrTheme.accent : SkrTheme.buttonBackground
                                     border.width: 2
                                     radius : height / 2
                                     color: model.color

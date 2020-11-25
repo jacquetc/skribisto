@@ -541,13 +541,15 @@ TreeListViewForm {
                 Drag.hotSpot.x: width / 2
                 Drag.hotSpot.y: height / 2
 
-                color: dragHandler.active | !tapHandler.enabled ? "lightsteelblue" : "transparent"
+                border.width: 2
+                border.color: dragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
                 Behavior on color {
                     ColorAnimation {
                         duration: 200
                     }
                 }
 
+                property bool dragging: false
                 DragHandler {
                     id: dragHandler
                     //acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
@@ -557,12 +559,24 @@ TreeListViewForm {
                     onActiveChanged: {
                         if (active) {
                             moveSourceInt = content.visualIndex
+                            cancelDragTimer.stop()
                         } else {
                             content.Drag.drop()
-                            tapHandler.enabled = true
+                            content.dragging = false
                         }
                     }
-                    enabled: !tapHandler.enabled
+                    enabled: content.dragging
+
+                    grabPermissions: PointerHandler.CanTakeOverFromItems |PointerHandler.CanTakeOverFromAnything
+                }
+
+                Timer{
+                    id: cancelDragTimer
+                    repeat: false
+                    interval: 3000
+                    onTriggered: {
+                        content.dragging = false
+                    }
                 }
 
                 HoverHandler {
@@ -574,12 +588,21 @@ TreeListViewForm {
                     id: tapHandler
 
                     onSingleTapped: {
+                        if(content.dragging){
+                            eventPoint.accepted = false
+                            return
+                        }
+
                         listView.currentIndex = model.index
                         delegateRoot.forceActiveFocus()
                         eventPoint.accepted = true
                     }
 
                     onDoubleTapped: {
+                        if(content.dragging){
+                            eventPoint.accepted = false
+                            return
+                        }
                         //console.log("double tapped")
                         listView.currentIndex = model.index
                         openDocumentAction.trigger()
@@ -587,10 +610,27 @@ TreeListViewForm {
                     }
 
                     onLongPressed: { // needed to activate the grab handler
-                        enabled = false
+
+//                        if(content.dragging){
+//                            eventPoint.accepted = false
+//                            return
+//                        }
+
+
+                        content.dragging = true
+                        cancelDragTimer.start()
+                        eventPoint.accepted = true
                     }
 
+
+                    onGrabChanged: {
+                        point.accepted = false
+
+                    }
+
+                    grabPermissions: PointerHandler.ApprovesTakeOverByHandlersOfDifferentType
                 }
+
 
                 TapHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
@@ -607,7 +647,10 @@ TreeListViewForm {
                         menu.open()
                         eventPoint.accepted = true
                     }
+
+                    grabPermissions: PointerHandler.TakeOverForbidden
                 }
+
                 TapHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.MiddleButton
@@ -618,7 +661,9 @@ TreeListViewForm {
                         eventPoint.accepted = true
 
                     }
+                    grabPermissions: PointerHandler.TakeOverForbidden
                 }
+
                 /// without MouseArea, it breaks while dragging and scrolling:
                 MouseArea {
                     anchors.fill: parent

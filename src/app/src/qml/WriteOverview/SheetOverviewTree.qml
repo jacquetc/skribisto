@@ -472,6 +472,12 @@ SheetOverviewTreeForm {
                                 enabled = false
                             }
                         }
+
+                        onGrabChanged: {
+                            point.accepted = false
+
+                        }
+
                     }
 
                     TapHandler {
@@ -1084,6 +1090,7 @@ SheetOverviewTreeForm {
                             NotePad {
                                 id: notePad
                                 Layout.fillWidth: true
+                                Layout.fillHeight: true
 
                                 Layout.alignment: Qt.AlignVCenter
 
@@ -1148,6 +1155,7 @@ SheetOverviewTreeForm {
                                 id: tagPad
 
                                 Layout.fillWidth: true
+                                Layout.fillHeight: true
                                 Layout.alignment: Qt.AlignVCenter
 
 

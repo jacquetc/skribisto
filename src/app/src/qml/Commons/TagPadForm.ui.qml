@@ -7,6 +7,7 @@ import ".."
 Item {
     id: base
     property alias tagFlow: tagFlow
+    property alias tagFlickable: tagFlickable
     property alias addTagMenuToolButton: addTagMenuToolButton
     property alias tagRepeater: tagRepeater
     property alias tagFlowFocusScope: tagFlowFocusScope
@@ -69,7 +70,8 @@ Item {
                 id: tagFlowFocusScope
                 Layout.fillHeight: true
                 Layout.fillWidth: true
-                Layout.preferredHeight: minimalMode ? -1 : tagFlow.height + flickable.topMargin + flickable.bottomMargin
+                property int flowHeight: tagFlow.height + tagFlickable.topMargin + tagFlickable.bottomMargin
+                Layout.preferredHeight: minimalMode ? -1 : (flowHeight > 200 ? 200 : flowHeight)
 
                 ScrollView {
                     id: scrollView
@@ -80,10 +82,14 @@ Item {
                     ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
                     Flickable {
-                        id: flickable
+                        id: tagFlickable
                         boundsBehavior: Flickable.StopAtBounds
                         contentWidth: scrollView.width
                         contentHeight: tagFlow.height
+
+                        //needed to center vertically in overview tree
+                        interactive: tagFlow.height > tagFlickable.height
+
                         Flow {
                             id: tagFlow
                             width: scrollView.width

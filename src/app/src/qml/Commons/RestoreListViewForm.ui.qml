@@ -43,6 +43,13 @@ Item {
                         display: AbstractButton.IconOnly
                     }
 
+                    Item {
+                        id: stretcher2
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                    }
+
                     SkrToolButton {
                         id: restoreToolButton
                         flat: true

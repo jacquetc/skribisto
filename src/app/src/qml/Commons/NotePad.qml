@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
+import QtQml 2.15
 import eu.skribisto.searchnotelistproxymodel 1.0
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.propertyhub 1.0
@@ -35,6 +36,18 @@ NotePadForm {
         onTriggered:  openSynopsisAction.trigger()
 
     }
+
+    //----------------------------------------------------------------
+    //needed to center vertically in overview tree
+
+
+    Binding on noteFlickable.contentY {
+        value: noteFlow.height < noteFlickable.height ? -(noteFlickable.height / 2  - noteFlow.height / 2) : 0
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
 
     //-----------------------------------------------------------------------------
 
@@ -982,6 +995,10 @@ NotePadForm {
             titleTextField.clear()
         }
 
+        onClosed: {
+            addNoteMenuToolButton.forceActiveFocus()
+        }
+
         ColumnLayout {
             anchors.fill: parent
             SkrTextField {
@@ -1075,12 +1092,12 @@ NotePadForm {
 
                             TapHandler {
                                 id: tapHandler
+//                                onSingleTapped: {
+//                                    searchResultList.currentIndex = model.index
+//                                    delegateRoot.forceActiveFocus()
+//                                    eventPoint.accepted = true
+//                                }
                                 onSingleTapped: {
-                                    searchResultList.currentIndex = model.index
-                                    delegateRoot.forceActiveFocus()
-                                    eventPoint.accepted = true
-                                }
-                                onDoubleTapped: {
                                     //create relationship with note
 
                                     var noteId = model.paperId
@@ -1098,6 +1115,13 @@ NotePadForm {
 
                                     eventPoint.accepted = true
                                 }
+
+
+                                onGrabChanged: {
+                                    point.accepted = false
+                                }
+
+
                             }
 
                             //                        Shortcut {

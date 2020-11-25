@@ -8,6 +8,7 @@ import ".."
 Item {
     id: base
     property alias noteFlow: noteFlow
+    property alias noteFlickable: noteFlickable
     property alias noteWritingZone: noteWritingZone
     property alias openSynopsisToolButton: openSynopsisToolButton
     property alias openNoteInNewTabToolButton: openNoteInNewTabToolButton
@@ -93,7 +94,8 @@ Item {
                 id: noteFlowFocusScope
                 Layout.fillHeight: true
                 Layout.fillWidth: true
-                Layout.preferredHeight: minimalMode ? -1 : noteFlow.height + flickable.topMargin + flickable.bottomMargin
+                property int flowHeight: noteFlow.height + noteFlickable.topMargin + noteFlickable.bottomMargin
+                Layout.preferredHeight: minimalMode ? -1 : (flowHeight > 200 ? 200 : flowHeight)
 
                 ScrollView {
                     id: scrollView
@@ -104,10 +106,15 @@ Item {
                     ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
                     Flickable {
-                        id: flickable
+                        id: noteFlickable
                         boundsBehavior: Flickable.StopAtBounds
                         contentWidth: scrollView.width
                         contentHeight: noteFlow.height
+
+                        //needed to center vertically in overview tree
+                        interactive: noteFlow.height > noteFlickable.height
+
+
                         Flow {
                             id: noteFlow
                             width: scrollView.width

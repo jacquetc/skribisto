@@ -731,14 +731,16 @@ RootPageForm {
                                 rightMargin: 5
                             }
 
+
+
                             TapHandler {
                                 id: tapHandler
+                                //                                onSingleTapped: {
+                                //                                    dropDownTabMenuList.currentIndex = model.index
+                                //                                    delegateRoot.forceActiveFocus()
+                                //                                    eventPoint.accepted = true
+                                //                                }
                                 onSingleTapped: {
-                                    dropDownTabMenuList.currentIndex = model.index
-                                    delegateRoot.forceActiveFocus()
-                                    eventPoint.accepted = true
-                                }
-                                onDoubleTapped: {
                                     // open tab
 
                                     var noteId = model.tabId
@@ -748,7 +750,26 @@ RootPageForm {
                                     dropDownTabMenuPopup.close()
 
                                 }
+
+
+                                onGrabChanged: {
+                                    point.accepted = false
+                                }
+
                             }
+
+                            HoverHandler {
+                                id: hoverHandler
+
+                                onHoveredChanged: {
+                                    if(hovered){
+                                        dropDownTabMenuList.currentIndex = model.index
+                                        delegateRoot.forceActiveFocus()
+                                    }
+                                }
+                            }
+
+
                             Keys.priority: Keys.AfterItem
 
                             Keys.onPressed: {
@@ -774,6 +795,7 @@ RootPageForm {
 
 
                             RowLayout {
+                                id: baseLayout
                                 anchors.fill: parent
 
                                 SkrLabel {
