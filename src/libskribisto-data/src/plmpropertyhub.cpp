@@ -584,6 +584,35 @@ QString PLMPropertyHub::getPropertyById(int projectId, int propertyId) const
     return value;
 }
 
+// ---------------------------------------------------------------------
+
+int PLMPropertyHub::getPropertyId(int projectId, int paperCode, const QString& name) const
+{
+    SKRResult result(this);
+    int  value = -2;
+
+    QHash<int, QVariant> out;
+    PLMSqlQueries queries(projectId, m_tableName);
+    QHash<QString, QVariant> where;
+
+    where.insert(m_paperCodeFieldName, paperCode);
+    where.insert("t_name",             name);
+    result = queries.getValueByIdsWhere("t_value", out, where);
+
+    if (out.isEmpty()) {
+        return value;
+    }
+
+    IFOK(result) {
+        value = out.keys().first();
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return value;
+}
 // -----------------------------------------------------------------------------
 
 int PLMPropertyHub::getLastAddedId()

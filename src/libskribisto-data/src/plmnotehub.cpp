@@ -26,7 +26,11 @@
 #include <QDebug>
 
 PLMNoteHub::PLMNoteHub(QObject *parent) : PLMPaperHub(parent, "tbl_note", SKR::Note)
-{}
+{
+
+
+
+}
 
 SKRResult PLMNoteHub::addNoteRelatedToSheet(int projectId, int sheetId) {
     SKRResult result(this);
@@ -128,9 +132,9 @@ int PLMNoteHub::getSynopsisNoteId(int projectId, int sheetId) const
 // --------------------------------------------------------------------------------
 
 SKRResult PLMNoteHub::setSheetNoteRelationship(int  projectId,
-                                              int  sheetId,
-                                              int  noteId,
-                                              bool isSynopsis)
+                                               int  sheetId,
+                                               int  noteId,
+                                               bool isSynopsis)
 {
     SKRResult result(this);
 
@@ -249,18 +253,84 @@ SKRResult PLMNoteHub::removeSheetNoteRelationship(int projectId, int sheetId, in
 }
 
 // --------------------------------------------------------------------------------
+
+int PLMNoteHub::getSheetFromSynopsisId(int projectId, int synopsisId) const
+{
+    SKRResult   result;
+    int final = -2;
+    QHash<int, QVariant> out;
+    QHash<QString, QVariant> where;
+    where.insert("l_note_code", synopsisId);
+    where.insert("b_synopsis", true);
+
+    PLMSqlQueries queries(projectId, "tbl_sheet_note");
+
+
+    result = queries.getValueByIdsWhere("l_sheet_code", out, where);
+
+    if(out.isEmpty()){
+        return final;
+    }
+
+    IFOK(result) {
+        final = out.values().first().toInt();
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return final;
+}
+
+// --------------------------------------------------------------------------------
 ///
 /// \brief PLMNoteHub::getSynopsisFolderId
 /// \param projectId
 /// \return
-/// Retrieve note id used as parent of synopsis. Create one if none found and
-// move all
-/// existing synopsis into the folder
+/// Retrieve note id used as parent of synopsis.
 int PLMNoteHub::getSynopsisFolderId(int projectId) {
+    SKRResult result(this);
+
+    // retrieve
+
+    int retrievedId = -2;
+
+    for (const int noteId : getAllIds(projectId)) {
+        QString propertyValue = plmdata->notePropertyHub()->getProperty(projectId,
+                                                                        noteId,
+                                                                        "is_synopsis_folder",
+                                                                        QString());
+
+        if (propertyValue == "true") {
+            retrievedId = noteId;
+            break;
+        }
+    }
+
+    // if none
+    if (retrievedId == -2) {
+        result = SKRResult(SKRResult::Fatal, this, "synopsis_folder_not_found");
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return retrievedId;
+}
+
+// --------------------------------------------------------------------------------
+///
+/// \brief PLMNoteHub::cleanUpSynopsis
+/// \param projectId
+/// \return
+/// Retrieve note id used as parent of synopsis. Create one if none found and move all
+/// existing synopsis into the folder. Apply properties to folder and synopsis.
+/// Delete unused sysnopsis. Sync titles between sheet and synopsis
+SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
+
     SKRResult result(this);
     int value = -2;
 
-    // retrieve
+    // retrieve synopsis folder Id
 
     int retrievedId = -2;
 
@@ -307,6 +377,16 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
                                                     true);
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
+                                                    "can_add_sibling_paper",
+                                                    "true",
+                                                    true);
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
+                                                    "can_add_child_paper",
+                                                    "false",
+                                                    true);
+            plmdata->notePropertyHub()->setProperty(projectId,
+                                                    folderId,
                                                     "is_openable",
                                                     "false",
                                                     true);
@@ -341,7 +421,7 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
             }
 
             for (int synopsisId : synList) {
-                qDebug() << "synList " << synopsisId;
+                //qDebug() << "synList " << synopsisId;
                 result = this->movePaperAsChildOf(projectId, synopsisId, folderId);
 
                 // set properties :
@@ -357,7 +437,12 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
                                                         true);
                 plmdata->notePropertyHub()->setProperty(projectId,
                                                         synopsisId,
-                                                        "can_add_paper",
+                                                        "can_add_sibling_paper",
+                                                        "false",
+                                                        true);
+                plmdata->notePropertyHub()->setProperty(projectId,
+                                                        synopsisId,
+                                                        "can_add_child_paper",
                                                         "false",
                                                         true);
                 plmdata->notePropertyHub()->setProperty(projectId,
@@ -370,14 +455,96 @@ int PLMNoteHub::getSynopsisFolderId(int projectId) {
         }
     }
 
+    // upgrade properties in synopsis folder
+
+    int propertyId = plmdata->notePropertyHub()->getPropertyId(projectId, folderId, "can_add_paper");
+
+    if(propertyId != -2){
+        result = plmdata->notePropertyHub()->removeProperty(projectId, propertyId);
+    }
+
+    result = plmdata->notePropertyHub()->setProperty(projectId,
+                                            folderId,
+                                            "can_add_sibling_paper",
+                                            "true",
+                                            true);
+    result = plmdata->notePropertyHub()->setProperty(projectId,
+                                            folderId,
+                                            "can_add_child_paper",
+                                            "false",
+                                            true);
+
+    //all synopsis:
+    IFOK(result) {
+        QList<int> synList;
+
+        for (int noteId : getAllIds(projectId)) {
+            bool syn = isSynopsis(projectId, noteId);
+
+            if (syn) {
+                synList << noteId;
+
+            }
+        }
+
+        for (int synopsisId : synList) {
+
+            // upgrade properties in all synopsis
+
+            int propertyId = plmdata->notePropertyHub()->getPropertyId(projectId, synopsisId, "can_add_paper");
+
+            if(propertyId != -2){
+                result = plmdata->notePropertyHub()->removeProperty(projectId, propertyId);
+            }
+
+
+            result = plmdata->notePropertyHub()->setProperty(projectId,
+                                                    synopsisId,
+                                                    "can_add_sibling_paper",
+                                                    "false",
+                                                    true);
+            result = plmdata->notePropertyHub()->setProperty(projectId,
+                                                    synopsisId,
+                                                    "can_add_child_paper",
+                                                    "false",
+                                                    true);
+
+
+            // find sheet:
+            int sheetId = plmdata->noteHub()->getSheetFromSynopsisId(projectId, synopsisId);
+            if(sheetId == -2){
+                // delete useless note
+                 plmdata->noteHub()->removePaper(projectId, synopsisId);
+            }
+            else {
+                // sync names in all synopsis
+                QString sheetTitle = plmdata->sheetHub()->getTitle(projectId, sheetId);
+                if(plmdata->noteHub()->getTitle(projectId, synopsisId) != sheetTitle){
+                    result = plmdata->noteHub()->setTitle(projectId, synopsisId, sheetTitle);
+                }
+            }
+
+
+            IFKO(result){
+                break;
+            }
+
+        }
+    }
+
+
+
+
+
     IFOK(result) {
         value = folderId;
     }
     IFKO(result) {
         emit errorSent(result);
     }
-    return value;
+    return result;
 }
+
 
 // --------------------------------------------------------------------------------
 
@@ -452,7 +619,12 @@ SKRResult PLMNoteHub::createSynopsis(int projectId, int sheetId) {
                                                 true);
         plmdata->notePropertyHub()->setProperty(projectId,
                                                 lastAddedNoteId,
-                                                "can_add_paper",
+                                                "can_add_sibling_paper",
+                                                "false",
+                                                true);
+        plmdata->notePropertyHub()->setProperty(projectId,
+                                                lastAddedNoteId,
+                                                "can_add_child_paper",
                                                 "false",
                                                 true);
         plmdata->notePropertyHub()->setProperty(projectId,
@@ -487,8 +659,8 @@ QHash<QString, QVariant>PLMNoteHub::getNoteData(int projectId, int noteId) const
     QStringList fieldNames;
 
     fieldNames << "l_note_id" << "l_dna" << "l_sort_order" << "l_indent" <<
-        "l_version" << "t_title" << "dt_created" << "dt_updated" << "dt_content" <<
-        "b_trashed";
+                  "l_version" << "t_title" << "dt_created" << "dt_updated" << "dt_content" <<
+                  "b_trashed";
     PLMSqlQueries queries(projectId, m_tableName);
 
     result = queries.getMultipleValues(noteId, fieldNames, var);

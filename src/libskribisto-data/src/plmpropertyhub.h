@@ -100,6 +100,7 @@ public:
                                      const QString& defaultValue) const;
     QString            getPropertyById(int projectId,
                                        int propertyId) const;
+    int getPropertyId(int projectId, int paperCode, const QString &name) const;
     QHash<int, QString>getAllNames(int projectId) const;
     QHash<int, QString>getAllValues(int projectId) const;
     QHash<int, bool>   getAllIsSystems(int projectId) const;

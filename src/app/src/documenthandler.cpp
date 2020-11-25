@@ -55,7 +55,7 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 &DocumentHandler::projectIdChanged,
                 m_highlighter,
                 &SKRHighlighter::setProjectId);
-     } else {
+    } else {
         m_textCursor.setPosition(0);
     }
     emit cursorPositionChanged();
@@ -578,4 +578,19 @@ void DocumentHandler::addHorizontalLine()
                                                                                        "____________________"),
                                                                                    "<hr/><p></p>"));
     m_textCursor.endEditBlock();
+}
+
+
+void DocumentHandler::insertDocumentFragment(const QTextDocumentFragment &fragment){
+
+    m_selectionCursor.beginEditBlock();
+    if (m_selectionCursor.selectedText().isEmpty()) {
+        m_textCursor.insertFragment(fragment);
+    }
+    else{
+        m_selectionCursor.insertFragment(fragment);
+    }
+
+
+    m_selectionCursor.endEditBlock();
 }

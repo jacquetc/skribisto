@@ -14,6 +14,7 @@ Item {
     property alias searchDrawer: searchDrawer
     property alias showTagDrawerButton: showTagDrawerButton
     property alias deselectTagsButton: deselectTagsButton
+    readonly property bool searching: searchTextField.text.length !== 0
 
     ColumnLayout {
         id: columnLayout
@@ -71,11 +72,18 @@ Item {
                 CheckableTree {
                     id: searchListView
                     anchors.fill: parent
+                    treeIndentMultiplier: 20
+                    elevationEnabled: true                    
+
                     openActionsEnabled: true
                     renameActionEnabled: true
                     sendToTrashActionEnabled: true
-                    treeIndentMultiplier: 20
-                    elevationEnabled: true
+                    cutActionEnabled: true
+                    copyActionEnabled: true
+                    pasteActionEnabled: !searching
+                    addSiblingPaperActionEnabled: !searching
+                    addChildPaperActionEnabled: !searching
+                    moveActionEnabled: !searching
                 }
             }
 

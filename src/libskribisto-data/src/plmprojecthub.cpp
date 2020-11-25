@@ -32,6 +32,7 @@ SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath, bool hidden)
 
     IFOK(result) {
         plmdata->noteHub()->renumberSortOrders(projectId);
+        plmdata->noteHub()->cleanUpSynopsis(projectId);
         plmdata->sheetHub()->renumberSortOrders(projectId);
         if(!hidden){
             m_projectsNotModifiedOnceList.append(projectId);
@@ -62,6 +63,7 @@ SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path, bool hidden)
 
     IFOK(result) {
         plmdata->noteHub()->renumberSortOrders(projectId);
+        plmdata->noteHub()->cleanUpSynopsis(projectId);
         plmdata->sheetHub()->renumberSortOrders(projectId);
         if(!hidden){
             m_projectsNotModifiedOnceList.append(projectId);
@@ -110,9 +112,9 @@ SKRResult PLMProjectHub::saveProject(int projectId)
 /// called every modification
 void PLMProjectHub::setProjectNotSavedAnymore(int projectId)
 {
+    m_projectsNotModifiedOnceList.removeAll(projectId);
     if (!m_projectsNotSavedList.contains(projectId)) {
         m_projectsNotSavedList.append(projectId);
-        m_projectsNotModifiedOnceList.removeAll(projectId);
         emit projectNotSavedAnymore(projectId);
     }
 }

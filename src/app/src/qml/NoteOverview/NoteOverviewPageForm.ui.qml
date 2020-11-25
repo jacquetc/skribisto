@@ -144,14 +144,19 @@ Item {
 
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                     ScrollBar.vertical.policy: ScrollBar.AsNeeded
-                    contentWidth: pillarLayout.width
-                    contentHeight: pillarLayout.implicitHeight
+                    contentWidth: gridLayout.width
+                    contentHeight: gridLayout.implicitHeight
 
-                    SKRPillarLayout {
-                        id: pillarLayout
+//                    SKRPillarLayout {
+//                        id: pillarLayout
+//                        width: scrollView.width
+//                        columns: ((pillarLayout.width / columnWidth) | 0 )
+//                        maxColumns: 2
+
+                    GridLayout{
+                        id: gridLayout
+                        columns: ((gridLayout.width / columnWidth) | 0 )
                         width: scrollView.width
-                        columns: ((pillarLayout.width / columnWidth) | 0 )
-                        maxColumns: 2
 
 //                        RecentNotesItem {
 //                            id: recentNotesItem

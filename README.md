@@ -27,11 +27,11 @@ Short term goal is to rejoin its ancestor Plume Creator feature-wise. A few outs
 - **color themes**
 - **overview of all texts**
 - **character/word count**
+- **exporting to .txt/.odt/.PDF**
+- **printing**
 - advanced search/replace
 - display quickly the end of the previous text and the beginning of the next text
 - character/word goal
-- exporting to .txt/.odt/.PDF
-- printing
 
 Skribisto will add to these features with :
 

@@ -47,19 +47,19 @@ public:
     Q_INVOKABLE void      setProjectIdFilter(int projectIdFilter);
     void                  clearFilters();
 
-    Q_INVOKABLE void      addChildItem(int projectId,
+    Q_INVOKABLE SKRResult addChildItem(int projectId,
                                        int parentPaperId,
                                        int visualIndex);
-    Q_INVOKABLE void      addItemAbove(int projectId,
+    Q_INVOKABLE SKRResult addItemAbove(int projectId,
                                        int parentPaperId,
                                        int visualIndex);
-    Q_INVOKABLE void      addItemBelow(int projectId,
+    Q_INVOKABLE SKRResult      addItemBelow(int projectId,
                                        int parentPaperId,
                                        int visualIndex);
-    Q_INVOKABLE void      moveUp(int projectId,
+    Q_INVOKABLE SKRResult      moveUp(int projectId,
                                  int paperId,
                                  int visualIndex);
-    Q_INVOKABLE void      moveDown(int projectId,
+    Q_INVOKABLE SKRResult      moveDown(int projectId,
                                    int paperId,
                                    int visualIndex);
     Q_INVOKABLE void      moveItem(int from,
@@ -139,6 +139,9 @@ public:
                                      int paperId);
     Q_INVOKABLE void      clearHistory(int projectId);
 
+    Q_INVOKABLE void cut(int projectId, int paperId);
+    Q_INVOKABLE void copy(int projectId, int paperId);
+    Q_INVOKABLE void paste(int targetProjectId, int targetParentId);
 signals:
 
     void projectIdFilterChanged(int projectIdFilter);

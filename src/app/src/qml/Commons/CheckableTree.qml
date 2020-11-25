@@ -5,6 +5,7 @@ import QtQml.Models 2.15
 import QtQml 2.15
 import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
+import eu.skribisto.result 1.0
 import "../Items"
 import ".."
 
@@ -57,6 +58,9 @@ ListView {
     property bool cutActionEnabled: false
     property bool copyActionEnabled: false
     property bool pasteActionEnabled: false
+    property bool addSiblingPaperActionEnabled: false
+    property bool addChildPaperActionEnabled: false
+    property bool moveActionEnabled: false
     property bool elevationEnabled: false
 
     //tree-like onTreelikeIndents
@@ -261,6 +265,48 @@ ListView {
                     event.accepted = true
                 }
 
+                // paste
+                if (model.canAddChildPaper && addChildPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    pasteAction.trigger()
+                    event.accepted = true
+                }
+
+                // add before
+                if (model.canAddSiblingPaper && addSiblingPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    addBeforeAction.trigger()
+                    event.accepted = true
+                }
+
+                // add after
+                if (model.canAddSiblingPaper && addSiblingPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    addAfterAction.trigger()
+                    event.accepted = true
+                }
+
+                // add child
+                if (model.canAddChildPaper && addChildPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Space && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    addChildAction.trigger()
+                    event.accepted = true
+                }
+
+                // move up
+                if (model.isMovable && moveActionEnabled  && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    moveUpAction.trigger()
+                    event.accepted = true
+                }
+
+                // move down
+                if (model.isMovable && moveActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    moveDownAction.trigger()
+                    event.accepted = true
+                }
+
+                // send to trash
+                if (model.isTrashable && sendToTrashActionEnabled && event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    sendToTrashAction.trigger()
+                    event.accepted = true
+                }
+
                 if (event.key === Qt.Key_Escape){
                     console.log("Escape key pressed")
                     root.escapeKeyPressed()
@@ -317,6 +363,10 @@ ListView {
                         eventPoint.accepted = true
                     }
 
+                    onGrabChanged: {
+                        point.accepted = false
+
+                    }
                 }
 
                 TapHandler {
@@ -946,15 +996,36 @@ ListView {
                 }
 
                 MenuSeparator {
-                    height: model.isCopyable && copyActionEnabled  ? undefined : 0
-                    visible: model.isCopyable && copyActionEnabled
+                    height: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildPaper && pasteActionEnabled) ? undefined : 0
+                    visible: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildPaper && pasteActionEnabled)
+                }
+
+                SkrMenuItem {
+                    height: model.isMovable && cutActionEnabled ? undefined : 0
+                    visible: model.isMovable && cutActionEnabled
+                    action:
+                        Action {
+                        id: cutAction
+                        text: qsTr("Cut")
+                        //shortcut: StandardKey.Cut
+                        icon {
+                            source: "qrc:///icons/backup/edit-cut.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && root.enabled
+
+                        onTriggered: {
+                            console.log("cut action", model.projectId,
+                                        model.paperId)
+                            proxyModel.cut(model.projectId, model.paperId)
+                        }
+                    }
                 }
 
                 SkrMenuItem {
                     height: model.isCopyable && copyActionEnabled ? undefined : 0
                     visible: model.isCopyable && copyActionEnabled
                     action :Action {
-
+                        id: copyAction
                         text: qsTr("Copy")
                         //shortcut: StandardKey.Copy
                         icon {
@@ -965,10 +1036,170 @@ ListView {
                         onTriggered: {
                             console.log("copy action", model.projectId,
                                         model.paperId)
-                            copyCalled(model.projectId, model.paperId)
+                            proxyModel.copy(model.projectId, model.paperId)
                         }
                     }
                 }
+
+                SkrMenuItem {
+                    height: model.canAddChildPaper && pasteActionEnabled ? undefined : 0
+                    visible: model.canAddChildPaper && pasteActionEnabled
+                    action :Action {
+                        id: pasteAction
+                        text: qsTr("Paste")
+                        //shortcut: StandardKey.Copy
+                        icon {
+                            source: "qrc:///icons/backup/edit-paste.svg"
+                        }
+                        enabled: pasteActionEnabled && contextMenuItemIndex === model.index  && root.enabled
+
+                        onTriggered: {
+                            console.log("paste action", model.projectId,
+                                        model.paperId)
+                            proxyModel.paste(model.projectId, model.paperId)
+                        }
+                    }
+                }
+
+                MenuSeparator {
+                    height: (model.canAddSiblingPaper || model.canAddChildPaper)
+                            && (addChildPaperActionEnabled || addSiblingPaperActionEnabled)?
+                                undefined : 0
+                    visible: (model.canAddSiblingPaper || model.canAddChildPaper)
+                             && (addChildPaperActionEnabled || addSiblingPaperActionEnabled)
+                }
+
+                SkrMenuItem {
+                    height: model.canAddSiblingPaper && addSiblingPaperActionEnabled ? undefined : 0
+                    visible: model.canAddSiblingPaper && addSiblingPaperActionEnabled
+                    action:
+                        Action {
+                        id: addBeforeAction
+                        text: qsTr("Add before")
+                        //shortcut: "Ctrl+Shift+N"
+                        icon {
+                            source: "qrc:///icons/backup/document-new.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        onTriggered: {
+                            console.log("add before action", model.projectId,
+                                        model.paperId)
+
+                            var result =  proxyModel.addItemAbove(model.projectId,
+                                                       model.paperId, 0)
+
+                            // edit it :
+                            root.itemAtIndex(currentIndex).paperIdToEdit = result.getData("paperId", -2)
+
+
+                        }
+                    }
+                }
+
+                SkrMenuItem {
+                    height: model.canAddSiblingPaper && addSiblingPaperActionEnabled ? undefined : 0
+                    visible: model.canAddSiblingPaper && addSiblingPaperActionEnabled
+                    action:
+                        Action {
+                        id: addAfterAction
+                        text: qsTr("Add after")
+                        //shortcut: "Ctrl+N"
+                        icon {
+                            source: "qrc:///icons/backup/document-new.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        onTriggered: {
+                            console.log("add after action", model.projectId,
+                                        model.paperId)
+
+                            var result =  proxyModel.addItemBelow(model.projectId,
+                                                       model.paperId, 0)
+
+                            // edit it :
+                            root.itemAtIndex(currentIndex).paperIdToEdit = result.getData("paperId", -2)
+
+                        }
+                    }
+
+                }
+
+                SkrMenuItem {
+                    height: model.canAddChildPaper && addChildPaperActionEnabled ? undefined : 0
+                    visible: model.canAddChildPaper && addChildPaperActionEnabled
+                    action:
+                        Action {
+                        id: addChildAction
+                        text: qsTr("Add child")
+                        //shortcut: "Ctrl+N"
+                        icon {
+                            source: "qrc:///icons/backup/document-new.svg"
+                        }
+                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        onTriggered: {
+                            console.log("add child action", model.projectId,
+                                        model.paperId)
+
+                              var result =  proxyModel.addChildItem(model.projectId,
+                                                         model.paperId, 0)
+
+                            // edit it :
+                            root.itemAtIndex(currentIndex).paperIdToEdit = result.getData("paperId", -2)
+
+
+
+                        }
+                    }
+
+                }
+
+
+                MenuSeparator {
+                    height: model.isMovable && moveActionEnabled ? undefined : 0
+                    visible: model.isMovable && moveActionEnabled
+                }
+
+                SkrMenuItem {
+                    height: model.isMovable && moveActionEnabled ? undefined : 0
+                    visible: model.isMovable && moveActionEnabled
+                    action: Action {
+                        id: moveUpAction
+                        text: qsTr("Move up")
+                        //shortcut: "Ctrl+Up"
+                        icon {
+                            source: "qrc:///icons/backup/object-order-raise.svg"
+                        }
+                        enabled:root.enabled && currentIndex !== 0  && root.enabled && currentPaperId !== -1
+                        onTriggered: {
+                            console.log("move up action", currentProjectId, currentPaperId)
+
+                            proxyModel.moveUp(currentProjectId, currentPaperId, currentIndex)
+
+                        }
+                    }
+                }
+
+                SkrMenuItem {
+                    height: model.isMovable && moveActionEnabled ? undefined : 0
+                    visible: model.isMovable && moveActionEnabled
+                    action:
+                        Action {
+                        id: moveDownAction
+                        text: qsTr("Move down")
+                        //shortcut: "Ctrl+Down"
+                        icon {
+                            source: "qrc:///icons/backup/object-order-lower.svg"
+                        }
+                        enabled: currentIndex !== visualModel.items.count - 1  && root.enabled && currentPaperId !== -1
+
+                        onTriggered: {
+                            console.log("move down action", currentProjectId, currentPaperId)
+
+                            proxyModel.moveDown(currentProjectId, currentPaperId, currentIndex)
+                        }
+                    }
+                }
+
+
 
                 MenuSeparator {
                     height: model.isTrashable && (sendToTrashActionEnabled || deleteActionEnabled) ? undefined : 0
@@ -1051,8 +1282,30 @@ ListView {
                 }
             }
 
-            // move :
+            // edit name  :
+            property int paperIdToEdit: -2
+            onPaperIdToEditChanged: {
+                if(paperIdToEdit !== -2){
+                    editNameTimer.start()
+                }
+            }
+
+            Timer{
+                id: editNameTimer
+                repeat: false
+                interval: 250 //draggableContent.transitionAnimationDuration
+                onTriggered: {
+                    var index = proxyModel.findVisualIndex(model.projectId, paperIdToEdit)
+                    if(index !== -2){
+                        root.itemAtIndex(index).editName()
+                    }
+                    paperIdToEdit = -2
+                }
+
+            }
         }
+
+
     }
 
 

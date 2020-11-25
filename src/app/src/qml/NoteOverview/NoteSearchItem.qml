@@ -32,7 +32,6 @@ NoteSearchItemForm {
 
 
 
-
     //----------------------------------------------------------------------------
     // --------------------------------- tagpad ----------------------------------
     //----------------------------------------------------------------------------
@@ -83,7 +82,7 @@ NoteSearchItemForm {
     searchListView.model: noteOverviewSearchProxyModel
     searchListView.proxyModel: noteOverviewSearchProxyModel
 
-    searchListView.treelikeIndentsVisible: searchTextField.text.length === 0
+    searchListView.treelikeIndentsVisible: !searching
 
 
     Component.onCompleted: {

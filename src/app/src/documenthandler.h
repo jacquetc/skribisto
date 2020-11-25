@@ -147,6 +147,7 @@ public slots:
 
     void undo();
     void redo();
+    void insertDocumentFragment(const QTextDocumentFragment &fragment);
 
 signals:
 

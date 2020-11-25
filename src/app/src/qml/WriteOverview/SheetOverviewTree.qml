@@ -270,6 +270,12 @@ SheetOverviewTreeForm {
                     event.accepted = true
                 }
 
+                // add child
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Space && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                    addChildAction.trigger()
+                    event.accepted = true
+                }
+
                 // move up
                 if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
                     moveUpAction.trigger()
@@ -904,9 +910,8 @@ SheetOverviewTreeForm {
                                             paperId = _paperId
                                             projectId = _projectId
 
-                                            console.log("opening note :", _projectId, _paperId)
+                                            //console.log("opening note :", _projectId, _paperId)
                                             writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
-                                            title = plmData.noteHub().getTitle(_projectId, _paperId)
 
                                             skrTextBridge.subscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 

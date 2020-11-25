@@ -42,6 +42,14 @@ TextArea {
     property int initialCursorPositionX: -1
     property int initialCursorPosition: -1
     Keys.onPressed: {
+        // paste :
+        if(((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) || event.key === Qt.Key_Paste){
+            pasteAction.trigger()
+            event.accepted = true
+            return
+        }
+
+        // page Up :
         if((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_PageUp){
 
             if(initialCursorPositionX === -1){

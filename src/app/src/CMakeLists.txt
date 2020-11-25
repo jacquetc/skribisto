@@ -86,6 +86,8 @@ set(app_SRCS
     skrthemes.h
     skrexporter.cpp
     skrexporter.h
+    skrclipboard.cpp
+    skrclipboard.h
 )
 
 set(QML qml.qrc

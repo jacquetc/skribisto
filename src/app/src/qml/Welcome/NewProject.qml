@@ -99,32 +99,38 @@ NewProjectForm {
     createNewProjectButton.onClicked: {
         //TODO: test fileName
 
-
-       var result = plmData.projectHub().createNewEmptyProject(fileName)
+        // create new hidden empty project
+        var result = plmData.projectHub().createNewEmptyProject(fileName, true)
 
         if(!result){
-          return
+            return
         }
 
         var projetId = plmData.projectHub().getLastLoaded()
         //console.log("new project : getLastLoaded : ", projetId)
         plmData.projectHub().setProjectName(projetId, projectTitleTextField.text)
 
-        var firstSheetId = -2
+        //        var firstSheetId = -2
         for(var i = 1; i <= partSpinBox.value ; ++i){
             var result = plmData.sheetHub().addChildPaper(projetId, -1)
             //console.log("new project : add sheet : ", result.isSuccess())
             var sheetId = plmData.sheetHub().getLastAddedId()
             plmData.sheetHub().setTitle(projetId, sheetId, qsTr("Part ") + i)
 
-            if(sheetId === 1){
-                firstSheetId = sheetId
-            }
+            //            if(sheetId === 1){
+            //                firstSheetId = sheetId
+            //            }
 
         }
 
+
+        plmData.projectHub().saveProject(projetId)
+        plmData.projectHub().closeProject(projetId)
+        plmData.projectHub().loadProject(fileName)
+
+
         //root_stack.currentIndex = 1
-        Globals.openSheetInNewTabCalled(projetId, firstSheetId)
+        //Globals.openSheetInNewTabCalled(projetId, firstSheetId)
 
         //reset :
         projectTitleTextField.text = ""

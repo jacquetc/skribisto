@@ -7,6 +7,7 @@ import eu.skribisto.documenthandler 1.0
 import eu.skribisto.highlighter 1.0
 import eu.skribisto.spellchecker 1.0
 import eu.skribisto.projectdicthub 1.0
+import eu.skribisto.clipboard 1.0
 import "../Items"
 
 WritingZoneForm {
@@ -43,6 +44,16 @@ WritingZoneForm {
         documentHandler.topMarginEverywhere = textTopMargin
     }
 
+
+    // clipboard :
+    SKRClipboard{
+        id: clipboard
+        documentHandler: documentHandler
+        fontPointSize: root.textPointSize
+        fontFamily: root.textFontFamily
+        textIndent: root.textIndent
+        textTopMargin: root.textTopMargin
+    }
 
     //-------------------------------------------------
 
@@ -281,9 +292,16 @@ WritingZoneForm {
 
         console.log("paste action text")
         textArea.forceActiveFocus()
-        textArea.paste()
+        var originalLength = textArea.lengAth
+        clipboard.prepareAndSendLastClipboardText()
+        var newLength = textArea.length
+        textArea.deselect()
+        setCursorPosition(textArea.cursorPosition + (newLength - originalLength))
+        //textArea.paste()
 
     }
+
+
 
     function italic(checked){
 
