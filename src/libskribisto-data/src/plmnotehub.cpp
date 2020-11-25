@@ -460,15 +460,15 @@ SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
     int propertyId = plmdata->notePropertyHub()->getPropertyId(projectId, folderId, "can_add_paper");
 
     if(propertyId != -2){
-        plmdata->notePropertyHub()->removeProperty(projectId, propertyId);
+        result = plmdata->notePropertyHub()->removeProperty(projectId, propertyId);
     }
 
-    plmdata->notePropertyHub()->setProperty(projectId,
+    result = plmdata->notePropertyHub()->setProperty(projectId,
                                             folderId,
                                             "can_add_sibling_paper",
                                             "true",
                                             true);
-    plmdata->notePropertyHub()->setProperty(projectId,
+    result = plmdata->notePropertyHub()->setProperty(projectId,
                                             folderId,
                                             "can_add_child_paper",
                                             "false",
@@ -494,16 +494,16 @@ SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
             int propertyId = plmdata->notePropertyHub()->getPropertyId(projectId, synopsisId, "can_add_paper");
 
             if(propertyId != -2){
-                plmdata->notePropertyHub()->removeProperty(projectId, propertyId);
+                result = plmdata->notePropertyHub()->removeProperty(projectId, propertyId);
             }
 
 
-            plmdata->notePropertyHub()->setProperty(projectId,
+            result = plmdata->notePropertyHub()->setProperty(projectId,
                                                     synopsisId,
                                                     "can_add_sibling_paper",
                                                     "false",
                                                     true);
-            plmdata->notePropertyHub()->setProperty(projectId,
+            result = plmdata->notePropertyHub()->setProperty(projectId,
                                                     synopsisId,
                                                     "can_add_child_paper",
                                                     "false",
@@ -520,12 +520,14 @@ SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
                 // sync names in all synopsis
                 QString sheetTitle = plmdata->sheetHub()->getTitle(projectId, sheetId);
                 if(plmdata->noteHub()->getTitle(projectId, synopsisId) != sheetTitle){
-                    plmdata->noteHub()->setTitle(projectId, synopsisId, sheetTitle);
+                    result = plmdata->noteHub()->setTitle(projectId, synopsisId, sheetTitle);
                 }
             }
 
 
-
+            IFKO(result){
+                break;
+            }
 
         }
     }

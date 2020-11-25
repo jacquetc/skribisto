@@ -84,7 +84,7 @@ private slots:
     void refreshAfterDataRemove(int projectId,
                                 int paperId);
     void refreshAfterDataMove(int sourceProjectId,
-                              int sourcePaperId,
+                              QList<int> sourcePaperIds,
                               int targetProjectId,
                               int targetPaperId);
     void refreshAfterTrashedStateChanged(int  projectId,

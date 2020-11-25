@@ -66,11 +66,19 @@ public:
     SKRResult                       setSortOrder(int projectId,
                                                  int paperId,
                                                  int newSortOrder);
+    SKRResult                       setSortOrder(int projectId,
+                                                 int paperId,
+                                                 int newSortOrder,
+                                                 bool setCurrentdate,
+                                                 bool commit);
     int                             getSortOrder(int projectId,
                                                  int paperId) const;
     Q_INVOKABLE SKRResult           setContent(int            projectId,
                                                int            paperId,
                                                const QString& newContent);
+    SKRResult           setContent(int projectId,
+                                               int            paperId,
+                                               const QString& newContent, bool setCurrentdate, bool commit);
     Q_INVOKABLE QString             getContent(int projectId,
                                                int paperId) const;
     Q_INVOKABLE virtual SKRResult   setTrashedWithChildren(int  projectId,
@@ -105,7 +113,7 @@ public:
                         int             paperId,
                         const QString & fieldName,
                         const QVariant& value,
-                        bool            setCurrentDateBool = true);
+                        bool            setCurrentDateBool = true, bool commit = true);
     QVariant get(int            projectId,
                  int            paperId,
                  const QString& fieldName) const;
@@ -244,7 +252,7 @@ signals:
     void             paperRemoved(int projectId,
                                   int paperId);
     void             paperMoved(int sourceProjectId,
-                                int sourcePaperId,
+                                QList<int> sourcePaperIds,
                                 int targetProjectId,
                                 int targetPaperId);
     void wordCountChanged(SKR::ItemType paperType,

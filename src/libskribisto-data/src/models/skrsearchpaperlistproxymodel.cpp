@@ -24,6 +24,9 @@ SKRSearchPaperListProxyModel::SKRSearchPaperListProxyModel(SKR::ItemType paperTy
     }
 
 
+    this->setSortRole(SKRPaperItem::SortOrderRole);
+
+
     connect(
                 plmdata->projectHub(),
                 &PLMProjectHub::projectLoaded,
@@ -464,6 +467,7 @@ QList<int>SKRSearchPaperListProxyModel::findIdsTrashedAtTheSameTimeThan(int proj
 void SKRSearchPaperListProxyModel::deleteDefinitively(int projectId, int paperId)
 {
     m_paperHub->removePaper(projectId, paperId);
+    sort(0);
 }
 
 // --------------------------------------------------------------
@@ -1137,8 +1141,10 @@ void SKRSearchPaperListProxyModel::moveUp(int projectId, int paperId, int visual
         return;
     }
     SKRResult result = m_paperHub->movePaperUp(projectId, paperId);
+    sort(0);
+    int newVisualIndex = this->findVisualIndex(projectId, paperId);
 
-    this->setForcedCurrentIndex(visualIndex - 1);
+    this->setForcedCurrentIndex(newVisualIndex);
 }
 
 // --------------------------------------------------------------
@@ -1151,8 +1157,10 @@ void SKRSearchPaperListProxyModel::moveDown(int projectId, int paperId, int visu
         return;
     }
     SKRResult result = m_paperHub->movePaperDown(projectId, paperId);
+    sort(0);
+    int newVisualIndex = this->findVisualIndex(projectId, paperId);
 
-    this->setForcedCurrentIndex(visualIndex + 1);
+    this->setForcedCurrentIndex(newVisualIndex);
 }
 
 // --------------------------------------------------------------

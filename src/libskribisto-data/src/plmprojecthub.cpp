@@ -112,9 +112,9 @@ SKRResult PLMProjectHub::saveProject(int projectId)
 /// called every modification
 void PLMProjectHub::setProjectNotSavedAnymore(int projectId)
 {
+    m_projectsNotModifiedOnceList.removeAll(projectId);
     if (!m_projectsNotSavedList.contains(projectId)) {
         m_projectsNotSavedList.append(projectId);
-        m_projectsNotModifiedOnceList.removeAll(projectId);
         emit projectNotSavedAnymore(projectId);
     }
 }
