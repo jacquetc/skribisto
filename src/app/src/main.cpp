@@ -33,6 +33,7 @@ using namespace std;
 #include "plmutils.h"
 #include "skrthemes.h"
 #include "skrexporter.h"
+#include "skrclipboard.h"
 #include "skr.h"
 #include "models/skrtaglistmodel.h"
 #include "models/skrsearchsheetlistproxymodel.h"
@@ -315,6 +316,11 @@ int main(int argc, char *argv[])
                                1,
                                0,
                                "SKRExporter");
+
+    qmlRegisterType<SKRClipboard>("eu.skribisto.clipboard",
+                               1,
+                               0,
+                               "SKRClipboard");
 
 
     QQmlApplicationEngine engine(qApp);

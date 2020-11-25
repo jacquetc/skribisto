@@ -317,6 +317,10 @@ ListView {
                         eventPoint.accepted = true
                     }
 
+                    onGrabChanged: {
+                        point.accepted = false
+
+                    }
                 }
 
                 TapHandler {

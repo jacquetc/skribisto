@@ -579,3 +579,11 @@ void DocumentHandler::addHorizontalLine()
                                                                                    "<hr/><p></p>"));
     m_textCursor.endEditBlock();
 }
+
+
+void DocumentHandler::insertDocumentFragment(const QTextDocumentFragment &fragment){
+
+    m_textCursor.beginEditBlock();
+    m_textCursor.insertFragment(fragment);
+    m_textCursor.endEditBlock();
+}
