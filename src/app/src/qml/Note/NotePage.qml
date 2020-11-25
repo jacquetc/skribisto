@@ -71,7 +71,6 @@ NotePageForm {
         //title = getTitle()
         plmData.noteHub().titleChanged.connect(changeTitle)
 
-        determineModifiable()
     }
 
     //---------------------------------------------------------
@@ -364,6 +363,7 @@ NotePageForm {
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)
 
+        determineModifiable()
 
     }
 

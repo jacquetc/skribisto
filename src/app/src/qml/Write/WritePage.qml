@@ -82,7 +82,6 @@ WritePageForm {
 
         //title = getTitle()
         plmData.sheetHub().titleChanged.connect(changeTitle)
-        determineModifiable()
 
     }
 
@@ -349,7 +348,7 @@ WritePageForm {
         writingZone.paperId = _paperId
         writingZone.projectId = _projectId
 
-        console.log("opening sheet :", _projectId, _paperId)
+        //console.log("opening sheet :", _projectId, _paperId)
         writingZone.text = plmData.sheetHub().getContent(_projectId, _paperId)
         title = plmData.sheetHub().getTitle(_projectId, _paperId)
 
@@ -377,6 +376,7 @@ WritePageForm {
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)
 
+        determineModifiable()
     }
 
     function restoreCurrentPaperCursorPositionAndY(){

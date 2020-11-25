@@ -910,9 +910,8 @@ SheetOverviewTreeForm {
                                             paperId = _paperId
                                             projectId = _projectId
 
-                                            console.log("opening note :", _projectId, _paperId)
+                                            //console.log("opening note :", _projectId, _paperId)
                                             writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
-                                            title = plmData.noteHub().getTitle(_projectId, _paperId)
 
                                             skrTextBridge.subscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 

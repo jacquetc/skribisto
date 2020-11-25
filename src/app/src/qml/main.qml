@@ -63,6 +63,17 @@ ApplicationWindow {
         }
     }
 
+    Connections{
+        target: plmData.projectHub()
+        function onProjectNameChanged(projectId, newTitle){
+            var activeProjectId = plmData.projectHub().getActiveProject()
+            if(projectId === activeProjectId){
+                rootWindow.title = "Skribisto - %1".arg(plmData.projectHub().getProjectName(projectId))
+
+            }
+        }
+    }
+
 
     //------------------------------------------------------------------
     //---------Fullscreen---------
@@ -158,11 +169,11 @@ ApplicationWindow {
 
         id: showFaqAction
         text: qsTr("&FAQ")
-//        icon {
-//            source: "qrc:///icons/backup/system-help.svg"
-//            height: 50
-//            width: 50
-//        }
+        //        icon {
+        //            source: "qrc:///icons/backup/system-help.svg"
+        //            height: 50
+        //            width: 50
+        //        }
 
         onTriggered: {
             console.log("show FAQ")
@@ -203,11 +214,11 @@ ApplicationWindow {
 
         id: showAboutQtAction
         text: qsTr("About &Qt")
-//        icon {
-//            source: "qrc:///icons/backup/system-help.svg"
-//            height: 50
-//            width: 50
-//        }
+        //        icon {
+        //            source: "qrc:///icons/backup/system-help.svg"
+        //            height: 50
+        //            width: 50
+        //        }
 
         onTriggered: {
             console.log("show about Qt")
@@ -989,8 +1000,11 @@ ApplicationWindow {
     }
     Connections{
         target: plmData.projectHub()
-        function onProjectNameChanged(){
-            activeProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
+        function onProjectNameChanged(projectId, newTitle){
+            var activeProjectId = plmData.projectHub().getActiveProject()
+            if(projectId === activeProjectId){
+                activeProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
+            }
         }
     }
 
