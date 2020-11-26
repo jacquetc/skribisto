@@ -913,8 +913,14 @@ NotePadForm {
         text: qsTr("Add note")
         icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
+            if(loader_titleEditPopup.active){
+                loader_titleEditPopup.item.close()
+                loader_titleEditPopup.active = false
+                return
+            }
 
-            titleEditPopup.open()
+         loader_titleEditPopup.active = true
+           loader_titleEditPopup.item.open()
         }
     }
     addNoteMenuToolButton.action: addNoteAction
@@ -981,256 +987,277 @@ NotePadForm {
 
     }
     //---------------------------------------------
-    SkrPopup {
-        id: titleEditPopup
-        x: addNoteMenuToolButton.x - 200
-        y: addNoteMenuToolButton.y + addNoteMenuToolButton.height
-        width: 200
-        height: 400
-        modal: false
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
-        padding: 0
-
-        onOpened: {
-            titleTextField.clear()
-        }
-
-        onClosed: {
-            addNoteMenuToolButton.forceActiveFocus()
-        }
-
-        ColumnLayout {
-            anchors.fill: parent
-            SkrTextField {
-                id: titleTextField
-                Layout.fillWidth: true
-
-                selectByMouse: true
-                placeholderText: qsTr("Note name")
 
 
-                onVisibleChanged: {
-                    if (visible){
-                        titleTextField.forceActiveFocus()
-                        titleTextField.selectAll()
-                    }
-                }
 
-                onAccepted: {
+    Component {
+        id: component_titleEditPopup
+        SkrPopup {
+            property alias sectionHeading: inner_sectionHeading
+            property alias titleTextField: inner_titleTextField
+            property alias searchListScrollView: inner_searchListScrollView
+            property alias searchResultList: inner_searchResultList
 
-                    //create basic note
-                    var result = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
-                    if (!result.success){
-                        //TODO: add notification
-                        return
-                    }
+            id: titleEditPopup
+            x: addNoteMenuToolButton.x - 200
+            y: addNoteMenuToolButton.y + addNoteMenuToolButton.height
+            width: 200
+            height: 400
+            modal: false
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+            padding: 0
 
-                    var noteId = result.getData("noteId", -2)
-
-                    // set title
-                    var title = titleTextField.text
-                    plmData.noteHub().setTitle(projectId, noteId, title)
-
-                    // add to model
-                    //noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
-
-                    noteIdToOpen = noteId
-                    openDocumentAfterClosingPopupTimer.start()
-
-
-                    titleEditPopup.close()
-                }
-
-                onTextChanged: {
-                    searchProxyModel.textFilter = text
-                }
-
-                Keys.priority: Keys.BeforeItem
-                Keys.onPressed: {
-                    if (event.key === Qt.Key_Down){
-                        if(searchResultList.count > 0){
-                            searchResultList.itemAtIndex(0).forceActiveFocus()
-                        }
-                    }
-
-                }
+            onOpened: {
+                inner_titleTextField.clear()
             }
 
-            ScrollView {
-                id: searchListScrollView
-                focusPolicy: Qt.StrongFocus
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                clip: true
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+            onClosed: {
+                addNoteMenuToolButton.forceActiveFocus()
+                loader_titleEditPopup.active = false
+            }
 
-                ListView {
-                    id: searchResultList
-                    smooth: true
-                    focus: true
-                    boundsBehavior: Flickable.StopAtBounds
+            ColumnLayout {
+                anchors.fill: parent
+                SkrTextField {
+                    id: inner_titleTextField
+                    Layout.fillWidth: true
 
-                    model: searchProxyModel
-                    interactive: true
-                    spacing: 1
-                    delegate: Component {
-                        id: itemDelegate
-
-                        Item {
-                            id: delegateRoot
-                            height: 30
-                            focus: true
+                    selectByMouse: true
+                    placeholderText: qsTr("Note name")
 
 
-                            anchors {
-                                left: Qt.isQtObject(parent) ? parent.left : undefined
-                                right: Qt.isQtObject(parent) ? parent.right : undefined
-                                leftMargin: 5
-                                rightMargin: 5
+                    onVisibleChanged: {
+                        if (visible){
+                            inner_titleTextField.forceActiveFocus()
+                            inner_titleTextField.selectAll()
+                        }
+                    }
+
+                    onAccepted: {
+
+                        //create basic note
+                        var result = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
+                        if (!result.success){
+                            //TODO: add notification
+                            return
+                        }
+
+                        var noteId = result.getData("noteId", -2)
+
+                        // set title
+                        var title = inner_titleTextField.text
+                        plmData.noteHub().setTitle(projectId, noteId, title)
+
+                        // add to model
+                        //noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
+
+                        noteIdToOpen = noteId
+                        openDocumentAfterClosingPopupTimer.start()
+
+
+                        titleEditPopup.close()
+                    }
+
+                    onTextChanged: {
+                        searchProxyModel.textFilter = text
+                    }
+
+                    Keys.priority: Keys.BeforeItem
+                    Keys.onPressed: {
+                        if (event.key === Qt.Key_Down){
+                            if(inner_searchResultList.count > 0){
+                                inner_searchResultList.itemAtIndex(0).forceActiveFocus()
                             }
+                        }
 
-                            TapHandler {
-                                id: tapHandler
-//                                onSingleTapped: {
-//                                    searchResultList.currentIndex = model.index
-//                                    delegateRoot.forceActiveFocus()
-//                                    eventPoint.accepted = true
-//                                }
-                                onSingleTapped: {
-                                    //create relationship with note
+                    }
+                }
 
-                                    var noteId = model.paperId
-                                    var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                ScrollView {
+                    id: inner_searchListScrollView
+                    focusPolicy: Qt.StrongFocus
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                                    if (!result.success){
-                                        //TODO: add notification
+                    ListView {
+                        id: inner_searchResultList
+                        clip: true
+                        smooth: true
+                        focus: true
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        model: searchProxyModel
+                        interactive: true
+                        spacing: 1
+                        delegate: Component {
+                            id: inner_itemDelegate
+
+                            Item {
+                                id: inner_delegateRoot
+                                height: 30
+                                focus: true
+
+
+                                anchors {
+                                    left: Qt.isQtObject(parent) ? parent.left : undefined
+                                    right: Qt.isQtObject(parent) ? parent.right : undefined
+                                    leftMargin: 5
+                                    rightMargin: 5
+                                }
+
+                                TapHandler {
+                                    id: inner_tapHandler
+                                    //                                onSingleTapped: {
+                                    //                                    searchResultList.currentIndex = model.index
+                                    //                                    delegateRoot.forceActiveFocus()
+                                    //                                    eventPoint.accepted = true
+                                    //                                }
+                                    onSingleTapped: {
+                                        //create relationship with note
+
+                                        var noteId = model.paperId
+                                        var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+
+                                        if (!result.success){
+                                            //TODO: add notification
+                                            eventPoint.accepted = true
+                                            return
+                                        }
+
+                                        noteIdToOpen = noteId
+                                        openDocumentAfterClosingPopupTimer.start()
+                                        titleEditPopup.close()
+
                                         eventPoint.accepted = true
-                                        return
                                     }
 
-                                    noteIdToOpen = noteId
-                                    openDocumentAfterClosingPopupTimer.start()
-                                    titleEditPopup.close()
 
-                                    eventPoint.accepted = true
+                                    onGrabChanged: {
+                                        point.accepted = false
+                                    }
+
+
                                 }
 
 
-                                onGrabChanged: {
-                                    point.accepted = false
+                                HoverHandler {
+                                    id: hoverHandler
+
+                                    onHoveredChanged: {
+                                        if(hovered){
+                                            inner_searchResultList.currentIndex = model.index
+                                            inner_delegateRoot.forceActiveFocus()
+                                        }
+                                    }
                                 }
 
 
-                            }
+                                //                        Shortcut {
+                                //                            sequences: ["Return", "Space"]
+                                //                            onActivated: {
 
-                            //                        Shortcut {
-                            //                            sequences: ["Return", "Space"]
-                            //                            onActivated: {
+                                //                                //create relationship with note
 
-                            //                                //create relationship with note
+                                //                                var noteId = model.paperId
+                                //                                var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
-                            //                                var noteId = model.paperId
-                            //                                var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                                //                                if (!result.success){
+                                //                                    //TODO: add notification
+                                //                                    return
+                                //                                }
 
-                            //                                if (!result.success){
-                            //                                    //TODO: add notification
-                            //                                    return
-                            //                                }
+                                //                                titleEditPopup.close()
 
-                            //                                titleEditPopup.close()
+                                //                            }
 
-                            //                            }
+                                //                            //enabled: listView.activeFocus
+                                //                        }
 
-                            //                            //enabled: listView.activeFocus
-                            //                        }
+                                //Keys.shortcutOverride: event.accepted = (event.key === Qt.Key_Return || event.key === Qt.Key_Space)
 
-                            //Keys.shortcutOverride: event.accepted = (event.key === Qt.Key_Return || event.key === Qt.Key_Space)
+                                Keys.onPressed: {
+                                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
+                                        console.log("Return key pressed title")
 
-                            Keys.onPressed: {
-                                if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
-                                    console.log("Return key pressed title")
+                                        //create relationship with note
 
-                                    //create relationship with note
+                                        var noteId = model.paperId
+                                        var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
-                                    var noteId = model.paperId
-                                    var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                                        if (!result.success){
+                                            //TODO: add notification
+                                            event.accepted = true
+                                            return
+                                        }
 
-                                    if (!result.success){
-                                        //TODO: add notification
+                                        noteIdToOpen = noteId
+                                        openDocumentAfterClosingPopupTimer.start()
+                                        titleEditPopup.close()
+
                                         event.accepted = true
-                                        return
+
                                     }
 
-                                    noteIdToOpen = noteId
-                                    openDocumentAfterClosingPopupTimer.start()
-                                    titleEditPopup.close()
 
-                                    event.accepted = true
+
 
                                 }
 
 
 
 
-                            }
-
-
-
-
-                            SkrLabel {
-                                text: model.name
-                                anchors.fill: parent
-                                horizontalAlignment: Qt.AlignLeft
-                                verticalAlignment: Qt.AlignVCenter
-                            }
-                        }
-                    }
-
-                    highlight:  Component {
-                        id: highlight
-                        Rectangle {
-                            //                            x: 0
-                            //                            y: searchResultList.currentItem.y + 1
-                            //                            width: searchResultList.width
-                            //                            height: searchResultList.currentItem.height - 1
-                            //                            color: "transparent"
-                            radius: 5
-                            border.color:   SkrTheme.accent
-                            border.width: 2
-                            visible: searchResultList.activeFocus
-                            Behavior on y {
-                                SpringAnimation {
-                                    spring: 5
-                                    mass: 0.2
-                                    damping: 0.2
+                                SkrLabel {
+                                    text: model.name
+                                    anchors.fill: parent
+                                    horizontalAlignment: Qt.AlignLeft
+                                    verticalAlignment: Qt.AlignVCenter
                                 }
                             }
                         }
-                    }
+
+                        highlight:  Component {
+                            id: inner_highlight
+                            Rectangle {
+                                radius: 5
+                                border.color:   SkrTheme.accent
+                                border.width: 2
+                                visible: inner_searchResultList.activeFocus
+                                Behavior on y {
+                                    SpringAnimation {
+                                        spring: 5
+                                        mass: 0.2
+                                        damping: 0.2
+                                    }
+                                }
+                            }
+                        }
 
 
-                    section.property: "projectId"
-                    section.criteria: ViewSection.FullString
-                    section.labelPositioning: ViewSection.CurrentLabelAtStart |
-                                              ViewSection.InlineLabels
-                    section.delegate: sectionHeading
+                        section.property: "projectId"
+                        section.criteria: ViewSection.FullString
+                        section.labelPositioning: ViewSection.CurrentLabelAtStart |
+                                                  ViewSection.InlineLabels
+                        section.delegate: inner_sectionHeading
 
-                    // The delegate for each section header
-                    Component {
-                        id: sectionHeading
-                        Rectangle {
-                            width: searchResultList.width
-                            height: childrenRect.height
-                            color: SkrTheme.buttonBackground
+                        // The delegate for each section header
+                        Component {
+                            id: inner_sectionHeading
+                            Rectangle {
+                                width: inner_searchResultList.width
+                                height: childrenRect.height
+                                color: SkrTheme.buttonBackground
 
-                            required property string section
+                                required property string section
 
-                            SkrLabel {
-                                text: qsTr("Existing notes")
-                                font.bold: true
-                                color: SkrTheme.buttonForeground
-                                //font.pixelSize: 20
+                                SkrLabel {
+                                    text: qsTr("Existing notes")
+                                    font.bold: true
+                                    color: SkrTheme.buttonForeground
+                                    //font.pixelSize: 20
+                                }
                             }
                         }
                     }
@@ -1238,6 +1265,12 @@ NotePadForm {
             }
         }
     }
+    Loader {
+        id: loader_titleEditPopup
+        sourceComponent: component_titleEditPopup
+        active: false
+    }
+
 
 
     //--------------------------------------------

@@ -705,7 +705,6 @@ RootPageForm {
 
                 ListView {
                     id: dropDownTabMenuList
-                    anchors.fill: parent
                     clip: true
                     smooth: true
                     focus: true
@@ -786,6 +785,7 @@ RootPageForm {
                                     dropDownTabMenuPopup.close()
 
 
+                                    event.accepted = true
                                 }
 
 
@@ -835,11 +835,6 @@ RootPageForm {
                     highlight:  Component {
                         id: highlight
                         Rectangle {
-                            //                            x: 0
-                            //                            y: searchResultList.currentItem.y + 1
-                            //                            width: searchResultList.width
-                            //                            height: searchResultList.currentItem.height - 1
-                            //                            color: "transparent"
                             radius: 5
                             border.color:  SkrTheme.accent
                             border.width: 2

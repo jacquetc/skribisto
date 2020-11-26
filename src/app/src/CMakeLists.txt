@@ -111,11 +111,16 @@ set(QML qml.qrc
 #    endif()
 #endif()
 
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+set(TEST_FILES_QRC ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc)
+endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
 set(QRC pics.qrc
     controls.qrc
     themes.qrc
     ${CMAKE_SOURCE_DIR}/3rdparty/icons.qrc
-    ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc
+    ${TEST_FILES_QRC}
     ${CMAKE_SOURCE_DIR}/readme.qrc
 
     ${CMAKE_BINARY_DIR}/src/app/src/translations.qrc
