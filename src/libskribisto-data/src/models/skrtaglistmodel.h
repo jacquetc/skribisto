@@ -60,9 +60,9 @@ public:
 
     QHash<int, QByteArray> roleNames() const override;
 
-    QModelIndexList getModelIndex(int projectId, int paperId);
-    SKRTagItem *getItem(int projectId, int paperId);
-
+    QModelIndexList getModelIndex(int projectId, int tagId);
+    SKRTagItem *getItem(int projectId, int tagId);
+    Q_INVOKABLE QString getTagName(int projectId, int tagId);
 
 private slots:
     void populate();

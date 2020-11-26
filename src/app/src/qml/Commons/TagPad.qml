@@ -321,16 +321,32 @@ TagPadForm {
                 }
             }
 
+
+            Action{
+                id: renameAction
+                text: qsTr("Rename")
+                onTriggered: {
+
+                    if(loader_renamePopup.active){
+                        loader_renamePopup.active = false
+                        loader_renamePopup.item.close()
+                        return
+                    }
+
+                    loader_renamePopup.active = true
+                    loader_renamePopup.item.tagId = model.tagId
+                    loader_renamePopup.item.projectId = projectId
+                    loader_renamePopup.item.open()
+                }
+            }
+
             SkrMenu{
                 id: rightClickMenu
 
                 SkrMenuItem {
                     id: renameMenuItem
-                    text: qsTr("Rename")
+                    action: renameAction
 
-                    onTriggered: {
-
-                    }
                 }
 
 
@@ -418,6 +434,9 @@ TagPadForm {
                 if( event.key === Qt.Key_Escape){
                     event.accepted = true
                 }
+                if( event.key === Qt.Key_F2){
+                    event.accepted = true
+                }
             }
 
             Keys.onPressed: {
@@ -444,6 +463,10 @@ TagPadForm {
 
                     //plmData.tagHub().removePaperTagRelationship(projectId, itemId, model.itemTagId)
 
+                }
+
+                if (event.key === Qt.Key_F2){
+                    renameAction.triggered()
                 }
 
                 if (event.key === Qt.Key_Space){
@@ -599,15 +622,15 @@ TagPadForm {
         icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
 
-            if(loader_titleEditPopup.active){
-                loader_titleEditPopup.item.close()
-                loader_titleEditPopup.active = false
+            if(loader_addPopup.active){
+                loader_addPopup.item.close()
+                loader_addPopup.active = false
                 return
             }
 
 
-            loader_titleEditPopup.active = true
-            loader_titleEditPopup.item.open()
+            loader_addPopup.active = true
+            loader_addPopup.item.open()
         }
     }
     addTagMenuToolButton.action: addTagAction
@@ -625,14 +648,14 @@ TagPadForm {
 
 
     Component {
-        id: component_titleEditPopup
+        id: component_addPopup
         SkrPopup {
             property alias titleTextField: inner_titleTextField
             property alias searchListScrollView: inner_searchListScrollView
             property alias searchResultList: inner_searchResultList
             property alias colorChooser: inner_colorChooser
 
-            id: titleEditPopup
+            id: addPopup
             x: addTagMenuToolButton.x - 400
             y: addTagMenuToolButton.y + addTagMenuToolButton.height
             width: 400
@@ -646,7 +669,7 @@ TagPadForm {
                 colorChooser.selectRandomColor()
             }
             onClosed: {
-                loader_titleEditPopup.active = false
+                loader_addPopup.active = false
             }
 
             RowLayout{
@@ -654,7 +677,7 @@ TagPadForm {
 
                 ColumnLayout {
                     Layout.fillHeight: true
-                    Layout.preferredWidth: titleEditPopup.width / 2
+                    Layout.preferredWidth: addPopup.width / 2
 
                     ColorChooser {
                         id: inner_colorChooser
@@ -669,7 +692,7 @@ TagPadForm {
                 }
                 ColumnLayout {
                     Layout.fillHeight: true
-                    Layout.preferredWidth: titleEditPopup.width / 2
+                    Layout.preferredWidth: addPopup.width / 2
 
                     SkrTextField {
                         id: inner_titleTextField
@@ -694,7 +717,7 @@ TagPadForm {
                             else {
                                 callAddTagRelationship(projectId, itemId, inner_titleTextField.text, inner_colorChooser.colorCode, inner_colorChooser.textColorCode)
                             }
-                            titleEditPopup.close()
+                            addPopup.close()
                         }
 
                         onTextChanged: {
@@ -768,7 +791,7 @@ TagPadForm {
                                                 callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
 
                                             }
-                                            titleEditPopup.close()
+                                            addPopup.close()
                                             eventPoint.accepted = true
                                         }
 
@@ -792,7 +815,7 @@ TagPadForm {
                                     //                                    return
                                     //                                }
 
-                                    //                                titleEditPopup.close()
+                                    //                                addPopup.close()
 
                                     //                            }
 
@@ -805,7 +828,7 @@ TagPadForm {
 
                                             //create relationship with tag
                                             callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
-                                            titleEditPopup.close()
+                                            addPopup.close()
 
 
                                             event.accepted = true
@@ -896,12 +919,100 @@ TagPadForm {
         }
     }
     Loader {
-        id: loader_titleEditPopup
-        sourceComponent: component_titleEditPopup
+        id: loader_addPopup
+        sourceComponent: component_addPopup
         active: false
     }
 
 
+
+
+    //--------------------------------------------
+    //------- Rename note -----------------------
+    //--------------------------------------------
+
+
+    //---------------------------------------------
+
+
+
+    Component {
+        id: component_renamePopup
+        SkrPopup {
+
+            property alias titleTextField: inner_titleTextField
+            property int projectId: -2
+            property int tagId: -2
+
+
+            id: renamePopup
+            x: addNoteMenuToolButton.x - width
+            y: addNoteMenuToolButton.y + addNoteMenuToolButton.height
+            width: inner_titleTextField.implicitWidth
+            height: inner_titleTextField.implicitHeight
+            modal: false
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+            padding: 0
+
+            onOpened: {
+                inner_titleTextField.clear()
+                var name = plmData.tagHub().getTagName(projectId, tagId)
+                inner_titleTextField.text = name
+                inner_titleTextField.selectAll()
+            }
+
+            onClosed: {
+                loader_renamePopup.active = false
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                SkrTextField {
+                    id: inner_titleTextField
+                    Layout.fillWidth: true
+
+                    selectByMouse: true
+                    placeholderText: qsTr("Note name")
+
+
+                    onVisibleChanged: {
+                        if (visible){
+                            inner_titleTextField.forceActiveFocus()
+                            inner_titleTextField.selectAll()
+                        }
+                    }
+
+                    onAccepted: {
+                        if(inner_titleTextField.text.length === 0){
+                            return
+                        }
+
+                        //create basic note
+                        var result = plmData.tagHub().setTagName(renamePopup.projectId, renamePopup.tagId, inner_titleTextField.text)
+                        if (!result.success){
+                            //TODO: add notification
+                            return
+                        }
+
+
+                        renamePopup.close()
+                    }
+
+                }
+
+
+            }
+        }
+    }
+    Loader {
+        id: loader_renamePopup
+        sourceComponent: component_renamePopup
+        active: false
+    }
+
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
 
 

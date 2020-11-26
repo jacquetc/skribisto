@@ -283,16 +283,34 @@ NotePadForm {
                 }
             }
 
+
+            Action{
+                id: renameAction
+                text: qsTr("Rename")
+                onTriggered: {
+
+                    if(loader_renamePopup.active){
+                        loader_renamePopup.active = false
+                        loader_renamePopup.item.close()
+                        return
+                    }
+
+                    loader_renamePopup.active = true
+                    loader_renamePopup.item.noteId = model.itemNoteId
+                    loader_renamePopup.item.projectId = projectId
+                    loader_renamePopup.item.open()
+                }
+            }
+
+
             SkrMenu{
                 id: rightClickMenu
 
                 SkrMenuItem {
                     id: renameMenuItem
-                    text: qsTr("Rename")
 
-                    onTriggered: {
+                    action: renameAction
 
-                    }
                 }
 
                 SkrMenuItem {
@@ -369,6 +387,9 @@ NotePadForm {
                 if( event.key === Qt.Key_Escape){
                     event.accepted = true
                 }
+                if( event.key === Qt.Key_F2){
+                    event.accepted = true
+                }
             }
 
 
@@ -392,6 +413,10 @@ NotePadForm {
                     // dissociate
                     plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
 
+                }
+
+                if (event.key === Qt.Key_F2){
+                    renameAction.triggered()
                 }
 
                 if (event.key === Qt.Key_Space){
@@ -913,14 +938,14 @@ NotePadForm {
         text: qsTr("Add note")
         icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
-            if(loader_titleEditPopup.active){
-                loader_titleEditPopup.item.close()
-                loader_titleEditPopup.active = false
+            if(loader_addPopup.active){
+                loader_addPopup.item.close()
+                loader_addPopup.active = false
                 return
             }
 
-         loader_titleEditPopup.active = true
-           loader_titleEditPopup.item.open()
+         loader_addPopup.active = true
+           loader_addPopup.item.open()
         }
     }
     addNoteMenuToolButton.action: addNoteAction
@@ -991,14 +1016,14 @@ NotePadForm {
 
 
     Component {
-        id: component_titleEditPopup
+        id: component_addPopup
         SkrPopup {
             property alias sectionHeading: inner_sectionHeading
             property alias titleTextField: inner_titleTextField
             property alias searchListScrollView: inner_searchListScrollView
             property alias searchResultList: inner_searchResultList
 
-            id: titleEditPopup
+            id: addPopup
             x: addNoteMenuToolButton.x - 200
             y: addNoteMenuToolButton.y + addNoteMenuToolButton.height
             width: 200
@@ -1012,8 +1037,7 @@ NotePadForm {
             }
 
             onClosed: {
-                addNoteMenuToolButton.forceActiveFocus()
-                loader_titleEditPopup.active = false
+                loader_addPopup.active = false
             }
 
             ColumnLayout {
@@ -1055,7 +1079,7 @@ NotePadForm {
                         openDocumentAfterClosingPopupTimer.start()
 
 
-                        titleEditPopup.close()
+                        addPopup.close()
                     }
 
                     onTextChanged: {
@@ -1129,7 +1153,7 @@ NotePadForm {
 
                                         noteIdToOpen = noteId
                                         openDocumentAfterClosingPopupTimer.start()
-                                        titleEditPopup.close()
+                                        addPopup.close()
 
                                         eventPoint.accepted = true
                                     }
@@ -1169,7 +1193,7 @@ NotePadForm {
                                 //                                    return
                                 //                                }
 
-                                //                                titleEditPopup.close()
+                                //                                addPopup.close()
 
                                 //                            }
 
@@ -1195,7 +1219,7 @@ NotePadForm {
 
                                         noteIdToOpen = noteId
                                         openDocumentAfterClosingPopupTimer.start()
-                                        titleEditPopup.close()
+                                        addPopup.close()
 
                                         event.accepted = true
 
@@ -1266,8 +1290,8 @@ NotePadForm {
         }
     }
     Loader {
-        id: loader_titleEditPopup
-        sourceComponent: component_titleEditPopup
+        id: loader_addPopup
+        sourceComponent: component_addPopup
         active: false
     }
 
@@ -1309,6 +1333,95 @@ NotePadForm {
 
     }
 
+
+
+    //--------------------------------------------
+    //------- Rename note -----------------------
+    //--------------------------------------------
+
+
+    //---------------------------------------------
+
+
+
+    Component {
+        id: component_renamePopup
+        SkrPopup {
+
+            property alias titleTextField: inner_titleTextField
+            property int projectId: -2
+            property int noteId: -2
+
+
+            id: renamePopup
+            x: addNoteMenuToolButton.x - width
+            y: addNoteMenuToolButton.y + addNoteMenuToolButton.height
+            width: inner_titleTextField.implicitWidth
+            height: inner_titleTextField.implicitHeight
+            modal: false
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+            padding: 0
+
+            onOpened: {
+                inner_titleTextField.clear()
+
+                var title = plmData.noteHub().getTitle(projectId, noteId)
+                inner_titleTextField.text = title
+                inner_titleTextField.selectAll()
+            }
+
+            onClosed: {
+                loader_renamePopup.active = false
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                SkrTextField {
+                    id: inner_titleTextField
+                    Layout.fillWidth: true
+
+                    selectByMouse: true
+                    placeholderText: qsTr("Note name")
+
+
+                    onVisibleChanged: {
+                        if (visible){
+                            inner_titleTextField.forceActiveFocus()
+                            inner_titleTextField.selectAll()
+                        }
+                    }
+
+                    onAccepted: {
+                        if(inner_titleTextField.text.length === 0){
+                            return
+                        }
+
+                        //create basic note
+                        var result = plmData.noteHub().setTitle(renamePopup.projectId, renamePopup.noteId, inner_titleTextField.text)
+                        if (!result.success){
+                            //TODO: add notification
+                            return
+                        }
+
+
+                        renamePopup.close()
+                    }
+
+                }
+
+
+            }
+        }
+    }
+    Loader {
+        id: loader_renamePopup
+        sourceComponent: component_renamePopup
+        active: false
+    }
+
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
 
     onActiveFocusChanged: {

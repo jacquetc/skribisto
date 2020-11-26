@@ -295,6 +295,21 @@ SKRTagItem * SKRTagListModel::getItem(int projectId, int tagId)
     return result_item;
 }
 
+//----------------------------------------------------------------
+
+QString SKRTagListModel::getTagName(int projectId, int tagId)
+{
+    SKRTagItem *item = getItem(projectId, tagId);
+
+    if(item){
+       return item->name();
+    }
+
+    return "";
+}
+
+//----------------------------------------------------------------
+
 void SKRTagListModel::populate()
 {
     this->beginResetModel();
