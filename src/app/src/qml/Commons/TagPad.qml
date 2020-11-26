@@ -321,16 +321,32 @@ TagPadForm {
                 }
             }
 
+
+            Action{
+                id: renameAction
+                text: qsTr("Rename")
+                onTriggered: {
+
+                    if(loader_renamePopup.active){
+                        loader_renamePopup.active = false
+                        loader_renamePopup.item.close()
+                        return
+                    }
+
+                    loader_renamePopup.active = true
+                    loader_renamePopup.item.tagId = model.tagId
+                    loader_renamePopup.item.projectId = projectId
+                    loader_renamePopup.item.open()
+                }
+            }
+
             SkrMenu{
                 id: rightClickMenu
 
                 SkrMenuItem {
                     id: renameMenuItem
-                    text: qsTr("Rename")
+                    action: renameAction
 
-                    onTriggered: {
-
-                    }
                 }
 
 
@@ -418,6 +434,9 @@ TagPadForm {
                 if( event.key === Qt.Key_Escape){
                     event.accepted = true
                 }
+                if( event.key === Qt.Key_F2){
+                    event.accepted = true
+                }
             }
 
             Keys.onPressed: {
@@ -444,6 +463,10 @@ TagPadForm {
 
                     //plmData.tagHub().removePaperTagRelationship(projectId, itemId, model.itemTagId)
 
+                }
+
+                if (event.key === Qt.Key_F2){
+                    renameAction.triggered()
                 }
 
                 if (event.key === Qt.Key_Space){
@@ -598,7 +621,16 @@ TagPadForm {
         text: qsTr("Add tag")
         icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
-            titleEditPopup.open()
+
+            if(loader_addPopup.active){
+                loader_addPopup.item.close()
+                loader_addPopup.active = false
+                return
+            }
+
+
+            loader_addPopup.active = true
+            loader_addPopup.item.open()
         }
     }
     addTagMenuToolButton.action: addTagAction
@@ -615,268 +647,372 @@ TagPadForm {
 
 
 
+    Component {
+        id: component_addPopup
+        SkrPopup {
+            property alias titleTextField: inner_titleTextField
+            property alias searchListScrollView: inner_searchListScrollView
+            property alias searchResultList: inner_searchResultList
+            property alias colorChooser: inner_colorChooser
 
-    SkrPopup {
-        id: titleEditPopup
-        x: addTagMenuToolButton.x - 200
-        y: addTagMenuToolButton.y + addTagMenuToolButton.height
-        width: 400
-        height: 400
-        modal: false
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
-        padding: 0
+            id: addPopup
+            x: addTagMenuToolButton.x - 400
+            y: addTagMenuToolButton.y + addTagMenuToolButton.height
+            width: 400
+            height: 400
+            modal: false
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+            padding: 0
 
-        onOpened: {
-            titleTextField.clear()
-            colorChooser.selectRandomColor()
-        }
+            onOpened: {
+                inner_titleTextField.clear()
+                colorChooser.selectRandomColor()
+            }
+            onClosed: {
+                loader_addPopup.active = false
+            }
 
-        RowLayout{
-            anchors.fill: parent
+            RowLayout{
+                anchors.fill: parent
 
-            ColumnLayout {
-                Layout.fillHeight: true
-                Layout.preferredWidth: titleEditPopup.width / 2
-
-                ColorChooser {
-                    id: colorChooser
-
+                ColumnLayout {
                     Layout.fillHeight: true
-                    Layout.fillWidth: true
+                    Layout.preferredWidth: addPopup.width / 2
+
+                    ColorChooser {
+                        id: inner_colorChooser
+
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
 
 
-                    onColorCodeChanged: titleTextField.forceActiveFocus()
+                        onColorCodeChanged: inner_titleTextField.forceActiveFocus()
 
+                    }
+                }
+                ColumnLayout {
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: addPopup.width / 2
+
+                    SkrTextField {
+                        id: inner_titleTextField
+                        Layout.fillWidth: true
+
+                        selectByMouse: true
+
+                        placeholderText: qsTr("Tag name")
+
+
+                        onVisibleChanged: {
+                            if (visible){
+                                inner_titleTextField.forceActiveFocus()
+                                inner_titleTextField.selectAll()
+                            }
+                        }
+
+                        onAccepted: {
+                            if(itemId === -2){
+                                callAddTag(projectId, inner_titleTextField.text, inner_colorChooser.colorCode, inner_colorChooser.textColorCode)
+                            }
+                            else {
+                                callAddTagRelationship(projectId, itemId, inner_titleTextField.text, inner_colorChooser.colorCode, inner_colorChooser.textColorCode)
+                            }
+                            addPopup.close()
+                        }
+
+                        onTextChanged: {
+                            searchProxyModel.textFilter = text
+                        }
+
+
+                        Keys.priority: Keys.BeforeItem
+
+                        Keys.onPressed: {
+                            if (event.key === Qt.Key_Down){
+                                if(inner_searchResultList.count > 0){
+                                    inner_searchResultList.itemAtIndex(0).forceActiveFocus()
+                                }
+                            }
+
+                        }
+
+
+                    }
+
+                    ScrollView {
+                        id: inner_searchListScrollView
+                        focusPolicy: Qt.StrongFocus
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                        ListView {
+                            id: inner_searchResultList
+                            smooth: true
+                            focus: true
+                            boundsBehavior: Flickable.StopAtBounds
+
+                            model: searchProxyModel
+                            interactive: true
+                            spacing: 1
+                            delegate: Component {
+                                id: inner_itemDelegate
+
+                                Item {
+                                    id: inner_delegateRoot
+                                    height: inner_itemBase.height
+
+                                    width: inner_itemBase.width
+                                    anchors {
+                                        left: Qt.isQtObject(parent) ? parent.left : undefined
+                                        right: Qt.isQtObject(parent) ? parent.right : undefined
+                                        leftMargin: 5
+                                        rightMargin: 5
+                                    }
+
+                                    TapHandler {
+                                        id: inner_tapHandler
+                                        //                                    onSingleTapped: {
+                                        //                                        searchResultList.currentIndex = model.index
+                                        //                                        delegateRoot.forceActiveFocus()
+                                        //                                        colorChooser.selectColor(model.color)
+
+                                        //                                        eventPoint.accepted = true
+                                        //                                    }
+                                        onSingleTapped: {
+
+                                            if(itemId === -2){
+                                                callAddTag(model.projectId, model.name, model.color, model.textColor)
+                                            }
+                                            else {
+                                                //create relationship with tag
+                                                callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
+
+                                            }
+                                            addPopup.close()
+                                            eventPoint.accepted = true
+                                        }
+
+                                        onGrabChanged: {
+                                            point.accepted = false
+                                        }
+
+                                    }
+
+                                    //                        Shortcut {
+                                    //                            sequences: ["Return", "Space"]
+                                    //                            onActivated: {
+
+                                    //                                //create relationship with tag
+
+                                    //                                var tagId = model.paperId
+                                    //                                var result = plmData.tagHub().setPaperTagRelationship(model.projectId, paperId, tagId )
+
+                                    //                                if (!result.success){
+                                    //                                    //TODO: add notification
+                                    //                                    return
+                                    //                                }
+
+                                    //                                addPopup.close()
+
+                                    //                            }
+
+                                    //                            //enabled: listView.activeFocus
+                                    //                        }
+
+                                    Keys.onPressed: {
+                                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
+                                            console.log("Return key pressed title")
+
+                                            //create relationship with tag
+                                            callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
+                                            addPopup.close()
+
+
+                                            event.accepted = true
+                                        }
+
+                                    }
+
+                                    Rectangle {
+                                        id: inner_itemBase
+                                        width: childrenRect.width + 10
+                                        height: childrenRect.height + 10
+                                        border.color: inner_searchResultList.currentIndex === model.index ? SkrTheme.accent : SkrTheme.buttonBackground
+                                        border.width: 2
+                                        radius : height / 2
+                                        color: model.color
+
+                                        RowLayout{
+                                            id: inner_tagLayout
+                                            anchors.left: parent.left
+                                            anchors.top: parent.top
+
+                                            anchors.margins : 5
+                                            SkrLabel {
+                                                text: model.name
+                                                horizontalAlignment: Qt.AlignHCenter
+                                                verticalAlignment: Qt.AlignHCenter
+                                                Layout.minimumWidth: 20
+                                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                                Layout.fillWidth: true
+                                                Layout.fillHeight: true
+
+                                                color: model.textColor
+                                            }
+                                        }
+
+                                    }
+                                }
+                            }
+
+                            highlight:  Component {
+                                id: inner_highlight
+                                Rectangle {
+
+                                    radius: 5
+                                    border.color:  SkrTheme.accent
+                                    border.width: 2
+                                    visible: inner_searchResultList.activeFocus
+                                    Behavior on y {
+                                        SpringAnimation {
+                                            spring: 5
+                                            mass: 0.2
+                                            damping: 0.2
+                                        }
+                                    }
+                                }
+                            }
+
+
+                            section.property: "projectId"
+                            section.criteria: ViewSection.FullString
+                            section.labelPositioning: ViewSection.CurrentLabelAtStart |
+                                                      ViewSection.InlineLabels
+                            section.delegate: inner_sectionHeading
+
+                            // The delegate for each section header
+                            Component {
+                                id: inner_sectionHeading
+                                Rectangle {
+                                    width: inner_searchResultList.width
+                                    height: childrenRect.height
+                                    color: SkrTheme.buttonBackground
+
+                                    required property string section
+
+                                    SkrLabel {
+                                        text: qsTr("Existing tags")
+                                        font.bold: true
+                                        color: SkrTheme.buttonForeground
+                                        //font.pixelSize: 20
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            ColumnLayout {
-                Layout.fillHeight: true
-                Layout.preferredWidth: titleEditPopup.width / 2
 
+        }
+    }
+    Loader {
+        id: loader_addPopup
+        sourceComponent: component_addPopup
+        active: false
+    }
+
+
+
+
+    //--------------------------------------------
+    //------- Rename note -----------------------
+    //--------------------------------------------
+
+
+    //---------------------------------------------
+
+
+
+    Component {
+        id: component_renamePopup
+        SkrPopup {
+
+            property alias titleTextField: inner_titleTextField
+            property int projectId: -2
+            property int tagId: -2
+
+
+            id: renamePopup
+            x: addNoteMenuToolButton.x - width
+            y: addNoteMenuToolButton.y + addNoteMenuToolButton.height
+            width: inner_titleTextField.implicitWidth
+            height: inner_titleTextField.implicitHeight
+            modal: false
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+            padding: 0
+
+            onOpened: {
+                inner_titleTextField.clear()
+                var name = plmData.tagHub().getTagName(projectId, tagId)
+                inner_titleTextField.text = name
+                inner_titleTextField.selectAll()
+            }
+
+            onClosed: {
+                loader_renamePopup.active = false
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
                 SkrTextField {
-                    id: titleTextField
+                    id: inner_titleTextField
                     Layout.fillWidth: true
 
                     selectByMouse: true
-
-                    placeholderText: qsTr("Tag name")
+                    placeholderText: qsTr("Note name")
 
 
                     onVisibleChanged: {
                         if (visible){
-                            titleTextField.forceActiveFocus()
-                            titleTextField.selectAll()
+                            inner_titleTextField.forceActiveFocus()
+                            inner_titleTextField.selectAll()
                         }
                     }
 
                     onAccepted: {
-                        if(itemId === -2){
-                            callAddTag(projectId, titleTextField.text, colorChooser.colorCode, colorChooser.textColorCode)
-                        }
-                        else {
-                            callAddTagRelationship(projectId, itemId, titleTextField.text, colorChooser.colorCode, colorChooser.textColorCode)
-                        }
-                        titleEditPopup.close()
-                    }
-
-                    onTextChanged: {
-                        searchProxyModel.textFilter = text
-                    }
-
-
-                    Keys.priority: Keys.BeforeItem
-
-                    Keys.onPressed: {
-                        if (event.key === Qt.Key_Down){
-                            if(searchResultList.count > 0){
-                                searchResultList.itemAtIndex(0).forceActiveFocus()
-                            }
+                        if(inner_titleTextField.text.length === 0){
+                            return
                         }
 
-                    }
+                        //create basic note
+                        var result = plmData.tagHub().setTagName(renamePopup.projectId, renamePopup.tagId, inner_titleTextField.text)
+                        if (!result.success){
+                            //TODO: add notification
+                            return
+                        }
 
+
+                        renamePopup.close()
+                    }
 
                 }
 
-                ScrollView {
-                    id: searchListScrollView
-                    focusPolicy: Qt.StrongFocus
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    clip: true
-                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                    ListView {
-                        id: searchResultList
-                        smooth: true
-                        focus: true
-                        boundsBehavior: Flickable.StopAtBounds
-
-                        model: searchProxyModel
-                        interactive: true
-                        spacing: 1
-                        delegate: Component {
-                            id: itemDelegate
-
-                            Item {
-                                id: delegateRoot
-                                height: itemBase.height
-
-                                width: itemBase.width
-                                anchors {
-                                    left: Qt.isQtObject(parent) ? parent.left : undefined
-                                    right: Qt.isQtObject(parent) ? parent.right : undefined
-                                    leftMargin: 5
-                                    rightMargin: 5
-                                }
-
-                                TapHandler {
-                                    id: tapHandler
-//                                    onSingleTapped: {
-//                                        searchResultList.currentIndex = model.index
-//                                        delegateRoot.forceActiveFocus()
-//                                        colorChooser.selectColor(model.color)
-
-//                                        eventPoint.accepted = true
-//                                    }
-                                    onSingleTapped: {
-
-                                        if(itemId === -2){
-                                            callAddTag(model.projectId, model.name, model.color, model.textColor)
-                                        }
-                                        else {
-                                            //create relationship with tag
-                                            callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
-
-                                        }
-                                        titleEditPopup.close()
-                                        eventPoint.accepted = true
-                                    }
-
-                                    onGrabChanged: {
-                                        point.accepted = false
-                                    }
-
-                                }
-
-                                //                        Shortcut {
-                                //                            sequences: ["Return", "Space"]
-                                //                            onActivated: {
-
-                                //                                //create relationship with tag
-
-                                //                                var tagId = model.paperId
-                                //                                var result = plmData.tagHub().setPaperTagRelationship(model.projectId, paperId, tagId )
-
-                                //                                if (!result.success){
-                                //                                    //TODO: add notification
-                                //                                    return
-                                //                                }
-
-                                //                                titleEditPopup.close()
-
-                                //                            }
-
-                                //                            //enabled: listView.activeFocus
-                                //                        }
-
-                                Keys.onPressed: {
-                                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
-                                        console.log("Return key pressed title")
-
-                                        //create relationship with tag
-                                        callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
-                                        titleEditPopup.close()
-
-
-                                        event.accepted = true
-                                    }
-
-                                }
-
-                                Rectangle {
-                                    id: itemBase
-                                    width: childrenRect.width + 10
-                                    height: childrenRect.height + 10
-                                    border.color: searchResultList.currentIndex === model.index ? SkrTheme.accent : SkrTheme.buttonBackground
-                                    border.width: 2
-                                    radius : height / 2
-                                    color: model.color
-
-                                    RowLayout{
-                                        id: tagLayout
-                                        anchors.left: parent.left
-                                        anchors.top: parent.top
-
-                                        anchors.margins : 5
-                                        SkrLabel {
-                                            text: model.name
-                                            horizontalAlignment: Qt.AlignHCenter
-                                            verticalAlignment: Qt.AlignHCenter
-                                            Layout.minimumWidth: 20
-                                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                                            Layout.fillWidth: true
-                                            Layout.fillHeight: true
-
-                                            color: model.textColor
-                                        }
-                                    }
-
-                                }
-                            }
-                        }
-
-                        highlight:  Component {
-                            id: highlight
-                            Rectangle {
-
-                                radius: 5
-                                border.color:  SkrTheme.accent
-                                border.width: 2
-                                visible: searchResultList.activeFocus
-                                Behavior on y {
-                                    SpringAnimation {
-                                        spring: 5
-                                        mass: 0.2
-                                        damping: 0.2
-                                    }
-                                }
-                            }
-                        }
-
-
-                        section.property: "projectId"
-                        section.criteria: ViewSection.FullString
-                        section.labelPositioning: ViewSection.CurrentLabelAtStart |
-                                                  ViewSection.InlineLabels
-                        section.delegate: sectionHeading
-
-                        // The delegate for each section header
-                        Component {
-                            id: sectionHeading
-                            Rectangle {
-                                width: searchResultList.width
-                                height: childrenRect.height
-                                color: SkrTheme.buttonBackground
-
-                                required property string section
-
-                                SkrLabel {
-                                    text: qsTr("Existing tags")
-                                    font.bold: true
-                                    color: SkrTheme.buttonForeground
-                                    //font.pixelSize: 20
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
-
+    }
+    Loader {
+        id: loader_renamePopup
+        sourceComponent: component_renamePopup
+        active: false
     }
 
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
 
 
