@@ -1238,6 +1238,7 @@ SKRResult PLMPaperHub::movePaper(int  sourceProjectId,
                                  int  targetPaperId,
                                  bool after)
 {
+
     SKRResult result(this);
     int targetProjectId = sourceProjectId;
 
@@ -1245,8 +1246,16 @@ SKRResult PLMPaperHub::movePaper(int  sourceProjectId,
 
     PLMSqlQueries queries(sourceProjectId, m_tableName);
 
-    // int sourceSortOrder = this->getSortOrder(sourceProjectId, sourcePaperId);
+    if(targetPaperId == 0) { // means end of list, so add to end
+        after = true;
+        int lastChildrenId = this->getAllIds(targetProjectId).last();
+        targetPaperId = lastChildrenId;
+    }
+
+
+
     int targetSortOrder = this->getSortOrder(targetProjectId, targetPaperId);
+
 
     if(after && this->hasChildren(targetProjectId, targetPaperId, true, true)){
     //find the child at the most down of the target
@@ -1262,7 +1271,6 @@ SKRResult PLMPaperHub::movePaper(int  sourceProjectId,
         targetSortOrder += 1;
         result           = setSortOrder(sourceProjectId, childId, targetSortOrder, true, false);
     }
-
 
     childrenList.prepend(sourcePaperId);
 

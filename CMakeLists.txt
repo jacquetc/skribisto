@@ -12,6 +12,9 @@ set(QT_DEFAULT_MAJOR_VERSION 5)
 find_package(ECM REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
 
+
+#set(SKR_TEST_APP false)
+
 # git tag for version :
 include(MunkeyVersionFromGit)
 version_from_git(
@@ -71,13 +74,13 @@ add_subdirectory(resources/unix/icons)
 add_subdirectory(src/libskribisto-data/src)
 #add_subdirectory(src/plugins)
 #add_subdirectory(3rdparty)
-add_subdirectory(src/app/src)
-
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_subdirectory(src/libskribisto-data/tests)
     add_subdirectory(src/app/tests)
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+add_subdirectory(src/app/src)
 
 install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})
 install(FILES resources/unix/mime/eu.skribisto.skribisto.xml DESTINATION ${KDE_INSTALL_MIMEDIR})

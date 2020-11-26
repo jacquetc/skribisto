@@ -101,7 +101,7 @@ Item {
     Settings {
         id: settings
         category: settingsCategory
-        property int dockWidth: 300
+        property int dockWidth: 400
         property bool isVisible: true
     }
 
@@ -216,6 +216,9 @@ Item {
     }
 
     onWidthChanged: {
+        if(state === "left_edge"){
+            root.x = 0 - (root.width * (1 - position))
+        }
         if(state === "right_edge"){
             root.x = (root.parent.width - root.width) + (root.width * (1 - position))
         }

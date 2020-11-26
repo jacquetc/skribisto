@@ -53,6 +53,7 @@ public:
                       const QModelIndex& parent = QModelIndex()) const override;
 
     int      rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    int      columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
     QVariant data(const QModelIndex& index,
                   int                role = Qt::DisplayRole) const override;
@@ -71,6 +72,7 @@ public:
     SKRPaperItem        * getItem(int projectId,
                                   int paperId);
 
+    void sortAllPaperItems();
 private slots:
 
     void populate();
@@ -96,6 +98,11 @@ private slots:
     void refreshAfterIndentChanged(int projectId,
                                    int paperId,
                                    int newIndent);
+
+
+
+signals:
+    void sortOtherProxyModelsCalled();
 
 private:
 

@@ -351,7 +351,7 @@ TreeListViewForm {
             }
 
             onDropped: {
-                //console.log("dropped : ", moveSourceInt, content.visualIndex)
+                console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
                 proxyModel.moveItem(moveSourceInt, content.visualIndex)
             }
             property int visualIndex: {
@@ -632,7 +632,6 @@ TreeListViewForm {
 
                         content.dragging = true
                         cancelDragTimer.start()
-                        eventPoint.accepted = true
                     }
 
 

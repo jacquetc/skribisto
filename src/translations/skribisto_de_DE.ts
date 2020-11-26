@@ -467,6 +467,14 @@
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Move up</source>
+        <translation type="unfinished">Aufwärts bewegen</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation type="unfinished">Abwärts bewegen</translation>
+    </message>
 </context>
 <context>
     <name>ColorChooser</name>
@@ -2464,6 +2472,14 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <source>Deselect tags</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Note search result list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note overview list</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NoteZone</name>
@@ -3210,6 +3226,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>The checked documents are those which were trashed at the same time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List of trashed items to be restored</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

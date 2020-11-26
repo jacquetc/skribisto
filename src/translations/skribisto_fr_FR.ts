@@ -99,6 +99,14 @@
         <source>Paste</source>
         <translation type="unfinished">Coller</translation>
     </message>
+    <message>
+        <source>Move up</source>
+        <translation type="unfinished">Déplacer vers le haut</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation type="unfinished">Déplacer vers le bas</translation>
+    </message>
 </context>
 <context>
     <name>ColorChooser</name>
@@ -884,6 +892,14 @@
         <source>Deselect tags</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Note search result list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note overview list</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PlumeImporterForm.ui</name>
@@ -1218,6 +1234,10 @@
     <message>
         <source>The checked documents are those which were trashed at the same time</source>
         <translation>Les documents précochés sont ceux qui ont été déplacés dans la corbeille au même moment</translation>
+    </message>
+    <message>
+        <source>List of trashed items to be restored</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -340,6 +340,14 @@
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Move up</source>
+        <translation type="unfinished">Sposta su</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation type="unfinished">Sposta giù</translation>
+    </message>
 </context>
 <context>
     <name>ColorChooser</name>
@@ -2170,6 +2178,14 @@ Please open a .plume file.</source>
         <source>Deselect tags</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Note search result list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note overview list</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NoteZone</name>
@@ -2846,6 +2862,10 @@ Please open a .plume file.</source>
     </message>
     <message>
         <source>The checked documents are those which were trashed at the same time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List of trashed items to be restored</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

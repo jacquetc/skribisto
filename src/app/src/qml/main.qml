@@ -14,7 +14,6 @@ ApplicationWindow {
 
     id: rootWindow
     objectName: "rootWindow"
-    //visible: true
     minimumHeight: 500
     minimumWidth: 600
 
