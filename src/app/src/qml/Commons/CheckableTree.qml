@@ -224,6 +224,11 @@ ListView {
             }
 
             Keys.onPressed: {
+                // avoid unwanted overshoot when taping right key
+                if (event.key === Qt.Key_Right){
+                    event.accepted = true
+
+                }
                 if (model.isOpenable && openActionsEnabled && event.key === Qt.Key_Return){
                     console.log("Return key pressed")
                     openDocumentAction.trigger()

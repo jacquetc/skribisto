@@ -40,6 +40,7 @@ SKRPaperListModel::SKRPaperListModel(QObject *parent, SKR::ItemType paperType)
     m_rootItem = new SKRPaperItem(m_paperType);
     m_rootItem->setIsRootItem();
 
+
     connect(plmdata->projectHub(),
             &PLMProjectHub::projectLoaded,
             this,
@@ -72,7 +73,7 @@ SKRPaperListModel::SKRPaperListModel(QObject *parent, SKR::ItemType paperType)
 
     connect(m_paperHub,
             &PLMPaperHub::trashedChanged, // careful, paper is trashed = true,
-            // not a true removal
+                                          // not a true removal
             this,
             &SKRPaperListModel::refreshAfterTrashedStateChanged);
 
@@ -138,6 +139,13 @@ int SKRPaperListModel::rowCount(const QModelIndex& parent) const
     if (parent.isValid()) return 0;
 
     return m_allPaperItems.count();
+}
+
+int SKRPaperListModel::columnCount(const QModelIndex& parent) const
+{
+    if (parent.isValid()) return 0;
+
+    return 1;
 }
 
 QVariant SKRPaperListModel::data(const QModelIndex& index, int role) const
@@ -400,32 +408,32 @@ Qt::ItemFlags SKRPaperListModel::flags(const QModelIndex& index) const
 QHash<int, QByteArray>SKRPaperListModel::roleNames() const {
     QHash<int, QByteArray> roles;
 
-    roles[SKRPaperItem::Roles::ProjectNameRole]     = "projectName";
-    roles[SKRPaperItem::Roles::PaperIdRole]         = "paperId";
-    roles[SKRPaperItem::Roles::ProjectIdRole]       = "projectId";
-    roles[SKRPaperItem::Roles::NameRole]            = "name";
-    roles[SKRPaperItem::Roles::LabelRole]           = "label";
-    roles[SKRPaperItem::Roles::IndentRole]          = "indent";
-    roles[SKRPaperItem::Roles::SortOrderRole]       = "sortOrder";
-    roles[SKRPaperItem::Roles::CreationDateRole]    = "creationDate";
-    roles[SKRPaperItem::Roles::UpdateDateRole]      = "updateDate";
-    roles[SKRPaperItem::Roles::ContentDateRole]     = "contentDate";
-    roles[SKRPaperItem::Roles::HasChildrenRole]     = "hasChildren";
-    roles[SKRPaperItem::Roles::TrashedRole]         = "trashed";
-    roles[SKRPaperItem::Roles::WordCountRole]       = "wordCount";
-    roles[SKRPaperItem::Roles::CharCountRole]       = "charCount";
-    roles[SKRPaperItem::Roles::WordCountWithChildrenRole]       = "wordCountWithChildren";
-    roles[SKRPaperItem::Roles::CharCountWithChildrenRole]       = "charCountWithChildren";
-    roles[SKRPaperItem::Roles::ProjectIsBackupRole] = "projectIsBackup";
-    roles[SKRPaperItem::Roles::ProjectIsActiveRole] = "projectIsActive";
-    roles[SKRPaperItem::Roles::IsRenamableRole]     = "isRenamable";
-    roles[SKRPaperItem::Roles::IsMovableRole]       = "isMovable";
-    roles[SKRPaperItem::Roles::CanAddSiblingPaperRole]     = "canAddSiblingPaper";
-    roles[SKRPaperItem::Roles::CanAddChildPaperRole]     = "canAddChildPaper";
-    roles[SKRPaperItem::Roles::IsTrashableRole]     = "isTrashable";
-    roles[SKRPaperItem::Roles::IsOpenableRole]      = "isOpenable";
-    roles[SKRPaperItem::Roles::IsCopyableRole]      = "isCopyable";
-    roles[SKRPaperItem::Roles::AttributesRole]      = "attributes";
+    roles[SKRPaperItem::Roles::ProjectNameRole]           = "projectName";
+    roles[SKRPaperItem::Roles::PaperIdRole]               = "paperId";
+    roles[SKRPaperItem::Roles::ProjectIdRole]             = "projectId";
+    roles[SKRPaperItem::Roles::NameRole]                  = "name";
+    roles[SKRPaperItem::Roles::LabelRole]                 = "label";
+    roles[SKRPaperItem::Roles::IndentRole]                = "indent";
+    roles[SKRPaperItem::Roles::SortOrderRole]             = "sortOrder";
+    roles[SKRPaperItem::Roles::CreationDateRole]          = "creationDate";
+    roles[SKRPaperItem::Roles::UpdateDateRole]            = "updateDate";
+    roles[SKRPaperItem::Roles::ContentDateRole]           = "contentDate";
+    roles[SKRPaperItem::Roles::HasChildrenRole]           = "hasChildren";
+    roles[SKRPaperItem::Roles::TrashedRole]               = "trashed";
+    roles[SKRPaperItem::Roles::WordCountRole]             = "wordCount";
+    roles[SKRPaperItem::Roles::CharCountRole]             = "charCount";
+    roles[SKRPaperItem::Roles::WordCountWithChildrenRole] = "wordCountWithChildren";
+    roles[SKRPaperItem::Roles::CharCountWithChildrenRole] = "charCountWithChildren";
+    roles[SKRPaperItem::Roles::ProjectIsBackupRole]       = "projectIsBackup";
+    roles[SKRPaperItem::Roles::ProjectIsActiveRole]       = "projectIsActive";
+    roles[SKRPaperItem::Roles::IsRenamableRole]           = "isRenamable";
+    roles[SKRPaperItem::Roles::IsMovableRole]             = "isMovable";
+    roles[SKRPaperItem::Roles::CanAddSiblingPaperRole]    = "canAddSiblingPaper";
+    roles[SKRPaperItem::Roles::CanAddChildPaperRole]      = "canAddChildPaper";
+    roles[SKRPaperItem::Roles::IsTrashableRole]           = "isTrashable";
+    roles[SKRPaperItem::Roles::IsOpenableRole]            = "isOpenable";
+    roles[SKRPaperItem::Roles::IsCopyableRole]            = "isCopyable";
+    roles[SKRPaperItem::Roles::AttributesRole]            = "attributes";
     return roles;
 }
 
@@ -569,6 +577,7 @@ void SKRPaperListModel::refreshAfterDataAddition(int projectId, int paperId)
                                                        indentsHash.value(paperId),
                                                        sortOrdersHash.value(paperId)));
     this->index(itemIndex, 0, QModelIndex());
+    this->sortAllPaperItems();
     endInsertRows();
 }
 
@@ -584,7 +593,9 @@ void SKRPaperListModel::refreshAfterDataRemove(int projectId, int paperId)
     beginRemoveRows(QModelIndex(), modelIndex.row(), modelIndex.row());
 
     SKRPaperItem *item = this->getItem(projectId, paperId);
+
     m_allPaperItems.removeAll(item);
+    this->sortAllPaperItems();
 
     endRemoveRows();
 
@@ -592,94 +603,87 @@ void SKRPaperListModel::refreshAfterDataRemove(int projectId, int paperId)
     for (SKRPaperItem *item : m_allPaperItems) {
         item->invalidateData(SKRPaperItem::Roles::SortOrderRole);
         item->invalidateData(SKRPaperItem::Roles::HasChildrenRole);
+        this->exploitSignalFromPLMData(projectId, item->paperId(), SKRPaperItem::Roles::SortOrderRole);
+        this->exploitSignalFromPLMData(projectId, item->paperId(), SKRPaperItem::Roles::HasChildrenRole);
     }
-
 }
 
 // --------------------------------------------------------------------
 
-void SKRPaperListModel::refreshAfterDataMove(int sourceProjectId,
-                                             QList<int> sourcePaperIds,
-                                             int targetProjectId,
-                                             int targetPaperId)
+void SKRPaperListModel::refreshAfterDataMove(int       sourceProjectId,
+                                             QList<int>sourcePaperIds,
+                                             int       targetProjectId,
+                                             int       targetPaperId)
 {
 
 
+    this->sortAllPaperItems();
     for (SKRPaperItem *item : m_allPaperItems) {
         item->invalidateData(SKRPaperItem::Roles::SortOrderRole);
+        this->exploitSignalFromPLMData(targetProjectId, item->paperId(), SKRPaperItem::Roles::SortOrderRole);
     }
 
+//    this->exploitSignalFromPLMData(targetProjectId, targetPaperId, SKRPaperItem::Roles::SortOrderRole);
+//    for(int sourcePaperId : sourcePaperIds){
+//    this->exploitSignalFromPLMData(sourceProjectId, sourcePaperId, SKRPaperItem::Roles::SortOrderRole);
+//    }
+
+//    QList<int> sourceIndexList;
+//    int targetIndex = -2;
+//    int sourceRow   = -2;
+//    int targetRow   = -2;
 
 
-    //TODO: temporary
-    return;
-    this->populate();
-    return;
+//    SKRPaperItem *targetItem = this->getItem(targetProjectId, targetPaperId);
+
+//    if (!targetItem) {
+//        qWarning() << "refreshAfterDataMove no targetItem";
+//        return;
+//    }
+
+//    SKRPaperItem *sourceItem = this->getItem(sourceProjectId, sourcePaperIds.first());
+
+//    if (!sourceItem) {
+//        qWarning() << "refreshAfterDataMove no sourceItem";
+//        return;
+//    }
+
+//    int i = 0;
+
+//    for (SKRPaperItem *item : m_allPaperItems) {
+//        if (sourcePaperIds.contains(item->paperId())) {
+//            sourceIndexList.append(i);
+//        }
+
+//        if ((item->paperId() == targetPaperId) && (targetIndex == -2)) {
+//            targetIndex = i;
+//        }
+//        i++;
+//    }
+//    int firstSourceIndex = sourceIndexList.first();
+
+//    sourceRow = firstSourceIndex;
+//    targetRow = targetIndex;
+
+//    if (sourceRow < targetRow) {
+//        targetRow += 1;
+//    }
 
 
-    QList<int> sourceIndexList;
-    int targetIndex = -2;
-    int sourceRow   = -2;
-    int targetRow   = -2;
+//    beginMoveRows(QModelIndex(), sourceRow, sourceRow + sourceIndexList.count() - 1, QModelIndex(), targetRow);
 
 
-    SKRPaperItem *targetItem = this->getItem(targetProjectId, targetPaperId);
+//        this->sortAllPaperItems();
+//        for (SKRPaperItem *item : m_allPaperItems) {
+//            item->invalidateData(SKRPaperItem::Roles::SortOrderRole);
+//        }
 
-    if (!targetItem) {
-        qWarning() << "refreshAfterDataMove no targetItem";
-        return;
-    }
+//    endMoveRows();
 
-    SKRPaperItem *sourceItem = this->getItem(sourceProjectId, sourcePaperIds.first());
 
-    if (!sourceItem) {
-        qWarning() << "refreshAfterDataMove no sourceItem";
-        return;
-    }
-
-    int i = 0;
-
-    for (SKRPaperItem *item : m_allPaperItems) {
-        if (sourcePaperIds.contains(item->paperId())) {
-            sourceIndexList.append(i);
-        }
-
-        if (item->paperId() == targetPaperId && targetIndex == -2) {
-            targetIndex = i;
-        }
-        i++;
-    }
-
-    int firstSourceIndex = sourceIndexList.first();
-
-    sourceRow = firstSourceIndex;
-    targetRow = targetIndex;
-
-    if (sourceRow < targetRow) {
-        targetRow += 1;
-    }
-
-    for (SKRPaperItem *item : m_allPaperItems) {
-        item->invalidateData(SKRPaperItem::Roles::SortOrderRole);
-    }
-
-    beginMoveRows(QModelIndex(), sourceRow, sourceRow + sourceIndexList.count() - 1, QModelIndex(), targetRow );
-
-    int v = 0;
-    for(int sourceIndex : sourceIndexList){
-        Q_UNUSED(sourceIndex)
-        SKRPaperItem *tempItem = m_allPaperItems.takeAt(firstSourceIndex);
-
-        m_allPaperItems.insert(targetIndex + v, tempItem);
-
-        if(sourceRow > targetRow){
-            v++;
-        }
-
-    }
-
-    endMoveRows();
 }
+
+
 
 // --------------------------------------------------------------------
 ///
@@ -744,6 +748,22 @@ void SKRPaperListModel::refreshAfterIndentChanged(int projectId, int paperId,
 }
 
 // --------------------------------------------------------------------
+///
+/// \brief SKRPaperListModel::sortAllPaperItems
+/// sort by SortOrder
+void SKRPaperListModel::sortAllPaperItems(){
+
+    std::sort(m_allPaperItems.begin(), m_allPaperItems.end(), [](SKRPaperItem *item1, SKRPaperItem *item2)->bool{
+        return item1->sortOrder() < item2->sortOrder();
+    }
+ );
+
+}
+
+
+
+
+// --------------------------------------------------------------------
 
 void SKRPaperListModel::exploitSignalFromPLMData(int                 projectId,
                                                  int                 paperId,
@@ -787,7 +807,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_paperHub,
                                            &PLMPaperHub::titleChanged, this,
                                            [this](int projectId, int paperId,
-                                           const QString& value) {
+                                                  const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId, SKRPaperItem::Roles::NameRole);
     }, Qt::UniqueConnection);
@@ -795,7 +815,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(plmdata->projectHub(),
                                            &PLMProjectHub::projectNameChanged, this,
                                            [this](int projectId,
-                                           const QString& value) {
+                                                  const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, -1,
                                        SKRPaperItem::Roles::ProjectNameRole);
@@ -804,9 +824,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -817,7 +837,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_paperHub,
                                            &PLMPaperHub::paperIdChanged, this,
                                            [this](int projectId, int paperId,
-                                           int value) {
+                                                  int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        SKRPaperItem::Roles::PaperIdRole);
@@ -826,7 +846,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_paperHub,
                                            &PLMPaperHub::indentChanged, this,
                                            [this](int projectId, int paperId,
-                                           int value) {
+                                                  int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        SKRPaperItem::Roles::IndentRole);
@@ -835,7 +855,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_paperHub,
                                            &PLMPaperHub::sortOrderChanged, this,
                                            [this](int projectId, int paperId,
-                                           int value) {
+                                                  int value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        SKRPaperItem::Roles::SortOrderRole);
@@ -844,7 +864,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_paperHub,
                                            &PLMPaperHub::contentDateChanged, this,
                                            [this](int projectId, int paperId,
-                                           const QDateTime& value) {
+                                                  const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        SKRPaperItem::Roles::ContentDateRole);
@@ -853,7 +873,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_paperHub,
                                            &PLMPaperHub::updateDateChanged, this,
                                            [this](int projectId, int paperId,
-                                           const QDateTime& value) {
+                                                  const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        SKRPaperItem::Roles::UpdateDateRole);
@@ -862,7 +882,7 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_paperHub,
                                            &PLMPaperHub::trashedChanged, this,
                                            [this](int projectId, int paperId,
-                                           bool value) {
+                                                  bool value) {
         Q_UNUSED(value)
         this->exploitSignalFromPLMData(projectId, paperId,
                                        SKRPaperItem::Roles::TrashedRole);
@@ -871,9 +891,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -885,9 +905,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -899,9 +919,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -913,9 +933,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -938,9 +958,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -952,9 +972,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -966,9 +986,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -980,9 +1000,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -994,9 +1014,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -1008,9 +1028,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -1022,9 +1042,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
@@ -1036,9 +1056,9 @@ void SKRPaperListModel::connectToPLMDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &PLMPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                           int            paperCode,
-                                           const QString& name,
-                                           const QString& value) {
+                                                  int            paperCode,
+                                                  const QString& name,
+                                                  const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 

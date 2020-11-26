@@ -64,14 +64,29 @@ Item {
             ScrollView {
                 id: scrollView
                 anchors.fill: parent
-                focusPolicy: Qt.WheelFocus
+                focusPolicy: Qt.StrongFocus
                 clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
+
                 CheckableTree {
                     id: searchListView
                     anchors.fill: parent
+                    smooth: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.VerticalFlick
+                    spacing: 5
+
+                    Accessible.name: searching ? qsTr("Note search result list") : qsTr("Note overview list")
+                    Accessible.role: Accessible.List
+
+//                    ScrollBar.vertical: ScrollBar {
+//                        id: internalScrollBar
+//                        parent: searchListView
+//                        policy: ScrollBar.AsNeeded
+//                    }
+
                     treeIndentMultiplier: 20
                     elevationEnabled: true                    
 
@@ -85,6 +100,7 @@ Item {
                     addChildPaperActionEnabled: !searching
                     moveActionEnabled: !searching
                 }
+
             }
 
             SKRDrawer {

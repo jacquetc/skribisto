@@ -102,7 +102,7 @@ Item {
                     copyActionEnabled: true
                     deleteActionEnabled: true
 
-                    Accessible.name: "List of trashed items to be restored"
+                    Accessible.name: qsTr("List of trashed items to be restored")
                     Accessible.role: Accessible.List
                 }
             }

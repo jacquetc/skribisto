@@ -1,2 +1,5 @@
 #add_subdirectory(auto/writetreecase)
-
+message(checkabletree ${SKR_TEST_APP})
+if (SKR_TEST_APP)
+add_subdirectory(checkabletree)
+endif()

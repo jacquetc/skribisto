@@ -155,6 +155,8 @@ signals:
     void showParentWhenParentIdFilterChanged(bool value);
     void tagIdListFilterChanged(const QList<int>tagIdList);
 
+    void sortOtherProxyModelsCalled();
+
 public slots:
 
     Q_INVOKABLE void setParentFilter(int projectId,

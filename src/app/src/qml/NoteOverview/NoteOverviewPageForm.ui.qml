@@ -146,6 +146,8 @@ Item {
                     ScrollBar.vertical.policy: ScrollBar.AsNeeded
                     contentWidth: gridLayout.width
                     contentHeight: gridLayout.implicitHeight
+//                    contentWidth: pillarLayout.width
+//                    contentHeight: pillarLayout.implicitHeight
 
 //                    SKRPillarLayout {
 //                        id: pillarLayout
@@ -155,8 +157,8 @@ Item {
 
                     GridLayout{
                         id: gridLayout
-                        columns: ((gridLayout.width / columnWidth) | 0 )
-                        width: scrollView.width
+                        columns: ((gridLayout.width / columnWidth) | 0 ) === 0 ? 1 : 2
+                        width: scrollView.width - scrollView.anchors.leftMargin
 
 //                        RecentNotesItem {
 //                            id: recentNotesItem

@@ -73,7 +73,7 @@ Item {
                 Layout.fillHeight: true
                 clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ScrollBar.vertical.policy: scrollBarVerticalPolicy
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded//scrollBarVerticalPolicy
 
                 ListView {
                     id: listView

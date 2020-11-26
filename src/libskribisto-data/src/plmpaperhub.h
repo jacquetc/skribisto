@@ -200,12 +200,12 @@ public:
                                                       int            paperId,
                                                       const QString& attribute) = 0;
 
-private:
 
-    SKRResult movePaper(int  projectId,
+    Q_INVOKABLE SKRResult movePaper(int  projectId,
                         int  sourcePaperId,
                         int  targetPaperId,
                         bool after = false);
+private:
 
     SKRResult setTrashedDateToNow(int projectId,
                                   int paperId);

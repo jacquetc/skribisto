@@ -25,19 +25,18 @@ SKRSearchPaperListProxyModel::SKRSearchPaperListProxyModel(SKR::ItemType paperTy
 
 
     this->setSortRole(SKRPaperItem::SortOrderRole);
+    this->setDynamicSortFilter(false);
 
 
-    connect(
-                plmdata->projectHub(),
-                &PLMProjectHub::projectLoaded,
-                this,
-                &SKRSearchPaperListProxyModel::loadProjectSettings);
-    connect(
-                plmdata->projectHub(),
-                &PLMProjectHub::projectToBeClosed,
-                this,
-                &SKRSearchPaperListProxyModel::saveProjectSettings,
-                Qt::DirectConnection);
+    connect(plmdata->projectHub(),
+            &PLMProjectHub::projectLoaded,
+            this,
+            &SKRSearchPaperListProxyModel::loadProjectSettings);
+    connect(plmdata->projectHub(),
+            &PLMProjectHub::projectToBeClosed,
+            this,
+            &SKRSearchPaperListProxyModel::saveProjectSettings,
+            Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this,
             [this](int
             projectId) {
@@ -45,6 +44,17 @@ SKRSearchPaperListProxyModel::SKRSearchPaperListProxyModel(SKR::ItemType paperTy
     });
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->invalidateFilter();
+    });
+
+
+    // connect this proxy model to all other proxy models using the main model
+
+    SKRPaperListModel *listModel = static_cast<SKRPaperListModel*>(this->sourceModel());
+    connect(this, &SKRSearchPaperListProxyModel::sortOtherProxyModelsCalled, listModel, &SKRPaperListModel::sortOtherProxyModelsCalled);
+    connect(listModel, &SKRPaperListModel::sortOtherProxyModelsCalled, [this](){
+        if(this->sender() != this){
+            this->sort(0);
+        }
     });
 }
 
@@ -329,7 +339,7 @@ QList<int>SKRSearchPaperListProxyModel::getCheckedIdsList() {
     // sort list
 
     QList<int> allSortedIds = m_paperHub->getAllIds(m_projectIdFilter);
-     QList<int> sortedCheckedIds;
+    QList<int> sortedCheckedIds;
     for(int sortedId : allSortedIds){
         if(list.contains(sortedId)){
             sortedCheckedIds.append(sortedId);
@@ -1101,8 +1111,8 @@ int SKRSearchPaperListProxyModel::getItemIndent(int projectId, int paperId)
 // -----------------------------------------------------------------
 
 SKRResult SKRSearchPaperListProxyModel::addChildItem(int projectId,
-                                                int parentPaperId,
-                                                int visualIndex)
+                                                     int parentPaperId,
+                                                     int visualIndex)
 {
     SKRResult result = m_paperHub->addChildPaper(projectId, parentPaperId);
 
@@ -1112,6 +1122,7 @@ SKRResult SKRSearchPaperListProxyModel::addChildItem(int projectId,
 
 
         sort(0);
+        emit sortOtherProxyModelsCalled();
         int newVisualIndex = this->findVisualIndex(projectId, newPaperId);
 
         this->setForcedCurrentIndex(newVisualIndex);
@@ -1122,8 +1133,8 @@ SKRResult SKRSearchPaperListProxyModel::addChildItem(int projectId,
 // -----------------------------------------------------------------
 
 SKRResult SKRSearchPaperListProxyModel::addItemAbove(int projectId,
-                                                int parentPaperId,
-                                                int visualIndex)
+                                                     int parentPaperId,
+                                                     int visualIndex)
 {
     SKRResult result = m_paperHub->addPaperAbove(projectId, parentPaperId);
 
@@ -1133,6 +1144,7 @@ SKRResult SKRSearchPaperListProxyModel::addItemAbove(int projectId,
 
 
         sort(0);
+        emit sortOtherProxyModelsCalled();
         int newVisualIndex = this->findVisualIndex(projectId, newPaperId);
 
         this->setForcedCurrentIndex(newVisualIndex);
@@ -1142,8 +1154,8 @@ SKRResult SKRSearchPaperListProxyModel::addItemAbove(int projectId,
 // -----------------------------------------------------------------
 
 SKRResult SKRSearchPaperListProxyModel::addItemBelow(int projectId,
-                                                int parentPaperId,
-                                                int visualIndex)
+                                                     int parentPaperId,
+                                                     int visualIndex)
 {
     SKRResult result = m_paperHub->addPaperBelow(projectId, parentPaperId);
     IFOK(result){
@@ -1152,6 +1164,7 @@ SKRResult SKRSearchPaperListProxyModel::addItemBelow(int projectId,
 
 
         sort(0);
+        emit sortOtherProxyModelsCalled();
         int newVisualIndex = this->findVisualIndex(projectId, newPaperId);
 
         this->setForcedCurrentIndex(newVisualIndex);
@@ -1171,10 +1184,11 @@ SKRResult SKRSearchPaperListProxyModel::moveUp(int projectId, int paperId, int v
     }
     SKRResult result = m_paperHub->movePaperUp(projectId, paperId);
     IFOK(result){
-    sort(0);
-    int newVisualIndex = this->findVisualIndex(projectId, paperId);
+        sort(0);
+        emit sortOtherProxyModelsCalled();
+        int newVisualIndex = this->findVisualIndex(projectId, paperId);
 
-    this->setForcedCurrentIndex(newVisualIndex);
+        this->setForcedCurrentIndex(newVisualIndex);
     }
     return result;
 }
@@ -1190,10 +1204,11 @@ SKRResult SKRSearchPaperListProxyModel::moveDown(int projectId, int paperId, int
     }
     SKRResult result = m_paperHub->movePaperDown(projectId, paperId);
     IFOK(result){
-    sort(0);
-    int newVisualIndex = this->findVisualIndex(projectId, paperId);
+        sort(0);
+        emit sortOtherProxyModelsCalled();
+        int newVisualIndex = this->findVisualIndex(projectId, paperId);
 
-    this->setForcedCurrentIndex(newVisualIndex);
+        this->setForcedCurrentIndex(newVisualIndex);
     }
     return result;
 }
@@ -1207,7 +1222,10 @@ SKRResult SKRSearchPaperListProxyModel::moveDown(int projectId, int paperId, int
 /// \param to target item index number
 /// Carefull, this is only used for manually moving a visual item
 void SKRSearchPaperListProxyModel::moveItem(int from, int to) {
-    //TODO: adapt it to trees
+
+
+
+
     if (from == to) return;
 
     int modelFrom = from;
@@ -1232,50 +1250,14 @@ void SKRSearchPaperListProxyModel::moveItem(int from, int to) {
                                                           SKRPaperItem::Roles::NameRole).
                 toString();
 
-    int finalSortOrder = toSortOrder - 1;
+
+    m_paperHub->movePaper(fromProjectId, fromPaperId, toPaperId, false);
 
 
-    // append to end of list if moved here, paperId = 0
+    sort(0);
+    emit sortOtherProxyModelsCalled();
+    this->invalidate();
 
-    if (toPaperId == 0) {
-        SKRPaperListModel *model = static_cast<SKRPaperListModel *>(this->sourceModel());
-
-        QModelIndex modelIndex =
-                model->getModelIndex(fromProjectId, fromPaperId).first();
-        SKRPaperItem *item =
-                static_cast<SKRPaperItem *>(modelIndex.internalPointer());
-
-        int indent                 = item->indent();
-        QList<int> idList          = m_paperHub->getAllIds(fromProjectId);
-        QHash<int, int> indentHash = m_paperHub->getAllIndents(fromProjectId);
-        int lastIdWithSameIndent   = fromPaperId;
-
-        for (int id : idList) {
-            if (indentHash.value(id) == indent) {
-                lastIdWithSameIndent = id;
-            }
-        }
-
-        if (lastIdWithSameIndent == fromPaperId) {
-            return;
-        }
-
-        finalSortOrder = m_paperHub->getValidSortOrderAfterPaper(fromProjectId,
-                                                                 lastIdWithSameIndent);
-    }
-    qDebug() << "finalSortOrder" << finalSortOrder;
-
-
-    // beginMoveRows(QModelIndex(), modelFrom, modelFrom, QModelIndex(),
-    // modelTo);
-    // SKRResult result = m_paperHub->movePaper(fromProjectId,
-    // fromPaperId, toPaperId);
-    this->setData(fromIndex, finalSortOrder, SKRPaperItem::Roles::SortOrderRole);
-
-    // m_paperHub->setSortOrder(fromPaperId, fromPaperId, toSortOrder -
-    // 1);
-
-    // endMoveRows();
 }
 
 // --------------------------------------------------------------

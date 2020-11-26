@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.5.0)
 
 # Populate a CMake variable with the sources
 
-project(app LANGUAGES CXX VERSION ${VERSION})
-
+project(checkabletree LANGUAGES CXX VERSION ${VERSION})
 
 if(ANDROID)
     set(SKR_PRINT_SUPPORT false)
@@ -45,52 +44,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Some defaults are set for OpenBSD as well (info and man pages).
 include(GNUInstallDirs)
 include(FeatureSummary)
-# translations :
-set(TS_FILES
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_fr_FR.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_de_DE.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_it_IT.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_ru_RU.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_pt_BR.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_sp_SP.ts
-    )
-#set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION ${CMAKE_SOURCE_DIR}/src/translations/)
-qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
-configure_file(${CMAKE_SOURCE_DIR}/src/translations/translations.qrc ${CMAKE_BINARY_DIR}/src/app/src COPYONLY)
 
 set(app_SRCS 
     main.cpp
-    documenthandler.h
-    documenthandler.cpp
-    skrusersettings.h
-    skrusersettings.cpp
-    skrrecentprojectlistmodel.h
-    skrrecentprojectlistmodel.cpp
-    skrfonts.h
-    skrfonts.cpp
-    skrfontfamilylistmodel.cpp
-    skrfontfamilylistmodel.h
-    skrfonts.cpp
-    skreditmenusignalhub.h
-    skreditmenusignalhub.cpp
-    skrqmltools.h
-    skrhighlighter.cpp
-    skrhighlighter.h
-    skrspellchecker.cpp
-    skrspellchecker.h
-    skrrootitem.cpp
-    skrrootitem.h
-    skrtextbridge.cpp
-    skrtextbridge.h
-    skrthemes.cpp
-    skrthemes.h
-    skrexporter.cpp
-    skrexporter.h
-    skrclipboard.cpp
-    skrclipboard.h
 )
 
-set(QML qml.qrc
+set(QML ${CMAKE_SOURCE_DIR}/src/app/src/qml.qrc 
+	test_qml.qrc
     )
 #ADD_CUSTOM_TARGET(qml.qrc SOURCES qml.qrc)
 
@@ -111,14 +71,13 @@ set(QML qml.qrc
 #    endif()
 #endif()
 
-set(QRC pics.qrc
-    controls.qrc
-    themes.qrc
+set(QRC ${CMAKE_SOURCE_DIR}/src/app/src/pics.qrc
+    ${CMAKE_SOURCE_DIR}/src/app/src/controls.qrc
+    ${CMAKE_SOURCE_DIR}/src/app/src/themes.qrc
     ${CMAKE_SOURCE_DIR}/3rdparty/icons.qrc
     ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc
     ${CMAKE_SOURCE_DIR}/readme.qrc
 
-    ${CMAKE_BINARY_DIR}/src/app/src/translations.qrc
     )
 
 # needed to allow qML debugging :
@@ -133,16 +92,13 @@ endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Tell CMake to create the executable
 
-message(SKR_TEST_APP ${SKR_TEST_APP})
-if(ANDROID OR SKR_TEST_APP)
-    message("------- library is to be built ---------")
-    add_library(skribisto SHARED ${app_SRCS} ${RESOURCES} ${QRC} )
+if(ANDROID AND NOT SKR_TEST_APP)
+    add_library(checkabletree SHARED ${app_SRCS} ${RESOURCES} ${QRC} )
 else()
-    message("------- executable is to be built ---------")
-    add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC} )
+    add_executable(checkabletree ${app_SRCS} ${RESOURCES} ${QRC} )
 endif()
 
-target_compile_definitions(skribisto
+target_compile_definitions(checkabletree
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
 if(${SKR_PRINT_SUPPORT})
@@ -151,11 +107,15 @@ else()
     set(PRINT "")
 endif()
 
-target_link_libraries(skribisto PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2
+if(SKR_TEST_APP)
+target_link_libraries(checkabletree PRIVATE skribisto skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2
     ${PRINT} ${HUNSPELL_LIBRARIES})
-include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
-target_include_directories(skribisto SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
+endif()
 
-install(TARGETS skribisto RUNTIME DESTINATION ${KDE_INSTALL_BINDIR})
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/" "${CMAKE_SOURCE_DIR}/src/app/src/")
+target_include_directories(checkabletree SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
+target_include_directories(checkabletree SYSTEM PUBLIC "${CMAKE_SOURCE_DIR}/src/app/src/")
+
+install(TARGETS checkabletree RUNTIME DESTINATION ${KDE_INSTALL_BINDIR})
 
 #set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/data/Info.plist)
