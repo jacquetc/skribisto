@@ -594,3 +594,16 @@ void DocumentHandler::insertDocumentFragment(const QTextDocumentFragment &fragme
 
     m_selectionCursor.endEditBlock();
 }
+
+QString DocumentHandler::getHtmlAtSelection(int start, int end){
+
+    setSelectionStart(start);
+    setSelectionEnd(end);
+
+    return m_selectionCursor.selection().toHtml();
+
+}
+void DocumentHandler::insertHtml(int position, const QString &html){
+    setCursorPosition(position);
+    m_textCursor.insertHtml(html);
+}

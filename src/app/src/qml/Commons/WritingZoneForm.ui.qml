@@ -12,7 +12,7 @@ FocusScope {
     property int maximumTextAreaWidth
     property alias scrollView: scrollView
     property alias textArea: textArea
-    property alias flickable: flickable
+    property alias flickable: textAreaFlickable
     property alias internalScrollBar: internalScrollBar
     property int scrollBarVerticalPolicy: ScrollBar.AsNeeded
     property alias leftScrollItem: leftScrollItem
@@ -81,14 +81,14 @@ FocusScope {
 
                     //contentWidth: scrollView.width
                     Flickable {
-                        id: flickable
+                        id: textAreaFlickable
                         flickableDirection: Flickable.VerticalFlick
                         boundsBehavior: Flickable.StopAtBounds
                         interactive: true
                         //clip: true
                         ScrollBar.vertical: ScrollBar {
                             id: internalScrollBar
-                            parent: flickable.parent
+                            parent: textAreaFlickable.parent
                         }
                         TextArea.flickable: SKRTextArea {
                             id: textArea

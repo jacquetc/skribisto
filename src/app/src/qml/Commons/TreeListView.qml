@@ -343,6 +343,7 @@ TreeListViewForm {
             Accessible.description: qsTr("navigation item")
 
 
+            keys: ["application/skribisto-paper"]
             onEntered: {
 
                 content.sourceIndex = drag.source.visualIndex
@@ -351,8 +352,12 @@ TreeListViewForm {
             }
 
             onDropped: {
-                console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
-                proxyModel.moveItem(moveSourceInt, content.visualIndex)
+                if(drop.proposedAction === Qt.MoveAction){
+
+                    console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
+                    proxyModel.moveItem(moveSourceInt, content.visualIndex)
+
+                }
             }
             property int visualIndex: {
                 return DelegateModel.itemsIndex
@@ -553,6 +558,11 @@ TreeListViewForm {
                 Drag.source: content
                 Drag.hotSpot.x: width / 2
                 Drag.hotSpot.y: height / 2
+                Drag.keys: ["application/skribisto-paper"]
+
+                Drag.supportedActions: Qt.MoveAction
+                //Drag.dragType: Drag.Automatic
+
 
                 border.width: 2
                 border.color: dragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
