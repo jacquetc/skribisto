@@ -1271,7 +1271,6 @@ ApplicationWindow {
         checkable: true
 
         onCheckedChanged: {
-            console.log("preventTrigger", preventTrigger)
             if(preventTrigger){
                 return
             }

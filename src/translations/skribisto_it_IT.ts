@@ -3847,6 +3847,10 @@ Please open a .plume file.</source>
 %2</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Note name</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TagPadForm.ui</name>

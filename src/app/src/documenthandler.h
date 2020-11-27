@@ -139,6 +139,10 @@ public:
         return m_highlighter;
     }
 
+    Q_INVOKABLE QString getHtmlAtSelection(int start, int end);
+
+    Q_INVOKABLE void insertHtml(int position, const QString &html);
+
 public slots:
 
     void addHorizontalLine();

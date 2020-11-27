@@ -190,33 +190,45 @@ WritingZoneForm {
     }
 
 
+
+
     //-----------------------------------------------------------
     // ---------context menu :----------------------------------
     //-----------------------------------------------------------
 
     textArea.onPressed: {
         if(event.buttons === Qt.RightButton){
+            callTextAreaContextMenu(event.x, event.y)
+        }
+    }
+
+
+
+
+
+    function callTextAreaContextMenu(posX, posY){
+            if(menu.visible){
+                menu.close()
+                return
+            }
 
 
             // deselect if outside selection :
             var selectStart = textArea.selectionStart
             var selectEnd = textArea.selectionEnd
-            var eventCursorPosition = textArea.positionAt(event.x, event.y)
+            var eventCursorPosition = textArea.positionAt(posX, posY)
 
             if(textArea.selectedText != "" & (eventCursorPosition < selectStart | eventCursorPosition > selectEnd)){
-                textArea.cursorPosition = textArea.positionAt(event.x, event.y)
-                menu.popup(textArea, event.x, event.y)
+                textArea.cursorPosition = textArea.positionAt(posX, posY)
+                menu.popup(textArea, posX, posY)
                 //console.log("deselect")
                 return
             }
             else{
-                menu.popup(textArea, event.x, event.y)
+                menu.popup(textArea, posX, posY)
             }
 
 
-
-
-        }
     }
 
     textArea.onActiveFocusChanged: {

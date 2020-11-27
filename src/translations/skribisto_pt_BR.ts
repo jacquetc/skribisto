@@ -3630,6 +3630,10 @@ not allowed delete a filled book.</source>
 %2</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Note name</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TagPadForm.ui</name>
