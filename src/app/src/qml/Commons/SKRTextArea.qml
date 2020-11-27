@@ -326,7 +326,7 @@ TextArea {
 
 
     //----------------------------------------------------------------------
-    //-----------touch flicking--------------------------------------------------
+    //-----------touch handler--------------------------------------------------
     //----------------------------------------------------------------------
 
     TapHandler{
@@ -337,6 +337,7 @@ TextArea {
 
         onSingleTapped: {
             console.log("tapped")
+            forceActiveFocus()
             priv.touchDetected = false
             priv.touchDetected = true
             cursorPosition = positionAt(eventPoint.position.x, eventPoint.position.y)
@@ -422,7 +423,7 @@ TextArea {
         id: p_selectionHandle
 
         property bool blocked: false
-        property int rectHeight: root.font.pointSize * 3 / 4
+        property int rectHeight: root.font.pointSize * 3 / 4 < 15 ? 15 : root.font.pointSize * 3 / 4
     }
     Item{
         id: leftSelectionHandle
