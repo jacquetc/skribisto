@@ -785,19 +785,19 @@ SheetOverviewTreeForm {
                                         orientation: Qt.Vertical
                                         GradientStop {
                                             position: 0.00;
-                                            color: "#ffffff";
+                                            color: "transparent";
                                         }
                                         GradientStop {
                                             position: 0.30;
-                                            color: "#9e9e9e";
+                                            color: SkrTheme.divider;
                                         }
                                         GradientStop {
                                             position: 0.70;
-                                            color: "#9e9e9e";
+                                            color: SkrTheme.divider;
                                         }
                                         GradientStop {
                                             position: 1.00;
-                                            color: "#ffffff";
+                                            color: "transparent";
                                         }
                                     }
 
@@ -1073,19 +1073,19 @@ SheetOverviewTreeForm {
                                     orientation: Qt.Vertical
                                     GradientStop {
                                         position: 0.00;
-                                        color: "#ffffff";
+                                        color: "transparent";
                                     }
                                     GradientStop {
                                         position: 0.30;
-                                        color: "#9e9e9e";
+                                        color: SkrTheme.divider;
                                     }
                                     GradientStop {
                                         position: 0.70;
-                                        color: "#9e9e9e";
+                                        color: SkrTheme.divider;
                                     }
                                     GradientStop {
                                         position: 1.00;
-                                        color: "#ffffff";
+                                        color: "transparent";
                                     }
                                 }
 
@@ -1137,19 +1137,19 @@ SheetOverviewTreeForm {
                                     orientation: Qt.Vertical
                                     GradientStop {
                                         position: 0.00;
-                                        color: "#ffffff";
+                                        color: "transparent";
                                     }
                                     GradientStop {
                                         position: 0.30;
-                                        color: "#9e9e9e";
+                                        color: SkrTheme.divider;
                                     }
                                     GradientStop {
                                         position: 0.70;
-                                        color: "#9e9e9e";
+                                        color: SkrTheme.divider;
                                     }
                                     GradientStop {
                                         position: 1.00;
-                                        color: "#ffffff";
+                                        color: "transparent";
                                     }
                                 }
 
@@ -1261,19 +1261,19 @@ SheetOverviewTreeForm {
                                     orientation: Qt.Vertical
                                     GradientStop {
                                         position: 0.00;
-                                        color: "#ffffff";
+                                        color: "transparent";
                                     }
                                     GradientStop {
                                         position: 0.30;
-                                        color: "#9e9e9e";
+                                        color: SkrTheme.divider;
                                     }
                                     GradientStop {
                                         position: 0.70;
-                                        color: "#9e9e9e";
+                                        color: SkrTheme.divider;
                                     }
                                     GradientStop {
                                         position: 1.00;
-                                        color: "#ffffff";
+                                        color: "transparent";
                                     }
                                 }
 

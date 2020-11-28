@@ -1,10 +1,11 @@
-import QtQuick 2.9
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.2
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
 import ".."
 import "../Items"
 
 Item {
+    id: base
     property alias projectPageButton: projectPageButton
     property alias examplePageButton: examplePageButton
     property alias helpPageButton: helpPageButton
@@ -109,11 +110,30 @@ Item {
 
             Rectangle {
                 id: separator
-                color: SkrTheme.divider
-                Layout.maximumWidth: 2
-                Layout.fillHeight: true
-            }
+                Layout.preferredWidth: 2
+                Layout.preferredHeight: base.height * 3 / 4
+                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                gradient: Gradient {
+                    orientation: Qt.Vertical
+                    GradientStop {
+                        position: 0.00;
+                        color: "transparent";
+                    }
+                    GradientStop {
+                        position: 0.30;
+                        color:  SkrTheme.divider;
+                    }
+                    GradientStop {
+                        position: 0.70;
+                        color: SkrTheme.divider;
+                    }
+                    GradientStop {
+                        position: 1.00;
+                        color: "transparent";
+                    }
+                }
 
+            }
             StackLayout {
                 id: stackLayout
                 Layout.fillWidth: true

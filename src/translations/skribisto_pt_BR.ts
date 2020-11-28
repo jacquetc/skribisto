@@ -410,10 +410,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Themes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3647,6 +3643,17 @@ not allowed delete a filled book.</source>
     </message>
 </context>
 <context>
+    <name>TextContextMenuForm.ui</name>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Suggestions</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TextStyles</name>
     <message>
         <source>New Style</source>
@@ -4367,6 +4374,10 @@ not allowed delete a filled book.</source>
     </message>
     <message>
         <source>&amp;Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

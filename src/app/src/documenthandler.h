@@ -68,6 +68,9 @@ class DocumentHandler : public QObject {
     Q_PROPERTY(
         qreal indentEverywhere READ indentEverywhere WRITE setIndentEverywhere NOTIFY indentEverywhereChanged)
 
+    Q_PROPERTY(QStringList suggestionList READ suggestionList NOTIFY suggestionListChanged)
+    Q_PROPERTY(QString suggestionOriginalWord READ suggestionOriginalWord NOTIFY suggestionOriginalWordChanged)
+
     Q_PROPERTY(SKRHighlighter * highlighter READ getHighlighter)
 
 public:
@@ -143,7 +146,16 @@ public:
 
     Q_INVOKABLE void insertHtml(int position, const QString &html);
 
+
+    Q_INVOKABLE bool isWordMisspelled(int cursorPosition);
+    Q_INVOKABLE void listAndSendSpellSuggestions(int cursorPosition);
+
+    QString suggestionOriginalWord() const;
+
+    QStringList suggestionList() const;
+
 public slots:
+    void replaceWord(const QString &word, const QString &newWord);
 
     void addHorizontalLine();
     void indentBlock();
@@ -170,6 +182,8 @@ signals:
     void wordCountChanged(int count);
 
 
+    void suggestionListChanged(const QStringList &list);
+    void suggestionOriginalWordChanged(const QString &word);
 private:
 
     QQuickTextDocument *m_textDoc;
@@ -186,6 +200,9 @@ private:
     qreal m_indentEverywhere;
 
     SKRHighlighter *m_highlighter;
+
+    QString m_suggestionOriginalWord;
+    QStringList m_suggestionList;
 
 };
 

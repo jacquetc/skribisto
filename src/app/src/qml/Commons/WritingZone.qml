@@ -57,6 +57,15 @@ WritingZoneForm {
 
     //-------------------------------------------------
 
+    Component.onCompleted:{
+        determineTextCursorUnblinkingSetting()
+
+    }
+
+
+
+    //-------------------------------------------------
+
     //style :
     property bool textAreaStyleElevation : textArea.styleElevation
     onTextAreaStyleElevationChanged: {
@@ -207,26 +216,52 @@ WritingZoneForm {
 
 
     function callTextAreaContextMenu(posX, posY){
-            if(menu.visible){
-                menu.close()
-                return
+        if(textContextMenu.visible){
+            textContextMenu.close()
+            return
+        }
+
+
+        // deselect if outside selection :
+        var selectStart = textArea.selectionStart
+        var selectEnd = textArea.selectionEnd
+        var eventCursorPosition = textArea.positionAt(posX, posY)
+
+        if(textArea.selectedText.length != 0 && (selectStart <= eventCursorPosition  && eventCursorPosition <= selectEnd)){
+
+
+            //prepare context menu
+            var point = mapFromItem(textArea, posX, posY)
+            textContextMenu.x =  point.x
+            textContextMenu.y =  point.y
+
+            if(documentHandler.isWordMisspelled(eventCursorPosition)){
+                textContextMenu.currentIndex = 1
+                documentHandler.listAndSendSpellSuggestions(eventCursorPosition)
             }
 
 
-            // deselect if outside selection :
-            var selectStart = textArea.selectionStart
-            var selectEnd = textArea.selectionEnd
-            var eventCursorPosition = textArea.positionAt(posX, posY)
+            textContextMenu.open()
+            //console.log("deselect")
+            return
+        }
+        else{            // no text selected OR text selected but clicked outside selection
 
-            if(textArea.selectedText != "" & (eventCursorPosition < selectStart | eventCursorPosition > selectEnd)){
-                textArea.cursorPosition = textArea.positionAt(posX, posY)
-                menu.popup(textArea, posX, posY)
-                //console.log("deselect")
-                return
+            textArea.cursorPosition = eventCursorPosition
+
+
+            var pointB = mapFromItem(textArea, posX, posY)
+            textContextMenu.x =  pointB.x
+            textContextMenu.y =  pointB.y
+
+            //prepare context menu
+            if(documentHandler.isWordMisspelled(eventCursorPosition)){
+                textContextMenu.currentIndex = 1
+                documentHandler.listAndSendSpellSuggestions(eventCursorPosition)
             }
-            else{
-                menu.popup(textArea, posX, posY)
-            }
+
+            textContextMenu.open()
+        }
 
 
     }
@@ -346,81 +381,80 @@ WritingZoneForm {
 
         documentHandler.underline = checked
     }
+
+
+
     //menu :
-    SkrMenu {
-        id: menu
+
+    TextContextMenu{
+        id: textContextMenu
         objectName: "editMenu"
 
-
-        SkrMenuItem{
-            id: italicItem
-            action: italicAction
-            objectName: "italicItem"
+        Component.onCompleted: {
+            textContextMenu.suggestionChosen.connect(documentHandler.replaceWord)
         }
 
-        SkrMenuItem {
-            id: boldItem
-            action: boldAction
-            objectName: "boldItem"
-
-        }
-
-        SkrMenuItem {
-            id: strikeItem
-            action: strikeAction
-            objectName: "strikeItem"
-
-
-        }
-
-        SkrMenuItem {
-            id: underlineItem
-            action: underlineAction
-            objectName: "underlineItem"
-
-
-        }
-
-        MenuSeparator {}
-
-        SkrMenuItem{
-            id: cutItem
-            action: cutAction
-            objectName: "cutItem"
-            enabled: textArea.selectedText !== ""
-        }
-
-        SkrMenuItem {
-            id: copyItem
-            action: copyAction
-            objectName: "copyItem"
-            enabled: textArea.selectedText !== ""
-
-        }
-        SkrMenuItem {
-            id: pasteItem
-            action: pasteAction
-            objectName: "pasteItem"
-
-        }
-        MenuSeparator {}
-
-
-
-        Component.onCompleted:{
-            skrEditMenuSignalHub.subscribe(menu.objectName)
-            skrEditMenuSignalHub.subscribe(italicItem.objectName)
-            skrEditMenuSignalHub.subscribe(boldItem.objectName)
-            skrEditMenuSignalHub.subscribe(strikeItem.objectName)
-            skrEditMenuSignalHub.subscribe(underlineItem.objectName)
-            skrEditMenuSignalHub.subscribe(cutItem.objectName)
-            skrEditMenuSignalHub.subscribe(copyItem.objectName)
-            skrEditMenuSignalHub.subscribe(pasteItem.objectName)
-
-
-            determineTextCursorUnblinkingSetting()
-        }
     }
+
+    //    SkrMenu {
+
+
+    //        SkrMenuItem{
+    //            id: italicItem
+    //            action: italicAction
+    //            objectName: "italicItem"
+    //        }
+
+    //        SkrMenuItem {
+    //            id: boldItem
+    //            action: boldAction
+    //            objectName: "boldItem"
+
+    //        }
+
+    //        SkrMenuItem {
+    //            id: strikeItem
+    //            action: strikeAction
+    //            objectName: "strikeItem"
+
+
+    //        }
+
+    //        SkrMenuItem {
+    //            id: underlineItem
+    //            action: underlineAction
+    //            objectName: "underlineItem"
+
+
+    //        }
+
+    //        MenuSeparator {}
+
+    //        SkrMenuItem{
+    //            id: cutItem
+    //            action: cutAction
+    //            objectName: "cutItem"
+    //            enabled: textArea.selectedText !== ""
+    //        }
+
+    //        SkrMenuItem {
+    //            id: copyItem
+    //            action: copyAction
+    //            objectName: "copyItem"
+    //            enabled: textArea.selectedText !== ""
+
+    //        }
+    //        SkrMenuItem {
+    //            id: pasteItem
+    //            action: pasteAction
+    //            objectName: "pasteItem"
+
+    //        }
+    //        MenuSeparator {}
+
+
+
+    //    }
 
     //property int visibleAreaY: 0
 
@@ -536,6 +570,16 @@ WritingZoneForm {
 
         selectionStart: textArea.selectionStart
         selectionEnd: textArea.selectionEnd
+
+
+        // needed because bindings are not working between DocumentHandler and TextContextMenu
+        onSuggestionListChanged: {
+            textContextMenu.suggestionList = suggestionList
+        }
+        onSuggestionOriginalWordChanged: {
+            textContextMenu.suggestionOriginalWord = suggestionOriginalWord
+        }
+
 
         Component.onCompleted: {
 

@@ -261,3 +261,8 @@ void SKRHighlighter::setProjectId(int projectId)
 
     emit projectIdChanged(projectId);
 }
+
+
+
+//--------------------------------------------------------------
+

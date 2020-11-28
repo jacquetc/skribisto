@@ -336,10 +336,6 @@
         <translation>Revenir</translation>
     </message>
     <message>
-        <source>Themes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1865,6 +1861,17 @@
     </message>
 </context>
 <context>
+    <name>TextContextMenuForm.ui</name>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished">Editer</translation>
+    </message>
+    <message>
+        <source>Suggestions</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ThemePage</name>
     <message>
         <source>Edit theme</source>
@@ -2448,6 +2455,10 @@
     </message>
     <message>
         <source>&amp;Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

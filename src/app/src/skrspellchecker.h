@@ -79,6 +79,8 @@ signals:
     void langCodeChanged(QString langCode);
     void userDictChanged(QStringList userDict);
 
+    void suggestionListChanged(QStringList list);
+    void suggestionOriginalWordChanged(QString word);
 private:
 
     // fix bug when hunspell gives me latin1 encoded results on several Linux
