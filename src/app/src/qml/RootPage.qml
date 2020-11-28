@@ -679,13 +679,19 @@ RootPageForm {
     SkrPopup {
         id: dropDownTabMenuPopup
 
+        QtObject{
+            id: p_dropDownMenu
+            property int calculatedHeight: dropDownTabMenuList.count * itemHeight + dropDownTabMenuList.count * dropDownTabMenuList.spacing
+            property int itemHeight: 30
+
+        }
 
         onAboutToShow: {
             x = showTabListButton.x
             y = showTabListButton.y + showTabListButton.height
             width = 200
-            height = 200
         }
+        height: p_dropDownMenu.calculatedHeight > rootPage.height ? rootPage.height : p_dropDownMenu.calculatedHeight
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         padding: 0
@@ -719,7 +725,7 @@ RootPageForm {
 
                         Item {
                             id: delegateRoot
-                            height: 30
+                            height: p_dropDownMenu.itemHeight
                             focus: true
 
 
