@@ -132,6 +132,24 @@ ApplicationWindow {
     }
 
     //------------------------------------------------------------------
+    //--------- Themes---------------------------------------------
+    //------------------------------------------------------------------
+
+    Action{
+        id: themesColorAction
+        text: qsTr("Themes")
+        icon {
+            source: "qrc:///icons/backup/color-picker-white.svg"
+            height: 50
+            width: 50
+        }
+
+        onTriggered: {
+            Globals.openThemePageCalled()
+        }
+
+    }
+    //------------------------------------------------------------------
     //---------Help Content---------------------------------------------
     //------------------------------------------------------------------
 
@@ -571,13 +589,6 @@ ApplicationWindow {
             saveACopyFileDialog.projectId = projectId
             saveACopyFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
             saveACopyFileDialog.open()
-
-
-
-
-
-
-
 
         }
     }

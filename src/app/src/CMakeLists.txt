@@ -138,7 +138,6 @@ endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Tell CMake to create the executable
 
-message(SKR_TEST_APP ${SKR_TEST_APP})
 if(ANDROID OR SKR_TEST_APP)
     message("------- library is to be built ---------")
     add_library(skribisto SHARED ${app_SRCS} ${RESOURCES} ${QRC} )

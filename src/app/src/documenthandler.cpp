@@ -55,6 +55,7 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 &DocumentHandler::projectIdChanged,
                 m_highlighter,
                 &SKRHighlighter::setProjectId);
+
     } else {
         m_textCursor.setPosition(0);
     }
@@ -595,6 +596,16 @@ void DocumentHandler::insertDocumentFragment(const QTextDocumentFragment &fragme
     m_selectionCursor.endEditBlock();
 }
 
+QStringList DocumentHandler::suggestionList() const
+{
+    return m_suggestionList;
+}
+
+QString DocumentHandler::suggestionOriginalWord() const
+{
+    return m_suggestionOriginalWord;
+}
+
 QString DocumentHandler::getHtmlAtSelection(int start, int end){
 
     setSelectionStart(start);
@@ -606,4 +617,52 @@ QString DocumentHandler::getHtmlAtSelection(int start, int end){
 void DocumentHandler::insertHtml(int position, const QString &html){
     setCursorPosition(position);
     m_textCursor.insertHtml(html);
+}
+
+//------------------------------------------------------------------------
+
+bool DocumentHandler::isWordMisspelled(int cursorPosition)
+{
+    QTextCursor textCursor(m_textDoc->textDocument());
+    textCursor.setPosition(cursorPosition);
+textCursor.movePosition(QTextCursor::StartOfWord);
+textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+QString text = textCursor.selectedText();
+return !m_highlighter->getSpellChecker()->spell(textCursor.selectedText());
+}
+
+//------------------------------------------------------------------------
+
+void DocumentHandler::listAndSendSpellSuggestions(int cursorPosition)
+{
+    QTextCursor textCursor(m_textDoc->textDocument());
+    textCursor.setPosition(cursorPosition);
+    textCursor.movePosition(QTextCursor::StartOfWord);
+    textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+    QString word = textCursor.selectedText();
+
+
+    QStringList list = m_highlighter->getSpellChecker()->suggest(word);
+    qDebug() << "list;" << list;
+    m_suggestionList = list;
+    emit suggestionListChanged(list);
+    m_suggestionOriginalWord = word;
+    emit suggestionOriginalWordChanged(word);
+
+
+
+}
+
+void DocumentHandler::replaceWord(const QString &word, const QString &newWord)
+{
+    //verify
+
+    m_textCursor.movePosition(QTextCursor::StartOfWord);
+    m_textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+
+    if(m_textCursor.selectedText() == word){
+        //replace:
+        m_textCursor.insertText(newWord);
+    }
+
 }

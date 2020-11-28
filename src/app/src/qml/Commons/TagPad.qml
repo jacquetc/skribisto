@@ -762,9 +762,15 @@ TagPadForm {
 
                                 Item {
                                     id: inner_delegateRoot
-                                    height: inner_itemBase.height
 
+
+                                    Accessible.name: model.name
+                                    Accessible.role: Accessible.ListItem
+
+
+                                    height: inner_itemBase.height
                                     width: inner_itemBase.width
+
                                     anchors {
                                         left: Qt.isQtObject(parent) ? parent.left : undefined
                                         right: Qt.isQtObject(parent) ? parent.right : undefined

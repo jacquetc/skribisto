@@ -540,7 +540,7 @@ TreeListViewForm {
                 }
             }
 
-            Rectangle {
+            Rectangle{
                 id: content
                 property int visualIndex: 0
                 property int sourceIndex: -2
@@ -563,10 +563,11 @@ TreeListViewForm {
                 Drag.supportedActions: Qt.MoveAction
                 //Drag.dragType: Drag.Automatic
 
+                color: SkrTheme.pageBackground
 
                 border.width: 2
                 border.color: dragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
-                Behavior on color {
+                Behavior on border.color {
                     ColorAnimation {
                         duration: 200
                     }
@@ -1148,19 +1149,19 @@ TreeListViewForm {
                             orientation: Qt.Horizontal
                             GradientStop {
                                 position: 0.00;
-                                color: "#ffffff";
+                                color: "transparent";
                             }
                             GradientStop {
                                 position: 0.30;
-                                color: "#9e9e9e";
+                                color: SkrTheme.divider;
                             }
                             GradientStop {
                                 position: 0.70;
-                                color: "#9e9e9e";
+                                color: SkrTheme.divider;
                             }
                             GradientStop {
                                 position: 1.00;
-                                color: "#ffffff";
+                                color: "transparent";
                             }
                         }
 

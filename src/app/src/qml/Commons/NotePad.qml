@@ -1124,6 +1124,8 @@ NotePadForm {
                                 height: 30
                                 focus: true
 
+                                Accessible.name: model.name
+                                Accessible.role: Accessible.ListItem
 
                                 anchors {
                                     left: Qt.isQtObject(parent) ? parent.left : undefined

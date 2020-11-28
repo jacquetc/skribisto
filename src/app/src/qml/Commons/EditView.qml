@@ -32,6 +32,7 @@ EditViewForm {
 
     checkSpellingToolButton.action: checkSpellingAction
     centerTextCursorToolButton.action: centerTextCursorAction
+    themesToolButton.action: themesColorAction
 
 
     Action{
@@ -52,22 +53,6 @@ EditViewForm {
     }
     sizeToolButton.action: sizeAction
 
-    Action{
-        id: themesColorAction
-        text: qsTr("Themes")
-        icon {
-            source: "qrc:///icons/backup/color-picker-white.svg"
-            height: 50
-            width: 50
-        }
-
-        //shortcut: StandardKey.
-        onTriggered: {
-            Globals.openThemePageCalled()
-        }
-
-    }
-    themesToolButton.action: themesColorAction
 
 
 
