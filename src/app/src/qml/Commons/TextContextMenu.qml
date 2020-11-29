@@ -217,6 +217,7 @@ TextContextMenuForm {
                         Layout.preferredHeight: priv.buttonHeight
                         Layout.preferredWidth: priv.buttonHeight
                         display: AbstractButton.IconOnly
+                    }
 
 
                 }
