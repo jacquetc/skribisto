@@ -339,11 +339,11 @@ WritingZoneForm {
 
         console.log("paste action text")
         textArea.forceActiveFocus()
-        var originalLength = textArea.lengAth
+        var originalLength = textArea.length
         clipboard.prepareAndSendLastClipboardText()
         var newLength = textArea.length
         textArea.deselect()
-        setCursorPosition(textArea.cursorPosition + (newLength - originalLength))
+        //setCursorPosition(textArea.cursorPosition + (newLength - originalLength))
         //textArea.paste()
 
     }
@@ -791,11 +791,7 @@ WritingZoneForm {
 
 
             //top bound
-            if(textCenteringEnabled && flickable.contentY + value < -textArea.viewHeight / 2){
-                flickable.contentY = -textArea.viewHeight / 2
-                return
-            }
-            else if(!textCenteringEnabled && flickable.contentY + value < 0){
+            if(flickable.contentY + value < 0){
                 flickable.contentY = 0
                 return
             }

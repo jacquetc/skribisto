@@ -6,7 +6,7 @@ import ".."
 
 TextContextMenuForm {
     id: root
-    width: stackView.currentItem.implicitWidth
+    width: 200
     height: stackView.currentItem.implicitHeight + tabBar.height
 
 

@@ -442,7 +442,7 @@ WritePageForm {
             var previousCursorPosition = writingZone.textArea.cursorPosition
             //console.log("previousCursorPosition", previousCursorPosition)
             var previousY = writingZone.flickable.contentY
-            console.log("previousContentY", previousY)
+            //console.log("previousContentY", previousY)
             skrUserSettings.insertInProjectSettingHash(
                         projectId, "writeSheetPositionHash", paperId,
                         previousCursorPosition)

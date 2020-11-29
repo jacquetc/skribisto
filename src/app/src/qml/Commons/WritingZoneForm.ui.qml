@@ -99,7 +99,7 @@ FocusScope {
                             textFormat: Text.MarkdownText
                             focus: true
                             selectByMouse: true
-                            wrapMode: TextEdit.WordWrap
+                            wrapMode: TextEdit.Wrap
                             topPadding: 4
                             bottomPadding: 1
 
