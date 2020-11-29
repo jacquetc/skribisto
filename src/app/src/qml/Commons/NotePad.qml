@@ -118,10 +118,10 @@ NotePadForm {
         id: noteFlowComponent
         Rectangle {
             id: itemBase
-            width: childrenRect.width + 10
+            width: childrenRect.width < noteFlow.width ? childrenRect.width + 10 : noteFlow.width
             height: childrenRect.height + 10
-            color: isOpened && !minimalMode? SkrTheme.accent : "lightskyblue"
-            border.color: isSelected ? SkrTheme.accent : "lightskyblue"
+            color: isOpened && !minimalMode? SkrTheme.accent : SkrTheme.buttonBackground
+            border.color: isSelected ? SkrTheme.accent : SkrTheme.buttonBackground
             border.width: 2
             radius : height / 2
             property int projectId: model.itemProjectId
@@ -538,6 +538,7 @@ NotePadForm {
                     verticalAlignment: Qt.AlignHCenter
                     Layout.minimumWidth: 20
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    Layout.maximumWidth: itemBase.width < noteFlow.width ? -1 : noteFlow.width -10
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true

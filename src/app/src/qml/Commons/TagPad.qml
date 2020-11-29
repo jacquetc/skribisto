@@ -181,7 +181,7 @@ TagPadForm {
         id: tagFlowComponent
         Rectangle {
             id: itemBase
-            width: childrenRect.width + 10
+            width: childrenRect.width < tagFlow.width ? childrenRect.width + 10 : tagFlow.width
             height: childrenRect.height + 10
             border.color: isSelected ? SkrTheme.accent :  SkrTheme.buttonBackground
             border.width: 2
@@ -540,6 +540,7 @@ TagPadForm {
                     verticalAlignment: Qt.AlignHCenter
                     Layout.minimumWidth: 20
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    Layout.maximumWidth: itemBase.width < tagFlow.width ? -1 : tagFlow.width - 10
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true

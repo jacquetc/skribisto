@@ -4,4 +4,6 @@ import ".."
 
 Label {
     Material.foreground: SkrTheme.buttonForeground
+
+    elide: Qt.ElideRight
 }
