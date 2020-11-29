@@ -268,8 +268,7 @@ NotePadForm {
                 onDoubleTapped: {
 
                     console.log("double tapped")
-                    itemBase.setFocused()
-                    itemBase.toggleSelected()
+
                     Globals.openNoteInNewTabCalled(itemBase.projectId, itemBase.noteId)
 
                     eventPoint.accepted = true
