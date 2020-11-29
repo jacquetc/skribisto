@@ -6,8 +6,6 @@ import ".."
 
 TextContextMenuForm {
     id: root
-    width: 200
-    height: stackView.currentItem.implicitHeight + tabBar.height
 
 
     signal suggestionChosen(string original, string suggestion)

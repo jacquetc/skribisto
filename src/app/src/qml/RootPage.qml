@@ -1514,17 +1514,17 @@ RootPageForm {
             SkrMenuItem{
                 id: cutItem
                 objectName: "cutItem"
-                action: cutAction
+                action: cutTextAction
             }
             SkrMenuItem{
                 id: copyItem
                 objectName: "copyItem"
-                action: copyAction
+                action: copyTextAction
             }
             SkrMenuItem{
                 id: pasteItem
                 objectName: "pasteItem"
-                action: pasteAction
+                action: pasteTextAction
             }
 
             Component.onCompleted:{

@@ -1846,7 +1846,7 @@ SheetOverviewTreeForm {
 
         Action {
             id: addChildAction
-            text: qsTr("Add child")
+            text: qsTr("Add a sub-item")
             //shortcut: "Ctrl+N"
             icon {
                 source: "qrc:///icons/backup/document-new.svg"
