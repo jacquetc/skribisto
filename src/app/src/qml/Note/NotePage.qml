@@ -128,13 +128,25 @@ NotePageForm {
             }
         }
     }
+
+    Timer{
+        id: determineModifiableTimer
+        repeat: false
+        interval: 200
+        onTriggered: {
+            determineModifiable()
+        }
+    }
+
     function determineModifiable(){
 
         root.isModifiable = plmData.notePropertyHub().getProperty(projectId, paperId, "modifiable", "true") === "true"
 
-        saveCurrentPaperCursorPositionAndY()
-         writingZone.textArea.readOnly = !root.isModifiable
-        restoreCurrentPaperCursorPositionAndY()
+        if(!root.isModifiable !== writingZone.textArea.readOnly){
+            saveCurrentPaperCursorPositionAndY()
+            writingZone.textArea.readOnly = !root.isModifiable
+            restoreCurrentPaperCursorPositionAndY()
+        }
     }
 
 
@@ -365,7 +377,7 @@ NotePageForm {
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)
 
-        determineModifiable()
+        determineModifiableTimer.start()
 
     }
 
@@ -381,9 +393,24 @@ NotePageForm {
 
         // set positions :
         writingZone.setCursorPosition(position)
-        writingZone.flickable.contentY = visibleAreaY
 
+        writingZoneFlickableContentYTimer.y = visibleAreaY
+        writingZoneFlickableContentYTimer.start()
     }
+
+    Timer{
+
+        property int y: 0
+        id: writingZoneFlickableContentYTimer
+        repeat: false
+        interval: 50
+        onTriggered: {
+            writingZone.flickable.contentY = y
+        }
+    }
+
+
+
 
     function saveCurrentPaperCursorPositionAndY(){
 

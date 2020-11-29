@@ -1116,7 +1116,7 @@ SKRPaperItem * SKRPaperListModel::getItem(int projectId, int paperId)
 {
     SKRPaperItem *result_item = nullptr;
 
-    for (SKRPaperItem *item : m_allPaperItems) {
+    for (SKRPaperItem *item : qAsConst(m_allPaperItems)) {
         if ((item->projectId() == projectId) && (item->paperId() == paperId)) {
             result_item = item;
             break;
@@ -1124,7 +1124,7 @@ SKRPaperItem * SKRPaperListModel::getItem(int projectId, int paperId)
     }
 
     if (!result_item) {
-        qDebug() << "result_item is null";
+    //    qDebug() << "result_item is null";
     }
 
     return result_item;

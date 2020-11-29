@@ -799,6 +799,50 @@ NotePadForm {
 
     }
 
+    //---------------------------------------------------------
+    // modifiable :
+
+    property bool isModifiable: true
+
+    Connections{
+        target: plmData.notePropertyHub()
+        function onPropertyChanged(projectId, propertyId, paperId, name, value){
+            if(projectId === root.projectId && paperId === root.currentNoteId){
+
+                if(name === "modifiable"){
+                    determineModifiable()
+                }
+            }
+        }
+    }
+
+    Timer{
+        id: determineModifiableTimer
+        repeat: false
+        interval: 200
+        onTriggered: {
+            determineModifiable()
+        }
+    }
+
+
+
+
+    function determineModifiable(){
+
+        root.isModifiable = plmData.notePropertyHub().getProperty(projectId, root.currentNoteId, "modifiable", "true") === "true"
+
+        if(!root.isModifiable !== noteWritingZone.textArea.readOnly){
+            saveCurrentPaperCursorPositionAndY()
+            noteWritingZone.textArea.readOnly = !root.isModifiable
+            restoreCurrentPaperCursorPositionAndY()
+        }
+
+    }
+
+    //--------------------------------------------------------
+
+
     SKRUserSettings {
         id: skrUserSettings
     }
@@ -850,6 +894,10 @@ NotePadForm {
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
 
+
+        determineModifiableTimer.start()
+
+
     }
 
     function restoreCurrentPaperCursorPositionAndY(){
@@ -864,8 +912,22 @@ NotePadForm {
 
         // set positions :
         noteWritingZone.setCursorPosition(position)
-        noteWritingZone.flickable.contentY = visibleAreaY
 
+        writingZoneFlickableContentYTimer.y = visibleAreaY
+        writingZoneFlickableContentYTimer.start()
+
+    }
+
+
+    Timer{
+
+        property int y: 0
+        id: writingZoneFlickableContentYTimer
+        repeat: false
+        interval: 50
+        onTriggered: {
+            noteWritingZone.flickable.contentY = y
+        }
     }
 
 

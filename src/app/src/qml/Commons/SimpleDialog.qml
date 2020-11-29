@@ -22,6 +22,8 @@ Dialog {
         text: dialog.title
         font.bold: true
         font.pointSize: Qt.application.font.pointSize * 1.2
+        horizontalAlignment: Qt.AlignHCenter
+        verticalAlignment: Qt.AlignVCenter
     }
 
     contentItem: SkrLabel {

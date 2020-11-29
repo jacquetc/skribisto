@@ -137,13 +137,29 @@ WritePageForm {
             }
         }
     }
+
+    Timer{
+        id: determineModifiableTimer
+        repeat: false
+        interval: 200
+        onTriggered: {
+            determineModifiable()
+        }
+    }
+
+
+
+
     function determineModifiable(){
 
         root.isModifiable = plmData.sheetPropertyHub().getProperty(projectId, paperId, "modifiable", "true") === "true"
 
-        saveCurrentPaperCursorPositionAndY()
-         writingZone.textArea.readOnly = !root.isModifiable
-   restoreCurrentPaperCursorPositionAndY()
+        if(!root.isModifiable !== writingZone.textArea.readOnly){
+            saveCurrentPaperCursorPositionAndY()
+            writingZone.textArea.readOnly = !root.isModifiable
+            restoreCurrentPaperCursorPositionAndY()
+        }
+
     }
 
 
@@ -378,7 +394,7 @@ WritePageForm {
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)
 
-        determineModifiable()
+        determineModifiableTimer.start()
     }
 
     Timer{
@@ -400,8 +416,21 @@ WritePageForm {
 
         // set positions :
         writingZone.setCursorPosition(position)
-        writingZone.flickable.contentY = visibleAreaY
 
+        writingZoneFlickableContentYTimer.y = visibleAreaY
+        writingZoneFlickableContentYTimer.start()
+
+    }
+
+    Timer{
+
+        property int y: 0
+        id: writingZoneFlickableContentYTimer
+        repeat: false
+        interval: 50
+        onTriggered: {
+            writingZone.flickable.contentY = y
+        }
     }
 
 
@@ -413,7 +442,7 @@ WritePageForm {
             var previousCursorPosition = writingZone.textArea.cursorPosition
             //console.log("previousCursorPosition", previousCursorPosition)
             var previousY = writingZone.flickable.contentY
-            //console.log("previousContentY", previousY)
+            console.log("previousContentY", previousY)
             skrUserSettings.insertInProjectSettingHash(
                         projectId, "writeSheetPositionHash", paperId,
                         previousCursorPosition)

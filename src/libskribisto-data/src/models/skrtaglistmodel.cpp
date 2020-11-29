@@ -289,7 +289,7 @@ SKRTagItem * SKRTagListModel::getItem(int projectId, int tagId)
     }
 
     if (!result_item) {
-        qDebug() << "result_item is null";
+    //    qDebug() << "result_item is null";
     }
 
     return result_item;

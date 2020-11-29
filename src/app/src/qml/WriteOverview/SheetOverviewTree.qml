@@ -873,6 +873,7 @@ SheetOverviewTreeForm {
 
                                             }
 
+                                            writingZone.setCursorPosition(0)
                                             writingZone.clear()
                                         }
 
@@ -922,6 +923,7 @@ SheetOverviewTreeForm {
                                             projectId = _projectId
 
                                             //console.log("opening note :", _projectId, _paperId)
+                                            writingZone.setCursorPosition(0)
                                             writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
 
                                             skrTextBridge.subscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
@@ -943,9 +945,53 @@ SheetOverviewTreeForm {
                                             }
                                             documentPrivate.contentSaveTimerAllowedToStart = true
 
+                                            determineModifiableTimer.start()
+
 
                                         }
 
+                                        //---------------------------------------------------------
+                                        // modifiable :
+
+                                        property bool isModifiable: true
+
+                                        Connections{
+                                            target: plmData.notePropertyHub()
+                                            function onPropertyChanged(_projectId, propertyId, _paperId, name, value){
+                                                if(_projectId === writingZone.projectId && _paperId === writingZone.paperId){
+
+                                                    if(name === "modifiable"){
+                                                        determineModifiable()
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Timer{
+                                            id: determineModifiableTimer
+                                            repeat: false
+                                            interval: 200
+                                            onTriggered: {
+                                                determineModifiable()
+                                            }
+                                        }
+
+
+
+
+                                        function determineModifiable(){
+
+                                            isModifiable = plmData.notePropertyHub().getProperty(writingZone.projectId, writingZone.paperId, "modifiable", "true") === "true"
+
+                                            if(!isModifiable !== writingZone.textArea.readOnly){
+                                                saveCurrentPaperCursorPositionAndY()
+                                                writingZone.textArea.readOnly = !isModifiable
+                                                restoreCurrentPaperCursorPositionAndY()
+                                            }
+
+                                        }
+
+                                        //--------------------------------------------------------
 
                                         function restoreCurrentPaperCursorPositionAndY(){
 
@@ -962,9 +1008,23 @@ SheetOverviewTreeForm {
                                             }
 
                                             writingZone.setCursorPosition(position)
-                                            writingZone.flickable.contentY = visibleAreaY
+
+                                            writingZoneFlickableContentYTimer.y = visibleAreaY
+                                            writingZoneFlickableContentYTimer.start()
 
                                         }
+
+                                        Timer{
+
+                                            property int y: 0
+                                            id: writingZoneFlickableContentYTimer
+                                            repeat: false
+                                            interval: 50
+                                            onTriggered: {
+                                                writingZone.flickable.contentY = y
+                                            }
+                                        }
+
 
                                         function saveCurrentPaperCursorPositionAndY(){
 
