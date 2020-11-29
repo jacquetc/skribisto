@@ -32,7 +32,7 @@ NotePadForm {
     Timer{
         id: openSynopsisTimer
         repeat: false
-        interval: 0
+        interval: 50
         onTriggered:  openSynopsisAction.trigger()
 
     }
@@ -618,7 +618,7 @@ NotePadForm {
             }
         }
     }
-//------------------------------------------------------------------
+    //------------------------------------------------------------------
 
 
     function populateNoteListModel(){
@@ -1021,6 +1021,7 @@ NotePadForm {
             for(i = 0; i < noteRepeater.count; i++) {
                 noteRepeater.itemAt(i).isOpened = false
             }
+
 
             noteWritingZone.forceActiveFocus();
 

@@ -249,7 +249,7 @@ SKRResult SKRTagHub::setTagTextColor(int projectId, int tagId, const QString& co
 // ------------------------------------------------------------
 
 SKRResult SKRTagHub::setCreationDate(int projectId, int tagId,
-                                    const QDateTime& newDate)
+                                     const QDateTime& newDate)
 {
     SKRResult result = set(projectId, tagId, "dt_created", newDate);
 
@@ -302,10 +302,10 @@ QDateTime SKRTagHub::getUpdateDate(int projectId, int tagId) const
 
 
 SKRResult SKRTagHub::set(int             projectId,
-                        int             tagId,
-                        const QString & fieldName,
-                        const QVariant& value,
-                        bool            setCurrentDateBool)
+                         int             tagId,
+                         const QString & fieldName,
+                         const QVariant& value,
+                         bool            setCurrentDateBool)
 {
     SKRResult result(this);
     PLMSqlQueries queries(projectId,  "tbl_tag");
@@ -541,9 +541,9 @@ QList<int>SKRTagHub::getTagsFromItemId(int                 projectId,
 
 
 SKRResult SKRTagHub::setTagRelationship(int                 projectId,
-                                       SKR::ItemType itemType,
-                                       int                 itemId,
-                                       int                 tagId)
+                                        SKR::ItemType itemType,
+                                        int                 itemId,
+                                        int                 tagId)
 {
     SKRResult result(this);
 
@@ -639,9 +639,9 @@ SKRResult SKRTagHub::setTagRelationship(int                 projectId,
 // --------------------------------------------------------------------------------
 
 SKRResult SKRTagHub::removeTagRelationship(int                 projectId,
-                                          SKR::ItemType itemType,
-                                          int                 itemId,
-                                          int                 tagId)
+                                           SKR::ItemType itemType,
+                                           int                 itemId,
+                                           int                 tagId)
 {
     SKRResult result(this);
 
@@ -649,6 +649,7 @@ SKRResult SKRTagHub::removeTagRelationship(int                 projectId,
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
+    where.insert("l_tag_code", tagId);
 
     if (itemType == SKR::Sheet) {
         where.insert("l_sheet_code", itemId);
@@ -682,10 +683,7 @@ SKRResult SKRTagHub::removeTagRelationship(int                 projectId,
         QHash<int, int>::const_iterator j = hash.constBegin();
 
         while (j != hash.constEnd()) {
-            if(j.key() == tagId){
-                key = j.key();
-                break;
-            }
+            key = j.key();
             ++j;
         }
 
