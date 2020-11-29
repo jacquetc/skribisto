@@ -284,6 +284,15 @@ bool SKRSearchTagListProxyModel::filterAcceptsRow(int                sourceRow,
         value = false;
     }
 
+    // hide tag ids
+
+    if(value && !m_hideTagIdListFilter.isEmpty()){
+
+        if(m_hideTagIdListFilter.contains(item->tagId())){
+            value = false;
+        }
+    }
+
     return value;
 }
 
@@ -354,15 +363,21 @@ void SKRSearchTagListProxyModel::populateRelationshipList()
     }
 }
 
-// --------------------------------------------------------------------------------
-
-
 void SKRSearchTagListProxyModel::setNoteIdFilter(int noteIdFilter)
 {
     m_noteIdFilter = noteIdFilter;
     this->populateRelationshipList();
-    emit noteIdFilterChanged(noteIdFilter);
 
+    this->invalidateFilter();
+}
+
+// --------------------------------------------------------------------------------
+
+
+void SKRSearchTagListProxyModel::setHideTagIdListFilter(const QList<int> &hideTagIdListFilter)
+{
+    m_hideTagIdListFilter = hideTagIdListFilter;
+    emit hideTagIdListFilterChanged(hideTagIdListFilter);
     this->invalidateFilter();
 }
 

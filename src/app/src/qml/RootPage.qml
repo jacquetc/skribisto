@@ -1595,6 +1595,43 @@ RootPageForm {
             SkrMenuItem {
                 action: showAboutQtAction
             }
+
+        }
+        SkrMenuItem {
+            id: bottomMenuItem
+            objectName: "bottomMenuItem"
+            focus: false
+
+            onActiveFocusChanged: {
+                if(activeFocus){
+                    closeCurrentProjectToolButtonInMenuItem.forceActiveFocus()
+                }
+            }
+
+            background: SkrPane { anchors.fill: parent}
+            contentItem:
+                RowLayout{
+                anchors.fill: parent
+                SkrToolButton{
+                    id: closeCurrentProjectToolButtonInMenuItem
+                    action: closeCurrentProjectAction
+                    display: AbstractButton.IconOnly
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+
+                    KeyNavigation.down: quitToolButtonInMenuItem
+
+                }
+                SkrToolButton{
+                    id: quitToolButtonInMenuItem
+                    action: quitAction
+                    display: AbstractButton.IconOnly
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                }
+
+            }
+
+
+
         }
 
     }

@@ -93,6 +93,12 @@ NotePadForm {
         id: visualModel
         model: noteListModel
         delegate: noteFlowComponent
+
+        onCountChanged: {
+            console.log("count", count)
+            hideCurrentNotesInAddPopup()
+        }
+
     }
     noteRepeater.model: visualModel
 
@@ -201,9 +207,47 @@ NotePadForm {
             }
 
             TapHandler {
+                id: touchHandler
+                acceptedDevices:  PointerDevice.TouchScreen
+                onSingleTapped: {
+                    console.log("single tapped")
+                    //reset other notes :
+                    var i;
+                    for(i = 0; i < noteRepeater.count; i++) {
+                        noteRepeater.itemAt(i).isOpened = false
+                    }
+
+                    itemBase.setFocused()
+                    itemBase.toggleSelected()
+                    itemBase.forceActiveFocus()
+
+                    itemBase.isOpened = true
+                    //open in noteTextArea
+                    openDocument(projectId, noteId)
+
+                    eventPoint.accepted = true
+                }
+                onLongPressed: {
+
+                    itemBase.setFocused()
+                    itemBase.forceActiveFocus()
+
+
+                    if(rightClickMenu.visible){
+                        rightClickMenu.close()
+                        return
+                    }
+
+                    rightClickMenu.popup(itemBase, 0, itemBase.height)
+                }
+            }
+
+            TapHandler {
                 id: tapHandler
+                acceptedDevices:  PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.LeftButton
                 onSingleTapped: {
+                    console.log("single tapped")
                     //reset other notes :
                     var i;
                     for(i = 0; i < noteRepeater.count; i++) {
@@ -222,17 +266,10 @@ NotePadForm {
 
                 }
                 onDoubleTapped: {
-                    //reset other notes :
-                    var i;
-                    for(i = 0; i < noteRepeater.count; i++) {
-                        noteRepeater.itemAt(i).isOpened = false
-                    }
 
+                    console.log("double tapped")
                     itemBase.setFocused()
                     itemBase.toggleSelected()
-                    itemBase.forceActiveFocus()
-
-                    itemBase.isOpened = true
                     Globals.openNoteInNewTabCalled(itemBase.projectId, itemBase.noteId)
 
                     eventPoint.accepted = true
@@ -247,12 +284,10 @@ NotePadForm {
 
                     if(rightClickMenu.visible){
                         rightClickMenu.close()
-                        eventPoint.accepted = true
                         return
                     }
 
                     rightClickMenu.popup(itemBase, 0, itemBase.height)
-                    eventPoint.accepted = true
                 }
             }
 
@@ -325,6 +360,9 @@ NotePadForm {
                     text: qsTr("Dissociate")
 
                     onTriggered: {
+                        if(currentNoteId === model.itemNoteId){
+                            openSynopsis()
+                        }
                         plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
                     }
                 }
@@ -361,7 +399,9 @@ NotePadForm {
                 }
 
                 onAccepted: {
-
+                    if(currentNoteId === model.itemNoteId){
+                        openSynopsis()
+                    }
                     plmData.noteHub().setTrashedWithChildren(projectId, noteId, true)
                     plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, noteId)
 
@@ -370,6 +410,8 @@ NotePadForm {
 
             TapHandler {
                 id: shiftTapHandler
+                acceptedDevices:  PointerDevice.Mouse | PointerDevice.Stylus
+                acceptedButtons: Qt.LeftButton
                 acceptedModifiers: Qt.ShiftModifier
                 onSingleTapped: {
                     //reset other notes :
@@ -378,7 +420,7 @@ NotePadForm {
                         noteRepeater.itemAt(i).isOpened = false
                     }
                     itemBase.setFocused()
-                    itemBase.isOpened = true
+                    //itemBase.isOpened = true
                     Globals.openNoteInNewTabCalled(itemBase.projectId, itemBase.noteId)
                 }
             }
@@ -397,7 +439,6 @@ NotePadForm {
                 if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Delete){
                     console.log("Shift delete key pressed ")
                     // move the note to trash
-
                     moveToTrashOrNotDialog.projectId = projectId
                     moveToTrashOrNotDialog.noteId = itemBase.noteId
                     moveToTrashOrNotDialog.sheetId = itemBase.sheetId
@@ -411,6 +452,9 @@ NotePadForm {
                 else if (event.key === Qt.Key_Delete){
                     console.log("Delete key pressed: dissociate ")
                     // dissociate
+                    if(currentNoteId === model.itemNoteId){
+                        openSynopsis()
+                    }
                     plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
 
                 }
@@ -425,6 +469,27 @@ NotePadForm {
 
                 if (event.key === Qt.Key_Escape){
                     escapeKeyPressed()
+                }
+
+                if (event.key === Qt.Key_Return){
+                    //reset other notes :
+                    var i;
+                    for(i = 0; i < noteRepeater.count; i++) {
+                        noteRepeater.itemAt(i).isOpened = false
+                    }
+
+                    itemBase.setFocused()
+                    itemBase.toggleSelected()
+                    itemBase.forceActiveFocus()
+
+                    itemBase.isOpened = true
+                    //open in noteTextArea
+                    openDocument(projectId, noteId)
+
+                }
+
+                if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Return){
+                    Globals.openNoteInNewTabCalled(itemBase.projectId, itemBase.noteId)
                 }
 
                 if (event.key === Qt.Key_Right || event.key === Qt.Key_Down ){
@@ -495,7 +560,12 @@ NotePadForm {
                         opacity: 0
                         icon.source: "qrc:///icons/backup/list-remove.svg"
                         onReleased:{
+                            // dissociate
+                            if(currentNoteId === model.itemNoteId){
+                                openSynopsis()
+                            }
                             plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+
                         }
 
                         activeFocusOnTab: false
@@ -548,6 +618,8 @@ NotePadForm {
             }
         }
     }
+//------------------------------------------------------------------
+
 
     function populateNoteListModel(){
         if(projectId === -2 || sheetId === -2){
@@ -577,9 +649,9 @@ NotePadForm {
 
     }
 
-    //--------------------------------------------
-    //---------- note writing zone------------------------
-    //--------------------------------------------
+    //----------------------------------------------------------------
+    //---------- note writing zone------------------------------------
+    //----------------------------------------------------------------
 
     noteWritingZone.textPointSize: SkrSettings.notePadSettings.textPointSize
     noteWritingZone.textFontFamily: SkrSettings.notePadSettings.textFontFamily
@@ -715,7 +787,6 @@ NotePadForm {
             saveCurrentPaperCursorPositionAndY()
             skrTextBridge.unsubscribeTextDocument(pageType, projectId, currentNoteId, noteWritingZone.textArea.objectName, noteWritingZone.textArea.textDocument)
 
-            root.projectId = -2
             root.currentNoteId = -2
         }
 
@@ -801,19 +872,19 @@ NotePadForm {
         if(sheetId === -2 || currentNoteId === -2 ||  sheetId === -2 || minimalMode){
             return
         }
-            //save cursor position of current document :
+        //save cursor position of current document :
 
-            var previousCursorPosition = noteWritingZone.textArea.cursorPosition
-            //console.log("previousCursorPosition", previousCursorPosition)
-            var previousY = noteWritingZone.flickable.contentY
-            //console.log("previousContentY", previousY)
-            skrUserSettings.insertInProjectSettingHash(
-                        projectId, "notePadPositionHash", currentNoteId,
-                        previousCursorPosition)
-            skrUserSettings.insertInProjectSettingHash(projectId,
-                                                       "notePadYHash",
-                                                       currentNoteId,
-                                                       previousY)
+        var previousCursorPosition = noteWritingZone.textArea.cursorPosition
+        //console.log("previousCursorPosition", previousCursorPosition)
+        var previousY = noteWritingZone.flickable.contentY
+        //console.log("previousContentY", previousY)
+        skrUserSettings.insertInProjectSettingHash(
+                    projectId, "notePadPositionHash", currentNoteId,
+                    previousCursorPosition)
+        skrUserSettings.insertInProjectSettingHash(projectId,
+                                                   "notePadYHash",
+                                                   currentNoteId,
+                                                   previousY)
 
     }
 
@@ -915,6 +986,9 @@ NotePadForm {
     Connections{
         target: plmData.noteHub()
         function sheetNoteRelationshipChanged(projectId, sheetId, noteId){
+            if(projectId !== root.projectId){
+                return
+            }
             if(sheetId !== root.sheetId){
                 return
             }
@@ -944,8 +1018,8 @@ NotePadForm {
                 return
             }
 
-         loader_addPopup.active = true
-           loader_addPopup.item.open()
+            loader_addPopup.active = true
+            loader_addPopup.item.open()
         }
     }
     addNoteMenuToolButton.action: addNoteAction
@@ -954,6 +1028,9 @@ NotePadForm {
     Connections{
         target: plmData.noteHub()
         function onSheetNoteRelationshipAdded(projectId, sheetId, noteId){
+            if(projectId !== root.projectId){
+                return
+            }
             if(sheetId !== root.sheetId){
                 return
             }
@@ -970,14 +1047,6 @@ NotePadForm {
 
     }
 
-    //proxy model for search :
-
-    SKRSearchNoteListProxyModel {
-        id: searchProxyModel
-        showTrashedFilter: false
-        showNotTrashedFilter: true
-        projectIdFilter: projectId
-    }
 
 
 
@@ -1015,6 +1084,33 @@ NotePadForm {
 
 
 
+    //---------------------------------------------
+
+    QtObject{
+        id: priv
+        property var idToHideList: []
+
+    }
+
+
+
+    //proxy model for search :
+
+    function  hideCurrentNotesInAddPopup(){
+
+        var idToHideList = []
+        for(var i = 0  ; i < visualModel.items.count; i++){
+
+            idToHideList.push(visualModel.items.get(i).model.itemNoteId)
+        }
+
+        priv.idToHideList = idToHideList
+
+    }
+
+
+
+
     Component {
         id: component_addPopup
         SkrPopup {
@@ -1022,6 +1118,28 @@ NotePadForm {
             property alias titleTextField: inner_titleTextField
             property alias searchListScrollView: inner_searchListScrollView
             property alias searchResultList: inner_searchResultList
+
+
+
+            //proxy model for search :
+
+            SKRSearchNoteListProxyModel {
+                id: searchProxyModel
+                showTrashedFilter: false
+                showNotTrashedFilter: true
+                projectIdFilter: projectId
+                hideThoseWithAttributesFilter: ["synopsis", "synopsis_folder"]
+                hidePaperIdListFilter: priv.idToHideList
+
+            }
+
+
+
+
+
+
+
+
 
             id: addPopup
             x: addNoteMenuToolButton.x - 200
@@ -1034,6 +1152,8 @@ NotePadForm {
 
             onOpened: {
                 inner_titleTextField.clear()
+                searchProxyModel.textFilter = ""
+
             }
 
             onClosed: {
@@ -1306,6 +1426,9 @@ NotePadForm {
     Connections{
         target: plmData.noteHub()
         function onSheetNoteRelationshipRemoved(projectId, sheetId, noteId){
+            if(projectId !== root.projectId){
+                return
+            }
             if(sheetId !== root.sheetId){
                 return
             }
@@ -1316,15 +1439,15 @@ NotePadForm {
 
                 if (item.itemNoteId === noteId){
                     //console.log("removing " + i)
-                    noteListModel.remove(i)
 
                     // clear:
                     if(currentNoteId === noteId){
-
-                        contentSaveTimer.stop()
-                        currentNoteId = -2
-                        noteWritingZone.clear()
+                        clearNoteWritingZone()
                     }
+
+
+
+                    noteListModel.remove(i)
 
                     break
                 }

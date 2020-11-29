@@ -66,11 +66,15 @@ TagPadForm {
         id: visualModel
         model: tagListModel
         delegate: tagFlowComponent
+
+        onCountChanged:{
+            hideCurrentTagsInAddPopup()
+        }
+
+
     }
 
     tagRepeater.model: visualModel
-
-
 
 
     // force focus on first child
@@ -102,6 +106,9 @@ TagPadForm {
     Connections{
         target: root
         function onCallRemoveTagRelationship(projectId, itemId, tagId){
+            if(projectId !== root.projectId){
+                return
+            }
             plmData.tagHub().removeTagRelationship(projectId, itemType , itemId, tagId)
         }
     }
@@ -110,6 +117,9 @@ TagPadForm {
     Connections{
         target: root
         function onCallAddTagRelationship(projectId, itemId, tagName, colorCode, textColorCode){
+            if(projectId !== root.projectId){
+                return
+            }
 
             var result;
             // verify if name doesn't already exist :
@@ -141,6 +151,9 @@ TagPadForm {
     Connections{
         target: root
         function onCallAddTag(projectId, tagName, colorCode, textColorCode){
+            if(projectId !== root.projectId){
+                return
+            }
             var result = plmData.tagHub().addTag(projectId, tagName)
             var tagId = result.getData("tagId", -2)
 
@@ -156,6 +169,9 @@ TagPadForm {
     Connections{
         target: root
         function onCallRemoveTag(projectId, tagId){
+            if(projectId !== root.projectId){
+                return
+            }
             plmData.tagHub().removeTag(projectId, tagId)
         }
     }
@@ -636,13 +652,28 @@ TagPadForm {
     addTagMenuToolButton.action: addTagAction
 
 
+    //---------------------------------------------
+
+    QtObject{
+        id: priv
+        property var idToHideList: []
+
+    }
+
 
 
     //proxy model for search :
 
-    SKRSearchTagListProxyModel {
-        id: searchProxyModel
-        projectIdFilter: projectId
+    function  hideCurrentTagsInAddPopup(){
+
+        var idToHideList = []
+        for(var i = 0  ; i < visualModel.items.count; i++){
+
+            idToHideList.push(visualModel.items.get(i).model.tagId)
+        }
+
+        priv.idToHideList = idToHideList
+
     }
 
 
@@ -654,6 +685,15 @@ TagPadForm {
             property alias searchListScrollView: inner_searchListScrollView
             property alias searchResultList: inner_searchResultList
             property alias colorChooser: inner_colorChooser
+
+
+            SKRSearchTagListProxyModel {
+                id: searchProxyModel
+                projectIdFilter: projectId
+                hideTagIdListFilter: priv.idToHideList
+            }
+
+
 
             id: addPopup
             x: addTagMenuToolButton.x - 400
@@ -667,6 +707,8 @@ TagPadForm {
             onOpened: {
                 inner_titleTextField.clear()
                 colorChooser.selectRandomColor()
+
+
             }
             onClosed: {
                 loader_addPopup.active = false

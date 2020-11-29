@@ -372,11 +372,6 @@ SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
                                                     true);
             plmdata->notePropertyHub()->setProperty(projectId,
                                                     folderId,
-                                                    "can_add_paper",
-                                                    "false",
-                                                    true);
-            plmdata->notePropertyHub()->setProperty(projectId,
-                                                    folderId,
                                                     "can_add_sibling_paper",
                                                     "true",
                                                     true);
@@ -401,6 +396,7 @@ SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
                                                     "true",
                                                     true);
             this->addAttribute(projectId, folderId, "locked");
+            this->addAttribute(projectId, folderId, "synopsis_folder");
         }
 
 
@@ -473,6 +469,7 @@ SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
                                             "can_add_child_paper",
                                             "false",
                                             true);
+    this->addAttribute(projectId, folderId, "synopsis_folder");
 
     //all synopsis:
     IFOK(result) {

@@ -143,20 +143,6 @@ NoteOverviewPageForm {
         privateMenuObject.dockUniqueId = Qt.formatDateTime(new Date(), "yyyyMMddhhmmsszzz")
 
 
-        var helpMenu
-
-        var menuCount = mainMenu.count
-
-        // take Help menu
-        menuCount = mainMenu.count
-        var m;
-        for(m = 0 ; m < menuCount ; m++){
-            var menu = mainMenu.menuAt(m)
-            if(menu.objectName === "helpMenu"){
-                helpMenu = mainMenu.takeMenu(m)
-            }
-        }
-
         // add new menus
         var k
         for(k = 0 ; k < leftDock.menuComponents.length ; k++){
@@ -167,39 +153,47 @@ NoteOverviewPageForm {
 
         }
 
-        // shortcuts:
-
-
-        //reinsert Help menu
-        mainMenu.addMenu(helpMenu)
-
-    }
-
-    function removeMenus(){
-        if(mainMenu === null){
-            return
-        }
-
-
-        var helpMenu
-
         var menuCount = mainMenu.count
 
-        // take Help menu
+
+        // move Help menu
         menuCount = mainMenu.count
         var m;
         for(m = 0 ; m < menuCount ; m++){
             var menu = mainMenu.menuAt(m)
             if(menu.objectName === "helpMenu"){
-                helpMenu = mainMenu.takeMenu(m)
+                mainMenu.moveItem(m, mainMenu.count -1)
             }
         }
 
-        // remove additional menus
+        // move bottomMenuItem
+        var bottomMenuItem
+        var p;
+        for(p = 0 ; p < menuCount ; p++){
+            var p_menu = mainMenu.itemAt(p)
+            if(p_menu.objectName === "bottomMenuItem"){
+                mainMenu.moveItem(p, mainMenu.count - 1)
+            }
+        }
+
+    }
+
+    function removeMenus(){
+
+        if(mainMenu === null){
+            return
+        }
+
+        var menuCount = mainMenu.count
+
         menuCount = mainMenu.count
         var i;
         for(i = menuCount - 1 ; i >= 0  ; i--){
             var menu1 = mainMenu.menuAt(i)
+
+            if(!menu1){
+                continue
+            }
 
             if(menu1.objectName === "navigationDockMenu-" + privateMenuObject.dockUniqueId
                     || menu1.objectName === "toolDockMenu-" + privateMenuObject.dockUniqueId){
@@ -210,8 +204,6 @@ NoteOverviewPageForm {
         }
 
 
-        //reinsert Help menu
-        mainMenu.addMenu(helpMenu)
 
         privateMenuObject.dockUniqueId = ""
     }

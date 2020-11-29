@@ -323,6 +323,25 @@ void SKRSearchPaperListProxyModel::setTagIdListFilter(const QList<int>& tagIdLis
 
 // --------------------------------------------------------------
 
+void SKRSearchPaperListProxyModel::setHideThoseWithAttributesFilter(const QStringList &hideThoseWithAttributesFilter)
+{
+    m_hideThoseWithAttributesFilter = hideThoseWithAttributesFilter;
+
+    emit hideThoseWithAttributesFilterChanged(hideThoseWithAttributesFilter);
+    this->invalidateFilter();
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchPaperListProxyModel::setShowOnlyWithAttributesFilter(const QStringList &showOnlyWithAttributesFilter)
+{
+    m_showOnlyWithAttributesFilter = showOnlyWithAttributesFilter;
+
+    emit showOnlyWithAttributesFilterChanged(showOnlyWithAttributesFilter);
+    this->invalidateFilter();
+}
+// --------------------------------------------------------------
+
 QList<int>SKRSearchPaperListProxyModel::getCheckedIdsList() {
     QList<int> list;
 
@@ -579,25 +598,39 @@ bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow
         value = false;
     }
 
+    int paperId = item->data(SKRPaperItem::Roles::PaperIdRole).toInt();
 
     // paperIdListFiltering :
-    if (!m_paperIdListFilter.isEmpty()) {
-        if (value &&
-                m_paperIdListFilter.contains(item->data(
-                                                 SKRPaperItem::Roles::PaperIdRole).toInt()))
-        {
-            value = true;
+    if (value && (!m_paperIdListFilter.isEmpty() || !m_hidePaperIdListFilter.isEmpty())) {
+
+
+        int showed = false;
+        if(m_paperIdListFilter.isEmpty()){
+            showed = true;
         }
-        else if (value) {
-            value = false;
+        else if(m_hidePaperIdListFilter.isEmpty()){
+            showed = false;
         }
+        else { //both are with values
+            showed = false;
+        }
+
+
+        if(m_paperIdListFilter.contains(paperId)){
+            showed = true;
+        }
+        if(m_hidePaperIdListFilter.contains(paperId)){
+            showed = false;
+        }
+        value = showed;
+
     }
 
 
     // parentId filtering :
     if (value && (m_parentIdFilter != -2)) {
         if (m_showParentWhenParentIdFilter &&
-                (m_parentIdFilter == item->data(SKRPaperItem::Roles::PaperIdRole).toInt())) {
+                (m_parentIdFilter == paperId)) {
             value = true;
         }
         else {
@@ -620,17 +653,14 @@ bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow
 
     if (value && !m_tagIdListFilter.isEmpty() && (m_projectIdFilter != -2)) {
         QList<int> tagIds = plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter,
-                                                                 SKR::Note,
-                                                                 item->data(SKRPaperItem::
-                                                                            Roles::
-                                                                            PaperIdRole).toInt());
+                                                                 SKR::Note, paperId);
 
         value = false;
 
         int tagCountGoal = m_tagIdListFilter.count();
         int tagCount     = 0;
 
-        for (int tag : tagIds) {
+        for (int tag : qAsConst(tagIds)) {
             if (m_tagIdListFilter.contains(tag)) {
                 tagCount += 1;
             }
@@ -640,6 +670,39 @@ bool SKRSearchPaperListProxyModel::filterAcceptsRow(int                sourceRow
             value = true;
         }
     }
+
+    //  attribute filtering
+    if (value && (!m_showOnlyWithAttributesFilter.isEmpty() || !m_hideThoseWithAttributesFilter.isEmpty()) && (m_projectIdFilter != -2)) {
+        QStringList attributes = m_propertyHub->getProperty(m_projectIdFilter, paperId, "attributes").split(";", Qt::SkipEmptyParts);
+
+        int showed = false;
+        if(m_showOnlyWithAttributesFilter.isEmpty()){
+            showed = true;
+        }
+        else if(m_hideThoseWithAttributesFilter.isEmpty()){
+            showed = false;
+        }
+        else { //both are with values
+            showed = false;
+        }
+
+        for(const QString &attribute : qAsConst(attributes)){
+            if(m_showOnlyWithAttributesFilter.contains(attribute)){
+                showed = true;
+                break;
+            }
+            if(m_hideThoseWithAttributesFilter.contains(attribute)){
+                showed = false;
+                break;
+            }
+
+        }
+
+
+        value = showed;
+    }
+
+
 
     return value;
 }
@@ -847,6 +910,7 @@ void SKRSearchPaperListProxyModel::saveProjectSettings(int projectId)
     settings.endGroup();
 }
 
+
 // --------------------------------------------------------------
 
 void SKRSearchPaperListProxyModel::setPaperIdListFilter(
@@ -855,6 +919,17 @@ void SKRSearchPaperListProxyModel::setPaperIdListFilter(
     m_paperIdListFilter = paperIdListFilter;
 
     emit paperIdListFilterChanged(paperIdListFilter);
+
+    this->invalidateFilter();
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchPaperListProxyModel::setHidePaperIdListFilter(const QList<int> &hidePaperIdListFilter)
+{
+    m_hidePaperIdListFilter = hidePaperIdListFilter;
+
+    emit hidePaperIdListFilterChanged(hidePaperIdListFilter);
 
     this->invalidateFilter();
 }

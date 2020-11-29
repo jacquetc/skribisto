@@ -32,6 +32,7 @@ class EXPORT SKRSearchTagListProxyModel : public QSortFilterProxyModel
     Q_PROPERTY(int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)
     Q_PROPERTY(int sheetIdFilter MEMBER m_sheetIdFilter WRITE setSheetIdFilter NOTIFY sheetIdFilterChanged)
     Q_PROPERTY(int noteIdFilter MEMBER m_noteIdFilter WRITE setNoteIdFilter NOTIFY noteIdFilterChanged)
+    Q_PROPERTY(QList<int> hideTagIdListFilter MEMBER m_hideTagIdListFilter WRITE setHideTagIdListFilter NOTIFY hideTagIdListFilterChanged)
     Q_PROPERTY(QString textFilter MEMBER m_textFilter WRITE setTextFilter NOTIFY textFilterChanged)
     Q_PROPERTY(int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
 
@@ -60,10 +61,13 @@ public:
     void setSheetIdFilter(int sheetIdFilter);
     void setNoteIdFilter(int noteIdFilter);
 
+    void setHideTagIdListFilter(const QList<int> &hideTagIdListFilter);
+
 signals:
     void projectIdFilterChanged(int projectIdFilter);
     void sheetIdFilterChanged(int sheetIdFilter);
     void noteIdFilterChanged(int noteIdFilter);
+    void hideTagIdListFilterChanged(const QList<int> &hideTagIdFilter);
     void textFilterChanged(const QString &value);
     Q_INVOKABLE void forcedCurrentIndexChanged(int forcedCurrentIndex);
 
@@ -80,6 +84,7 @@ private slots:
 private:
     QString m_textFilter;
     int m_projectIdFilter, m_sheetIdFilter, m_noteIdFilter;
+    QList<int> m_hideTagIdListFilter;
     int m_forcedCurrentIndex;
     QList<int> m_relationshipList;
 };
