@@ -1244,8 +1244,8 @@ SheetOverviewTreeForm {
 
                                 SKRSearchTagListProxyModel {
                                     id: tagProxyModel
-                                    projectIdFilter: projectId
-                                    sheetIdFilter: paperId
+                                    projectIdFilter: model.projectId
+                                    sheetIdFilter: model.paperId
                                 }
                                 tagListModel: tagProxyModel
                                 itemType: SKR.Sheet

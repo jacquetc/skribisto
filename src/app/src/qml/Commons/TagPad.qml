@@ -19,7 +19,7 @@ TagPadForm {
     // we use the term itemId instead of paperId to not be constrained if we want to tag more than papers in the future
     property int itemId: -2
     property var itemType: SKR.Sheet
-    property var tagListModel: undefined
+    property var tagListModel
 
     signal callAddTagRelationship(int projectId, int itemId, string tagName, string colorCode, string textColorCode)
     signal callRemoveTagRelationship(int projectId,int itemId, int tagId)
@@ -106,7 +106,7 @@ TagPadForm {
     Connections{
         target: root
         function onCallRemoveTagRelationship(projectId, itemId, tagId){
-            if(projectId !== root.projectId){
+            if(projectId !== root.projectId && itemId !== root.itemId){
                 return
             }
             plmData.tagHub().removeTagRelationship(projectId, itemType , itemId, tagId)
@@ -117,7 +117,7 @@ TagPadForm {
     Connections{
         target: root
         function onCallAddTagRelationship(projectId, itemId, tagName, colorCode, textColorCode){
-            if(projectId !== root.projectId){
+            if(projectId !== root.projectId && itemId !== root.itemId){
                 return
             }
 
@@ -280,7 +280,7 @@ TagPadForm {
                 onSingleTapped: {
 
                     itemBase.setFocused()
-                    itemBase.toggleSelected()
+                    itemBase.setSelected()
                     itemBase.forceActiveFocus()
                     tagTapped(projectId, tagId)
 
@@ -321,6 +321,7 @@ TagPadForm {
                 onSingleTapped: {
 
                     itemBase.setFocused()
+                    itemBase.setSelected()
                     itemBase.forceActiveFocus()
 
 
@@ -379,13 +380,14 @@ TagPadForm {
 
                     onTriggered: {
                         if(itemId === -2){
-                            removeTagDialog.projectId = projectId
-                            removeTagDialog.tagId = tagId
+                            removeTagDialog.projectId = model.projectId
+                            removeTagDialog.tagId = model.tagId
                             removeTagDialog.tagName = model.name
                             removeTagDialog.open()
                         }
                         else {
-                            callRemoveTagRelationship(projectId, itemId, tagId)
+                            console.log(model.projectId, root.itemId, "tag", model.tagId)
+                            callRemoveTagRelationship(model.projectId, root.itemId, model.tagId)
                         }
                     }
 
@@ -468,7 +470,7 @@ TagPadForm {
                     }
                     else {
                         // remove relationship
-                        callRemoveTagRelationship(projectId, itemId, tagId)
+                        callRemoveTagRelationship(projectId, root.itemId, tagId)
                     }
                 }
                 if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Delete){
@@ -563,13 +565,13 @@ TagPadForm {
                         onReleased:{
                             if(itemId === -2){
 
-                                removeTagDialog.projectId = projectId
-                                removeTagDialog.tagId = tagId
+                                removeTagDialog.projectId = model.projectId
+                                removeTagDialog.tagId = model.tagId
                                 removeTagDialog.tagName = model.name
                                 removeTagDialog.open()
                             }
                             else {
-                                callRemoveTagRelationship(projectId, itemId, tagId)
+                                callRemoveTagRelationship(model.projectId, root.itemId, model.tagId)
 
                             }
                         }

@@ -682,7 +682,10 @@ SKRResult SKRTagHub::removeTagRelationship(int                 projectId,
         QHash<int, int>::const_iterator j = hash.constBegin();
 
         while (j != hash.constEnd()) {
-            key = j.key();
+            if(j.key() == tagId){
+                key = j.key();
+                break;
+            }
             ++j;
         }
 
