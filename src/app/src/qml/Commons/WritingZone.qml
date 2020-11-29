@@ -326,6 +326,7 @@ WritingZoneForm {
         console.log("cut action text", textArea.selectedText)
         textArea.forceActiveFocus()
         textArea.cut()
+        textContextMenu.close()
 
     }
     function copy(){
@@ -333,6 +334,7 @@ WritingZoneForm {
         console.log("copy action text", textArea.selectedText)
         textArea.forceActiveFocus()
         textArea.copy()
+        textContextMenu.close()
 
     }
     function paste(){
@@ -345,6 +347,7 @@ WritingZoneForm {
         textArea.deselect()
         //setCursorPosition(textArea.cursorPosition + (newLength - originalLength))
         //textArea.paste()
+        textContextMenu.close()
 
     }
 

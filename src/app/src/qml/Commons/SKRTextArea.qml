@@ -131,7 +131,7 @@ TextArea {
     property int viewContentY
 
 
-    onCursorPositionChanged: {
+    onLengthChanged: {
         if(!root.textCenteringEnabled || root.selectedText){
             return
         }
