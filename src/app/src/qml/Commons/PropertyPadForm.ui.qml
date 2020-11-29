@@ -35,9 +35,7 @@ Item {
 
                 GridLayout {
                     id: gridLayout
-                    columns: gridLayout.width / printableToolButton.width - 1
-                    anchors.left: parent.left
-                    anchors.right: parent.right
+                    columns: groupBox.width / printableToolButton.width - 1
                     columnSpacing: 3
                     rowSpacing: 3
 

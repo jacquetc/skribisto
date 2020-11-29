@@ -985,6 +985,7 @@ ApplicationWindow {
     Action {
         id: closeCurrentProjectAction
         text: qsTr("&Close \"%1\" project").arg(activeProjectName)
+        enabled: plmData.projectHub().isThereAnyLoadedProject
         icon {
             source: "qrc:///icons/backup/document-close.svg"
             height: 50
