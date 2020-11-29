@@ -23,6 +23,8 @@ class SKRSearchPaperListProxyModel : public QSortFilterProxyModel {
     Q_PROPERTY(
         QList<int>paperIdListFilter MEMBER m_paperIdListFilter WRITE setPaperIdListFilter NOTIFY paperIdListFilterChanged)
     Q_PROPERTY(
+        QList<int>hidePaperIdListFilter MEMBER m_hidePaperIdListFilter WRITE setHidePaperIdListFilter NOTIFY hidePaperIdListFilterChanged)
+    Q_PROPERTY(
         int forcedCurrentIndex MEMBER m_forcedCurrentIndex WRITE setForcedCurrentIndex NOTIFY forcedCurrentIndexChanged)
     Q_PROPERTY(
         int parentIdFilter MEMBER m_parentIdFilter WRITE setParentIdFilter NOTIFY parentIdFilterChanged)
@@ -30,6 +32,10 @@ class SKRSearchPaperListProxyModel : public QSortFilterProxyModel {
         bool showParentWhenParentIdFilter MEMBER m_showParentWhenParentIdFilter WRITE setShowParentWhenParentIdFilter NOTIFY showParentWhenParentIdFilterChanged)
     Q_PROPERTY(
         QList<int>tagIdListFilter MEMBER m_tagIdListFilter WRITE setTagIdListFilter NOTIFY tagIdListFilterChanged)
+    Q_PROPERTY(
+        QStringList showOnlyWithAttributesFilter MEMBER m_showOnlyWithAttributesFilter WRITE setShowOnlyWithAttributesFilter NOTIFY showOnlyWithAttributesFilterChanged)
+    Q_PROPERTY(
+        QStringList hideThoseWithAttributesFilter MEMBER m_hideThoseWithAttributesFilter WRITE setHideThoseWithAttributesFilter NOTIFY hideThoseWithAttributesFilterChanged)
 
 public:
 
@@ -87,6 +93,9 @@ public:
     void                  setParentIdFilter(int projectIdfilter);
     void                  setShowParentWhenParentIdFilter(bool showParent);
 
+    void setHideThoseWithAttributesFilter(const QStringList &hideThoseWithAttributesFilter);
+
+    void setShowOnlyWithAttributesFilter(const QStringList &showOnlyWithAttributesFilter);
     Q_INVOKABLE QList<int>getChildrenList(int  projectId,
                                           int  paperId,
                                           bool getTrashed,
@@ -104,6 +113,7 @@ public:
                               bool getNotTrashed);
 
     void                  setPaperIdListFilter(const QList<int>& paperIdListFilter);
+    void                  setHidePaperIdListFilter(const QList<int>& hidePaperIdListFilter);
 
     Q_INVOKABLE QString   getItemName(int projectId,
                                       int paperId);
@@ -142,6 +152,7 @@ public:
     Q_INVOKABLE void cut(int projectId, int paperId);
     Q_INVOKABLE void copy(int projectId, int paperId);
     Q_INVOKABLE void paste(int targetProjectId, int targetParentId);
+
 signals:
 
     void projectIdFilterChanged(int projectIdFilter);
@@ -150,11 +161,13 @@ signals:
     void showNotTrashedFilterChanged(bool value);
     void navigateByBranchesEnabledChanged(bool value);
     void paperIdListFilterChanged(const QList<int>paperIdList);
+    void hidePaperIdListFilterChanged(const QList<int>paperIdList);
     void forcedCurrentIndexChanged(int forcedCurrentIndex);
     void parentIdFilterChanged(int paperIdFilter);
     void showParentWhenParentIdFilterChanged(bool value);
     void tagIdListFilterChanged(const QList<int>tagIdList);
-
+    void showOnlyWithAttributesFilterChanged(const QStringList attributes);
+    void hideThoseWithAttributesFilterChanged(const QStringList attributes);
     void sortOtherProxyModelsCalled();
 
 public slots:
@@ -191,7 +204,10 @@ private:
     bool m_showParentWhenParentIdFilter;
     int m_forcedCurrentIndex;
     QList<int>m_paperIdListFilter;
+    QList<int>m_hidePaperIdListFilter;
     QList<int>m_tagIdListFilter;
+    QStringList m_showOnlyWithAttributesFilter;
+    QStringList m_hideThoseWithAttributesFilter;
     QHash<int, Qt::CheckState>m_checkedIdsHash;
     QHash<int, QList<int> >m_historyList;
 };
