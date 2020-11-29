@@ -123,40 +123,44 @@ TreeListViewForm {
         determineIfGoUpButtonEnabled()
 
         if (currentParent !== -2 & currentProject !== -2) {
-            currentParentToolButton.text = proxyModel.getItemName(
+            var parentTitle = proxyModel.getItemName(
                         currentProject, currentParent)
             //console.log("onCurrentParentChanged")
 
-            listView.section.delegate = null
+            p_section.parentTitle = parentTitle
+            listView.section.delegate = sectionHeading
 
         }
         // clear :
         if (currentParent === -2 & currentProject === -2 ){
-            currentParentToolButton.text = ""
             listView.section.delegate = null
         }
         // show "projects" section
         else if (currentParent === -2 ){
 
+            p_section.parentTitle = qsTr("Projects")
             listView.section.delegate = sectionHeading
+
 
         }
     }
     onCurrentProjectChanged: {
         if (currentParent !== -2 & currentProject !== -2) {
-            currentParentToolButton.text = proxyModel.getItemName(
+            p_section.parentTitle = proxyModel.getItemName(
                         currentProject, currentParent)
+            listView.section.delegate = sectionHeading
             //console.log("onCurrentProjectChanged")
         }
         // clear :
         if (currentParent === -2 & currentProject === -2 ){
-            currentParentToolButton.text = ""
+            listView.section.delegate = null
         }
     }
 
-    currentParentToolButton.onClicked: {
 
-        //currentParent
+    QtObject{
+        id: p_section
+        property string parentTitle: ""
     }
 
     //----------------------------------------------------------------------------
@@ -172,13 +176,14 @@ TreeListViewForm {
         Rectangle {
             width: listView.width
             height: childrenRect.height
-            color: "lightsteelblue"
+            color: SkrTheme.buttonBackground
 
             required property string section
 
             SkrLabel {
-                text: qsTr("Projects")
+                text: p_section.parentTitle
                 font.bold: true
+                color: SkrTheme.buttonForeground
                 //font.pixelSize: 20
             }
         }
@@ -720,7 +725,7 @@ TreeListViewForm {
                         return true
                     }
                     icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : (model.canAddChildPaper ? "qrc:///icons/backup/list-add.svg" : "")
-                    text: model.hasChildren ? ">" : (model.canAddChildPaper ? qsTr("Add a child") : qsTr("See children"))
+                    text: model.hasChildren ? ">" : (model.canAddChildPaper ? qsTr("Add a sub-item") : qsTr("See sub-items"))
                     onTriggered: {
                         console.log("goToChildAction triggered")
 
@@ -1287,6 +1292,7 @@ TreeListViewForm {
             SkrMenu {
                 id: menu
                 y: menuButton.height
+                width: 300
 
                 onOpened: {
                     // necessary to differenciate between all items
@@ -1548,7 +1554,7 @@ TreeListViewForm {
                     action:
                         Action {
                         id: addChildAction
-                        text: qsTr("Add child")
+                        text: qsTr("Add a sub-item")
                         //shortcut: "Ctrl+N"
                         icon {
                             source: "qrc:///icons/backup/document-new.svg"

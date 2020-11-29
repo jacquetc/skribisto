@@ -258,10 +258,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add child</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
@@ -272,6 +268,10 @@
     <message>
         <source>Move down</source>
         <translation type="unfinished">Опустить</translation>
+    </message>
+    <message>
+        <source>Add a sub-item</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2928,10 +2928,6 @@ Have you checked the one(s) you want to look through ?</source>
         <translation type="unfinished">Здравствуйте</translation>
     </message>
     <message>
-        <source>Write</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Notes</source>
         <translation type="obsolete">Заметки</translation>
     </message>
@@ -2990,6 +2986,14 @@ Have you checked the one(s) you want to look through ?</source>
     <message>
         <source></source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fatal</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3700,10 +3704,6 @@ Have you checked the one(s) you want to look through ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add child</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>c: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3717,6 +3717,10 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>all w: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4524,24 +4528,16 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add a child</source>
+        <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>See children</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add child</source>
+        <source>See sub-items</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>TreeListViewForm.ui</name>
-    <message>
-        <source>current folder name</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Add a document</source>
         <translation type="unfinished"></translation>

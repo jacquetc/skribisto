@@ -10,6 +10,8 @@ SkrPopup {
     property alias dictToolButton: dictToolButton
     property alias editToolButton: editToolButton
     property alias tabBar: tabBar
+    width: 200
+    height: stackView.currentItem.implicitHeight + tabBar.height + separator.height + columnLayout.spacing
     padding: 1
 
     ColumnLayout {
@@ -65,6 +67,7 @@ SkrPopup {
 
 
        Rectangle {
+           id: separator
            Layout.preferredHeight: 1
            Layout.preferredWidth: base.height * 3 / 4
            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop

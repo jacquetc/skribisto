@@ -10,7 +10,6 @@ Item {
     property alias scrollView: scrollView
     property int scrollBarVerticalPolicy: ScrollBar.AlwaysOff
     property alias goUpToolButton: goUpToolButton
-    property alias currentParentToolButton: currentParentToolButton
     property alias addToolButton: addToolButton
     property alias treeMenuToolButton: treeMenuToolButton
     property var toolBarPrimaryColor
@@ -43,12 +42,11 @@ Item {
                         display: AbstractButton.IconOnly
                     }
 
-                    SkrToolButton {
-                        id: currentParentToolButton
-                        flat: true
+                    Item {
+                        id: stretcher
                         Layout.fillWidth: true
-                        text: qsTr("current folder name")
                     }
+
                     SkrToolButton {
                         id: addToolButton
                         flat: true

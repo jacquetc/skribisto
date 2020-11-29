@@ -59,7 +59,7 @@ RootPageForm {
 
         Action {
             id: writeOverviewWindowAction
-            text: qsTr("Write")
+            text: qsTr("Overview")
             icon {
                 source: "qrc:///icons/backup/view-media-playlist.svg"
                 color: SkrTheme.buttonIcon
@@ -296,7 +296,7 @@ RootPageForm {
                                      qsTr("Ok") : (model.errorType === SKRResult.Warning ?
                                                        qsTr("Warning") : (model.errorType === SKRResult.Critical ?
                                                                               qsTr("Critical") : (model.errorType === SKRResult.Fatal ?
-                                                                                                      qsTr("")  :  "Fatal" )))
+                                                                                                      qsTr("Fatal")  :  "Fatal" )))
 
                         }
                         SkrToolButton{
@@ -336,10 +336,10 @@ RootPageForm {
 
                         TextArea {
                             id: textArea
-                            width:  scrollView.width
+                            //width:  scrollView.width
                             readOnly: true
                             color: SkrTheme.buttonForeground
-                            wrapMode: TextEdit.WordWrap
+                            wrapMode: TextEdit.Wrap
                             text: model.content
                             topPadding: 0
                             bottomPadding: 0
@@ -1514,17 +1514,17 @@ RootPageForm {
             SkrMenuItem{
                 id: cutItem
                 objectName: "cutItem"
-                action: cutAction
+                action: cutTextAction
             }
             SkrMenuItem{
                 id: copyItem
                 objectName: "copyItem"
-                action: copyAction
+                action: copyTextAction
             }
             SkrMenuItem{
                 id: pasteItem
                 objectName: "pasteItem"
-                action: pasteAction
+                action: pasteTextAction
             }
 
             Component.onCompleted:{

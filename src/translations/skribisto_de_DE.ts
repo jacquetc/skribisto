@@ -460,10 +460,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add child</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
@@ -474,6 +470,10 @@
     <message>
         <source>Move down</source>
         <translation type="unfinished">Abwärts bewegen</translation>
+    </message>
+    <message>
+        <source>Add a sub-item</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3279,10 +3279,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <translation type="unfinished">Willkommen</translation>
     </message>
     <message>
-        <source>Write</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Notes</source>
         <translation type="obsolete">Notizen</translation>
     </message>
@@ -3341,6 +3337,14 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source></source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fatal</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4007,10 +4011,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add child</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>c: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4024,6 +4024,10 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     </message>
     <message>
         <source>all w: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4697,24 +4701,16 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add a child</source>
+        <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>See children</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add child</source>
+        <source>See sub-items</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>TreeListViewForm.ui</name>
-    <message>
-        <source>current folder name</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Add a document</source>
         <translation type="unfinished"></translation>

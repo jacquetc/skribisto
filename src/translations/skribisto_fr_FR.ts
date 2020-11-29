@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="fr_FR">
+<TS version="2.0" language="fr_FR">
 <context>
     <name>CheckableTree</name>
     <message>
@@ -9,7 +9,7 @@
     </message>
     <message>
         <source>label: %1</source>
-        <translation>label: %1</translation>
+        <translation>marque: %1</translation>
     </message>
     <message>
         <source>has children</source>
@@ -65,47 +65,47 @@
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplacer dans la corbeille</translation>
     </message>
     <message>
         <source>partially checked</source>
-        <translation type="unfinished"></translation>
+        <translation>partiellement coché</translation>
     </message>
     <message>
         <source>checked</source>
-        <translation type="unfinished"></translation>
+        <translation>coché</translation>
     </message>
     <message>
         <source>unchecked</source>
-        <translation type="unfinished"></translation>
+        <translation>décoché</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">Couper</translation>
+        <translation>Couper</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation type="unfinished">Ajouter avant</translation>
+        <translation>Ajouter avant</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation type="unfinished">Ajouter après</translation>
-    </message>
-    <message>
-        <source>Add child</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter après</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">Coller</translation>
+        <translation>Coller</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation type="unfinished">Déplacer vers le haut</translation>
+        <translation>Déplacer vers le haut</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation type="unfinished">Déplacer vers le bas</translation>
+        <translation>Déplacer vers le bas</translation>
+    </message>
+    <message>
+        <source>Add a sub-item</source>
+        <translation>Ajouter une sous-entrée</translation>
     </message>
 </context>
 <context>
@@ -231,75 +231,75 @@
     <name>DeletedListView</name>
     <message>
         <source>Trash: %1</source>
-        <translation type="vanished">Corbeille: %1</translation>
+        <translation>Corbeille: %1</translation>
     </message>
     <message>
         <source>Empty the trash</source>
-        <translation type="vanished">Vider la corbeille</translation>
+        <translation>Vider la corbeille</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation type="vanished">Restaurer</translation>
+        <translation>Restaurer</translation>
     </message>
     <message>
         <source>has child</source>
-        <translation type="vanished">a des enfants</translation>
+        <translation>a des enfants</translation>
     </message>
     <message>
         <source>label:</source>
-        <translation type="vanished">libelé:</translation>
+        <translation>marque:</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation type="vanished">élément de navigation</translation>
+        <translation>élément de navigation</translation>
     </message>
     <message>
         <source>This project is a backup</source>
-        <translation type="vanished">Ce projet est une copie de secours</translation>
+        <translation>Ce projet est une copie de secours</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation type="vanished">Entrez un nom</translation>
+        <translation>Entrez un nom</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Ouvrir</translation>
+        <translation>Ouvrir</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation type="vanished">Ouvrir dans un nouvel onglet</translation>
+        <translation>Ouvrir dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="vanished">Renommer</translation>
+        <translation>Renommer</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="vanished">Copier</translation>
+        <translation>Copier</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="vanished">Couper</translation>
+        <translation>Couper</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation type="vanished">Ajouter avant</translation>
+        <translation>Ajouter avant</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation type="vanished">Ajouter après</translation>
+        <translation>Ajouter après</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation type="vanished">Déplacer vers le haut</translation>
+        <translation>Déplacer vers le haut</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation type="vanished">Déplacer vers le bas</translation>
+        <translation>Déplacer vers le bas</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="vanished">Supprimer</translation>
+        <translation>Supprimer</translation>
     </message>
     <message>
         <source>Open document in a window</source>
@@ -314,11 +314,11 @@
     <name>DeletedListViewForm.ui</name>
     <message>
         <source>Restore a document</source>
-        <translation type="vanished">Restaurer un document</translation>
+        <translation>Restaurer un document</translation>
     </message>
     <message>
         <source>Deleted menu</source>
-        <translation type="vanished">Menu des supprimés</translation>
+        <translation>Menu des supprimés</translation>
     </message>
 </context>
 <context>
@@ -329,7 +329,7 @@
     </message>
     <message>
         <source>Full Screen Colors</source>
-        <translation type="vanished">Couleurs du plein écran</translation>
+        <translation>Couleurs du plein écran</translation>
     </message>
     <message>
         <source>Go back</source>
@@ -337,7 +337,7 @@
     </message>
     <message>
         <source>Quick print</source>
-        <translation type="unfinished"></translation>
+        <translation>Impression rapide</translation>
     </message>
 </context>
 <context>
@@ -400,11 +400,11 @@
     </message>
     <message>
         <source>Background :</source>
-        <translation type="vanished">Arrière-plan :</translation>
+        <translation>Arrière-plan :</translation>
     </message>
     <message>
         <source>Paper :</source>
-        <translation type="vanished">Papier :</translation>
+        <translation>Papier :</translation>
     </message>
     <message>
         <source></source>
@@ -416,26 +416,26 @@
     </message>
     <message>
         <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>Centrer verticallement le curseur de texte</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation type="unfinished"></translation>
+        <translation>Partager</translation>
     </message>
     <message>
         <source>Quick print</source>
-        <translation type="unfinished"></translation>
+        <translation>Impression rapide</translation>
     </message>
 </context>
 <context>
     <name>Exporter</name>
     <message>
         <source>Select none</source>
-        <translation type="unfinished">Ne rien sélectionner</translation>
+        <translation>Ne rien sélectionner</translation>
     </message>
     <message>
         <source>Select all</source>
-        <translation type="unfinished">Tout sélectionner</translation>
+        <translation>Tout sélectionner</translation>
     </message>
     <message>
         <source>.odt</source>
@@ -455,168 +455,168 @@
     </message>
     <message>
         <source>Export &quot;%1&quot; project as ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporter le projet &quot;%1&quot; dans ...</translation>
     </message>
     <message>
         <source>.pdf</source>
-        <translation type="unfinished"></translation>
+        <translation>.pdf</translation>
     </message>
     <message>
         <source>Levels with titles: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Niveaux avec les titres : %1</translation>
     </message>
 </context>
 <context>
     <name>ExporterForm.ui</name>
     <message>
         <source>Go back</source>
-        <translation type="unfinished">Revenir</translation>
+        <translation>Revenir</translation>
     </message>
     <message>
         <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h2&gt;Exporter&lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Sheets</source>
-        <translation type="unfinished"></translation>
+        <translation>Feuilles</translation>
     </message>
     <message>
         <source>Notes</source>
-        <translation type="unfinished">Notes</translation>
+        <translation>Notes</translation>
     </message>
     <message>
         <source>Destination file</source>
-        <translation type="unfinished"></translation>
+        <translation>Fichier de destination</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished">Sélectionner</translation>
+        <translation>Sélectionner</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished">Exporter</translation>
+        <translation>Exporter</translation>
     </message>
     <message>
         <source>Sheets : </source>
-        <translation type="unfinished"></translation>
+        <translation>Feuilles :</translation>
     </message>
     <message>
         <source>Notes : </source>
-        <translation type="unfinished"></translation>
+        <translation>Notes :</translation>
     </message>
     <message>
         <source>OpenDocument</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenDocument</translation>
     </message>
     <message>
         <source>Text</source>
-        <translation type="unfinished">Texte</translation>
+        <translation>Texte</translation>
     </message>
     <message>
         <source>Markdown</source>
-        <translation type="unfinished"></translation>
+        <translation>Markdown</translation>
     </message>
     <message>
         <source>Include outline in each sheet</source>
-        <translation type="unfinished"></translation>
+        <translation>Inclure le plan dans chaque feuille</translation>
     </message>
     <message>
         <source>Numbered</source>
-        <translation type="unfinished"></translation>
+        <translation>Numéroté</translation>
     </message>
     <message>
         <source>Add tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter les étiquettes</translation>
     </message>
     <message>
         <source>HTML</source>
-        <translation type="unfinished"></translation>
+        <translation>HTML</translation>
     </message>
     <message>
         <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h2&gt;Imprimer&lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Aperçu</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Imprimer</translation>
+        <translation>Imprimer</translation>
     </message>
     <message>
         <source>Text size :</source>
-        <translation type="unfinished">Taille du texte :</translation>
+        <translation>Taille du texte :</translation>
     </message>
     <message>
         <source>Text indent :</source>
-        <translation type="unfinished">Indentation du texte :</translation>
+        <translation>Indentation du texte :</translation>
     </message>
     <message>
         <source>Top margin :</source>
-        <translation type="unfinished">Marge supérieure du texte :</translation>
+        <translation>Marge supérieure du texte :</translation>
     </message>
 </context>
 <context>
     <name>FileMenuPage</name>
     <message>
         <source>Opened</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvert</translation>
     </message>
     <message>
         <source>last modified %1</source>
-        <translation type="unfinished"></translation>
+        <translation>modififé le %1</translation>
     </message>
     <message>
         <source>recent projects list item</source>
-        <translation type="unfinished"></translation>
+        <translation>Elément de liste de projets récents</translation>
     </message>
     <message>
         <source>Close project</source>
-        <translation type="unfinished">Fermer le projet</translation>
+        <translation>Fermer le projet</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished">Oublier</translation>
+        <translation>Oublier</translation>
     </message>
 </context>
 <context>
     <name>FileMenuPageForm.ui</name>
     <message>
         <source>Projects</source>
-        <translation type="unfinished">Projets</translation>
+        <translation>Projets</translation>
     </message>
     <message>
         <source>New project</source>
-        <translation type="unfinished">Nouveau projet</translation>
+        <translation>Nouveau projet</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished">Ouvrir un projet</translation>
+        <translation>Ouvrir un projet</translation>
     </message>
     <message>
         <source>Recent projects</source>
-        <translation type="unfinished">Projets récents</translation>
+        <translation>Projets récents</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">Enregistrer</translation>
+        <translation>Enregistrer</translation>
     </message>
     <message>
         <source>Save as</source>
-        <translation type="unfinished">Enregistrer sous</translation>
+        <translation>Enregistrer sous</translation>
     </message>
     <message>
         <source>Save all</source>
-        <translation type="unfinished">Tout enregistrer</translation>
+        <translation>Tout enregistrer</translation>
     </message>
     <message>
         <source>Save a copy</source>
-        <translation type="unfinished">Enregistrer une copie</translation>
+        <translation>Enregistrer une copie</translation>
     </message>
     <message>
         <source>Back up</source>
-        <translation type="unfinished">Faire une copie de secours</translation>
+        <translation>Faire une copie de secours</translation>
     </message>
     <message>
         <source></source>
@@ -624,19 +624,19 @@
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Imprimer</translation>
+        <translation>Imprimer</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished">Importer</translation>
+        <translation>Importer</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished">Exporter</translation>
+        <translation>Exporter</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation type="unfinished"></translation>
+        <translation>Partager</translation>
     </message>
 </context>
 <context>
@@ -647,34 +647,34 @@
     </message>
     <message>
         <source>FAQ</source>
-        <translation type="unfinished"></translation>
+        <translation>FAQ</translation>
     </message>
     <message>
         <source>About</source>
-        <translation type="unfinished"></translation>
+        <translation>A propos</translation>
     </message>
     <message>
         <source>About Qt</source>
-        <translation type="unfinished"></translation>
+        <translation>A propos de Qt</translation>
     </message>
     <message>
         <source>Contents</source>
-        <translation type="unfinished"></translation>
+        <translation>Contenu</translation>
     </message>
 </context>
 <context>
     <name>ImporterForm.ui</name>
     <message>
         <source>Go back</source>
-        <translation type="unfinished">Revenir</translation>
+        <translation>Revenir</translation>
     </message>
     <message>
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h2&gt;Importer&lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Import from Plume Creator project</source>
-        <translation type="unfinished"></translation>
+        <translation>Importer depuis un projet Plume Creator</translation>
     </message>
 </context>
 <context>
@@ -693,99 +693,99 @@
     </message>
     <message>
         <source>Show navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la navigation</translation>
     </message>
     <message>
         <source>Show recent notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher les notes récentes</translation>
     </message>
     <message>
         <source>Show recent sheets</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher les feuilles récentes</translation>
     </message>
 </context>
 <context>
     <name>LeftDockForm.ui</name>
     <message>
         <source>Navigation</source>
-        <translation type="vanished">Navigation</translation>
+        <translation>Navigation</translation>
     </message>
     <message>
         <source>Opened documents</source>
-        <translation type="vanished">Documents ouverts</translation>
+        <translation>Documents ouverts</translation>
     </message>
 </context>
 <context>
     <name>ListItemAttributes</name>
     <message>
         <source>Outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Plan</translation>
     </message>
     <message>
         <source>Locked</source>
-        <translation type="unfinished"></translation>
+        <translation>Verrouillé</translation>
     </message>
     <message>
         <source>Favorite</source>
-        <translation type="unfinished"></translation>
+        <translation>Favori</translation>
     </message>
 </context>
 <context>
     <name>NewProject</name>
     <message>
         <source>Part </source>
-        <translation type="unfinished">Partie </translation>
+        <translation>Partie </translation>
     </message>
 </context>
 <context>
     <name>NewProjectForm.ui</name>
     <message>
         <source>Go back</source>
-        <translation type="unfinished">Revenir</translation>
+        <translation>Revenir</translation>
     </message>
     <message>
         <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
-        <translation type="unfinished">&lt;h2&gt;Nouveau projet&lt;/h2&gt;</translation>
+        <translation>&lt;h2&gt;Nouveau projet&lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Project title :</source>
-        <translation type="unfinished">Titre du projet :</translation>
+        <translation>Titre du projet :</translation>
     </message>
     <message>
         <source>project title</source>
-        <translation type="unfinished">titre du projet</translation>
+        <translation>titre du projet</translation>
     </message>
     <message>
         <source>Project file :</source>
-        <translation type="unfinished">Fichier du projet :</translation>
+        <translation>Fichier du projet :</translation>
     </message>
     <message>
         <source>project file</source>
-        <translation type="unfinished">fichier du projet</translation>
+        <translation>fichier du projet</translation>
     </message>
     <message>
         <source>Project path :</source>
-        <translation type="unfinished">Chemin du projet :</translation>
+        <translation>Chemin du projet :</translation>
     </message>
     <message>
         <source>project path</source>
-        <translation type="unfinished">chemin du projet</translation>
+        <translation>chemin du projet</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished">Sélectionner</translation>
+        <translation>Sélectionner</translation>
     </message>
     <message>
         <source>This project will be created as : </source>
-        <translation type="unfinished">Ce projet sera créé en tant que : </translation>
+        <translation>Ce projet sera créé en tant que : </translation>
     </message>
     <message>
         <source>Number of parts :</source>
-        <translation type="unfinished">Nombre de parties :</translation>
+        <translation>Nombre de parties :</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished">Créer</translation>
+        <translation>Créer</translation>
     </message>
 </context>
 <context>
@@ -820,7 +820,7 @@
     </message>
     <message>
         <source>Information</source>
-        <translation type="vanished">Information</translation>
+        <translation>Information</translation>
     </message>
     <message>
         <source>Do you want to move the note &quot;%1&quot; to the trash ?</source>
@@ -832,30 +832,30 @@
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Ajouter</translation>
+        <translation>Ajouter</translation>
     </message>
     <message>
         <source>Show outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher le plan</translation>
     </message>
     <message>
         <source>Open current note in a new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvrir la note actuelle dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Note name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom de la note</translation>
     </message>
     <message>
         <source>Outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Plan</translation>
     </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
     <message>
         <source>Show synopsis</source>
-        <translation type="vanished">Montrer le synopsis</translation>
+        <translation>Montrer le synopsis</translation>
     </message>
     <message>
         <source>Open note</source>
@@ -867,133 +867,133 @@
     </message>
     <message>
         <source>Show outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher le plan</translation>
     </message>
     <message>
         <source>Type your note here...</source>
-        <translation type="unfinished"></translation>
+        <translation>Taper votre note ici...</translation>
     </message>
 </context>
 <context>
     <name>NoteSearchItemForm.ui</name>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Chercher</translation>
     </message>
     <message>
         <source>Show tags list</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la liste d&apos;étiquettes</translation>
     </message>
     <message>
         <source>Deselect tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Déselectionner les étiquettes</translation>
     </message>
     <message>
         <source>Note search result list</source>
-        <translation type="unfinished"></translation>
+        <translation>List de résultats de la recherche de note</translation>
     </message>
     <message>
         <source>Note overview list</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste de vue d&apos;ensemble des notes</translation>
     </message>
 </context>
 <context>
     <name>PlumeImporterForm.ui</name>
     <message>
         <source>Go back</source>
-        <translation type="unfinished">Revenir</translation>
+        <translation>Revenir</translation>
     </message>
     <message>
         <source>&lt;h2&gt;Import Plume Creator project&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h2&gt;Importer un projet de Plume Creator&lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Plume project file (*.plume) :</source>
-        <translation type="unfinished"></translation>
+        <translation>Fichier de projet de Plume (*.plume) :</translation>
     </message>
     <message>
         <source>plume project file</source>
-        <translation type="unfinished"></translation>
+        <translation>fichier de projet de Plume</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished">Sélectionner</translation>
+        <translation>Sélectionner</translation>
     </message>
     <message>
         <source>This project will be imported as : </source>
-        <translation type="unfinished"></translation>
+        <translation>Ce projet sera importé en tant que : </translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished">Importer</translation>
+        <translation>Importer</translation>
     </message>
 </context>
 <context>
     <name>PrintForm.ui</name>
     <message>
         <source>Go back</source>
-        <translation type="unfinished">Revenir</translation>
+        <translation>Revenir</translation>
     </message>
     <message>
         <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h2&gt;Imprimer&lt;/h2&gt;</translation>
     </message>
 </context>
 <context>
     <name>ProjectListItemForm.ui</name>
     <message>
         <source>Text</source>
-        <translation type="vanished">Texte</translation>
+        <translation>Texte</translation>
     </message>
 </context>
 <context>
     <name>ProjectPage</name>
     <message>
         <source>Close project</source>
-        <translation type="vanished">Fermer le projet</translation>
+        <translation>Fermer le projet</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="vanished">Oublier</translation>
+        <translation>Oublier</translation>
     </message>
     <message>
         <source>Part </source>
-        <translation type="vanished">Partie </translation>
+        <translation>Partie </translation>
     </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
     <message>
         <source>Projects</source>
-        <translation type="vanished">Projets</translation>
+        <translation>Projets</translation>
     </message>
     <message>
         <source>New project</source>
-        <translation type="vanished">Nouveau projet</translation>
+        <translation>Nouveau projet</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="vanished">Ouvrir un projet</translation>
+        <translation>Ouvrir un projet</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="vanished">Enregistrer</translation>
+        <translation>Enregistrer</translation>
     </message>
     <message>
         <source>Save as</source>
-        <translation type="vanished">Enregistrer sous</translation>
+        <translation>Enregistrer sous</translation>
     </message>
     <message>
         <source>Save a copy</source>
-        <translation type="vanished">Enregistrer une copie</translation>
+        <translation>Enregistrer une copie</translation>
     </message>
     <message>
         <source>Back up</source>
-        <translation type="vanished">Faire une copie de secours</translation>
+        <translation>Faire une copie de secours</translation>
     </message>
     <message>
         <source>Save all</source>
-        <translation type="vanished">Tout enregistrer</translation>
+        <translation>Tout enregistrer</translation>
     </message>
     <message>
         <source></source>
@@ -1001,75 +1001,75 @@
     </message>
     <message>
         <source>Create an empty project at start</source>
-        <translation type="vanished">Créer un projet vide au démarrage</translation>
+        <translation>Créer un projet vide au démarrage</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="vanished">Imprimer</translation>
+        <translation>Imprimer</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="vanished">Importer</translation>
+        <translation>Importer</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="vanished">Exporter</translation>
+        <translation>Exporter</translation>
     </message>
     <message>
         <source>Go back</source>
-        <translation type="vanished">Revenir</translation>
+        <translation>Revenir</translation>
     </message>
     <message>
         <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
-        <translation type="vanished">&lt;h2&gt;Nouveau projet&lt;/h2&gt;</translation>
+        <translation>&lt;h2&gt;Nouveau projet&lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Project title :</source>
-        <translation type="vanished">Titre du projet :</translation>
+        <translation>Titre du projet :</translation>
     </message>
     <message>
         <source>project title</source>
-        <translation type="vanished">titre du projet</translation>
+        <translation>titre du projet</translation>
     </message>
     <message>
         <source>Project file :</source>
-        <translation type="vanished">Fichier du projet :</translation>
+        <translation>Fichier du projet :</translation>
     </message>
     <message>
         <source>project file</source>
-        <translation type="vanished">fichier du projet</translation>
+        <translation>fichier du projet</translation>
     </message>
     <message>
         <source>Project path :</source>
-        <translation type="vanished">Chemin du projet :</translation>
+        <translation>Chemin du projet :</translation>
     </message>
     <message>
         <source>project path</source>
-        <translation type="vanished">chemin du projet</translation>
+        <translation>chemin du projet</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="vanished">Sélectionner</translation>
+        <translation>Sélectionner</translation>
     </message>
     <message>
         <source>This project will be created as : </source>
-        <translation type="vanished">Ce projet sera créé en tant que : </translation>
+        <translation>Ce projet sera créé en tant que : </translation>
     </message>
     <message>
         <source>Number of parts :</source>
-        <translation type="vanished">Nombre de parties :</translation>
+        <translation>Nombre de parties :</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="vanished">Créer</translation>
+        <translation>Créer</translation>
     </message>
     <message>
         <source>Behavior</source>
-        <translation type="vanished">Comportement</translation>
+        <translation>Comportement</translation>
     </message>
     <message>
         <source>Recent projects</source>
-        <translation type="vanished">Projets récents</translation>
+        <translation>Projets récents</translation>
     </message>
 </context>
 <context>
@@ -1080,11 +1080,11 @@
     </message>
     <message>
         <source>Character count : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nombre de caractères : %1</translation>
     </message>
     <message>
         <source>Word count : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nombre de mots : %1</translation>
     </message>
 </context>
 <context>
@@ -1111,37 +1111,37 @@
     </message>
     <message>
         <source>Tags</source>
-        <translation type="unfinished">Etiquettes</translation>
+        <translation>Etiquettes</translation>
     </message>
     <message>
         <source>Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statistiques</translation>
     </message>
 </context>
 <context>
     <name>ProjectTabForm.ui</name>
     <message>
         <source>Close project</source>
-        <translation type="unfinished">Fermer le projet</translation>
+        <translation>Fermer le projet</translation>
     </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
     <message>
         <source>Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Propriétés</translation>
     </message>
     <message>
         <source>Printable</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimable</translation>
     </message>
     <message>
         <source>Modifiable</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifiable</translation>
     </message>
     <message>
         <source>Favorite</source>
-        <translation type="unfinished"></translation>
+        <translation>Favori</translation>
     </message>
 </context>
 <context>
@@ -1233,7 +1233,7 @@
     </message>
     <message>
         <source>List of trashed items to be restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste d&apos;éléments dans la corbeille à restorer</translation>
     </message>
 </context>
 <context>
@@ -1252,42 +1252,42 @@
     </message>
     <message>
         <source>&amp;Notes</source>
-        <translation type="vanished">&amp;Notes</translation>
+        <translation>&amp;Notes</translation>
     </message>
     <message>
         <source>&amp;Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Vue d&apos;ensemble</translation>
     </message>
     <message>
         <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la boîte à outils d&apos;édition</translation>
     </message>
     <message>
         <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la boîte à outils d&apos;étiquettes</translation>
     </message>
     <message>
         <source>Show overview tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la boîte à outils de la viue d&apos;ensemble</translation>
     </message>
     <message>
         <source>&amp;Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Propriétés</translation>
     </message>
     <message>
         <source>Show properties tool box</source>
-        <translation type="unfinished">Montrer la boîte à outils des propriétés</translation>
+        <translation>Montrer la boîte à outils des propriétés</translation>
     </message>
 </context>
 <context>
     <name>RightDockForm.ui</name>
     <message>
         <source>Edit</source>
-        <translation type="vanished">Editer</translation>
+        <translation>Editer</translation>
     </message>
     <message>
         <source>Tags</source>
-        <translation type="vanished">Etiquettes</translation>
+        <translation>Etiquettes</translation>
     </message>
 </context>
 <context>
@@ -1326,39 +1326,47 @@
     </message>
     <message>
         <source>&amp;About</source>
-        <translation type="vanished">&amp;A propos</translation>
+        <translation>&amp;A propos</translation>
     </message>
     <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
-        <translation type="unfinished"></translation>
+        <translation>Skribisto %1 créé par Cyril Jacquet</translation>
     </message>
     <message>
         <source>Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Thème</translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Affichage</translation>
     </message>
     <message>
         <source>Outlines</source>
-        <translation type="unfinished"></translation>
+        <translation>Plans</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation type="unfinished"></translation>
+        <translation>Ok</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation type="unfinished">Attention</translation>
+        <translation>Attention</translation>
     </message>
     <message>
         <source>Critical</source>
-        <translation type="unfinished"></translation>
+        <translation>Critique</translation>
     </message>
     <message>
         <source></source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation>Vue d&apos;ensemble</translation>
+    </message>
+    <message>
+        <source>Fatal</source>
+        <translation>Fatal</translation>
     </message>
 </context>
 <context>
@@ -1369,7 +1377,7 @@
     </message>
     <message>
         <source>Label</source>
-        <translation type="vanished">Libelé</translation>
+        <translation>Marque</translation>
     </message>
     <message>
         <source>Main menu</source>
@@ -1377,34 +1385,34 @@
     </message>
     <message>
         <source>Button</source>
-        <translation type="vanished">Bouton</translation>
+        <translation>Bouton</translation>
     </message>
     <message>
         <source>Show list of tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la liste d&apos;étiquettes</translation>
     </message>
 </context>
 <context>
     <name>SKRExporter</name>
     <message>
         <source>Notes</source>
-        <translation type="unfinished">Notes</translation>
+        <translation>Notes</translation>
     </message>
     <message>
         <source>Outline:</source>
-        <translation type="unfinished"></translation>
+        <translation>Plan:</translation>
     </message>
     <message>
         <source>Text:</source>
-        <translation type="unfinished"></translation>
+        <translation>Texte:</translation>
     </message>
     <message>
         <source>Outlines</source>
-        <translation type="unfinished"></translation>
+        <translation>Plans</translation>
     </message>
     <message>
         <source>Tags:</source>
-        <translation type="unfinished"></translation>
+        <translation>Etiquettes:</translation>
     </message>
 </context>
 <context>
@@ -1430,7 +1438,7 @@
     </message>
     <message>
         <source>Disallow swipe gesture between tabs</source>
-        <translation type="vanished">Interdire le geste de balayage entre les onglets</translation>
+        <translation>Interdire le geste de balayage entre les onglets</translation>
     </message>
     <message>
         <source>Show menu bar</source>
@@ -1518,62 +1526,62 @@
     </message>
     <message>
         <source>Manage themes</source>
-        <translation type="unfinished"></translation>
+        <translation>Gérer les thèmes</translation>
     </message>
     <message>
         <source>Behavior</source>
-        <translation type="unfinished">Comportement</translation>
+        <translation>Comportement</translation>
     </message>
     <message>
         <source>Create an empty project at start</source>
-        <translation type="unfinished">Créer un projet vide au démarrage</translation>
+        <translation>Créer un projet vide au démarrage</translation>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>Centrer verticallement le curseur de texte</translation>
     </message>
     <message>
         <source>Minimalist menu tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Onglets de menu minimalistes</translation>
     </message>
     <message>
         <source>Quick print</source>
-        <translation type="unfinished"></translation>
+        <translation>Impression rapide</translation>
     </message>
     <message>
         <source>Include outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Inclure le plan</translation>
     </message>
     <message>
         <source>Add tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajouter les étiquettes</translation>
     </message>
     <message>
         <source>Text size :</source>
-        <translation type="unfinished">Taille du texte :</translation>
+        <translation>Taille du texte :</translation>
     </message>
     <message>
         <source>Text indent :</source>
-        <translation type="unfinished">Indentation du texte :</translation>
+        <translation>Indentation du texte :</translation>
     </message>
     <message>
         <source>Top margin :</source>
-        <translation type="unfinished">Marge supérieure du texte :</translation>
+        <translation>Marge supérieure du texte :</translation>
     </message>
 </context>
 <context>
     <name>SheetOverviewToolForm.ui</name>
     <message>
         <source>Display</source>
-        <translation type="unfinished">Afficher</translation>
+        <translation>Affichage</translation>
     </message>
     <message>
         <source>Display mode :</source>
-        <translation type="unfinished"></translation>
+        <translation>Mode d&apos;affichage :</translation>
     </message>
     <message>
         <source>Tree indentation :</source>
-        <translation type="unfinished"></translation>
+        <translation>Indentation de l&apos;arbre :</translation>
     </message>
     <message>
         <source>Italic</source>
@@ -1593,157 +1601,157 @@
     </message>
     <message>
         <source>Show outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher le plan</translation>
     </message>
     <message>
         <source>Show notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher les notes</translation>
     </message>
     <message>
         <source>Show tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher les étiquettes</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished">Projet</translation>
+        <translation>Projet</translation>
     </message>
     <message>
         <source>Show character count</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher le nombre de caractères</translation>
     </message>
     <message>
         <source>Show word count</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher le nombre de mots</translation>
     </message>
 </context>
 <context>
     <name>SheetOverviewTree</name>
     <message>
         <source>Level %1</source>
-        <translation type="unfinished">Niveau %1</translation>
+        <translation>Niveau %1</translation>
     </message>
     <message>
         <source>label: %1</source>
-        <translation type="unfinished">label: %1</translation>
+        <translation>marque: %1</translation>
     </message>
     <message>
         <source>has children</source>
-        <translation type="unfinished">a des enfants</translation>
+        <translation>a des enfants</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation type="unfinished">élément de navigation</translation>
+        <translation>élément de navigation</translation>
     </message>
     <message>
         <source>Open document</source>
-        <translation type="unfinished">Ouvrir document</translation>
+        <translation>Ouvrir document</translation>
     </message>
     <message>
         <source>Open document in a new tab</source>
-        <translation type="unfinished">Ouvrir un document dans un nouvel onglet</translation>
+        <translation>Ouvrir un document dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Open document in a window</source>
-        <translation type="unfinished">Ouvrir un document dans une nouvelle fenêtre</translation>
+        <translation>Ouvrir un document dans une nouvelle fenêtre</translation>
     </message>
     <message>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation>Entrer une marque</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation type="unfinished">Entrez un nom</translation>
+        <translation>Entrez un nom</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">Ouvrir</translation>
+        <translation>Ouvrir</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation type="unfinished">Ouvrir dans un nouvel onglet</translation>
+        <translation>Ouvrir dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Open in new window</source>
-        <translation type="unfinished">Ouvrir dans une nouvelle fenêtre</translation>
+        <translation>Ouvrir dans une nouvelle fenêtre</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished">Renommer</translation>
+        <translation>Renommer</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation>Marquer</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">Couper</translation>
+        <translation>Couper</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Copier</translation>
+        <translation>Copier</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation type="unfinished">Ajouter avant</translation>
+        <translation>Ajouter avant</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation type="unfinished">Ajouter après</translation>
+        <translation>Ajouter après</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation type="unfinished">Déplacer vers le haut</translation>
+        <translation>Déplacer vers le haut</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation type="unfinished">Déplacer vers le bas</translation>
+        <translation>Déplacer vers le bas</translation>
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Déplacer dans la corbeille</translation>
     </message>
     <message>
         <source>Outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Plan</translation>
     </message>
     <message>
         <source>Unset focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Cesser la concentration</translation>
     </message>
     <message>
         <source>Set focus</source>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;y concentrer</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">Coller</translation>
-    </message>
-    <message>
-        <source>Add child</source>
-        <translation type="unfinished"></translation>
+        <translation>Coller</translation>
     </message>
     <message>
         <source>c: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>c: %1</translation>
     </message>
     <message>
         <source>all c: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>tous c: %1</translation>
     </message>
     <message>
         <source>w: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>m: %1</translation>
     </message>
     <message>
         <source>all w: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>tous m: %1</translation>
+    </message>
+    <message>
+        <source>Add a sub-item</source>
+        <translation>Ajouter une sous-entrée</translation>
     </message>
 </context>
 <context>
     <name>SkrTabButtonForm.ui</name>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermer</translation>
     </message>
 </context>
 <context>
@@ -1821,32 +1829,33 @@
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished">Renommer</translation>
+        <translation>Renommer</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Ajouter</translation>
+        <translation>Ajouter</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Retirer</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation type="unfinished">Attention</translation>
+        <translation>Attention</translation>
     </message>
     <message>
         <source>Tag name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom de l&apos;étiquette</translation>
     </message>
     <message>
         <source>Do you want to delete the tag &quot;%1&quot; ?
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Voulez-vous supprimer l&apos;étiquette &quot;%1&quot; ?
+%2</translation>
     </message>
     <message>
         <source>Note name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom de la note</translation>
     </message>
 </context>
 <context>
@@ -1857,80 +1866,80 @@
     </message>
     <message>
         <source>Tags</source>
-        <translation type="unfinished">Etiquettes</translation>
+        <translation>Etiquettes</translation>
     </message>
 </context>
 <context>
     <name>TextContextMenuForm.ui</name>
     <message>
         <source>Edit</source>
-        <translation type="unfinished">Editer</translation>
+        <translation>Editer</translation>
     </message>
     <message>
         <source>Suggestions</source>
-        <translation type="unfinished"></translation>
+        <translation>Suggestions</translation>
     </message>
 </context>
 <context>
     <name>ThemePage</name>
     <message>
         <source>Edit theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer le thème</translation>
     </message>
     <message>
         <source>Edit color</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer la couleur</translation>
     </message>
     <message>
         <source>Distraction free</source>
-        <translation type="unfinished"></translation>
+        <translation>Sans distraction</translation>
     </message>
     <message>
         <source>Normal</source>
-        <translation type="unfinished"></translation>
+        <translation>Normal</translation>
     </message>
 </context>
 <context>
     <name>ThemePageForm.ui</name>
     <message>
         <source>Themes</source>
-        <translation type="unfinished"></translation>
+        <translation>Thèmes</translation>
     </message>
     <message>
         <source>Example</source>
-        <translation type="unfinished"></translation>
+        <translation>Exemple</translation>
     </message>
     <message>
         <source>list item</source>
-        <translation type="unfinished"></translation>
+        <translation>élement de liste</translation>
     </message>
     <message>
         <source>button</source>
-        <translation type="unfinished"></translation>
+        <translation>bouton</translation>
     </message>
     <message>
         <source>Switch</source>
-        <translation type="unfinished"></translation>
+        <translation>Interrupteur</translation>
     </message>
     <message>
         <source>Outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Plan</translation>
     </message>
     <message>
         <source>Primary text</source>
-        <translation type="unfinished"></translation>
+        <translation>Texte principal</translation>
     </message>
     <message>
         <source>Secondary text</source>
-        <translation type="unfinished"></translation>
+        <translation>Texte secondaire</translation>
     </message>
     <message>
         <source>Color properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Propriétés de la couleur</translation>
     </message>
     <message>
         <source>Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Couleurs</translation>
     </message>
 </context>
 <context>
@@ -1949,51 +1958,51 @@
     </message>
     <message>
         <source>has child</source>
-        <translation type="vanished">a des enfants</translation>
+        <translation>a des enfants</translation>
     </message>
     <message>
         <source>label:</source>
-        <translation type="vanished">libelé:</translation>
+        <translation>marque:</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation type="vanished">élément de navigation</translation>
+        <translation>élément de navigation</translation>
     </message>
     <message>
         <source>Open document in a window</source>
-        <translation type="vanished">Ouvrir un document dans une nouvelle fenêtre</translation>
+        <translation>Ouvrir un document dans une nouvelle fenêtre</translation>
     </message>
     <message>
         <source>This project is a backup</source>
-        <translation type="vanished">Ce projet est une copie de secours</translation>
+        <translation>Ce projet est une copie de secours</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation type="vanished">Entrez un nom</translation>
+        <translation>Entrez un nom</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="vanished">Ouvrir</translation>
+        <translation>Ouvrir</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation type="vanished">Ouvrir dans un nouvel onglet</translation>
+        <translation>Ouvrir dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Open in new window</source>
-        <translation type="vanished">Ouvrir dans une nouvelle fenêtre</translation>
+        <translation>Ouvrir dans une nouvelle fenêtre</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="vanished">Renommer</translation>
+        <translation>Renommer</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="vanished">Copier</translation>
+        <translation>Copier</translation>
     </message>
     <message>
         <source>Delete definitively</source>
-        <translation type="vanished">Supprimer définitivement</translation>
+        <translation>Supprimer définitivement</translation>
     </message>
     <message>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
@@ -2003,11 +2012,11 @@
     </message>
     <message>
         <source>Enter label</source>
-        <translation type="vanished">Entrer un label</translation>
+        <translation>Entrer une marque</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation type="vanished">Définir le label</translation>
+        <translation>Définir le label</translation>
     </message>
 </context>
 <context>
@@ -2053,7 +2062,7 @@
     </message>
     <message>
         <source>label:</source>
-        <translation>libelé:</translation>
+        <translation>marque:</translation>
     </message>
     <message>
         <source>navigation item</source>
@@ -2117,7 +2126,7 @@
     </message>
     <message>
         <source>Delete</source>
-        <translation type="vanished">Supprimer</translation>
+        <translation>Supprimer</translation>
     </message>
     <message>
         <source>Open document in a new tab</source>
@@ -2133,27 +2142,23 @@
     </message>
     <message>
         <source>Enter label</source>
-        <translation>Entrer un libelé</translation>
+        <translation>Marquer</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation>Définir le libelé</translation>
+        <translation>Marquer</translation>
     </message>
     <message>
         <source>Projects</source>
-        <translation type="unfinished">Projets</translation>
+        <translation>Projets</translation>
     </message>
     <message>
-        <source>Add a child</source>
-        <translation type="unfinished"></translation>
+        <source>Add a sub-item</source>
+        <translation>Ajouter une sous-entrée</translation>
     </message>
     <message>
-        <source>See children</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add child</source>
-        <translation type="unfinished"></translation>
+        <source>See sub-items</source>
+        <translation>Afficher les sous-entrées</translation>
     </message>
 </context>
 <context>
@@ -2206,51 +2211,51 @@
     </message>
     <message>
         <source>Show navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la navigation</translation>
     </message>
     <message>
         <source>Show recent sheets</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher les notes récentes</translation>
     </message>
 </context>
 <context>
     <name>WriteLeftDockForm.ui</name>
     <message>
         <source>Navigation</source>
-        <translation type="vanished">Navigation</translation>
+        <translation>Navigation</translation>
     </message>
     <message>
         <source>Opened documents</source>
-        <translation type="vanished">Documents ouverts</translation>
+        <translation>Documents ouverts</translation>
     </message>
 </context>
 <context>
     <name>WriteOverviewPage</name>
     <message>
         <source>The focus is currently on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>La concentration est actuellement sur %1</translation>
     </message>
 </context>
 <context>
     <name>WriteOverviewPageForm.ui</name>
     <message>
         <source>Unfocus</source>
-        <translation type="unfinished"></translation>
+        <translation>Cesser la concentration</translation>
     </message>
 </context>
 <context>
     <name>WritePage</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="vanished">&amp;Aide</translation>
+        <translation>&amp;Aide</translation>
     </message>
     <message>
         <source>&amp;Navigation dock</source>
-        <translation type="vanished">dock de &amp;navigation</translation>
+        <translation>dock de &amp;navigation</translation>
     </message>
     <message>
         <source>&amp;Tools dock</source>
-        <translation type="vanished">Dock d&apos;&amp;outils</translation>
+        <translation>Dock d&apos;&amp;outils</translation>
     </message>
 </context>
 <context>
@@ -2273,38 +2278,38 @@
     </message>
     <message>
         <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la boîte à outils d&apos;édition</translation>
     </message>
     <message>
         <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la boîte à outils d&apos;étiquettes</translation>
     </message>
     <message>
         <source>Show notes tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher la boîte à outils des notes</translation>
     </message>
     <message>
         <source>Show properties tool box</source>
-        <translation type="unfinished">Montrer la boîte à outils des propriétés</translation>
+        <translation>Montrer la boîte à outils des propriétés</translation>
     </message>
     <message>
         <source>&amp;Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Propriétés</translation>
     </message>
 </context>
 <context>
     <name>WriteRightDockForm.ui</name>
     <message>
         <source>Edit</source>
-        <translation type="vanished">Editer</translation>
+        <translation>Editer</translation>
     </message>
     <message>
         <source>Tags</source>
-        <translation type="vanished">Etiquettes</translation>
+        <translation>Etiquettes</translation>
     </message>
     <message>
         <source>Notes</source>
-        <translation type="vanished">Notes</translation>
+        <translation>Notes</translation>
     </message>
 </context>
 <context>
@@ -2339,7 +2344,7 @@
     </message>
     <message>
         <source>Save as...</source>
-        <translation type="vanished">Enregistrer sous...</translation>
+        <translation>Enregistrer sous...</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as ...</source>
@@ -2419,15 +2424,15 @@
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="vanished">&amp;Fichier</translation>
+        <translation>&amp;Fichier</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation type="vanished">&amp;Editer</translation>
+        <translation>&amp;Editer</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation type="vanished">&amp;Aide</translation>
+        <translation>&amp;Aide</translation>
     </message>
     <message>
         <source>&amp;About</source>
@@ -2439,27 +2444,27 @@
     </message>
     <message>
         <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>Centrer verticallement le curseur de texte</translation>
     </message>
     <message>
         <source>Save As...</source>
-        <translation type="unfinished"></translation>
+        <translation>Enregistrer sous...</translation>
     </message>
     <message>
         <source>&amp;FAQ</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;FAQ</translation>
     </message>
     <message>
         <source>About &amp;Qt</source>
-        <translation type="unfinished"></translation>
+        <translation>A propos de &amp;Qt</translation>
     </message>
     <message>
         <source>&amp;Contents</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Contenu</translation>
     </message>
     <message>
         <source>Themes</source>
-        <translation type="unfinished"></translation>
+        <translation>Thèmes</translation>
     </message>
 </context>
 </TS>
