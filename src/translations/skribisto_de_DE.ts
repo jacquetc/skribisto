@@ -3279,10 +3279,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
         <translation type="unfinished">Willkommen</translation>
     </message>
     <message>
-        <source>Write</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Notes</source>
         <translation type="obsolete">Notizen</translation>
     </message>
@@ -3341,6 +3337,14 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
     <message>
         <source></source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fatal</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4707,10 +4711,6 @@ Bitte öffnen Sie eine Plume-Datei.</translation>
 </context>
 <context>
     <name>TreeListViewForm.ui</name>
-    <message>
-        <source>current folder name</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Add a document</source>
         <translation type="unfinished"></translation>

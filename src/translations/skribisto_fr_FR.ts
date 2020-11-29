@@ -1360,6 +1360,14 @@
         <source></source>
         <translation></translation>
     </message>
+    <message>
+        <source>Overview</source>
+        <translation>Vue d&apos;ensemble</translation>
+    </message>
+    <message>
+        <source>Fatal</source>
+        <translation>Fatal</translation>
+    </message>
 </context>
 <context>
     <name>RootPageForm.ui</name>

@@ -2675,10 +2675,6 @@ not allowed delete a filled book.</source>
         <translation type="unfinished">Bem-vindo</translation>
     </message>
     <message>
-        <source>Write</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Notes</source>
         <translation type="obsolete">Notas</translation>
     </message>
@@ -2737,6 +2733,14 @@ not allowed delete a filled book.</source>
     <message>
         <source></source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fatal</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4002,10 +4006,6 @@ not allowed delete a filled book.</source>
 </context>
 <context>
     <name>TreeListViewForm.ui</name>
-    <message>
-        <source>current folder name</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Add a document</source>
         <translation type="unfinished"></translation>

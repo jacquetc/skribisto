@@ -59,7 +59,7 @@ RootPageForm {
 
         Action {
             id: writeOverviewWindowAction
-            text: qsTr("Write")
+            text: qsTr("Overview")
             icon {
                 source: "qrc:///icons/backup/view-media-playlist.svg"
                 color: SkrTheme.buttonIcon
@@ -296,7 +296,7 @@ RootPageForm {
                                      qsTr("Ok") : (model.errorType === SKRResult.Warning ?
                                                        qsTr("Warning") : (model.errorType === SKRResult.Critical ?
                                                                               qsTr("Critical") : (model.errorType === SKRResult.Fatal ?
-                                                                                                      qsTr("")  :  "Fatal" )))
+                                                                                                      qsTr("Fatal")  :  "Fatal" )))
 
                         }
                         SkrToolButton{
@@ -336,10 +336,10 @@ RootPageForm {
 
                         TextArea {
                             id: textArea
-                            width:  scrollView.width
+                            //width:  scrollView.width
                             readOnly: true
                             color: SkrTheme.buttonForeground
-                            wrapMode: TextEdit.WordWrap
+                            wrapMode: TextEdit.Wrap
                             text: model.content
                             topPadding: 0
                             bottomPadding: 0

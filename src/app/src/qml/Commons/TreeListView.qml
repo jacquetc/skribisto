@@ -1292,6 +1292,7 @@ TreeListViewForm {
             SkrMenu {
                 id: menu
                 y: menuButton.height
+                width: 300
 
                 onOpened: {
                     // necessary to differenciate between all items
