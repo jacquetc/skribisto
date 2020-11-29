@@ -459,6 +459,8 @@ SheetOverviewTreeForm {
                         id: tapHandler
 
                         onSingleTapped: {
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
                             listView.currentIndex = model.index
                             delegateRoot.forceActiveFocus()
                             eventPoint.accepted = true
@@ -467,6 +469,9 @@ SheetOverviewTreeForm {
 
                         onDoubleTapped: {
                             //console.log("double tapped")
+
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
                             listView.currentIndex = model.index
                             openDocumentAction.trigger()
                             eventPoint.accepted = true
@@ -474,6 +479,8 @@ SheetOverviewTreeForm {
 
 
                         onLongPressed: { // needed to activate the grab handler
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
                             if(root.dragDropEnabled){
                                 enabled = false
                             }
@@ -497,6 +504,8 @@ SheetOverviewTreeForm {
                                 return
                             }
 
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
 
                             // necessary to differenciate between all items
                             contextMenuItemIndex = model.index
@@ -510,6 +519,8 @@ SheetOverviewTreeForm {
                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                         acceptedButtons: Qt.MiddleButton
                         onTapped: {
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
                             listView.currentIndex = model.index
                             delegateRoot.forceActiveFocus()
                             openDocumentInNewTabAction.trigger()
@@ -1598,7 +1609,7 @@ SheetOverviewTreeForm {
 
             action: Action {
                 id: focusOnbranchAction
-                text: listView.itemAtIndex(currentIndex).focusOnBranchChecked ? qsTr("Unset focus") : qsTr("Set focus")
+                text: Qt.isQtObject(listView.itemAtIndex(currentIndex)) ? (listView.itemAtIndex(currentIndex).focusOnBranchChecked ? qsTr("Unset focus") : qsTr("Set focus")) : ""
                 //shortcut: "Alt+Return"
                 icon {
                     source: "qrc:///icons/backup/edit-find.svg"
