@@ -96,7 +96,7 @@ WritePageForm {
 
     //---------------------------------------------------------
 
-    function clearNoteWritingZone(){
+    function clearWritingZone(){
         if(paperId !== -2 && projectId !== -2){
             contentSaveTimer.stop()
             saveContent()
@@ -108,12 +108,13 @@ WritePageForm {
             root.paperId = -2
         }
 
+        writingZone.setCursorPosition(0)
         writingZone.clear()
     }
     //---------------------------------------------------------
 
     function runActionsBeforeDestruction() {
-        clearNoteWritingZone()
+        clearWritingZone()
     }
 
     Component.onDestruction: {
@@ -337,7 +338,7 @@ WritePageForm {
     function openDocument(_projectId, _paperId) {
         // save current
         if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
-            clearNoteWritingZone()
+            clearWritingZone()
         }
 
         documentPrivate.contentSaveTimerAllowedToStart = false
@@ -349,18 +350,19 @@ WritePageForm {
         writingZone.projectId = _projectId
 
         //console.log("opening sheet :", _projectId, _paperId)
+        writingZone.setCursorPosition(0)
         writingZone.text = plmData.sheetHub().getContent(_projectId, _paperId)
         title = plmData.sheetHub().getTitle(_projectId, _paperId)
 
         skrTextBridge.subscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
-        // apply format
         writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent
         writingZone.documentHandler.topMarginEverywhere = SkrSettings.writeSettings.textTopMargin
 
         restoreCurrentPaperCursorPositionAndY()
 
-        writingZone.forceActiveFocus()
+        forceActiveFocusTimer.start()
+
         //save :
         skrUserSettings.setProjectSetting(projectId, "writeCurrentPaperId", paperId)
 
@@ -377,6 +379,13 @@ WritePageForm {
         leftDock.setOpenedPaperId(projectId, paperId)
 
         determineModifiable()
+    }
+
+    Timer{
+        id: forceActiveFocusTimer
+        repeat: false
+        interval: 0
+        onTriggered:  writingZone.forceActiveFocus()
     }
 
     function restoreCurrentPaperCursorPositionAndY(){

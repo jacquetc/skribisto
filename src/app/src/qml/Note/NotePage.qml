@@ -97,6 +97,7 @@ NotePageForm {
             root.paperId = -2
         }
 
+        writingZone.setCursorPosition(0)
         writingZone.clear()
     }
 
@@ -337,6 +338,7 @@ NotePageForm {
         writingZone.projectId = _projectId
 
         //console.log("opening note :", _projectId, _paperId)
+        writingZone.setCursorPosition(0)
         writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
         title = plmData.noteHub().getTitle(_projectId, _paperId)
 

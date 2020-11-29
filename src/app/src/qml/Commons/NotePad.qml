@@ -790,6 +790,7 @@ NotePadForm {
             root.currentNoteId = -2
         }
 
+        noteWritingZone.setCursorPosition(0)
         noteWritingZone.clear()
     }
 
@@ -810,6 +811,7 @@ NotePadForm {
         clearNoteWritingZone()
 
 
+        noteWritingZone.setCursorPosition(0)
         noteWritingZone.text = plmData.noteHub().getContent(_projectId, _noteId)
 
         // apply format

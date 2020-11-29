@@ -489,7 +489,7 @@ WritingZoneForm {
     function setCursorPosition(cursorPosition){
         if (documentHandler.maxCursorPosition() >= cursorPosition) {
             textArea.cursorPosition = cursorPosition
-            console.log("textArea.cursorPosition =", cursorPosition)
+            //console.log("textArea.cursorPosition =", cursorPosition)
 
         } else {
             textArea.cursorPosition = documentHandler.maxCursorPosition()
