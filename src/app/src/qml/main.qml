@@ -2,7 +2,6 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
 import QtQml 2.15
-//import QtQuick.Dialogs 1.3
 import Qt.labs.settings 1.1
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.result 1.0
@@ -985,6 +984,7 @@ ApplicationWindow {
     Action {
         id: closeCurrentProjectAction
         text: qsTr("&Close \"%1\" project").arg(activeProjectName)
+        enabled: plmData.projectHub().isThereAnyLoadedProject
         icon {
             source: "qrc:///icons/backup/document-close.svg"
             height: 50
@@ -1181,9 +1181,9 @@ ApplicationWindow {
 
         if(skrEditMenuSignalHub.isSubscribed(activeFocusItem.objectName)){
             //console.log("activeFocusItem", activeFocusItem.objectName)
-            cutAction.enabled = true
-            copyAction.enabled = true
-            pasteAction.enabled = true
+            cutTextAction.enabled = true
+            copyTextAction.enabled = true
+            pasteTextAction.enabled = true
             lastFocusedItem = item
             return
         }
@@ -1195,14 +1195,14 @@ ApplicationWindow {
         }
         if(skrEditMenuSignalHub.isSubscribed(lastFocusedItem.objectName)){
             //console.log("lastFocusedItem", lastFocusedItem.objectName)
-            cutAction.enabled = true
-            copyAction.enabled = true
-            pasteAction.enabled = true
+            cutTextAction.enabled = true
+            copyTextAction.enabled = true
+            pasteTextAction.enabled = true
         }
         else {
-            cutAction.enabled = false
-            copyAction.enabled = false
-            pasteAction.enabled = false
+            cutTextAction.enabled = false
+            copyTextAction.enabled = false
+            pasteTextAction.enabled = false
 
         }
         lastFocusedItem = item
@@ -1211,7 +1211,7 @@ ApplicationWindow {
     }
 
     Action {
-        id: cutAction
+        id: cutTextAction
         text: qsTr("Cut")
         shortcut: StandardKey.Cut
         icon {
@@ -1229,7 +1229,7 @@ ApplicationWindow {
     //    }
 
     Action {
-        id: copyAction
+        id: copyTextAction
         text: qsTr("Copy")
         shortcut: StandardKey.Copy
         icon {
@@ -1247,7 +1247,7 @@ ApplicationWindow {
     //    }
 
     Action {
-        id: pasteAction
+        id: pasteTextAction
         text: qsTr("Paste")
         shortcut: StandardKey.Paste
         icon {

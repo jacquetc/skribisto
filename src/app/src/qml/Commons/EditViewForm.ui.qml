@@ -56,9 +56,7 @@ Item {
 
                         GridLayout {
                             id: gridLayout
-                            columns: gridLayout.width / italicToolButton.width - 1
-                            anchors.left: parent.left
-                            anchors.right: parent.right
+                            columns: groupBox.width / italicToolButton.width - 1
                             columnSpacing: 3
                             rowSpacing: 3
 
@@ -104,9 +102,7 @@ Item {
                             id: gridLayout2
                             columnSpacing: 3
                             rowSpacing: 3
-                            columns: gridLayout2.width / fullScreenToolButton.width - 1
-                            anchors.left: parent.left
-                            anchors.right: parent.right
+                            columns: groupBox2.width / fullScreenToolButton.width - 1
 
                             SkrToolButton {
                                 id: fullScreenToolButton
@@ -153,9 +149,7 @@ Item {
                             id: gridLayout3
                             columnSpacing: 3
                             rowSpacing: 3
-                            columns: gridLayout2.width / quickPrintToolButton.width - 1
-                            anchors.left: parent.left
-                            anchors.right: parent.right
+                            columns: groupBox3.width / quickPrintToolButton.width - 1
 
                             SkrToolButton {
                                 id: quickPrintToolButton

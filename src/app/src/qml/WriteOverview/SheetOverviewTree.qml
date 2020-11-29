@@ -459,6 +459,8 @@ SheetOverviewTreeForm {
                         id: tapHandler
 
                         onSingleTapped: {
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
                             listView.currentIndex = model.index
                             delegateRoot.forceActiveFocus()
                             eventPoint.accepted = true
@@ -467,6 +469,9 @@ SheetOverviewTreeForm {
 
                         onDoubleTapped: {
                             //console.log("double tapped")
+
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
                             listView.currentIndex = model.index
                             openDocumentAction.trigger()
                             eventPoint.accepted = true
@@ -474,6 +479,8 @@ SheetOverviewTreeForm {
 
 
                         onLongPressed: { // needed to activate the grab handler
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
                             if(root.dragDropEnabled){
                                 enabled = false
                             }
@@ -497,6 +504,8 @@ SheetOverviewTreeForm {
                                 return
                             }
 
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
 
                             // necessary to differenciate between all items
                             contextMenuItemIndex = model.index
@@ -510,6 +519,8 @@ SheetOverviewTreeForm {
                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                         acceptedButtons: Qt.MiddleButton
                         onTapped: {
+                            currentPaperId = model.paperId
+                            currentProjectId = model.projectId
                             listView.currentIndex = model.index
                             delegateRoot.forceActiveFocus()
                             openDocumentInNewTabAction.trigger()
@@ -862,6 +873,7 @@ SheetOverviewTreeForm {
 
                                             }
 
+                                            writingZone.setCursorPosition(0)
                                             writingZone.clear()
                                         }
 
@@ -911,6 +923,7 @@ SheetOverviewTreeForm {
                                             projectId = _projectId
 
                                             //console.log("opening note :", _projectId, _paperId)
+                                            writingZone.setCursorPosition(0)
                                             writingZone.text = plmData.noteHub().getContent(_projectId, _paperId)
 
                                             skrTextBridge.subscribeTextDocument(writingZone.pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
@@ -932,9 +945,53 @@ SheetOverviewTreeForm {
                                             }
                                             documentPrivate.contentSaveTimerAllowedToStart = true
 
+                                            determineModifiableTimer.start()
+
 
                                         }
 
+                                        //---------------------------------------------------------
+                                        // modifiable :
+
+                                        property bool isModifiable: true
+
+                                        Connections{
+                                            target: plmData.notePropertyHub()
+                                            function onPropertyChanged(_projectId, propertyId, _paperId, name, value){
+                                                if(_projectId === writingZone.projectId && _paperId === writingZone.paperId){
+
+                                                    if(name === "modifiable"){
+                                                        determineModifiable()
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Timer{
+                                            id: determineModifiableTimer
+                                            repeat: false
+                                            interval: 200
+                                            onTriggered: {
+                                                determineModifiable()
+                                            }
+                                        }
+
+
+
+
+                                        function determineModifiable(){
+
+                                            isModifiable = plmData.notePropertyHub().getProperty(writingZone.projectId, writingZone.paperId, "modifiable", "true") === "true"
+
+                                            if(!isModifiable !== writingZone.textArea.readOnly){
+                                                saveCurrentPaperCursorPositionAndY()
+                                                writingZone.textArea.readOnly = !isModifiable
+                                                restoreCurrentPaperCursorPositionAndY()
+                                            }
+
+                                        }
+
+                                        //--------------------------------------------------------
 
                                         function restoreCurrentPaperCursorPositionAndY(){
 
@@ -951,9 +1008,23 @@ SheetOverviewTreeForm {
                                             }
 
                                             writingZone.setCursorPosition(position)
-                                            writingZone.flickable.contentY = visibleAreaY
+
+                                            writingZoneFlickableContentYTimer.y = visibleAreaY
+                                            writingZoneFlickableContentYTimer.start()
 
                                         }
+
+                                        Timer{
+
+                                            property int y: 0
+                                            id: writingZoneFlickableContentYTimer
+                                            repeat: false
+                                            interval: 50
+                                            onTriggered: {
+                                                writingZone.flickable.contentY = y
+                                            }
+                                        }
+
 
                                         function saveCurrentPaperCursorPositionAndY(){
 
@@ -1173,8 +1244,8 @@ SheetOverviewTreeForm {
 
                                 SKRSearchTagListProxyModel {
                                     id: tagProxyModel
-                                    projectIdFilter: projectId
-                                    sheetIdFilter: paperId
+                                    projectIdFilter: model.projectId
+                                    sheetIdFilter: model.paperId
                                 }
                                 tagListModel: tagProxyModel
                                 itemType: SKR.Sheet
@@ -1598,7 +1669,7 @@ SheetOverviewTreeForm {
 
             action: Action {
                 id: focusOnbranchAction
-                text: listView.itemAtIndex(currentIndex).focusOnBranchChecked ? qsTr("Unset focus") : qsTr("Set focus")
+                text: Qt.isQtObject(listView.itemAtIndex(currentIndex)) ? (listView.itemAtIndex(currentIndex).focusOnBranchChecked ? qsTr("Unset focus") : qsTr("Set focus")) : ""
                 //shortcut: "Alt+Return"
                 icon {
                     source: "qrc:///icons/backup/edit-find.svg"

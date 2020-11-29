@@ -33,7 +33,7 @@ void  SKRClipboard::prepareAndSendLastClipboardText()
         originalTextDoc.setHtml(htmlText);
 
     }
-    if(mimeData->hasText()){
+    else if(mimeData->hasText()){
 
         QString subType = "plain";
         QString plainText = clipboard->text(subType, QClipboard::Clipboard);
@@ -46,8 +46,7 @@ void  SKRClipboard::prepareAndSendLastClipboardText()
     QTextCursor finalCursor(&finalTextDoc);
     for(int i = 0 ; i < originalTextDoc.blockCount() ; i++){
         QTextBlock textBlock = originalTextDoc.findBlockByNumber(i);
-//        qDebug() << "textb :" << textBlock.text();
-//        qDebug() << "pos :" << textBlock.position();
+
         originalCursor.setPosition(textBlock.position());
         originalCursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
 
@@ -63,6 +62,7 @@ void  SKRClipboard::prepareAndSendLastClipboardText()
 
 
     }
+
 
     qDebug() << "pasted from SKRClipboard";
     emit lastClipboardTextPrepared(QTextDocumentFragment(&finalTextDoc));

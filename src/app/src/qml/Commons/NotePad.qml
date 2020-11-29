@@ -32,7 +32,7 @@ NotePadForm {
     Timer{
         id: openSynopsisTimer
         repeat: false
-        interval: 0
+        interval: 50
         onTriggered:  openSynopsisAction.trigger()
 
     }
@@ -118,10 +118,10 @@ NotePadForm {
         id: noteFlowComponent
         Rectangle {
             id: itemBase
-            width: childrenRect.width + 10
+            width: childrenRect.width < noteFlow.width ? childrenRect.width + 10 : noteFlow.width
             height: childrenRect.height + 10
-            color: isOpened && !minimalMode? SkrTheme.accent : "lightskyblue"
-            border.color: isSelected ? SkrTheme.accent : "lightskyblue"
+            color: isOpened && !minimalMode? SkrTheme.accent : SkrTheme.buttonBackground
+            border.color: isSelected ? SkrTheme.accent : SkrTheme.buttonBackground
             border.width: 2
             radius : height / 2
             property int projectId: model.itemProjectId
@@ -538,6 +538,7 @@ NotePadForm {
                     verticalAlignment: Qt.AlignHCenter
                     Layout.minimumWidth: 20
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    Layout.maximumWidth: itemBase.width < noteFlow.width ? -1 : noteFlow.width -10
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -617,7 +618,7 @@ NotePadForm {
             }
         }
     }
-//------------------------------------------------------------------
+    //------------------------------------------------------------------
 
 
     function populateNoteListModel(){
@@ -789,6 +790,7 @@ NotePadForm {
             root.currentNoteId = -2
         }
 
+        noteWritingZone.setCursorPosition(0)
         noteWritingZone.clear()
     }
 
@@ -796,6 +798,50 @@ NotePadForm {
         clearNoteWritingZone()
 
     }
+
+    //---------------------------------------------------------
+    // modifiable :
+
+    property bool isModifiable: true
+
+    Connections{
+        target: plmData.notePropertyHub()
+        function onPropertyChanged(projectId, propertyId, paperId, name, value){
+            if(projectId === root.projectId && paperId === root.currentNoteId){
+
+                if(name === "modifiable"){
+                    determineModifiable()
+                }
+            }
+        }
+    }
+
+    Timer{
+        id: determineModifiableTimer
+        repeat: false
+        interval: 200
+        onTriggered: {
+            determineModifiable()
+        }
+    }
+
+
+
+
+    function determineModifiable(){
+
+        root.isModifiable = plmData.notePropertyHub().getProperty(projectId, root.currentNoteId, "modifiable", "true") === "true"
+
+        if(!root.isModifiable !== noteWritingZone.textArea.readOnly){
+            saveCurrentPaperCursorPositionAndY()
+            noteWritingZone.textArea.readOnly = !root.isModifiable
+            restoreCurrentPaperCursorPositionAndY()
+        }
+
+    }
+
+    //--------------------------------------------------------
+
 
     SKRUserSettings {
         id: skrUserSettings
@@ -809,6 +855,7 @@ NotePadForm {
         clearNoteWritingZone()
 
 
+        noteWritingZone.setCursorPosition(0)
         noteWritingZone.text = plmData.noteHub().getContent(_projectId, _noteId)
 
         // apply format
@@ -847,6 +894,10 @@ NotePadForm {
             saveCurrentPaperCursorPositionAndYTimer.start()
         }
 
+
+        determineModifiableTimer.start()
+
+
     }
 
     function restoreCurrentPaperCursorPositionAndY(){
@@ -861,8 +912,22 @@ NotePadForm {
 
         // set positions :
         noteWritingZone.setCursorPosition(position)
-        noteWritingZone.flickable.contentY = visibleAreaY
 
+        writingZoneFlickableContentYTimer.y = visibleAreaY
+        writingZoneFlickableContentYTimer.start()
+
+    }
+
+
+    Timer{
+
+        property int y: 0
+        id: writingZoneFlickableContentYTimer
+        repeat: false
+        interval: 50
+        onTriggered: {
+            noteWritingZone.flickable.contentY = y
+        }
     }
 
 
@@ -956,6 +1021,7 @@ NotePadForm {
             for(i = 0; i < noteRepeater.count; i++) {
                 noteRepeater.itemAt(i).isOpened = false
             }
+
 
             noteWritingZone.forceActiveFocus();
 

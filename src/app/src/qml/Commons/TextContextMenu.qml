@@ -6,7 +6,7 @@ import ".."
 
 TextContextMenuForm {
     id: root
-    width: stackView.currentItem.implicitWidth
+    width: 200
     height: stackView.currentItem.implicitHeight + tabBar.height
 
 
@@ -191,43 +191,33 @@ TextContextMenuForm {
 
                     SkrToolButton{
                         id: cutToolButton
-                        action: cutAction
+                        action: cutTextAction
                         objectName: "cutItem"
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                         Layout.preferredHeight: priv.buttonHeight
                         Layout.preferredWidth: priv.buttonHeight
                         display: AbstractButton.IconOnly
 
-                        onToggled: {
-                            root.close()
-                        }
                     }
                     SkrToolButton {
                         id: copyToolButton
-                        action: copyAction
+                        action: copyTextAction
                         objectName: "copyItem"
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                         Layout.preferredHeight: priv.buttonHeight
                         Layout.preferredWidth: priv.buttonHeight
                         display: AbstractButton.IconOnly
 
-                        onToggled: {
-                            root.close()
-                        }
                     }
                     SkrToolButton{
                         id: pasteToolButton
-                        action: pasteAction
+                        action: pasteTextAction
                         objectName: "pasteItem"
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                         Layout.preferredHeight: priv.buttonHeight
                         Layout.preferredWidth: priv.buttonHeight
                         display: AbstractButton.IconOnly
 
-                        onToggled: {
-                            root.close()
-                        }
-                    }
 
                 }
                 GridLayout{

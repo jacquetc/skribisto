@@ -10,15 +10,25 @@ Dialog {
 
     anchors.centerIn: Overlay.overlay
 
-    property alias dialogTitle: dialog.title
-    property alias text: text.text
+    property alias text: contentLabel.text
 
 
     modal: true
+    implicitWidth: contentLabel.implicitWidth
 
+    header: SkrLabel {
+        id: headerLabel
+        visible: true
+        text: dialog.title
+        font.bold: true
+        font.pointSize: Qt.application.font.pointSize * 1.2
+        horizontalAlignment: Qt.AlignHCenter
+        verticalAlignment: Qt.AlignVCenter
+    }
 
-    SkrLabel {
-        id: text
+    contentItem: SkrLabel {
+        id: contentLabel
+        wrapMode: Text.WordWrap
     }
     standardButtons: Dialog.Ok
 

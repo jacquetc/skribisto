@@ -34,7 +34,6 @@ TextArea {
         Material.elevation: styleElevation ? 6 : 0
     }
 
-
     property int viewHeight: 200
     signal moveViewYCalled(int height)
 
@@ -132,7 +131,7 @@ TextArea {
     property int viewContentY
 
 
-    onCursorPositionChanged: {
+    onLengthChanged: {
         if(!root.textCenteringEnabled || root.selectedText){
             return
         }
@@ -140,6 +139,7 @@ TextArea {
         var cursorY = root.cursorRectangle.y
 
         var wantedCursorY = root.viewContentY + root.viewHeight / 2
+
 
         moveViewYCalled(-(wantedCursorY - cursorY))
 
@@ -157,7 +157,7 @@ TextArea {
         acceptedButtons: Qt.LeftButton
 
         onGrabChanged: {
-            console.log("tapHandler", transition)
+            //console.log("tapHandler", transition)
 
         }
 
@@ -543,7 +543,7 @@ TextArea {
 
 
 
-//-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
     Item{
         id: rightSelectionHandle
         width: p_selectionHandle.rectHeight

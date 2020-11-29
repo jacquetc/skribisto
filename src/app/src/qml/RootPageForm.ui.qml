@@ -72,6 +72,17 @@ Item {
             }
 
 
+            SkrToolButton {
+                id: showTabListButton
+                text: qsTr("Show list of tabs")
+                flat: true
+                checkable: true
+                focusPolicy: Qt.NoFocus
+                padding: 2
+                display: AbstractButton.IconOnly
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 30
+            }
 
 
             SkrTabBar {
@@ -123,17 +134,6 @@ Item {
             }
 
 
-            SkrToolButton {
-                id: showTabListButton
-                text: qsTr("Show list of tabs")
-                flat: true
-                checkable: true
-                focusPolicy: Qt.NoFocus
-                padding: 2
-                display: AbstractButton.IconOnly
-                Layout.preferredHeight: 30
-                Layout.preferredWidth: 30
-            }
         }
 
         Item {

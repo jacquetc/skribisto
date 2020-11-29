@@ -104,6 +104,7 @@ QVariant SKRUserSettings::getFromProjectSettingHash(int             projectId,
 
     // Serializing default value
     QHash<QString, QVariant> newHash;
+    newHash.insert(hashKey, defaultValue);
     QByteArray array = serializingHash(newHash);
 
     QByteArray hashArray = settings.value(key, array).toByteArray();

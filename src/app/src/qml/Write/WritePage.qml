@@ -96,7 +96,7 @@ WritePageForm {
 
     //---------------------------------------------------------
 
-    function clearNoteWritingZone(){
+    function clearWritingZone(){
         if(paperId !== -2 && projectId !== -2){
             contentSaveTimer.stop()
             saveContent()
@@ -108,12 +108,13 @@ WritePageForm {
             root.paperId = -2
         }
 
+        writingZone.setCursorPosition(0)
         writingZone.clear()
     }
     //---------------------------------------------------------
 
     function runActionsBeforeDestruction() {
-        clearNoteWritingZone()
+        clearWritingZone()
     }
 
     Component.onDestruction: {
@@ -136,13 +137,29 @@ WritePageForm {
             }
         }
     }
+
+    Timer{
+        id: determineModifiableTimer
+        repeat: false
+        interval: 200
+        onTriggered: {
+            determineModifiable()
+        }
+    }
+
+
+
+
     function determineModifiable(){
 
         root.isModifiable = plmData.sheetPropertyHub().getProperty(projectId, paperId, "modifiable", "true") === "true"
 
-        saveCurrentPaperCursorPositionAndY()
-         writingZone.textArea.readOnly = !root.isModifiable
-   restoreCurrentPaperCursorPositionAndY()
+        if(!root.isModifiable !== writingZone.textArea.readOnly){
+            saveCurrentPaperCursorPositionAndY()
+            writingZone.textArea.readOnly = !root.isModifiable
+            restoreCurrentPaperCursorPositionAndY()
+        }
+
     }
 
 
@@ -337,7 +354,7 @@ WritePageForm {
     function openDocument(_projectId, _paperId) {
         // save current
         if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
-            clearNoteWritingZone()
+            clearWritingZone()
         }
 
         documentPrivate.contentSaveTimerAllowedToStart = false
@@ -349,18 +366,19 @@ WritePageForm {
         writingZone.projectId = _projectId
 
         //console.log("opening sheet :", _projectId, _paperId)
+        writingZone.setCursorPosition(0)
         writingZone.text = plmData.sheetHub().getContent(_projectId, _paperId)
         title = plmData.sheetHub().getTitle(_projectId, _paperId)
 
         skrTextBridge.subscribeTextDocument(pageType, projectId, paperId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
-        // apply format
         writingZone.documentHandler.indentEverywhere = SkrSettings.writeSettings.textIndent
         writingZone.documentHandler.topMarginEverywhere = SkrSettings.writeSettings.textTopMargin
 
         restoreCurrentPaperCursorPositionAndY()
 
-        writingZone.forceActiveFocus()
+        forceActiveFocusTimer.start()
+
         //save :
         skrUserSettings.setProjectSetting(projectId, "writeCurrentPaperId", paperId)
 
@@ -376,7 +394,14 @@ WritePageForm {
         leftDock.setCurrentPaperId(projectId, paperId)
         leftDock.setOpenedPaperId(projectId, paperId)
 
-        determineModifiable()
+        determineModifiableTimer.start()
+    }
+
+    Timer{
+        id: forceActiveFocusTimer
+        repeat: false
+        interval: 0
+        onTriggered:  writingZone.forceActiveFocus()
     }
 
     function restoreCurrentPaperCursorPositionAndY(){
@@ -391,8 +416,21 @@ WritePageForm {
 
         // set positions :
         writingZone.setCursorPosition(position)
-        writingZone.flickable.contentY = visibleAreaY
 
+        writingZoneFlickableContentYTimer.y = visibleAreaY
+        writingZoneFlickableContentYTimer.start()
+
+    }
+
+    Timer{
+
+        property int y: 0
+        id: writingZoneFlickableContentYTimer
+        repeat: false
+        interval: 50
+        onTriggered: {
+            writingZone.flickable.contentY = y
+        }
     }
 
 

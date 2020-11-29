@@ -168,7 +168,6 @@ Item {
                             Layout.preferredHeight: 200
 
                             ColumnLayout {
-                                anchors.fill: parent
 
                                 WritingZone {
                                     id: primaryTextAreaSample
