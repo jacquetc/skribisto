@@ -213,7 +213,7 @@ void SKRThemes::applyTheme(const QString& themeName)
     m_distractionFree_menuBackground =  distractionFreeObject.value(
         "menuBackground").toString("").toLower();
     m_distractionFree_listItemBackground =
-        normalObject.value("listItemBackground").toString("").toLower();
+        distractionFreeObject.value("listItemBackground").toString("").toLower();
 
     emit colorsChanged();
 }
