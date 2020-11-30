@@ -106,6 +106,8 @@ QtObject {
         list.push(skrThemes.distractionFree_divider)
         list.push(skrThemes.menuBackground)
         list.push(skrThemes.distractionFree_menuBackground)
+        list.push(skrThemes.listItemBackground)
+        list.push(skrThemes.distractionFree_listItemBackground)
 
         return list
     }
@@ -141,6 +143,8 @@ QtObject {
         list.push("distractionFree_divider")
         list.push("menuBackground")
         list.push("distractionFree_menuBackground")
+        list.push("listItemBackground")
+        list.push("distractionFree_listItemBackground")
 
         return list
     }
@@ -178,6 +182,8 @@ QtObject {
         list.push(qsTr("Divider"))
         list.push(qsTr("Menu background"))
         list.push(qsTr("Menu background"))
+        list.push(qsTr("List item background"))
+        list.push(qsTr("List item background"))
 
         return list
 
@@ -293,6 +299,12 @@ QtObject {
             break;
         case "distractionFree_menuBackground":
             skrThemes.distractionFree_menuBackground = color
+            break;
+        case "listItemBackground":
+            skrThemes.listItemBackground = color
+            break;
+        case "distractionFree_listItemBackground":
+            skrThemes.distractionFree_listItemBackground = color
             break;
         default:
             console.exception(propertyExactName, "doesn't exist")
