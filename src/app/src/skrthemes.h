@@ -57,6 +57,10 @@ class SKRThemes : public QObject {
     Q_PROPERTY(QString menuBackground MEMBER m_menuBackground NOTIFY colorsChanged)
     Q_PROPERTY(
         QString distractionFree_menuBackground MEMBER m_distractionFree_menuBackground NOTIFY colorsChanged)
+    Q_PROPERTY(
+        QString listItemBackground MEMBER m_listItemBackground NOTIFY colorsChanged)
+    Q_PROPERTY(
+        QString distractionFree_listItemBackground MEMBER m_distractionFree_listItemBackground NOTIFY colorsChanged)
 
 public:
 
@@ -105,6 +109,7 @@ private:
     QString m_toolBarBackground, m_distractionFree_toolBarBackground;
     QString m_divider, m_distractionFree_divider;
     QString m_menuBackground, m_distractionFree_menuBackground;
+    QString m_listItemBackground, m_distractionFree_listItemBackground;
 };
 
 #endif // SKRTHEMES_H

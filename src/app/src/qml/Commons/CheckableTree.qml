@@ -322,7 +322,7 @@ ListView {
 
             property bool editBugWorkaround: false
 
-            SkrPane {
+            SkrListItemPane {
                 id: content
                 property int visualIndex: 0
                 property int sourceIndex: -2
@@ -756,19 +756,19 @@ ListView {
                             orientation: Qt.Horizontal
                             GradientStop {
                                 position: 0.00;
-                                color: "#ffffff";
+                                color: "transparent";
                             }
                             GradientStop {
                                 position: 0.30;
-                                color: "#9e9e9e";
+                                color: SkrTheme.divider;
                             }
                             GradientStop {
                                 position: 0.70;
-                                color: "#9e9e9e";
+                                color: SkrTheme.divider;
                             }
                             GradientStop {
                                 position: 1.00;
-                                color: "#ffffff";
+                                color: "transparent";
                             }
                         }
 

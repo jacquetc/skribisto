@@ -180,6 +180,8 @@ void SKRThemes::applyTheme(const QString& themeName)
     m_divider        =  normalObject.value("divider").toString("").toLower();
     m_menuBackground =
         normalObject.value("menuBackground").toString("").toLower();
+    m_listItemBackground =
+        normalObject.value("listItemBackground").toString("").toLower();
 
     QJsonObject distractionFreeObject =
         rootJsonObject.value("distractionFree").toObject();
@@ -210,6 +212,8 @@ void SKRThemes::applyTheme(const QString& themeName)
         distractionFreeObject.value("divider").toString("").toLower();
     m_distractionFree_menuBackground =  distractionFreeObject.value(
         "menuBackground").toString("").toLower();
+    m_distractionFree_listItemBackground =
+        normalObject.value("listItemBackground").toString("").toLower();
 
     emit colorsChanged();
 }
@@ -282,6 +286,7 @@ void SKRThemes::saveTheme(const QString& themeName) {
     normalObject.insert("toolBarBackground",           m_toolBarBackground);
     normalObject.insert("divider",                     m_divider);
     normalObject.insert("menuBackground",              m_menuBackground);
+    normalObject.insert("listItemBackground",              m_listItemBackground);
 
     rootJsonObject.insert("normal", normalObject);
 
@@ -313,6 +318,8 @@ void SKRThemes::saveTheme(const QString& themeName) {
                                  m_distractionFree_divider);
     distractionFreeObject.insert("menuBackground",
                                  m_distractionFree_menuBackground);
+    distractionFreeObject.insert("listItemBackground",
+                                 m_distractionFree_listItemBackground);
 
     rootJsonObject.insert("distractionFree", distractionFreeObject);
 

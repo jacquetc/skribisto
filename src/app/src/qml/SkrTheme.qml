@@ -22,7 +22,7 @@ QtObject {
     readonly property var toolBarBackground:  Globals.fullScreen ? skrThemes.distractionFree_toolBarBackground : skrThemes.toolBarBackground
     readonly property var divider:  Globals.fullScreen ? skrThemes.distractionFree_divider : skrThemes.divider
     readonly property var menuBackground:  Globals.fullScreen ? skrThemes.distractionFree_menuBackground : skrThemes.menuBackground
-
+    readonly  property var listItemBackground:  Globals.fullScreen ? skrThemes.distractionFree_listItemBackground : skrThemes.listItemBackground
     property var skrThemes: SKRThemes {
         id: skrThemes
     }

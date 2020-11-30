@@ -6,31 +6,111 @@ import ".."
 ComboBox {
     id: control
 
-    Material.background: SkrTheme.buttonBackground
-    Material.foreground: SkrTheme.buttonForeground
+    Material.background: SkrTheme.pageBackground
+    Material.foreground: control.activeFocus ?  SkrTheme.accent : SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
 
 
+    delegate: ItemDelegate {
+        id: inner_itemDelegate
+        width: control.width
+        contentItem: Label {
+            text: modelData
+            color: SkrTheme.buttonForeground
+            font: control.font
+            elide: Text.ElideRight
+            verticalAlignment: Text.AlignVCenter
+        }
+        highlighted: control.highlightedIndex === index
 
-//    Popup {
-//             y: control.height - 1
-//             width: control.width
-//             implicitHeight: contentItem.implicitHeight
-//             padding: 1
+    }
 
-//             contentItem: ListView {
-//                 clip: true
-//                 implicitHeight: contentHeight
-//                 model: control.popup.visible ? control.delegateModel : null
-//                 currentIndex: control.highlightedIndex
+//        SkrListItemPane {
+//            id: inner_delegateRoot
+//            height: 30
+//            focus: true
 
-//                 ScrollIndicator.vertical: ScrollIndicator { }
-//             }
+//            Accessible.name: model.dataValue
+//            Accessible.role: Accessible.ListItem
 
-//             background: Rectangle {
-//                 border.color: "#21be2b"
-//                 radius: 2
-//             }
-//         }
+//            anchors {
+//                left: Qt.isQtObject(parent) ? parent.left : undefined
+//                right: Qt.isQtObject(parent) ? parent.right : undefined
+//                leftMargin: 5
+//                rightMargin: 5
+//            }
+
+
+//            TapHandler {
+//                id: inner_tapHandler
+
+//                onSingleTapped: {
+
+//                    eventPoint.accepted = true
+//                }
+
+
+//                onGrabChanged: {
+//                    point.accepted = false
+//                }
+//            }
+
+
+
+//            SkrLabel {
+//                text: modelData
+//                anchors.fill: parent
+//                horizontalAlignment: Qt.AlignLeft
+//                verticalAlignment: Qt.AlignVCenter
+
+//                highlighted: control.highlightedIndex === index
+//            }
+
+
+//}
+
+//}
+
+    popup: SkrPopup {
+        y: control.height - 1
+        width: control.width
+        implicitHeight: 400
+        padding: 1
+
+        contentItem: SkrListItemPane{
+
+            ScrollView {
+                id: scrollView
+                clip: true
+                anchors.fill: parent
+
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                focusPolicy: Qt.StrongFocus
+                implicitHeight: contentHeight
+
+                ListView {
+                    clip: true
+                    model: control.popup.visible ? control.delegateModel : null
+                    currentIndex: control.highlightedIndex
+                    interactive: true
+                    smooth: true
+                    focus: true
+
+
+
+                    }
+
+                }
+
+
+
+        }
+
+        background: Rectangle {
+            border.color: SkrTheme.pageBackground
+            radius: 2
+        }
+    }
 }
 

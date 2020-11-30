@@ -66,7 +66,7 @@ ThemePageForm {
     property string currentlySelectedTheme: ""
 
 
-    themeListView.delegate: SkrPane {
+    themeListView.delegate: SkrListItemPane {
         id: themeDelegateRoot
 
         height: 60
@@ -342,13 +342,14 @@ ThemePageForm {
         Rectangle {
             width: propertiesListView.width
             height: childrenRect.height
-            color: "lightsteelblue"
+            color: SkrTheme.buttonBackground
 
             required property string section
 
             SkrLabel {
                 text: section === "true" ? qsTr("Distraction free") : qsTr("Normal")
                 font.bold: true
+                color: SkrTheme.buttonForeground
                 //font.pixelSize: 20
             }
         }

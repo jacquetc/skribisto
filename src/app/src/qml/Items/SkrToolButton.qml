@@ -5,9 +5,14 @@ import ".."
 
 ToolButton {
     id: control
-    icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) : (control.action.icon.color === "transparent" ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) : (enabled ? control.action.icon.color : SkrTheme.buttonIconDisabled))
+    icon.color: control.activeFocus ? SkrTheme.accent : control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
+                                          (control.action.icon.color === "transparent" ?
+                                               (enabled ? control.action.icon.color: SkrTheme.buttonIconDisabled) :
+                                               (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
+
+
     Material.background: SkrTheme.buttonBackground
-    Material.foreground: SkrTheme.buttonForeground
+    Material.foreground: control.activeFocus ?  SkrTheme.accent : SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
 
     property string tip
@@ -30,4 +35,6 @@ ToolButton {
         color: SkrTheme.accent
         visible: control.checked
     }
+
+
 }

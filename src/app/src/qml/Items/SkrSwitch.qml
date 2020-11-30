@@ -6,7 +6,7 @@ Switch {
     id: control
 
     Material.background: SkrTheme.buttonBackground
-    Material.foreground: SkrTheme.buttonForeground
+    Material.foreground: control.activeFocus ?  SkrTheme.accent : SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
 
     property string tip

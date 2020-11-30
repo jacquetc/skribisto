@@ -5,6 +5,8 @@ import ".."
 Slider {
     id: control
 
+    Material.accent: SkrTheme.accent
+
 
     property string tip
     hoverEnabled: true
@@ -13,5 +15,9 @@ Slider {
         text: control.tip
         visible: control.hovered && tip.length !== 0
     }
+
+    snapMode: Slider.SnapOnRelease
+
+
 
 }

@@ -77,6 +77,7 @@ Item {
                     id: listView
                     smooth: true
                     boundsBehavior: Flickable.StopAtBounds
+                    spacing: 1
 
                     Accessible.name: "Navigation list"
                     Accessible.role: Accessible.List

@@ -4,5 +4,6 @@ import ".."
 
 TabBar {
     Material.background: SkrTheme.pageBackground
+    Material.accent: SkrTheme.accent
 
 }

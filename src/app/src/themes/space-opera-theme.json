@@ -1,0 +1,40 @@
+{
+    "themeName": "Space Opera Theme",
+    "isEditable": false,
+    "normal": {
+        "mainTextAreaBackground": "#6e6e6e",
+        "mainTextAreaForeground": "#e2e2e2",
+        "secondaryTextAreaBackground": "#6e6e6e",
+        "secondaryTextAreaForeground": "#e2e2e2",
+        "pageBackground": "#313131",
+        "buttonBackground": "#0e0e0e",
+        "buttonForeground": "#b1b1b1",
+        "buttonIcon": "#e2e2e2",
+        "buttonIconDisabled": "#414141",
+        "accent": "#b56c17",
+        "spellcheck": "#DC0029",
+        "toolBarBackground": "#4a4842",
+        "divider": "#e2e2e2",
+        "menuBackground": "#313131",
+        "listItemBackground": "#525252"
+
+    },
+    "distractionFree": {
+        "mainTextAreaBackground": "#6e6e6e",
+        "mainTextAreaForeground": "#e2e2e2",
+        "secondaryTextAreaBackground": "#6e6e6e",
+        "secondaryTextAreaForeground": "#e2e2e2",
+        "pageBackground": "#313131",
+        "buttonBackground": "#0e0e0e",
+        "buttonForeground": "#b1b1b1",
+        "buttonIcon": "#e2e2e2",
+        "buttonIconDisabled": "#414141",
+        "accent": "#b56c17",
+        "spellcheck": "#DC0029",
+        "toolBarBackground": "#4a4842",
+        "divider": "#e2e2e2",
+        "menuBackground": "#313131",
+        "listItemBackground": "#525252"
+
+    }
+}

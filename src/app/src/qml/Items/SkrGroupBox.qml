@@ -1,15 +1,12 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls.Material 2.15
 import ".."
 
 GroupBox {
     id: control
 
     property bool bigTitleEnabled: true
-
-    Material.foreground: SkrTheme.buttonForeground
 
 
     background: Rectangle {
@@ -33,7 +30,7 @@ GroupBox {
             text: control.title
             font.bold: true
             font.pointSize: bigTitleEnabled ? Qt.application.font.pointSize * 1.5 :  Qt.application.font.pointSize
-            color: SkrTheme.buttonForeground
+            color: control.activeFocus ?  SkrTheme.accent : SkrTheme.buttonForeground
             elide: Text.ElideRight
         }
         Rectangle {
