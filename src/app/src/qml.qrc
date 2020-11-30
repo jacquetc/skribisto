@@ -126,5 +126,6 @@
         <file>qml/Commons/ColorChooser.qml</file>
         <file>qml/Commons/TextContextMenu.qml</file>
         <file>qml/Commons/TextContextMenuForm.ui.qml</file>
+        <file>qml/Items/SkrListItemPane.qml</file>
     </qresource>
 </RCC>

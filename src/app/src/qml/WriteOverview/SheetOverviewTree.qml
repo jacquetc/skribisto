@@ -425,7 +425,7 @@ SheetOverviewTreeForm {
 
 
 
-                SkrPane{
+                SkrListItemPane{
                     id: content
 
                     property alias tapHandler: tapHandler
@@ -824,7 +824,6 @@ SheetOverviewTreeForm {
                                         id: writingZone
 
                                         property string pageType: "note"
-
                                         clip: true
                                         projectId: model.projectId
                                         spellCheckerKilled: true
@@ -841,7 +840,7 @@ SheetOverviewTreeForm {
 
                                         textAreaStyleBackgroundColor: SkrTheme.secondaryTextAreaBackground
                                         textAreaStyleForegroundColor: SkrTheme.secondaryTextAreaForeground
-                                        paneStyleBackgroundColor: SkrTheme.pageBackground
+                                        paneStyleBackgroundColor: SkrTheme.listItemBackground
                                         textAreaStyleAccentColor: SkrTheme.accent
 
                                         Component.onCompleted: {

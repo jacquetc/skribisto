@@ -545,7 +545,7 @@ TreeListViewForm {
                 }
             }
 
-            Rectangle{
+            SkrListItemPane{
                 id: content
                 property int visualIndex: 0
                 property int sourceIndex: -2
@@ -568,11 +568,9 @@ TreeListViewForm {
                 Drag.supportedActions: Qt.MoveAction
                 //Drag.dragType: Drag.Automatic
 
-                color: SkrTheme.pageBackground
-
-                border.width: 2
-                border.color: dragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
-                Behavior on border.color {
+                borderWidth: 2
+                borderColor: dragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
+                Behavior on borderColor {
                     ColorAnimation {
                         duration: 200
                     }

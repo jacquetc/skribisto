@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="fr_FR">
+<TS version="2.1" language="fr_FR">
 <context>
     <name>CheckableTree</name>
     <message>
@@ -231,75 +231,75 @@
     <name>DeletedListView</name>
     <message>
         <source>Trash: %1</source>
-        <translation>Corbeille: %1</translation>
+        <translation type="vanished">Corbeille: %1</translation>
     </message>
     <message>
         <source>Empty the trash</source>
-        <translation>Vider la corbeille</translation>
+        <translation type="vanished">Vider la corbeille</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation>Restaurer</translation>
+        <translation type="vanished">Restaurer</translation>
     </message>
     <message>
         <source>has child</source>
-        <translation>a des enfants</translation>
+        <translation type="vanished">a des enfants</translation>
     </message>
     <message>
         <source>label:</source>
-        <translation>marque:</translation>
+        <translation type="vanished">marque:</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation>élément de navigation</translation>
+        <translation type="vanished">élément de navigation</translation>
     </message>
     <message>
         <source>This project is a backup</source>
-        <translation>Ce projet est une copie de secours</translation>
+        <translation type="vanished">Ce projet est une copie de secours</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation>Entrez un nom</translation>
+        <translation type="vanished">Entrez un nom</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Ouvrir</translation>
+        <translation type="vanished">Ouvrir</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation>Ouvrir dans un nouvel onglet</translation>
+        <translation type="vanished">Ouvrir dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation>Renommer</translation>
+        <translation type="vanished">Renommer</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>Copier</translation>
+        <translation type="vanished">Copier</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation>Couper</translation>
+        <translation type="vanished">Couper</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation>Ajouter avant</translation>
+        <translation type="vanished">Ajouter avant</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation>Ajouter après</translation>
+        <translation type="vanished">Ajouter après</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation>Déplacer vers le haut</translation>
+        <translation type="vanished">Déplacer vers le haut</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation>Déplacer vers le bas</translation>
+        <translation type="vanished">Déplacer vers le bas</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Supprimer</translation>
+        <translation type="vanished">Supprimer</translation>
     </message>
     <message>
         <source>Open document in a window</source>
@@ -314,11 +314,11 @@
     <name>DeletedListViewForm.ui</name>
     <message>
         <source>Restore a document</source>
-        <translation>Restaurer un document</translation>
+        <translation type="vanished">Restaurer un document</translation>
     </message>
     <message>
         <source>Deleted menu</source>
-        <translation>Menu des supprimés</translation>
+        <translation type="vanished">Menu des supprimés</translation>
     </message>
 </context>
 <context>
@@ -329,7 +329,7 @@
     </message>
     <message>
         <source>Full Screen Colors</source>
-        <translation>Couleurs du plein écran</translation>
+        <translation type="vanished">Couleurs du plein écran</translation>
     </message>
     <message>
         <source>Go back</source>
@@ -400,11 +400,11 @@
     </message>
     <message>
         <source>Background :</source>
-        <translation>Arrière-plan :</translation>
+        <translation type="vanished">Arrière-plan :</translation>
     </message>
     <message>
         <source>Paper :</source>
-        <translation>Papier :</translation>
+        <translation type="vanished">Papier :</translation>
     </message>
     <message>
         <source></source>
@@ -708,11 +708,11 @@
     <name>LeftDockForm.ui</name>
     <message>
         <source>Navigation</source>
-        <translation>Navigation</translation>
+        <translation type="vanished">Navigation</translation>
     </message>
     <message>
         <source>Opened documents</source>
-        <translation>Documents ouverts</translation>
+        <translation type="vanished">Documents ouverts</translation>
     </message>
 </context>
 <context>
@@ -820,7 +820,7 @@
     </message>
     <message>
         <source>Information</source>
-        <translation>Information</translation>
+        <translation type="vanished">Information</translation>
     </message>
     <message>
         <source>Do you want to move the note &quot;%1&quot; to the trash ?</source>
@@ -855,7 +855,7 @@
     <name>NotePadForm.ui</name>
     <message>
         <source>Show synopsis</source>
-        <translation>Montrer le synopsis</translation>
+        <translation type="vanished">Montrer le synopsis</translation>
     </message>
     <message>
         <source>Open note</source>
@@ -943,57 +943,57 @@
     <name>ProjectListItemForm.ui</name>
     <message>
         <source>Text</source>
-        <translation>Texte</translation>
+        <translation type="vanished">Texte</translation>
     </message>
 </context>
 <context>
     <name>ProjectPage</name>
     <message>
         <source>Close project</source>
-        <translation>Fermer le projet</translation>
+        <translation type="vanished">Fermer le projet</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation>Oublier</translation>
+        <translation type="vanished">Oublier</translation>
     </message>
     <message>
         <source>Part </source>
-        <translation>Partie </translation>
+        <translation type="vanished">Partie </translation>
     </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
     <message>
         <source>Projects</source>
-        <translation>Projets</translation>
+        <translation type="vanished">Projets</translation>
     </message>
     <message>
         <source>New project</source>
-        <translation>Nouveau projet</translation>
+        <translation type="vanished">Nouveau projet</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation>Ouvrir un projet</translation>
+        <translation type="vanished">Ouvrir un projet</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation>Enregistrer</translation>
+        <translation type="vanished">Enregistrer</translation>
     </message>
     <message>
         <source>Save as</source>
-        <translation>Enregistrer sous</translation>
+        <translation type="vanished">Enregistrer sous</translation>
     </message>
     <message>
         <source>Save a copy</source>
-        <translation>Enregistrer une copie</translation>
+        <translation type="vanished">Enregistrer une copie</translation>
     </message>
     <message>
         <source>Back up</source>
-        <translation>Faire une copie de secours</translation>
+        <translation type="vanished">Faire une copie de secours</translation>
     </message>
     <message>
         <source>Save all</source>
-        <translation>Tout enregistrer</translation>
+        <translation type="vanished">Tout enregistrer</translation>
     </message>
     <message>
         <source></source>
@@ -1001,75 +1001,75 @@
     </message>
     <message>
         <source>Create an empty project at start</source>
-        <translation>Créer un projet vide au démarrage</translation>
+        <translation type="vanished">Créer un projet vide au démarrage</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation>Imprimer</translation>
+        <translation type="vanished">Imprimer</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation>Importer</translation>
+        <translation type="vanished">Importer</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation>Exporter</translation>
+        <translation type="vanished">Exporter</translation>
     </message>
     <message>
         <source>Go back</source>
-        <translation>Revenir</translation>
+        <translation type="vanished">Revenir</translation>
     </message>
     <message>
         <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
-        <translation>&lt;h2&gt;Nouveau projet&lt;/h2&gt;</translation>
+        <translation type="vanished">&lt;h2&gt;Nouveau projet&lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Project title :</source>
-        <translation>Titre du projet :</translation>
+        <translation type="vanished">Titre du projet :</translation>
     </message>
     <message>
         <source>project title</source>
-        <translation>titre du projet</translation>
+        <translation type="vanished">titre du projet</translation>
     </message>
     <message>
         <source>Project file :</source>
-        <translation>Fichier du projet :</translation>
+        <translation type="vanished">Fichier du projet :</translation>
     </message>
     <message>
         <source>project file</source>
-        <translation>fichier du projet</translation>
+        <translation type="vanished">fichier du projet</translation>
     </message>
     <message>
         <source>Project path :</source>
-        <translation>Chemin du projet :</translation>
+        <translation type="vanished">Chemin du projet :</translation>
     </message>
     <message>
         <source>project path</source>
-        <translation>chemin du projet</translation>
+        <translation type="vanished">chemin du projet</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>Sélectionner</translation>
+        <translation type="vanished">Sélectionner</translation>
     </message>
     <message>
         <source>This project will be created as : </source>
-        <translation>Ce projet sera créé en tant que : </translation>
+        <translation type="vanished">Ce projet sera créé en tant que : </translation>
     </message>
     <message>
         <source>Number of parts :</source>
-        <translation>Nombre de parties :</translation>
+        <translation type="vanished">Nombre de parties :</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation>Créer</translation>
+        <translation type="vanished">Créer</translation>
     </message>
     <message>
         <source>Behavior</source>
-        <translation>Comportement</translation>
+        <translation type="vanished">Comportement</translation>
     </message>
     <message>
         <source>Recent projects</source>
-        <translation>Projets récents</translation>
+        <translation type="vanished">Projets récents</translation>
     </message>
 </context>
 <context>
@@ -1252,7 +1252,7 @@
     </message>
     <message>
         <source>&amp;Notes</source>
-        <translation>&amp;Notes</translation>
+        <translation type="vanished">&amp;Notes</translation>
     </message>
     <message>
         <source>&amp;Overview</source>
@@ -1283,11 +1283,11 @@
     <name>RightDockForm.ui</name>
     <message>
         <source>Edit</source>
-        <translation>Editer</translation>
+        <translation type="vanished">Editer</translation>
     </message>
     <message>
         <source>Tags</source>
-        <translation>Etiquettes</translation>
+        <translation type="vanished">Etiquettes</translation>
     </message>
 </context>
 <context>
@@ -1298,7 +1298,7 @@
     </message>
     <message>
         <source>Write</source>
-        <translation>Ecrire</translation>
+        <translation type="vanished">Ecrire</translation>
     </message>
     <message>
         <source>Note</source>
@@ -1326,7 +1326,7 @@
     </message>
     <message>
         <source>&amp;About</source>
-        <translation>&amp;A propos</translation>
+        <translation type="vanished">&amp;A propos</translation>
     </message>
     <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
@@ -1377,7 +1377,7 @@
     </message>
     <message>
         <source>Label</source>
-        <translation>Marque</translation>
+        <translation type="vanished">Marque</translation>
     </message>
     <message>
         <source>Main menu</source>
@@ -1385,7 +1385,7 @@
     </message>
     <message>
         <source>Button</source>
-        <translation>Bouton</translation>
+        <translation type="vanished">Bouton</translation>
     </message>
     <message>
         <source>Show list of tabs</source>
@@ -1438,7 +1438,7 @@
     </message>
     <message>
         <source>Disallow swipe gesture between tabs</source>
-        <translation>Interdire le geste de balayage entre les onglets</translation>
+        <translation type="vanished">Interdire le geste de balayage entre les onglets</translation>
     </message>
     <message>
         <source>Show menu bar</source>
@@ -1958,51 +1958,51 @@
     </message>
     <message>
         <source>has child</source>
-        <translation>a des enfants</translation>
+        <translation type="vanished">a des enfants</translation>
     </message>
     <message>
         <source>label:</source>
-        <translation>marque:</translation>
+        <translation type="vanished">marque:</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation>élément de navigation</translation>
+        <translation type="vanished">élément de navigation</translation>
     </message>
     <message>
         <source>Open document in a window</source>
-        <translation>Ouvrir un document dans une nouvelle fenêtre</translation>
+        <translation type="vanished">Ouvrir un document dans une nouvelle fenêtre</translation>
     </message>
     <message>
         <source>This project is a backup</source>
-        <translation>Ce projet est une copie de secours</translation>
+        <translation type="vanished">Ce projet est une copie de secours</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation>Entrez un nom</translation>
+        <translation type="vanished">Entrez un nom</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Ouvrir</translation>
+        <translation type="vanished">Ouvrir</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation>Ouvrir dans un nouvel onglet</translation>
+        <translation type="vanished">Ouvrir dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Open in new window</source>
-        <translation>Ouvrir dans une nouvelle fenêtre</translation>
+        <translation type="vanished">Ouvrir dans une nouvelle fenêtre</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation>Renommer</translation>
+        <translation type="vanished">Renommer</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>Copier</translation>
+        <translation type="vanished">Copier</translation>
     </message>
     <message>
         <source>Delete definitively</source>
-        <translation>Supprimer définitivement</translation>
+        <translation type="vanished">Supprimer définitivement</translation>
     </message>
     <message>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
@@ -2012,11 +2012,11 @@
     </message>
     <message>
         <source>Enter label</source>
-        <translation>Entrer une marque</translation>
+        <translation type="vanished">Entrer une marque</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation>Définir le label</translation>
+        <translation type="vanished">Définir le label</translation>
     </message>
 </context>
 <context>
@@ -2126,7 +2126,7 @@
     </message>
     <message>
         <source>Delete</source>
-        <translation>Supprimer</translation>
+        <translation type="vanished">Supprimer</translation>
     </message>
     <message>
         <source>Open document in a new tab</source>
@@ -2165,7 +2165,7 @@
     <name>TreeListViewForm.ui</name>
     <message>
         <source>current folder name</source>
-        <translation>chemin actuel</translation>
+        <translation type="vanished">chemin actuel</translation>
     </message>
     <message>
         <source>Add a document</source>
@@ -2222,11 +2222,11 @@
     <name>WriteLeftDockForm.ui</name>
     <message>
         <source>Navigation</source>
-        <translation>Navigation</translation>
+        <translation type="vanished">Navigation</translation>
     </message>
     <message>
         <source>Opened documents</source>
-        <translation>Documents ouverts</translation>
+        <translation type="vanished">Documents ouverts</translation>
     </message>
 </context>
 <context>
@@ -2247,15 +2247,15 @@
     <name>WritePage</name>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Aide</translation>
+        <translation type="vanished">&amp;Aide</translation>
     </message>
     <message>
         <source>&amp;Navigation dock</source>
-        <translation>dock de &amp;navigation</translation>
+        <translation type="vanished">dock de &amp;navigation</translation>
     </message>
     <message>
         <source>&amp;Tools dock</source>
-        <translation>Dock d&apos;&amp;outils</translation>
+        <translation type="vanished">Dock d&apos;&amp;outils</translation>
     </message>
 </context>
 <context>
@@ -2301,15 +2301,15 @@
     <name>WriteRightDockForm.ui</name>
     <message>
         <source>Edit</source>
-        <translation>Editer</translation>
+        <translation type="vanished">Editer</translation>
     </message>
     <message>
         <source>Tags</source>
-        <translation>Etiquettes</translation>
+        <translation type="vanished">Etiquettes</translation>
     </message>
     <message>
         <source>Notes</source>
-        <translation>Notes</translation>
+        <translation type="vanished">Notes</translation>
     </message>
 </context>
 <context>
@@ -2344,7 +2344,7 @@
     </message>
     <message>
         <source>Save as...</source>
-        <translation>Enregistrer sous...</translation>
+        <translation type="vanished">Enregistrer sous...</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as ...</source>
@@ -2424,15 +2424,15 @@
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;Fichier</translation>
+        <translation type="vanished">&amp;Fichier</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation>&amp;Editer</translation>
+        <translation type="vanished">&amp;Editer</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Aide</translation>
+        <translation type="vanished">&amp;Aide</translation>
     </message>
     <message>
         <source>&amp;About</source>

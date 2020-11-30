@@ -69,9 +69,8 @@ Item {
                             text: qsTr("Display mode :")
                         }
 
-                        Slider {
+                        SkrSlider {
                             id: treeItemDisplayModeSlider
-                            snapMode: Slider.SnapOnRelease
                             stepSize: 1
                             from: 0
                             to: 2
@@ -81,9 +80,8 @@ Item {
                             text: qsTr("Tree indentation :")
                         }
 
-                        Slider {
+                        SkrSlider {
                             id: treeIndentationSlider
-                            snapMode: Slider.SnapOnRelease
                             stepSize: 1
                             from: 0
                             to: 200

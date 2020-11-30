@@ -190,7 +190,7 @@ Item {
                         text: qsTr("Text width :")
                     }
 
-                    Slider {
+                    SkrSlider {
                         id: textWidthSlider
                         from: 400
                         to: Screen.width
@@ -201,9 +201,8 @@ Item {
                         text: qsTr("Text size :")
                     }
 
-                    Slider {
+                    SkrSlider {
                         id: textPointSizeSlider
-                        snapMode: Slider.SnapOnRelease
                         stepSize: 1
                         from: 8
                         to: 40
@@ -219,9 +218,8 @@ Item {
                         text: qsTr("Text indent :")
                     }
 
-                    Slider {
+                    SkrSlider {
                         id: textIndentSlider
-                        snapMode: Slider.SnapOnRelease
                         stepSize: 1
                         from: 0
                         to: 200
@@ -232,9 +230,8 @@ Item {
                         text: qsTr("Top margin :")
                     }
 
-                    Slider {
+                    SkrSlider {
                         id: textTopMarginSlider
-                        snapMode: Slider.SnapOnRelease
                         stepSize: 1
                         from: 0
                         to: 30

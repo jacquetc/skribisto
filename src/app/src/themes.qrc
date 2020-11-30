@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>themes/default-light.json</file>
+        <file>themes/space-opera-theme.json</file>
     </qresource>
 </RCC>

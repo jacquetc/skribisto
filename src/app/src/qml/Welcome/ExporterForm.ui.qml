@@ -245,12 +245,11 @@ Item {
                         id: indentWithTitleLabel
                     }
 
-                    Slider{
+                    SkrSlider{
                         id: indentWithTitleSlider
                         Layout.fillWidth: true
                         Accessible.name: indentWithTitleLabel.text
                         stepSize: 1
-                        snapMode: Slider.SnapAlways
                         from: 0
                         to: 5
                     }
@@ -260,10 +259,9 @@ Item {
                         text: qsTr("Text size :")
                     }
 
-                    Slider {
+                    SkrSlider {
                         id: textPointSizeSlider
                         Layout.fillWidth: true
-                        snapMode: Slider.SnapOnRelease
                         stepSize: 1
                         from: 8
                         to: 40
@@ -279,10 +277,9 @@ Item {
                         text: qsTr("Text indent :")
                     }
 
-                    Slider {
+                    SkrSlider {
                         id: textIndentSlider
                         Layout.fillWidth: true
-                        snapMode: Slider.SnapOnRelease
                         stepSize: 1
                         from: 0
                         to: 200
@@ -293,9 +290,8 @@ Item {
                         text: qsTr("Top margin :")
                     }
 
-                    Slider {
+                    SkrSlider {
                         id: textTopMarginSlider
-                        snapMode: Slider.SnapOnRelease
                         stepSize: 1
                         from: 0
                         to: 30

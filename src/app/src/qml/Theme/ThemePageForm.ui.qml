@@ -147,11 +147,24 @@ Item {
                                     icon.source: "qrc:///icons/backup/edit-copy.svg"
 
                                 }
+                                SkrButton {
+                                    text: qsTr("button")
+                                    icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                    enabled: false
+
+                                }
 
                                 SkrToolButton {
                                     flat: true
                                     text: qsTr("button")
                                     icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                }
+
+                                SkrToolButton {
+                                    flat: true
+                                    text: qsTr("button")
+                                    icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                    enabled: false
                                 }
 
                                 SkrSwitch {

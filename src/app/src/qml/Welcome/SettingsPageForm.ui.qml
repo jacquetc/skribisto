@@ -225,14 +225,12 @@ Item {
                                             id: removeBackupPathButton
                                             flat: true
                                             display: AbstractButton.IconOnly
-                                            icon.color: SkrTheme.buttonIcon
                                         }
 
                                         SkrToolButton {
                                             id: addBackupPathButton
                                             flat: true
                                             display: AbstractButton.IconOnly
-                                            icon.color: SkrTheme.buttonIcon
 
                                         }
                                     }
@@ -386,9 +384,8 @@ Item {
                                 text: qsTr("Text size :")
                             }
 
-                            Slider {
+                            SkrSlider {
                                 id: textPointSizeSlider
-                                snapMode: Slider.SnapOnRelease
                                 stepSize: 1
                                 from: 8
                                 to: 40
@@ -404,9 +401,8 @@ Item {
                                 text: qsTr("Text indent :")
                             }
 
-                            Slider {
+                            SkrSlider {
                                 id: textIndentSlider
-                                snapMode: Slider.SnapOnRelease
                                 stepSize: 1
                                 from: 0
                                 to: 200
@@ -417,9 +413,8 @@ Item {
                                 text: qsTr("Top margin :")
                             }
 
-                            Slider {
+                            SkrSlider {
                                 id: textTopMarginSlider
-                                snapMode: Slider.SnapOnRelease
                                 stepSize: 1
                                 from: 0
                                 to: 30
