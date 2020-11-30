@@ -102,6 +102,8 @@ FocusScope {
                             wrapMode: TextEdit.Wrap
                             topPadding: 4
                             bottomPadding: 1
+                            leftPadding: 4
+                            rightPadding: 4
 
                             //                        background: Rectangle {
                             //                            border.color: "transparent"
