@@ -463,12 +463,12 @@ SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
                                             folderId,
                                             "can_add_sibling_paper",
                                             "true",
-                                            true);
+                                            true, false);
     result = plmdata->notePropertyHub()->setProperty(projectId,
                                             folderId,
                                             "can_add_child_paper",
                                             "false",
-                                            true);
+                                            true, false);
     this->addAttribute(projectId, folderId, "synopsis_folder");
 
     //all synopsis:
@@ -484,7 +484,7 @@ SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
             }
         }
 
-        for (int synopsisId : synList) {
+        for (int synopsisId : qAsConst(synList)) {
 
             // upgrade properties in all synopsis
 
@@ -499,12 +499,12 @@ SKRResult PLMNoteHub::cleanUpSynopsis(int projectId){
                                                     synopsisId,
                                                     "can_add_sibling_paper",
                                                     "false",
-                                                    true);
+                                                    true, false);
             result = plmdata->notePropertyHub()->setProperty(projectId,
                                                     synopsisId,
                                                     "can_add_child_paper",
                                                     "false",
-                                                    true);
+                                                    true, false);
 
 
             // find sheet:

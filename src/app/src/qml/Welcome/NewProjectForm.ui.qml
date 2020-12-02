@@ -6,8 +6,6 @@ import "../Commons"
 import ".."
 
 Item {
-    width: 400
-    height: 400
 
     property alias projectFileTextField: projectFileTextField
     property alias createNewProjectButton: createNewProjectButton
@@ -50,16 +48,17 @@ Item {
             GridLayout {
                 id: gridLayout2
                 rows: -1
-                columns: 2
+                columns: 1
                 flow: GridLayout.TopToBottom
                 Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: true
 
                 GridLayout {
                     id: gridLayout1
                     rows: 2
                     columns: 3
                     Layout.fillWidth: true
-                    Layout.maximumWidth: 600
+                    Layout.maximumWidth: 800
 
                     SkrLabel {
                         id: projectTitleLabel
