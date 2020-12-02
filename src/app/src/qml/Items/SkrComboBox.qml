@@ -12,10 +12,9 @@ ComboBox {
 
 
     delegate: ItemDelegate {
-        id: inner_itemDelegate
         width: control.width
         contentItem: Label {
-            text: modelData
+            text: model.modelData === undefined ? model.text : model.modelData
             color: SkrTheme.buttonForeground
             font: control.font
             elide: Text.ElideRight

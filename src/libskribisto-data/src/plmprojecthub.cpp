@@ -115,8 +115,9 @@ void PLMProjectHub::setProjectNotSavedAnymore(int projectId)
     m_projectsNotModifiedOnceList.removeAll(projectId);
     if (!m_projectsNotSavedList.contains(projectId)) {
         m_projectsNotSavedList.append(projectId);
-        emit projectNotSavedAnymore(projectId);
     }
+    emit projectNotSavedAnymore(projectId);
+
 }
 
 QList<int>PLMProjectHub::projectsNotModifiedOnce() {

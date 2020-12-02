@@ -117,13 +117,6 @@ bool SKRSearchTagListProxyModel::setData(const QModelIndex& index,
     return QSortFilterProxyModel::setData(index, value, role);
 }
 
-// --------------------------------------------------------------------------------
-
-
-QString SKRSearchTagListProxyModel::getItemName(int projectId, int paperId)
-{
-    // TODO: to fill
-}
 
 // --------------------------------------------------------------------------------
 
@@ -248,7 +241,7 @@ bool SKRSearchTagListProxyModel::filterAcceptsRow(int                sourceRow,
         return false;
     }
     SKRTagItem *item       = static_cast<SKRTagItem *>(index.internalPointer());
-    SKRTagListModel *model = static_cast<SKRTagListModel *>(this->sourceModel());
+    //SKRTagListModel *model = static_cast<SKRTagListModel *>(this->sourceModel());
 
     // project filtering :
     if (value &&

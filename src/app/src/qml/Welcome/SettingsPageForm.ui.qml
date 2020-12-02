@@ -50,7 +50,7 @@ Item {
 
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ScrollBar.vertical.policy: ScrollBar.AsNeeded
-            contentWidth: pillarLayout.width
+            contentWidth: scrollView.width
             contentHeight: pillarLayout.implicitHeight
 
             SKRPillarLayout {

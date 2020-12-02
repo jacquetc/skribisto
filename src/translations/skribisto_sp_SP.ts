@@ -536,6 +536,13 @@
     </message>
 </context>
 <context>
+    <name>ExamplePageForm.ui</name>
+    <message>
+        <source>&lt;h2&gt;Examples&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Exporter</name>
     <message>
         <source>Dialog</source>
@@ -3795,6 +3802,10 @@ Have you checked the one(s) you want to look through ?</source>
     </message>
     <message>
         <source>Button icon (disabled)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List item background</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

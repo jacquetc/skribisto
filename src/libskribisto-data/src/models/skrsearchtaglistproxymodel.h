@@ -48,7 +48,6 @@ public:
                           const QVariant   & value,
                           int                role);
 
-    Q_INVOKABLE QString getItemName(int projectId, int paperId);
     void setProjectIdFilter(int projectIdFilter);
     void clearFilters();
 

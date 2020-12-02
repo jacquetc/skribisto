@@ -120,6 +120,7 @@ set(QRC pics.qrc
     controls.qrc
     themes.qrc
     ${CMAKE_SOURCE_DIR}/3rdparty/icons.qrc
+    ${CMAKE_SOURCE_DIR}/resources/examples/examples.qrc
     ${TEST_FILES_QRC}
     ${CMAKE_SOURCE_DIR}/readme.qrc
 
