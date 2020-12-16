@@ -372,6 +372,7 @@ ApplicationWindow {
             height: 50
             width: 50
         }
+        enabled: false
 
         //shortcut: StandardKey.Save
         onTriggered: {
@@ -442,6 +443,7 @@ ApplicationWindow {
             height: 50
             width: 50
         }
+        enabled: false
 
         //shortcut: "Ctrl+Shift+S"
         onTriggered: {
@@ -493,6 +495,7 @@ ApplicationWindow {
             height: 50
             width: 50
         }
+        enabled: false
 
         //shortcut: StandardKey.SaveAs
         onTriggered: {
