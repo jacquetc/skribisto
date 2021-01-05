@@ -35,7 +35,7 @@ TextArea {
     }
 
     property int viewHeight: 200
-    signal moveViewYCalled(int height)
+    signal moveViewYCalled(int height, bool animationEnabled)
 
     Keys.priority: Keys.BeforeItem
 
@@ -44,7 +44,7 @@ TextArea {
     Keys.onPressed: {
         // paste :
         if(((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) || event.key === Qt.Key_Paste){
-            pasteAction.trigger()
+            pasteTextAction.trigger()
             event.accepted = true
             return
         }
@@ -60,7 +60,7 @@ TextArea {
             }
 
             var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y - viewHeight)
-            moveViewYCalled(-viewHeight)
+            moveViewYCalled(-viewHeight, true)
             root.cursorPosition = newPosition
 
             root.select(initialCursorPosition, root.cursorPosition)
@@ -78,7 +78,7 @@ TextArea {
             }
 
             var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y + viewHeight)
-            moveViewYCalled(viewHeight)
+            moveViewYCalled(viewHeight, true)
             root.cursorPosition = newPosition
 
             root.select(initialCursorPosition, root.cursorPosition)
@@ -95,7 +95,7 @@ TextArea {
             }
 
             var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y - viewHeight)
-            moveViewYCalled(-viewHeight)
+            moveViewYCalled(-viewHeight, true)
             root.cursorPosition = newPosition
 
             event.accepted = true
@@ -109,7 +109,7 @@ TextArea {
             }
 
             var newPosition = root.positionAt(initialCursorPositionX, root.cursorRectangle.y + viewHeight)
-            moveViewYCalled(viewHeight)
+            moveViewYCalled(viewHeight, true)
             root.cursorPosition = newPosition
 
             event.accepted = true
@@ -141,7 +141,7 @@ TextArea {
         var wantedCursorY = root.viewContentY + root.viewHeight / 2
 
 
-        moveViewYCalled(-(wantedCursorY - cursorY))
+        moveViewYCalled(-(wantedCursorY - cursorY),  false)
 
 
     }

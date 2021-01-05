@@ -789,28 +789,32 @@ WritingZoneForm {
 
     Connections {
         target: textArea
-        function onMoveViewYCalled(height){
+        function onMoveViewYCalled(height, animationEnabled){
             var value = height - textArea.topPadding - textArea.bottomPadding
 
-
+            contentYBehavior.enabled = animationEnabled
             //top bound
             if(flickable.contentY + value < 0){
                 flickable.contentY = 0
+                contentYBehavior.enabled = true
                 return
             }
 
             // bottom bound
             if(textCenteringEnabled && flickable.contentY + value + 20 > flickable.contentHeight + textArea.viewHeight / 2){
                 flickable.contentY = flickable.contentHeight - textArea.viewHeight + textArea.viewHeight / 2
+                contentYBehavior.enabled = true
                 return
             }
             else if(!textCenteringEnabled && flickable.contentY + value + 20 > flickable.contentHeight){
                 flickable.contentY = flickable.contentHeight - textArea.viewHeight
+                contentYBehavior.enabled = true
                 return
             }
 
             // normal move
             flickable.contentY += value
+            contentYBehavior.enabled = true
 
         }
     }
@@ -820,6 +824,7 @@ WritingZoneForm {
 
 
     Behavior on flickable.contentY {
+        id: contentYBehavior
         NumberAnimation {
             duration: 200
             easing.type: Easing.OutQuad
