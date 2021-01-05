@@ -557,6 +557,69 @@ void DocumentHandler::unindentBlock()
     m_textCursor.setBlockFormat(f);
 }
 
+void DocumentHandler::decrementHeadingLevel()
+{
+    QTextBlockFormat f = m_textCursor.blockFormat();
+
+    int currentLevel = f.headingLevel();
+    int newLevel = 0;
+    if(currentLevel == 0){
+        newLevel = 0;
+    }
+    else if(newLevel == 6){
+        newLevel = 6;
+    }
+    else {
+        newLevel = currentLevel + 1;
+    }
+
+    f.setHeadingLevel(newLevel);
+    m_textCursor.setBlockFormat(f);
+}
+
+void DocumentHandler::incrementHeadingLevel()
+{
+    QTextBlockFormat f = m_textCursor.blockFormat();
+
+    int currentLevel = f.headingLevel();
+    int newLevel = 0;
+    if(currentLevel == 0){
+        newLevel = 6;
+    }
+    else if(newLevel == 1){
+        newLevel = 1;
+    }
+    else {
+        newLevel = currentLevel - 1;
+    }
+
+    f.setHeadingLevel(newLevel);
+    m_textCursor.setBlockFormat(f);
+}
+
+void DocumentHandler::setHeadingLevel(int headingLevel)
+{
+    QTextBlockFormat f = m_textCursor.blockFormat();
+
+    f.setHeadingLevel(headingLevel);
+    m_textCursor.setBlockFormat(f);
+}
+
+void DocumentHandler::removeHeadingLevel()
+{
+    QTextBlockFormat f = m_textCursor.blockFormat();
+
+    f.setHeadingLevel(0);
+    m_textCursor.setBlockFormat(f);
+}
+
+int DocumentHandler::headingLevel()
+{
+    QTextBlockFormat f = m_textCursor.blockFormat();
+
+    return f.headingLevel();
+}
+
 void DocumentHandler::undo()
 {
     if (m_textDoc) {

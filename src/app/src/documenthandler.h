@@ -154,6 +154,11 @@ public:
 
     QStringList suggestionList() const;
 
+    Q_INVOKABLE void decrementHeadingLevel();
+    Q_INVOKABLE void incrementHeadingLevel();
+    void setHeadingLevel(int headingLevel);
+    Q_INVOKABLE void removeHeadingLevel();
+    int headingLevel();
 public slots:
     void replaceWord(const QString &word, const QString &newWord);
 
