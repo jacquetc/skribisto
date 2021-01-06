@@ -25,7 +25,7 @@
         <file>qml/Welcome/HelpPageForm.ui.qml</file>
         <file>qml/Welcome/ExamplePage.qml</file>
         <file>qml/Welcome/ExamplePageForm.ui.qml</file>
-        <file>qml/Commons/TreeListViewForm.ui.qml</file>
+        <file>qml/Commons/NavigationListForm.ui.qml</file>
         <file>qml/Commons/DocumentListView.qml</file>
         <file>qml/Commons/DocumentListViewForm.ui.qml</file>
         <file>qml/Write/WriteRightDock.qml</file>
@@ -50,7 +50,7 @@
         <file>qml/NoteOverview/LeftDockForm.ui.qml</file>
         <file>qml/NoteOverview/NoteOverviewPageForm.ui.qml</file>
         <file>qml/Commons/SimpleDialog.qml</file>
-        <file>qml/Commons/TreeListView.qml</file>
+        <file>qml/Commons/NavigationList.qml</file>
         <file>qml/Commons/TrashedListView.qml</file>
         <file>qml/Commons/TrashedListViewForm.ui.qml</file>
         <file>qml/Commons/SKRTextArea.qml</file>

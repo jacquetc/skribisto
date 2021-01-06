@@ -859,27 +859,6 @@ void PLMUtils::Dir::createPath(QString path)
 
 int PLMUtils::Misc::id;
 
-QString PLMUtils::Misc::spaceInNumber(const QString numberString,
-                                      const QString symbol)
-{
-    QString originalString = numberString;
-    QString finalString;
-    QStringList list;
-
-    while (!originalString.isEmpty()) {
-        list.append(originalString.right(3));
-        originalString.chop(3);
-    }
-
-    while (!list.isEmpty()) {
-        finalString.append(list.takeLast());
-        finalString.append(symbol);
-    }
-
-    finalString.chop(symbol.size());
-    return finalString;
-}
-
 //
 //
 // ---------------------------------------------------------------------------------------

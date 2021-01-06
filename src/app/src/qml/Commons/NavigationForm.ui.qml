@@ -13,7 +13,7 @@ Item {
     StackView {
         id: stackView
         anchors.fill: parent
-        initialItem: treeListViewComponent
+        initialItem: navigationListComponent
 
     }
 }

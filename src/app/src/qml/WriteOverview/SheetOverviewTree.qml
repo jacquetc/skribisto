@@ -529,7 +529,7 @@ SheetOverviewTreeForm {
                         }
                     }
 
-                    RowLayout{
+                    contentItem: RowLayout{
                         id: rowLayout3
                         anchors.fill: parent
 

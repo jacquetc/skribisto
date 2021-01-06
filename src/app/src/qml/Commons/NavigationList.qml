@@ -6,7 +6,7 @@ import QtQuick.Controls.Material 2.15
 import "../Items"
 import ".."
 
-TreeListViewForm {
+NavigationListForm {
     id: root
 
     property var proxyModel
@@ -877,7 +877,7 @@ TreeListViewForm {
                     }
                 }
 
-                ColumnLayout{
+                contentItem: ColumnLayout{
                     id: columnLayout3
                     anchors.fill: parent
 

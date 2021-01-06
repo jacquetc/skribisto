@@ -1,4 +1,5 @@
 #add_subdirectory(auto/writetreecase)
 if (SKR_TEST_APP)
-add_subdirectory(checkabletree)
+    add_subdirectory(checkabletree)
+    add_subdirectory(navigationlist)
 endif()

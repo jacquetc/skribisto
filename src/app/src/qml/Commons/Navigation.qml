@@ -7,7 +7,7 @@ NavigationForm {
     id: root
     property int minimumHeight: 300
 
-    property var treeListViewProxyModel
+    property var navigationListProxyModel
     property var trashedListViewProxyModel
     property var restoreListViewProxyModel
     property int openedProjectId
@@ -20,20 +20,20 @@ NavigationForm {
     signal restoreDocumentList(int projectId, var paperIdList)
 
     Component {
-        id: treeListViewComponent
+        id: navigationListComponent
 
-        TreeListView {
-            id: treeListView
-            proxyModel: root.treeListViewProxyModel
-            model: root.treeListViewProxyModel
+        NavigationList {
+            id: navigationList
+            proxyModel: root.navigationListProxyModel
+            model: root.navigationListProxyModel
             openedProjectId: root.openedProjectId
             openedPaperId: root.openedPaperId
 
             Component.onCompleted: {
-                treeListView.openDocument.connect(root.openDocument)
-                treeListView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
-                treeListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
-                treeListView.showTrashedList.connect(root.pushTrashedListView)
+                navigationList.openDocument.connect(root.openDocument)
+                navigationList.openDocumentInNewTab.connect(root.openDocumentInNewTab)
+                navigationList.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
+                navigationList.showTrashedList.connect(root.pushTrashedListView)
 
             }
 

@@ -33,7 +33,7 @@ public:
     virtual ~PLMBaseInterface() {}
 };
 
-#define PLMBaseInterface_iid "com.Skribisto.BaseInterface/1.0"
+#define PLMBaseInterface_iid "com.skribisto.BaseInterface/1.0"
 
 
 Q_DECLARE_INTERFACE(PLMBaseInterface, PLMBaseInterface_iid)

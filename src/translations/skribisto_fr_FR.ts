@@ -738,6 +738,144 @@
     </message>
 </context>
 <context>
+    <name>NavigationList</name>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished">Remonter</translation>
+    </message>
+    <message>
+        <source>Projects</source>
+        <translation type="unfinished">Projets</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished">Coller</translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="unfinished">Avancé</translation>
+    </message>
+    <message>
+        <source>Sort alphabetically</source>
+        <translation type="unfinished">Trier alphabétiquement</translation>
+    </message>
+    <message>
+        <source>Trash</source>
+        <translation type="unfinished">Corbeille</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">Ajouter</translation>
+    </message>
+    <message>
+        <source>has child</source>
+        <translation type="unfinished">a des enfants</translation>
+    </message>
+    <message>
+        <source>label:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished">élément de navigation</translation>
+    </message>
+    <message>
+        <source>Add a sub-item</source>
+        <translation type="unfinished">Ajouter une sous-entrée</translation>
+    </message>
+    <message>
+        <source>See sub-items</source>
+        <translation type="unfinished">Afficher les sous-entrées</translation>
+    </message>
+    <message>
+        <source>Open document</source>
+        <translation type="unfinished">Ouvrir document</translation>
+    </message>
+    <message>
+        <source>Open document in a new tab</source>
+        <translation type="unfinished">Ouvrir un document dans un nouvel onglet</translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished">Ouvrir un document dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>This project is a backup</source>
+        <translation type="unfinished">Ce projet est une copie de secours</translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished">Entrez un nom</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished">Ouvrir</translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished">Ouvrir dans un nouvel onglet</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished">Ouvrir dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Set as active project</source>
+        <translation type="unfinished">Définir comme projet actif</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Renommer</translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished">Couper</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Copier</translation>
+    </message>
+    <message>
+        <source>Add before</source>
+        <translation type="unfinished">Ajouter avant</translation>
+    </message>
+    <message>
+        <source>Add after</source>
+        <translation type="unfinished">Ajouter après</translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation type="unfinished">Déplacer vers le haut</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation type="unfinished">Déplacer vers le bas</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NavigationListForm.ui</name>
+    <message>
+        <source>Add a document</source>
+        <translation type="unfinished">Ajouter un document</translation>
+    </message>
+    <message>
+        <source>Navigation menu</source>
+        <translation type="unfinished">menu de navigation</translation>
+    </message>
+</context>
+<context>
     <name>NewProject</name>
     <message>
         <source>Part </source>
@@ -2045,95 +2183,95 @@
     <name>TreeListView</name>
     <message>
         <source>Go up</source>
-        <translation>Remonter</translation>
+        <translation type="vanished">Remonter</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation>Coller</translation>
+        <translation type="vanished">Coller</translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation>Avancé</translation>
+        <translation type="vanished">Avancé</translation>
     </message>
     <message>
         <source>Sort alphabetically</source>
-        <translation>Trier alphabétiquement</translation>
+        <translation type="vanished">Trier alphabétiquement</translation>
     </message>
     <message>
         <source>Trash</source>
-        <translation>Corbeille</translation>
+        <translation type="vanished">Corbeille</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>Ajouter</translation>
+        <translation type="vanished">Ajouter</translation>
     </message>
     <message>
         <source>has child</source>
-        <translation>a des enfants</translation>
+        <translation type="vanished">a des enfants</translation>
     </message>
     <message>
         <source>label:</source>
-        <translation>marque:</translation>
+        <translation type="vanished">marque:</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation>élément de navigation</translation>
+        <translation type="vanished">élément de navigation</translation>
     </message>
     <message>
         <source>Open document</source>
-        <translation>Ouvrir document</translation>
+        <translation type="vanished">Ouvrir document</translation>
     </message>
     <message>
         <source>This project is a backup</source>
-        <translation>Ce projet est une copie de secours</translation>
+        <translation type="vanished">Ce projet est une copie de secours</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation>Entrez un nom</translation>
+        <translation type="vanished">Entrez un nom</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Ouvrir</translation>
+        <translation type="vanished">Ouvrir</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation>Ouvrir dans un nouvel onglet</translation>
+        <translation type="vanished">Ouvrir dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Open in new window</source>
-        <translation>Ouvrir dans une nouvelle fenêtre</translation>
+        <translation type="vanished">Ouvrir dans une nouvelle fenêtre</translation>
     </message>
     <message>
         <source>Set as active project</source>
-        <translation>Définir comme projet actif</translation>
+        <translation type="vanished">Définir comme projet actif</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation>Renommer</translation>
+        <translation type="vanished">Renommer</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>Copier</translation>
+        <translation type="vanished">Copier</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation>Couper</translation>
+        <translation type="vanished">Couper</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation>Ajouter avant</translation>
+        <translation type="vanished">Ajouter avant</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation>Ajouter après</translation>
+        <translation type="vanished">Ajouter après</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation>Déplacer vers le haut</translation>
+        <translation type="vanished">Déplacer vers le haut</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation>Déplacer vers le bas</translation>
+        <translation type="vanished">Déplacer vers le bas</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -2141,35 +2279,35 @@
     </message>
     <message>
         <source>Open document in a new tab</source>
-        <translation>Ouvrir un document dans un nouvel onglet</translation>
+        <translation type="vanished">Ouvrir un document dans un nouvel onglet</translation>
     </message>
     <message>
         <source>Open document in a window</source>
-        <translation>Ouvrir un document dans une nouvelle fenêtre</translation>
+        <translation type="vanished">Ouvrir un document dans une nouvelle fenêtre</translation>
     </message>
     <message>
         <source>Send to trash</source>
-        <translation>Déplacer dans la corbeille</translation>
+        <translation type="vanished">Déplacer dans la corbeille</translation>
     </message>
     <message>
         <source>Enter label</source>
-        <translation>Marquer</translation>
+        <translation type="vanished">Marquer</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation>Marquer</translation>
+        <translation type="vanished">Marquer</translation>
     </message>
     <message>
         <source>Projects</source>
-        <translation>Projets</translation>
+        <translation type="vanished">Projets</translation>
     </message>
     <message>
         <source>Add a sub-item</source>
-        <translation>Ajouter une sous-entrée</translation>
+        <translation type="vanished">Ajouter une sous-entrée</translation>
     </message>
     <message>
         <source>See sub-items</source>
-        <translation>Afficher les sous-entrées</translation>
+        <translation type="vanished">Afficher les sous-entrées</translation>
     </message>
 </context>
 <context>
@@ -2180,11 +2318,11 @@
     </message>
     <message>
         <source>Add a document</source>
-        <translation>Ajouter un document</translation>
+        <translation type="vanished">Ajouter un document</translation>
     </message>
     <message>
         <source>Navigation menu</source>
-        <translation>menu de navigation</translation>
+        <translation type="vanished">menu de navigation</translation>
     </message>
 </context>
 <context>

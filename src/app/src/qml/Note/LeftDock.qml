@@ -160,7 +160,7 @@ LeftDockForm {
         navigateByBranchesEnabled: true
     }
 
-    navigationView.treeListViewProxyModel: navigationProxyModel
+    navigationView.navigationListProxyModel: navigationProxyModel
 
 
     SKRSearchNoteListProxyModel {

@@ -1966,6 +1966,144 @@ Please open a .plume file.</source>
     </message>
 </context>
 <context>
+    <name>NavigationList</name>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>has child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>label:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>navigation item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a sub-item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>See sub-items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open document in a window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This project is a backup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set as active project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation type="unfinished">Sposta su</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation type="unfinished">Sposta giù</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NavigationListForm.ui</name>
+    <message>
+        <source>Add a document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigation menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>NewProject</name>
     <message>
         <source>Part </source>
@@ -4128,139 +4266,12 @@ Please open a .plume file.</source>
 <context>
     <name>TreeListView</name>
     <message>
-        <source>Go up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Advanced</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort alphabetically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Trash</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>has child</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>label:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>navigation item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This project is a backup</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set as active project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add before</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add after</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Move up</source>
-        <translation type="unfinished">Sposta su</translation>
+        <translation type="obsolete">Sposta su</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation type="unfinished">Sposta giù</translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Projects</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>See sub-items</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>TreeListViewForm.ui</name>
-    <message>
-        <source>Add a document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigation menu</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Sposta giù</translation>
     </message>
 </context>
 <context>

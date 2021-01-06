@@ -110,8 +110,6 @@ public:
 class Misc {
 public:
 
-    static QString spaceInNumber(const QString numberString = "",
-                                 const QString symbol       = " ");
     static QString updateProjectIfOldSystem(QString file);
 
 

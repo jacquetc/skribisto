@@ -1,6 +1,5 @@
 #include "plmdata.h"
 
-
 PLMData::PLMData(QObject *parent) : QObject(parent)
 {
     m_instance = this;

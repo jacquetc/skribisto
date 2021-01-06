@@ -41,7 +41,7 @@ ExamplePageForm {
                 }
             }
 
-            ColumnLayout{
+            contentItem: ColumnLayout{
                 anchors.fill: parent
 
                 Image {

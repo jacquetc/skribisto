@@ -162,7 +162,7 @@ LeftDockForm {
         navigateByBranchesEnabled: true
     }
 
-    navigationView.treeListViewProxyModel: navigationProxyModel
+    navigationView.navigationListProxyModel: navigationProxyModel
 
     Connections {
         target: plmData.projectHub()

@@ -98,7 +98,7 @@ ThemePageForm {
 
 
 
-        RowLayout {
+        contentItem: RowLayout {
             anchors.fill: parent
 
 

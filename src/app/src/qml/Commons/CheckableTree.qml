@@ -462,7 +462,7 @@ ListView {
                     }
                 }
 
-                ColumnLayout{
+                contentItem: ColumnLayout{
                     id: columnLayout3
                     anchors.fill: parent
 

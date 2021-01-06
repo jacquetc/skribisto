@@ -78,7 +78,7 @@ ComboBox {
 
         contentItem: SkrListItemPane{
 
-            ScrollView {
+            contentItem: ScrollView {
                 id: scrollView
                 clip: true
                 anchors.fill: parent

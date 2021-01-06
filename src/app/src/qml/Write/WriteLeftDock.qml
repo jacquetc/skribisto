@@ -152,7 +152,7 @@ WriteLeftDockForm {
         navigateByBranchesEnabled: true
     }
 
-    navigationView.treeListViewProxyModel: navigationProxyModel
+    navigationView.navigationListProxyModel: navigationProxyModel
 
     SKRSearchSheetListProxyModel {
         id: trashedSheetProxyModel
