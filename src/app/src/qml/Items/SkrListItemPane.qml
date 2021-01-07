@@ -32,7 +32,7 @@ Item {
         verticalOffset: elevation
         radius: 8
         samples: 17
-        color: "#b5b5b5"
+        color: "#33000000"
         source: mainRectangle
     }
 
@@ -42,7 +42,7 @@ Item {
         verticalOffset: elevation
         radius: 8
         samples: 17
-        color: "#b5b5b5"
+        color: "#33000000"
         source: mainRectangle
     }
 }
