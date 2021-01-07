@@ -31,6 +31,7 @@ Item {
             id: scrollView
             Layout.fillWidth: true
             Layout.fillHeight: true
+            padding: 3
 
             clip: true
 
