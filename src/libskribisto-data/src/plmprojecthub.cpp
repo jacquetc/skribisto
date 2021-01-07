@@ -24,7 +24,10 @@ PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent),
 
 SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath, bool hidden)
 {
-    // qDebug() << "loading project";
+    if(!hidden){
+        emit projectToBeLoaded();
+    }
+
     int projectId    = -1;
     SKRResult result = plmProjectManager->loadProject(urlFilePath, projectId);
 

@@ -8,6 +8,7 @@ import eu.skribisto.result 1.0
 import eu.skribisto.projecthub 1.0
 import QtQuick.Controls.Material 2.15
 import "Commons"
+import "Items"
 
 ApplicationWindow {
 
@@ -350,7 +351,6 @@ ApplicationWindow {
 
             }
             else {
-
                 var result = plmData.projectHub().loadProject(file)
             }
 
@@ -659,11 +659,14 @@ ApplicationWindow {
     // style :
     //palette.window: "white"
 
-    //Splash screen
+    //-----------------------------------------------------------------------------
+    //--------- Splash screen  ----------------------------------------------------
+    //-----------------------------------------------------------------------------
+
     Item {
         id: splash
         parent: Overlay.overlay
-        property int timeoutInterval: 1000
+        property int timeoutInterval: 100
         signal timeout
         x: (Overlay.overlay.width - splashImage.width) / 2
         y: (Overlay.overlay.height - splashImage.height) / 2
@@ -701,6 +704,60 @@ ApplicationWindow {
         }
         Component.onCompleted: splash.visible = true
     }
+
+    //-----------------------------------------------------------------------------
+    //--------- Loading Modal Popup  --------------------------------------------
+    //-----------------------------------------------------------------------------
+
+
+    SkrPopup {
+        id: loadingPopup
+        parent: Overlay.overlay
+        property int timeoutInterval: 1000
+        signal timeout
+        x: (Overlay.overlay.width - width) / 2
+        y: (Overlay.overlay.height - height) / 2
+        width: 300
+        height: 100
+
+        modal: true
+
+        closePolicy: Popup.NoAutoClose
+
+
+        contentItem: SkrLabel {
+            id: loadingPopupLabel
+            text: "<h1>" + qsTr("Loading a project") + "</h1>"
+            focus: true
+        }
+
+
+
+        Timer {
+            interval: loadingPopup.timeoutInterval; running: true; repeat: false
+            onTriggered: {
+                loadingPopup.visible = false
+                loadingPopup.timeout()
+            }
+        }
+    }
+
+
+    Connections{
+        target: plmData.projectHub()
+        function onProjectToBeLoaded(){
+            loadingPopup.open()
+        }
+    }
+    Connections{
+        target: plmData.projectHub()
+        function onProjectLoaded(projectId){
+            loadingPopup.close()
+        }
+    }
+    //-------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------
 
 
 
@@ -1168,6 +1225,8 @@ ApplicationWindow {
             rootWindow.close()
         }
     }
+
+
 
 
 

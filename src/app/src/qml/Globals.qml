@@ -39,7 +39,6 @@ QtObject {
     signal openMainMenuCalled()
     signal openSubMenuCalled(var menu)
 
-
     //Sheet overview
     property int sheetOverviewCurrentProjectId: -2
 

@@ -98,30 +98,34 @@ public:
 signals:
 
     void             errorSent(const SKRResult& result) const;
-    Q_INVOKABLE void projectLoaded(int projectId);
+    ///
+    /// \brief projectToBeLoaded
+    /// To be used with a direct connection
+    void projectToBeLoaded();
+    void projectLoaded(int projectId);
 
     ///
     /// \brief projectToBeClosed
     /// \param projectId
     /// To be used with a direct connection
-    Q_INVOKABLE void projectToBeClosed(int projectId);
-    Q_INVOKABLE void projectClosed(int projectId);
-    Q_INVOKABLE void allProjectsClosed();
-    Q_INVOKABLE void isThereAnyLoadedProjectChanged(bool value);
-    Q_INVOKABLE void projectTypeChanged(int            projectId,
-                                        const QString& newType);
-    Q_INVOKABLE void activeProjectChanged(int projectId);
-    Q_INVOKABLE void projectPathChanged(int         projectId,
-                                        const QUrl& newUrlPath);
-    Q_INVOKABLE void projectNameChanged(int            projectId,
-                                        const QString& newProjectName);
-    Q_INVOKABLE void langCodeChanged(int            projectId,
-                                     const QString& newProjectName);
-    Q_INVOKABLE void projectSaved(int projectId);
-    Q_INVOKABLE void projectNotSavedAnymore(int projectId);
-    Q_INVOKABLE void projectCountChanged(int count);
+    void projectToBeClosed(int projectId);
+    void projectClosed(int projectId);
+    void allProjectsClosed();
+    void isThereAnyLoadedProjectChanged(bool value);
+    void projectTypeChanged(int            projectId,
+                            const QString& newType);
+    void activeProjectChanged(int projectId);
+    void projectPathChanged(int         projectId,
+                            const QUrl& newUrlPath);
+    void projectNameChanged(int            projectId,
+                            const QString& newProjectName);
+    void langCodeChanged(int            projectId,
+                         const QString& newProjectName);
+    void projectSaved(int projectId);
+    void projectNotSavedAnymore(int projectId);
+    void projectCountChanged(int count);
 
-    Q_INVOKABLE void projectIsBackupChanged(int  projectId,
+    void projectIsBackupChanged(int  projectId,
                                             bool isThisABackup);
 
 public slots:
