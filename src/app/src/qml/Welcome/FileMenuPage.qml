@@ -102,7 +102,10 @@ FileMenuPageForm {
                     if(plmData.projectHub().isURLAlreadyLoaded(model.fileName)){
                     }
                     else {
-                        plmData.projectHub().loadProject(model.fileName)
+                        //TODO: temporary until async is done
+                        Globals.loadingPopupCalled()
+                        //plmData.projectHub().loadProject(model.fileName)
+                        loadProjectTimer.start()
                     }
 
 
@@ -111,7 +114,17 @@ FileMenuPageForm {
 
             }
 
+            //TODO: temporary until async is done
+            Timer {
+                id: loadProjectTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    plmData.projectHub().loadProject(model.skribistoFile)
 
+                }
+
+            }
 
             TapHandler {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
@@ -236,6 +249,7 @@ FileMenuPageForm {
                             itemButtonsIndex = model.index
                             closeAction.trigger()
                         }
+                        text: qsTr("Close project")
 
                     }
 

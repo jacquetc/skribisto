@@ -486,7 +486,16 @@ RootPageForm {
         id: projectLoadingTimer
         repeat: false
         interval: 100
-        onTriggered: Globals.openSheetInNewTabCalled(projectIdForProjectLoading, paperIdForProjectLoading)
+        onTriggered: {
+            if(paperIdForProjectLoading === -2 || paperIdForProjectLoading === 0 ){
+                Globals.showWriteOverviewPageCalled()
+            }
+            else{
+                Globals.openSheetInNewTabCalled(projectIdForProjectLoading, paperIdForProjectLoading)
+            }
+
+
+        }
     }
     //---------------------------------------------------------
     //---------Tab bar ------------------------------------------
@@ -1688,10 +1697,12 @@ RootPageForm {
             //console.log("argument : " , arguments[arg])
 
             if (arguments[arg] === "--testProject") {
-                var result = plmData.projectHub().loadProject(
-                            testProjectFileName)
-                console.log("project loaded : " + result.success)
-                console.log("projectFileName :", testProjectFileName.toString(), "\n")
+//                var result = plmData.projectHub().loadProject(
+//                            testProjectFileName)
+                //TODO: temporary until async is done
+                Globals.loadingPopupCalled()
+                openArgumentTimer.fileName = testProjectFileName
+                openArgumentTimer.start()
 
                 //show Write window
                 //                writeOverviewWindowAction.trigger()
@@ -1707,8 +1718,10 @@ RootPageForm {
                     //console.log("argument skrib : " , arguments[arg])
                     var url = skrQMLTools.getURLFromLocalFile(arguments[arg])
                     //console.log("argument skrib url : " , url)
-
-                    projectInArgument = plmData.projectHub().loadProject(url)
+                    //TODO: temporary until async is done
+                    Globals.loadingPopupCalled()
+                    openArgumentTimer.fileName = url
+                    openArgumentTimer.start()
 
                 }
             }
@@ -1722,11 +1735,30 @@ RootPageForm {
 
 
         if (!isTestProject & !oneProjectInArgument & plmData.projectHub().getProjectCount() === 0 & SkrSettings.behaviorSettings.createEmptyProjectAtStart === true) {
-            plmData.projectHub().loadProject("")
+            //TODO: temporary until async is done
+            Globals.loadingPopupCalled()
+            openArgumentTimer.fileName = ""
+            openArgumentTimer.start()
+            //plmData.projectHub().loadProject("")
 
             //show Write window
             //            writeOverviewWindowAction.trigger()
 
+        }
+    }
+
+    //TODO: temporary until async is done
+    Timer{
+        id: openArgumentTimer
+
+        property url fileName
+
+        repeat: false
+        interval: 100
+        onTriggered: {
+            var result = plmData.projectHub().loadProject(fileName)
+            console.log("project loaded : " + result.success)
+            console.log("projectFileName :", testProjectFileName.toString(), "\n")
         }
     }
 }
