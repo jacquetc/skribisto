@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
+import QtQuick.Layouts 1.15
 import QtQml 2.15
 import Qt.labs.settings 1.1
 import Qt.labs.platform 1.1 as LabPlatform
@@ -351,7 +352,10 @@ ApplicationWindow {
 
             }
             else {
-                var result = plmData.projectHub().loadProject(file)
+                //TODO: temporary until async is done
+                Globals.loadingPopupCalled()
+                openProjectTimer.fileName = file
+                openProjectTimer.start()
             }
 
         }
@@ -359,6 +363,19 @@ ApplicationWindow {
 
         }
     }
+
+    //TODO: temporary until async is done
+    Timer{
+        id: openProjectTimer
+
+        property url fileName
+
+        interval: 100
+        onTriggered: {
+            var result = plmData.projectHub().loadProject(fileName)
+        }
+    }
+
     //------------------------------------------------------------------
     //---------Save---------
     //------------------------------------------------------------------
@@ -713,7 +730,7 @@ ApplicationWindow {
     SkrPopup {
         id: loadingPopup
         parent: Overlay.overlay
-        property int timeoutInterval: 1000
+        property int timeoutInterval: 10000
         signal timeout
         x: (Overlay.overlay.width - width) / 2
         y: (Overlay.overlay.height - height) / 2
@@ -725,16 +742,39 @@ ApplicationWindow {
         closePolicy: Popup.NoAutoClose
 
 
-        contentItem: SkrLabel {
+        contentItem: ColumnLayout{
+
+            SkrLabel {
             id: loadingPopupLabel
+
+            Layout.alignment: Qt.AlignHCenter
+
+
             text: "<h1>" + qsTr("Loading a project") + "</h1>"
             focus: true
         }
 
+            AnimatedSprite {
+                id: loadingPopupAnimation
+                Layout.alignment: Qt.AlignHCenter
+                width: 200
+                height: 200
+                frameHeight: 22
+                frameWidth: 22
+                frameRate: 10
+                frameCount: 8
+
+                source: "qrc:///icons/backup/process-working.svg"
+
+            }
+        }
+
+
 
 
         Timer {
-            interval: loadingPopup.timeoutInterval; running: true; repeat: false
+            id: loadingPopupTimeoutTimer
+            interval: loadingPopup.timeoutInterval; repeat: false
             onTriggered: {
                 loadingPopup.visible = false
                 loadingPopup.timeout()
@@ -742,19 +782,41 @@ ApplicationWindow {
         }
     }
 
+    //TODO: temporary until async is done
+    Connections{
+        target: Globals
+        function onLoadingPopupCalled(){
+            loadingPopup.open()
+            loadingPopupTimeoutTimer.start()
+        }
+    }
 
     Connections{
         target: plmData.projectHub()
         function onProjectToBeLoaded(){
             loadingPopup.open()
+            loadingPopupTimeoutTimer.start()
         }
     }
     Connections{
         target: plmData.projectHub()
         function onProjectLoaded(projectId){
-            loadingPopup.close()
+            closeLoadingPopupTimer.start()
         }
     }
+
+    // delay close of loading popup to let the time to switch to the sheet tab
+    Timer {
+        id: closeLoadingPopupTimer
+        interval: 1000
+        repeat: false
+        onTriggered: {
+            loadingPopup.close()
+            loadingPopupTimeoutTimer.stop()
+        }
+
+    }
+
     //-------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------

@@ -33,12 +33,27 @@ ExamplePageForm {
 
             TapHandler {
                 onTapped: {
-                      plmData.projectHub().loadProject(model.skribistoFile)
+                    //TODO: temporary until async is done
+                    Globals.loadingPopupCalled()
+                    //plmData.projectHub().loadProject(model.skribistoFile)
+                    loadProjectTimer.start()
                 }
 
                 onGrabChanged: {
                     eventPoint.accepted = false
                 }
+            }
+
+            //TODO: temporary until async is done
+            Timer {
+                id: loadProjectTimer
+                repeat: false
+                interval: 100
+                onTriggered: {
+                    plmData.projectHub().loadProject(model.skribistoFile)
+
+                }
+
             }
 
             contentItem: ColumnLayout{
