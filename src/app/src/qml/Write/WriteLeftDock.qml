@@ -169,6 +169,8 @@ WriteLeftDockForm {
     }
     navigationView.restoreListViewProxyModel: restoreSheetProxyModel
 
+    navigationView.iconUrl: "qrc:///icons/backup/story-editor.svg"
+
 
 
 
@@ -234,7 +236,7 @@ WriteLeftDockForm {
 
 
     function setCurrentPaperId(projectId, paperId) {
-        navigationProxyModel.setCurrentPaperId(projectId, paperId)
+        navigationView.setCurrentPaperId(projectId, paperId)
     }
     function setOpenedPaperId(projectId, paperId) {
         navigationView.openedProjectId = projectId

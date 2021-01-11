@@ -16,7 +16,7 @@ ApplicationWindow {
 
     id: rootWindow
     objectName: "rootWindow"
-    minimumHeight: 500
+    minimumHeight: 800
     minimumWidth: 600
     visible: true
 
@@ -27,7 +27,7 @@ ApplicationWindow {
 
     Component.onCompleted:{
     var result = plmData.projectHub().loadProject(testProjectFileName)
-        navigationProxyModel.setCurrentPaperId(1, 2)
+        searchListView.setCurrentPaperId(1, 21)
     }
 
 
@@ -59,12 +59,13 @@ ApplicationWindow {
 
         NavigationList {
             id: searchListView
-            model: navigationProxyModel
+
             proxyModel: navigationProxyModel
             //openedPaperId: 1
             width: parent.width
             height: 600
 
+            iconUrl: "qrc:///icons/backup/story-editor.svg"
 
 
             Accessible.role: Accessible.List

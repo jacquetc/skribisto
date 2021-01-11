@@ -11,6 +11,9 @@ class EXPORT SKRSearchNoteListProxyModel : public SKRSearchPaperListProxyModel {
 public:
 
     explicit SKRSearchNoteListProxyModel();
+
+    Q_INVOKABLE SKRSearchNoteListProxyModel *clone();
+
 };
 
 #endif // SKRSEARCHNOTELISTPROXYMODEL_H

@@ -6,3 +6,8 @@
 SKRSearchNoteListProxyModel::SKRSearchNoteListProxyModel() :
     SKRSearchPaperListProxyModel(SKR::Note)
 {}
+
+SKRSearchNoteListProxyModel *SKRSearchNoteListProxyModel::clone()
+{
+    return static_cast<SKRSearchNoteListProxyModel *>(SKRSearchPaperListProxyModel::clone()) ;
+}

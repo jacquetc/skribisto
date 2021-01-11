@@ -189,6 +189,7 @@ LeftDockForm {
     }
     navigationView.restoreListViewProxyModel: restoreNoteProxyModel
 
+    navigationView.iconUrl: "qrc:///icons/backup/view-pim-notes.svg"
 
 
     function restoreNoteList(projectId, noteIdList){
@@ -248,7 +249,7 @@ LeftDockForm {
 
 
     function setCurrentPaperId(projectId, paperId) {
-        navigationProxyModel.setCurrentPaperId(projectId, paperId)
+        navigationView.setCurrentPaperId(projectId, paperId)
     }
 
 

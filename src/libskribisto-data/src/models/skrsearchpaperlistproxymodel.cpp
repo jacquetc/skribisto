@@ -9,19 +9,8 @@ SKRSearchPaperListProxyModel::SKRSearchPaperListProxyModel(SKR::ItemType paperTy
                                                                    false), m_textFilter(""),
       m_projectIdFilter(-2), m_parentIdFilter(-2), m_showParentWhenParentIdFilter(false)
 {
-    if (paperType == SKR::Sheet) {
-        m_paperHub = plmdata->sheetHub();
-        m_propertyHub = plmdata->sheetPropertyHub();
-        this->setSourceModel(plmmodels->sheetListModel());
-    }
-    else if (paperType == SKR::Note) {
-        m_paperHub = plmdata->noteHub();
-        m_propertyHub = plmdata->notePropertyHub();
-        this->setSourceModel(plmmodels->noteListModel());
-    }
-    else {
-        qFatal(this->metaObject()->className(), "Invalid ItemType");
-    }
+
+    setPaperType(paperType);
 
 
     this->setSortRole(SKRPaperItem::SortOrderRole);
@@ -51,11 +40,55 @@ SKRSearchPaperListProxyModel::SKRSearchPaperListProxyModel(SKR::ItemType paperTy
 
     SKRPaperListModel *listModel = static_cast<SKRPaperListModel*>(this->sourceModel());
     connect(this, &SKRSearchPaperListProxyModel::sortOtherProxyModelsCalled, listModel, &SKRPaperListModel::sortOtherProxyModelsCalled);
-    connect(listModel, &SKRPaperListModel::sortOtherProxyModelsCalled, [this](){
+    connect(listModel, &SKRPaperListModel::sortOtherProxyModelsCalled, this, [this](){
         if(this->sender() != this){
             this->sort(0);
         }
     });
+}
+
+
+void SKRSearchPaperListProxyModel::setPaperType(SKR::ItemType paperType)
+{
+
+    if (paperType == SKR::Sheet) {
+        m_paperHub = plmdata->sheetHub();
+        m_propertyHub = plmdata->sheetPropertyHub();
+        this->setSourceModel(plmmodels->sheetListModel());
+    }
+    else if (paperType == SKR::Note) {
+        m_paperHub = plmdata->noteHub();
+        m_propertyHub = plmdata->notePropertyHub();
+        this->setSourceModel(plmmodels->noteListModel());
+    }
+    else {
+        qFatal(this->metaObject()->className(), "Invalid ItemType");
+    }
+
+    emit paperTypeChanged(paperType);
+
+}
+
+SKRSearchPaperListProxyModel *SKRSearchPaperListProxyModel::clone()
+{
+    SKRSearchPaperListProxyModel *newInstance = new SKRSearchPaperListProxyModel(m_paperType);
+
+    newInstance->setProjectIdFilter(m_projectIdFilter);
+    newInstance->setShowTrashedFilter(m_showTrashedFilter);
+    newInstance->setShowNotTrashedFilter(m_showNotTrashedFilter);
+    newInstance->setNavigateByBranchesEnabled(m_navigateByBranchesEnabled);
+    newInstance->setTextFilter(m_textFilter);
+    newInstance->setPaperIdListFilter(m_paperIdListFilter);
+    newInstance->setHidePaperIdListFilter(m_hidePaperIdListFilter);
+    newInstance->setForcedCurrentIndex(m_forcedCurrentIndex);
+    newInstance->setParentIdFilter(m_parentIdFilter);
+    newInstance->setShowParentWhenParentIdFilter(m_showParentWhenParentIdFilter);
+    newInstance->setTagIdListFilter(m_tagIdListFilter);
+    newInstance->setShowOnlyWithAttributesFilter(m_showOnlyWithAttributesFilter);
+    newInstance->setHideThoseWithAttributesFilter(m_hideThoseWithAttributesFilter);
+
+
+    return newInstance;
 }
 
 Qt::ItemFlags SKRSearchPaperListProxyModel::flags(const QModelIndex& index) const

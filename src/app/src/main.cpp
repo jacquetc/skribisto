@@ -276,6 +276,7 @@ int main(int argc, char *argv[])
         0,
         "SKRSearchSheetListProxyModel");
 
+
     qmlRegisterType<SKRSearchTagListProxyModel>("eu.skribisto.searchtaglistproxymodel",
                                                 1,
                                                 0,

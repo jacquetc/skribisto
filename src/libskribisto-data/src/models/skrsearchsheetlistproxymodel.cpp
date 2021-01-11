@@ -6,3 +6,8 @@
 SKRSearchSheetListProxyModel::SKRSearchSheetListProxyModel() :
     SKRSearchPaperListProxyModel(SKR::Sheet)
 {}
+
+SKRSearchSheetListProxyModel *SKRSearchSheetListProxyModel::clone()
+{
+    return static_cast<SKRSearchSheetListProxyModel *>(SKRSearchPaperListProxyModel::clone()) ;
+}

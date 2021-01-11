@@ -13,11 +13,17 @@ NavigationForm {
     property int openedProjectId
     property int openedPaperId
 
+    property string iconUrl
+
 
     signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
     signal openDocumentInNewTab(int projectId, int paperId)
     signal openDocumentInNewWindow(int projectId, int paperId)
     signal restoreDocumentList(int projectId, var paperIdList)
+
+    function setCurrentPaperId(projectId, paperId){
+         stackView.get(0, StackView.DontLoad).setCurrentPaperId(projectId, paperId)
+    }
 
     Component {
         id: navigationListComponent
@@ -25,15 +31,16 @@ NavigationForm {
         NavigationList {
             id: navigationList
             proxyModel: root.navigationListProxyModel
-            model: root.navigationListProxyModel
             openedProjectId: root.openedProjectId
             openedPaperId: root.openedPaperId
+            iconUrl: root.iconUrl
 
             Component.onCompleted: {
                 navigationList.openDocument.connect(root.openDocument)
                 navigationList.openDocumentInNewTab.connect(root.openDocumentInNewTab)
                 navigationList.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
                 navigationList.showTrashedList.connect(root.pushTrashedListView)
+
 
             }
 

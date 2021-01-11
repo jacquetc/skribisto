@@ -188,6 +188,7 @@ LeftDockForm {
     }
     navigationView.restoreListViewProxyModel: restoreSheetProxyModel
 
+    navigationView.iconUrl: "qrc:///icons/backup/story-editor.svg"
 
 
 
@@ -250,7 +251,7 @@ LeftDockForm {
 
 
     function setCurrentPaperId(projectId, paperId) {
-        navigationProxyModel.setCurrentPaperId(projectId, paperId)
+        navigationView.setCurrentPaperId(projectId, paperId)
     }
 
 

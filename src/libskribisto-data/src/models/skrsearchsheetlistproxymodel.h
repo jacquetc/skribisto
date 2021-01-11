@@ -11,6 +11,8 @@ class EXPORT SKRSearchSheetListProxyModel : public SKRSearchPaperListProxyModel 
 public:
 
     explicit SKRSearchSheetListProxyModel();
+
+    Q_INVOKABLE SKRSearchSheetListProxyModel *clone();
 };
 
 #endif // PLMSEARCHSHEETLISTPROXYMODEL_H

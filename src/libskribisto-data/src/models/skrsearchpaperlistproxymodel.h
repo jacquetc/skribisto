@@ -11,6 +11,8 @@
 class SKRSearchPaperListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
     Q_PROPERTY(
+        SKR::ItemType paperType MEMBER m_paperType WRITE setPaperType NOTIFY paperTypeChanged)
+    Q_PROPERTY(
         int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)
     Q_PROPERTY(
         bool showTrashedFilter MEMBER m_showTrashedFilter WRITE setShowTrashedFilter NOTIFY showTrashedFilterChanged)
@@ -40,6 +42,8 @@ class SKRSearchPaperListProxyModel : public QSortFilterProxyModel {
 public:
 
     explicit SKRSearchPaperListProxyModel(SKR::ItemType paperType);
+
+    SKRSearchPaperListProxyModel *clone();
 
 
     Qt::ItemFlags flags(const QModelIndex& index) const;
@@ -143,18 +147,20 @@ public:
     Q_INVOKABLE void      deleteDefinitively(int projectId,
                                              int paperId);
 
-    Q_INVOKABLE int       getLastOfHistory(int projectId);
-    Q_INVOKABLE void      removeLastOfHistory(int projectId);
-    Q_INVOKABLE void      addHistory(int projectId,
+    Q_DECL_DEPRECATED Q_INVOKABLE int       getLastOfHistory(int projectId);
+    Q_DECL_DEPRECATED Q_INVOKABLE void      removeLastOfHistory(int projectId);
+    Q_DECL_DEPRECATED Q_INVOKABLE void      addHistory(int projectId,
                                      int paperId);
-    Q_INVOKABLE void      clearHistory(int projectId);
+    Q_DECL_DEPRECATED Q_INVOKABLE void      clearHistory(int projectId);
 
     Q_INVOKABLE void cut(int projectId, int paperId);
     Q_INVOKABLE void copy(int projectId, int paperId);
     Q_INVOKABLE void paste(int targetProjectId, int targetParentId);
 
+    void setPaperType(SKR::ItemType paperType);
 signals:
 
+    void paperTypeChanged(SKR::ItemType paperType);
     void projectIdFilterChanged(int projectIdFilter);
     void textFilterChanged(const QString& value);
     void showTrashedFilterChanged(bool value);

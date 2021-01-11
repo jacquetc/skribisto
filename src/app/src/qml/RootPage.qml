@@ -79,7 +79,7 @@ RootPageForm {
             id: noteOverviewWindowAction
             text: qsTr("Note")
             icon {
-                source: "qrc:///icons/backup/story-editor.svg"
+                source: "qrc:///icons/backup/view-pim-notes.svg"
                 color: SkrTheme.buttonIcon
                 height: 100
                 width: 100

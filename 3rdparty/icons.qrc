@@ -91,5 +91,6 @@
         <file>icons/backup/object-rows.svg</file>
         <file>icons/backup/document-print-direct.svg</file>
         <file>icons/backup/favorite.svg</file>
+        <file>icons/backup/view-pim-notes.svg</file>
     </qresource>
 </RCC>
