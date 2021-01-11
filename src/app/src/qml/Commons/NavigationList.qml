@@ -53,7 +53,6 @@ NavigationListForm {
 
     function setCurrentPaperId(projectId, paperId){
 
-        console.log(projectId, paperId)
 
         //find parent id
         var ancestorsList = proxyModel.getAncestorsList(projectId, paperId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)
@@ -546,24 +545,6 @@ NavigationListForm {
                             }
 
 
-                            //            drag.target: held ? content : undefined
-                            //            drag.axis: Drag.YAxis
-
-                            //            onPressAndHold: held = true
-                            //            onReleased: held = false
-                            //            Shortcut {
-                            //                sequence: "Ctrl+Up"
-                            //                onActivated: moveUpAction.trigger(delegateRoot)
-                            //            }
-                            //            Keys.onShortcutOverride: {
-                            //                if (event.key === Qt.Key_Backspace) {
-                            //                    console.log("onShortcutOverride")
-                            //                    event.accepted = true
-                            //                }
-                            //            }
-                            //            Keys.onBackPressed: {
-                            //                console.log("eee")
-                            //            }
                             function editName() {
                                 state = "edit_name"
                                 titleTextFieldForceActiveFocusTimer.start()

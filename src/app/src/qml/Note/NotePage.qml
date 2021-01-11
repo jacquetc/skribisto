@@ -362,7 +362,8 @@ NotePageForm {
 
         restoreCurrentPaperCursorPositionAndY()
 
-        writingZone.forceActiveFocus()
+        forceActiveFocusTimer.start()
+
         //save :
         skrUserSettings.setProjectSetting(projectId, "noteCurrentPaperId", paperId)
 
@@ -380,6 +381,14 @@ NotePageForm {
         determineModifiableTimer.start()
 
     }
+
+    Timer{
+        id: forceActiveFocusTimer
+        repeat: false
+        interval: 100
+        onTriggered:  writingZone.forceActiveFocus()
+    }
+
 
     function restoreCurrentPaperCursorPositionAndY(){
 

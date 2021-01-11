@@ -395,12 +395,13 @@ WritePageForm {
         leftDock.setOpenedPaperId(projectId, paperId)
 
         determineModifiableTimer.start()
+
     }
 
     Timer{
         id: forceActiveFocusTimer
         repeat: false
-        interval: 0
+        interval: 100
         onTriggered:  writingZone.forceActiveFocus()
     }
 
