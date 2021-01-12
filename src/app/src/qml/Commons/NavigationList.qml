@@ -77,7 +77,6 @@ NavigationListForm {
         else {
             navigationListStackView.pop(null)
             ancestorsList.reverse()
-            ancestorsList.push(paperId)
             for(var i = 0 ; i < ancestorsList.length ; i++){
                 var newItem = navigationListStackView.push(stackViewComponent, {"projectId": projectId, "paperId": ancestorsList[i] } )
                 newItem.setCurrent()
@@ -87,6 +86,7 @@ NavigationListForm {
         }
 
         sideNavigationPopup.close()
+        determineIfGoUpButtonEnabled()
 
         //
     }
@@ -295,25 +295,21 @@ NavigationListForm {
 
             Component.onCompleted: {
                 init()
-
             }
+
 
             function init(){
                 p_section.parentTitle = qsTr("Projects")
                 listView.section.delegate = sectionHeading
 
-                if(paperId === -2 & parentId !== -2 ){
+                if(paperId === -2 && parentId !== -2 ){
                     stackViewBaseItem.proxyModel.setParentFilter(projectId, parentId)
                 }
                 else{
                     stackViewBaseItem.proxyModel.setCurrentPaperId(projectId, paperId)
                     parentId = stackViewBaseItem.proxyModel.parentIdFilter
-                    console.log("parentId", parentId)
 
                 }
-
-                setCurrent()
-
                 determineSectionTitle()
             }
 
@@ -339,7 +335,7 @@ NavigationListForm {
 
             function  determineSectionTitle(){
 
-                if (parentId !== -2 && root.currentProjectId !== -2) {
+                if (parentId !== -2 && projectId !== -2) {
                     var parentTitle = proxyModel.getItemName(projectId, parentId)
                     //console.log("onCurrentParentChanged")
 
@@ -347,7 +343,7 @@ NavigationListForm {
                     listView.section.delegate = sectionHeading
 
                 }
-                else if (parentId === -2 && root.currentProjectId !== -2) {
+                else if (parentId === -2 && projectId !== -2) {
                     var projectTitle = plmData.getProjectName(projectId)
                     //console.log("onCurrentParentChanged")
 
@@ -752,7 +748,7 @@ NavigationListForm {
                                         if(hovered && model.hasChildren){
                                             sideNavigationPopup.projectId = model.projectId
                                             sideNavigationPopup.parentId = model.paperId
-                                            closeSideNavigationListPopupTimer.start()
+                                            openSideNavigationListPopupTimer.start()
 
                                         }
                                         else if(!model.hasChildren){
@@ -2046,6 +2042,12 @@ NavigationListForm {
         property int projectId: -2
         property int parentId: -2
 
+        onParentIdChanged: {
+            sideNavigationLoader.item.projectId = projectId
+            sideNavigationLoader.item.parentId = parentId
+            sideNavigationLoader.item.init()
+        }
+
         x: root.width
         y: navigationListStackView.y
         width: 200
@@ -2061,27 +2063,12 @@ NavigationListForm {
             sourceComponent: stackViewComponent
             visible: status == Loader.Ready
 
-            onLoaded: {
-                item.init()
-            }
-
-            Binding {
-                target: sideNavigationLoader.item
-                property: "projectId"
-                value: sideNavigationPopup.projectId
-            }
-            Binding {
-                target: sideNavigationLoader.item
-                property: "parentId"
-                value: sideNavigationPopup.parentId
-            }
-
         }
 
     }
 
     Timer{
-        id: closeSideNavigationListPopupTimer
+        id: openSideNavigationListPopupTimer
         interval: 20
         onTriggered: {
 
