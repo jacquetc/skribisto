@@ -288,7 +288,7 @@ void SKRRecentProjectListModel::populate()
     // sorting opened first
     QList<PLMProjectItem *> openedList;
 
-    for (PLMProjectItem *item : m_allRecentProjects) {
+    for (PLMProjectItem *item : qAsConst(m_allRecentProjects)) {
         if (item->isOpened) {
             openedList.append(item);
         }
@@ -298,7 +298,7 @@ void SKRRecentProjectListModel::populate()
     //    //sorting opened more recent second
     QList<PLMProjectItem *> moreRecentList;
 
-    for (PLMProjectItem *item : m_allRecentProjects) {
+    for (PLMProjectItem *item : qAsConst(m_allRecentProjects)) {
         if (!item->isOpened) {
             moreRecentList.append(item);
         }

@@ -7,8 +7,8 @@ FocusScope {
     id: base
     property alias text: textArea.text
     property bool stretch: stretch
-    property int textAreaWidth
-    property int minimalTextAreaWidth: 50
+    property int textAreaWidth: 999999
+    property int minimalTextAreaWidth: 150
     property int maximumTextAreaWidth
     property alias scrollView: scrollView
     property alias textArea: textArea

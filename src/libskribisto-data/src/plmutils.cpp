@@ -728,7 +728,12 @@ QStringList PLMUtils::Dir::addonsPathsList()
             list.append(dir.path());
         }
 
-    dir.setPath(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+
+    if (dir.cd("plugins"))
+        if (dir.isReadable()) {
+            list.append(dir.path());
+        }
     dir.cdUp();
 
     if (dir.cd("plugins"))
@@ -761,13 +766,20 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
-    dir.setPath("/usr/lib/skribisto/");
+    dir.setPath("/usr/lib/plugins/skribisto/");
 
     if (dir.isReadable()) {
         list.append(dir.path());
     }
 
     dir.setPath(QDir::homePath() + "/.local/share/skribisto/");
+
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
+
+    // flatpak
+    dir.setPath("/app/lib/plugins/skribisto/");
 
     if (dir.isReadable()) {
         list.append(dir.path());

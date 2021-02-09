@@ -17,6 +17,11 @@ SKRResult PLMProjectManager::createNewEmptyDatabase(int& projectId)
     return loadProject(QUrl(), projectId);
 }
 
+SKRResult PLMProjectManager::createNewSpecificEmptyDatabase(int& projectId, const QString& sqlFile)
+{
+    return loadProject(QUrl(), projectId, sqlFile);
+}
+
 // -----------------------------------------------------------------------------
 
 PLMProjectManager *PLMProjectManager::m_instance = 0;
@@ -24,13 +29,13 @@ PLMProjectManager *PLMProjectManager::m_instance = 0;
 // -----------------------------------------------------------------------------
 
 
-SKRResult PLMProjectManager::loadProject(const QUrl& fileName, int& projectId)
+SKRResult PLMProjectManager::loadProject(const QUrl& fileName, int& projectId, const QString& sqlFile)
 {
     SKRResult result(this);
 
     m_projectIdIncrement += 1;
     projectId             = m_projectIdIncrement;
-    PLMProject *project = new PLMProject(this, projectId, fileName, &result);
+    PLMProject *project = new PLMProject(this, projectId, fileName, &result, sqlFile);
 
     // if result :
     if (project->id() == -1) {

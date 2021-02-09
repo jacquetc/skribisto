@@ -88,6 +88,14 @@ set(app_SRCS
     skrexporter.h
     skrclipboard.cpp
     skrclipboard.h
+    skrwindowmanager.cpp
+    skrwindowmanager.h
+    skrviewmanager.cpp
+    skrviewmanager.h
+    skrpageinterface.h
+    skrexporterinterface.h
+    skrtreemanager.cpp
+    skrtreemanager.h
 )
 
 set(QML qml.qrc

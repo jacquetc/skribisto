@@ -15,17 +15,18 @@ using namespace std;
 #include <QDir>
 #include <QQuickStyle>
 #include <QIcon>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "plmpluginloader.h"
+#include "skrpluginloader.h"
 #include "plmdata.h"
-#include "plmsheethub.h"
-#include "plmnotehub.h"
+#include "skrtreehub.h"
 #include "skrtaghub.h"
 #include "skrresult.h"
 #include "plmprojecthub.h"
 #include "skrprojectdicthub.h"
 #include "skrerrorhub.h"
-#include "plmpropertyhub.h"
+#include "skrpropertyhub.h"
 #include "skrstathub.h"
 #include "documenthandler.h"
 #include "skrhighlighter.h"
@@ -36,10 +37,9 @@ using namespace std;
 #include "skrclipboard.h"
 #include "skr.h"
 #include "models/skrtaglistmodel.h"
-#include "models/skrsearchsheetlistproxymodel.h"
-#include "models/skrsearchnotelistproxymodel.h"
+#include "models/skrsearchtreelistproxymodel.h"
 #include "models/skrsearchtaglistproxymodel.h"
-#include "models/plmmodels.h"
+#include "models/skrmodels.h"
 #include "skrrecentprojectlistmodel.h"
 #include "skrusersettings.h"
 #include "skrfonts.h"
@@ -47,6 +47,9 @@ using namespace std;
 #include "skrqmltools.h"
 #include "skrrootitem.h"
 #include "skrtextbridge.h"
+#include "skrwindowmanager.h"
+#include "skrviewmanager.h"
+#include "skrtreemanager.h"
 
 #ifdef QT_DEBUG
 # include <QQmlDebuggingEnabler>
@@ -75,6 +78,29 @@ void startCore()
 
 // -------------------------------------------------------
 
+void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    QByteArray localMsg = msg.toLocal8Bit();
+    const char *file = context.file ? context.file : "";
+    const char *function = context.function ? context.function : "";
+    switch (type) {
+    case QtDebugMsg:
+        fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+        break;
+    case QtInfoMsg:
+        fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+        break;
+    case QtWarningMsg:
+        fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+        break;
+    case QtCriticalMsg:
+        fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+        break;
+    case QtFatalMsg:
+        fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+        break;
+    }
+}
 
 //// -------------------------------------------------------
 
@@ -121,6 +147,7 @@ int main(int argc, char *argv[])
     QQmlDebuggingEnabler enabler;
 
     // QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
+    //qInstallMessageHandler(myMessageOutput);
 #endif // QT_DEBUG
 
     // Allows qml styling
@@ -133,7 +160,7 @@ int main(int argc, char *argv[])
 
 #if QT_VERSION >= 0x051400
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
-        Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
+                Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 #else // if QT_VERSION >= 0x051400
 
     // qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
@@ -177,23 +204,26 @@ int main(int argc, char *argv[])
 
     // -----------------------------------------------------------------------
 
+    QQmlApplicationEngine engine(qApp);
 
-    SKRRootItem *rootItem = new SKRRootItem(qApp);
+    PLMData   *data                            = new PLMData(&engine);
+    SKRRootItem *rootItem = new SKRRootItem(&engine);
     rootItem->applyLanguageFromSettings();
 
 
-    PLMData   *data                            = new PLMData(qApp);
-    PLMModels *models                          = new PLMModels(qApp);
-    SKRFonts  *skrFonts                        = new SKRFonts(qApp);
-    SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(qApp);
-    SKRQMLTools   *skrQMLTools                 = new SKRQMLTools(qApp);
-    SKRTextBridge *skrTextBridge               = new SKRTextBridge(qApp);
+    SKRModels *models                          = new SKRModels(&engine);
+    SKRFonts  *skrFonts                        = new SKRFonts(&engine);
+    SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(&engine);
+    SKRQMLTools   *skrQMLTools                 = new SKRQMLTools(&engine);
+    SKRTextBridge *skrTextBridge               = new SKRTextBridge(&engine);
+    SKRUserSettings *skrUserSettings         = new SKRUserSettings(&engine);
+    SKRTreeManager *skrTreeManager         = new SKRTreeManager(&engine);
 
     qmlRegisterUncreatableType<SKRResult>("eu.skribisto.result",
-                                         1,
-                                         0,
-                                         "SKRResult",
-                                         "Can't instantiate SKRResult");
+                                          1,
+                                          0,
+                                          "SKRResult",
+                                          "Can't instantiate SKRResult");
 
 
     qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",
@@ -202,17 +232,11 @@ int main(int argc, char *argv[])
                                               "PLMProjectHub",
                                               "Can't instantiate PLMProjectHub");
 
-    qmlRegisterUncreatableType<PLMNoteHub>("eu.skribisto.notehub",
+    qmlRegisterUncreatableType<SKRTreeHub>("eu.skribisto.treehub",
                                            1,
                                            0,
-                                           "PLMNoteHub",
-                                           "Can't instantiate PLMNoteHub");
-
-    qmlRegisterUncreatableType<PLMSheetHub>("eu.skribisto.sheethub",
-                                            1,
-                                            0,
-                                            "PLMSheetHub",
-                                            "Can't instantiate PLMSheetHub");
+                                           "SKRTreeHub",
+                                           "Can't instantiate SKRTreeHub");
 
     qmlRegisterUncreatableType<SKRTagHub>("eu.skribisto.taghub",
                                           1,
@@ -226,55 +250,50 @@ int main(int argc, char *argv[])
                                                   "SKRProjectDictHub",
                                                   "Can't instantiate SKRProjectDictHub");
 
-    qmlRegisterUncreatableType<PLMPropertyHub>("eu.skribisto.propertyhub",
+    qmlRegisterUncreatableType<SKRPropertyHub>("eu.skribisto.propertyhub",
                                                1,
                                                0,
-                                               "PLMProjectDictHub",
-                                               "Can't instantiate PLMPropertyHub");
+                                               "SKRPropertyHub",
+                                               "Can't instantiate SKRPropertyHub");
 
     qmlRegisterUncreatableType<SKRStatHub>("eu.skribisto.stathub",
-                                               1,
-                                               0,
-                                               "SKRStatHub",
-                                               "Can't instantiate SKRStatHub");
+                                           1,
+                                           0,
+                                           "SKRStatHub",
+                                           "Can't instantiate SKRStatHub");
 
     qmlRegisterUncreatableType<SKRErrorHub>("eu.skribisto.errorhub",
-                                               1,
-                                               0,
-                                               "SKRStatHub",
-                                               "Can't instantiate SKRErrorHub");
+                                            1,
+                                            0,
+                                            "SKRErrorHub",
+                                            "Can't instantiate SKRErrorHub");
 
 
     qmlRegisterUncreatableType<SKR>("eu.skribisto.skr",
-                                               1,
-                                               0,
-                                               "SKR",
-                                               "Can't instantiate SKR");
+                                    1,
+                                    0,
+                                    "SKR",
+                                    "Can't instantiate SKR");
 
-    qmlRegisterUncreatableType<PLMModels>("eu.skribisto.models",
+    qmlRegisterUncreatableType<SKRModels>("eu.skribisto.models",
                                           1,
                                           0,
-                                          "PLMModels",
-                                          "Can't instantiate PLMModels");
+                                          "SKRModels",
+                                          "Can't instantiate SKRModels");
 
 
     qmlRegisterUncreatableType<PLMWriteDocumentListModel>(
-        "eu.skribisto.writedocumentlistmodel",
-        1,
-        0,
-        "PLMWriteDocumentListModel",
-        "Can't instantiate PLMWriteDocumentListModel");
+                "eu.skribisto.writedocumentlistmodel",
+                1,
+                0,
+                "PLMWriteDocumentListModel",
+                "Can't instantiate PLMWriteDocumentListModel");
 
-    qmlRegisterType<SKRSearchNoteListProxyModel>("eu.skribisto.searchnotelistproxymodel",
+    qmlRegisterType<SKRSearchTreeListProxyModel>("eu.skribisto.searchtreelistproxymodel",
                                                  1,
                                                  0,
-                                                 "SKRSearchNoteListProxyModel");
+                                                 "SKRSearchTreeListProxyModel");
 
-    qmlRegisterType<SKRSearchSheetListProxyModel>(
-        "eu.skribisto.searchsheetlistproxymodel",
-        1,
-        0,
-        "SKRSearchSheetListProxyModel");
 
 
     qmlRegisterType<SKRSearchTagListProxyModel>("eu.skribisto.searchtaglistproxymodel",
@@ -314,34 +333,51 @@ int main(int argc, char *argv[])
                                "SKRThemes");
 
     qmlRegisterType<SKRExporter>("eu.skribisto.exporter",
-                               1,
-                               0,
-                               "SKRExporter");
+                                 1,
+                                 0,
+                                 "SKRExporter");
 
     qmlRegisterType<SKRClipboard>("eu.skribisto.clipboard",
-                               1,
-                               0,
-                               "SKRClipboard");
+                                  1,
+                                  0,
+                                  "SKRClipboard");
+
+    qmlRegisterType<SKRViewManager>("eu.skribisto.viewmanager",
+                                  1,
+                                  0,
+                                  "SKRViewManager");
 
 
-    QQmlApplicationEngine engine(qApp);
+
     const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
+
+    SKRWindowManager *skrWindowManager = new SKRWindowManager(qApp, &engine, url);
 
     engine.rootContext()->setContextProperty("plmData", data);
     engine.rootContext()->setContextProperty("skrRootItem", rootItem);
-    engine.rootContext()->setContextProperty("plmModels", models);
+    engine.rootContext()->setContextProperty("skrModels", models);
     engine.rootContext()->setContextProperty("skrFonts", skrFonts);
     engine.rootContext()->setContextProperty("skrQMLTools", skrQMLTools);
-    engine.rootContext()->setContextProperty("skrEditMenuSignalHub",
-                                             skrEditMenuSignalHub);
+    engine.rootContext()->setContextProperty("skrEditMenuSignalHub", skrEditMenuSignalHub);
     engine.rootContext()->setContextProperty("skrTextBridge", skrTextBridge);
+    engine.rootContext()->setContextProperty("skrWindowManager", skrWindowManager);
+    engine.rootContext()->setContextProperty("skrUserSettings", skrUserSettings);
+    engine.rootContext()->setContextProperty("skrTreeManager", skrTreeManager);
+
+
+
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl& objUrl) {
         if (!obj && (url == objUrl)) QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
 
-    engine.load(url);
+    skrWindowManager->restoreWindows();
+
+
+
+
+
 
     //            QCoreApplication *app = qApp;
     //            engine->connect(engine, &QQmlApplicationEngine::objectCreated,

@@ -676,7 +676,8 @@ SheetOverviewTreeForm {
 
                                         ListItemAttributes{
                                             id: attributes
-                                            attributes: model.attributes
+                                            treeItemId: model.treeItemId
+                                            projectId: model.projectId
                                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                             Layout.leftMargin: 4
                                             Layout.bottomMargin: 2

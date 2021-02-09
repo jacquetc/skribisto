@@ -16,10 +16,10 @@ public:
     explicit SKRUserSettings(QObject *parent = nullptr);
     Q_INVOKABLE void setProjectSetting(int            projectId,
                                        const QString& key,
-                                       int            value);
-    Q_INVOKABLE int  getProjectSetting(int            projectId,
+                                       QVariant            value);
+    Q_INVOKABLE QVariant getProjectSetting(int            projectId,
                                        const QString& key,
-                                       int            defaultValue);
+                                       QVariant defaultValue);
     Q_INVOKABLE void removeProjectSetting(int            projectId,
                                           const QString& key);
 
@@ -35,6 +35,21 @@ public:
                                                   const QString& key,
                                                   const QString& hashKey);
 
+    Q_INVOKABLE void insertInSomeGroupSettingHash(const QString & settingGroup,
+                                                const QString & key,
+                                                const QString & hashKey,
+                                                const QVariant& value);
+    Q_INVOKABLE QVariant getFromSomeGroupSettingHash(const QString & settingGroup,
+                                                   const QString & key,
+                                                   const QString & hashKey,
+                                                   const QVariant& defaultValue);
+    Q_INVOKABLE void removeFromSomeGroupSettingHash(const QString & settingGroup,
+                                                  const QString& key,
+                                                  const QString& hashKey);
+
+    Q_INVOKABLE void setSetting(const QString &group, const QString &key, QVariant value);
+    Q_INVOKABLE QVariant getSetting(const QString &group, const QString &key, QVariant defaultValue);
+    Q_INVOKABLE void removeSetting(const QString &group, const QString &key);
 signals:
 
 private:

@@ -9,35 +9,22 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
     m_projectManager = new PLMProjectManager(this);
     m_projectHub     = new PLMProjectHub(this);
 
-    m_sheetHub         = new PLMSheetHub(this);
-    m_sheetPropertyHub = new PLMPropertyHub(this,
-                                            "tbl_sheet_property",
-                                            "l_sheet_code");
-    m_noteHub         = new PLMNoteHub(this);
-    m_notePropertyHub = new PLMPropertyHub(this,
-                                           "tbl_note_property",
-                                           "l_note_code");
-
+    m_treeHub         = new SKRTreeHub(this);
+    m_treePropertyHub = new SKRPropertyHub(this,
+                                            "tbl_tree_property",
+                                            "l_tree_code");
     m_tagHub         = new SKRTagHub(this);
     m_projectDictHub = new SKRProjectDictHub(this);
-    m_pluginHub      = new PLMPluginHub(this);
+    m_pluginHub      = new SKRPluginHub(this);
     m_statHub      = new SKRStatHub(this);
 
 
-    connect(m_sheetHub,
-            &PLMSheetHub::projectModified,
+    connect(m_treeHub,
+            &SKRTreeHub::projectModified,
             m_projectHub,
             &PLMProjectHub::setProjectNotSavedAnymore);
-    connect(m_sheetPropertyHub,
-            &PLMPropertyHub::projectModified,
-            m_projectHub,
-            &PLMProjectHub::setProjectNotSavedAnymore);
-    connect(m_noteHub,
-            &PLMNoteHub::projectModified,
-            m_projectHub,
-            &PLMProjectHub::setProjectNotSavedAnymore);
-    connect(m_notePropertyHub,
-            &PLMPropertyHub::projectModified,
+    connect(m_treePropertyHub,
+            &SKRPropertyHub::projectModified,
             m_projectHub,
             &PLMProjectHub::setProjectNotSavedAnymore);
     connect(m_tagHub,
@@ -48,20 +35,12 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
 
     // connect errors :
 
-    connect(m_sheetHub,
-            &PLMSheetHub::errorSent,
+    connect(m_treeHub,
+            &SKRTreeHub::errorSent,
             m_errorHub,
             &SKRErrorHub::addError);
-    connect(m_sheetPropertyHub,
-            &PLMPropertyHub::errorSent,
-            m_errorHub,
-            &SKRErrorHub::addError);
-    connect(m_noteHub,
-            &PLMNoteHub::errorSent,
-            m_errorHub,
-            &SKRErrorHub::addError);
-    connect(m_notePropertyHub,
-            &PLMPropertyHub::errorSent,
+    connect(m_treePropertyHub,
+            &SKRPropertyHub::errorSent,
             m_errorHub,
             &SKRErrorHub::addError);
     connect(m_tagHub,
@@ -112,34 +91,20 @@ PLMData *PLMData::m_instance = nullptr;
 // -----------------------------------------------------------------------------
 
 
-PLMSheetHub * PLMData::sheetHub()
+SKRTreeHub * PLMData::treeHub()
 {
-    return m_sheetHub;
+    return m_treeHub;
 }
 
 // -----------------------------------------------------------------------------
 
-PLMPropertyHub * PLMData::sheetPropertyHub()
+SKRPropertyHub * PLMData::treePropertyHub()
 {
-    return m_sheetPropertyHub;
+    return m_treePropertyHub;
 }
 
 // -----------------------------------------------------------------------------
-
-PLMNoteHub * PLMData::noteHub()
-{
-    return m_noteHub;
-}
-
-// -----------------------------------------------------------------------------
-
-PLMPropertyHub * PLMData::notePropertyHub()
-{
-    return m_notePropertyHub;
-}
-
-// -----------------------------------------------------------------------------
-PLMPluginHub * PLMData::pluginHub()
+SKRPluginHub * PLMData::pluginHub()
 {
     return m_pluginHub;
 }

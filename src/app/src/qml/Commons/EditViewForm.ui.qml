@@ -193,7 +193,7 @@ Item {
                     SkrSlider {
                         id: textWidthSlider
                         from: 400
-                        to: Screen.width
+                        to: rootWindow.width
                         Layout.fillWidth: true
                     }
 

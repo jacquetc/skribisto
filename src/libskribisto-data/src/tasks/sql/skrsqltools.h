@@ -20,6 +20,11 @@ public:
 
     static QString getProjectTemplateDBVersion(SKRResult *result);
     static double getProjectDBVersion(SKRResult *result, QSqlDatabase &sqlDb);
+    static SKRResult renumberTreeSortOrder(QSqlDatabase &sqlDb);
+    static SKRResult addStringTreeProperty(QSqlDatabase &sqlDb, int tree_id, const QString &name, const QString &value);
+    static SKRResult trimTreePropertyTable(QSqlDatabase &sqlDb);
+    static SKRResult trimTagRelationshipTable(QSqlDatabase &sqlDb);
+    static SKRResult trimTreeRelationshipTable(QSqlDatabase &sqlDb);
 signals:
 };
 

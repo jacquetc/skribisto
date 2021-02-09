@@ -10,10 +10,10 @@ PropertyPadForm {
     id: root
 
     property int projectId: -2
-    property int paperId: -2
+    property int treeItemId: -2
 
     onProjectIdChanged: {
-        if(projectId === -2 || paperId === -2 ){
+        if(projectId === -2 || treeItemId === -2 ){
             return
         }
 
@@ -21,8 +21,8 @@ PropertyPadForm {
         determineModifiableToolButton()
         determineFavoriteToolButton()
     }
-    onPaperIdChanged: {
-        if(projectId === -2 || paperId === -2 ){
+    onTreeItemIdChanged: {
+        if(projectId === -2 || treeItemId === -2 ){
             return
         }
 
@@ -30,14 +30,11 @@ PropertyPadForm {
         determineModifiableToolButton()
         determineFavoriteToolButton()
     }
-
-    required property var propertyHub
-    required property var paperHub
 
     Connections{
-        target: propertyHub
-        function onPropertyChanged(projectId, propertyId, paperId, name, value){
-            if(projectId === root.projectId && paperId === root.paperId){
+        target: plmData.treePropertyHub()
+        function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
+            if(projectId === root.projectId && treeItemId === root.treeItemId){
                 if(name === "printable"){
                     determinePrintableToolButton()
                 }
@@ -63,7 +60,7 @@ PropertyPadForm {
     function determinePrintableToolButton(){
         switchPrivate.updateBlocked = true
 
-        printableToolButton.checked = propertyHub.getProperty(projectId, paperId, "printable", "true") === "true"
+        printableToolButton.checked = plmData.treePropertyHub().getProperty(projectId, treeItemId, "printable", "true") === "true"
 
         switchPrivate.updateBlocked = false
     }
@@ -73,12 +70,12 @@ PropertyPadForm {
             return
         }
         var checked = printableToolButton.checked ? "true" : "false"
-        propertyHub.setProperty(projectId, paperId, "printable", checked)
+        plmData.treePropertyHub().setProperty(projectId, treeItemId, "printable", checked)
 
-        var childrenList = paperHub.getAllChildren(projectId, paperId)
+        var childrenList = plmData.treeHub().getAllChildren(projectId, treeItemId)
 
         childrenList.forEach(function(childId, index, array) {
-            propertyHub.setProperty(projectId, childId, "printable", checked)
+            plmData.treePropertyHub().setProperty(projectId, childId, "printable", checked)
         })
     }
     printableToolButton.icon.source: "qrc:///icons/backup/document-print.svg"
@@ -90,7 +87,7 @@ PropertyPadForm {
     function determineModifiableToolButton(){
         switchPrivate.updateBlocked = true
 
-        modifiableToolButton.checked = propertyHub.getProperty(projectId, paperId, "modifiable", "true") === "true"
+        modifiableToolButton.checked = plmData.treePropertyHub().getProperty(projectId, treeItemId, "modifiable", "true") === "true"
 
         switchPrivate.updateBlocked = false
     }
@@ -100,19 +97,12 @@ PropertyPadForm {
             return
         }
         var checked = modifiableToolButton.checked ? "true" : "false"
-        propertyHub.setProperty(projectId, paperId, "modifiable", checked)
+        plmData.treePropertyHub().setProperty(projectId, treeItemId, "modifiable", checked)
 
-        var childrenList = paperHub.getAllChildren(projectId, paperId)
-
-        if(!modifiableToolButton.checked){
-            paperHub.addAttribute(projectId, paperId, "locked")
-        }
-        else {
-            paperHub.removeAttribute(projectId, paperId, "locked")
-        }
+        var childrenList = plmData.treeHub().getAllChildren(projectId, treeItemId)
 
         childrenList.forEach(function(childId, index, array) {
-            propertyHub.setProperty(projectId, childId, "modifiable", checked)
+            plmData.treePropertyHub().setProperty(projectId, childId, "modifiable", checked)
         })
 
     }
@@ -132,14 +122,7 @@ PropertyPadForm {
                 return
             }
             var checked = favoriteAction.checked ? "true" : "false"
-            propertyHub.setProperty(projectId, paperId, "favorite", checked)
-
-            if(favoriteAction.checked){
-                paperHub.addAttribute(projectId, paperId, "favorite")
-            }
-            else {
-                paperHub.removeAttribute(projectId, paperId, "favorite")
-            }
+            plmData.treePropertyHub().setProperty(projectId, treeItemId, "favorite", checked)
 
         }
     }
@@ -148,7 +131,7 @@ PropertyPadForm {
     function determineFavoriteToolButton(){
         switchPrivate.updateBlocked = true
 
-        favoriteAction.checked = propertyHub.getProperty(projectId, paperId, "favorite", "false") === "true"
+        favoriteAction.checked = plmData.treePropertyHub().getProperty(projectId, treeItemId, "favorite", "false") === "true"
 
         switchPrivate.updateBlocked = false
     }

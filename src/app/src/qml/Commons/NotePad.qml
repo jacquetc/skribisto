@@ -3,7 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import QtQml 2.15
-import eu.skribisto.searchnotelistproxymodel 1.0
+import eu.skribisto.searchtreelistproxymodel 1.0
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.propertyhub 1.0
 import "../Commons"

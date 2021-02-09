@@ -146,7 +146,7 @@ Letter:
 
 QStringList SKRSpellChecker::suggest(const QString& word)
 {
-    if (!m_isActive) return QStringList();
+    if (!m_isActive || !m_hunspell) return QStringList();
 
 
     std::vector<std::string> suggestionsVector;
@@ -165,7 +165,7 @@ QStringList SKRSpellChecker::suggest(const QString& word)
     // maybe differenciate between latin1 and utf8
     QStringList suggestions;
 
-    for (const std::string& string: suggestionsQVect) {
+    for (const std::string& string: qAsConst(suggestionsQVect)) {
         suggestions.append(QString::fromStdString(string));
     }
 

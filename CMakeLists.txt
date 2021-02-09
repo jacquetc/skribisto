@@ -73,7 +73,6 @@ set(CMAKE_CXX_STANDARD 14)
 add_subdirectory(resources/unix/icons)
 
 add_subdirectory(src/libskribisto-data/src)
-#add_subdirectory(src/plugins)
 #add_subdirectory(3rdparty)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -82,6 +81,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 add_subdirectory(src/app/src)
+add_subdirectory(src/plugins)
 
 install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})
 install(FILES resources/unix/mime/eu.skribisto.skribisto.xml DESTINATION ${KDE_INSTALL_MIMEDIR})

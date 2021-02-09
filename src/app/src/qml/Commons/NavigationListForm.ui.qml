@@ -11,7 +11,6 @@ Item {
     property alias addToolButton: addToolButton
     property alias treeMenuToolButton: treeMenuToolButton
     property alias navigationListStackView: navigationListStackView
-    property var toolBarPrimaryColor
 
     SkrPane {
         id: pane

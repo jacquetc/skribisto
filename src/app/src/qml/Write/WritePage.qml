@@ -347,10 +347,6 @@ WritePageForm {
     //---------------------------------------------------------
 
 
-    SKRUserSettings {
-        id: skrUserSettings
-    }
-
     function openDocument(_projectId, _paperId) {
         // save current
         if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor

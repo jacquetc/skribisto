@@ -12,7 +12,7 @@
 #include "plmdata.h"
 
 PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent),
-    m_tableName("tbl_project"), m_isProjectToBeClosed(-2)
+    m_tableName("tbl_project"), m_activeProject(-2), m_isProjectToBeClosed(-2)
 {
     // connection for 'getxxx' functions to have a way to get errors.
     connect(this,
@@ -34,9 +34,7 @@ SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath, bool hidden)
     result.addData("projectId", projectId);
 
     IFOK(result) {
-        plmdata->noteHub()->renumberSortOrders(projectId);
-        plmdata->noteHub()->cleanUpSynopsis(projectId);
-        plmdata->sheetHub()->renumberSortOrders(projectId);
+        plmdata->treeHub()->renumberSortOrders(projectId);
         if(!hidden){
             m_projectsNotModifiedOnceList.append(projectId);
             emit projectLoaded(projectId);
@@ -65,9 +63,7 @@ SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path, bool hidden)
     result.addData("projectId", projectId);
 
     IFOK(result) {
-        plmdata->noteHub()->renumberSortOrders(projectId);
-        plmdata->noteHub()->cleanUpSynopsis(projectId);
-        plmdata->sheetHub()->renumberSortOrders(projectId);
+        plmdata->treeHub()->renumberSortOrders(projectId);
         if(!hidden){
             m_projectsNotModifiedOnceList.append(projectId);
             emit projectLoaded(projectId);
@@ -89,6 +85,29 @@ SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path, bool hidden)
     }
     return result;
 }
+
+SKRResult PLMProjectHub::createSilentlyNewSpecificEmptyProject(const QUrl& path, const QString& sqlFile)
+{
+    int projectId    = -1;
+    SKRResult result = plmProjectManager->createNewSpecificEmptyDatabase(projectId, sqlFile);
+
+    result.addData("projectId", projectId);
+
+    IFOK(result) {
+        plmdata->treeHub()->renumberSortOrders(projectId);
+    }
+    IFOK(result) {
+        if (path.isValid()) {
+            result = this->saveProjectAs(projectId, this->getProjectType(projectId), path);
+        }
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
 
 SKRResult PLMProjectHub::saveProject(int projectId)
 {

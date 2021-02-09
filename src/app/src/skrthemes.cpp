@@ -4,10 +4,31 @@
 #include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSettings>
 
-SKRThemes::SKRThemes(QObject *parent) : QObject(parent), m_currentTheme("")
+SKRThemes::SKRThemes(QObject *parent) : QObject(parent), m_selectedTheme("")
 {
     populate();
+
+    QSettings settings;
+    settings.beginGroup("theme");
+    setCurrentLightTheme(settings.value("lightThemeName", defaultLightTheme()).toString());
+    setCurrentDarkTheme(settings.value("darkThemeName", defaultDarkTheme()).toString());
+    setCurrentDistractionFreeTheme(settings.value("distractionFreeThemeName", defaultDistractionFreeTheme()).toString());
+
+    QString colorMode = settings.value("currentColorMode", "light" ).toString();
+    if(colorMode == "light"){
+        setCurrentColorMode(ColorMode::Light);
+    }
+    else if(colorMode == "dark"){
+        setCurrentColorMode(ColorMode::Dark);
+    }
+    else if(colorMode == "distractionFree"){
+        setCurrentColorMode(ColorMode::DistractionFree);
+    }
+
+    settings.endGroup();
+
 }
 
 // ----------------------------------------------------------
@@ -45,7 +66,7 @@ void SKRThemes::populate()
 
             if (jsonError.error != QJsonParseError::NoError) {
                 qDebug() << "Error JSON in theme" << fileInfo.absoluteFilePath() <<
-                "result :" << jsonError.errorString();
+                            "result :" << jsonError.errorString();
             }
 
             if (jsonDoc.isNull()) {
@@ -55,7 +76,7 @@ void SKRThemes::populate()
 
             QJsonObject jsonObject = jsonDoc.object();
             QString     themeName  = jsonObject.value("themeName").toString(
-                "Missing theme name");
+                        "Missing theme name");
 
             m_fileByThemeNameHash.insert(themeName, fileInfo.absoluteFilePath());
 
@@ -80,9 +101,23 @@ QStringList SKRThemes::getThemeList() const
 
 // ---------------------------------------------------------------
 
-QString SKRThemes::defaultTheme() const
+QString SKRThemes::defaultLightTheme() const
 {
     return "Default Light";
+}
+
+// ---------------------------------------------------------------
+
+QString SKRThemes::defaultDarkTheme() const
+{
+    return "Default Dark";
+}
+
+// ---------------------------------------------------------------
+
+QString SKRThemes::defaultDistractionFreeTheme() const
+{
+    return "Default Dark";
 }
 
 // ---------------------------------------------------------------
@@ -101,22 +136,22 @@ bool SKRThemes::doesThemeExist(const QString& themeName) const
 
 // ---------------------------------------------------------------
 
-QString SKRThemes::currentTheme()
+QString SKRThemes::selectedTheme()
 {
-    if (m_currentTheme == "") {
-        m_currentTheme = this->defaultTheme();
+    if (m_selectedTheme == "") {
+        m_selectedTheme = this->defaultLightTheme();
     }
 
-    return m_currentTheme;
+    return m_selectedTheme;
 }
 
-void SKRThemes::setCurrentTheme(const QString& themeName)
+void SKRThemes::setSelectedTheme(const QString& themeName)
 {
-    m_currentTheme = themeName;
+    m_selectedTheme = themeName;
 
     applyTheme(themeName);
 
-    emit currentThemeChanged(m_currentTheme);
+    emit selectedThemeChanged(m_selectedTheme);
 }
 
 // ---------------------------------------------------------------
@@ -126,7 +161,7 @@ void SKRThemes::applyTheme(const QString& themeName)
     QString theme = themeName;
 
     if (!m_fileByThemeNameHash.contains(theme)) {
-        theme = defaultTheme();
+        theme = defaultLightTheme();
     }
 
     QFile file(m_fileByThemeNameHash.value(theme));
@@ -142,7 +177,7 @@ void SKRThemes::applyTheme(const QString& themeName)
 
     if (jsonError.error != QJsonParseError::NoError) {
         qDebug() << "Error JSON in theme" << m_fileByThemeNameHash.value(theme) <<
-        "result :" << jsonError.errorString();
+                    "result :" << jsonError.errorString();
     }
 
     if (jsonDoc.isNull()) {
@@ -152,70 +187,143 @@ void SKRThemes::applyTheme(const QString& themeName)
 
     QJsonObject rootJsonObject = jsonDoc.object();
 
-    QJsonObject normalObject = rootJsonObject.value("normal").toObject();
+    QJsonObject normalObject = rootJsonObject.value("colors").toObject();
 
     m_mainTextAreaBackground = normalObject.value("mainTextAreaBackground").toString(
-        "").toLower();
+                "").toLower();
     m_mainTextAreaForeground =
-        normalObject.value("mainTextAreaForeground").toString("").toLower();
+            normalObject.value("mainTextAreaForeground").toString("").toLower();
     m_secondaryTextAreaBackground =
-        normalObject.value("secondaryTextAreaBackground").toString("").toLower();
+            normalObject.value("secondaryTextAreaBackground").toString("").toLower();
     m_secondaryTextAreaForeground =
-        normalObject.value("secondaryTextAreaForeground").toString("").toLower();
+            normalObject.value("secondaryTextAreaForeground").toString("").toLower();
     m_pageBackground =
-        normalObject.value("pageBackground").toString("").toLower();
+            normalObject.value("pageBackground").toString("").toLower();
     m_buttonBackground =
-        normalObject.value("buttonBackground").toString("").toLower();
+            normalObject.value("buttonBackground").toString("").toLower();
     m_buttonForeground =
-        normalObject.value("buttonForeground").toString("").toLower();
+            normalObject.value("buttonForeground").toString("").toLower();
     m_buttonIcon =
-        normalObject.value("buttonIcon").toString("").toLower();
+            normalObject.value("buttonIcon").toString("").toLower();
     m_buttonIconDisabled =
-        normalObject.value("buttonIconDisabled").toString("").toLower();
+            normalObject.value("buttonIconDisabled").toString("").toLower();
     m_accent     =  normalObject.value("accent").toString("").toLower();
     m_spellcheck =
-        normalObject.value("spellcheck").toString("").toLower();
+            normalObject.value("spellcheck").toString("").toLower();
     m_toolBarBackground =
-        normalObject.value("toolBarBackground").toString("").toLower();
+            normalObject.value("toolBarBackground").toString("").toLower();
+    m_pageToolBarBackground =
+            normalObject.value("pageToolBarBackground").toString("").toLower();
     m_divider        =  normalObject.value("divider").toString("").toLower();
     m_menuBackground =
-        normalObject.value("menuBackground").toString("").toLower();
+            normalObject.value("menuBackground").toString("").toLower();
     m_listItemBackground =
-        normalObject.value("listItemBackground").toString("").toLower();
-
-    QJsonObject distractionFreeObject =
-        rootJsonObject.value("distractionFree").toObject();
-
-    m_distractionFree_mainTextAreaBackground = distractionFreeObject.value(
-        "mainTextAreaBackground").toString("").toLower();
-    m_distractionFree_mainTextAreaForeground =  distractionFreeObject.value(
-        "mainTextAreaForeground").toString("").toLower();
-    m_distractionFree_secondaryTextAreaBackground =  distractionFreeObject.value(
-        "secondaryTextAreaBackground").toString("").toLower();
-    m_distractionFree_secondaryTextAreaForeground =  distractionFreeObject.value(
-        "secondaryTextAreaForeground").toString("").toLower();
-    m_distractionFree_pageBackground =  distractionFreeObject.value(
-        "pageBackground").toString("").toLower();
-    m_distractionFree_buttonBackground =  distractionFreeObject.value(
-        "buttonBackground").toString("").toLower();
-    m_distractionFree_buttonForeground =  distractionFreeObject.value(
-        "buttonForeground").toString("").toLower();
-    m_distractionFree_buttonIcon =  distractionFreeObject.value("buttonIcon").toString("").toLower();
-    m_distractionFree_buttonIconDisabled =  distractionFreeObject.value("buttonIconDisabled").toString("").toLower();
-    m_distractionFree_accent =
-        distractionFreeObject.value("accent").toString("").toLower();
-    m_distractionFree_spellcheck =  distractionFreeObject.value(
-        "spellcheck").toString("").toLower();
-    m_distractionFree_toolBarBackground =  distractionFreeObject.value(
-        "toolBarBackground").toString("").toLower();
-    m_distractionFree_divider =
-        distractionFreeObject.value("divider").toString("").toLower();
-    m_distractionFree_menuBackground =  distractionFreeObject.value(
-        "menuBackground").toString("").toLower();
-    m_distractionFree_listItemBackground =
-        distractionFreeObject.value("listItemBackground").toString("").toLower();
+            normalObject.value("listItemBackground").toString("").toLower();
 
     emit colorsChanged();
+}
+
+
+//------------------------------------------------------------------
+
+QString SKRThemes::getCurrentDistractionFreeTheme() const
+{
+    return m_currentDistractionFreeTheme;
+}
+
+void SKRThemes::setCurrentDistractionFreeTheme(const QString &currentDistractionFreeTheme)
+{
+    if(doesThemeExist(currentDistractionFreeTheme)){
+        m_currentDistractionFreeTheme = currentDistractionFreeTheme;
+    }
+    else {
+        m_currentDistractionFreeTheme = defaultDistractionFreeTheme();
+    }
+
+    QSettings settings;
+    settings.beginGroup("theme");
+    settings.setValue("distractionFreeThemeName", m_currentDistractionFreeTheme);
+    settings.endGroup();
+
+    emit currentDistractionFreeThemeChanged(m_currentDistractionFreeTheme);
+}
+
+QString SKRThemes::getCurrentLightTheme() const
+{
+    return m_currentLightTheme;
+}
+
+void SKRThemes::setCurrentLightTheme(const QString &currentLightTheme)
+{
+    if(doesThemeExist(currentLightTheme)){
+        m_currentLightTheme = currentLightTheme;
+    }
+    else {
+        m_currentLightTheme = defaultLightTheme();
+    }
+
+    QSettings settings;
+    settings.beginGroup("theme");
+    settings.setValue("lightThemeName", m_currentLightTheme);
+    settings.endGroup();
+
+    emit currentLightThemeChanged(m_currentLightTheme);
+}
+
+QString SKRThemes::getCurrentDarkTheme() const
+{
+    return m_currentDarkTheme;
+}
+
+void SKRThemes::setCurrentDarkTheme(const QString &currentDarkTheme)
+{
+    if(doesThemeExist(currentDarkTheme)){
+        m_currentDarkTheme = currentDarkTheme;
+    }
+    else {
+        m_currentDarkTheme = defaultDarkTheme();
+    }
+
+    QSettings settings;
+    settings.beginGroup("theme");
+    settings.setValue("darkThemeName", m_currentDarkTheme);
+    settings.endGroup();
+
+    emit currentDarkThemeChanged(m_currentDarkTheme);
+}
+
+SKRThemes::ColorMode SKRThemes::getCurrentColorMode() const
+{
+    return m_currentColorMode;
+}
+
+void SKRThemes::setCurrentColorMode(SKRThemes::ColorMode colorMode)
+{
+    m_currentColorMode = colorMode;
+
+    QString colorModeString;
+
+    switch(colorMode){
+    case ColorMode::Light:
+        colorModeString = "light";
+        applyTheme(getCurrentLightTheme());
+        break;
+    case ColorMode::Dark:
+        colorModeString = "dark";
+        applyTheme(getCurrentDarkTheme());
+        break;
+    case ColorMode::DistractionFree:
+        colorModeString = "distractionFree";
+        applyTheme(getCurrentDistractionFreeTheme());
+        break;
+    }
+
+    QSettings settings;
+    settings.beginGroup("theme");
+    settings.setValue("currentColorMode", colorModeString);
+    settings.endGroup();
+
+    emit currentColorModeChanged(colorMode);
 }
 
 // ---------------------------------------------------------------
@@ -225,7 +333,7 @@ void SKRThemes::saveTheme(const QString& themeName) {
     QString theme = themeName;
 
     if (!m_fileByThemeNameHash.contains(theme)) {
-        theme = defaultTheme();
+        theme = defaultLightTheme();
     }
 
 
@@ -246,7 +354,7 @@ void SKRThemes::saveTheme(const QString& themeName) {
 
     if (jsonError.error != QJsonParseError::NoError) {
         qDebug() << "Error JSON in theme" << fileInfo.absoluteFilePath() << "result :" <<
-        jsonError.errorString();
+                    jsonError.errorString();
     }
 
     if (jsonDoc.isNull()) {
@@ -270,7 +378,7 @@ void SKRThemes::saveTheme(const QString& themeName) {
 
     // write properties
 
-    QJsonObject normalObject = rootJsonObject.value("normal").toObject();
+    QJsonObject normalObject = rootJsonObject.value("colors").toObject();
 
     normalObject.insert("mainTextAreaBackground",      m_mainTextAreaBackground);
     normalObject.insert("mainTextAreaForeground",      m_mainTextAreaForeground);
@@ -284,44 +392,12 @@ void SKRThemes::saveTheme(const QString& themeName) {
     normalObject.insert("accent",                      m_accent);
     normalObject.insert("spellcheck",                  m_spellcheck);
     normalObject.insert("toolBarBackground",           m_toolBarBackground);
+    normalObject.insert("pageToolBarBackground",           m_pageToolBarBackground);
     normalObject.insert("divider",                     m_divider);
     normalObject.insert("menuBackground",              m_menuBackground);
     normalObject.insert("listItemBackground",              m_listItemBackground);
 
     rootJsonObject.insert("normal", normalObject);
-
-    QJsonObject distractionFreeObject =
-        rootJsonObject.value("distractionFree").toObject();
-
-    distractionFreeObject.insert("mainTextAreaBackground",
-                                           m_distractionFree_mainTextAreaBackground);
-    distractionFreeObject.insert("mainTextAreaForeground",
-                                           m_distractionFree_mainTextAreaForeground);
-    distractionFreeObject.insert("secondaryTextAreaBackground",
-                                           m_distractionFree_secondaryTextAreaBackground);
-    distractionFreeObject.insert("secondaryTextAreaForeground",
-                                           m_distractionFree_secondaryTextAreaForeground);
-    distractionFreeObject.insert("pageBackground",
-                                           m_distractionFree_pageBackground);
-    distractionFreeObject.insert("buttonBackground",
-                                           m_distractionFree_buttonBackground);
-    distractionFreeObject.insert("buttonForeground",
-                                           m_distractionFree_buttonForeground);
-    distractionFreeObject.insert("buttonIcon", m_distractionFree_buttonIcon);
-    distractionFreeObject.insert("buttonIconDisabled", m_distractionFree_buttonIconDisabled);
-    distractionFreeObject.insert("accent", m_distractionFree_accent);
-    distractionFreeObject.insert("spellcheck",
-                                 m_distractionFree_spellcheck);
-    distractionFreeObject.insert("toolBarBackground",
-                                 m_distractionFree_toolBarBackground);
-    distractionFreeObject.insert("divider",
-                                 m_distractionFree_divider);
-    distractionFreeObject.insert("menuBackground",
-                                 m_distractionFree_menuBackground);
-    distractionFreeObject.insert("listItemBackground",
-                                 m_distractionFree_listItemBackground);
-
-    rootJsonObject.insert("distractionFree", distractionFreeObject);
 
 
     // write back to file
@@ -366,7 +442,7 @@ bool SKRThemes::duplicate(const QString& themeName, const QString& newThemeName)
 
     if (jsonError.error != QJsonParseError::NoError) {
         qDebug() << "Error JSON in theme" << fileInfo.absoluteFilePath() << "result :" <<
-        jsonError.errorString();
+                    jsonError.errorString();
     }
 
     if (jsonDoc.isNull()) {
@@ -421,8 +497,8 @@ bool SKRThemes::remove(const QString& themeName) {
         return false;
     }
 
-    if (currentTheme() == themeName) {
-        setCurrentTheme(defaultTheme());
+    if (selectedTheme() == themeName) {
+        setSelectedTheme(defaultLightTheme());
     }
 
     QFile file(m_fileByThemeNameHash.value(themeName));

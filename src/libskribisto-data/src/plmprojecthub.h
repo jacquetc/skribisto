@@ -31,12 +31,15 @@ class EXPORT PLMProjectHub : public QObject {
     Q_OBJECT
     Q_PROPERTY(
         bool isThereAnyLoadedProject READ isThereAnyLoadedProject NOTIFY isThereAnyLoadedProjectChanged)
+    Q_PROPERTY(
+        int activeProjectId READ getActiveProject WRITE setActiveProject NOTIFY activeProjectChanged)
 
 public:
 
     explicit PLMProjectHub(QObject *parent);
     Q_INVOKABLE SKRResult loadProject(const QUrl& urlFilePath, bool hidden = false);
     Q_INVOKABLE SKRResult createNewEmptyProject(const QUrl& path, bool hidden = false);
+    SKRResult createSilentlyNewSpecificEmptyProject(const QUrl &path, const QString &sqlFile);
     Q_INVOKABLE SKRResult saveProject(int projectId);
     Q_INVOKABLE SKRResult saveProjectAs(int            projectId,
                                         const QString& type,

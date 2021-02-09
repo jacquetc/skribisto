@@ -128,7 +128,7 @@ LeftDockForm {
         checkable: true
         text: qsTr( "Show navigation")
         icon {
-            source: "qrc:///icons/backup/object-rows.svg"
+            source: "qrc:///icons/backup/compass.svg"
             height: 50
             width: 50
         }

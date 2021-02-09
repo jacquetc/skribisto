@@ -20,16 +20,16 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "skrsearchtaglistproxymodel.h"
-#include "plmmodels.h"
+#include "skrmodels.h"
 #include "skrtaghub.h"
 
 #include <QTimer>
 
 SKRSearchTagListProxyModel::SKRSearchTagListProxyModel(QObject *parent) :
     QSortFilterProxyModel(parent),
-    m_textFilter(""), m_projectIdFilter(-2), m_sheetIdFilter(-2), m_noteIdFilter(-2)
+    m_textFilter(""), m_projectIdFilter(-2), m_treeItemIdFilter(-2)
 {
-    this->setSourceModel(plmmodels->tagListModel());
+    this->setSourceModel(skrmodels->tagListModel());
 
 
     connect(
@@ -136,11 +136,8 @@ void SKRSearchTagListProxyModel::clearFilters()
     m_projectIdFilter = -2;
     emit projectIdFilterChanged(m_projectIdFilter);
 
-    m_sheetIdFilter = -2;
-    emit sheetIdFilterChanged(m_sheetIdFilter);
-
-    m_noteIdFilter = -2;
-    emit noteIdFilterChanged(m_noteIdFilter);
+    m_treeItemIdFilter = -2;
+    emit treeItemIdFilterChanged(m_treeItemIdFilter);
 
     m_textFilter = "";
     emit textFilterChanged(m_textFilter);
@@ -253,7 +250,7 @@ bool SKRSearchTagListProxyModel::filterAcceptsRow(int                sourceRow,
     }
 
     // sheet or note filtering:
-    if (m_sheetIdFilter != -2 ^ m_noteIdFilter != -2) {
+    if (m_treeItemIdFilter != -2) {
         if (value &&
             m_relationshipList.contains(item->data(SKRTagItem::Roles::TagIdRole).toInt()))
         {
@@ -341,28 +338,12 @@ void SKRSearchTagListProxyModel::populateRelationshipList()
 {
     m_relationshipList.clear();
 
-    if (m_sheetIdFilter != -2) {
+    if (m_treeItemIdFilter != -2) {
         m_relationshipList.append(plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter,
-                                                                       SKR::ItemType
-                                                                       ::Sheet,
-                                                                       m_sheetIdFilter));
-    }
-
-    if (m_noteIdFilter != -2) {
-        m_relationshipList.append(plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter,
-                                                                       SKR::ItemType
-                                                                       ::Note,
-                                                                       m_noteIdFilter));
+                                                                       m_treeItemIdFilter));
     }
 }
 
-void SKRSearchTagListProxyModel::setNoteIdFilter(int noteIdFilter)
-{
-    m_noteIdFilter = noteIdFilter;
-    this->populateRelationshipList();
-
-    this->invalidateFilter();
-}
 
 // --------------------------------------------------------------------------------
 
@@ -377,11 +358,11 @@ void SKRSearchTagListProxyModel::setHideTagIdListFilter(const QList<int> &hideTa
 // --------------------------------------------------------------------------------
 
 
-void SKRSearchTagListProxyModel::setSheetIdFilter(int sheetIdFilter)
+void SKRSearchTagListProxyModel::setTreeItemIdFilter(int treeItemIdFilter)
 {
-    m_sheetIdFilter = sheetIdFilter;
+    m_treeItemIdFilter = treeItemIdFilter;
     this->populateRelationshipList();
-    emit sheetIdFilterChanged(sheetIdFilter);
+    emit treeItemIdFilterChanged(treeItemIdFilter);
 
     this->invalidateFilter();
 }

@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick 2.15
+import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
 
 QtObject {
@@ -52,14 +53,23 @@ QtObject {
         property string spellCheckingLangCode: "en_US"
     }
 
-    property Settings writeSettings: Settings{
-        category: "write"
-        property int textWidth: initialTextWidth
+    property Settings textSettings: Settings{
+        category: "text"
+        property int textWidth: 500
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
+
+    property Settings outlineSettings: Settings{
+        category: "outline"
+        property int textPointSize: Qt.application.font.pointSize
+        property real textIndent: 2
+        property real textTopMargin: 2
+        property string textFontFamily: skrRootItem.defaultFontFamily()
+    }
+
 
     property Settings noteSettings: Settings{
         category: "note"
@@ -111,7 +121,5 @@ QtObject {
 
 
     property int initialTextWidth: 0
-    Component.onCompleted: {
-        initialTextWidth = Globals.width / 3
-    }
+
 }

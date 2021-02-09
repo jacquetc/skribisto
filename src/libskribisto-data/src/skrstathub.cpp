@@ -3,16 +3,16 @@
 
 SKRStatHub::SKRStatHub(QObject *parent) : QObject(parent)
 {
-    connect(plmdata->sheetHub(), &PLMPaperHub::wordCountChanged,      this, &SKRStatHub::updateWordStats);
-    connect(plmdata->noteHub(),  &PLMPaperHub::wordCountChanged,      this, &SKRStatHub::updateWordStats);
-    connect(plmdata->sheetHub(), &PLMPaperHub::characterCountChanged, this, &SKRStatHub::updateCharacterStats);
-    connect(plmdata->noteHub(),  &PLMPaperHub::characterCountChanged, this, &SKRStatHub::updateCharacterStats);
+//    connect(plmdata->sheetHub(), &PLMPaperHub::wordCountChanged,      this, &SKRStatHub::updateWordStats);
+//    connect(plmdata->noteHub(),  &PLMPaperHub::wordCountChanged,      this, &SKRStatHub::updateWordStats);
+//    connect(plmdata->sheetHub(), &PLMPaperHub::characterCountChanged, this, &SKRStatHub::updateCharacterStats);
+//    connect(plmdata->noteHub(),  &PLMPaperHub::characterCountChanged, this, &SKRStatHub::updateCharacterStats);
 
-    connect(plmdata->sheetHub(), &PLMPaperHub::trashedChanged,        this, &SKRStatHub::setSheetTrashed);
-    connect(plmdata->noteHub(),  &PLMPaperHub::trashedChanged,        this, &SKRStatHub::setNoteTrashed);
+//    connect(plmdata->sheetHub(), &PLMPaperHub::trashedChanged,        this, &SKRStatHub::setSheetTrashed);
+//    connect(plmdata->noteHub(),  &PLMPaperHub::trashedChanged,        this, &SKRStatHub::setNoteTrashed);
 
-    connect(plmdata->sheetHub(), &PLMPaperHub::paperRemoved,          this, &SKRStatHub::removeSheetFromStat);
-    connect(plmdata->noteHub(),  &PLMPaperHub::paperRemoved,          this, &SKRStatHub::removeNoteFromStat);
+//    connect(plmdata->sheetHub(), &PLMPaperHub::paperRemoved,          this, &SKRStatHub::removeSheetFromStat);
+//    connect(plmdata->noteHub(),  &PLMPaperHub::paperRemoved,          this, &SKRStatHub::removeNoteFromStat);
 }
 
 int SKRStatHub::getSheetTotalCount(SKRStatHub::StatType type, int project)
@@ -77,23 +77,14 @@ int SKRStatHub::getNoteTotalCount(SKRStatHub::StatType type, int project)
 
 void SKRStatHub::updateWordStats(SKR::ItemType paperType, int projectId, int paperId, int wordCount, bool triggerProjectModifiedSignal)
 {
-    QHash<int, QHash<QString, int> > projectHash;
-    PLMPropertyHub *propertyHub = nullptr;
-    PLMPaperHub    *paperHub    = nullptr;
 
-    if (paperType == SKR::Note) {
-        projectHash = m_noteHashByProjectHash.value(projectId);
-        propertyHub = plmdata->notePropertyHub();
-        paperHub    = plmdata->noteHub();
-    }
-    else if (paperType == SKR::Sheet) {
-        projectHash = m_sheetHashByProjectHash.value(projectId);
-        propertyHub = plmdata->sheetPropertyHub();
-        paperHub    = plmdata->sheetHub();
-    }
+       QHash<int, QHash<QString, int> > projectHash = m_noteHashByProjectHash.value(projectId);
+       SKRPropertyHub * propertyHub = plmdata->treePropertyHub();
+       SKRTreeHub    *treeHub    = plmdata->treeHub();
+
 
     // ------------- get trashed
-    bool isTrashed = paperHub->getTrashed(projectId, paperId);
+    bool isTrashed = treeHub->getTrashed(projectId, paperId);
 
     // ------------- update word_count
 
@@ -128,14 +119,14 @@ void SKRStatHub::updateWordStats(SKR::ItemType paperType, int projectId, int pap
     // -------------update parents' charCountWithChildren:
 
     // get all ancestors
-    QList<int> ancestors = paperHub->getAllAncestors(projectId, paperId);
+    QList<int> ancestors = treeHub->getAllAncestors(projectId, paperId);
 
     ancestors.prepend(paperId);
 
     // for each ancestor, get all children
 
     for (int ancestorId : ancestors) {
-        QList<int> children = paperHub->getAllChildren(projectId, ancestorId);
+        QList<int> children = treeHub->getAllChildren(projectId, ancestorId);
 
         // remove trashed
         QMutableListIterator<int> i(children);
@@ -172,23 +163,13 @@ void SKRStatHub::updateWordStats(SKR::ItemType paperType, int projectId, int pap
 
 void SKRStatHub::updateCharacterStats(SKR::ItemType paperType, int projectId, int paperId, int characterCount, bool triggerProjectModifiedSignal)
 {
-    QHash<int, QHash<QString, int> > projectHash;
-    PLMPropertyHub *propertyHub = nullptr;
-    PLMPaperHub    *paperHub    = nullptr;
 
-    if (paperType == SKR::Note) {
-        projectHash = m_noteHashByProjectHash.value(projectId);
-        propertyHub = plmdata->notePropertyHub();
-        paperHub    = plmdata->noteHub();
-    }
-    else if (paperType == SKR::Sheet) {
-        projectHash = m_sheetHashByProjectHash.value(projectId);
-        propertyHub = plmdata->sheetPropertyHub();
-        paperHub    = plmdata->sheetHub();
-    }
+    QHash<int, QHash<QString, int> > projectHash = m_noteHashByProjectHash.value(projectId);
+    SKRPropertyHub * propertyHub = plmdata->treePropertyHub();
+    SKRTreeHub    *treeHub    = plmdata->treeHub();
 
     // ------------- get trashed
-    bool isTrashed = paperHub->getTrashed(projectId, paperId);
+    bool isTrashed = treeHub->getTrashed(projectId, paperId);
 
     // ------------- update char_count
 
@@ -223,14 +204,14 @@ void SKRStatHub::updateCharacterStats(SKR::ItemType paperType, int projectId, in
     // -------------update parents' charCountWithChildren:
 
     // get all ancerstors
-    QList<int> ancestors = paperHub->getAllAncestors(projectId, paperId);
+    QList<int> ancestors = treeHub->getAllAncestors(projectId, paperId);
 
     ancestors.prepend(paperId);
 
     // for each ancestor, get all children
 
     for (int ancestorId : ancestors) {
-        QList<int> children = paperHub->getAllChildren(projectId, ancestorId);
+        QList<int> children = treeHub->getAllChildren(projectId, ancestorId);
 
         // remove trashed
         QMutableListIterator<int> i(children);

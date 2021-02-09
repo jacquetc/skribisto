@@ -38,6 +38,13 @@ public:
 signals:
 
 public slots:
+
+
+private:
+    static SKRResult movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &tableName);
+    static SKRResult transformParentsToFolder_1_5(QSqlDatabase sqlDb);
+    static SKRResult dropDeprecatedTables_1_5(QSqlDatabase sqlDb);
+    static SKRResult moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb);
 };
 
 #endif // PLMUPGRADER_H

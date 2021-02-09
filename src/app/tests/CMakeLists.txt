@@ -2,4 +2,5 @@
 if (SKR_TEST_APP)
     add_subdirectory(checkabletree)
     add_subdirectory(navigationlist)
+    add_subdirectory(overview)
 endif()

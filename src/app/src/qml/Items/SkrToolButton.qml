@@ -5,7 +5,7 @@ import ".."
 
 ToolButton {
     id: control
-    icon.color: control.activeFocus ? SkrTheme.accent : control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
+    icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
                                           (control.action.icon.color === "transparent" ?
                                                (enabled ? control.action.icon.color: SkrTheme.buttonIconDisabled) :
                                                (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
@@ -15,9 +15,21 @@ ToolButton {
     Material.foreground: control.activeFocus ?  SkrTheme.accent : SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
 
+    Rectangle {
+        parent: control.background
+        anchors.fill: control.background
+        color: "transparent"
+        border.color: SkrTheme.accent
+        border.width: control.activeFocus ? 1 : 0
+        radius: 4
+
+    }
+
     property string tip
     hoverEnabled: true
     flat: true
+
+    display: AbstractButton.IconOnly
 
     SkrToolTip {
         text: control.tip ? control.tip : control.text

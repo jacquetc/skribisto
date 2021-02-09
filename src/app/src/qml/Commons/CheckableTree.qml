@@ -15,20 +15,20 @@ ListView {
 
 
 
-    signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
-    signal openDocumentInNewTab(int projectId, int paperId)
-    signal openDocumentInNewWindow(int projectId, int paperId)
+    signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
+    signal openDocumentInAnotherView(int projectId, int treeItemId)
+    signal openDocumentInNewWindow(int projectId, int treeItemId)
 
 
-    signal copyCalled(int projectId, int paperId)
-    signal deleteDefinitivelyCalled(int projectId, int paperId)
-    //signal sendToTrashCalled(int projectId, int paperId)
+    signal copyCalled(int projectId, int treeItemId)
+    signal deleteDefinitivelyCalled(int projectId, int treeItemId)
+    //signal sendToTrashCalled(int projectId, int treeItemId)
     signal escapeKeyPressed()
 
-    property int currentPaperId: -2
+    property int currentTreeItemId: -2
     property int currentProjectId: -2
     property int openedProjectId: -2
-    property int openedPaperId: -2
+    property int openedTreeItemId: -2
     property bool hoveringChangingTheCurrentItemAllowed: true
 
     property alias visualModel: visualModel
@@ -37,7 +37,7 @@ ListView {
 
     DelegateModel {
         id: visualModel
-
+        model: proxyModel
         delegate: dragDelegate
     }
     model: visualModel
@@ -58,8 +58,8 @@ ListView {
     property bool cutActionEnabled: false
     property bool copyActionEnabled: false
     property bool pasteActionEnabled: false
-    property bool addSiblingPaperActionEnabled: false
-    property bool addChildPaperActionEnabled: false
+    property bool addSiblingTreeItemActionEnabled: false
+    property bool addChildTreeItemActionEnabled: false
     property bool moveActionEnabled: false
     property bool elevationEnabled: false
 
@@ -71,12 +71,12 @@ ListView {
     leftMargin: elevationEnabled ? 5 : 0
 
     // checkButtons :
-    function getCheckedPaperIdList(){
+    function getCheckedTreeItemIdList(){
         return proxyModel.getCheckedIdsList()
     }
 
-    function setCheckedPaperIdList(checkedPaperIdList){
-        proxyModel.setCheckedIdsList(checkedPaperIdList)
+    function setCheckedTreeItemIdList(checkedTreeItemIdList){
+        proxyModel.setCheckedIdsList(checkedTreeItemIdList)
     }
 
 
@@ -145,7 +145,7 @@ ListView {
 
             onActiveFocusChanged: {
                 if(root.currentIndex === model.index && model.index !== -1 && activeFocus){
-                    root.currentPaperId = model.paperId
+                    root.currentTreeItemId = model.treeItemId
                 }
             }
 
@@ -168,7 +168,7 @@ ListView {
             //                console.log("eee")
             //            }
             function editName() {
-                state = "edit_name"
+                state = "edit_title"
                 titleTextFieldForceActiveFocusTimer.start()
                 titleTextField.selectAll()
             }
@@ -215,7 +215,7 @@ ListView {
                 if(pasteActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
                     event.accepted = true
                 }
-                if(renameActionEnabled && event.key === Qt.Key_Escape && (delegateRoot.state == "edit_name" || delegateRoot.state == "edit_label")){
+                if(renameActionEnabled && event.key === Qt.Key_Escape && (delegateRoot.state == "edit_title" || delegateRoot.state == "edit_label")){
                     event.accepted = true
                 }
                 if( event.key === Qt.Key_Escape){
@@ -236,7 +236,7 @@ ListView {
                 }
                 if (model.isOpenable && openActionsEnabled && (event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
                     console.log("Alt Return key pressed")
-                    openDocumentInNewTabAction.trigger()
+                    openDocumentInAnotherViewAction.trigger()
                     event.accepted = true
                 }
 
@@ -253,61 +253,61 @@ ListView {
 
                 // rename
 
-                if (model.isRenamable && renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isRenamable && renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     renameAction.trigger()
                     event.accepted = true
                 }
 
                 // cut
-                if (model.isMovable && cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     cutAction.trigger()
                     event.accepted = true
                 }
 
                 // copy
-                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     copyAction.trigger()
                     event.accepted = true
                 }
 
                 // paste
-                if (model.canAddChildPaper && addChildPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.canAddChildTreeItem && addChildTreeItemActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     pasteAction.trigger()
                     event.accepted = true
                 }
 
                 // add before
-                if (model.canAddSiblingPaper && addSiblingPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     addBeforeAction.trigger()
                     event.accepted = true
                 }
 
                 // add after
-                if (model.canAddSiblingPaper && addSiblingPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     addAfterAction.trigger()
                     event.accepted = true
                 }
 
                 // add child
-                if (model.canAddChildPaper && addChildPaperActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Space && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.canAddChildTreeItem && addChildTreeItemActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Space && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     addChildAction.trigger()
                     event.accepted = true
                 }
 
                 // move up
-                if (model.isMovable && moveActionEnabled  && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && moveActionEnabled  && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     moveUpAction.trigger()
                     event.accepted = true
                 }
 
                 // move down
-                if (model.isMovable && moveActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && moveActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     moveDownAction.trigger()
                     event.accepted = true
                 }
 
                 // send to trash
-                if (model.isTrashable && sendToTrashActionEnabled && event.key === Qt.Key_Delete && delegateRoot.state !== "edit_name" && delegateRoot.state !== "edit_label"){
+                if (model.isTrashable && sendToTrashActionEnabled && event.key === Qt.Key_Delete && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
                     sendToTrashAction.trigger()
                     event.accepted = true
                 }
@@ -395,7 +395,7 @@ ListView {
                     acceptedButtons: Qt.MiddleButton
                     onTapped: {
                         root.currentIndex = model.index
-                        openDocumentInNewTabAction.trigger()
+                        openDocumentInAnotherViewAction.trigger()
                         eventPoint.accepted = true
 
                     }
@@ -417,13 +417,13 @@ ListView {
                     onTriggered: {
                         //console.log("model.openedProjectId", openedProjectId)
                         //console.log("model.projectId", model.projectId)
-                        root.openDocument(openedProjectId, openedPaperId, model.projectId,
-                                          model.paperId)
+                        root.openDocument(openedProjectId, openedTreeItemId, model.projectId,
+                                          model.treeItemId)
                     }
                 }
 
                 Action {
-                    id: openDocumentInNewTabAction
+                    id: openDocumentInAnotherViewAction
                     //shortcut: "Alt+Return"
                     enabled: {
                         if (root.focus === true && titleTextField.visible === false
@@ -436,8 +436,8 @@ ListView {
                     text: "Open document in a new tab"
                     onTriggered: {
                         console.log("model.projectId", model.projectId)
-                        root.openDocumentInNewTab(model.projectId,
-                                                  model.paperId)
+                        root.openDocumentInAnotherView(model.projectId,
+                                                  model.treeItemId)
 
                     }
                 }
@@ -457,7 +457,7 @@ ListView {
                     text: qsTr("Open document in a window")
                     onTriggered: {
                         root.openDocumentInNewWindow(model.projectId,
-                                                     model.paperId)
+                                                     model.treeItemId)
 
                     }
                 }
@@ -490,10 +490,10 @@ ListView {
 
                                 if(root.currentIndex === model.index){
                                     //console.log("model.hasChildren", model.hasChildren)
-                                    if(checkState === Qt.PartiallyChecked && !proxyModel.hasChildren(model.projectId, model.paperId)){
+                                    if(checkState === Qt.PartiallyChecked && !proxyModel.hasChildren(model.projectId, model.treeItemId)){
                                         model.checkState = Qt.Checked
                                     }
-                                    else if(checkState === Qt.PartiallyChecked && proxyModel.hasChildren(model.projectId, model.paperId)){
+                                    else if(checkState === Qt.PartiallyChecked && proxyModel.hasChildren(model.projectId, model.treeItemId)){
                                         model.checkState = Qt.PartiallyChecked
                                     }
                                     else if(checkState === Qt.Checked){
@@ -533,12 +533,12 @@ ListView {
                             color: SkrTheme.accent
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
-                            visible: model.projectId === openedProjectId && model.paperId === openedPaperId
+                            visible: model.projectId === openedProjectId && model.treeItemId === openedTreeItemId
                         }
 
                         SkrButton {
                             id: projectIsBackupIndicator
-                            visible: model.projectIsBackup && model.paperId === -1
+                            visible: model.projectIsBackup && model.treeItemId === -1
                             enabled: true
                             focusPolicy: Qt.NoFocus
                             implicitHeight: 32
@@ -586,7 +586,7 @@ ListView {
                                     Layout.leftMargin: 4
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
-                                    text: model.indent === -1 ? model.projectName : model.name
+                                    text: model.indent === -1 ? model.projectName : model.title
                                     elide: Text.ElideRight
                                 }
 
@@ -650,7 +650,7 @@ ListView {
                                         //accepted()
                                         //}
                                         console.log("editing finished")
-                                        model.name = text
+                                        model.title = text
                                         delegateRoot.state = ""
                                     }
 
@@ -682,7 +682,8 @@ ListView {
 
                                     ListItemAttributes{
                                         id: attributes
-                                        attributes: model.attributes
+                                        treeItemId: model.treeItemId
+                                        projectId: model.projectId
                                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                         Layout.leftMargin: 4
                                         Layout.bottomMargin: 2
@@ -796,7 +797,7 @@ ListView {
             //                    //                    var targetModelIndex = dragArea.DelegateModel.modelIndex(
             //                    //                                targetIndex)
 
-            //                    //                    console.log("targetIndex : ", sourceModelIndex.name)
+            //                    //                    console.log("targetIndex : ", sourceModelIndex.title)
             //                }
 
             //                onDropped: {
@@ -821,7 +822,7 @@ ListView {
                     }
                 },
                 State {
-                    name: "edit_name"
+                    name: "edit_title"
                     PropertyChanges {
                         target: menuButton
                         visible: false
@@ -903,16 +904,16 @@ ListView {
                     height: model.isOpenable && openActionsEnabled ? undefined : 0
                     visible: model.isOpenable && openActionsEnabled
                     action: Action {
-                        id: openPaperAction
+                        id: openTreeItemAction
                         text: qsTr("Open")
                         //shortcut: "Return"
                         icon {
                             source: "qrc:///icons/backup/document-edit.svg"
                         }
-                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.paperId !== -1
+                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.treeItemId !== -1
                         onTriggered: {
-                            console.log("open paper action", model.projectId,
-                                        model.paperId)
+                            console.log("open treeItem action", model.projectId,
+                                        model.treeItemId)
                             openDocumentAction.trigger()
                         }
                     }
@@ -922,17 +923,17 @@ ListView {
                     height: model.isOpenable && openActionsEnabled ? undefined : 0
                     visible: model.isOpenable && openActionsEnabled
                     action: Action {
-                        id: openPaperInNewTabAction
+                        id: openTreeItemInAnotherViewAction
                         text: qsTr("Open in new tab")
                         //shortcut: "Alt+Return"
                         icon {
                             source: "qrc:///icons/backup/tab-new.svg"
                         }
-                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.paperId !== -1
+                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.treeItemId !== -1
                         onTriggered: {
-                            console.log("open paper in new tab action", model.projectId,
-                                        model.paperId)
-                            openDocumentInNewTabAction.trigger()
+                            console.log("open treeItem in new tab action", model.projectId,
+                                        model.treeItemId)
+                            openDocumentInAnotherViewAction.trigger()
                         }
                     }
                 }
@@ -941,16 +942,16 @@ ListView {
                     height: model.isOpenable && openActionsEnabled ? undefined : 0
                     visible: model.isOpenable && openActionsEnabled
                     action: Action {
-                        id: openPaperInNewWindowAction
+                        id: openTreeItemInNewWindowAction
                         text: qsTr("Open in new window")
                         //shortcut: "Alt+Return"
                         icon {
                             source: "qrc:///icons/backup/window-new.svg"
                         }
-                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false && root.enabled &&  model.paperId !== -1
+                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false && root.enabled &&  model.treeItemId !== -1
                         onTriggered: {
-                            console.log("open paper in new window action", model.projectId,
-                                        model.paperId)
+                            console.log("open treeItem in new window action", model.projectId,
+                                        model.treeItemId)
                             openDocumentInNewWindowAction.trigger()
                         }
                     }
@@ -974,7 +975,7 @@ ListView {
                         enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
                         onTriggered: {
                             console.log("rename action", model.projectId,
-                                        model.paperId)
+                                        model.treeItemId)
                             delegateRoot.editName()
                         }
                     }
@@ -994,15 +995,15 @@ ListView {
                         enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
                         onTriggered: {
                             console.log("sel label", model.projectId,
-                                        model.paperId)
+                                        model.treeItemId)
                             delegateRoot.editLabel()
                         }
                     }
                 }
 
                 MenuSeparator {
-                    height: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildPaper && pasteActionEnabled) ? undefined : 0
-                    visible: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildPaper && pasteActionEnabled)
+                    height: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildTreeItem && pasteActionEnabled) ? undefined : 0
+                    visible: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildTreeItem && pasteActionEnabled)
                 }
 
                 SkrMenuItem {
@@ -1020,8 +1021,8 @@ ListView {
 
                         onTriggered: {
                             console.log("cut action", model.projectId,
-                                        model.paperId)
-                            proxyModel.cut(model.projectId, model.paperId)
+                                        model.treeItemId)
+                            proxyModel.cut(model.projectId, model.treeItemId)
                         }
                     }
                 }
@@ -1040,15 +1041,15 @@ ListView {
 
                         onTriggered: {
                             console.log("copy action", model.projectId,
-                                        model.paperId)
-                            proxyModel.copy(model.projectId, model.paperId)
+                                        model.treeItemId)
+                            proxyModel.copy(model.projectId, model.treeItemId)
                         }
                     }
                 }
 
                 SkrMenuItem {
-                    height: model.canAddChildPaper && pasteActionEnabled ? undefined : 0
-                    visible: model.canAddChildPaper && pasteActionEnabled
+                    height: model.canAddChildTreeItem && pasteActionEnabled ? undefined : 0
+                    visible: model.canAddChildTreeItem && pasteActionEnabled
                     action :Action {
                         id: pasteAction
                         text: qsTr("Paste")
@@ -1060,23 +1061,23 @@ ListView {
 
                         onTriggered: {
                             console.log("paste action", model.projectId,
-                                        model.paperId)
-                            proxyModel.paste(model.projectId, model.paperId)
+                                        model.treeItemId)
+                            proxyModel.paste(model.projectId, model.treeItemId)
                         }
                     }
                 }
 
                 MenuSeparator {
-                    height: (model.canAddSiblingPaper || model.canAddChildPaper)
-                            && (addChildPaperActionEnabled || addSiblingPaperActionEnabled)?
+                    height: (model.canAddSiblingTreeItem || model.canAddChildTreeItem)
+                            && (addChildTreeItemActionEnabled || addSiblingTreeItemActionEnabled)?
                                 undefined : 0
-                    visible: (model.canAddSiblingPaper || model.canAddChildPaper)
-                             && (addChildPaperActionEnabled || addSiblingPaperActionEnabled)
+                    visible: (model.canAddSiblingTreeItem || model.canAddChildTreeItem)
+                             && (addChildTreeItemActionEnabled || addSiblingTreeItemActionEnabled)
                 }
 
                 SkrMenuItem {
-                    height: model.canAddSiblingPaper && addSiblingPaperActionEnabled ? undefined : 0
-                    visible: model.canAddSiblingPaper && addSiblingPaperActionEnabled
+                    height: model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled ? undefined : 0
+                    visible: model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled
                     action:
                         Action {
                         id: addBeforeAction
@@ -1088,13 +1089,13 @@ ListView {
                         enabled: contextMenuItemIndex === model.index && root.enabled
                         onTriggered: {
                             console.log("add before action", model.projectId,
-                                        model.paperId)
+                                        model.treeItemId)
 
                             var result =  proxyModel.addItemAbove(model.projectId,
-                                                       model.paperId, 0)
+                                                       model.treeItemId, 0)
 
                             // edit it :
-                            root.itemAtIndex(currentIndex).paperIdToEdit = result.getData("paperId", -2)
+                            root.itemAtIndex(currentIndex).treeItemIdToEdit = result.getData("treeItemId", -2)
 
 
                         }
@@ -1102,8 +1103,8 @@ ListView {
                 }
 
                 SkrMenuItem {
-                    height: model.canAddSiblingPaper && addSiblingPaperActionEnabled ? undefined : 0
-                    visible: model.canAddSiblingPaper && addSiblingPaperActionEnabled
+                    height: model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled ? undefined : 0
+                    visible: model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled
                     action:
                         Action {
                         id: addAfterAction
@@ -1115,13 +1116,13 @@ ListView {
                         enabled: contextMenuItemIndex === model.index && root.enabled
                         onTriggered: {
                             console.log("add after action", model.projectId,
-                                        model.paperId)
+                                        model.treeItemId)
 
                             var result =  proxyModel.addItemBelow(model.projectId,
-                                                       model.paperId, 0)
+                                                       model.treeItemId, 0)
 
                             // edit it :
-                            root.itemAtIndex(currentIndex).paperIdToEdit = result.getData("paperId", -2)
+                            root.itemAtIndex(currentIndex).treeItemIdToEdit = result.getData("treeItemId", -2)
 
                         }
                     }
@@ -1129,8 +1130,8 @@ ListView {
                 }
 
                 SkrMenuItem {
-                    height: model.canAddChildPaper && addChildPaperActionEnabled ? undefined : 0
-                    visible: model.canAddChildPaper && addChildPaperActionEnabled
+                    height: model.canAddChildTreeItem && addChildTreeItemActionEnabled ? undefined : 0
+                    visible: model.canAddChildTreeItem && addChildTreeItemActionEnabled
                     action:
                         Action {
                         id: addChildAction
@@ -1142,13 +1143,13 @@ ListView {
                         enabled: contextMenuItemIndex === model.index && root.enabled
                         onTriggered: {
                             console.log("add child action", model.projectId,
-                                        model.paperId)
+                                        model.treeItemId)
 
                               var result =  proxyModel.addChildItem(model.projectId,
-                                                         model.paperId, 0)
+                                                         model.treeItemId, 0)
 
                             // edit it :
-                            root.itemAtIndex(currentIndex).paperIdToEdit = result.getData("paperId", -2)
+                            root.itemAtIndex(currentIndex).treeItemIdToEdit = result.getData("treeItemId", -2)
 
 
 
@@ -1173,11 +1174,11 @@ ListView {
                         icon {
                             source: "qrc:///icons/backup/object-order-raise.svg"
                         }
-                        enabled:root.enabled && currentIndex !== 0  && root.enabled && currentPaperId !== -1
+                        enabled:root.enabled && currentIndex !== 0  && root.enabled
                         onTriggered: {
-                            console.log("move up action", currentProjectId, currentPaperId)
+                            console.log("move up action", currentProjectId, currentTreeItemId)
 
-                            proxyModel.moveUp(currentProjectId, currentPaperId, currentIndex)
+                            proxyModel.moveUp(currentProjectId, currentTreeItemId, currentIndex)
 
                         }
                     }
@@ -1194,12 +1195,12 @@ ListView {
                         icon {
                             source: "qrc:///icons/backup/object-order-lower.svg"
                         }
-                        enabled: currentIndex !== visualModel.items.count - 1  && root.enabled && currentPaperId !== -1
+                        enabled: currentIndex !== visualModel.items.count - 1  && root.enabled
 
                         onTriggered: {
-                            console.log("move down action", currentProjectId, currentPaperId)
+                            console.log("move down action", currentProjectId, currentTreeItemId)
 
-                            proxyModel.moveDown(currentProjectId, currentPaperId, currentIndex)
+                            proxyModel.moveDown(currentProjectId, currentTreeItemId, currentIndex)
                         }
                     }
                 }
@@ -1223,9 +1224,9 @@ ListView {
                         enabled: sendToTrashActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
                         onTriggered: {
                             console.log("sent to trash action", model.projectId,
-                                        model.paperId)
-                            //sendToTrashCalled(model.projectId, model.paperId)
-                            proxyModel.trashItemWithChildren(model.projectId, model.paperId)
+                                        model.treeItemId)
+                            //sendToTrashCalled(model.projectId, model.treeItemId)
+                            proxyModel.trashItemWithChildren(model.projectId, model.treeItemId)
                         }
                     }
                 }
@@ -1242,8 +1243,8 @@ ListView {
                         enabled: deleteActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
                         onTriggered: {
                             console.log("delete action", model.projectId,
-                                        model.paperId)
-                            deleteDefinitivelyCalled(model.projectId, model.paperId)
+                                        model.treeItemId)
+                            deleteDefinitivelyCalled(model.projectId, model.treeItemId)
                         }
                     }
                 }
@@ -1288,9 +1289,9 @@ ListView {
             }
 
             // edit name  :
-            property int paperIdToEdit: -2
-            onPaperIdToEditChanged: {
-                if(paperIdToEdit !== -2){
+            property int treeItemIdToEdit: -2
+            onTreeItemIdToEditChanged: {
+                if(treeItemIdToEdit !== -2){
                     editNameTimer.start()
                 }
             }
@@ -1300,11 +1301,11 @@ ListView {
                 repeat: false
                 interval: 250 //draggableContent.transitionAnimationDuration
                 onTriggered: {
-                    var index = proxyModel.findVisualIndex(model.projectId, paperIdToEdit)
+                    var index = proxyModel.findVisualIndex(model.projectId, treeItemIdToEdit)
                     if(index !== -2){
                         root.itemAtIndex(index).editName()
                     }
-                    paperIdToEdit = -2
+                    treeItemIdToEdit = -2
                 }
 
             }
@@ -1317,7 +1318,7 @@ ListView {
     remove: Transition {
 
         SequentialAnimation {
-            id: removePaperAnimation
+            id: removeTreeItemAnimation
             PropertyAction {
                 property: "ListView.delayRemove"
                 value: true

@@ -17,6 +17,8 @@ DocumentHandler::DocumentHandler(QObject *parent) :
     QObject(parent),
     m_textDoc(nullptr),
     m_formatPosition(-2),
+    m_selectionStart(0),
+    m_selectionEnd(0),
     m_projectId(-2),
     m_paperId(-2)
 {}
@@ -688,10 +690,10 @@ bool DocumentHandler::isWordMisspelled(int cursorPosition)
 {
     QTextCursor textCursor(m_textDoc->textDocument());
     textCursor.setPosition(cursorPosition);
-textCursor.movePosition(QTextCursor::StartOfWord);
-textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
-QString text = textCursor.selectedText();
-return !m_highlighter->getSpellChecker()->spell(textCursor.selectedText());
+    textCursor.movePosition(QTextCursor::StartOfWord);
+    textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+    QString text = textCursor.selectedText();
+    return !m_highlighter->getSpellChecker()->spell(textCursor.selectedText());
 }
 
 //------------------------------------------------------------------------

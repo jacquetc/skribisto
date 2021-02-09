@@ -22,8 +22,10 @@ public:
     }
 
     SKRResult createNewEmptyDatabase(int& projectId);
+    SKRResult createNewSpecificEmptyDatabase(int &projectId, const QString &sqlFile);
     SKRResult loadProject(const QUrl& fileName,
-                         int       & projectId);
+                         int       & projectId,
+                          const QString& sqlFile = "");
     SKRResult saveProject(int projectId);
     SKRResult saveProjectAs(int            projectId,
                            const QString& type,

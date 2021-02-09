@@ -16,13 +16,16 @@ TagPadForm {
 
 
     property int projectId: -2
-    // we use the term itemId instead of paperId to not be constrained if we want to tag more than papers in the future
-    property int itemId: -2
-    property var itemType: SKR.Sheet
-    property var tagListModel
+    // we use the term treeItemId instead of paperId to not be constrained if we want to tag more than papers in the future
+    property int treeItemId: -2
+    property var tagListModel: SKRSearchTagListProxyModel {
+        id: tagProxyModel
+        projectIdFilter: root.projectId
+        treeItemIdFilter: root.treeItemId
+    }
 
-    signal callAddTagRelationship(int projectId, int itemId, string tagName, string colorCode, string textColorCode)
-    signal callRemoveTagRelationship(int projectId,int itemId, int tagId)
+    signal callAddTagRelationship(int projectId, int treeItemId, string tagName, string colorCode, string textColorCode)
+    signal callRemoveTagRelationship(int projectId,int treeItemId, int tagId)
     signal callAddTag(int projectId, string tagName, string colorCode, string textColorCode)
     signal callRemoveTag(int projectId,int tagId)
     signal tagTapped(int projectId,int tagId)
@@ -105,19 +108,19 @@ TagPadForm {
 
     Connections{
         target: root
-        function onCallRemoveTagRelationship(projectId, itemId, tagId){
-            if(projectId !== root.projectId && itemId !== root.itemId){
+        function onCallRemoveTagRelationship(projectId, treeItemId, tagId){
+            if(projectId !== root.projectId && treeItemId !== root.treeItemId){
                 return
             }
-            plmData.tagHub().removeTagRelationship(projectId, itemType , itemId, tagId)
+            plmData.tagHub().removeTagRelationship(projectId, treeItemId, tagId)
         }
     }
     //----------------------------------------------------------------
 
     Connections{
         target: root
-        function onCallAddTagRelationship(projectId, itemId, tagName, colorCode, textColorCode){
-            if(projectId !== root.projectId && itemId !== root.itemId){
+        function onCallAddTagRelationship(projectId, treeItemId, tagName, colorCode, textColorCode){
+            if(projectId !== root.projectId && treeItemId !== root.treeItemId){
                 return
             }
 
@@ -137,7 +140,7 @@ TagPadForm {
             }
 
             // set relationship
-            result = plmData.tagHub().setTagRelationship(projectId, itemType, itemId, tagId)
+            result = plmData.tagHub().setTagRelationship(projectId, treeItemId, tagId)
             if (!result.success){
                 console.log("result onCallAddTagRelationship")
                 //TODO: add notification
@@ -187,7 +190,7 @@ TagPadForm {
             border.width: 2
             radius : height / 2
             property int projectId: model.projectId
-            property int itemId: root.itemId
+            property int treeItemId: root.treeItemId
             property int tagId: model.tagId
             property bool isSelected: false
             property bool isFocused: root.focusedIndex === model.index
@@ -379,15 +382,15 @@ TagPadForm {
                     text: qsTr("Remove")
 
                     onTriggered: {
-                        if(itemId === -2){
+                        if(treeItemId === -2){
                             removeTagDialog.projectId = model.projectId
                             removeTagDialog.tagId = model.tagId
                             removeTagDialog.tagName = model.name
                             removeTagDialog.open()
                         }
                         else {
-                            console.log(model.projectId, root.itemId, "tag", model.tagId)
-                            callRemoveTagRelationship(model.projectId, root.itemId, model.tagId)
+                            console.log(model.projectId, root.treeItemId, "tag", model.tagId)
+                            callRemoveTagRelationship(model.projectId, root.treeItemId, model.tagId)
                         }
                     }
 
@@ -407,33 +410,33 @@ TagPadForm {
                 standardButtons: Dialog.Yes  | Dialog.Cancel
 
                 onOpened: {
-                    var list = plmData.tagHub().getItemIdsFromTag(projectId, tagId, true)
+                    var list = plmData.tagHub().getItemIdsFromTag(projectId, tagId)
 
                     var separator
                     var i
                     for (i = 0 ; i < list.length ; i++){
 
 
-                        if(list[i] === -30){
-                            relatedItemNames += "Sheets :\n"
-                            separator = -30
-                            continue
-                        }
+                        //                        if(list[i] === -30){
+                        //                            relatedItemNames += "Sheets :\n"
+                        //                            separator = -30
+                        //                            continue
+                        //                        }
 
 
-                        if(list[i] === -31){
-                            relatedItemNames += "Notes :\n"
-                            separator = -31
-                            continue
-                        }
+                        //                        if(list[i] === -31){
+                        //                            relatedItemNames += "Notes :\n"
+                        //                            separator = -31
+                        //                            continue
+                        //                        }
+                        relatedItemNames += "- " + plmData.treeHub().getTitle(projectId, list[i]) + "\n"
 
-
-                        if(separator === -30){
-                            relatedItemNames += "- " + plmData.sheetHub().getTitle(projectId, list[i]) + "\n"
-                        }
-                        else if(separator === -31){
-                            relatedItemNames += "- " + plmData.noteHub().getTitle(projectId, list[i]) + "\n"
-                        }
+                        //                        if(separator === -30){
+                        //                            relatedItemNames += "- " + plmData.sheetHub().getTitle(projectId, list[i]) + "\n"
+                        //                        }
+                        //                        else if(separator === -31){
+                        //                            relatedItemNames += "- " + plmData.noteHub().getTitle(projectId, list[i]) + "\n"
+                        //                        }
 
                     }
                 }
@@ -461,7 +464,7 @@ TagPadForm {
                 if (event.key === Qt.Key_Delete){
                     console.log("Delete key pressed ")
 
-                    if(itemId === -2){
+                    if(treeItemId === -2){
                         // remove tag
                         removeTagDialog.projectId = projectId
                         removeTagDialog.tagId = tagId
@@ -470,7 +473,7 @@ TagPadForm {
                     }
                     else {
                         // remove relationship
-                        callRemoveTagRelationship(projectId, root.itemId, tagId)
+                        callRemoveTagRelationship(projectId, root.treeItemId, tagId)
                     }
                 }
                 if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Delete){
@@ -479,7 +482,7 @@ TagPadForm {
 
                     //TODO: ask confirmation before erasing
 
-                    //plmData.tagHub().removePaperTagRelationship(projectId, itemId, model.itemTagId)
+                    //plmData.tagHub().removePaperTagRelationship(projectId, treeItemId, model.itemTagId)
 
                 }
 
@@ -563,7 +566,7 @@ TagPadForm {
                         opacity: 0
                         icon.source: "qrc:///icons/backup/list-remove.svg"
                         onReleased:{
-                            if(itemId === -2){
+                            if(treeItemId === -2){
 
                                 removeTagDialog.projectId = model.projectId
                                 removeTagDialog.tagId = model.tagId
@@ -571,7 +574,7 @@ TagPadForm {
                                 removeTagDialog.open()
                             }
                             else {
-                                callRemoveTagRelationship(model.projectId, root.itemId, model.tagId)
+                                callRemoveTagRelationship(model.projectId, root.treeItemId, model.tagId)
 
                             }
                         }
@@ -756,11 +759,11 @@ TagPadForm {
                         }
 
                         onAccepted: {
-                            if(itemId === -2){
+                            if(treeItemId === -2){
                                 callAddTag(projectId, inner_titleTextField.text, inner_colorChooser.colorCode, inner_colorChooser.textColorCode)
                             }
                             else {
-                                callAddTagRelationship(projectId, itemId, inner_titleTextField.text, inner_colorChooser.colorCode, inner_colorChooser.textColorCode)
+                                callAddTagRelationship(projectId, treeItemId, inner_titleTextField.text, inner_colorChooser.colorCode, inner_colorChooser.textColorCode)
                             }
                             addPopup.close()
                         }
@@ -834,12 +837,12 @@ TagPadForm {
                                         //                                    }
                                         onSingleTapped: {
 
-                                            if(itemId === -2){
+                                            if(treeItemId === -2){
                                                 callAddTag(model.projectId, model.name, model.color, model.textColor)
                                             }
                                             else {
                                                 //create relationship with tag
-                                                callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
+                                                callAddTagRelationship(model.projectId, treeItemId, model.name, model.color, model.textColor)
 
                                             }
                                             addPopup.close()
@@ -878,7 +881,7 @@ TagPadForm {
                                             console.log("Return key pressed title")
 
                                             //create relationship with tag
-                                            callAddTagRelationship(model.projectId, itemId, model.name, model.color, model.textColor)
+                                            callAddTagRelationship(model.projectId, treeItemId, model.name, model.color, model.textColor)
                                             addPopup.close()
 
 

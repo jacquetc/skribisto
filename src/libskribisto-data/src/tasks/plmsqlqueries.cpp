@@ -25,6 +25,7 @@
 #include <QSqlDriver>
 #include <QSqlRecord>
 #include <QSqlField>
+#include "sql/skrsqltools.h"
 
 PLMSqlQueries::PLMSqlQueries(int            projectId,
                              const QString& tableName) : m_projectId(projectId),
@@ -429,7 +430,7 @@ SKRResult PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId)
         QSqlQuery   query(m_sqlDB);
         QStringList valueNamesStrList;
         QString     valueNamesStr                  = "(";
-        QString     valuesStr                      = " VALUES(:";
+        QString     valuesStr                      = " VALUES (:";
         QHash<QString, QVariant>::const_iterator i = values.constBegin();
 
         while (i != values.constEnd()) {
@@ -582,6 +583,26 @@ SKRResult PLMSqlQueries::injectDirectSql(const QString& sqlString)
     return result;
 }
 
+SKRResult PLMSqlQueries::trimTreePropertyTable()
+{
+    return SKRSqlTools::trimTreePropertyTable(m_sqlDB);
+}
+
+SKRResult PLMSqlQueries::trimTagRelationshipTable()
+{
+    return SKRSqlTools::trimTagRelationshipTable(m_sqlDB);
+}
+
+SKRResult PLMSqlQueries::trimTreeRelationshipTable()
+{
+    return SKRSqlTools::trimTreeRelationshipTable(m_sqlDB);
+}
+
+QString PLMSqlQueries::getIdName() const
+{
+    return m_idName;
+}
+
 SKRResult PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
 {
     SKRResult result(this);
@@ -633,7 +654,7 @@ SKRResult PLMSqlQueries::renumberSortOrder()
 
     //    qDebug() << query.lastError().text();
 
-    int dest = renumInterval;
+    int dest = 0;
     QList<int> list;
 
     while (query.next()) {

@@ -1,14 +1,14 @@
 #include "plmwritedocumentlistmodel.h"
 
-#include <plmsheethub.h>
+#include "skrtreehub.h"
 #include <plmdata.h>
 
 PLMWriteDocumentListModel::PLMWriteDocumentListModel(QObject *parent) :
     PLMDocumentListModel(parent, "tbl_user_writewindow_doc_list"), m_tableName(
         "tbl_user_writewindow_doc_list")
 {
-    connect(plmdata->sheetHub(),
-            &PLMSheetHub::titleChanged,
+    connect(plmdata->treeHub(),
+            &SKRTreeHub::titleChanged,
             [ = ](int            projectId,
                   int            paperId,
                   const QString& newTitle) {

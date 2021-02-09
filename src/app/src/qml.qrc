@@ -4,11 +4,9 @@
         <file>qml/Globals.qml</file>
         <file>qml/main.qml</file>
         <file>qml/qmldir</file>
-        <file>qml/RootPage.qml</file>
-        <file>qml/RootPageForm.ui.qml</file>
+        <file>qml/RootPageOld.qml</file>
+        <file>qml/RootPageFormOld.ui.qml</file>
         <file>qml/SkrSettings.qml</file>
-        <file>qml/Welcome/WelcomePage.qml</file>
-        <file>qml/Welcome/WelcomePageForm.ui.qml</file>
         <file>qml/Write/WriteLeftDock.qml</file>
         <file>qml/Write/WriteLeftDockForm.ui.qml</file>
         <file>qml/Write/WritePage.qml</file>
@@ -17,14 +15,6 @@
         <file>qml/Note/NotePageForm.ui.qml</file>
         <file>qml/Commons/Navigation.qml</file>
         <file>qml/Commons/NavigationForm.ui.qml</file>
-        <file>qml/Welcome/SettingsPage.qml</file>
-        <file>qml/Welcome/SettingsPageForm.ui.qml</file>
-        <file>qml/Welcome/ProjectPage.qml</file>
-        <file>qml/Welcome/ProjectPageForm.ui.qml</file>
-        <file>qml/Welcome/HelpPage.qml</file>
-        <file>qml/Welcome/HelpPageForm.ui.qml</file>
-        <file>qml/Welcome/ExamplePage.qml</file>
-        <file>qml/Welcome/ExamplePageForm.ui.qml</file>
         <file>qml/Commons/NavigationListForm.ui.qml</file>
         <file>qml/Commons/DocumentListView.qml</file>
         <file>qml/Commons/DocumentListViewForm.ui.qml</file>
@@ -56,7 +46,7 @@
         <file>qml/Commons/SKRTextArea.qml</file>
         <file>qml/Commons/TagPad.qml</file>
         <file>qml/Commons/TagPadForm.ui.qml</file>
-        <file>qml/Commons/SKRDrawer.qml</file>
+        <file>qml/Commons/SkrDrawer.qml</file>
         <file>qml/Commons/RestoreListView.qml</file>
         <file>qml/Commons/RestoreListViewForm.ui.qml</file>
         <file>qml/Commons/CheckableTree.qml</file>
@@ -96,36 +86,70 @@
         <file>qml/Items/SkrComboBox.qml</file>
         <file>qml/Items/SkrTextField.qml</file>
         <file>qml/Items/SkrRoundButton.qml</file>
-        <file>qml/Welcome/PlumeImporter.qml</file>
-        <file>qml/Welcome/PlumeImporterForm.ui.qml</file>
-        <file>qml/Welcome/Print.qml</file>
-        <file>qml/Welcome/PrintForm.ui.qml</file>
-        <file>qml/Welcome/Exporter.qml</file>
-        <file>qml/Welcome/ExporterForm.ui.qml</file>
-        <file>qml/Welcome/Importer.qml</file>
-        <file>qml/Welcome/ImporterForm.ui.qml</file>
         <file>qml/NoteOverview/NoteSearchItem.qml</file>
         <file>qml/NoteOverview/NoteSearchItemForm.ui.qml</file>
         <file>qml/NoteOverview/RecentNotesItem.qml</file>
         <file>qml/NoteOverview/RecentNotesItemForm.ui.qml</file>
         <file>qml/Items/SkrToolTip.qml</file>
         <file>qml/Items/SkrTabButtonForm.ui.qml</file>
-        <file>qml/Welcome/NewProject.qml</file>
-        <file>qml/Welcome/NewProjectForm.ui.qml</file>
-        <file>qml/Welcome/FileMenuPage.qml</file>
-        <file>qml/Welcome/FileMenuPageForm.ui.qml</file>
         <file>qml/Commons/ListItemAttributes.qml</file>
-        <file>qml/Welcome/HelpContents.qml</file>
-        <file>qml/Welcome/HelpContentsForm.ui.qml</file>
-        <file>qml/Welcome/FAQ.qml</file>
-        <file>qml/Welcome/FAQForm.ui.qml</file>
-        <file>qml/Welcome/About.qml</file>
-        <file>qml/Welcome/AboutForm.ui.qml</file>
         <file>qml/Commons/PropertyPad.qml</file>
         <file>qml/Commons/PropertyPadForm.ui.qml</file>
         <file>qml/Commons/ColorChooser.qml</file>
         <file>qml/Commons/TextContextMenu.qml</file>
         <file>qml/Commons/TextContextMenuForm.ui.qml</file>
         <file>qml/Items/SkrListItemPane.qml</file>
+        <file>qml/RootPage.qml</file>
+        <file>qml/RootPageForm.ui.qml</file>
+        <file>qml/Items/SkrBasePage.qml</file>
+        <file>qml/Commons/SkrViewManager.qml</file>
+        <file>qml/Commons/SkrViewButtons.qml</file>
+        <file>qml/EmptyPage.qml</file>
+        <file>qml/MultiViewArea.qml</file>
+        <file>qml/MultiViewAreaForm.ui.qml</file>
+        <file>qml/LeftDock.qml</file>
+        <file>qml/LeftDockForm.ui.qml</file>
+        <file>qml/RightDock.qml</file>
+        <file>qml/RightDockForm.ui.qml</file>
+        <file>qml/ProjectPage/ProjectPage.qml</file>
+        <file>qml/ProjectPage/ProjectPageForm.ui.qml</file>
+        <file>qml/Items/SkrToolBox.qml</file>
+        <file>qml/WelcomePage/SettingsPageForm.ui.qml</file>
+        <file>qml/WelcomePage/SettingsPage.qml</file>
+        <file>qml/WelcomePage/FileMenuPage.qml</file>
+        <file>qml/WelcomePage/ExamplePage.qml</file>
+        <file>qml/WelcomePage/ExamplePageForm.ui.qml</file>
+        <file>qml/WelcomePage/NewProjectPageForm.ui.qml</file>
+        <file>qml/WelcomePage/ExporterPageForm.ui.qml</file>
+        <file>qml/WelcomePage/WelcomePageForm.ui.qml</file>
+        <file>qml/WelcomePage/NewProjectPage.qml</file>
+        <file>qml/WelcomePage/ExporterPage.qml</file>
+        <file>qml/WelcomePage/ProjectPage.qml</file>
+        <file>qml/WelcomePage/WelcomePage.qml</file>
+        <file>qml/WelcomePage/HelpPageForm.ui.qml</file>
+        <file>qml/WelcomePage/HelpPage.qml</file>
+        <file>qml/WelcomePage/HelpContentsForm.ui.qml</file>
+        <file>qml/WelcomePage/HelpContents.qml</file>
+        <file>qml/WelcomePage/FAQForm.ui.qml</file>
+        <file>qml/WelcomePage/FAQ.qml</file>
+        <file>qml/WelcomePage/AboutForm.ui.qml</file>
+        <file>qml/WelcomePage/About.qml</file>
+        <file>qml/WelcomePage/ImporterPage.qml</file>
+        <file>qml/WelcomePage/FileMenuPageForm.ui.qml</file>
+        <file>qml/WelcomePage/PlumeImporterForm.ui.qml</file>
+        <file>qml/WelcomePage/ProjectPageForm.ui.qml</file>
+        <file>qml/WelcomePage/PlumeImporter.qml</file>
+        <file>qml/WelcomePage/ImporterPageForm.ui.qml</file>
+        <file>qml/Commons/SkrPagePluginInfoBase.qml</file>
+        <file>qml/Commons/NewItemPopup.qml</file>
+        <file>qml/Commons/NewItemPopupForm.ui.qml</file>
+        <file>qml/Items/SkrSplitViewHandler.qml</file>
+        <file>qml/Items/SkrPageToolBar.qml</file>
+        <file>qml/OverviewPage/OverviewPage.qml</file>
+        <file>qml/OverviewPage/OverviewPageForm.ui.qml</file>
+        <file>qml/OverviewPage/OverviewTree.qml</file>
+        <file>qml/OverviewPage/OverviewTreeForm.ui.qml</file>
+        <file>qml/Commons/OutlinePad.qml</file>
+        <file>qml/Commons/OutlinePadForm.ui.qml</file>
     </qresource>
 </RCC>

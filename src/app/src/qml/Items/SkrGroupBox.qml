@@ -16,6 +16,8 @@ GroupBox {
         color: "transparent"
     }
 
+
+
     label:
         RowLayout {
         x: control.leftPadding
@@ -30,8 +32,17 @@ GroupBox {
             text: control.title
             font.bold: true
             font.pointSize: bigTitleEnabled ? Qt.application.font.pointSize * 1.5 :  Qt.application.font.pointSize
-            color: control.activeFocus ?  SkrTheme.accent : SkrTheme.buttonForeground
+            color: SkrTheme.buttonForeground
             elide: Text.ElideRight
+            Rectangle {
+
+                anchors.fill: parent
+                color: "transparent"
+                border.color: SkrTheme.accent
+                border.width: control.activeFocus ? 1 : 0
+                radius: 4
+
+            }
         }
         Rectangle {
             id: separator

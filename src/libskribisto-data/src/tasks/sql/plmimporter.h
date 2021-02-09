@@ -42,7 +42,8 @@ public:
                                     int            projectId,
                                     SKRResult     & result);
     QSqlDatabase createEmptySQLiteProject(int       projectId,
-                                          SKRResult& result);
+                                          SKRResult& result,
+                                     const QString &sqlFile = "");
 
     SKRResult     importPlumeCreatorProject(const QUrl& plumeFileName,
                                            const QUrl& skribistoFileName);
@@ -55,23 +56,26 @@ private:
 
     //    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
     // projectId, SKRResult &result);
+    SKRResult transformParentsToFolder(int projectId);
 
     SKRResult createPapersAndAssociations(int                     projectId,
                                          int                     indent,
                                          const QXmlStreamReader& xml,
-                                         const QString         & tempDirPath);
+                                         const QString         & tempDirPath, int textFolderId, int noteFolderId);
     SKRResult createNote(int            projectId,
                         int            indent,
                         int            plumeId,
                         const QString& name,
-                        const QString& tempDirPath);
+                        const QString& tempDirPath,
+                        int parentFolderId);
+
     SKRResult createTagsFromAttend(int                     projectId,
                                   int                     noteId,
                                   const QXmlStreamReader& xml,
                                   const QString         & attributeName,
                                   const QStringList     & values);
 
-    SKRResult readXMLRecursivelyAndCreatePaper(int projectId, int indent, QXmlStreamReader *xml, const QString &tempDirPath);
+    SKRResult readXMLRecursivelyAndCreatePaper(int projectId, int indent, QXmlStreamReader *xml, const QString &tempDirPath, int textFolderId, int noteFolderId);
 private:
 
     // used to track old plume id with new skribisto note id

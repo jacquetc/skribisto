@@ -33,7 +33,7 @@
 #include <QFileInfo>
 #include <QTimer>
 
-PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKRResult *result) :
+PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKRResult *result, const QString &sqlFile) :
     QObject(parent)
 {
     qRegisterMetaType<PLMProject::DBType>("PLMProject::DBType");
@@ -66,7 +66,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKR
         PLMImporter importer;
 
         if (fileName.isEmpty()) { // virgin project
-            m_sqlDb = importer.createEmptySQLiteProject(projectId, *result);
+            m_sqlDb = importer.createEmptySQLiteProject(projectId, *result, sqlFile);
 
             IFKO(*result) {
                 // qWarning << result.getMessage()

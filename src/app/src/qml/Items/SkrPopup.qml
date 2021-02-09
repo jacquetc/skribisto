@@ -5,11 +5,17 @@ import ".."
 
 Popup {
     id: root
-    Material.background: SkrTheme.pageBackground
+    //Material.background: SkrTheme.pageBackground
+    //anchors.centerIn: Overlay.overlay
 
     readonly property int  windowWidth : Overlay.overlay === null ? 0 : Overlay.overlay.width
     readonly property int  windowHeight :  Overlay.overlay === null ? 0 : Overlay.overlay.height
+    property bool enableBehavior: true
 
+
+    background: Rectangle {
+        color: SkrTheme.pageBackground
+    }
 
     onOpened: {
         // verify if popup appears outside the window
@@ -39,6 +45,7 @@ Popup {
     }
 
     Behavior on x {
+        enabled: enableBehavior
         SpringAnimation {
             spring: 5
             mass: 0.2
@@ -47,6 +54,7 @@ Popup {
     }
 
     Behavior on y {
+        enabled: enableBehavior
         SpringAnimation {
             spring: 5
             mass: 0.2

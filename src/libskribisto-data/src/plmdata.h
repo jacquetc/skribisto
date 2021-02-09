@@ -24,13 +24,12 @@
 #include <QObject>
 
 #include "skrerrorhub.h"
-#include "plmnotehub.h"
 #include "plmprojecthub.h"
-#include "plmpropertyhub.h"
-#include "plmsheethub.h"
+#include "skrpropertyhub.h"
+#include "skrtreehub.h"
 #include "skrtaghub.h"
 #include "plmsignalhub.h"
-#include "plmpluginhub.h"
+#include "skrpluginhub.h"
 #include "skrprojectdicthub.h"
 #include "skribisto_data_global.h"
 #include "skrstathub.h"
@@ -55,15 +54,13 @@ public:
 
     PLMSignalHub                 * signalHub();
     Q_INVOKABLE SKRErrorHub      * errorHub();
-    Q_INVOKABLE PLMSheetHub      * sheetHub();
-    Q_INVOKABLE PLMPropertyHub   * sheetPropertyHub();
-    Q_INVOKABLE PLMNoteHub       * noteHub();
-    Q_INVOKABLE PLMPropertyHub   * notePropertyHub();
+    Q_INVOKABLE SKRTreeHub       * treeHub();
+    Q_INVOKABLE SKRPropertyHub   * treePropertyHub();
     Q_INVOKABLE PLMProjectHub    * projectHub();
     Q_INVOKABLE SKRTagHub        * tagHub();
     Q_INVOKABLE SKRProjectDictHub* projectDictHub();
     Q_INVOKABLE SKRStatHub       * statHub();
-    PLMPluginHub                 * pluginHub();
+    SKRPluginHub                 * pluginHub();
 
 signals:
 
@@ -76,12 +73,11 @@ private:
     SKRErrorHub *m_errorHub;
     PLMSignalHub *m_signalHub;
     PLMProjectHub *m_projectHub;
-    PLMSheetHub *m_sheetHub;
-    PLMNoteHub *m_noteHub;
+    SKRTreeHub *m_treeHub;
     PLMProjectManager *m_projectManager;
-    PLMPropertyHub *m_notePropertyHub, *m_sheetPropertyHub;
+    SKRPropertyHub *m_treePropertyHub;
     SKRTagHub *m_tagHub;
-    PLMPluginHub *m_pluginHub;
+    SKRPluginHub *m_pluginHub;
     SKRProjectDictHub *m_projectDictHub;
     SKRStatHub *m_statHub;
 };
