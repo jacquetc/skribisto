@@ -394,7 +394,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     m_attendanceConversionHash.clear();
 
 
-    while (attendXml.readNextStartElement() && attendXml.name() == "plume-attendance") {
+    while (attendXml.readNextStartElement() && attendXml.name().toString() == "plume-attendance") {
         QStringList rolesNames  = attendXml.attributes().value("rolesNames").toString().split("--", Qt::SkipEmptyParts);
         QStringList levelsNames =
                 attendXml.attributes().value("levelsNames").toString().split("--", Qt::SkipEmptyParts);
@@ -407,7 +407,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
                 attendXml.attributes().value("spinBox_1").toString().split("--", Qt::SkipEmptyParts);
 
 
-        while (attendXml.readNextStartElement() && attendXml.name() == "group") {
+        while (attendXml.readNextStartElement() && attendXml.name().toString() == "group") {
             int attendNumber  = attendXml.attributes().value("number").toInt();
             QString groupName = attendXml.attributes().value("name").toString();
             result = this->createNote(projectId, 1, attendNumber, groupName, tempDirPath + "/attend/A", attendFolderId);
@@ -423,7 +423,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
             }
 
 
-            while (attendXml.readNextStartElement() && attendXml.name() == "obj") {
+            while (attendXml.readNextStartElement() && attendXml.name().toString() == "obj") {
                 int attendNumber = attendXml.attributes().value("number").toInt();
                 QString objName  = attendXml.attributes().value("name").toString();
                 result = this->createNote(projectId, 2, attendNumber, objName, tempDirPath + "/attend/A", attendFolderId);
@@ -479,7 +479,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     QXmlStreamReader xml(lines);
 
 
-    while (xml.readNextStartElement() && xml.name() == "plume-tree") {
+    while (xml.readNextStartElement() && xml.name().toString() == "plume-tree") {
         // pick project name
         QString projectName = xml.attributes().value("projectName").toString();
         IFOKDO(result, plmdata->projectHub()->setProjectName(projectId, projectName));
@@ -488,11 +488,11 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
 
         while (xml.readNextStartElement()){
-            if(xml.name() == "trash") {
+            if(xml.name().toString() == "trash") {
                 xml.skipCurrentElement();
                 continue;
             }
-            if(xml.name() == "book") {
+            if(xml.name().toString() == "book") {
                 IFOKDO(result, this->readXMLRecursivelyAndCreatePaper(projectId, 1, &xml, tempDirPath, textFolderId, noteFolderId));
 
             }
@@ -738,7 +738,7 @@ SKRResult PLMImporter::readXMLRecursivelyAndCreatePaper(int                     
         return result;
     }
     else {
-        if(xml->name() == "separator"){
+        if(xml->name().toString() == "separator"){
             xml->skipCurrentElement();
         }
         else {
@@ -749,7 +749,7 @@ SKRResult PLMImporter::readXMLRecursivelyAndCreatePaper(int                     
 
     while (xml->readNextStartElement()) {
 
-        if(xml->name() == "separator"){
+        if(xml->name().toString() == "separator"){
             xml->skipCurrentElement();
             continue;
         }

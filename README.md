@@ -74,13 +74,43 @@ Each project is a SQLite3 file, more robust than the zipped projects in Plume.
 ## Build it, test it
 
 ### Windows
-*Not supported yet*
-Download the latest from GitHub, then you can use Qt Creator to open the top-most CMakeLists.txt at the root of the project. Build it against Qt 5.15 minimum to be sure.
 
-Needed sources and libs :
-- hunspell
-- zlib
-- quazip
+#### By hand, for development
+
+Install Qt 5.15.2 on Windows 10
+
+##### Building prerequisites 
+
+- Download the latest from GitHub, then you can use Qt Creator to open the superbuild at *cmake/Superbuild/CMakeLists.txt* in the project. 
+- Configure against Qt 5.15 MinGW minimum to be sure.
+- **Before** compiling it, set the build directory (in Projects tab) to *build_skribisto_Release* just outside the skribisto folder
+- add the CMake variable QT_VERSION_MAJOR and set its value to 5 or 6 depending of your Qt version, apply the change
+- Build it against 
+- After successfully compiling it, close the Skribisto-Superbuild project
+
+##### Building 
+
+- Open CMakeLists.txt_ at the root of the project
+- In Qt Creator, in Projects tab, in the build subsection, add the CMake variable SKR_DEV (bool) and set its value to "ON", apply the change
+- Compile it
+
+##### Running it
+
+- In Qt Creator, in Projects tab, in the run subsection, copy the value of environment variable *Path* in a text editor.
+- Add to the line the paths of the prerequisites dll. For example, I added to the original Path value : 
+	;C:\Users\jacqu\Devel\build_skribisto_Release\3rdparty\zlib\bin;
+	C:\Users\jacqu\Devel\build_skribisto_Release\3rdparty\quazip\bin;
+	C:\Users\jacqu\Devel\build_skribisto_Release\3rdparty\hunspell\bin;
+	(make it only one line)
+- run skribisto
+
+
+##### automated building & packaging
+- install Inno Setup found at https://jrsoftware.org/isdl.php
+- unlock running Powershell scripts by running in admin Powershell :  *set-ExecutionPolicy RemoteSigned*
+- Open PowerShell
+	- cd skribisto\package\windows\
+	- run .\packaging.ps1
 
 ### Linux
 

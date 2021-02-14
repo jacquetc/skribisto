@@ -698,6 +698,20 @@
 <context>
     <name>LeftDock</name>
     <message>
+        <location filename="../app/src/qml/LeftDock.qml" line="62"/>
+        <location filename="../app/src/qml/Note/LeftDock.qml" line="129"/>
+        <location filename="../app/src/qml/NoteOverview/LeftDock.qml" line="127"/>
+        <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="127"/>
+        <source>Show navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/LeftDock.qml" line="207"/>
+        <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="223"/>
+        <source>Show recent sheets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../app/src/qml/Note/LeftDock.qml" line="44"/>
         <location filename="../app/src/qml/NoteOverview/LeftDock.qml" line="44"/>
         <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="45"/>
@@ -719,23 +733,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/LeftDock.qml" line="62"/>
-        <location filename="../app/src/qml/Note/LeftDock.qml" line="129"/>
-        <location filename="../app/src/qml/NoteOverview/LeftDock.qml" line="127"/>
-        <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="127"/>
-        <source>Show navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/Note/LeftDock.qml" line="213"/>
         <location filename="../app/src/qml/NoteOverview/LeftDock.qml" line="219"/>
         <source>Show recent notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/LeftDock.qml" line="207"/>
-        <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="223"/>
-        <source>Show recent sheets</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -765,12 +765,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="347"/>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="403"/>
-        <source>Projects</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="194"/>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1845"/>
         <source>Paste</source>
@@ -797,13 +791,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="547"/>
-        <source>is a folder</source>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="347"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="403"/>
+        <source>Projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="548"/>
-        <source>has child</source>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="547"/>
+        <source>is a folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -812,18 +807,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="548"/>
+        <source>has child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="550"/>
         <source>navigation item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1685"/>
-        <source>Open in another view</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1954"/>
-        <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -867,6 +857,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1685"/>
+        <source>Open in another view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1706"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
@@ -904,6 +899,11 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1912"/>
         <source>Add after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1954"/>
+        <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1747,17 +1747,17 @@
 <context>
     <name>SKRExporter</name>
     <message>
-        <location filename="../app/src/skrexporter.cpp" line="276"/>
+        <location filename="../app/src/skrexporter.cpp" line="279"/>
         <source>Tags:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/skrexporter.cpp" line="307"/>
+        <location filename="../app/src/skrexporter.cpp" line="310"/>
         <source>Outline:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/skrexporter.cpp" line="338"/>
+        <location filename="../app/src/skrexporter.cpp" line="341"/>
         <source>Text:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2262,6 +2262,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="130"/>
+        <source>Close view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="171"/>
         <source>Split vertically</source>
         <translation type="unfinished"></translation>
@@ -2269,11 +2274,6 @@
     <message>
         <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="182"/>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="130"/>
-        <source>Close view</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

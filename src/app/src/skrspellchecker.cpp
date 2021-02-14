@@ -7,11 +7,11 @@
 #include <QDir>
 #include <QCoreApplication>
 
-#ifdef Q_OS_WIN
-# include "externals/hunspell/hunspell.hxx"
-#endif // Q_OS_WIN
+//#ifdef Q_OS_WIN
+//# include "externals/hunspell/hunspell.hxx"
+//#endif // Q_OS_WIN
 
-#include <hunspell/hunspell.hxx>
+#include <hunspell.hxx>
 #include "plmutils.h"
 
 SKRSpellChecker::SKRSpellChecker(QObject *parent) :
@@ -114,7 +114,7 @@ Letter:
 
         case QChar::Punctuation_Other:
 
-            if ((c == 0x0027) || (c == 0x2019)) {
+            if ((c == QChar(0x0027)) || (c == QChar(0x2019))) {
                 ++chars;
                 break;
             }

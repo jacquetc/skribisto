@@ -11,7 +11,8 @@ add_definitions(-DSKRIBISTO_DATA_LIBRARY)
 # Find the QtWidgets library
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
-find_package(QuaZip-Qt5 REQUIRED)
+
+
 
 
 set(data_SRCS
@@ -50,7 +51,7 @@ set(data_SRCS
     models/skrtagitem.cpp
     models/skrtaglistmodel.cpp
     models/skrsearchtaglistproxymodel.cpp
-)
+    )
 set(data_HDR
     skrcoreinterface.h
     skrcoreplugins.h
@@ -94,7 +95,7 @@ set(data_HDR
     models/skrtagitem.h
     models/skrtaglistmodel.h
     models/skrsearchtaglistproxymodel.h
-)
+    )
 
 set(QRC
     tasks/sql/sql.qrc
@@ -105,7 +106,36 @@ qt_add_resources(RESOURCES ${QRC})
 # Tell CMake to create the executable
 add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${models_SRCS} ${RESOURCES})
 
-target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml QuaZip::QuaZip)
+target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
+
+
+
+#-------------- QUAZIP --------------------
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
+
+    if(${SKR_DEV})
+        set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
+
+        set(QUAZIP_QT_MAJOR_VERSION ${QT_MAJOR_VERSION})
+        set(QuaZip-Qt${QT_VERSION_MAJOR}_DIR ${EXTERNAL_INSTALL_LOCATION}/quazip/lib/cmake/QuaZip-Qt${QT_VERSION_MAJOR}-1.1)
+        set(ZLIB_ROOT ${EXTERNAL_INSTALL_LOCATION}/zlib)
+    endif(${SKR_DEV})
+
+
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
+
+find_package(QuaZip-Qt${QT_VERSION_MAJOR} REQUIRED)
+target_link_libraries(skribisto-data PRIVATE QuaZip::QuaZip)
+target_include_directories(skribisto-data SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
+
+
+#---------------------------------
+
+
+
 
 
 install(TARGETS skribisto-data LIBRARY DESTINATION ${KDE_INSTALL_LIBDIR})

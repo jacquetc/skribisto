@@ -9,6 +9,7 @@
 #include <QImageReader>
 #include <QTextDocumentWriter>
 #include <QTextDocumentFragment>
+#include <QRegularExpression>
 
 
 // #include "plmdata.h"
@@ -640,7 +641,7 @@ void DocumentHandler::addHorizontalLine()
 {
     m_textCursor.beginEditBlock();
     m_textCursor.insertHtml("____________________");
-    m_textDoc->textDocument()->setHtml(m_textDoc->textDocument()->toHtml().replace(QRegExp(
+    m_textDoc->textDocument()->setHtml(m_textDoc->textDocument()->toHtml().replace(QRegularExpression(
                                                                                        "____________________"),
                                                                                    "<hr/><p></p>"));
     m_textCursor.endEditBlock();

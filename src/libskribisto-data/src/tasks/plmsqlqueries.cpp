@@ -25,6 +25,7 @@
 #include <QSqlDriver>
 #include <QSqlRecord>
 #include <QSqlField>
+#include <QRegularExpression>
 #include "sql/skrsqltools.h"
 
 PLMSqlQueries::PLMSqlQueries(int            projectId,
@@ -261,7 +262,7 @@ SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
                 wh = m_idName;
             }
 
-            QRegExp rx("[><=]^");
+            auto rx  = QRegularExpression("[><=]^");
 
             if (!wh.contains(rx)) {
                 wh.append(" =");
@@ -321,7 +322,7 @@ SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
                 wh = m_idName;
             }
 
-            QRegExp rx("\\s*[><=]{1,2}$");
+            auto rx  = QRegularExpression("\\s*[><=]{1,2}$");
             QString valueWh = wh;
 
             if (wh.contains(rx)) {

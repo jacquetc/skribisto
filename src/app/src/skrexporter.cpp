@@ -16,11 +16,14 @@
 
 #include "plmdata.h"
 #include "skr.h"
+#include "skrexporterinterface.h"
 
 SKRExporter::SKRExporter(QObject *parent) : QObject(parent), m_projectId(-2), m_printEnabled(false),
     m_outputType(OutputType::Odt), m_indentWithTitle(0), m_includeSynopsis(false), m_tagsEnabled(false), m_numbered(false),
     m_quick(false)
 {
+    plmdata->pluginHub()->addPluginType<SKRExporterInterface>();
+
     m_fontFamily    = qGuiApp->font().family().replace(", ","");
     m_fontPointSize = qGuiApp->font().pointSize();
     m_textTopMargin = 2;

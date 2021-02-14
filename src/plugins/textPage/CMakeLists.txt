@@ -28,11 +28,15 @@ qt_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
 add_library(skribisto-plugin-textPage SHARED ${SRCS} ${RESOURCES})
+add_dependencies(skribisto-plugin-textPage skribisto-data)
+add_dependencies(skribisto-plugin-textPage skribisto)
 
 target_link_libraries(skribisto-plugin-textPage PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2)
+target_link_libraries(skribisto-plugin-textPage PUBLIC skribisto-data)
+
 
 include_directories("${CMAKE_SOURCE_DIR}/src/app/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/app/src/qml/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
-install(TARGETS skribisto-plugin-textPage LIBRARY DESTINATION "${PLUGIN_INSTALL_DIR}/skribisto/")
+install(TARGETS skribisto-plugin-textPage LIBRARY DESTINATION "${PLUGIN_INSTALL_DIR}/skribisto/plugins")

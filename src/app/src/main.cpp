@@ -2,11 +2,11 @@
 #include <QSettings>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-
+#include <QtSvg>
 using namespace std;
 
 // for translator
-#include <QTextCodec>
+
 #include <QDebug>
 #include <QString>
 #include <QGuiApplication>
@@ -51,16 +51,13 @@ using namespace std;
 #include "skrviewmanager.h"
 #include "skrtreemanager.h"
 
-#ifdef QT_DEBUG
+#ifdef SKR_DEBUG
 # include <QQmlDebuggingEnabler>
-#endif // QT_DEBUG
+#endif // SKR_DEBUG
 // -------------------------------------------------------
 void startCore()
 {
     // new PLMPluginLoader(qApp);
-
-    // UTF-8 codec
-    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 
     // Names for the QSettings
     QCoreApplication::setOrganizationName("skribisto");
@@ -143,12 +140,12 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
 
 int main(int argc, char *argv[])
 {
-#ifdef QT_DEBUG
+#ifdef SKR_DEBUG
     QQmlDebuggingEnabler enabler;
 
     // QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
     //qInstallMessageHandler(myMessageOutput);
-#endif // QT_DEBUG
+#endif // SKR_DEBUG
 
     // Allows qml styling
     qputenv("QT_STYLE_OVERRIDE", "");

@@ -1,4 +1,6 @@
 #include "plmdata.h"
+#include <QDebug>
+#include <QCoreApplication>
 
 PLMData::PLMData(QObject *parent) : QObject(parent)
 {
@@ -17,7 +19,6 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
     m_projectDictHub = new SKRProjectDictHub(this);
     m_pluginHub      = new SKRPluginHub(this);
     m_statHub      = new SKRStatHub(this);
-
 
     connect(m_treeHub,
             &SKRTreeHub::projectModified,

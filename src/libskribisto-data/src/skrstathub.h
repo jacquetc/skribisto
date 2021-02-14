@@ -3,8 +3,9 @@
 
 #include <QObject>
 #include "skr.h"
+#include "skribisto_data_global.h"
 
-class SKRStatHub : public QObject
+class EXPORT SKRStatHub : public QObject
 {
     Q_OBJECT
 public:

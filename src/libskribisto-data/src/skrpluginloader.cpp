@@ -12,11 +12,7 @@ SKRPluginLoader::SKRPluginLoader(QObject *parent) : QObject(parent)
     for(const QString& path : PLMUtils::Dir::addonsPathsList()) {
         QCoreApplication::addLibraryPath(path);
     }
-    QCoreApplication::removeLibraryPath(qApp->applicationDirPath());
 
-    //    foreach(const QString  &path, QCoreApplication::libraryPaths() ) {
-    //    qDebug() << path;
-    //    }
 
 
     // this->reload();

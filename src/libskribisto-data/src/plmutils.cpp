@@ -156,8 +156,8 @@ bool PLMUtils::Dir::removeDir(const QString& dirName)
 // }
 
 bool PLMUtils::ProjectsArrayInSettings::modifyProjectModifiedDateInSettingsArray(
-    int     arrayNumber,
-    QString date)
+        int     arrayNumber,
+        QString date)
 {
     QSettings settings;
 
@@ -177,7 +177,7 @@ int PLMUtils::ProjectsArrayInSettings::findProjectInSettingArray(QString fileNam
     }
 
     if (!PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
-            fileName)) {
+                fileName)) {
         return 999;
     }
 
@@ -220,7 +220,7 @@ int PLMUtils::ProjectsArrayInSettings::findProjectInSettingArray(QString fileNam
 }
 
 bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
-    QString fileName)
+        QString fileName)
 {
     QFile file(fileName);
     QSettings settings;
@@ -392,7 +392,7 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
 // -------------------------------------------------------------
 
 QHash<QString,
-      QString>PLMUtils::ProjectsArrayInSettings::listAllProjectsInSettingsArray()
+QString>PLMUtils::ProjectsArrayInSettings::listAllProjectsInSettingsArray()
 {
     QSettings settings;
 
@@ -605,56 +605,9 @@ QHash<QString,
 // }
 
 
-QModelIndexList PLMUtils::Models::allChildIndexes(QModelIndex index)
-{
-    // The first number af the final list is the targeted element
-    QModelIndexList childList;
-
-    if (!index.isValid()) {
-        return childList;
-    }
-
-    //    qDebug() << index.data(Qt::DisplayRole).toString();
-    QModelIndex firstChild = index.child(0, 0);
-
-    if (!firstChild.isValid()) {
-        return childList;
-    }
-
-    childList.append(firstChild);
-    allChildIndexes(firstChild);
-    QModelIndex siblingChild = firstChild.sibling(firstChild.row() + 1, 0);
-
-    while (siblingChild.isValid()) {
-        childList.append(siblingChild);
-        allChildIndexes(siblingChild);
-        siblingChild = siblingChild.sibling(siblingChild.row() + 1, 0);
-    }
-
-    return childList;
-}
-
 //
 //
 // ---------------------------------------------------------------------------------------
-
-QModelIndexList PLMUtils::Models::allParentIndexes(QModelIndex index)
-{
-    QModelIndexList parentList;
-
-    if (!index.isValid()) {
-        return parentList;
-    }
-
-    QModelIndex parentIndex =  index.parent();
-
-    if (parentIndex.isValid()) {
-        parentList.append(parentIndex);
-        allParentIndexes(parentIndex);
-    }
-
-    return parentList;
-}
 
 //
 //
@@ -678,18 +631,18 @@ QStringList PLMUtils::Dir::writableAddonsPathsList()
 
 
 #endif // ifdef Q_OS_LINUX
-#ifdef Q_OS_WIN32
+#ifdef Q_OS_WIN
 
     dir.setPath(
-        QDir::homePath() + "/AppData/Roaming/" +
-        QCoreApplication::organizationName() + "/share/");
+                QDir::homePath() + "/AppData/Roaming/" +
+                QCoreApplication::organizationName() + "/share/");
 
     dir.mkpath(dir.path());
 
     if (dir.isReadable()) {
         list.append(dir.path());
     }
-#endif // ifdef Q_OS_WIN32
+#endif // ifdef Q_OS_WIN
 #ifdef Q_OS_MAC
 
     dir.setPath(QDir::homePath() + "/Library/Application Support/skribisto/");
@@ -721,28 +674,18 @@ QStringList PLMUtils::Dir::addonsPathsList()
     //        list.append(dir.path());
     //    }
 
+    dir.setPath(QCoreApplication::applicationDirPath() + "/plugins");
+
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
+
+    // to find plugins when devolping in Qt Creator
     dir.setPath(QCoreApplication::applicationDirPath());
-
-    if (dir.cd("plugins"))
-        if (dir.isReadable()) {
-            list.append(dir.path());
-        }
-
+    dir.cdUp();
     dir.cdUp();
 
-    if (dir.cd("plugins"))
-        if (dir.isReadable()) {
-            list.append(dir.path());
-        }
-    dir.cdUp();
-
-    if (dir.cd("plugins"))
-        if (dir.isReadable()) {
-            list.append(dir.path());
-        }
-    dir.cdUp();
-
-    if (dir.cd("plugins"))
+    if (dir.cd("plugins")) {
         if (dir.isReadable()) {
             list.append(dir.path());
 
@@ -752,12 +695,12 @@ QStringList PLMUtils::Dir::addonsPathsList()
                 list.append(dir.path() + "/" + pluginDir);
             }
         }
+    }
 
     dir.setPath(":/");
 
-    if (dir.isReadable()) {
-        list.append(dir.path());
-    }
+    list.append(dir.path());
+
 
 #ifdef Q_OS_LINUX
     dir.setPath("/usr/share/skribisto/");
@@ -785,8 +728,9 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
+
 #endif // ifdef Q_OS_LINUX
-#ifdef Q_OS_WIN32
+#ifdef Q_OS_WIN
     dir.setPath(QCoreApplication::applicationDirPath() + "/share/");
 
     if (dir.isReadable()) {
@@ -794,14 +738,14 @@ QStringList PLMUtils::Dir::addonsPathsList()
     }
 
     dir.setPath(
-        QDir::homePath() + "/AppData/Roaming/" +
-        QCoreApplication::organizationName() + "/share/");
+                QDir::homePath() + "/AppData/Roaming/" +
+                QCoreApplication::organizationName() + "/share/");
 
     if (dir.isReadable()) {
         list.append(dir.path());
     }
 
-#endif // ifdef Q_OS_WIN32
+#endif // ifdef Q_OS_WIN
 #ifdef Q_OS_MAC
     dir.setPath("/Library/Application Support/skribisto/");
 
@@ -831,8 +775,8 @@ QStringList PLMUtils::Dir::addonsPathsList()
     }
 
 #endif // ifdef Q_OS_MAC
-
-    // qDebug() << list;
+    //    qDebug() << "--------------  addons path list : ------------------";
+    //    qDebug() << list;
     return list;
 }
 

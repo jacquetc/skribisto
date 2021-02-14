@@ -5,8 +5,9 @@
 #include <QSortFilterProxyModel>
 #include "skrtreeitem.h"
 #include "skrtreelistmodel.h"
+#include "./skribisto_data_global.h"
 
-class SKRSearchTreeListProxyModel : public QSortFilterProxyModel {
+class EXPORT SKRSearchTreeListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
     Q_PROPERTY(
         int projectIdFilter MEMBER m_projectIdFilter WRITE setProjectIdFilter NOTIFY projectIdFilterChanged)

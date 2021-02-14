@@ -87,6 +87,7 @@ public:
                                          "fileName").toString(), obj);
 
                     if (!m_pluginsListHash.contains(plugin.name)) {
+                        qDebug() << "plugin found : " << plugin.name;
                         m_pluginsListHash.insert(plugin.name, plugin);
                     }
                 }
@@ -175,8 +176,9 @@ private:
         QDir plugDir = QDir(dir);
         QStringList filter;
 
-        filter << "*.so" << ".dll";
+        filter << "*.so" << "*.dll";
         QDir::Filters filterFlags(QDir::Files& ~QDir::Executable);
+        QStringList list = plugDir.entryList(filter, filterFlags, QDir::NoSort);
 
         for(const QString& file : plugDir.entryList(filter, filterFlags, QDir::NoSort)) {
             if (T *plugin =

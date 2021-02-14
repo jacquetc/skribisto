@@ -7,9 +7,16 @@ cmake_minimum_required(VERSION 3.5.0)
 #    cmake_policy(SET CMP0071 NEW)
 #endif()
 set(QT_MIN_VERSION "5.15.0")
-set(QT_DEFAULT_MAJOR_VERSION 5)
+#set(QT_DEFAULT_MAJOR_VERSION ${QT_MAJ_VERSION})
 
-find_package(ECM REQUIRED NO_MODULE)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(ECM REQUIRED NO_MODULE)
+    include(KDEInstallDirs)
+    include(ECMInstallIcons)
+    include(ECMOptionalAddSubdirectory)
+    add_subdirectory(resources/unix/icons)
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
 
 set(OpenGL_GL_PREFERENCE "GLVND")
@@ -34,6 +41,10 @@ add_compile_definitions(SKR_VERSION_MINOR=${VERSION_MINOR})
 add_compile_definitions(SKR_VERSION_PATCH=${VERSION_PATCH})
 
 
+
+
+
+
 project(skribisto LANGUAGES CXX VERSION ${VERSION})
 
 # Include GNUInstallDirs, which sets sensible defaults for install directories.
@@ -43,10 +54,8 @@ project(skribisto LANGUAGES CXX VERSION ${VERSION})
 
 #include(GNUInstallDirs)
 #include(FeatureSummary)
-include(KDEInstallDirs)
-include(ECMInstallIcons)
+
 include(CMakePackageConfigHelpers)
-include(ECMOptionalAddSubdirectory)
 
 
 include_directories(${Qt${QT_VERSION_MAJOR}Core_PRIVATE_INCLUDE_DIRS})
@@ -70,12 +79,14 @@ set(CMAKE_CXX_STANDARD 14)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 #set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fsanitize=address,undefined -O0")
 
-add_subdirectory(resources/unix/icons)
+
+
 
 add_subdirectory(src/libskribisto-data/src)
-#add_subdirectory(3rdparty)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(SKR_DEBUG true)
+    add_compile_definitions(SKR_DEBUG=true)
     add_subdirectory(src/libskribisto-data/tests)
     add_subdirectory(src/app/tests)
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -83,9 +94,11 @@ endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 add_subdirectory(src/app/src)
 add_subdirectory(src/plugins)
 
-install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})
-install(FILES resources/unix/mime/eu.skribisto.skribisto.xml DESTINATION ${KDE_INSTALL_MIMEDIR})
-install(FILES eu.skribisto.skribisto.appdata.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+    install(FILES resources/unix/mime/eu.skribisto.skribisto.xml DESTINATION ${KDE_INSTALL_MIMEDIR})
+    install(FILES eu.skribisto.skribisto.appdata.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 #install(TARGETS skribisto skribisto-data
 #        RUNTIME DESTINATION ${BINDIR}
