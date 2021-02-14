@@ -9,19 +9,10 @@ cmake_minimum_required(VERSION 3.5.0)
 set(QT_MIN_VERSION "5.15.0")
 #set(QT_DEFAULT_MAJOR_VERSION ${QT_MAJ_VERSION})
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(ECM REQUIRED NO_MODULE)
-    include(KDEInstallDirs)
-    include(ECMInstallIcons)
-    include(ECMOptionalAddSubdirectory)
-    add_subdirectory(resources/unix/icons)
-endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
-
 set(OpenGL_GL_PREFERENCE "GLVND")
 
 #set(SKR_TEST_APP false)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH})
 
 # git tag for version :
 include(MunkeyVersionFromGit)
@@ -46,6 +37,23 @@ add_compile_definitions(SKR_VERSION_PATCH=${VERSION_PATCH})
 
 
 project(skribisto LANGUAGES CXX VERSION ${VERSION})
+
+message("------------------CMAKE_SYSTEM_NAME---------------------")
+message("${CMAKE_SYSTEM_NAME}")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(ECM REQUIRED NO_MODULE)
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
+    include(ECMInstallIcons)
+    include(ECMOptionalAddSubdirectory)
+    include(KDEInstallDirs)
+    add_subdirectory(resources/unix/icons)
+
+
+
+    message("-----------ECM_MODULE_PATH----------")
+    message(${ECM_MODULE_PATH})
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 # Include GNUInstallDirs, which sets sensible defaults for install directories.
 # See https://cmake.org/cmake/help/v3.0/module/GNUInstallDirs.html for further information.

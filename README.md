@@ -205,8 +205,7 @@ flatpak install local-repo eu.skribisto.skribisto -y --reinstall
 After you modified the code you want in whichever git branch you want, type this command :
 
 ```
-cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/local/eu.skribisto.skribisto.yml --force-clean
-flatpak install local-repo eu.skribisto.skribisto -y --reinstall
+cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/local/eu.skribisto.skribisto.yml --force-clean && flatpak install local-repo eu.skribisto.skribisto -y --reinstall
 ```
 
 ## To contact me :
