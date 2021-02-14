@@ -287,7 +287,7 @@ QStringList SKRSpellChecker::dictsPaths()
 
     QStringList addonsList = PLMUtils::Dir::addonsPathsList();
 
-    for (const QString& string : addonsList) {
+    for (const QString& string : qAsConst(addonsList)) {
         list.append(string + "/dicts/");
     }
 

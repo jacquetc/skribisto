@@ -745,6 +745,14 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
+    dir.setPath(
+                QDir::homePath() + "/AppData/Roaming/" +
+                QCoreApplication::organizationName());
+
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
+
 #endif // ifdef Q_OS_WIN
 #ifdef Q_OS_MAC
     dir.setPath("/Library/Application Support/skribisto/");
