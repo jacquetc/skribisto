@@ -80,4 +80,4 @@ set(CMAKE_MODULE_PATH
     )
 message(${CMAKE_MODULE_PATH})
 include(add_ide_support)
-target_add_ide_support(skribisto "C:/Users/jacqu/Devel/skribisto/")
+target_add_ide_support(skribisto "../../")

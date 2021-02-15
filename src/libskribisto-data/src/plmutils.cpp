@@ -774,7 +774,7 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
-    dir.setPath(QApplication::applicationDirPath());
+    dir.setPath(QCoreApplication::applicationDirPath());
     dir.cdUp();
     dir.cd("Resources");
 

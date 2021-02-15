@@ -176,7 +176,7 @@ private:
         QDir plugDir = QDir(dir);
         QStringList filter;
 
-        filter << "*.so" << "*.dll";
+        filter << "*.so" << "*.dll" << "*.dylib";
         QDir::Filters filterFlags(QDir::Files& ~QDir::Executable);
         QStringList list = plugDir.entryList(filter, filterFlags, QDir::NoSort);
 

@@ -112,7 +112,7 @@ target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_
 
 #-------------- QUAZIP --------------------
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 
     if(${SKR_DEV})
@@ -124,7 +124,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     endif(${SKR_DEV})
 
 
-endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 
 find_package(QuaZip-Qt${QT_VERSION_MAJOR} REQUIRED)
@@ -138,4 +138,6 @@ target_include_directories(skribisto-data SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS}
 
 
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 install(TARGETS skribisto-data LIBRARY DESTINATION ${KDE_INSTALL_LIBDIR})
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")

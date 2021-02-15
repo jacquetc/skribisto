@@ -14,7 +14,6 @@ else()
     add_compile_definitions(SKR_PRINT_SUPPORT=true)
 endif()
 
-
 if(${SKR_PRINT_SUPPORT})
     set(PRINTPACKAGE PrintSupport)
 else()
@@ -228,7 +227,7 @@ target_link_libraries(skribisto PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Co
 #--------------HUNSPELL --------------------
 
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
     if(${SKR_DEV})
         set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
@@ -239,7 +238,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     endif(${SKR_DEV})
 
 
-endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 
 find_package(hunspell REQUIRED)
@@ -252,7 +251,9 @@ target_include_directories(skribisto SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
 
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 install(TARGETS skribisto RUNTIME DESTINATION ${KDE_INSTALL_BINDIR})
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 #set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/data/Info.plist)
