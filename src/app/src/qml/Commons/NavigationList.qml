@@ -786,20 +786,13 @@ NavigationListForm {
                                     if(hovered && model.hasChildren){
 
                                         if(!rootWindow.compactMode){
-                                            addSideNavigationListPopupTimer.projectId = model.projectId
-                                            addSideNavigationListPopupTimer.parentId = model.treeItemId
-                                            addSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId
-                                            addSideNavigationListPopupTimer.parentItem = swipeDelegate
-                                            addSideNavigationListPopupTimer.listView = listView
-//                                            console.log("popupId", stackViewBaseItem.popupId)
 
-                                            addSideNavigationListPopupTimer.start()
-
-
+                                            hoveringTimer.start()
                                         }
                                     }
                                     else if(hovered && !model.hasChildren){
                                         if(!addSideNavigationListPopupTimer.running){
+                                            hoveringTimer.stop()
                                             addSideNavigationListPopupTimer.stop()
                                             closeSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId + 1
                                             closeSideNavigationListPopupTimer.start()
@@ -809,12 +802,14 @@ NavigationListForm {
                                     }
                                     else if(!model.hasChildren){
                                         if(!addSideNavigationListPopupTimer.running){
+                                            hoveringTimer.stop()
                                             closeSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId + 1
                                             closeSideNavigationListPopupTimer.start()
                                         }
                                     }
 
                                     else{
+                                        hoveringTimer.stop()
                                         closeSideNavigationListPopupTimer.stop()
                                         //addSideNavigationListPopupTimer.stop()
                                     }
@@ -827,6 +822,25 @@ NavigationListForm {
                                 //                                }
 
                             }
+
+                            Timer {
+                                id: hoveringTimer
+                                interval: 200
+                                onTriggered: {
+
+
+                                    addSideNavigationListPopupTimer.projectId = model.projectId
+                                    addSideNavigationListPopupTimer.parentId = model.treeItemId
+                                    addSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId
+                                    addSideNavigationListPopupTimer.parentItem = swipeDelegate
+                                    addSideNavigationListPopupTimer.listView = listView
+//                                            console.log("popupId", stackViewBaseItem.popupId)
+
+                                addSideNavigationListPopupTimer.start()
+                                }
+
+                            }
+
 
 
                             contentItem:

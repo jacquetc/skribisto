@@ -732,3 +732,10 @@ void DocumentHandler::replaceWord(const QString &word, const QString &newWord)
     }
 
 }
+
+void DocumentHandler::learnWord(const QString &word)
+{
+
+    m_highlighter->getSpellChecker()->addWordToUserDict(word);
+
+}

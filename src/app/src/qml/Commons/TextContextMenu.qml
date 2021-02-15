@@ -9,6 +9,7 @@ TextContextMenuForm {
 
 
     signal suggestionChosen(string original, string suggestion)
+    signal suggestionToBeLearned(string word)
 
 
     stackView.initialItem: editPanelComponent
@@ -339,7 +340,7 @@ TextContextMenuForm {
                     delegate: Component {
                         id: itemDelegate
 
-                        Item {
+                        SkrListItemPane {
                             id: delegateRoot
                             height: 30
                             focus: true
@@ -440,6 +441,19 @@ TextContextMenuForm {
                     }
 
 
+                }
+
+
+                SkrToolButton {
+                    id: addWordButton
+                    Layout.fillWidth: true
+
+
+                    text: qsTr("Learn \"%1\"").arg(root.suggestionOriginalWord)
+
+                    onClicked: {
+                        root.suggestionToBeLearned(root.suggestionOriginalWord)
+                    }
                 }
 
             }

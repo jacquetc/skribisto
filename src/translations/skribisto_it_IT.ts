@@ -766,7 +766,7 @@
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="194"/>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1845"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1859"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
@@ -817,107 +817,107 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1043"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1057"/>
         <source>See sub-items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1157"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1171"/>
         <source>Open document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1180"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1194"/>
         <source>Open document in a new tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1203"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1217"/>
         <source>Open document in a window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1274"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1288"/>
         <source>This project is a backup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1416"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1430"/>
         <source>Enter label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1463"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1477"/>
         <source>Enter title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1665"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1679"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1685"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1699"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1706"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1720"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1732"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1746"/>
         <source>Set as active project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1754"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1768"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1775"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1789"/>
         <source>Set label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1800"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1814"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1822"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1836"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1872"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1886"/>
         <source>Add before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1912"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1926"/>
         <source>Add after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1954"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1968"/>
         <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="2003"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="2017"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="2033"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="2047"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="2068"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="2082"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>

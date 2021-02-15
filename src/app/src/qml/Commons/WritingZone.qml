@@ -391,6 +391,7 @@ WritingZoneForm {
 
         Component.onCompleted: {
             textContextMenu.suggestionChosen.connect(documentHandler.replaceWord)
+            textContextMenu.suggestionToBeLearned.connect(documentHandler.learnWord)
         }
 
     }
