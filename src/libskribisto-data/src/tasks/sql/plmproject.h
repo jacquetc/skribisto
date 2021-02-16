@@ -40,7 +40,9 @@ public:
 
     explicit PLMProject(QObject    *parent,
                         int         projectId,
-                        const QUrl& fileName, SKRResult *result);
+                        const QUrl& fileName,
+                        SKRResult *result,
+                        const QString& sqlFile = "");
     ~PLMProject();
     QString       getType() const;
     void          setType(const QString& value);

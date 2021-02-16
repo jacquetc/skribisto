@@ -16,11 +16,14 @@
 
 #include "plmdata.h"
 #include "skr.h"
+#include "skrexporterinterface.h"
 
 SKRExporter::SKRExporter(QObject *parent) : QObject(parent), m_projectId(-2), m_printEnabled(false),
     m_outputType(OutputType::Odt), m_indentWithTitle(0), m_includeSynopsis(false), m_tagsEnabled(false), m_numbered(false),
     m_quick(false)
 {
+    plmdata->pluginHub()->addPluginType<SKRExporterInterface>();
+
     m_fontFamily    = qGuiApp->font().family().replace(", ","");
     m_fontPointSize = qGuiApp->font().pointSize();
     m_textTopMargin = 2;
@@ -31,11 +34,11 @@ SKRExporter::SKRExporter(QObject *parent) : QObject(parent), m_projectId(-2), m_
 
 void SKRExporter::run()
 {
-    if (m_projectId == -2 || (m_sheetIdList.isEmpty() && m_noteIdList.isEmpty())) {
+    if (m_projectId == -2 || m_treeItemIdList.isEmpty()) {
         return;
     }
 
-    emit progressMaximumChanged(m_sheetIdList.count() + m_noteIdList.count());
+    emit progressMaximumChanged(m_treeItemIdList.count());
 
 
 
@@ -45,10 +48,10 @@ void SKRExporter::run()
     m_blockFormat.setTextIndent(m_textIndent);
 
 
-    QTextDocument *textDocument = new QTextDocument(this);
+    QTextDocument *finalDocument = new QTextDocument(this);
     QString projectTitle = plmdata->projectHub()->getProjectName(m_projectId);
 
-    QTextCursor textCursor(textDocument);
+    QTextCursor textCursor(finalDocument);
     if (!m_quick) {
         // project title :
 
@@ -68,52 +71,23 @@ void SKRExporter::run()
         textCursor.setBlockFormat(titleBlockFormat);
         textCursor.insertBlock(m_blockFormat, m_charFormat);
     }
-    QList<int> sheetNumbers;
+    QList<int> treeItemNumbers;
 
-    for (int sheetId : m_sheetIdList) {
-        this->createContent(textDocument, SKR::Sheet, m_projectId, sheetId, &sheetNumbers);
+    for (int treeItemId : qAsConst(m_treeItemIdList)) {
+        this->createContent(finalDocument, m_projectId, treeItemId, &treeItemNumbers);
     }
 
-    if (!m_noteIdList.isEmpty()) {
-        if (!m_quick) {
 
-            textCursor.movePosition(QTextCursor::End);
-            QTextBlockFormat lineBreakBlockFormat;
-            lineBreakBlockFormat.setPageBreakPolicy(QTextFormat::PageBreak_AlwaysBefore);
-            textCursor.insertBlock(lineBreakBlockFormat);
-            // notes :
-            QTextDocument noteDoc;
-
-            noteDoc.setPlainText(QString("%1").arg(tr("Notes")));
-
-            textCursor.movePosition(QTextCursor::End);
-            textCursor.insertFragment(QTextDocumentFragment(&noteDoc));
-
-
-            QTextBlockFormat noteBlockFormat;
-
-            noteBlockFormat.setAlignment(Qt::AlignHCenter);
-            noteBlockFormat.setHeadingLevel(1);
-            textCursor.mergeBlockFormat(noteBlockFormat);
-            textCursor.insertBlock(m_blockFormat, m_charFormat);
-        }
-
-        QList<int> noteNumbers;
-
-        for (int noteId : m_noteIdList) {
-            this->createContent(textDocument, SKR::Note, m_projectId, noteId, &noteNumbers);
-        }
-    }
 
     // set size and bold with headers for ODT, PDF, Print
 
-    for (int i = 0; i < textDocument->blockCount(); i++) {
-        QTextBlock textBlock = textDocument->findBlockByNumber(i);
+    for (int i = 0; i < finalDocument->blockCount(); i++) {
+        QTextBlock textBlock = finalDocument->findBlockByNumber(i);
 
         int headingLevel = textBlock.blockFormat().headingLevel();
 
         if (headingLevel > 0) {
-            QTextCursor cursor(textDocument);
+            QTextCursor cursor(finalDocument);
             cursor.setPosition(textBlock.position());
             cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
 
@@ -156,7 +130,7 @@ void SKRExporter::run()
 
     if ((m_outputType != OutputType::Printer) && (m_outputType != OutputType::Pdf)) {
         QTextDocumentWriter writer(fileName, format);
-        bool ok = writer.write(textDocument);
+        bool ok = writer.write(finalDocument);
     }
 
 
@@ -167,7 +141,7 @@ void SKRExporter::run()
         pdfPrinter.setPdfVersion(QPagedPaintDevice::PdfVersion_1_6);
         pdfPrinter.setTitle(projectTitle);
 
-        textDocument->print(&pdfPrinter);
+        finalDocument->print(&pdfPrinter);
     }
 
 #ifdef SKR_PRINT_SUPPORT
@@ -180,8 +154,8 @@ void SKRExporter::run()
 
         QPrintPreviewDialog previewDialog(&printer);
 
-        this->connect(&previewDialog, &QPrintPreviewDialog::paintRequested, [textDocument](QPrinter *printer) {
-            textDocument->print(printer);
+        this->connect(&previewDialog, &QPrintPreviewDialog::paintRequested, [finalDocument](QPrinter *printer) {
+            finalDocument->print(printer);
         });
 
         previewDialog.exec();
@@ -197,7 +171,7 @@ void SKRExporter::run()
         QPrintDialog printDialog(&printer);
 
         if (printDialog.exec() == QDialog::Accepted) {
-            textDocument->print(&printer);
+            finalDocument->print(&printer);
         }
     }
 
@@ -207,17 +181,14 @@ void SKRExporter::run()
 
 // --------------------------------------------------------------------------------------
 
-void SKRExporter::createContent(QTextDocument *textDocument, SKR::ItemType paperType, int projectId,
-                                int paperId, QList<int> *numbers) {
-    PLMPaperHub *paperHub;
+void SKRExporter::createContent(QTextDocument *textDocument, int projectId,
+                                int treeItemId, QList<int> *numbers) {
+    SKRTreeHub *treeHub = plmdata->treeHub();
 
-    if (paperType == SKR::Sheet) {
-        paperHub = plmdata->sheetHub();
-    }
-    else if (paperType == SKR::Note) {
-        paperHub = plmdata->noteHub();
-    }
-    else {
+    QString type = treeHub->getType(projectId, treeItemId);
+
+    //TODO: temp until other types are done
+    if(type != "TEXT"){
         return;
     }
 
@@ -226,10 +197,10 @@ void SKRExporter::createContent(QTextDocument *textDocument, SKR::ItemType paper
     textCursor.movePosition(QTextCursor::End);
 
 
-    int indent = paperHub->getIndent(projectId, paperId);
+    int indent = treeHub->getIndent(projectId, treeItemId);
 
 
-    if ((m_indentWithTitle > indent) || (paperType == SKR::Note)) {
+    if ((m_indentWithTitle > indent) || (type == "TEXT")) {
         // number :
 
         // increment :
@@ -255,13 +226,7 @@ void SKRExporter::createContent(QTextDocument *textDocument, SKR::ItemType paper
 
         // title :
 
-        QString title =  paperHub->getTitle(projectId, paperId);
-
-        if (paperType == SKR::Note) {
-            if (paperId == plmdata->noteHub()->getSynopsisFolderId(projectId)) {
-                title = tr("Outlines");
-            }
-        }
+        QString title =  treeHub->getTitle(projectId, treeItemId);
 
         QTextDocument titleDoc;
 
@@ -286,13 +251,13 @@ void SKRExporter::createContent(QTextDocument *textDocument, SKR::ItemType paper
 
     if (m_tagsEnabled) {
         QTextDocument tagsDoc;
-        QList<int>    tagsIdList = plmdata->tagHub()->getTagsFromItemId(projectId, paperType, paperId);
+        QList<int>    tagsIdList = plmdata->tagHub()->getTagsFromItemId(projectId, treeItemId);
 
 
         if (!tagsIdList.isEmpty()) {
             QStringList tagsStringList;
 
-            for (int tagId : tagsIdList) {
+            for (int tagId : qAsConst(tagsIdList)) {
                 tagsStringList.append(plmdata->tagHub()->getTagName(projectId, tagId));
             }
             tagsStringList.sort(Qt::CaseInsensitive);
@@ -323,10 +288,9 @@ void SKRExporter::createContent(QTextDocument *textDocument, SKR::ItemType paper
 
     bool synopsisIsEmpty = true;
 
-    if ((paperType == SKR::Sheet) && m_includeSynopsis) {
+    if (m_includeSynopsis) {
         QTextDocument synopsisDoc;
-        int synopsisId     = plmdata->noteHub()->getSynopsisNoteId(projectId, paperId);
-        QString synopsisMd = plmdata->noteHub()->getContent(projectId, synopsisId);
+        QString synopsisMd = plmdata->treeHub()->getSecondaryContent(projectId, treeItemId);
         synopsisIsEmpty = synopsisMd.isEmpty();
 
         if (!synopsisIsEmpty) {
@@ -355,7 +319,7 @@ void SKRExporter::createContent(QTextDocument *textDocument, SKR::ItemType paper
 
     // content :
     QTextDocument contentDoc;
-    QString contentMd = paperHub->getContent(projectId, paperId);
+    QString contentMd = treeHub->getPrimaryContent(projectId, treeItemId);
 
     if (!contentMd.isEmpty()) {
         contentDoc.setMarkdown(contentMd);
@@ -365,7 +329,7 @@ void SKRExporter::createContent(QTextDocument *textDocument, SKR::ItemType paper
         cursor.mergeBlockFormat(m_blockFormat);
         cursor.mergeCharFormat(m_charFormat);
 
-        if ((paperType == SKR::Sheet) && m_includeSynopsis && !synopsisIsEmpty) {
+        if (m_includeSynopsis && !synopsisIsEmpty) {
 
 
             cursor.movePosition(QTextCursor::Start);
@@ -510,26 +474,15 @@ void SKRExporter::setOutputType(const SKRExporter::OutputType& outputType)
     emit outputTypeChanged(outputType);
 }
 
-QList<int>SKRExporter::sheetIdList() const
+QList<int>SKRExporter::treeItemIdList() const
 {
-    return m_sheetIdList;
+    return m_treeItemIdList;
 }
 
-void SKRExporter::setSheetIdList(const QList<int>& sheetIdList)
+void SKRExporter::setTreeItemIdList(const QList<int>& treeItemIdList)
 {
-    m_sheetIdList = sheetIdList;
-    emit sheetIdListChanged(sheetIdList);
-}
-
-QList<int>SKRExporter::noteIdList() const
-{
-    return m_noteIdList;
-}
-
-void SKRExporter::setNoteIdList(const QList<int>& noteIdList)
-{
-    m_noteIdList = noteIdList;
-    emit noteIdListChanged(noteIdList);
+    m_treeItemIdList = treeItemIdList;
+    emit treeItemIdListChanged(treeItemIdList);
 }
 
 bool SKRExporter::includeSynopsis() const

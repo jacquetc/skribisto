@@ -91,5 +91,17 @@
         <file>icons/backup/object-rows.svg</file>
         <file>icons/backup/document-print-direct.svg</file>
         <file>icons/backup/favorite.svg</file>
+        <file>icons/backup/view-pim-notes.svg</file>
+        <file>icons/backup/compass.svg</file>
+        <file>icons/backup/view-list-text.svg</file>
+        <file>icons/backup/view-hidden.svg</file>
+        <file>icons/backup/address-book-new.svg</file>
+        <file>icons/backup/view-split-left-right.svg</file>
+        <file>icons/backup/view-split-top-bottom.svg</file>
+        <file>icons/backup/view-right-close.svg</file>
+        <file>icons/backup/view-close.svg</file>
+        <file>icons/backup/go-home.svg</file>
+        <file>icons/backup/document-print-none.svg</file>
+        <file>icons/backup/whitebalance.svg</file>
     </qresource>
 </RCC>

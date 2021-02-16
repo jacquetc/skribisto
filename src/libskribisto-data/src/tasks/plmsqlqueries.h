@@ -86,6 +86,12 @@ public:
 
     SKRResult injectDirectSql(const QString& sqlString);
 
+    SKRResult trimTreePropertyTable();
+    SKRResult trimTagRelationshipTable();
+    SKRResult trimTreeRelationshipTable();
+
+    QString getIdName() const;
+
 private:
 
     QSqlDatabase m_sqlDB;

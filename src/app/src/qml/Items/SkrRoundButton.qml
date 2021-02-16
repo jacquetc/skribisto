@@ -1,10 +1,11 @@
+import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 import ".."
 
 RoundButton {
     id: control
-    icon.color: control.activeFocus ? SkrTheme.accent : control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
+    icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
                                           (control.action.icon.color === "transparent" ?
                                                (enabled ? control.action.icon.color: SkrTheme.buttonIconDisabled) :
                                                (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
@@ -13,7 +14,15 @@ RoundButton {
     Material.foreground: SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
 
+    Rectangle {
+        parent: control.background
+        anchors.fill: control.background
+        color: "transparent"
+        border.color: SkrTheme.accent
+        border.width: control.activeFocus ? 1 : 0
+        radius: 4
 
+    }
     property string tip
     hoverEnabled: true
 

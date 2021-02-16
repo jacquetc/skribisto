@@ -5,21 +5,47 @@ import "../Items"
 
 Item {
     id: root
-    property string attributes: ""
+    property int projectId: -1
+    property int treeItemId: -1
 
-    onAttributesChanged: {
+    Component.onCompleted: {
         listModel.clear()
 
-        if(attributes === "")
-            return
+        createVisualAttributes()
 
-        var attributesList = attributes.split(";")
+    }
 
-        var i
-        for(i = 0 ; i < attributesList.length ; i++){
+    Connections {
+        target: plmData.treePropertyHub()
+        function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
+            if(projectId === root.projectId && treeItemId === root.treeItemId){
+                listModel.clear()
+                if(name === "printable"){
+                    createVisualAttributes()
+                }
+                if(name === "modifiable"){
+                    createVisualAttributes()
+                }
+                if(name === "favorite"){
+                    createVisualAttributes()
+                }
+            }
+        }
+    }
 
-            var attributeDict = createDictFromAttribute(attributesList[i])
-            listModel.append(attributeDict)
+    function createVisualAttributes(){
+
+        var propertyName = "printable"
+        if(!(plmData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "true") === "true"? true : false)){
+            listModel.append(createDictFromPropertyName(propertyName))
+        }
+        propertyName = "modifiable"
+        if(!(plmData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "true") === "true"? true : false)){
+            listModel.append(createDictFromPropertyName(propertyName))
+        }
+        propertyName = "favorite"
+        if(plmData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "false") === "true"? true : false){
+            listModel.append(createDictFromPropertyName(propertyName))
         }
 
     }
@@ -29,7 +55,7 @@ Item {
     }
 
 
-    function createDictFromAttribute(attribute){
+    function createDictFromPropertyName(attribute){
 
         var iconSource = ""
         var text = ""
@@ -38,12 +64,14 @@ Item {
 
         switch(attribute) {
 
-        case "synopsis":
-            iconSource = "qrc:///icons/backup/story-editor.svg"
-            text = qsTr("Outline")
+        case "printable":
+            //inverted
+            iconSource = "qrc:///icons/backup/document-print-none.svg"
+            text = qsTr("Non printable")
             break;
 
-        case "locked":
+        case "modifiable":
+            //inverted
             iconSource = "qrc:///icons/backup/lock.svg"
             text = qsTr("Locked")
             break;

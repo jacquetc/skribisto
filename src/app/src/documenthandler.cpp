@@ -9,6 +9,7 @@
 #include <QImageReader>
 #include <QTextDocumentWriter>
 #include <QTextDocumentFragment>
+#include <QRegularExpression>
 
 
 // #include "plmdata.h"
@@ -17,6 +18,8 @@ DocumentHandler::DocumentHandler(QObject *parent) :
     QObject(parent),
     m_textDoc(nullptr),
     m_formatPosition(-2),
+    m_selectionStart(0),
+    m_selectionEnd(0),
     m_projectId(-2),
     m_paperId(-2)
 {}
@@ -638,7 +641,7 @@ void DocumentHandler::addHorizontalLine()
 {
     m_textCursor.beginEditBlock();
     m_textCursor.insertHtml("____________________");
-    m_textDoc->textDocument()->setHtml(m_textDoc->textDocument()->toHtml().replace(QRegExp(
+    m_textDoc->textDocument()->setHtml(m_textDoc->textDocument()->toHtml().replace(QRegularExpression(
                                                                                        "____________________"),
                                                                                    "<hr/><p></p>"));
     m_textCursor.endEditBlock();
@@ -688,10 +691,10 @@ bool DocumentHandler::isWordMisspelled(int cursorPosition)
 {
     QTextCursor textCursor(m_textDoc->textDocument());
     textCursor.setPosition(cursorPosition);
-textCursor.movePosition(QTextCursor::StartOfWord);
-textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
-QString text = textCursor.selectedText();
-return !m_highlighter->getSpellChecker()->spell(textCursor.selectedText());
+    textCursor.movePosition(QTextCursor::StartOfWord);
+    textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+    QString text = textCursor.selectedText();
+    return !m_highlighter->getSpellChecker()->spell(textCursor.selectedText());
 }
 
 //------------------------------------------------------------------------
@@ -727,5 +730,12 @@ void DocumentHandler::replaceWord(const QString &word, const QString &newWord)
         //replace:
         m_textCursor.insertText(newWord);
     }
+
+}
+
+void DocumentHandler::learnWord(const QString &word)
+{
+
+    m_highlighter->getSpellChecker()->addWordToUserDict(word);
 
 }

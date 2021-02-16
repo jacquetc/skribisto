@@ -7,7 +7,7 @@ import Qt.labs.settings 1.1
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.result 1.0
 import eu.skribisto.projecthub 1.0
-import QtQuick.Controls.Material 2.15
+//import QtQuick.Controls.Material 2.15
 import "Commons"
 import "Items"
 
@@ -18,38 +18,130 @@ ApplicationWindow {
     minimumHeight: 500
     minimumWidth: 600
 
-    onHeightChanged: Globals.height = height
-    onWidthChanged: Globals.width = width
+    color: SkrTheme.pageBackground
 
-    x: settings.x
-    y: settings.y
-    height: settings.height
-    width: settings.width
+    property int projectIdToBeLoaded: -1
+    property int treeItemIdToBeLoaded: -1
+    property string projectIndependantPageTypeToBeLoaded: ""
+    property var additionalPropertiesForViewManager : ({})
 
+    property int windowId: -1
 
-    Material.background: SkrTheme.pageBackground
-
-
-    visibility: settings.visibility
-    Settings {
-        id: settings
-        category: "window"
-        property int x: 0
-        property int y: 0
-        property int height: Screen.height
-        property int width: Screen.width
-        property int visibility: Window.Maximized
+    Connections {
+        target: skrWindowManager
+        function onWindowIdsChanged(){
+            windowId = skrWindowManager.getWindowId(this)
+        }
     }
 
     Component.onCompleted: {
         SkrTheme // instanciate singleton
 
+        skrWindowManager.subscribeWindow(rootWindow)
+        windowId = skrWindowManager.getWindowId(this)
+
+        //rootWindow.visibility = rootWindow.visibility
         if(rootWindow.visibility === Window.FullScreen){
             fullscreenAction.checked = true
+        }
+
+        if(rootWindow.visibility === Window.Hidden){
+            rootWindow.visibility = Window.AutomaticVisibility
+        }
+
+        if(windowId === 0){
+            this.openArgument()
+        }
+        rootWindow.raise()
+
+        toBeLoadedTimer.start()
+    }
+
+    Timer {
+        id: toBeLoadedTimer
+        interval: 100
+        onTriggered: {
+            if(projectIdToBeLoaded !== -1 && treeItemIdToBeLoaded !== -1){
+                rootPage.viewManager.insertAdditionalPropertyDict(additionalPropertiesForViewManager)
+                rootPage.viewManager.loadTreeItemAt(projectIdToBeLoaded, treeItemIdToBeLoaded, Qt.TopLeftCorner)
+            }
+            else if(projectIdToBeLoaded === -1 && treeItemIdToBeLoaded === -1 && projectIndependantPageTypeToBeLoaded !== ""){
+                rootPage.viewManager.insertAdditionalPropertyDict(additionalPropertiesForViewManager)
+                rootPage.viewManager.loadProjectIndependantPageAt(projectIndependantPageTypeToBeLoaded, Qt.TopLeftCorner)
+            }
         }
     }
 
 
+    Component.onDestruction: {
+        skrWindowManager.unSubscribeWindow(rootWindow)
+    }
+
+    //------------------------------------------------------------------
+    //--------- window actions --------------------------------------------------
+    //------------------------------------------------------------------
+
+    QtObject {
+        id: windowActionPrivate
+        property int compactWidthLimit: 1000
+    }
+
+
+    property bool compactMode: false
+
+    onWidthChanged: {
+        width < windowActionPrivate.compactWidthLimit ? compactMode = true : compactMode = false
+    }
+    onCompactModeChanged: console.log("compact = " + compactMode)
+
+
+    signal openMainMenuCalled()
+    signal openSubMenuCalled(var menu)
+
+
+    //Focus
+    signal forceFocusOnEscapePressed()
+
+    Shortcut {
+        sequence: "Esc"
+        context: Qt.WindowShortcut
+        onActivated: {
+            forceFocusOnEscapePressed()
+        }
+    }
+
+    //drawers:
+    signal closeRightDrawerCalled()
+    signal closeLeftDrawerCalled()
+
+
+    signal setNavigationTreeItemIdCalled(int projectId, int treeItemId)
+
+
+
+    property alias protectedSignals: protectedSignals
+    QtObject {
+        id: protectedSignals
+
+            signal showWelcomePageCalled()
+
+        // project:
+            signal showProjectPageCalled()
+            signal showNewProjectWizardCalled()
+            signal showPrintWizardCalled()
+            signal showImportWizardCalled()
+            signal showExportWizardCalled()
+        // examples:
+            signal showExamplePageCalled()
+        // settings:
+            signal showSettingsPageCalled()
+        // help:
+            signal showHelpPageCalled()
+            signal showHelpContentsCalled()
+            signal showFaqCalled()
+            signal showAboutCalled()
+            signal showAboutQtCalled()
+    }
 
     //------------------------------------------------------------------
     //---------window title---------
@@ -71,6 +163,35 @@ ApplicationWindow {
                 rootWindow.title = "Skribisto - %1".arg(plmData.projectHub().getProjectName(projectId))
 
             }
+        }
+    }
+
+    //-------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------
+
+    property alias viewManager: rootPage.viewManager
+
+    RootPage {
+        id: rootPage
+        anchors.fill: parent
+    }
+
+
+
+
+    Connections {
+        target: Globals
+        function onFullScreenCalled(value) {
+            console.log("fullscreen")
+            if(value){
+
+                visibility = Window.FullScreen
+            }
+            else {
+                visibility = Window.AutomaticVisibility
+            }
+
         }
     }
 
@@ -100,9 +221,123 @@ ApplicationWindow {
 
     Shortcut {
         sequences: [StandardKey.FullScreen, "F11"]
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: fullscreenAction.trigger()
     }
+
+
+
+
+
+
+
+
+
+
+
+    //------------------------------------------------------------------
+    //--------- Read arguments ---------------------------
+    //------------------------------------------------------------------
+
+
+
+
+
+    property url testProjectFileName: "qrc:/testfiles/skribisto_test_project.skrib"
+    function openArgument(){
+
+
+
+        var arg
+        var arguments
+        var isTestProject = false
+        var oneProjectInArgument = false
+        var projectInArgument = ""
+
+        arguments = Qt.application.arguments
+        for (arg in arguments) {
+            if(arg === 0 ){
+                continue
+            }
+            //console.log("argument : " , arguments[arg])
+
+            if (arguments[arg] === "--testProject") {
+                //                var result = plmData.projectHub().loadProject(
+                //                            testProjectFileName)
+                //TODO: temporary until async is done
+                Globals.loadingPopupCalled()
+                openArgumentTimer.fileName = testProjectFileName
+                openArgumentTimer.start()
+
+                //show Write window
+                //                writeOverviewWindowAction.trigger()
+                isTestProject = true
+
+            }
+            else {
+                if (arguments[arg].slice(-6) === ".skrib"){
+
+
+                    oneProjectInArgument = true
+
+                    //console.log("argument skrib : " , arguments[arg])
+                    var url = skrQMLTools.getURLFromLocalFile(arguments[arg])
+                    //console.log("argument skrib url : " , url)
+                    //TODO: temporary until async is done
+                    Globals.loadingPopupCalled()
+                    openArgumentTimer.fileName = url
+                    openArgumentTimer.start()
+
+                }
+            }
+        }
+        //        if(!isTestProject & oneProjectInArgument){
+        //            var result = plmData.projectHub().loadProject(
+        //                        projectInArgument)
+        //            //show Write window
+        //            //            writeOverviewWindowAction.trigger()
+        //        }
+
+
+        if (!isTestProject & !oneProjectInArgument & plmData.projectHub().getProjectCount() === 0 & SkrSettings.behaviorSettings.createEmptyProjectAtStart === true) {
+            //TODO: temporary until async is done
+            Globals.loadingPopupCalled()
+            openArgumentTimer.fileName = ""
+            openArgumentTimer.start()
+            //plmData.projectHub().loadProject("")
+
+            //show Write window
+            //            writeOverviewWindowAction.trigger()
+
+        }
+    }
+
+    //TODO: temporary until async is done
+    Timer{
+        id: openArgumentTimer
+
+        property url fileName
+
+        repeat: false
+        interval: 100
+        onTriggered: {
+            var result = plmData.projectHub().loadProject(fileName)
+            console.log("project loaded : " + result.success)
+            console.log("projectFileName :", testProjectFileName.toString(), "\n")
+            //plmData.projectHub().setProjectName(1, "test")
+
+            if(!result.success){
+                return
+            }
+            var projectId = result.getData("projectId", -1)
+
+            //            rootPage.viewManager.loadTreeItemAt(projectId, 1, Qt.TopLeftCorner)
+            //            rootPage.viewManager.loadTreeItemAt(projectId, 8, Qt.BottomLeftCorner)
+
+
+        }
+    }
+
 
     //------------------------------------------------------------------
     //---------Center vertically text cursor---------------------------
@@ -264,16 +499,14 @@ ApplicationWindow {
         //shortcut: StandardKey.New
         onTriggered: {
             console.log("New Project")
-            Globals.showWelcomePageCalled()
-            Globals.showWelcomeProjectPageCalled()
-            Globals.showNewProjectWizardCalled()
+            rootPage.viewManager.loadProjectIndependantPage("NEWPROJECT")
         }
 
 
     }
     Shortcut {
         sequence:  StandardKey.New
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: newProjectAction.trigger()
     }
     //------------------------------------------------------------------
@@ -735,38 +968,51 @@ ApplicationWindow {
         x: (Overlay.overlay.width - width) / 2
         y: (Overlay.overlay.height - height) / 2
         width: 300
-        height: 100
+        height: 200
 
         modal: true
 
         closePolicy: Popup.NoAutoClose
 
+        background: Rectangle {
+
+            radius: 10
+            color: SkrTheme.pageBackground
+
+        }
+
 
         contentItem: ColumnLayout{
 
             SkrLabel {
-            id: loadingPopupLabel
+                id: loadingPopupLabel
 
-            Layout.alignment: Qt.AlignHCenter
-
-
-            text: "<h1>" + qsTr("Loading a project") + "</h1>"
-            focus: true
-        }
-
-            AnimatedSprite {
-                id: loadingPopupAnimation
                 Layout.alignment: Qt.AlignHCenter
-                width: 200
-                height: 200
-                frameHeight: 22
-                frameWidth: 22
-                frameRate: 10
-                frameCount: 8
 
-                source: "qrc:///icons/backup/process-working.svg"
 
+                text: "<h1>" + qsTr("Loading a project") + "</h1>"
+                focus: true
             }
+
+            //            AnimatedSprite {
+            //                id: loadingPopupAnimation
+            //                Layout.alignment: Qt.AlignHCenter
+            //                width: 200
+            //                height: 200
+            //                frameHeight: 22
+            //                frameWidth: 22
+            //                frameRate: 10
+            //                frameCount: 8
+
+            //                source: "qrc:///icons/backup/process-working.svg"
+
+            //            }
+            BusyIndicator {
+                Layout.alignment: Qt.AlignHCenter
+                running: loadingPopup.visible
+            }
+
+
         }
 
 
@@ -815,32 +1061,6 @@ ApplicationWindow {
             loadingPopupTimeoutTimer.stop()
         }
 
-    }
-
-    //-------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------
-
-
-
-    RootPage {
-        anchors.fill: parent
-    }
-
-
-
-    Connections {
-        target: Globals
-        function onFullScreenCalled(value) {
-            console.log("fullscreen")
-            if(value){
-                visibility = Window.FullScreen
-            }
-            else {
-                visibility = Window.AutomaticVisibility
-            }
-
-        }
     }
 
 
@@ -893,7 +1113,7 @@ ApplicationWindow {
                 // in all backup paths :
                 var j;
                 for (j = 0; j < backupPathList.length ; j++ ){
-                    var path = Qt.resolvedUrl(backupPathList[j])
+                    var path = skrQMLTools.getURLFromLocalFile(backupPathList[j])
 
 
                     if (!path){
@@ -916,6 +1136,7 @@ ApplicationWindow {
         }
     }
 
+
     //------------------------------------------------------------
     //------------Print project-----------------------------------
     //------------------------------------------------------------
@@ -930,9 +1151,8 @@ ApplicationWindow {
         enabled: skrRootItem.hasPrintSupport()
 
         onTriggered: {
-            Globals.showWelcomePageCalled()
-            Globals.showWelcomeProjectPageCalled()
-            Globals.showPrintWizardCalled()
+            rootPage.viewManager.insertAdditionalProperty("printEnabled", true)
+            rootPage.viewManager.loadProjectIndependantPage("EXPORT")
 
         }
     }
@@ -957,9 +1177,8 @@ ApplicationWindow {
 
         //shortcut: StandardKey
         onTriggered: {
-            Globals.showWelcomePageCalled()
-            Globals.showWelcomeProjectPageCalled()
-            Globals.showImportWizardCalled()
+
+            rootPage.viewManager.loadProjectIndependantPage("IMPORT")
 
         }
     }
@@ -977,10 +1196,7 @@ ApplicationWindow {
 
         //shortcut: StandardKey.New
         onTriggered: {
-            Globals.showWelcomePageCalled()
-            Globals.showWelcomeProjectPageCalled()
-            Globals.showExportWizardCalled()
-
+            rootPage.viewManager.loadProjectIndependantPage("EXPORT")
         }
     }
 
@@ -1141,8 +1357,18 @@ ApplicationWindow {
     }
 
     //------------------------------------------------------------
-    //------------Close logic-----------------------------------
+    //------------Quit logic-----------------------------------
     //------------------------------------------------------------
+
+
+
+    Connections{
+        target: Globals
+        function onQuitCalled(){
+            rootWindow.close()
+        }
+    }
+
 
     Action {
         id: quitAction
@@ -1154,57 +1380,74 @@ ApplicationWindow {
         }
 
         //        shortcut: StandardKey.Quit
+        property bool quitConfirmed: false
         onTriggered: {
-            rootWindow.close()
+            console.log("quiting")
 
+
+            // determine if all projects are saved
+
+
+            var projectsNotSavedList = plmData.projectHub().projectsNotSaved()
+            var i;
+            for (i = 0; i < projectsNotSavedList.length ; i++ ){
+                var projectId = projectsNotSavedList[i]
+
+                if(plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                    continue
+                }
+                else {
+
+                    saveOrNotBeforeQuitingDialog.projectId = projectId
+                    saveOrNotBeforeQuitingDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                    saveOrNotBeforeQuitingDialog.open()
+                    //saveAsBeforeQuitingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+
+                }
+
+            }
+            if(projectsNotSavedList.length === 0){
+
+
+
+
+                skrUserSettings.setSetting("window", "numberOfWindows", skrWindowManager.getNumberOfWindows())
+                quitConfirmed = true
+                plmData.projectHub().closeAllProjects()
+                Globals.quitCalled()
+                
+
+
+            }
         }
     }
 
     onClosing: {
-        console.log("quiting")
+
+        var group = "window_" + windowId
+        // geometry
+        skrUserSettings.setSetting(group, "x", rootWindow.x)
+        skrUserSettings.setSetting(group, "y", rootWindow.y)
+        skrUserSettings.setSetting(group, "width", rootWindow.width)
+        skrUserSettings.setSetting(group, "height", rootWindow.height)
+        skrUserSettings.setSetting(group, "visibility", rootWindow.visibility)
+        rootPage.viewManager.saveViewsToSettings()
 
 
-        // determine if all projects are saved
+        if(skrWindowManager.getNumberOfWindows() === 1 && quitAction.quitConfirmed === false){
+            quitAction.trigger()
 
-
-        var projectsNotSavedList = plmData.projectHub().projectsNotSaved()
-        var i;
-        for (i = 0; i < projectsNotSavedList.length ; i++ ){
-            var projectId = projectsNotSavedList[i]
-
-            if(plmData.projectHub().isProjectNotModifiedOnce(projectId)){
-                continue
-            }
-            else {
-
-                saveOrNotBeforeQuitingDialog.projectId = projectId
-                saveOrNotBeforeQuitingDialog.projectName = plmData.projectHub().getProjectName(projectId)
-                saveOrNotBeforeQuitingDialog.open()
-                //saveAsBeforeQuitingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
-                close.accepted = false
-            }
-
-        }
-        if(projectsNotSavedList.length === 0){
-
-
-
-            // geometry
-            settings.x = rootWindow.x
-            settings.y = rootWindow.y
-            settings.width = rootWindow.width
-            settings.height = rootWindow.height
-            settings.visibility = rootWindow.visibility
-
-
-            close.accepted = true
+            close.accepted = false
+            return
         }
 
+
+        skrWindowManager.deleteWindow(this)
     }
 
     Shortcut {
-        sequence: StandardKey.Quit
-        context: Qt.ApplicationShortcut
+        sequences: [StandardKey.Quit, "Ctrl+Q"]
+        context: Qt.WindowShortcut
         onActivated: quitAction.trigger()
     }
 
@@ -1224,8 +1467,7 @@ ApplicationWindow {
 
         onDiscarded: {
             plmData.projectHub().closeProject(projectId)
-
-            rootWindow.close()
+            quitAction.trigger()
         }
 
         onAccepted: {
@@ -1239,7 +1481,7 @@ ApplicationWindow {
                 saveAsBeforeQuitingFileDialog.open()
             }
             else {
-                rootWindow.close()
+                quitAction.trigger()
             }
 
         }
@@ -1280,11 +1522,12 @@ ApplicationWindow {
 
             }
             else{
-                rootWindow.close()
+                quitAction.trigger()
             }
         }
         onRejected: {
-            rootWindow.close()
+            quitAction.trigger()
+
         }
     }
 

@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.5.0)
 # Populate a CMake variable with the sources
 
 project(app LANGUAGES CXX VERSION ${VERSION})
-
+message("------------------ VERSION -----------------------")
+message(${VERSION})
 
 if(ANDROID)
     set(SKR_PRINT_SUPPORT false)
@@ -12,7 +13,6 @@ else()
     set(SKR_PRINT_SUPPORT true)
     add_compile_definitions(SKR_PRINT_SUPPORT=true)
 endif()
-
 
 if(${SKR_PRINT_SUPPORT})
     set(PRINTPACKAGE PrintSupport)
@@ -23,7 +23,11 @@ endif()
 # Find the QtWidgets library
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 ${PRINTPACKAGE} REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 ${PRINTPACKAGE} REQUIRED)
-find_package(hunspell REQUIRED)
+
+
+
+#if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+#endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -88,7 +92,15 @@ set(app_SRCS
     skrexporter.h
     skrclipboard.cpp
     skrclipboard.h
-)
+    skrwindowmanager.cpp
+    skrwindowmanager.h
+    skrviewmanager.cpp
+    skrviewmanager.h
+    skrpageinterface.h
+    skrexporterinterface.h
+    skrtreemanager.cpp
+    skrtreemanager.h
+    )
 
 set(QML qml.qrc
     )
@@ -113,7 +125,7 @@ set(QML qml.qrc
 
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-set(TEST_FILES_QRC ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc)
+    set(TEST_FILES_QRC ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc)
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 set(QRC pics.qrc
@@ -129,8 +141,16 @@ set(QRC pics.qrc
 
 # needed to allow qML debugging :
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    find_package(Qt${QT_VERSION_MAJOR}QuickCompiler)
-    qtquick_compiler_add_resources(RESOURCES ${QML})
+    if(${QT_VERSION_MAJOR} EQUAL 5)
+        find_package(Qt5 COMPONENTS QuickCompiler)
+        qtquick_compiler_add_resources(RESOURCES ${QML})
+
+    elseif(${QT_VERSION_MAJOR} EQUAL 6)
+        find_package(Qt6 COMPONENTS QmlCompiler)
+        # qt6 alternative for qtquick_compiler_add_resources not found
+        #qt_compiler_add_resources(RESOURCES ${QML})
+    endif()
+
     qt_add_resources(RESOURCES ${QRC})
 endif (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -139,12 +159,46 @@ endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Tell CMake to create the executable
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(GUI_TYPE  "WIN32")
+
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+#IF (APPLE)
+#SET(GUI_TYPE MACOSX_BUNDLE)
+#ENDIF (APPLE)
+
+
+
+
+
+
+
+
+set(VERSION_RC)
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
+    set(VERSION_RC ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
+
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in
+        ${VERSION_RC}
+        @ONLY)
+
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
+
+
+
+
+
+
+
 if(ANDROID OR SKR_TEST_APP)
     message("------- library is to be built ---------")
-    add_library(skribisto SHARED ${app_SRCS} ${RESOURCES} ${QRC} )
+    add_library(skribisto SHARED ${app_SRCS} ${RESOURCES} ${QRC} ${VERSION_RC})
 else()
     message("------- executable is to be built ---------")
-    add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC} )
+    add_executable(skribisto ${GUI_TYPE} ${app_SRCS} ${RESOURCES} ${QRC} ${VERSION_RC})
 endif()
 
 target_compile_definitions(skribisto
@@ -157,10 +211,49 @@ else()
 endif()
 
 target_link_libraries(skribisto PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2
-    ${PRINT} ${HUNSPELL_LIBRARIES})
-include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+    ${PRINT})
+
+
+
+
+
+
+
+
+
+
+
+
+#--------------HUNSPELL --------------------
+
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+
+    if(${SKR_DEV})
+        set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
+        set(PKG_HUNSPELL_LIBRARY_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/lib)
+
+        set(PKG_HUNSPELL_INCLUDE_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/include)
+        set(PKG_HUNSPELL_LIBRARY_DIRS ${PKG_HUNSPELL_LIBRARY_DIRS})
+    endif(${SKR_DEV})
+
+
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+
+
+find_package(hunspell REQUIRED)
+target_link_libraries(skribisto PRIVATE ${HUNSPELL_LIBRARY})
 target_include_directories(skribisto SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
 
+
+#---------------------------------
+
+
+
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
 install(TARGETS skribisto RUNTIME DESTINATION ${KDE_INSTALL_BINDIR})
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 #set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/data/Info.plist)

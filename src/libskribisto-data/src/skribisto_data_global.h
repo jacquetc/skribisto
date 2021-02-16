@@ -1,3 +1,4 @@
+#include <QVariant>
 /***************************************************************************
 *   Copyright (C) 2016 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *

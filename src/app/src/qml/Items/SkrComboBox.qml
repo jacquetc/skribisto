@@ -7,8 +7,18 @@ ComboBox {
     id: control
 
     Material.background: SkrTheme.pageBackground
-    Material.foreground: control.activeFocus ?  SkrTheme.accent : SkrTheme.buttonForeground
+    Material.foreground: SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
+
+    Rectangle {
+        parent: control.background
+        anchors.fill: control.background
+        color: "transparent"
+        border.color: SkrTheme.accent
+        border.width: control.activeFocus ? 1 : 0
+        radius: 4
+
+    }
 
 
     delegate: ItemDelegate {

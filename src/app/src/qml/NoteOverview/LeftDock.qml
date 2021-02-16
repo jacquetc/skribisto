@@ -126,7 +126,7 @@ LeftDockForm {
         checkable: true
         text: qsTr( "Show navigation")
         icon {
-            source: "qrc:///icons/backup/object-rows.svg"
+            source: "qrc:///icons/backup/compass.svg"
             height: 50
             width: 50
         }
@@ -189,6 +189,7 @@ LeftDockForm {
     }
     navigationView.restoreListViewProxyModel: restoreNoteProxyModel
 
+    navigationView.iconUrl: "qrc:///icons/backup/view-pim-notes.svg"
 
 
     function restoreNoteList(projectId, noteIdList){
@@ -248,7 +249,7 @@ LeftDockForm {
 
 
     function setCurrentPaperId(projectId, paperId) {
-        navigationProxyModel.setCurrentPaperId(projectId, paperId)
+        navigationView.setCurrentPaperId(projectId, paperId)
     }
 
 

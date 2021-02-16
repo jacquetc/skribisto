@@ -122,7 +122,7 @@ WriteLeftDockForm {
         checkable: true
         text: qsTr( "Show navigation")
         icon {
-            source: "qrc:///icons/backup/object-rows.svg"
+            source: "qrc:///icons/backup/compass.svg"
             height: 50
             width: 50
         }
@@ -168,6 +168,8 @@ WriteLeftDockForm {
         showNotTrashedFilter: false
     }
     navigationView.restoreListViewProxyModel: restoreSheetProxyModel
+
+    navigationView.iconUrl: "qrc:///icons/backup/story-editor.svg"
 
 
 
@@ -234,7 +236,7 @@ WriteLeftDockForm {
 
 
     function setCurrentPaperId(projectId, paperId) {
-        navigationProxyModel.setCurrentPaperId(projectId, paperId)
+        navigationView.setCurrentPaperId(projectId, paperId)
     }
     function setOpenedPaperId(projectId, paperId) {
         navigationView.openedProjectId = projectId

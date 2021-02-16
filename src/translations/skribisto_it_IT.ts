@@ -2,531 +2,300 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="it_IT">
 <context>
-    <name>AttendAbstractModel</name>
-    <message>
-        <source>Titles</source>
-        <translation type="obsolete">Titoli</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <translation type="obsolete">Nessuno</translation>
-    </message>
-</context>
-<context>
-    <name>AttendBase</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-</context>
-<context>
-    <name>AttendBox</name>
-    <message>
-        <source>new</source>
-        <translation type="obsolete">nuovo</translation>
-    </message>
-    <message>
-        <source>Manage</source>
-        <translation type="obsolete">Gestisci</translation>
-    </message>
-    <message>
-        <source>POV</source>
-        <comment>Point Of View</comment>
-        <translation type="obsolete">Punto Di Vista</translation>
-    </message>
-    <message>
-        <source>Main</source>
-        <translation type="obsolete">Principale</translation>
-    </message>
-    <message>
-        <source>Secondary</source>
-        <translation type="obsolete">Secondario</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <translation type="obsolete">Nessuno</translation>
-    </message>
-    <message>
-        <source>Protagonist</source>
-        <translation type="obsolete">Protagonista</translation>
-    </message>
-    <message>
-        <source>Supporting</source>
-        <translation type="obsolete">Sostenitore</translation>
-    </message>
-    <message>
-        <source>Neutral</source>
-        <translation type="obsolete">Neutrale</translation>
-    </message>
-    <message>
-        <source>Antagonist</source>
-        <translation type="obsolete">Antagonista</translation>
-    </message>
-    <message>
-        <source>Plume Creator Tree</source>
-        <translation type="obsolete">Diagramma di Plume Creator</translation>
-    </message>
-    <message>
-        <source>Parse error at line %1, column %2:
-%3
-</source>
-        <translation type="obsolete">Analizza errore alla linea %1, colonna %2:
-%3</translation>
-    </message>
-    <message>
-        <source>The file is not a a Plume Creator attendance file.</source>
-        <translation type="obsolete">Il file non è un file di manutenzione Plume.</translation>
-    </message>
-    <message>
-        <source>The file is not an Plume Creator attendance file version 0.1 file.</source>
-        <translation type="obsolete">Il file non è un file di manutenzione Plume Creator versione 0.1.</translation>
-    </message>
-    <message>
-        <source>Characters</source>
-        <translation type="obsolete">Personaggi</translation>
-    </message>
-    <message>
-        <source>Items</source>
-        <translation type="obsolete">Oggetti</translation>
-    </message>
-    <message>
-        <source>Places</source>
-        <translation type="obsolete">Luoghi</translation>
-    </message>
-    <message>
-        <source>Manage...</source>
-        <translation type="obsolete">Gestisci...</translation>
-    </message>
-    <message>
-        <source>Launch a manager for characters, items and places</source>
-        <translation type="obsolete">Lancia un gestore per personaggi, oggetti e luoghi</translation>
-    </message>
-    <message>
-        <source>Attendance Manager</source>
-        <translation type="obsolete">Gestore di Manutenzione</translation>
-    </message>
-    <message>
-        <source>Project</source>
-        <translation type="obsolete">Progetto</translation>
-    </message>
-    <message>
-        <source>First Name :</source>
-        <translation type="obsolete">Nome proprio :</translation>
-    </message>
-    <message>
-        <source>Last Name :</source>
-        <translation type="obsolete">Cognome :</translation>
-    </message>
-    <message>
-        <source>Name :</source>
-        <translation type="obsolete">Nome :</translation>
-    </message>
-    <message>
-        <source>List all the characters, items and places in this project</source>
-        <translation type="obsolete">n filename=&quot;attendbox.cpp&quot; line=&quot;860&quot;/&gt;
-        &lt;source&gt;Elenca tutti i personaggi, oggetti e luoghi in questo progetto</translation>
-    </message>
-    <message>
-        <source>List all the characters, items and places in the current sheet</source>
-        <translation type="obsolete">Elenca tutti i personaggi, oggetti e luoghi nel foglio corrente</translation>
-    </message>
-    <message>
-        <source>Show this item details</source>
-        <translation type="obsolete">Mostra i dettagli di questo oggetto</translation>
-    </message>
-    <message>
-        <source>Hide this item details</source>
-        <translation type="obsolete">Nascondi i dettagli di questo oggetto</translation>
-    </message>
-    <message>
-        <source>Add a new character</source>
-        <translation type="obsolete">Aggiungi un nuovo personaggio</translation>
-    </message>
-    <message>
-        <source>Add a new item</source>
-        <translation type="obsolete">Aggiungi un nuovo oggetto</translation>
-    </message>
-    <message>
-        <source>Add a new place</source>
-        <translation type="obsolete">Aggiungi un nuovo luogo</translation>
-    </message>
-    <message>
-        <source>Delete an item</source>
-        <translation type="obsolete">Cancella un oggetto</translation>
-    </message>
-    <message>
-        <source>Add the selected item(s) to the current sheet</source>
-        <translation type="obsolete">Aggiungi l&apos;oggetto/i selezionato/i al foglio corrente</translation>
-    </message>
-    <message>
-        <source>Remove the selected item(s) from the current sheet</source>
-        <translation type="obsolete">Rimuovi l&apos;oggetto/i selezionato/i dal foglio corrente</translation>
-    </message>
-    <message>
-        <source>Write here the description</source>
-        <translation type="obsolete">Scrivi qui la descrizione</translation>
-    </message>
-    <message>
-        <source>First name</source>
-        <translation type="obsolete">Nome proprio</translation>
-    </message>
-    <message>
-        <source>Last name</source>
-        <translation type="obsolete">Cognome</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="obsolete">Nome</translation>
-    </message>
-    <message>
-        <source>Set the item level</source>
-        <translation type="obsolete">Imposta il livello dell&apos;oggetto</translation>
-    </message>
-    <message>
-        <source>Set the item role</source>
-        <translation type="obsolete">Imposta il ruolo dell&apos;oggetto</translation>
-    </message>
-    <message>
-        <source>Detail font</source>
-        <translation type="obsolete">Carattere del dettaglio</translation>
-    </message>
-    <message>
-        <source>Indent :</source>
-        <translation type="obsolete">Indentazione :</translation>
-    </message>
-    <message>
-        <source>Margin :</source>
-        <translation type="obsolete">Margine :</translation>
-    </message>
-    <message>
-        <source>Fonts</source>
-        <translation type="obsolete">Caratteri</translation>
-    </message>
-    <message>
-        <source>no entry</source>
-        <translation type="obsolete">nessun inserimento</translation>
-    </message>
-    <message>
-        <source>Item Deletion</source>
-        <translation type="obsolete">Cancellazione Oggetto</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The selected items will be permanently deleted.&lt;/p&gt;
-&lt;br&gt;&lt;p&gt;Do you really want to continue ?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Gli oggetti selezionati verranno cancellati definitivamente.&lt;/p&gt;
-&lt;br&gt;&lt;p&gt;Vuoi continuare davvero?&lt;/p&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>AttendManager</name>
-    <message>
-        <source>Name</source>
-        <translation type="obsolete">Nome</translation>
-    </message>
-</context>
-<context>
-    <name>AttendManagerTreeProxyModel</name>
-    <message>
-        <source>new</source>
-        <translation type="obsolete">nuovo</translation>
-    </message>
-</context>
-<context>
-    <name>AttendSettings</name>
-    <message>
-        <source>None</source>
-        <translation type="obsolete">Nessuno</translation>
-    </message>
-    <message>
-        <source>new</source>
-        <translation type="obsolete">nuovo</translation>
-    </message>
-</context>
-<context>
     <name>CheckableTree</name>
     <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="95"/>
         <source>Level %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>label: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>has children</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>navigation item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This project is a backup</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete definitively</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="102"/>
         <source>partially checked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="103"/>
         <source>checked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="104"/>
         <source>unchecked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="109"/>
+        <source>label: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="114"/>
+        <source>has children</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="121"/>
+        <source>navigation item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="457"/>
+        <source>Open document in a window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="566"/>
+        <source>This project is a backup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="603"/>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="646"/>
+        <source>Enter name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="908"/>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="927"/>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="946"/>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="970"/>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="990"/>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1015"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add before</source>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1035"/>
+        <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add after</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1055"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Move up</source>
-        <translation type="unfinished">Sposta su</translation>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1084"/>
+        <source>Add before</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Move down</source>
-        <translation type="unfinished">Sposta giù</translation>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1111"/>
+        <source>Add after</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1138"/>
         <source>Add a sub-item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1172"/>
+        <source>Move up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1193"/>
+        <source>Move down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1219"/>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1238"/>
+        <source>Delete definitively</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ColorChooser</name>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="60"/>
         <source>White</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="61"/>
         <source>Snow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="62"/>
         <source>Azure</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="63"/>
         <source>Beige</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="64"/>
         <source>Black</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="65"/>
         <source>Red</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="66"/>
         <source>Dark red</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="67"/>
         <source>Pale Green</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="68"/>
         <source>Chartreuse</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="69"/>
         <source>Green</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="70"/>
         <source>Dark green</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="71"/>
         <source>Light cyan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="72"/>
         <source>Cyan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="73"/>
         <source>Dark cyan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="74"/>
         <source>Blue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="75"/>
         <source>Dark blue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="76"/>
         <source>Light pink</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="77"/>
         <source>Pink</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="78"/>
         <source>Hot pink</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="79"/>
         <source>Magenta</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="80"/>
         <source>Dark magenta</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="81"/>
         <source>Light yellow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="82"/>
         <source>Yellow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="83"/>
         <source>Gold</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="84"/>
         <source>Orange</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="85"/>
         <source>Dark orange</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="86"/>
         <source>Grey</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="87"/>
         <source>Dark grey</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="108"/>
         <source>Color: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>DockedTextTreeWidget</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-</context>
-<context>
-    <name>DockedTreeBase</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-</context>
-<context>
-    <name>EditMenu</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-    <message>
-        <source>Zoom :</source>
-        <translation type="obsolete">Zoom :</translation>
-    </message>
-    <message>
-        <source>Text Width :</source>
-        <translation type="obsolete">Larghezza del testo :</translation>
-    </message>
-    <message>
-        <source>Styles :</source>
-        <translation type="obsolete">Stili :</translation>
-    </message>
-</context>
-<context>
-    <name>EditToolBar</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <translation type="obsolete">Grassetto</translation>
-    </message>
-    <message>
-        <source>Italic</source>
-        <translation type="obsolete">Corsivo</translation>
-    </message>
-</context>
-<context>
     <name>EditView</name>
     <message>
+        <location filename="../app/src/qml/Commons/EditView.qml" line="39"/>
         <source>Sizes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditView.qml" line="60"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditView.qml" line="174"/>
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
@@ -534,361 +303,284 @@
 <context>
     <name>EditViewForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="54"/>
         <source>Edit text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="65"/>
         <source>Italic</source>
-        <translation type="unfinished">Corsivo</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="72"/>
         <source>Bold</source>
-        <translation type="unfinished">Grassetto</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="79"/>
         <source>Strike</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="87"/>
         <source>Underline</source>
-        <translation type="unfinished">Sottolineato</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="98"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="109"/>
         <source>Full screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="116"/>
         <source>Size</source>
-        <translation type="unfinished">Dimensioni</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="122"/>
         <source>Full screen Colors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Text width :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Text size :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Text indent :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Top margin :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
-        <translation></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="128"/>
         <source>Check spelling</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="134"/>
         <source>Center vertically the text cursor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="145"/>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="156"/>
         <source>Quick print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="183"/>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="190"/>
+        <source>Text width :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="201"/>
+        <source>Text size :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="218"/>
+        <source>Text indent :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="230"/>
+        <source>Top margin :</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>EmptyPage</name>
+    <message>
+        <location filename="../app/src/qml/EmptyPage.qml" line="69"/>
+        <source>&lt;h2&gt;Open a document&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/EmptyPage.qml" line="74"/>
+        <source>- Drag an drop here
+- Click here then select a document in Navigation</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ExamplePageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ExamplePageForm.ui.qml" line="22"/>
         <source>&lt;h2&gt;Examples&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>Exporter</name>
+    <name>ExporterPage</name>
     <message>
-        <source>Export Dialog</source>
-        <translation type="obsolete">Finestra di Esportazione</translation>
-    </message>
-    <message>
-        <source>Print Dialog</source>
-        <translation type="obsolete">Finestra di Stampa</translation>
-    </message>
-    <message>
-        <source>Please complete the fields below: </source>
-        <translation type="obsolete">Per favore completa i campi seguenti:</translation>
-    </message>
-    <message>
-        <source>File name :</source>
-        <translation type="obsolete">Nome del file :</translation>
-    </message>
-    <message>
-        <source>Select path</source>
-        <translation type="obsolete">Scegli il percorso</translation>
-    </message>
-    <message>
-        <source>.html</source>
-        <translation type="unfinished">.html</translation>
-    </message>
-    <message>
-        <source>.odt</source>
-        <translation type="unfinished">.odt</translation>
-    </message>
-    <message>
-        <source>.txt</source>
-        <translation type="unfinished">.txt</translation>
-    </message>
-    <message>
-        <source>Options :</source>
-        <translation type="obsolete">Opzioni :</translation>
-    </message>
-    <message>
-        <source>Titles</source>
-        <translation type="obsolete">Titoli</translation>
-    </message>
-    <message>
-        <source>Insert story</source>
-        <translation type="obsolete">Inserisci storia</translation>
-    </message>
-    <message>
-        <source>Insert synopses</source>
-        <translation type="obsolete">Inserisci sinossi</translation>
-    </message>
-    <message>
-        <source>Insert notes</source>
-        <translation type="obsolete">Inserisci note</translation>
-    </message>
-    <message>
-        <source>Insert scene titles</source>
-        <translation type="obsolete">Inserisci didascalie della scena</translation>
-    </message>
-    <message>
-        <source>Preview</source>
-        <translation type="obsolete">Anteprima</translation>
-    </message>
-    <message>
-        <source>Print</source>
-        <translation type="obsolete">Stampa</translation>
-    </message>
-    <message>
-        <source>Project Exporter</source>
-        <translation type="obsolete">Esportatore Progetto</translation>
-    </message>
-    <message>
-        <source>The destination fields must be completed !</source>
-        <translation type="obsolete">I campi di destinazione devono essere compilati !</translation>
-    </message>
-    <message>
-        <source>Select a directory</source>
-        <translation type="obsolete">Scegli una directory</translation>
-    </message>
-    <message>
-        <source>Plume Creator Tree</source>
-        <translation type="obsolete">Diagramma di Plume Creator</translation>
-    </message>
-    <message>
-        <source>The file is not readable.</source>
-        <translation type="obsolete">Il file non è leggibile.</translation>
-    </message>
-    <message>
-        <source>Parse error at line %1, column %2:
-%3
-</source>
-        <translation type="obsolete">Analizza errore alla linea %1, colonna %2:
-%3</translation>
-    </message>
-    <message>
-        <source>The file is not a a Plume Creator project file.</source>
-        <translation type="obsolete">Il file non è un file di progetto Plume Creator.</translation>
-    </message>
-    <message>
-        <source>The file is not an Plume Creator project file version 1.0 file.</source>
-        <translation type="obsolete">Il file non è un file di progetto Plume Creator versione 1.0.</translation>
-    </message>
-    <message>
-        <source>Synopsis</source>
-        <translation type="obsolete">Sinossi</translation>
-    </message>
-    <message>
-        <source>Note</source>
-        <translation type="obsolete">Nota</translation>
-    </message>
-    <message>
-        <source>Story</source>
-        <translation type="obsolete">Storia</translation>
-    </message>
-    <message>
-        <source>You have selected the .txt format. There is no formatting !</source>
-        <translation type="obsolete">Hai scelto il formato .txt. Non c&apos;è formattazione !</translation>
-    </message>
-    <message>
-        <source>Project exported</source>
-        <translation type="obsolete">Progetto esportato</translation>
-    </message>
-    <message>
-        <source>This project was successfully exported !</source>
-        <translation type="obsolete">Questo progetto è stato esportato con successo !</translation>
-    </message>
-    <message>
-        <source>Print Document</source>
-        <translation type="obsolete">Stampa Documento</translation>
-    </message>
-    <message>
-        <source>Title</source>
-        <translation type="obsolete">Titolo</translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="77"/>
         <source>Select none</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="77"/>
         <source>Select all</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="147"/>
+        <source>.odt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="164"/>
+        <source>.txt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="180"/>
         <source>.md</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Export &quot;%1&quot; project as ...</source>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="196"/>
+        <source>.html</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="212"/>
         <source>.pdf</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="273"/>
         <source>Levels with titles: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="377"/>
+        <source>Export &quot;%1&quot; project as ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>ExporterForm.ui</name>
+    <name>ExporterPageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="51"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sheets</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="unfinished">Note</translation>
-    </message>
-    <message>
-        <source>Destination file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sheets : </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Notes : </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>OpenDocument</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Text</source>
-        <translation type="unfinished">Testo</translation>
-    </message>
-    <message>
-        <source>Markdown</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include outline in each sheet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Numbered</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>HTML</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="56"/>
         <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Preview</source>
-        <translation type="unfinished">Anteprima</translation>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="56"/>
+        <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Print</source>
-        <translation type="unfinished">Stampa</translation>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="166"/>
+        <source>OpenDocument</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="166"/>
+        <source>Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="166"/>
+        <source>Markdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="166"/>
+        <source>HTML</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="174"/>
+        <source>Include outline in each sheet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="180"/>
+        <source>Numbered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="186"/>
+        <source>Add tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="204"/>
         <source>Text size :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="222"/>
         <source>Text indent :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="235"/>
         <source>Top margin :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="252"/>
+        <source>Destination file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="257"/>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="266"/>
+        <source>Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="272"/>
+        <source>Print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="272"/>
+        <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>FileMenuPage</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="76"/>
         <source>Opened</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="79"/>
         <source>last modified %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="84"/>
         <source>recent projects list item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="252"/>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="271"/>
         <source>Close project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="292"/>
         <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
@@ -896,1198 +588,336 @@
 <context>
     <name>FileMenuPageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="48"/>
         <source>Projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="62"/>
         <source>New project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="68"/>
         <source>Open project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="79"/>
         <source>Recent projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="107"/>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="121"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="129"/>
         <source>Save as</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="136"/>
         <source>Save all</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="150"/>
         <source>Save a copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="158"/>
         <source>Back up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source></source>
-        <translation></translation>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="171"/>
+        <source>Share</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="185"/>
         <source>Print</source>
-        <translation type="unfinished">Stampa</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="190"/>
         <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="195"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>FileUpdater</name>
-    <message>
-        <source>Main</source>
-        <translation type="obsolete">Principale</translation>
-    </message>
-    <message>
-        <source>Secondary</source>
-        <translation type="obsolete">Secondario</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <translation type="obsolete">Nessuno</translation>
-    </message>
-    <message>
-        <source>Protagonist</source>
-        <translation type="obsolete">Protagonista</translation>
-    </message>
-    <message>
-        <source>Supporting</source>
-        <translation type="obsolete">Sostenitore</translation>
-    </message>
-    <message>
-        <source>Neutral</source>
-        <translation type="obsolete">Neutrale</translation>
-    </message>
-    <message>
-        <source>Antagonist</source>
-        <translation type="obsolete">Antagonista</translation>
-    </message>
-    <message>
-        <source>Plume Creator Tree</source>
-        <translation type="obsolete">Diagramma di Plume Creator</translation>
-    </message>
-    <message>
-        <source>The file is not a a Plume Creator attendance file.</source>
-        <translation type="obsolete">Il file non è un file di manutenzione Plume.</translation>
-    </message>
-    <message>
-        <source>Characters</source>
-        <translation type="obsolete">Personaggi</translation>
-    </message>
-    <message>
-        <source>Items</source>
-        <translation type="obsolete">Oggetti</translation>
-    </message>
-    <message>
-        <source>Places</source>
-        <translation type="obsolete">Luoghi</translation>
-    </message>
-    <message>
-        <source>Plume Creator Info</source>
-        <translation type="obsolete">Informazioni Plume Creator</translation>
-    </message>
-</context>
-<context>
-    <name>FindReplace</name>
-    <message>
-        <source>Find &amp; Replace Dialog</source>
-        <translation type="obsolete">Finestra Trova &amp; Sostituisci</translation>
-    </message>
-    <message>
-        <source>Progress :</source>
-        <translation type="obsolete">Avanzamento :</translation>
-    </message>
-    <message>
-        <source>Document :</source>
-        <translation type="obsolete">Documento :</translation>
-    </message>
-    <message>
-        <source>Find :</source>
-        <translation type="obsolete">Trova :</translation>
-    </message>
-    <message>
-        <source>Previous</source>
-        <translation type="obsolete">Precedente</translation>
-    </message>
-    <message>
-        <source>Next</source>
-        <translation type="obsolete">Seguente</translation>
-    </message>
-    <message>
-        <source>Replace &amp;&amp; Next</source>
-        <translation type="obsolete">Sostituisci &amp;&amp; Seguente</translation>
-    </message>
-    <message>
-        <source>Prev. Doc</source>
-        <translation type="obsolete">Doc. Precedente</translation>
-    </message>
-    <message>
-        <source>Next Doc</source>
-        <translation type="obsolete">Doc.Seguente</translation>
-    </message>
-    <message>
-        <source>Find</source>
-        <translation type="obsolete">Trova</translation>
-    </message>
-    <message>
-        <source>Replace All</source>
-        <translation type="obsolete">Sostituisci Tutto</translation>
-    </message>
-    <message>
-        <source>Replace with :</source>
-        <translation type="obsolete">Sostituisci con :</translation>
-    </message>
-    <message>
-        <source>Replace</source>
-        <translation type="obsolete">Sostituisci</translation>
-    </message>
-    <message>
-        <source>Replace Doc</source>
-        <translation type="obsolete">Sostituisci Documento</translation>
-    </message>
-    <message>
-        <source>Text</source>
-        <translation type="obsolete">Testo</translation>
-    </message>
-    <message>
-        <source>Synopsis</source>
-        <translation type="obsolete">Sinossi</translation>
-    </message>
-    <message>
-        <source>Options :</source>
-        <translation type="obsolete">Opzioni :</translation>
-    </message>
-    <message>
-        <source>Check story</source>
-        <translation type="obsolete">Controlla storia</translation>
-    </message>
-    <message>
-        <source>Check synopses</source>
-        <translation type="obsolete">Controlla sinossi</translation>
-    </message>
-    <message>
-        <source>Check notes</source>
-        <translation type="obsolete">Controlla note</translation>
-    </message>
-    <message>
-        <source>The Find &amp; Replace feature isn&apos;t implemented !&lt;br&gt;For now, it&apos;s only a mock-up GUI. Please wait for a future release !</source>
-        <translation type="obsolete">La funzione Trova &amp; Sostituisci non è implementata !&lt;br&gt;Per ora, è solo un abbozzo di GUI. Per favore attendi una release seguente !</translation>
-    </message>
-    <message>
-        <source>Plume Creator Tree</source>
-        <translation type="obsolete">Diagramma di Plume Creator</translation>
-    </message>
-    <message>
-        <source>The file is not readable.</source>
-        <translation type="obsolete">Il file non è leggibile.</translation>
-    </message>
-    <message>
-        <source>Parse error at line %1, column %2:
-%3
-</source>
-        <translation type="obsolete">Analizza errore alla linea %1, colonna %2
-%3</translation>
-    </message>
-    <message>
-        <source>The file is not a a Plume Creator project file.</source>
-        <translation type="obsolete">Questo file non è un file di progetto Plume Creator.</translation>
-    </message>
-    <message>
-        <source>The file is not an Plume Creator project file version 1.0 file.</source>
-        <translation type="obsolete">Questo file non è un file di progetto Plume Creator versione 1.0.</translation>
-    </message>
-</context>
-<context>
-    <name>FullTextZone</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="obsolete">Annulla (&amp;U)</translation>
-    </message>
-    <message>
-        <source>Undo the last operation</source>
-        <translation type="obsolete">Annulla l&apos;ultima operazione</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="obsolete">&amp;Ripeti</translation>
-    </message>
-    <message>
-        <source>Redo the last operation</source>
-        <translation type="obsolete">Ripeti l&apos;ultima operazione</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="obsolete">&amp;Taglia</translation>
-    </message>
-    <message>
-        <source>Cut the current selection&apos;s contents to the clipboard</source>
-        <translation type="obsolete">Ritaglia il contenuto della selezione corrente negli appunti</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="obsolete">&amp;Copia</translation>
-    </message>
-    <message>
-        <source>Copy the current selection&apos;s contents to the clipboard</source>
-        <translation type="obsolete">Copia il contenuto della selezione corrente negli appunti</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="obsolete">Incolla (&amp;P)</translation>
-    </message>
-    <message>
-        <source>Paste the clipboard&apos;s contents into the current selection</source>
-        <translation type="obsolete">Incolla il contenuto degli appunti nella selezione corrente</translation>
-    </message>
-    <message>
-        <source>&amp;Bold</source>
-        <translation type="obsolete">Grassetto (&amp;B)</translation>
-    </message>
-    <message>
-        <source>Make the text bold</source>
-        <translation type="obsolete">Rendi il testo grassetto</translation>
-    </message>
-    <message>
-        <source>&amp;Italic</source>
-        <translation type="obsolete">Corsivo (&amp;I)</translation>
-    </message>
-    <message>
-        <source>Make the text italic</source>
-        <translation type="obsolete">Rendi il testo corsivo</translation>
-    </message>
-</context>
-<context>
-    <name>FullscreenEditor</name>
-    <message>
-        <source>Fullscreen</source>
-        <translation type="obsolete">Schermo intero</translation>
-    </message>
-    <message>
-        <source>Words :</source>
-        <translation type="obsolete">Parole :</translation>
-    </message>
-    <message>
-        <source>Timer :</source>
-        <translation type="obsolete">Timer :</translation>
-    </message>
-    <message>
-        <source>Clock :</source>
-        <translation type="obsolete">Orologio :</translation>
-    </message>
-    <message>
-        <source>Next</source>
-        <translation type="obsolete">Seguente</translation>
-    </message>
-    <message>
-        <source>Synopsis</source>
-        <translation type="obsolete">Sinossi</translation>
-    </message>
-    <message>
-        <source>Show the synopsis</source>
-        <translation type="obsolete">Mostra la sinossi</translation>
-    </message>
-    <message>
-        <source>Note</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-    <message>
-        <source>Show the note</source>
-        <translation type="obsolete">Mostra le note</translation>
-    </message>
-    <message>
-        <source>Manage &amp;Styles</source>
-        <translation type="obsolete">Gestisci &amp;Stili</translation>
-    </message>
-    <message>
-        <source>Manage the styles</source>
-        <translation type="obsolete">Gestisci gli stili</translation>
-    </message>
-    <message>
-        <source>Colors</source>
-        <translation type="obsolete">Colori</translation>
-    </message>
-    <message>
-        <source>Set the colors</source>
-        <translation type="obsolete">Imposta i colori</translation>
-    </message>
-    <message>
-        <source>FullScreen Colors :</source>
-        <translation type="obsolete">Colori a schermo intero :</translation>
-    </message>
-    <message>
-        <source>&amp;Background color:</source>
-        <translation type="obsolete">Colore di sfondo (&amp;B):</translation>
-    </message>
-    <message>
-        <source>Text b&amp;ackground color:</source>
-        <translation type="obsolete">Colore di sfondo del testo (&amp;a):</translation>
-    </message>
-    <message>
-        <source>&amp;Text color:</source>
-        <translation type="obsolete">Colore del &amp;Testo:</translation>
-    </message>
-    <message>
-        <source>&amp;Timers color:</source>
-        <translation type="obsolete">Colore del &amp;Timer:</translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation type="obsolete">Ok</translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-    <message>
-        <source>Project</source>
-        <translation type="obsolete">Progetto</translation>
     </message>
 </context>
 <context>
     <name>HelpPageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/HelpPageForm.ui.qml" line="30"/>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/HelpPageForm.ui.qml" line="35"/>
         <source>FAQ</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/HelpPageForm.ui.qml" line="40"/>
         <source>About</source>
-        <translation type="unfinished">Riguardo</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/HelpPageForm.ui.qml" line="45"/>
         <source>About Qt</source>
-        <translation type="unfinished">Riguardo Qt</translation>
-    </message>
-    <message>
-        <source>Contents</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>ImporterForm.ui</name>
+    <name>ImporterPageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ImporterPageForm.ui.qml" line="31"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ImporterPageForm.ui.qml" line="36"/>
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/ImporterPageForm.ui.qml" line="48"/>
         <source>Import from Plume Creator project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>IntroPage</name>
-    <message>
-        <source>New Project</source>
-        <translation type="obsolete">Nuovo Progetto</translation>
-    </message>
-    <message>
-        <source>Welcome to Plume Creator !</source>
-        <translation type="obsolete">Benvenuti in Plume Creator !</translation>
-    </message>
-    <message>
-        <source>This assistant will help you create a new project .</source>
-        <translation type="obsolete">Questa procedura guidata vi aiuterà a creare un nuovo progetto.</translation>
-    </message>
-</context>
-<context>
     <name>LeftDock</name>
     <message>
-        <source>&amp;Navigation dock</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/LeftDock.qml" line="62"/>
+        <location filename="../app/src/qml/Note/LeftDock.qml" line="129"/>
+        <location filename="../app/src/qml/NoteOverview/LeftDock.qml" line="127"/>
+        <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="127"/>
         <source>Show navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show recent notes</source>
+        <location filename="../app/src/qml/LeftDock.qml" line="207"/>
+        <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="223"/>
+        <source>Show recent sheets</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show recent sheets</source>
+        <location filename="../app/src/qml/Note/LeftDock.qml" line="44"/>
+        <location filename="../app/src/qml/NoteOverview/LeftDock.qml" line="44"/>
+        <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="45"/>
+        <source>&amp;Navigation dock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Note/LeftDock.qml" line="56"/>
+        <location filename="../app/src/qml/NoteOverview/LeftDock.qml" line="56"/>
+        <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="57"/>
+        <source>&amp;Navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Note/LeftDock.qml" line="67"/>
+        <location filename="../app/src/qml/NoteOverview/LeftDock.qml" line="67"/>
+        <location filename="../app/src/qml/WriteOverview/LeftDock.qml" line="68"/>
+        <source>&amp;Documents</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Note/LeftDock.qml" line="213"/>
+        <location filename="../app/src/qml/NoteOverview/LeftDock.qml" line="219"/>
+        <source>Show recent notes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ListItemAttributes</name>
     <message>
-        <source>Outline</source>
+        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="70"/>
+        <source>Non printable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="76"/>
         <source>Locked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="81"/>
         <source>Favorite</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>MainTree</name>
-    <message>
-        <source>Plume Creator Tree</source>
-        <translation type="obsolete">Diagramma di Plume Creator</translation>
-    </message>
-    <message>
-        <source>Parse error at line %1, column %2:
-%3
-</source>
-        <translation type="obsolete">Analizza errore alla linea %1, colonna %2:
-%3</translation>
-    </message>
-    <message>
-        <source>The file is not a Plume Creator project file.</source>
-        <translation type="obsolete">Questo file non è un file di progetto Plume Creator.</translation>
-    </message>
-    <message>
-        <source>The file is not an Plume Creator project file version 0.2 file.</source>
-        <translation type="obsolete">Questo file non è un file di progetto Plume Creator versione 0.2.</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="obsolete">Cancella (&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Advanced</source>
-        <translation type="obsolete">&amp;Avanzato</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="obsolete">&amp;Rinomina</translation>
-    </message>
-    <message>
-        <source>Add &amp;next</source>
-        <translation type="obsolete">Aggiungi segue&amp;nte</translation>
-    </message>
-    <message>
-        <source>Add &amp;child</source>
-        <translation type="obsolete">Aggiungi figlio (&amp;c)</translation>
-    </message>
-    <message>
-        <source>Add &amp;scene break</source>
-        <translation type="obsolete">Aggiungi interruzione di &amp;scena</translation>
-    </message>
-    <message>
-        <source>Move Up</source>
-        <translation type="obsolete">Sposta su</translation>
-    </message>
-    <message>
-        <source>Move Down</source>
-        <translation type="obsolete">Sposta giù</translation>
-    </message>
-    <message>
-        <source>C&amp;onfirm</source>
-        <translation type="obsolete">C&amp;onferma</translation>
-    </message>
-    <message>
-        <source>&amp;Auto Rename Childs</source>
-        <translation type="obsolete">Rinomina &amp;Automaticamente Figli</translation>
-    </message>
-    <message>
-        <source>&amp;Split</source>
-        <translation type="obsolete">&amp;Spezza</translation>
-    </message>
-    <message>
-        <source>Add &amp;X Children</source>
-        <translation type="obsolete">Aggiungi &amp;X Figli</translation>
-    </message>
-    <message>
-        <source>Rename sheet</source>
-        <translation type="obsolete">Rinomina foglio</translation>
-    </message>
-    <message>
-        <source>Sheet name :</source>
-        <translation type="obsolete">Nome del foglio :</translation>
-    </message>
-    <message>
-        <source>Sheet Deletion</source>
-        <translation type="obsolete">Cancellazione Foglio</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The selected sheet and its children will be permanently deleted.&lt;/p&gt;
-&lt;br&gt;&lt;p&gt;Do you really want to continue ?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Il foglio selezionato e i suoi figli saranno cancellati definitivamente.&lt;/p&gt;
-&lt;br&gt;&lt;p&gt;Sei sicuro di voler continuare ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Plume Creator Info</source>
-        <translation type="obsolete">Informazioni Plume Creator</translation>
-    </message>
-    <message>
-        <source>For safety measure, you are
-not allowed delete a filled book.</source>
-        <translation type="obsolete">Per precauzione, non è permesso
-cancellare un libro riempito.</translation>
-    </message>
-    <message>
-        <source>Chapter</source>
-        <translation type="obsolete">Capitolo</translation>
-    </message>
-    <message>
-        <source>Scene</source>
-        <translation type="obsolete">Scena</translation>
-    </message>
-    <message>
-        <source>Split Dialog</source>
-        <translation type="obsolete">Finestra Divisione</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;With this tool, you can split a text in several parts.For each part, Plume will create a chapter or a scene.&lt;/p&gt;&lt;br&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Con questo strumento, puoi dividere un testo in varie parti.Per ogni parte, Plume creerà un capitolo o una scena.&lt;/p&gt;&lt;br&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;center&gt;&lt;b&gt;Each sheet type has different behaviour !&lt;/b&gt;&lt;/center&gt;&lt;br&gt;&lt;p&gt;&lt;blockquote&gt;In a scene sheet : split &lt;b&gt;only&lt;/b&gt; into scenes with *** .&lt;/blockquote&gt;&lt;blockquote&gt;In a chapter sheet : split into scenes with *** and into chapters with ### .&lt;/blockquote&gt;&lt;blockquote&gt;In a book sheet : split into scenes with *** and into chapters with ### .&lt;/blockquote&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;center&gt;&lt;b&gt;Ogni tipo di foglio ha comportamenti diversi !&lt;/b&gt;&lt;/center&gt;&lt;br&gt;&lt;p&gt;&lt;blockquote&gt;In un foglio di scena : dividi &lt;b&gt;solo&lt;/b&gt; in scene con *** .&lt;/blockquote&gt;&lt;blockquote&gt;In un foglio di capitolo : dividi in scene con *** e in capitoli con ### .&lt;/blockquote&gt;&lt;blockquote&gt;In un foglio di libro : dividi in scene con *** e in capitoli con ### .&lt;/blockquote&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Text</source>
-        <translation type="obsolete">Testo</translation>
-    </message>
-    <message>
-        <source>Synopsys</source>
-        <translation type="obsolete">Sinossi</translation>
-    </message>
-    <message>
-        <source>Note</source>
-        <translation type="obsolete">Nota</translation>
-    </message>
-    <message>
-        <source>Choose the type of document that you want to split :</source>
-        <translation type="obsolete">Scegli il tipo di documento che vuoi dividere :</translation>
-    </message>
-    <message>
-        <source>Splitting Task</source>
-        <translation type="obsolete">Compito di divisione</translation>
-    </message>
-    <message>
-        <source>This sheet does not contain *** .</source>
-        <translation type="obsolete">Questo foglio non contiene ***.</translation>
-    </message>
-    <message>
-        <source>Add X Children</source>
-        <translation type="obsolete">Aggiungi X Figli</translation>
-    </message>
-    <message>
-        <source>Please enter a number :</source>
-        <translation type="obsolete">Per favore inserisci un numero :</translation>
-    </message>
-    <message>
-        <source>New Book</source>
-        <translation type="obsolete">Nuovo Libro</translation>
-    </message>
-    <message>
-        <source>New Chapter</source>
-        <translation type="obsolete">Nuovo Capitolo</translation>
-    </message>
-    <message>
-        <source>New Scene</source>
-        <translation type="obsolete">Nuova Scena</translation>
-    </message>
-</context>
-<context>
-    <name>MainTreeAbstractModel</name>
-    <message>
-        <source>Titles</source>
-        <translation type="obsolete">Titoli</translation>
-    </message>
-    <message>
-        <source>Synopsis</source>
-        <translation type="obsolete">Sinossi</translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-    <message>
-        <source>Splitting Task</source>
-        <translation type="obsolete">Compito di divisione</translation>
-    </message>
-    <message>
-        <source>This sheet does not contain *** .</source>
-        <translation type="obsolete">Questo foglio non contiene ***.</translation>
-    </message>
-    <message>
-        <source>Chapter</source>
-        <translation type="obsolete">Capitolo</translation>
-    </message>
-    <message>
-        <source>Scene</source>
-        <translation type="obsolete">Scena</translation>
-    </message>
-</context>
-<context>
-    <name>MainTreeContextMenu</name>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="obsolete">Cancella (&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Advanced</source>
-        <translation type="obsolete">&amp;Avanzato</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="obsolete">&amp;Rinomina</translation>
-    </message>
-    <message>
-        <source>Move Up</source>
-        <translation type="obsolete">Sposta su</translation>
-    </message>
-    <message>
-        <source>Move Down</source>
-        <translation type="obsolete">Sposta giù</translation>
-    </message>
-    <message>
-        <source>C&amp;onfirm</source>
-        <translation type="obsolete">C&amp;onferma</translation>
-    </message>
-    <message>
-        <source>&amp;Split</source>
-        <translation type="obsolete">&amp;Spezza</translation>
-    </message>
-    <message>
-        <source>Add &amp;X Children</source>
-        <translation type="obsolete">Aggiungi &amp;X Figli</translation>
-    </message>
-    <message>
-        <source>Split Dialog</source>
-        <translation type="obsolete">Finestra Divisione</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;With this tool, you can split a text in several parts.For each part, Plume will create a chapter or a scene.&lt;/p&gt;&lt;br&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Con questo strumento, puoi dividere un testo in varie parti.Per ogni parte, Plume creerà un capitolo o una scena.&lt;/p&gt;&lt;br&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;center&gt;&lt;b&gt;Each sheet type has different behaviour !&lt;/b&gt;&lt;/center&gt;&lt;br&gt;&lt;p&gt;&lt;blockquote&gt;In a scene sheet : split &lt;b&gt;only&lt;/b&gt; into scenes with *** .&lt;/blockquote&gt;&lt;blockquote&gt;In a chapter sheet : split into scenes with *** and into chapters with ### .&lt;/blockquote&gt;&lt;blockquote&gt;In a book sheet : split into scenes with *** and into chapters with ### .&lt;/blockquote&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;center&gt;&lt;b&gt;Ogni tipo di foglio ha comportamenti diversi !&lt;/b&gt;&lt;/center&gt;&lt;br&gt;&lt;p&gt;&lt;blockquote&gt;In un foglio di scena : dividi &lt;b&gt;solo&lt;/b&gt; in scene con *** .&lt;/blockquote&gt;&lt;blockquote&gt;In un foglio di capitolo : dividi in scene con *** e in capitoli con ### .&lt;/blockquote&gt;&lt;blockquote&gt;In un foglio di libro : dividi in scene con *** e in capitoli con ### .&lt;/blockquote&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Text</source>
-        <translation type="obsolete">Testo</translation>
-    </message>
-    <message>
-        <source>Synopsys</source>
-        <translation type="obsolete">Sinossi</translation>
-    </message>
-    <message>
-        <source>Choose the type of document that you want to split :</source>
-        <translation type="obsolete">Scegli il tipo di documento che vuoi dividere :</translation>
-    </message>
-    <message>
-        <source>Rename sheet</source>
-        <translation type="obsolete">Rinomina foglio</translation>
-    </message>
-    <message>
-        <source>Sheet name :</source>
-        <translation type="obsolete">Nome del foglio :</translation>
-    </message>
-    <message>
-        <source>Add X Children</source>
-        <translation type="obsolete">Aggiungi X Figli</translation>
-    </message>
-    <message>
-        <source>Please enter a number :</source>
-        <translation type="obsolete">Per favore inserisci un numero :</translation>
-    </message>
-</context>
-<context>
-    <name>MainWindow</name>
-    <message>
-        <source>Welcome</source>
-        <translation type="obsolete">Benvenuto</translation>
-    </message>
-    <message>
-        <source>&lt;center&gt;&lt;b&gt;Hello ! Welcome to Plume Creator v</source>
-        <translation type="obsolete">&lt;center&gt;&lt;b&gt;Salve ! Benvenuto in Plume Creator v</translation>
-    </message>
-    <message>
-        <source>!&lt;/b&gt;&lt;/center&gt;&lt;p&gt;Plume Creator is a little program for writers in quest of a complete yet simple way of writing and organizing a fiction.&lt;/p&gt;&lt;br&gt;&lt;p&gt;It allows :&lt;blockquote&gt;- fullscreen text editing&lt;/blockquote&gt;&lt;blockquote&gt;- chapters and scenes outlining&lt;/blockquote&gt;&lt;blockquote&gt;- note taking&lt;/blockquote&gt;&lt;blockquote&gt;- items/characters/places managing&lt;/blockquote&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;&lt;h1&gt;This is a Beta software ! It&apos;s stable but all the features are not finished !&lt;/h1&gt;&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">!&lt;/b&gt;&lt;/center&gt;&lt;p&gt;Plume Creator è un piccolo programma per scrittori alla ricercadi un modo completo ma semplice di scrivere e organizzare un racconto.&lt;/p&gt;&lt;br&gt;&lt;p&gt;Permette :&lt;blockquote&gt;- modifica di testo a schermo intero&lt;/blockquote&gt;&lt;blockquote&gt;- evidenziazione di capitoli e scene&lt;/blockquote&gt;&lt;blockquote&gt;- annotazioni&lt;/blockquote&gt;&lt;blockquote&gt;- gestione di oggetti/personaggi/luoghi&lt;/blockquote&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;&lt;h1&gt;Questo è un software Beta ! E&apos; stabile ma non tutte le funzionalità sono ultimate !&lt;/h1&gt;&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Small screen size detected</source>
-        <translation type="obsolete">Rilevato schermo di piccole dimensioni</translation>
-    </message>
-    <message>
-        <source>&lt;center&gt;&lt;b&gt;A small screen has been detected&lt;/b&gt;&lt;/center&gt;&lt;p&gt;Maybe you are running Plume on a netbook. Plume will adapt its interface to this type of computer.&lt;/p&gt;&lt;br&gt;&lt;p&gt;You can change this option in the &apos;Configure&apos; dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;center&gt;&lt;b&gt;E&apos; stato rilevato uno schermo di piccole dimensioni&lt;/b&gt;&lt;/center&gt;&lt;p&gt;Forse stai eseguendo Plume su un netbook. Plume adatterà la sua interfaccia a questo tipo di computer.&lt;/p&gt;&lt;br&gt;&lt;p&gt;Puoi cambiare quest&apos;opzione nella finestra &apos;Configura&apos;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Attendance</source>
-        <translation type="obsolete">Manutenzione</translation>
-    </message>
-    <message>
-        <source>Project</source>
-        <translation type="obsolete">Progetto</translation>
-    </message>
-    <message>
-        <source>Tools</source>
-        <translation type="obsolete">Strumenti</translation>
-    </message>
-    <message>
-        <source>Stats</source>
-        <translation type="obsolete">Statistiche</translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-    <message>
-        <source>Draft</source>
-        <translation type="obsolete">Bozza</translation>
-    </message>
-    <message>
-        <source>25%</source>
-        <translation type="obsolete">25%</translation>
-    </message>
-    <message>
-        <source>50%</source>
-        <translation type="obsolete">50%</translation>
-    </message>
-    <message>
-        <source>75%</source>
-        <translation type="obsolete">75%</translation>
-    </message>
-    <message>
-        <source>Done</source>
-        <translation type="obsolete">Fatto</translation>
-    </message>
-    <message>
-        <source>Corrected</source>
-        <translation type="obsolete">Corretto</translation>
-    </message>
-    <message>
-        <source>Synopsis</source>
-        <translation type="obsolete">Sinossi</translation>
-    </message>
-    <message>
-        <source>Note</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-    <message>
-        <source>Dock Buttons</source>
-        <translation type="obsolete">Pulsanti della Barra</translation>
-    </message>
-    <message>
-        <source>Outliner</source>
-        <translation type="obsolete">Evidenziatore</translation>
-    </message>
-    <message>
-        <source>Fullscreen</source>
-        <translation type="obsolete">Schermo Intero</translation>
-    </message>
-    <message>
-        <source>Edit this document fullscreen</source>
-        <translation type="obsolete">Modifica questo documento a schermo intero</translation>
-    </message>
-    <message>
-        <source>Do you want to quit ?</source>
-        <translation type="vanished">Vuoi terminare ?</translation>
-    </message>
-    <message>
-        <source>Your changes are already saved.</source>
-        <translation type="vanished">I tuoi cambiamenti sono già stati salvati.</translation>
-    </message>
-    <message>
-        <source>Words : </source>
-        <translation type="obsolete">Parole :</translation>
-    </message>
-</context>
-<context>
-    <name>MenuBar</name>
-    <message>
-        <source>Do you want to close the current project ?</source>
-        <translation type="obsolete">Vuoi chiudere il progetto corrente ?</translation>
-    </message>
-    <message>
-        <source>Your changes are already saved.</source>
-        <translation type="obsolete">I tuoi cambiamenti sono già stati salvati.</translation>
-    </message>
-    <message>
-        <source>About Qt</source>
-        <translation type="obsolete">Riguardo Qt</translation>
-    </message>
-    <message>
-        <source>Release Notes</source>
-        <translation type="obsolete">Note di rilascio</translation>
-    </message>
-    <message>
-        <source>About Plume Creator</source>
-        <translation type="obsolete">Riguardo Plume Creator</translation>
-    </message>
-    <message>
-        <source>&amp;New Project</source>
-        <translation type="obsolete">&amp;Nuovo Progetto</translation>
-    </message>
-    <message>
-        <source>Create a new project</source>
-        <translation type="obsolete">Crea un nuovo progetto</translation>
-    </message>
-    <message>
-        <source>Project &amp;Manager</source>
-        <translation type="obsolete">Gestione Progetti (&amp;M)</translation>
-    </message>
-    <message>
-        <source>Create and manage your projects</source>
-        <translation type="obsolete">Crea e gestisci i tuoi progetti</translation>
-    </message>
-    <message>
-        <source>&amp;Configure</source>
-        <translation type="obsolete">&amp;Configura</translation>
-    </message>
-    <message>
-        <source>Display the configuration</source>
-        <translation type="obsolete">Mostra la configurazione</translation>
-    </message>
-    <message>
-        <source>&amp;Export</source>
-        <translation type="obsolete">&amp;Esporta</translation>
-    </message>
-    <message>
-        <source>Export the project</source>
-        <translation type="obsolete">Esporta il progetto</translation>
-    </message>
-    <message>
-        <source>&amp;Print</source>
-        <translation type="obsolete">Stampa (&amp;P)</translation>
-    </message>
-    <message>
-        <source>Print part of the project</source>
-        <translation type="obsolete">Stampa parte del progetto</translation>
-    </message>
-    <message>
-        <source>&amp;Close project</source>
-        <translation type="obsolete">&amp;Chiudi Progetto</translation>
-    </message>
-    <message>
-        <source>Print the document</source>
-        <translation type="obsolete">Stampa il documento</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation type="obsolete">Esci (&amp;X)</translation>
-    </message>
-    <message>
-        <source>Exit the application</source>
-        <translation type="obsolete">Esci dall&apos;applicazione</translation>
-    </message>
-    <message>
-        <source>&amp;Project</source>
-        <translation type="obsolete">&amp;Progetto</translation>
-    </message>
-    <message>
-        <source>&amp;Find &amp;&amp; Replace</source>
-        <translation type="obsolete">Trova &amp;&amp; Sostituisci (&amp;F)</translation>
-    </message>
-    <message>
-        <source>Find &amp; Replace Dialog</source>
-        <translation type="obsolete">Finestra Trova &amp; Sostituisci</translation>
-    </message>
-    <message>
-        <source>Manage &amp;Styles</source>
-        <translation type="obsolete">Gestisci &amp;Stili</translation>
-    </message>
-    <message>
-        <source>Manage the styles</source>
-        <translation type="obsolete">Gestisci gli stili</translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation type="obsolete">&amp;Edita</translation>
-    </message>
-    <message>
-        <source>Show the project dock</source>
-        <translation type="obsolete">Mostra la barra del progetto</translation>
-    </message>
-    <message>
-        <source>&amp;Notes</source>
-        <translation type="obsolete">&amp;Note</translation>
-    </message>
-    <message>
-        <source>Show the note dock</source>
-        <translation type="obsolete">Mostra la barra delle note</translation>
-    </message>
-    <message>
-        <source>&amp;Attendance</source>
-        <translation type="obsolete">Manutenzione (&amp;M)</translation>
-    </message>
-    <message>
-        <source>Show the attendance dock</source>
-        <translation type="obsolete">Mostra la barra di manutenzione</translation>
-    </message>
-    <message>
-        <source>&amp;Tools</source>
-        <translation type="obsolete">S&amp;trumenti</translation>
-    </message>
-    <message>
-        <source>Show the tool dock</source>
-        <translation type="obsolete">Mostra la barra strumenti</translation>
-    </message>
-    <message>
-        <source>&amp;Outliner</source>
-        <translation type="obsolete">Evidenziat&amp;ore</translation>
-    </message>
-    <message>
-        <source>Show the outliner</source>
-        <translation type="obsolete">Mostra l&apos;evidenziatore</translation>
-    </message>
-    <message>
-        <source>&amp;Fullscreen</source>
-        <translation type="obsolete">Schermo intero (&amp;F)</translation>
-    </message>
-    <message>
-        <source>Edit fullscreen</source>
-        <translation type="obsolete">Modifica a schermo intero</translation>
-    </message>
-    <message>
-        <source>&amp;View</source>
-        <translation type="obsolete">&amp;Visualizza</translation>
-    </message>
-    <message>
-        <source>About</source>
-        <translation type="obsolete">Riguardo</translation>
-    </message>
-    <message>
-        <source>about the application</source>
-        <translation type="obsolete">riguardo l&apos;applicazione</translation>
-    </message>
-    <message>
-        <source>about Qt</source>
-        <translation type="obsolete">riguardo Qt</translation>
-    </message>
-    <message>
-        <source>Release notes</source>
-        <translation type="obsolete">Note di rilascio</translation>
-    </message>
-    <message>
-        <source>Open the Readme with the release notes</source>
-        <translation type="obsolete">Apri il Readme con le note di rilascio</translation>
-    </message>
-    <message>
-        <source>Check Update</source>
-        <translation type="obsolete">Controlla aggiornamenti</translation>
-    </message>
-    <message>
-        <source>check for an update</source>
-        <translation type="obsolete">controlla gli aggiornamenti</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="obsolete">Aiuto (&amp;H)</translation>
-    </message>
-    <message>
-        <source>Plume Creator Warning</source>
-        <translation type="obsolete">Avviso Plume Creator</translation>
-    </message>
-    <message>
-        <source>The file you are trying to open
- isn&apos;t a Plume project.
-
-
-Please open a .plume file.</source>
-        <translation type="obsolete">Il file che stai cercando di aprire non è un file di progetto Plume. Per favore apri un file .plume.</translation>
-    </message>
-    <message>
-        <source>Plume Creator Prj XML</source>
-        <translation type="obsolete">Progetto XML Plume Creator</translation>
-    </message>
-    <message>
-        <source>Parse error at line %1, column %2:
-%3
-</source>
-        <translation type="obsolete">Analizza errore alla linea %1, colonna %2:
-%3</translation>
-    </message>
-    <message>
-        <source>Plume Creator Prj Tree</source>
-        <translation type="obsolete">Diagramma di Progetto Plume Creator</translation>
-    </message>
-    <message>
-        <source>The file is not a Plume Creator information file.</source>
-        <translation type="obsolete">Il file non è un file di informazioni Plume Creator.</translation>
-    </message>
-    <message>
-        <source>The file is not an Plume Creator information file version 0.2 file.</source>
-        <translation type="obsolete">Questo file non è un file di informazioni Plume Creator versione 0.2.</translation>
-    </message>
-    <message>
-        <source>Open Project</source>
-        <translation type="obsolete">Apri Progetto</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are opening a Plume project.&lt;/p&gt;
-&lt;br&gt;&lt;p&gt;Do you want to add this project to the manager list ?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Stai aprendo un progetto Plume.&lt;/p&gt;
-&lt;br&gt;&lt;p&gt;Vuoi aggiungere questo progetto alla lista di gestione ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Plume Creator XML</source>
-        <translation type="obsolete">XML Plume Creator</translation>
-    </message>
-    <message>
-        <source>Plume Creator Information Tree</source>
-        <translation type="obsolete">Diagramma di Informazioni Plume Creator</translation>
-    </message>
-    <message>
-        <source>error</source>
-        <translation type="obsolete">errore</translation>
-    </message>
-</context>
-<context>
     <name>NavigationList</name>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="111"/>
         <source>Go up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Projects</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="194"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1859"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="201"/>
         <source>Advanced</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="203"/>
         <source>Sort alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="211"/>
         <source>Trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="224"/>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>has child</source>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="347"/>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="403"/>
+        <source>Projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="547"/>
+        <source>is a folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="548"/>
         <source>label:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="548"/>
+        <source>has child</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="550"/>
         <source>navigation item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1057"/>
         <source>See sub-items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1171"/>
         <source>Open document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1194"/>
         <source>Open document in a new tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1217"/>
         <source>Open document in a window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1288"/>
         <source>This project is a backup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1430"/>
         <source>Enter label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter name</source>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1477"/>
+        <source>Enter title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1679"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open in new tab</source>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1699"/>
+        <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1720"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1746"/>
         <source>Set as active project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1768"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1789"/>
         <source>Set label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1814"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1836"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1886"/>
         <source>Add before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1926"/>
         <source>Add after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1968"/>
+        <source>Add a sub-item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="2017"/>
         <source>Move up</source>
-        <translation type="unfinished">Sposta su</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="2047"/>
         <source>Move down</source>
-        <translation type="unfinished">Sposta giù</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationList.qml" line="2082"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2095,212 +925,189 @@ Please open a .plume file.</source>
 <context>
     <name>NavigationListForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationListForm.ui.qml" line="51"/>
         <source>Add a document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NavigationListForm.ui.qml" line="58"/>
         <source>Navigation menu</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>NewProject</name>
+    <name>NewItemPopupForm.ui</name>
     <message>
-        <source>Part </source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>NewProjectForm.ui</name>
-    <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Project title :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>project title</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Project file :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>project file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Project path :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This project will be created as : </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Number of parts :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/NewItemPopupForm.ui.qml" line="53"/>
         <source>Create</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>NewProjectWizard</name>
+    <name>NewProjectPage</name>
     <message>
-        <source>Project Creator</source>
-        <translation type="obsolete">Creatore Progetto</translation>
-    </message>
-    <message>
-        <source>Chapter 1</source>
-        <translation type="obsolete">Capitolo 1</translation>
-    </message>
-    <message>
-        <source>Scene 1</source>
-        <translation type="obsolete">Scena 1</translation>
-    </message>
-    <message>
-        <source>Main</source>
-        <translation type="obsolete">Principale</translation>
-    </message>
-    <message>
-        <source>Secondary</source>
-        <translation type="obsolete">Secondario</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <translation type="obsolete">Nessuno</translation>
-    </message>
-    <message>
-        <source>Protagonist</source>
-        <translation type="obsolete">Protagonista</translation>
-    </message>
-    <message>
-        <source>Supporting</source>
-        <translation type="obsolete">Sostenitore</translation>
-    </message>
-    <message>
-        <source>Neutral</source>
-        <translation type="obsolete">Neutrale</translation>
-    </message>
-    <message>
-        <source>Antagonist</source>
-        <translation type="obsolete">Antagonista</translation>
-    </message>
-    <message>
-        <source>Characters</source>
-        <translation type="obsolete">Personaggi</translation>
-    </message>
-    <message>
-        <source>Items</source>
-        <translation type="obsolete">Oggetti</translation>
-    </message>
-    <message>
-        <source>Places</source>
-        <translation type="obsolete">Luoghi</translation>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPage.qml" line="118"/>
+        <source>Part </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>NoteDock</name>
+    <name>NewProjectPageForm.ui</name>
     <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="36"/>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Synopsis</source>
-        <translation type="obsolete">Sinossi</translation>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="41"/>
+        <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="65"/>
+        <source>Project title :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="70"/>
+        <source>project title</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="76"/>
+        <source>Project file :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="81"/>
+        <source>project file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="87"/>
+        <source>Project path :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="92"/>
+        <source>project path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="98"/>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="105"/>
+        <source>This project will be created as : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="116"/>
+        <source>Number of parts :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="133"/>
+        <source>Create</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>NotePad</name>
     <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="323"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Dissociate</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Warning</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you want to move the note &quot;%1&quot; to the trash ?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>note related to the current sheet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New note</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add note</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Existing notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="352"/>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="359"/>
+        <source>Dissociate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="370"/>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="392"/>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="393"/>
+        <source>Do you want to move the note &quot;%1&quot; to the trash ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="523"/>
+        <source>note related to the current sheet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="695"/>
+        <source>New note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="885"/>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="985"/>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="1006"/>
         <source>Show outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="1039"/>
         <source>Open current note in a new tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="1077"/>
+        <source>Add note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="1235"/>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="1574"/>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Outline</source>
+        <location filename="../app/src/qml/Commons/NotePad.qml" line="1467"/>
+        <source>Existing notes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
     <message>
-        <source>Open note</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Notes list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="73"/>
         <source>Show outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="79"/>
+        <source>Open note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="137"/>
+        <source>Notes list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="146"/>
         <source>Type your note here...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2308,585 +1115,318 @@ Please open a .plume file.</source>
 <context>
     <name>NoteSearchItemForm.ui</name>
     <message>
+        <location filename="../app/src/qml/NoteOverview/NoteSearchItemForm.ui.qml" line="29"/>
         <source>Search</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/NoteOverview/NoteSearchItemForm.ui.qml" line="37"/>
         <source>Show tags list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/NoteOverview/NoteSearchItemForm.ui.qml" line="47"/>
         <source>Deselect tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/NoteOverview/NoteSearchItemForm.ui.qml" line="81"/>
         <source>Note search result list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/NoteOverview/NoteSearchItemForm.ui.qml" line="81"/>
         <source>Note overview list</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>NoteZone</name>
+    <name>OutlinePad</name>
     <message>
-        <source>&amp;Undo</source>
-        <translation type="obsolete">Annulla (&amp;U)</translation>
+        <location filename="../app/src/qml/Commons/OutlinePad.qml" line="30"/>
+        <source>Open outline</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Undo the last operation</source>
-        <translation type="obsolete">Annulla l&apos;ultima operazione</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="obsolete">&amp;Ripeti</translation>
-    </message>
-    <message>
-        <source>Redo the last operation</source>
-        <translation type="obsolete">Ripeti l&apos;ultima operazione</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="obsolete">&amp;Taglia</translation>
-    </message>
-    <message>
-        <source>Cut the current selection&apos;s contents to the clipboard</source>
-        <translation type="obsolete">Copia il contenuto della selezione corrente negli appunti</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="obsolete">&amp;Copia</translation>
-    </message>
-    <message>
-        <source>Copy the current selection&apos;s contents to the clipboard</source>
-        <translation type="obsolete">Copia il contenuto della selezione corrente negli appunti</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="obsolete">Incolla (&amp;P)</translation>
-    </message>
-    <message>
-        <source>Paste the clipboard&apos;s contents into the current selection</source>
-        <translation type="obsolete">Incolla il contenuto degli appunti nella selezione corrente</translation>
-    </message>
-    <message>
-        <source>&amp;Bold</source>
-        <translation type="obsolete">Grassetto (&amp;B)</translation>
-    </message>
-    <message>
-        <source>Make the text bold</source>
-        <translation type="obsolete">Rendi il testo grassetto</translation>
-    </message>
-    <message>
-        <source>&amp;Italic</source>
-        <translation type="obsolete">Corsivo (&amp;I)</translation>
-    </message>
-    <message>
-        <source>Make the text italic</source>
-        <translation type="obsolete">Rendi il testo corsivo</translation>
-    </message>
-    <message>
-        <source>&amp;Left Align</source>
-        <translation type="obsolete">A&amp;llineamento a Sinistra</translation>
-    </message>
-    <message>
-        <source>Ctrl+L</source>
-        <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <source>Left align the selected text</source>
-        <translation type="obsolete">Allinea il testo selezionato a sinistra</translation>
-    </message>
-    <message>
-        <source>&amp;Right Align</source>
-        <translation type="obsolete">Allineamento a Dest&amp;ra</translation>
-    </message>
-    <message>
-        <source>Ctrl+R</source>
-        <translation type="obsolete">Ctrl+R</translation>
-    </message>
-    <message>
-        <source>Right align the selected text</source>
-        <translation type="obsolete">Allinea il testo selezionato a destra</translation>
-    </message>
-    <message>
-        <source>&amp;Justify</source>
-        <translation type="obsolete">Giustifica (&amp;J)</translation>
-    </message>
-    <message>
-        <source>Ctrl+J</source>
-        <translation type="obsolete">Ctrl+J</translation>
-    </message>
-    <message>
-        <source>Justify the selected text</source>
-        <translation type="obsolete">Giustifica il testo selezionato</translation>
-    </message>
-    <message>
-        <source>&amp;Center</source>
-        <translation type="obsolete">&amp;Centra</translation>
-    </message>
-    <message>
-        <source>Ctrl+E</source>
-        <translation type="obsolete">Ctrl+E</translation>
-    </message>
-    <message>
-        <source>Center the selected text</source>
-        <translation type="obsolete">Centra il testo selezionato</translation>
-    </message>
-    <message>
-        <source>&amp;Alignment</source>
-        <translation type="obsolete">&amp;Allineamento</translation>
-    </message>
-    <message>
-        <source>L</source>
-        <comment>align left</comment>
-        <translation type="obsolete">L</translation>
-    </message>
-    <message>
-        <source>R</source>
-        <comment>align right</comment>
-        <translation type="obsolete">R</translation>
-    </message>
-    <message>
-        <source>L</source>
-        <translation type="obsolete">L</translation>
-    </message>
-    <message>
-        <source>R</source>
-        <translation type="obsolete">R</translation>
+        <location filename="../app/src/qml/Commons/OutlinePad.qml" line="45"/>
+        <source>Add outline</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>Outline</name>
+    <name>OutlinePadForm.ui</name>
     <message>
-        <source>new</source>
-        <translation type="obsolete">nuovo</translation>
+        <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="53"/>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Outliner</source>
-        <translation type="obsolete">Evidenziatore</translation>
-    </message>
-    <message>
-        <source>Show all lists</source>
-        <translation type="obsolete">Mostra tutte le liste</translation>
-    </message>
-    <message>
-        <source>Show all notes</source>
-        <translation type="obsolete">Mostra tutte le note</translation>
-    </message>
-    <message>
-        <source>Expand all texts</source>
-        <translation type="obsolete">Espandi tutti i testi</translation>
-    </message>
-    <message>
-        <source>Attendances width</source>
-        <translation type="obsolete">Larghezza manutenzioni</translation>
-    </message>
-    <message>
-        <source>Synopses width</source>
-        <translation type="obsolete">Larghezza sinossi</translation>
-    </message>
-    <message>
-        <source>Notes width</source>
-        <translation type="obsolete">Larghezza note</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="obsolete">Dimensioni</translation>
-    </message>
-    <message>
-        <source>Synopses font</source>
-        <translation type="obsolete">Carattere delle sinossi</translation>
-    </message>
-    <message>
-        <source>Indent :</source>
-        <translation type="obsolete">Indentazione :</translation>
-    </message>
-    <message>
-        <source>Margin :</source>
-        <translation type="obsolete">Margine :</translation>
-    </message>
-    <message>
-        <source>Notes font</source>
-        <translation type="obsolete">Carattere delle note</translation>
-    </message>
-    <message>
-        <source>Fonts</source>
-        <translation type="obsolete">Caratteri</translation>
-    </message>
-    <message>
-        <source>Characters</source>
-        <translation type="obsolete">Personaggi</translation>
-    </message>
-    <message>
-        <source>Items</source>
-        <translation type="obsolete">Oggetti</translation>
-    </message>
-    <message>
-        <source>Places</source>
-        <translation type="obsolete">Luoghi</translation>
+        <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="73"/>
+        <source>Type your outline here...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>OutlineItem</name>
+    <name>OverviewTree</name>
     <message>
-        <source>Attendance :</source>
-        <translation type="obsolete">Manutenzione :</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="105"/>
+        <source>Level %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Note :</source>
-        <translation type="obsolete">Nota :</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="114"/>
+        <source>label: %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Title</source>
-        <translation type="obsolete">Titolo</translation>
-    </message>
-</context>
-<context>
-    <name>OutlinerAbstractModel</name>
-    <message>
-        <source>Titles</source>
-        <translation type="obsolete">Titoli</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="119"/>
+        <source>has %1 sub-items</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Synopsis</source>
-        <translation type="obsolete">Sinossi</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="126"/>
+        <source>navigation item</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Notes</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-</context>
-<context>
-    <name>OutlinerBase</name>
-    <message>
-        <source>Outliner</source>
-        <translation type="obsolete">Evidenziatore</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="382"/>
+        <source>Open document</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Shift to spreadsheet mode</source>
-        <translation type="obsolete">Passa alla modalità foglio di calcolo</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="402"/>
+        <source>Open document in a new tab</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close the Outliner</source>
-        <translation type="obsolete">Chiudi l&apos;Evidenziatore</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="422"/>
+        <source>Open document in a window</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Expand spreadsheet</source>
-        <translation type="obsolete">Espandi il foglio di calcolo</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="704"/>
+        <source>Enter label</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Shrink spreadsheet</source>
-        <translation type="obsolete">Comprimi il foglio di calcolo</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="745"/>
+        <source>Enter name</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="942"/>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1389"/>
+        <source>c: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1398"/>
+        <source>all c: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1414"/>
+        <source>w: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1423"/>
+        <source>all w: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1719"/>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1738"/>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1758"/>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1781"/>
+        <source>Unset focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1781"/>
+        <source>Set focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1812"/>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1831"/>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1850"/>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1871"/>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1892"/>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1914"/>
+        <source>Add before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1938"/>
+        <source>Add after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1958"/>
+        <source>Add a sub-item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1988"/>
         <source>Move up</source>
-        <translation type="obsolete">Sposta su</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="2009"/>
         <source>Move down</source>
-        <translation type="obsolete">Sposta giù</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Characters</source>
-        <translation type="obsolete">Personaggi</translation>
-    </message>
-    <message>
-        <source>Items</source>
-        <translation type="obsolete">Oggetti</translation>
-    </message>
-    <message>
-        <source>Places</source>
-        <translation type="obsolete">Luoghi</translation>
-    </message>
-</context>
-<context>
-    <name>OutlinerSpreadsheet</name>
-    <message>
-        <source>Outliner</source>
-        <translation type="obsolete">Evidenziatore</translation>
-    </message>
-    <message>
-        <source>This speadsheet outliner is at an early stage of development. &lt;br&gt;For now, you can rename titles, write synopses and notes. Right-click and a menu will appear ! </source>
-        <translation type="obsolete">Questo evidenziatore di foglio di calcolo è ad un primo stadio di sviluppo. &lt;br&gt;Per ora, puoi rinominare titoli, scrivere sinossi e note. Clicca col tasto destro e apparirà un menu ! </translation>
-    </message>
-    <message>
-        <source>Do not warn me again</source>
-        <translation type="obsolete">Non avvisarmi ancora</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="obsolete">Cancella (&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Advanced</source>
-        <translation type="obsolete">&amp;Avanzato</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="obsolete">&amp;Rinomina</translation>
-    </message>
-    <message>
-        <source>Add &amp;next</source>
-        <translation type="obsolete">Aggiungi segue&amp;nte</translation>
-    </message>
-    <message>
-        <source>Add &amp;child</source>
-        <translation type="obsolete">Aggiungi figlio (&amp;c)</translation>
-    </message>
-    <message>
-        <source>Add &amp;scene break</source>
-        <translation type="obsolete">Aggiungi interruzione di &amp;scena</translation>
-    </message>
-    <message>
-        <source>Move Up</source>
-        <translation type="obsolete">Sposta su</translation>
-    </message>
-    <message>
-        <source>Move Down</source>
-        <translation type="obsolete">Sposta giù</translation>
-    </message>
-    <message>
-        <source>C&amp;onfirm</source>
-        <translation type="obsolete">C&amp;onferma</translation>
-    </message>
-    <message>
-        <source>&amp;Auto Rename Childs</source>
-        <translation type="obsolete">Rinomina &amp;Automaticamente Figli</translation>
-    </message>
-    <message>
-        <source>Add &amp;X Children</source>
-        <translation type="obsolete">Aggiungi &amp;X Figli</translation>
-    </message>
-</context>
-<context>
-    <name>PLMMainWindow</name>
-    <message>
-        <source>Project</source>
-        <translation type="obsolete">Progetto</translation>
-    </message>
-    <message>
-        <source>Print</source>
-        <translation type="obsolete">Stampa</translation>
-    </message>
-    <message>
-        <source>Do you want to quit ?</source>
-        <translation type="obsolete">Vuoi terminare ?</translation>
-    </message>
-    <message>
-        <source>Your changes are already saved.</source>
-        <translation type="obsolete">I tuoi cambiamenti sono già stati salvati.</translation>
-    </message>
-</context>
-<context>
-    <name>PLMSideMainBar</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-</context>
-<context>
-    <name>PLMTranslations</name>
-    <message>
-        <source>Chapter</source>
-        <translation type="obsolete">Capitolo</translation>
-    </message>
-    <message>
-        <source>Text</source>
-        <translation type="obsolete">Testo</translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-</context>
-<context>
-    <name>PLMWritingZone</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <translation type="obsolete">Grassetto</translation>
-    </message>
-    <message>
-        <source>Italic</source>
-        <translation type="obsolete">Corsivo</translation>
-    </message>
-    <message>
-        <source>Underline</source>
-        <translation type="obsolete">Sottolineato</translation>
+        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="2031"/>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PlumeImporterForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="27"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="32"/>
         <source>&lt;h2&gt;Import Plume Creator project&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="66"/>
         <source>Plume project file (*.plume) :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="71"/>
         <source>plume project file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="77"/>
         <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="84"/>
         <source>This project will be imported as : </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="97"/>
         <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>PrintForm.ui</name>
+    <name>ProjectPage</name>
     <message>
-        <source>Go back</source>
+        <location filename="../app/src/qml/ProjectPage/ProjectPage.qml" line="79"/>
+        <source>Write this project&apos;s new name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
+        <location filename="../app/src/qml/ProjectPage/ProjectPage.qml" line="220"/>
+        <source>Character count : %1</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>PrjManager</name>
     <message>
-        <source>Projects Manager</source>
-        <translation type="obsolete">Gestione Progetti</translation>
-    </message>
-    <message>
-        <source>Please select in the list below the project you want to work with :</source>
-        <translation type="obsolete">Per favore seleziona nella lista seguente il progetto con cui vuoi lavorare :</translation>
-    </message>
-    <message>
-        <source>&amp;New</source>
-        <translation type="obsolete">&amp;Nuovo</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation type="obsolete">Apri (&amp;O)</translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation type="obsolete">&amp;Edita</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="obsolete">Cancella (&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="obsolete">&amp;Chiudi</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="obsolete">&amp;Rinomina</translation>
-    </message>
-    <message>
-        <source>Rename the project</source>
-        <translation type="obsolete">Rinomina il progetto</translation>
-    </message>
-    <message>
-        <source>&amp;Name :</source>
-        <translation type="obsolete">&amp;Nome :</translation>
-    </message>
-    <message>
-        <source>&amp;Creation date :</source>
-        <translation type="obsolete">Data di &amp;creazione :</translation>
-    </message>
-    <message>
-        <source>&amp;Modified :</source>
-        <translation type="obsolete">&amp;Modificato :</translation>
-    </message>
-    <message>
-        <source>&amp;Path :</source>
-        <translation type="obsolete">&amp;Percorso :</translation>
-    </message>
-    <message>
-        <source>Delete project</source>
-        <translation type="obsolete">Cancella progetto</translation>
-    </message>
-    <message>
-        <source>You can&apos;t rename while a project is opened !&lt;br&gt; Please close the current project and try again.</source>
-        <translation type="obsolete">Non puoi rinominare mentre un progetto è aperto !&lt;br&gt; Per favore chiudi il progetto corrente e riprova.</translation>
-    </message>
-    <message>
-        <source>Rename Project</source>
-        <translation type="obsolete">Rinomina Progetto</translation>
-    </message>
-    <message>
-        <source>Type a new name for the selected project :</source>
-        <translation type="obsolete">Scrivi un nuovo nome per il progetto selezionato :</translation>
-    </message>
-    <message>
-        <source>Plume Creator Tree</source>
-        <translation type="obsolete">Diagramma di Plume Creator</translation>
-    </message>
-    <message>
-        <source>Parse error at line %1, column %2:
-%3
-</source>
-        <translation type="obsolete">Analizza errore alla linea %1, colonna %2:
-%3</translation>
-    </message>
-</context>
-<context>
-    <name>Project</name>
-    <message>
-        <source>Text</source>
-        <translation type="obsolete">Testo</translation>
-    </message>
-</context>
-<context>
-    <name>ProjectDockTitleBar</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-</context>
-<context>
-    <name>ProjectListItemForm.ui</name>
-    <message>
-        <source>Text</source>
-        <translation type="obsolete">Testo</translation>
+        <location filename="../app/src/qml/ProjectPage/ProjectPage.qml" line="223"/>
+        <source>Word count : %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
     <message>
-        <source></source>
-        <translation></translation>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="101"/>
+        <source>Edit project name</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Print</source>
-        <translation type="obsolete">Stampa</translation>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="116"/>
+        <source>Location :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="157"/>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="165"/>
+        <source>Dictionary :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="175"/>
+        <source>Selected dictionary not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="184"/>
+        <source>Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="198"/>
+        <source>Statistics</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ProjectSubPage</name>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSubPage.qml" line="60"/>
         <source>Write this project&apos;s new name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSubPage.qml" line="201"/>
         <source>Character count : %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSubPage.qml" line="204"/>
         <source>Word count : %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2894,30 +1434,37 @@ Please open a .plume file.</source>
 <context>
     <name>ProjectSupPageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSupPageForm.ui.qml" line="53"/>
         <source>Edit project name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSupPageForm.ui.qml" line="68"/>
         <source>Location :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSupPageForm.ui.qml" line="109"/>
         <source>Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSupPageForm.ui.qml" line="117"/>
         <source>Dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSupPageForm.ui.qml" line="127"/>
         <source>Selected dictionary not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSupPageForm.ui.qml" line="136"/>
         <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectSupPageForm.ui.qml" line="150"/>
         <source>Statistics</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2925,6 +1472,7 @@ Please open a .plume file.</source>
 <context>
     <name>ProjectTabForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Projects/ProjectTabForm.ui.qml" line="62"/>
         <source>Close project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2932,57 +1480,51 @@ Please open a .plume file.</source>
 <context>
     <name>PropertyPadForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="33"/>
         <source>Properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="45"/>
         <source>Printable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="53"/>
         <source>Modifiable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="61"/>
         <source>Favorite</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>QObject</name>
-    <message>
-        <source>XML problem : parseFolderElement(const QDomElement &amp;element, QTreeWidgetItem *parentItem)</source>
-        <translation type="obsolete">Problema XML : parseFolderElement(const QDomElement &amp;element, QTreeWidgetItem *parentItem)</translation>
-    </message>
-    <message>
-        <source>XML problem</source>
-        <translation type="obsolete">Problema XML</translation>
-    </message>
-    <message>
-        <source>No Title</source>
-        <translation type="obsolete">Nessun Titolo</translation>
-    </message>
-</context>
-<context>
     <name>RestoreListView</name>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListView.qml" line="93"/>
         <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListView.qml" line="174"/>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListView.qml" line="215"/>
         <source>Empty the trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListView.qml" line="230"/>
         <source>Select none</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListView.qml" line="230"/>
         <source>Select all</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2990,22 +1532,27 @@ Please open a .plume file.</source>
 <context>
     <name>RestoreListViewForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListViewForm.ui.qml" line="56"/>
         <source>Restore a document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListViewForm.ui.qml" line="63"/>
         <source>Select all</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListViewForm.ui.qml" line="70"/>
         <source>Trashed menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListViewForm.ui.qml" line="78"/>
         <source>The checked documents are those which were trashed at the same time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/RestoreListViewForm.ui.qml" line="105"/>
         <source>List of trashed items to be restored</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3013,437 +1560,244 @@ Please open a .plume file.</source>
 <context>
     <name>RightDock</name>
     <message>
+        <location filename="../app/src/qml/Note/RightDock.qml" line="45"/>
+        <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="44"/>
         <source>&amp;Tools dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Note/RightDock.qml" line="57"/>
+        <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="69"/>
         <source>&amp;Edit</source>
-        <translation type="unfinished">&amp;Edita</translation>
-    </message>
-    <message>
-        <source>&amp;Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Notes</source>
-        <translation type="obsolete">&amp;Note</translation>
-    </message>
-    <message>
-        <source>&amp;Overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show overview tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Note/RightDock.qml" line="69"/>
+        <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="81"/>
         <source>&amp;Properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Note/RightDock.qml" line="81"/>
+        <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="94"/>
+        <source>&amp;Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Note/RightDock.qml" line="146"/>
+        <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="195"/>
+        <source>Show edit tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Note/RightDock.qml" line="183"/>
+        <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="231"/>
         <source>Show properties tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Note/RightDock.qml" line="212"/>
+        <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="260"/>
+        <source>Show tags tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="57"/>
+        <source>&amp;Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="162"/>
+        <source>Show overview tool box</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>RootPage</name>
     <message>
-        <source>Welcome</source>
-        <translation type="unfinished">Benvenuto</translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-    <message>
-        <source>Gallery</source>
+        <location filename="../app/src/qml/RootPage.qml" line="206"/>
+        <source>Show the welcome page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Note</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Project</source>
-        <translation type="unfinished">Progetto</translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/RootPage.qml" line="340"/>
         <source>&amp;File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/RootPage.qml" line="390"/>
         <source>&amp;Edit</source>
-        <translation type="unfinished">&amp;Edita</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="unfinished">Aiuto (&amp;H)</translation>
-    </message>
-    <message>
-        <source>Skribisto %1 created by Cyril Jacquet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Theme</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/RootPage.qml" line="421"/>
         <source>&amp;View</source>
-        <translation type="unfinished">&amp;Visualizza</translation>
-    </message>
-    <message>
-        <source>Outlines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ok</source>
-        <translation type="unfinished">Ok</translation>
-    </message>
-    <message>
-        <source>Warning</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Critical</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source></source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Fatal</source>
+        <location filename="../app/src/qml/RootPage.qml" line="449"/>
+        <source>&amp;Help</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>RootPageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/RootPageForm.ui.qml" line="48"/>
+        <source>Main menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RootPageFormOld.ui</name>
+    <message>
+        <location filename="../app/src/qml/RootPageFormOld.ui.qml" line="64"/>
         <source>Main menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save</source>
+        <location filename="../app/src/qml/RootPageFormOld.ui.qml" line="77"/>
+        <source>Show list of tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show list of tabs</source>
+        <location filename="../app/src/qml/RootPageFormOld.ui.qml" line="266"/>
+        <source>Save</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RootPageOld</name>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="41"/>
+        <source>Welcome</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="62"/>
+        <source>Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="80"/>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="99"/>
+        <source>Gallery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="119"/>
+        <source>Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="296"/>
+        <source>Ok</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="297"/>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="298"/>
+        <source>Critical</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="299"/>
+        <source>Fatal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="1289"/>
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="1459"/>
+        <source>&amp;File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="1509"/>
+        <source>&amp;Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="1540"/>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="1580"/>
+        <source>&amp;Help</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/RootPageOld.qml" line="1645"/>
+        <source>Skribisto %1 created by Cyril Jacquet</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>S:</name>
+    <message>
+        <location filename="../../cmake/build-Superbuild-Desktop_Qt_5_15_2_clang_64bit-Debug/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1189"/>
+        <source></source>
+        <comment>translate this letter according to the shortcut * letter y)es</comment>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>SKRExporter</name>
     <message>
-        <source>Notes</source>
-        <translation type="unfinished">Note</translation>
+        <location filename="../app/src/skrexporter.cpp" line="279"/>
+        <source>Tags:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/skrexporter.cpp" line="310"/>
         <source>Outline:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/skrexporter.cpp" line="341"/>
         <source>Text:</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>SKRTreeManager</name>
     <message>
-        <source>Outlines</source>
+        <location filename="../app/src/skrtreemanager.cpp" line="98"/>
+        <source>Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tags:</source>
+        <location filename="../app/src/skrtreemanager.cpp" line="101"/>
+        <source>Folder</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>SelectPage</name>
-    <message>
-        <source>New Project</source>
-        <translation type="obsolete">Nuovo Progetto</translation>
-    </message>
-    <message>
-        <source>Specify the path of your new project. Please note you must have writing rights in it. Plume Creator will create a basic skeleton.</source>
-        <translation type="obsolete">Specifica il percorso del tuo nuovo progetto. Per favore nota che devi avere i diritti di scrittura su di esso. Plume Creator creerà una struttura di base.</translation>
-    </message>
-    <message>
-        <source>Please complete the fields below: </source>
-        <translation type="obsolete">Per favore completa i campi seguenti:</translation>
-    </message>
-    <message>
-        <source>Project name :</source>
-        <translation type="obsolete">Nome del progetto :</translation>
-    </message>
-    <message>
-        <source>Select path</source>
-        <translation type="obsolete">Scegli il percorso</translation>
-    </message>
-    <message>
-        <source>QFileDialog::getExistingDirectory()</source>
-        <translation type="obsolete">QFileDialog::getExistingDirectory()</translation>
-    </message>
-</context>
-<context>
-    <name>SettingsDialog</name>
-    <message>
-        <source>Settings Dialog</source>
-        <translation type="obsolete">Finestra Impostazioni</translation>
-    </message>
-    <message>
-        <source>General</source>
-        <translation type="obsolete">Generale</translation>
-    </message>
-    <message>
-        <source>Change your language :</source>
-        <translation type="obsolete">Cambia la tua lingua :</translation>
-    </message>
-    <message>
-        <source>Change Plume style :</source>
-        <translation type="obsolete">Cambia lo stile di Plume :</translation>
-    </message>
-    <message>
-        <source>Change your display :</source>
-        <translation type="obsolete">Cambia il tuo display :</translation>
-    </message>
-    <message>
-        <source>Save project every :</source>
-        <translation type="obsolete">Salva il progetto ogni :</translation>
-    </message>
-    <message>
-        <source> s</source>
-        <comment>seconds</comment>
-        <translation type="obsolete"> s</translation>
-    </message>
-    <message>
-        <source>Check update at startup</source>
-        <translation type="obsolete">Controlla aggiornamenti all&apos;avvio</translation>
-    </message>
-    <message>
-        <source>Prevent multiple space characters between words</source>
-        <translation type="obsolete">Previeni spazi multipli tra le parole</translation>
-    </message>
-    <message>
-        <source>Keep only one tab opened</source>
-        <translation type="obsolete">Mantieni sono una tab aperta</translation>
-    </message>
-    <message>
-        <source>Hide tabs</source>
-        <translation type="obsolete">Nascondi tab</translation>
-    </message>
-    <message>
-        <source>Text</source>
-        <translation type="obsolete">Testo</translation>
-    </message>
-    <message>
-        <source>Main Text Area</source>
-        <translation type="obsolete">Area Principale di Testo</translation>
-    </message>
-    <message>
-        <source>Text Area Width :</source>
-        <translation type="obsolete">Larghezza dell&apos;Area di Testo :</translation>
-    </message>
-    <message>
-        <source> px</source>
-        <translation type="obsolete">px</translation>
-    </message>
-    <message>
-        <source>Fullscreen Text Area</source>
-        <translation type="obsolete">Area di Testo a Schermo Intero</translation>
-    </message>
-    <message>
-        <source>CheckBox</source>
-        <translation type="obsolete">Casella di controllo</translation>
-    </message>
-    <message>
-        <source>Synopsis Area</source>
-        <translation type="obsolete">Area Sinossi</translation>
-    </message>
-    <message>
-        <source>Default Text Font :</source>
-        <translation type="obsolete">Carattere di default del Testo :</translation>
-    </message>
-    <message>
-        <source>Show scrollbar</source>
-        <translation type="obsolete">Mostra barra di scorrimento</translation>
-    </message>
-    <message>
-        <source>Paragraph Indent :</source>
-        <translation type="obsolete">Indentazione paragrafo :</translation>
-    </message>
-    <message>
-        <source>Margin :</source>
-        <translation type="obsolete">Margine :</translation>
-    </message>
-    <message>
-        <source>Note Area</source>
-        <translation type="obsolete">Area Note</translation>
-    </message>
-    <message>
-        <source>Styles</source>
-        <translation type="obsolete">Stili</translation>
-    </message>
-    <message>
-        <source>Fixed Options :</source>
-        <translation type="obsolete">Opzioni Fisse :</translation>
-    </message>
-    <message>
-        <source>Text Font :</source>
-        <translation type="obsolete">Carattere del Testo :</translation>
-    </message>
-    <message>
-        <source>Spacing :</source>
-        <translation type="obsolete">Spaziatura :</translation>
-    </message>
-    <message>
-        <source>Text Size :</source>
-        <translation type="obsolete">Grandezza del Testo :</translation>
-    </message>
-    <message>
-        <source>Text Alignment :</source>
-        <translation type="obsolete">Allineamento del Testo :</translation>
-    </message>
-    <message>
-        <source>Left</source>
-        <translation type="obsolete">Sinistra</translation>
-    </message>
-    <message>
-        <source>Center</source>
-        <translation type="obsolete">Centro</translation>
-    </message>
-    <message>
-        <source>Right</source>
-        <translation type="obsolete">Destra</translation>
-    </message>
-    <message>
-        <source>Justified</source>
-        <translation type="obsolete">Giustificato</translation>
-    </message>
-    <message>
-        <source>1st Line Indent :</source>
-        <translation type="obsolete">Indentazione 1ma Linea :</translation>
-    </message>
-    <message>
-        <source>Default Style</source>
-        <translation type="obsolete">Stile di Default</translation>
-    </message>
-    <message>
-        <source>Default Options :</source>
-        <translation type="obsolete">Opzioni di Default :</translation>
-    </message>
-    <message>
-        <source>These options can be modified with the right-click menu.</source>
-        <translation type="obsolete">Queste opzioni possono essere modificate con il menu del tasto destro.</translation>
-    </message>
-    <message>
-        <source>Italic</source>
-        <translation type="obsolete">Corsivo</translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <translation type="obsolete">Grassetto</translation>
-    </message>
-    <message>
-        <source>Underline</source>
-        <translation type="obsolete">Sottolineato</translation>
-    </message>
-    <message>
-        <source>Strike Out</source>
-        <translation type="obsolete">Sbarrato</translation>
-    </message>
-    <message>
-        <source>System default</source>
-        <translation type="obsolete">Default di sistema</translation>
-    </message>
-    <message>
-        <source>Plastique (KDE)</source>
-        <translation type="obsolete">Plastique (KDE)</translation>
-    </message>
-    <message>
-        <source>Cleanlooks</source>
-        <translation type="obsolete">Cleanlooks</translation>
-    </message>
-    <message>
-        <source>Gtk (Gnome/XFCE)</source>
-        <translation type="obsolete">Gtk (Gnome/XFCE)</translation>
-    </message>
-    <message>
-        <source>Windows Vista</source>
-        <translation type="obsolete">Windows Vista</translation>
-    </message>
-    <message>
-        <source>Windows XP</source>
-        <translation type="obsolete">Windows XP</translation>
-    </message>
-    <message>
-        <source>Macintosh (OSX)</source>
-        <translation type="obsolete">Macintosh (OSX)</translation>
-    </message>
-    <message>
-        <source>Desktop</source>
-        <translation type="obsolete">Desktop</translation>
-    </message>
-    <message>
-        <source>Netbook</source>
-        <translation type="obsolete">Netbook</translation>
-    </message>
-    <message>
-        <source>A different language has been selected.&lt;br&gt;The change will be effective after restarting the program.</source>
-        <translation type="obsolete">E&apos; stato selezionata una lingua differente.&lt;br&gt;Il cambiamento sarà effettivo dopo aver riavviato il programma.</translation>
-    </message>
-    <message>
-        <source>A different style has been selected.&lt;br&gt;The change will be effective after restarting the program.</source>
-        <translation type="obsolete">E&apos; stato selezionato uno stile differente.&lt;br&gt;Il cambiamento sarà effettivo dopo aver riavviato il programma.</translation>
-    </message>
-    <message>
-        <source>Name new style</source>
-        <translation type="obsolete">Dai un nome al nuovo stile</translation>
-    </message>
-    <message>
-        <source>Style name :</source>
-        <translation type="obsolete">Nome dello stile :</translation>
-    </message>
-    <message>
-        <source>New Style</source>
-        <translation type="obsolete">Nuovo Stile</translation>
-    </message>
-    <message>
-        <source>Style Renaming</source>
-        <translation type="obsolete">Rinominazione Stile</translation>
-    </message>
-    <message>
-        <source>Style new name :</source>
-        <translation type="obsolete">Nuovo nome dello stile :</translation>
-    </message>
-    <message>
-        <source>Do you want to remove this style ?</source>
-        <translation type="obsolete">Vuoi rimuovere questo stile ?</translation>
-    </message>
-    <message>
-        <source>The texts written with this style will not be linked anymore.</source>
-        <translation type="obsolete">I testi scritti con questo stile non saranno più collegati.</translation>
     </message>
 </context>
 <context>
     <name>SettingsPage</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="257"/>
         <source>Add backup path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="271"/>
         <source>Remove backup path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="377"/>
         <source>Enter a path to back up to</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3451,192 +1805,215 @@ Please open a .plume file.</source>
 <context>
     <name>SettingsPageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="67"/>
         <source>Accessibility</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="75"/>
         <source>Allow swipe gesture between tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="82"/>
         <source>Show menu bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="94"/>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="105"/>
         <source>Interface language :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="116"/>
         <source>Set main menu in status bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Backup</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backup paths :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Back up every</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>hours</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Back up once a day</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save every</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>minutes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Special E-Paper</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set the text cursor unblinking</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Advanced</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset dock configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Spell checking</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Check spelling</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Default dictionary :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage themes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Behavior</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create an empty project at start</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="121"/>
         <source>Minimalist menu tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="127"/>
+        <source>Manage themes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="136"/>
+        <source>Behavior</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="144"/>
+        <source>Create an empty project at start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="149"/>
+        <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="160"/>
+        <source>Spell checking</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="168"/>
+        <source>Check spelling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="178"/>
+        <source>Default dictionary :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="194"/>
+        <source>Backup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="202"/>
+        <source>Backup paths :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="270"/>
+        <source>Back up every</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="285"/>
+        <source>hours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="300"/>
+        <source>Back up once a day</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="311"/>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="324"/>
+        <source>Save every</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="335"/>
+        <source>minutes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="355"/>
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="368"/>
         <source>Include outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="373"/>
         <source>Add tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="384"/>
         <source>Text size :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="401"/>
         <source>Text indent :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="413"/>
         <source>Top margin :</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>Sheet</name>
     <message>
-        <source>Synopsis</source>
-        <translation type="obsolete">Sinossi</translation>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="435"/>
+        <source>Special E-Paper</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="439"/>
+        <source>Set the text cursor unblinking</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="451"/>
+        <source>Advanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="464"/>
+        <source>Show properties tool box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="469"/>
+        <source>Reset dock configuration</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>SheetOverviewToolForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="37"/>
+        <source>Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="57"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="69"/>
         <source>Display mode :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="80"/>
         <source>Tree indentation :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Italic</source>
-        <translation type="obsolete">Corsivo</translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <translation type="obsolete">Grassetto</translation>
-    </message>
-    <message>
-        <source>Underline</source>
-        <translation type="obsolete">Sottolineato</translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="92"/>
         <source>Show outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="96"/>
         <source>Show notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="100"/>
         <source>Show tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Project</source>
-        <translation type="unfinished">Progetto</translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="104"/>
         <source>Show character count</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="108"/>
         <source>Show word count</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3644,136 +2021,160 @@ Please open a .plume file.</source>
 <context>
     <name>SheetOverviewTree</name>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="101"/>
         <source>Level %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="109"/>
         <source>label: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="114"/>
         <source>has children</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="121"/>
         <source>navigation item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="377"/>
         <source>Open document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="397"/>
         <source>Open document in a new tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="417"/>
         <source>Open document in a window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="594"/>
         <source>Enter label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="635"/>
         <source>Enter name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add before</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add after</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move up</source>
-        <translation type="unfinished">Sposta su</translation>
-    </message>
-    <message>
-        <source>Move down</source>
-        <translation type="unfinished">Sposta giù</translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="832"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unset focus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set focus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1280"/>
         <source>c: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1289"/>
         <source>all c: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1305"/>
         <source>w: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1314"/>
         <source>all w: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1610"/>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1629"/>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1649"/>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1672"/>
+        <source>Unset focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1672"/>
+        <source>Set focus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1703"/>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1722"/>
+        <source>Set label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1741"/>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1762"/>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1783"/>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1805"/>
+        <source>Add before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1829"/>
+        <source>Add after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1849"/>
         <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>SideMainMenu</name>
     <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1879"/>
+        <source>Move up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1900"/>
+        <source>Move down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1922"/>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>SkrTabButtonForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Items/SkrTabButtonForm.ui.qml" line="91"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3781,222 +2182,160 @@ Please open a .plume file.</source>
 <context>
     <name>SkrTheme</name>
     <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="145"/>
         <source>Main text background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="146"/>
         <source>Main text foreground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="147"/>
         <source>Secondary text background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="148"/>
         <source>Secondary text foreground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="149"/>
         <source>Page background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="150"/>
         <source>Button background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="151"/>
         <source>Button foreground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="152"/>
         <source>Button icon</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Accent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Spellcheck</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ToolBar background</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Divider</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Menu background</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="153"/>
         <source>Button icon (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="154"/>
+        <source>Accent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="155"/>
+        <source>Spellcheck</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="156"/>
+        <source>ToolBar background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="157"/>
+        <source>Page ToolBar background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="158"/>
+        <source>Divider</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="159"/>
+        <source>Menu background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/SkrTheme.qml" line="160"/>
         <source>List item background</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>SlimFindReplace</name>
+    <name>SkrViewButtons</name>
     <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="102"/>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="158"/>
+        <source>Split</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Find :</source>
-        <translation type="obsolete">Trova :</translation>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="130"/>
+        <source>Close view</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Replace with :</source>
-        <translation type="obsolete">Sostituisci con :</translation>
-    </message>
-</context>
-<context>
-    <name>SlimUpdater</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="171"/>
+        <source>Split vertically</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;center&gt;Current version : </source>
-        <translation type="obsolete">&lt;center&gt;Versione corrente : </translation>
-    </message>
-    <message>
-        <source>&lt;/center&gt;</source>
-        <translation type="obsolete">&lt;/center&gt;</translation>
-    </message>
-    <message>
-        <source>You are connected to the web</source>
-        <translation type="obsolete">Sei connesso ad internet</translation>
-    </message>
-    <message>
-        <source>You are not connected to the web</source>
-        <translation type="obsolete">Non sei connesso ad internet</translation>
-    </message>
-    <message>
-        <source>Plume Creator website is available</source>
-        <translation type="obsolete">Il sito web di Plume Creator è disponibile</translation>
-    </message>
-    <message>
-        <source>Plume Creator website is unavailable</source>
-        <translation type="obsolete">Il sito web di Plume Creator non è disponibile</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Connection status :&lt;blockquote&gt;- </source>
-        <translation type="obsolete">&lt;p&gt;Stato connessione :&lt;blockquote&gt;- </translation>
-    </message>
-    <message>
-        <source>Plume Creator Version</source>
-        <translation type="obsolete">Versione Plume Creator</translation>
-    </message>
-    <message>
-        <source>The file is not a Plume Creator version file.</source>
-        <translation type="obsolete">Questo file non è un file di versione Plume Creator.</translation>
-    </message>
-    <message>
-        <source>&lt;/a&gt;&lt;/address&gt;&lt;/center&gt;</source>
-        <translation type="obsolete">&lt;/a&gt;&lt;/address&gt;&lt;/center&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;&lt;h3&gt;&lt;center&gt;You are up to date !&lt;/h3&gt;&lt;b&gt;</source>
-        <translation type="obsolete">&lt;b&gt;&lt;h3&gt;&lt;center&gt;Sei aggiornato !&lt;/h3&gt;&lt;b&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>StatsBox</name>
-    <message>
-        <source>Time</source>
-        <translation type="obsolete">Tempo</translation>
-    </message>
-    <message>
-        <source>Timer</source>
-        <translation type="obsolete">Timer</translation>
-    </message>
-    <message>
-        <source>Word Count</source>
-        <translation type="obsolete">Conteggio Parole</translation>
-    </message>
-    <message>
-        <source>All</source>
-        <translation type="obsolete">Tutto</translation>
-    </message>
-    <message>
-        <source>Project : </source>
-        <translation type="obsolete">Progetto :</translation>
-    </message>
-    <message>
-        <source>Current book : </source>
-        <translation type="obsolete">Libro corrente :</translation>
-    </message>
-    <message>
-        <source>current chapter : </source>
-        <translation type="obsolete">capitolo corrente :</translation>
-    </message>
-    <message>
-        <source>calculating...</source>
-        <translation type="obsolete">sto calcolando...</translation>
-    </message>
-</context>
-<context>
-    <name>StructurePage</name>
-    <message>
-        <source>New Project</source>
-        <translation type="obsolete">Nuovo Progetto</translation>
-    </message>
-    <message>
-        <source>Chapter</source>
-        <translation type="obsolete">Capitolo</translation>
-    </message>
-    <message>
-        <source>Scene</source>
-        <translation type="obsolete">Scena</translation>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="182"/>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>TagPad</name>
     <message>
-        <source>tag related to the current paper</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add tag</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Existing tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="347"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="375"/>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="382"/>
         <source>Remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="408"/>
         <source>Warning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tag name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="409"/>
         <source>Do you want to delete the tag &quot;%1&quot; ?
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="530"/>
+        <source>tag related to the current paper</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="643"/>
+        <source>Add tag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="751"/>
+        <source>Tag name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="961"/>
+        <source>Existing tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/TagPad.qml" line="1029"/>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4004,250 +2343,172 @@ Please open a .plume file.</source>
 <context>
     <name>TagPadForm.ui</name>
     <message>
-        <source>Tags list</source>
+        <location filename="../app/src/qml/Commons/TagPadForm.ui.qml" line="53"/>
+        <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tags</source>
+        <location filename="../app/src/qml/Commons/TagPadForm.ui.qml" line="111"/>
+        <source>Tags list</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>TextContextMenuForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Commons/TextContextMenuForm.ui.qml" line="37"/>
         <source>Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/TextContextMenuForm.ui.qml" line="52"/>
         <source>Suggestions</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>TextStyles</name>
+    <name>TextPage</name>
     <message>
-        <source>New Style</source>
-        <translation type="obsolete">Nuovo Stile</translation>
+        <location filename="../plugins/textPage/TextPage/TextPage.qml" line="23"/>
+        <source>Outline of %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Normal</source>
-        <translation type="obsolete">Normale</translation>
+        <location filename="../plugins/textPage/TextPage/TextPage.qml" line="579"/>
+        <source>Show edit tool box</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Poetry</source>
-        <translation type="obsolete">Poesia</translation>
-    </message>
-</context>
-<context>
-    <name>TextTab</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-</context>
-<context>
-    <name>TextZone</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="obsolete">Annulla (&amp;U)</translation>
+        <location filename="../plugins/textPage/TextPage/TextPage.qml" line="594"/>
+        <source>Show properties tool box</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Undo the last operation</source>
-        <translation type="obsolete">Annulla l&apos;ultima operazione</translation>
+        <location filename="../plugins/textPage/TextPage/TextPage.qml" line="611"/>
+        <source>Show outline tool box</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Redo</source>
-        <translation type="obsolete">&amp;Ripeti</translation>
+        <location filename="../plugins/textPage/TextPage/TextPage.qml" line="631"/>
+        <source>Show tags tool box</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Redo the last operation</source>
-        <translation type="obsolete">Ripeti l&apos;ultima operazione</translation>
+        <location filename="../plugins/textPage/textpage.h" line="44"/>
+        <source>Text page</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cu&amp;t</source>
-        <translation type="obsolete">&amp;Taglia</translation>
+        <location filename="../plugins/textPage/textpage.h" line="49"/>
+        <source>Text</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cut the current selection&apos;s contents to the clipboard</source>
-        <translation type="obsolete">Ritaglia il contenuto della selezione corrente negli appunti</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="obsolete">&amp;Copia</translation>
-    </message>
-    <message>
-        <source>Copy the current selection&apos;s contents to the clipboard</source>
-        <translation type="obsolete">Copia il contenuto della selezione corrente negli appunti</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="obsolete">Incolla (&amp;P)</translation>
-    </message>
-    <message>
-        <source>Paste the clipboard&apos;s contents into the current selection</source>
-        <translation type="obsolete">Incolla il contenuto degli appunti nella selezione corrente</translation>
-    </message>
-    <message>
-        <source>&amp;Bold</source>
-        <translation type="obsolete">Grassetto (&amp;B)</translation>
-    </message>
-    <message>
-        <source>Make the text bold</source>
-        <translation type="obsolete">Rendi il testo grassetto</translation>
-    </message>
-    <message>
-        <source>&amp;Italic</source>
-        <translation type="obsolete">Corsivo (&amp;I)</translation>
-    </message>
-    <message>
-        <source>Make the text italic</source>
-        <translation type="obsolete">Rendi il testo corsivo</translation>
-    </message>
-    <message>
-        <source>Manage &amp;Styles</source>
-        <translation type="obsolete">Gestisci &amp;Stili</translation>
-    </message>
-    <message>
-        <source>Manage the styles</source>
-        <translation type="obsolete">Gestisci gli stili</translation>
-    </message>
-    <message>
-        <source>&amp;Styles</source>
-        <translation type="obsolete">&amp;Stili</translation>
+        <location filename="../plugins/textPage/textpage.h" line="50"/>
+        <source>Write here any text, be it a scene or a note </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ThemePage</name>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePage.qml" line="140"/>
         <source>Edit theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePage.qml" line="310"/>
         <source>Edit color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePage.qml" line="350"/>
         <source>Distraction free</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePage.qml" line="350"/>
         <source>Normal</source>
-        <translation type="unfinished">Normale</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ThemePageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="43"/>
         <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="97"/>
         <source>Example</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="124"/>
         <source>list item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="146"/>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="151"/>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="159"/>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="165"/>
         <source>button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="171"/>
         <source>Switch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="194"/>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="215"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="195"/>
         <source>Primary text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="216"/>
         <source>Secondary text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="232"/>
         <source>Color properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Theme/ThemePageForm.ui.qml" line="264"/>
         <source>Colors</source>
-        <translation type="unfinished">Colori</translation>
-    </message>
-</context>
-<context>
-    <name>Timer</name>
-    <message>
-        <source>Start</source>
-        <translation type="obsolete">Inizia</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="obsolete">Azzera</translation>
-    </message>
-    <message>
-        <source>Pause</source>
-        <translation type="obsolete">Pausa</translation>
-    </message>
-    <message>
-        <source> h</source>
-        <translation type="obsolete">h</translation>
-    </message>
-    <message>
-        <source> min</source>
-        <translation type="obsolete">min</translation>
-    </message>
-    <message>
-        <source> s</source>
-        <translation type="obsolete">s</translation>
-    </message>
-    <message>
-        <source> h </source>
-        <translation type="obsolete">h</translation>
-    </message>
-    <message>
-        <source> min </source>
-        <translation type="obsolete">min</translation>
-    </message>
-    <message>
-        <source> s </source>
-        <translation type="obsolete">s</translation>
-    </message>
-</context>
-<context>
-    <name>Translations</name>
-    <message>
-        <source>Chapter</source>
-        <translation type="obsolete">Capitolo</translation>
-    </message>
-    <message>
-        <source>Text</source>
-        <translation type="obsolete">Testo</translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="obsolete">Note</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>TrashedListView</name>
     <message>
+        <location filename="../app/src/qml/Commons/TrashedListView.qml" line="99"/>
         <source>Trash: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/TrashedListView.qml" line="210"/>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/TrashedListView.qml" line="252"/>
         <source>Empty the trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/TrashedListView.qml" line="268"/>
         <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4255,226 +2516,67 @@ Please open a .plume file.</source>
 <context>
     <name>TrashedListViewForm.ui</name>
     <message>
+        <location filename="../app/src/qml/Commons/TrashedListViewForm.ui.qml" line="58"/>
         <source>Restore a document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Commons/TrashedListViewForm.ui.qml" line="65"/>
         <source>Trashed menu</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>TreeListView</name>
-    <message>
-        <source>Move up</source>
-        <translation type="obsolete">Sposta su</translation>
-    </message>
-    <message>
-        <source>Move down</source>
-        <translation type="obsolete">Sposta giù</translation>
-    </message>
-</context>
-<context>
-    <name>UpdateChecker</name>
-    <message>
-        <source>Plume Creator Version</source>
-        <translation type="obsolete">Versione Plume Creator</translation>
-    </message>
-    <message>
-        <source>The file is not a Plume Creator version file.</source>
-        <translation type="obsolete">Questo file non è un file di versione Plume Creator.</translation>
-    </message>
-    <message>
-        <source>&lt;/a&gt;&lt;/address&gt;&lt;/center&gt;</source>
-        <translation type="obsolete">&lt;/a&gt;&lt;/address&gt;&lt;/center&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;&lt;h3&gt;&lt;center&gt;You are up to date !&lt;/h3&gt;&lt;b&gt;</source>
-        <translation type="obsolete">&lt;b&gt;&lt;h3&gt;&lt;center&gt;Sei aggiornato !&lt;/h3&gt;&lt;b&gt;</translation>
-    </message>
-    <message>
-        <source>You are not connected to the web</source>
-        <translation type="obsolete">Non sei connesso ad internet</translation>
-    </message>
-    <message>
-        <source>Plume Creator website is unavailable</source>
-        <translation type="obsolete">Il sito web di Plume Creator non è disponibile</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Connection status :&lt;blockquote&gt;- </source>
-        <translation type="obsolete">&lt;p&gt;Stato connessione :&lt;blockquote&gt;- </translation>
-    </message>
-    <message>
-        <source>&lt;/blockquote&gt;&lt;blockquote&gt;- </source>
-        <translation type="obsolete">&lt;/blockquote&gt;&lt;blockquote&gt;- </translation>
-    </message>
-    <message>
-        <source>&lt;/blockquote&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;/blockquote&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are connected to the web</source>
-        <translation type="obsolete">Sei connesso ad internet</translation>
-    </message>
-    <message>
-        <source>Plume Creator website is available</source>
-        <translation type="obsolete">Il sito web di Plume Creator è disponibile</translation>
-    </message>
-</context>
-<context>
-    <name>Updater</name>
-    <message>
-        <source>Update Checker</source>
-        <translation type="obsolete">Controllo Aggiornamenti</translation>
-    </message>
-    <message>
-        <source>Please press this button to verify if an update is available :</source>
-        <translation type="obsolete">Per favore premi questo pulsante per verificare se è disponibile un aggiornamento :</translation>
-    </message>
-    <message>
-        <source>Error : version not readable</source>
-        <translation type="obsolete">Errore: versione non leggibile</translation>
-    </message>
-    <message>
-        <source>No connection</source>
-        <translation type="obsolete">Nessuna connessione</translation>
-    </message>
-    <message>
-        <source>&lt;center&gt;Website : &lt;br&gt;&lt;address&gt;&lt;a href=http://sourceforge.net/projects/plume-creator&gt;http://sourceforge.net/projects/plume-creator&lt;/a&gt;&lt;/address&gt;&lt;/center&gt;</source>
-        <translation type="obsolete">&lt;center&gt;Sito web : &lt;br&gt;&lt;address&gt;&lt;a href=http://sourceforge.net/projects/plume-creator&gt;http://sourceforge.net/projects/plume-creator&lt;/a&gt;&lt;/address&gt;&lt;/center&gt;</translation>
-    </message>
-    <message>
-        <source>Always check at Plume startup ?</source>
-        <translation type="obsolete">Controllare sempre all&apos;avvio di Plume ?</translation>
-    </message>
-    <message>
-        <source>&amp;Check</source>
-        <translation type="obsolete">&amp;Controlla</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="obsolete">&amp;Chiudi</translation>
-    </message>
-    <message>
-        <source>&lt;center&gt;Current version : </source>
-        <translation type="obsolete">&lt;center&gt;Versione corrente : </translation>
-    </message>
-    <message>
-        <source>&lt;/center&gt;</source>
-        <translation type="obsolete">&lt;/center&gt;</translation>
-    </message>
-    <message>
-        <source>You are connected to the web</source>
-        <translation type="obsolete">Sei connesso ad internet</translation>
-    </message>
-    <message>
-        <source>You are not connected to the web</source>
-        <translation type="obsolete">Non sei connesso ad internet</translation>
-    </message>
-    <message>
-        <source>Plume Creator website is available</source>
-        <translation type="obsolete">Il sito web di Plume Creator è disponibile</translation>
-    </message>
-    <message>
-        <source>Plume Creator website is unavailable</source>
-        <translation type="obsolete">Il sito web di Plume Creator non è disponibile</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Connection status :&lt;blockquote&gt;- </source>
-        <translation type="obsolete">&lt;p&gt;Stato connessione :&lt;blockquote&gt;- </translation>
-    </message>
-    <message>
-        <source>&lt;/blockquote&gt;&lt;blockquote&gt;- </source>
-        <translation type="obsolete">&lt;/blockquote&gt;&lt;blockquote&gt;- </translation>
-    </message>
-    <message>
-        <source>&lt;/blockquote&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;/blockquote&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Plume Creator Version</source>
-        <translation type="obsolete">Versione Plume Creator</translation>
-    </message>
-    <message>
-        <source>Parse error at line %1, column %2:
-%3
-</source>
-        <translation type="obsolete">Analizza errore alla linea %1, colonna %2:
-%3</translation>
-    </message>
-    <message>
-        <source>The file is not a Plume Creator version file.</source>
-        <translation type="obsolete">Questo file non è un file di versione Plume Creator.</translation>
-    </message>
-    <message>
-        <source>&lt;/h3&gt;&lt;b&gt;&lt;br&gt;Download it directly here : &lt;br&gt;&lt;address&gt;&lt;a href=</source>
-        <translation type="obsolete">&lt;/h3&gt;&lt;b&gt;&lt;br&gt;Scaricalo direttamente qui : &lt;br&gt;&lt;address&gt;&lt;a href=</translation>
-    </message>
-    <message>
-        <source>&lt;/a&gt;&lt;/address&gt;&lt;/center&gt;</source>
-        <translation type="obsolete">&lt;/a&gt;&lt;/address&gt;&lt;/center&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;&lt;h3&gt;&lt;center&gt;You are up to date !&lt;/h3&gt;&lt;b&gt;</source>
-        <translation type="obsolete">&lt;b&gt;&lt;h3&gt;&lt;center&gt;Sei aggiornato !&lt;/h3&gt;&lt;b&gt;</translation>
-    </message>
-</context>
-<context>
     <name>WelcomePageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="70"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="113"/>
         <source>Project</source>
-        <translation type="unfinished">Progetto</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="76"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="120"/>
         <source>Examples</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="82"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="127"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="89"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="134"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>WordGoalProgressBar</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
-    </message>
-</context>
-<context>
-    <name>Workbench</name>
-    <message>
-        <source>Shift to spreadsheet mode</source>
-        <translation type="obsolete">Passa alla modalità foglio di calcolo</translation>
-    </message>
-    <message>
-        <source>Close the Outliner</source>
-        <translation type="obsolete">Chiudi l&apos;Evidenziatore</translation>
-    </message>
-</context>
-<context>
     <name>WriteLeftDock</name>
     <message>
+        <location filename="../app/src/qml/Write/WriteLeftDock.qml" line="41"/>
         <source>&amp;Navigation dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Write/WriteLeftDock.qml" line="53"/>
         <source>&amp;Navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Write/WriteLeftDock.qml" line="64"/>
         <source>&amp;Documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Write/WriteLeftDock.qml" line="123"/>
         <source>Show navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Write/WriteLeftDock.qml" line="210"/>
         <source>Show recent sheets</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4482,6 +2584,7 @@ Please open a .plume file.</source>
 <context>
     <name>WriteOverviewPage</name>
     <message>
+        <location filename="../app/src/qml/WriteOverview/WriteOverviewPage.qml" line="64"/>
         <source>The focus is currently on %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4489,6 +2592,7 @@ Please open a .plume file.</source>
 <context>
     <name>WriteOverviewPageForm.ui</name>
     <message>
+        <location filename="../app/src/qml/WriteOverview/WriteOverviewPageForm.ui.qml" line="156"/>
         <source>Unfocus</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4496,192 +2600,229 @@ Please open a .plume file.</source>
 <context>
     <name>WriteRightDock</name>
     <message>
+        <location filename="../app/src/qml/Write/WriteRightDock.qml" line="43"/>
         <source>&amp;Tools dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Write/WriteRightDock.qml" line="55"/>
         <source>&amp;Edit</source>
-        <translation type="unfinished">&amp;Edita</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Write/WriteRightDock.qml" line="67"/>
+        <source>&amp;Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Write/WriteRightDock.qml" line="79"/>
         <source>&amp;Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Write/WriteRightDock.qml" line="91"/>
         <source>&amp;Notes</source>
-        <translation type="unfinished">&amp;Note</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../app/src/qml/Write/WriteRightDock.qml" line="163"/>
         <source>Show edit tool box</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show notes tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/Write/WriteRightDock.qml" line="200"/>
         <source>Show properties tool box</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Properties</source>
+        <location filename="../app/src/qml/Write/WriteRightDock.qml" line="229"/>
+        <source>Show tags tool box</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>WriteRightDockForm.ui</name>
     <message>
-        <source>Notes</source>
-        <translation type="obsolete">Note</translation>
-    </message>
-</context>
-<context>
-    <name>WritingZone</name>
-    <message>
-        <source>Form</source>
-        <translation type="obsolete">Modulo</translation>
+        <location filename="../app/src/qml/Write/WriteRightDock.qml" line="266"/>
+        <source>Show notes tool box</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>main</name>
     <message>
+        <location filename="../app/src/qml/main.qml" line="207"/>
         <source>Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;New Project</source>
-        <translation type="unfinished">&amp;Nuovo Progetto</translation>
-    </message>
-    <message>
-        <source>&amp;Open Project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open an existing project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save the &quot;%1&quot; project as ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This path is read-only, please choose another path.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save a Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save a copy of the &quot;%1&quot; project as ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Back up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Print</source>
-        <translation type="unfinished">Stampa (&amp;P)</translation>
-    </message>
-    <message>
-        <source>&amp;Import</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Export</source>
-        <translation type="unfinished">&amp;Esporta</translation>
-    </message>
-    <message>
-        <source>&amp;Close &quot;%1&quot; project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The project %1 is not saved. Do you want to save it before quiting ?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save the %1 project as ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Italic</source>
-        <translation type="unfinished">Corsivo</translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <translation type="unfinished">Grassetto</translation>
-    </message>
-    <message>
-        <source>Strike</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Underline</source>
-        <translation type="unfinished">Sottolineato</translation>
-    </message>
-    <message>
-        <source>&amp;Check spelling</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/main.qml" line="349"/>
         <source>Center vertically the text cursor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save As...</source>
+        <location filename="../app/src/qml/main.qml" line="376"/>
+        <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;FAQ</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;About</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>About &amp;Qt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
+        <location filename="../app/src/qml/main.qml" line="395"/>
         <source>&amp;Contents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Themes</source>
+        <location filename="../app/src/qml/main.qml" line="424"/>
+        <source>&amp;FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="446"/>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="469"/>
+        <source>About &amp;Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="492"/>
+        <source>&amp;New Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="519"/>
+        <source>&amp;Check spelling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="551"/>
+        <source>&amp;Open Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="573"/>
+        <source>Open an existing project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="619"/>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="690"/>
+        <source>Save All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="717"/>
+        <source>Ctrl+Shift+S</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="742"/>
+        <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="780"/>
+        <source>Save the &quot;%1&quot; project as ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="818"/>
+        <location filename="../app/src/qml/main.qml" line="892"/>
+        <source>This path is read-only, please choose another path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="831"/>
+        <source>Save a Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="853"/>
+        <source>Save a copy of the &quot;%1&quot; project as ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="993"/>
+        <source>Loading a project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1075"/>
+        <source>Back up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1145"/>
+        <source>&amp;Print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1171"/>
+        <source>&amp;Import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1190"/>
+        <source>&amp;Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1235"/>
+        <location filename="../app/src/qml/main.qml" line="1461"/>
+        <source>The project %1 is not saved. Do you want to save it before quiting ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1276"/>
+        <location filename="../app/src/qml/main.qml" line="1495"/>
+        <source>Save the %1 project as ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1324"/>
+        <source>&amp;Close &quot;%1&quot; project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1375"/>
+        <source>&amp;Quit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1582"/>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1600"/>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1618"/>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1641"/>
+        <source>Italic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1672"/>
+        <source>Bold</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1703"/>
+        <source>Strike</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1733"/>
+        <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

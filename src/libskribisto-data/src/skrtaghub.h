@@ -82,23 +82,16 @@ public:
     Q_INVOKABLE int       getTopPaperId(int projectId) const;
 
     // relationship :
-    Q_INVOKABLE QList<int>getItemIdsFromTag(int           projectId,
-                                            SKR::ItemType itemType,
-                                            int           tagId) const;
-    Q_INVOKABLE QList<int>getItemIdsFromTag(int  projectId,
-                                            int  tagId,
-                                            bool haveSeparator = false) const;
-    Q_INVOKABLE QList<int>getTagsFromItemId(int           projectId,
-                                            SKR::ItemType itemType,
-                                            int           itemId) const;
-    Q_INVOKABLE SKRResult setTagRelationship(int           projectId,
-                                             SKR::ItemType itemType,
-                                             int           itemId,
-                                             int           tagId);
-    Q_INVOKABLE SKRResult removeTagRelationship(int           projectId,
-                                                SKR::ItemType itemType,
-                                                int           itemId,
-                                                int           tagId);
+    Q_INVOKABLE QList<int>getItemIdsFromTag(int projectId,
+                                            int tagId) const;
+    Q_INVOKABLE QList<int>getTagsFromItemId(int projectId,
+                                            int treeItemId) const;
+    Q_INVOKABLE SKRResult setTagRelationship(int projectId,
+                                             int treeItemId,
+                                             int tagId);
+    Q_INVOKABLE SKRResult removeTagRelationship(int projectId,
+                                                int treeItemId,
+                                                int tagId);
 
 signals:
 
@@ -129,18 +122,15 @@ signals:
                            const QDateTime& newDate);
 
 
-    void tagRelationshipChanged(int           projectId,
-                                SKR::ItemType itemType,
-                                int           itemId,
-                                int           tagId);
-    void tagRelationshipRemoved(int           projectId,
-                                SKR::ItemType itemType,
-                                int           itemId,
-                                int           tagId);
-    void tagRelationshipAdded(int           projectId,
-                              SKR::ItemType itemType,
-                              int           itemId,
-                              int           tagId);
+    void tagRelationshipChanged(int projectId,
+                                int treeItemId,
+                                int tagId);
+    void tagRelationshipRemoved(int projectId,
+                                int treeItemId,
+                                int tagId);
+    void tagRelationshipAdded(int projectId,
+                              int treeItemId,
+                              int tagId);
 
 private:
 

@@ -347,10 +347,6 @@ WritePageForm {
     //---------------------------------------------------------
 
 
-    SKRUserSettings {
-        id: skrUserSettings
-    }
-
     function openDocument(_projectId, _paperId) {
         // save current
         if(projectId !== _projectId && paperId !== _paperId ){ //meaning it hasn't just used the constructor
@@ -395,12 +391,13 @@ WritePageForm {
         leftDock.setOpenedPaperId(projectId, paperId)
 
         determineModifiableTimer.start()
+
     }
 
     Timer{
         id: forceActiveFocusTimer
         repeat: false
-        interval: 0
+        interval: 100
         onTriggered:  writingZone.forceActiveFocus()
     }
 

@@ -6,7 +6,7 @@ import QtQml 2.15
 import Qt.labs.settings 1.1
 import eu.skribisto.result 1.0
 import eu.skribisto.projecthub 1.0
-import eu.skribisto.searchsheetlistproxymodel 1.0
+import eu.skribisto.searchtreelistproxymodel 1.0
 import QtQuick.Controls.Material 2.15
 import "qrc:///qml/Commons"
 import "qrc:///qml/Items"
@@ -16,7 +16,7 @@ ApplicationWindow {
 
     id: rootWindow
     objectName: "rootWindow"
-    minimumHeight: 500
+    minimumHeight: 800
     minimumWidth: 600
     visible: true
 
@@ -27,18 +27,29 @@ ApplicationWindow {
 
     Component.onCompleted:{
     var result = plmData.projectHub().loadProject(testProjectFileName)
-        navigationProxyModel.setCurrentPaperId(1, 2)
+        navigationView.setNavigationTreeItemId(1, 21)
     }
 
 
-    SKRSearchSheetListProxyModel {
+    SKRSearchTreeListProxyModel {
         id: navigationProxyModel
         showTrashedFilter: false
         showNotTrashedFilter: true
         navigateByBranchesEnabled: true
     }
 
+    SKRSearchTreeListProxyModel {
+        id: trashedSheetProxyModel
+        showTrashedFilter: true
+        showNotTrashedFilter: false
 
+    }
+
+    SKRSearchTreeListProxyModel {
+        id: restoreSheetProxyModel
+        showTrashedFilter: true
+        showNotTrashedFilter: false
+    }
 
     Item{
         id: base
@@ -56,18 +67,37 @@ ApplicationWindow {
 //        contentWidth: scrollView.width
 
 
+        Navigation{
+            id: navigationView
+        navigationListProxyModel: navigationProxyModel
 
-        NavigationList {
-            id: searchListView
-            model: navigationProxyModel
-            proxyModel: navigationProxyModel
-            //openedPaperId: 1
-            width: parent.width
-            height: 600
+        trashedListViewProxyModel: trashedSheetProxyModel
+        restoreListViewProxyModel: restoreSheetProxyModel
+
+        width: parent.width
+        height: 600
+        }
 
 
+        function initNavigationView(){
+            navigationView.restoreDocumentList.connect(root.restoreTreeIdList)
+        }
 
-            Accessible.role: Accessible.List
+        function restoreTreeIdList(projectId, treeIdList){
+            // restore is difficult to explain : a restored parent will restore its children, even those trashed years before. To avoid that,
+            // children trashed at the same minute will be checked to allow restore. The older ones will stay unchecked by default.
+            // All that is done in RestoreView.qml
+
+            var i
+            for(i = 0 ; i < treeIdList.length ; i++){
+                plmData.sheetHub().untrashOnlyOnePaper(projectId, treeIdList[i])
+            }
+
+
+           //console.log("restored: sheet:", sheetIdList)
+        }
+
+
 
 //                    ScrollBar.vertical: ScrollBar {
 //                        id: internalScrollBar
@@ -75,7 +105,9 @@ ApplicationWindow {
 //                        policy: ScrollBar.AsNeeded
 //                    }
 
-        }
+
+
+
 
     }
 

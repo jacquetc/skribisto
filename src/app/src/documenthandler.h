@@ -161,6 +161,7 @@ public:
     int headingLevel();
 public slots:
     void replaceWord(const QString &word, const QString &newWord);
+    void learnWord(const QString &word);
 
     void addHorizontalLine();
     void indentBlock();

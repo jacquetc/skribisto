@@ -445,8 +445,9 @@ TextArea {
             }
         }
 
-        Binding on visible{
+        Binding {
             target: leftSelectionHandle
+            property: "visible"
             id: leftSelectionHandleVisibleBinding
             value: leftSelectionHandleHandler_up.active || leftSelectionHandleHandler_down.active || ( priv.touchDetected && selectedText.length !== 0)
             delayed: true
@@ -560,8 +561,9 @@ TextArea {
             }
         }
 
-        Binding on visible{
+        Binding{
             target: rightSelectionHandle
+            property: "visible"
             id: rightSelectionHandleVisibleBinding
             value: rightSelectionHandleHandler_up.active || rightSelectionHandleHandler_down.active || ( priv.touchDetected && selectedText.length !== 0)
             delayed: true

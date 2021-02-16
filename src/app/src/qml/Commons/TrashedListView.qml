@@ -16,18 +16,18 @@ TrashedListViewForm {
         listView.visualModel.model = model
         proxyModel.projectIdFilter = currentProjectId
     }
-    signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
-    signal openDocumentInNewTab(int projectId, int paperId)
-    signal openDocumentInNewWindow(int projectId, int paperId)
-    signal restoreDocument(int projectId, int paperId)
+    signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
+    signal openDocumentInAnotherView(int projectId, int treeItemId)
+    signal openDocumentInNewWindow(int projectId, int treeItemId)
+    signal restoreDocument(int projectId, int treeItemId)
 
 
 
     property int currentProjectId: listView.currentProjectId
-    property int currentPaperId: listView.currentPaperId
+    property int currentTreeItemId: listView.currentTreeItemId
     property int currentIndex: listView.currentIndex
     property int openedProjectId: -2
-    property int openedPaperId: -2
+    property int openedTreeItemId: -2
     property bool hoveringChangingTheCurrentItemAllowed: listView.hoveringChangingTheCurrentItemAllowed
 
 
@@ -58,7 +58,7 @@ TrashedListViewForm {
         populateProjectComboBoxModel()
 
         listView.openDocument.connect(root.openDocument)
-        listView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
+        listView.openDocumentInAnotherView.connect(root.openDocumentInAnotherView)
         listView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
         listView.escapeKeyPressed.connect( function() {goBackAction.trigger()})
         listView.deleteDefinitivelyCalled.connect(root.prepareDeleteDefinitivelyDialog)
@@ -175,10 +175,10 @@ TrashedListViewForm {
 
     //----------------------------------------------------------------------------
 
-    function prepareDeleteDefinitivelyDialog(projectId, paperId){
+    function prepareDeleteDefinitivelyDialog(projectId, treeItemId){
 
-        var idList = [paperId]
-        idList = idList.concat(proxyModel.getChildrenList(projectId, paperId, true, false))
+        var idList = [treeItemId]
+        idList = idList.concat(proxyModel.getChildrenList(projectId, treeItemId, true, false))
 
         //get names
         var nameList = []
@@ -192,7 +192,7 @@ TrashedListViewForm {
 
         deleteDefinitivelyDialog.projectId = projectId
         deleteDefinitivelyDialog.projectName = plmData.projectHub().getProjectName(projectId)
-        deleteDefinitivelyDialog.paperIdList = idList
+        deleteDefinitivelyDialog.treeItemIdList = idList
         deleteDefinitivelyDialog.paperNamesString = "\n- " + nameList.join("\n- ")
         deleteDefinitivelyDialog.open()
 
@@ -202,7 +202,7 @@ TrashedListViewForm {
     SimpleDialog {
         property int projectId: -2
         property string projectName: ""
-        property var paperIdList: []
+        property var treeItemIdList: []
         property var paperNamesString: ""
 
         id: deleteDefinitivelyDialog
@@ -217,8 +217,8 @@ TrashedListViewForm {
 
         onAccepted: {
             var i
-            for(i = 0 ; i < paperIdList.length ; i++){
-                var id = paperIdList[i]
+            for(i = 0 ; i < treeItemIdList.length ; i++){
+                var id = treeItemIdList[i]
 
                 proxyModel.deleteDefinitively(projectId, id)
             }
@@ -275,8 +275,8 @@ TrashedListViewForm {
         }
         onTriggered: {
 
-            console.log('restore', currentProjectId, currentPaperId)
-            restoreDocument(currentProjectId, currentPaperId)
+            console.log('restore', currentProjectId, currentTreeItemId)
+            restoreDocument(currentProjectId, currentTreeItemId)
 
         }
     }

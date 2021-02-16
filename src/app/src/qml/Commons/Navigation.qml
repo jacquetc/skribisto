@@ -11,13 +11,16 @@ NavigationForm {
     property var trashedListViewProxyModel
     property var restoreListViewProxyModel
     property int openedProjectId
-    property int openedPaperId
+    property int openedTreeItemId
 
+    signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
+    signal openDocumentInAnotherView(int projectId, int treeItemId)
+    signal openDocumentInNewWindow(int projectId, int treeItemId)
+    signal restoreDocumentList(int projectId, var treeItemIdList)
 
-    signal openDocument(int openedProjectId, int openedPaperId, int projectId, int paperId)
-    signal openDocumentInNewTab(int projectId, int paperId)
-    signal openDocumentInNewWindow(int projectId, int paperId)
-    signal restoreDocumentList(int projectId, var paperIdList)
+    function setNavigationTreeItemId(projectId, treeItemId){
+         stackView.get(0, StackView.DontLoad).setCurrentTreeItemId(projectId, treeItemId)
+    }
 
     Component {
         id: navigationListComponent
@@ -25,15 +28,15 @@ NavigationForm {
         NavigationList {
             id: navigationList
             proxyModel: root.navigationListProxyModel
-            model: root.navigationListProxyModel
             openedProjectId: root.openedProjectId
-            openedPaperId: root.openedPaperId
+            openedTreeItemId: root.openedTreeItemId
 
             Component.onCompleted: {
                 navigationList.openDocument.connect(root.openDocument)
-                navigationList.openDocumentInNewTab.connect(root.openDocumentInNewTab)
+                navigationList.openDocumentInAnotherView.connect(root.openDocumentInAnotherView)
                 navigationList.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
                 navigationList.showTrashedList.connect(root.pushTrashedListView)
+
 
             }
 
@@ -59,11 +62,10 @@ NavigationForm {
         TrashedListView {
             id: trashedListView
             proxyModel: root.trashedListViewProxyModel
-            model: root.trashedListViewProxyModel
 
             Component.onCompleted: {
                 trashedListView.openDocument.connect(root.openDocument)
-                trashedListView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
+                trashedListView.openDocumentInAnotherView.connect(root.openDocumentInAnotherView)
                 trashedListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
                 trashedListView.restoreDocument.connect(root.defineWhichPossibleDocumentsToRestore)
                 trashedListView.goBack.connect(root.popTrashedListView)
@@ -73,20 +75,20 @@ NavigationForm {
     }
 
 
-    function defineWhichPossibleDocumentsToRestore(projectId, paperId){
+    function defineWhichPossibleDocumentsToRestore(projectId, treeItemId){
 
 
         // if get children :
-        var trashedChildrenList = trashedListViewProxyModel.getChildrenList(projectId, paperId, true, false)
-        var trashedAncestorsList = trashedListViewProxyModel.getAncestorsList(projectId, paperId, true, false)
+        var trashedChildrenList = trashedListViewProxyModel.getChildrenList(projectId, treeItemId, true, false)
+        var trashedAncestorsList = trashedListViewProxyModel.getAncestorsList(projectId, treeItemId, true, false)
         // if no children :
         if(trashedChildrenList.length === 0 && trashedAncestorsList === 0){
-            restoreDocumentList(projectId, [paperId])
+            restoreDocumentList(projectId, [treeItemId])
             return
         }
         else {
 
-            pushRestoreListView(projectId, paperId, trashedChildrenList.concat(trashedAncestorsList))
+            pushRestoreListView(projectId, treeItemId, trashedChildrenList.concat(trashedAncestorsList))
         }
 
 
@@ -104,11 +106,10 @@ NavigationForm {
         RestoreListView {
             id: restoreListView
             proxyModel: root.restoreListViewProxyModel
-            model: root.restoreListViewProxyModel
 
             Component.onCompleted: {
                 restoreListView.openDocument.connect(root.openDocument)
-                restoreListView.openDocumentInNewTab.connect(root.openDocumentInNewTab)
+                restoreListView.openDocumentInAnotherView.connect(root.openDocumentInAnotherView)
                 restoreListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
                 restoreListView.restoreDocumentList.connect(root.restoreDocumentList)
                 restoreListView.goBack.connect(root.popRestoreListView)
@@ -117,14 +118,14 @@ NavigationForm {
         }
     }
 
-    function pushRestoreListView(projectId, parentPaperIdToBeRestored, trashedChildrenList) {
+    function pushRestoreListView(projectId, parentTreeItemIdToBeRestored, trashedChildrenList) {
 
-        trashedChildrenList.push(parentPaperIdToBeRestored)
+        trashedChildrenList.push(parentTreeItemIdToBeRestored)
 
-        var treeIndentOffset = root.restoreListViewProxyModel.getItemIndent(projectId, parentPaperIdToBeRestored)
+        var treeIndentOffset = root.restoreListViewProxyModel.getItemIndent(projectId, parentTreeItemIdToBeRestored)
 
         stackView.push(restoreListViewComponent, {currentProjectId: projectId,
-                           parentPaperIdToBeRestored: parentPaperIdToBeRestored,
+                           parentTreeItemIdToBeRestored: parentTreeItemIdToBeRestored,
                            trashedChildrenList: trashedChildrenList,
                            treeIndentOffset: treeIndentOffset
                        })

@@ -15,11 +15,6 @@ WritingZoneForm {
     stretch: true
     leftScrollItemVisible: true
     property string name: ""
-    readonly property int wantedCenteredTextAreaLeftPos: rootPageBase.width / 2 - textAreaWidth / 2
-    readonly property int wantedCenteredTextAreaRightPos: rootPageBase.width / 2 + textAreaWidth / 2
-
-    readonly property int wantedCenteredWritingZoneLeftPos: rootPageBase.width / 2 - root.width / 2
-    readonly property int wantedCenteredWritingZoneRightPos: rootPageBase.width / 2 + root.width / 2
 
     textArea.persistentSelection: true
 
@@ -64,6 +59,7 @@ WritingZoneForm {
 
 
 
+
     //-------------------------------------------------
 
     //style :
@@ -88,21 +84,21 @@ WritingZoneForm {
 
     property int projectId: -2
     onProjectIdChanged: {
-        documentHandler.setId(projectId, paperId)
+        documentHandler.setId(projectId, treeItemId)
 
         if(!spellCheckerKilled){
             determineSpellCheckerLanguageCode()
         }
 
     }
-    property int paperId: -2
-    onPaperIdChanged: {
-        documentHandler.setId(projectId, paperId)
+    property int treeItemId: -2
+    onTreeItemIdChanged: {
+        documentHandler.setId(projectId, treeItemId)
     }
 
     function clear(){
         textArea.clear()
-        paperId = -2
+        treeItemId = -2
         projectId = -2
     }
 
@@ -395,6 +391,7 @@ WritingZoneForm {
 
         Component.onCompleted: {
             textContextMenu.suggestionChosen.connect(documentHandler.replaceWord)
+            textContextMenu.suggestionToBeLearned.connect(documentHandler.learnWord)
         }
 
     }
@@ -490,6 +487,7 @@ WritingZoneForm {
 
 
     function setCursorPosition(cursorPosition){
+
         if (documentHandler.maxCursorPosition() >= cursorPosition) {
             textArea.cursorPosition = cursorPosition
             //console.log("textArea.cursorPosition =", cursorPosition)
@@ -512,27 +510,39 @@ WritingZoneForm {
     //    }
 
     textArea.onCursorPositionChanged: {
-        if(textArea.activeFocus){
-
-            italicAction.preventTrigger = true
-            italicAction.checked = documentHandler.italic
-            italicAction.preventTrigger = false
-
-            boldAction.preventTrigger = true
-            boldAction.checked = documentHandler.bold
-            boldAction.preventTrigger = false
-
-            strikeAction.preventTrigger = true
-            strikeAction.checked = documentHandler.strikeout
-            strikeAction.preventTrigger = false
-
-            underlineAction.preventTrigger = true
-            underlineAction.checked = documentHandler.underline
-            underlineAction.preventTrigger = false
 
 
+        formatActionTimer.start()
+
+    }
+    Timer{
+        id: formatActionTimer
+        interval: 20
+        onTriggered: {
+            if(textArea.activeFocus){
+
+                italicAction.preventTrigger = true
+                italicAction.checked = documentHandler.italic
+                italicAction.preventTrigger = false
+
+                boldAction.preventTrigger = true
+                boldAction.checked = documentHandler.bold
+                boldAction.preventTrigger = false
+
+                strikeAction.preventTrigger = true
+                strikeAction.checked = documentHandler.strikeout
+                strikeAction.preventTrigger = false
+
+                underlineAction.preventTrigger = true
+                underlineAction.checked = documentHandler.underline
+                underlineAction.preventTrigger = false
+
+
+            }
         }
     }
+
+
 
     //    property int cursorPosition: 0
     //    onCursorPositionChanged: {

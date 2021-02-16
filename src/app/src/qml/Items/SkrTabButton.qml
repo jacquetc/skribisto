@@ -9,6 +9,15 @@ SkrTabButtonForm {
     Material.foreground: SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
 
+    Rectangle {
+        parent: control.background
+        anchors.fill: control.background
+        color: "transparent"
+        border.color: SkrTheme.accent
+        border.width: control.activeFocus ? 1 : 0
+        radius: 4
+
+    }
 
     property string tip
     hoverEnabled: true

@@ -9,8 +9,7 @@ EditViewForm {
     id: root
 
     property int projectId: -2
-    property int paperId: -2
-    property int paperType: SKR.Sheet
+    property int treeItemId: -2
 
     // must be set :
     property var skrSettingsGroup
@@ -76,8 +75,8 @@ EditViewForm {
 
     // textWidthSlider :
 
-    textWidthLabel.visible: !Globals.compactMode && textWidthSliderVisible
-    textWidthSlider.visible: !Globals.compactMode && textWidthSliderVisible
+    textWidthLabel.visible: !rootWindow.compactMode && textWidthSliderVisible
+    textWidthSlider.visible: !rootWindow.compactMode && textWidthSliderVisible
 
     textWidthSlider.value: skrSettingsGroup.textWidth
 
@@ -181,17 +180,8 @@ EditViewForm {
 
         //shortcut: StandardKey.
         onTriggered: {
-            if(root.paperType === SKR.Sheet){
-                exporter.sheetIdList = [root.paperId]
-            }
-            else if(root.paperType === SKR.Note){
-                exporter.noteIdList = [root.paperId]
-            }
-            else{
-                return
-            }
 
-
+            exporter.treeItemIdList = [root.treeItemId]
             exporter.run()
 
         }

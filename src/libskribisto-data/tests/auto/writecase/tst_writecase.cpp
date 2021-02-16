@@ -29,7 +29,6 @@ private Q_SLOTS:
     void cleanup();
 
     //    void getAll();
-    void getAllTitles();
     void getAllIndents();
     void getAllSortOrders();
     void getAllIds();
@@ -40,28 +39,30 @@ private Q_SLOTS:
     void setTrashed();
     void restoring();
     void getTrashed();
-    void setContent();
-    void getContent();
+    void setPrimaryContent();
+    void getPrimaryContent();
     void setCreationDate();
     void getCreationDate();
     void setUpdateDate();
     void getUpdateDate();
-    void setContentDate();
-    void getContentDate();
 
     void queue();
     void missingProjectError();
 
-    void addPaper();
-    void removePaper();
+    void addTreeItem();
+    void removeTreeItem();
 
     // properties
     void property();
     void property_replace();
 
     // label
-    void getSheetLabel();
-    void setSheetLabel();
+    void getTreeLabel();
+    void setTreeLabel();
+
+    // tag
+    void setTag();
+
 
 private:
 
@@ -123,7 +124,7 @@ void WriteCase::cleanup()
 // void WriteCase::getAll()
 // {
 //    //    QList<QHash<QString, QVariant> > list =
-// plmdata->sheetHub()->getAll(1);
+// plmdata->treeHub()->getAll(1);
 //    //    QVERIFY(list.length() > 0);
 //    //    QList<QString> keyList = list.at(0).keys();
 //    //    QVERIFY(keyList.length() > 0);
@@ -134,22 +135,10 @@ void WriteCase::cleanup()
 
 // ------------------------------------------------------------------------------------
 
-void WriteCase::getAllTitles()
-{
-    QHash<int, QString> hash = plmdata->sheetHub()->getAllTitles(m_currentProjectId);
-
-    QVERIFY(hash.size() > 0);
-    QList<int> keyList = hash.keys();
-
-    QVERIFY(keyList.length() > 0);
-}
-
-// ------------------------------------------------------------------------------------
-
 
 void WriteCase::getAllIndents()
 {
-    QHash<int, int> hash = plmdata->sheetHub()->getAllIndents(m_currentProjectId);
+    QHash<int, int> hash = plmdata->treeHub()->getAllIndents(m_currentProjectId);
 
     QVERIFY(hash.size() > 0);
     QList<int> keyList = hash.keys();
@@ -161,7 +150,7 @@ void WriteCase::getAllIndents()
 
 void WriteCase::getAllSortOrders()
 {
-    QHash<int, int> hash = plmdata->sheetHub()->getAllSortOrders(m_currentProjectId);
+    QHash<int, int> hash = plmdata->treeHub()->getAllSortOrders(m_currentProjectId);
 
     QVERIFY(hash.size() > 0);
     QList<int> keyList = hash.keys();
@@ -173,7 +162,7 @@ void WriteCase::getAllSortOrders()
 
 void WriteCase::getAllIds()
 {
-    QList<int> list = plmdata->sheetHub()->getAllIds(m_currentProjectId);
+    QList<int> list = plmdata->treeHub()->getAllIds(m_currentProjectId);
 
     QVERIFY(list.size() > 0);
 }
@@ -182,9 +171,9 @@ void WriteCase::getAllIds()
 
 void WriteCase::setTitle()
 {
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(titleChanged(int,int,QString)));
+    QSignalSpy spy(plmdata->treeHub(), SIGNAL(titleChanged(int,int,QString)));
 
-    plmdata->sheetHub()->setTitle(m_currentProjectId, 1, "new_title");
+    plmdata->treeHub()->setTitle(m_currentProjectId, 1, "new_title");
     QCOMPARE(spy.count(), 1);
 
     // make sure the signal was emitted exactly one time
@@ -192,7 +181,7 @@ void WriteCase::setTitle()
 
     QVERIFY(arguments.at(2).toString() == "new_title");
 
-    //    QString value = plmdata->sheetHub()->getTitle(m_currentProjectId, 1);
+    //    QString value = plmdata->treeHub()->getTitle(m_currentProjectId, 1);
     //    QCOMPARE(value, QString("new_title"));
 }
 
@@ -200,16 +189,16 @@ void WriteCase::setTitle()
 
 void WriteCase::getTitle()
 {
-    QString title = plmdata->sheetHub()->getTitle(m_currentProjectId, 1);
+    QString title = plmdata->treeHub()->getTitle(m_currentProjectId, 1);
 
     QCOMPARE(title, QString("First title"));
 }
 
 void WriteCase::setIndent()
 {
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(indentChanged(int,int,int)));
+    QSignalSpy spy(plmdata->treeHub(), SIGNAL(indentChanged(int,int,int)));
 
-    plmdata->sheetHub()->setIndent(m_currentProjectId, 1, 1);
+    plmdata->treeHub()->setIndent(m_currentProjectId, 1, 1);
     QCOMPARE(spy.count(), 1);
 
     // make sure the signal was emitted exactly one time
@@ -217,7 +206,7 @@ void WriteCase::setIndent()
 
     QVERIFY(arguments.at(2).toInt() == 1);
 
-    //    QString value = plmdata->sheetHub()->getTitle(m_currentProjectId, 1);
+    //    QString value = plmdata->treeHub()->getTitle(m_currentProjectId, 1);
     //    QCOMPARE(value, QString("new_title"));
 }
 
@@ -225,33 +214,33 @@ void WriteCase::setIndent()
 
 void WriteCase::getIndent()
 {
-    int indent = plmdata->sheetHub()->getIndent(m_currentProjectId, 1);
+    int indent = plmdata->treeHub()->getIndent(m_currentProjectId, 1);
 
-    QCOMPARE(indent, 0);
+    QCOMPARE(indent, 1);
 }
 
 // ------------------------------------------------------------------------------------
 
 void WriteCase::setTrashed()
 {
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(trashedChanged(int,int,bool)));
+    QSignalSpy spy(plmdata->treeHub(), SIGNAL(trashedChanged(int,int,bool)));
 
-    SKRResult result = plmdata->sheetHub()->setTrashedWithChildren(m_currentProjectId,
-                                                                 2,
+    SKRResult result = plmdata->treeHub()->setTrashedWithChildren(m_currentProjectId,
+                                                                 55,
                                                                  true);
 
     QCOMPARE(result.isSuccess(), true);
-    QVERIFY(spy.count() > 1);
+    QVERIFY(spy.count() == 2);
 
     // make sure the signal was emitted exactly one time
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
 
     QVERIFY(arguments.at(2).toBool() == true);
-    bool value = plmdata->sheetHub()->getTrashed(m_currentProjectId, 2);
+    bool value = plmdata->treeHub()->getTrashed(m_currentProjectId, 55);
 
     QCOMPARE(value, true);
 
-    QDateTime date = plmdata->sheetHub()->getTrashedDate(m_currentProjectId, 2);
+    QDateTime date = plmdata->treeHub()->getTrashedDate(m_currentProjectId, 55);
 
     QCOMPARE(date.isValid(), true);
 }
@@ -263,9 +252,9 @@ void WriteCase::restoring()
     setTrashed();
 
     // restoring
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(trashedChanged(int,int,bool)));
+    QSignalSpy spy(plmdata->treeHub(), SIGNAL(trashedChanged(int,int,bool)));
 
-    SKRResult result = plmdata->sheetHub()->untrashOnlyOnePaper(m_currentProjectId, 2);
+    SKRResult result = plmdata->treeHub()->untrashOnlyOneTreeItem(m_currentProjectId, 2);
 
     QCOMPARE(result.isSuccess(), true);
 
@@ -274,11 +263,11 @@ void WriteCase::restoring()
 
     QVERIFY(arguments.at(2).toBool() == false);
 
-    bool value = plmdata->sheetHub()->getTrashed(m_currentProjectId, 2);
+    bool value = plmdata->treeHub()->getTrashed(m_currentProjectId, 2);
 
     QCOMPARE(value, false);
 
-    QDateTime date = plmdata->sheetHub()->getTrashedDate(m_currentProjectId, 2);
+    QDateTime date = plmdata->treeHub()->getTrashedDate(m_currentProjectId, 2);
 
     QCOMPARE(date.isNull(), true);
 }
@@ -287,39 +276,39 @@ void WriteCase::restoring()
 
 void WriteCase::getTrashed()
 {
-    bool value = plmdata->sheetHub()->getTrashed(m_currentProjectId, 1);
+    bool value = plmdata->treeHub()->getTrashed(m_currentProjectId, 1);
 
     QCOMPARE(value, false);
 }
 
 // ------------------------------------------------------------------------------------
 
-void WriteCase::setContent()
+void WriteCase::setPrimaryContent()
 {
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(contentChanged(int,int,QString)));
+    QSignalSpy spy(plmdata->treeHub(), SIGNAL(primaryContentChanged(int,int,QString)));
 
-    plmdata->sheetHub()->setContent(m_currentProjectId, 1, "new_content");
+    plmdata->treeHub()->setPrimaryContent(m_currentProjectId, 1, "new_content");
     QCOMPARE(spy.count(), 1);
 
     // make sure the signal was emitted exactly one time
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
 
     QVERIFY(arguments.at(2).toString() == "new_content");
-    QString value = plmdata->sheetHub()->getContent(m_currentProjectId, 1);
+    QString value = plmdata->treeHub()->getPrimaryContent(m_currentProjectId, 1);
 
     QCOMPARE(value, QString("new_content"));
 }
 
 // ------------------------------------------------------------------------------------
 
-void WriteCase::getContent()
+void WriteCase::getPrimaryContent()
 {
-    QString value = plmdata->sheetHub()->getContent(m_currentProjectId, 1);
+    QString value = plmdata->treeHub()->getPrimaryContent(m_currentProjectId, 1);
 
     QCOMPARE(value, QString("fir**st** *content* test_project_dict_word badword\n\n"));
 
     // lorem ipsum :
-    value = plmdata->sheetHub()->getContent(m_currentProjectId, 6);
+    value = plmdata->treeHub()->getPrimaryContent(m_currentProjectId, 8);
     QVERIFY(value.size() > 5000);
 }
 
@@ -327,17 +316,17 @@ void WriteCase::getContent()
 
 void WriteCase::setCreationDate()
 {
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(creationDateChanged(int,int,QDateTime)));
+    QSignalSpy spy(plmdata->treeHub(), SIGNAL(creationDateChanged(int,int,QDateTime)));
     QDateTime  date(QDate(2010, 1, 1), QTime(1, 0, 0));
 
-    plmdata->sheetHub()->setCreationDate(m_currentProjectId, 1, date);
+    plmdata->treeHub()->setCreationDate(m_currentProjectId, 1, date);
     QCOMPARE(spy.count(), 1);
 
     // make sure the signal was emitted exactly one time
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
 
     QVERIFY(arguments.at(2).toDateTime() == QDateTime(QDate(2010, 1, 1), QTime(1, 0, 0)));
-    QDateTime value = plmdata->sheetHub()->getCreationDate(m_currentProjectId, 1);
+    QDateTime value = plmdata->treeHub()->getCreationDate(m_currentProjectId, 1);
 
     QCOMPARE(value, QDateTime(QDate(2010, 1, 1), QTime(1, 0, 0)));
 }
@@ -346,7 +335,7 @@ void WriteCase::setCreationDate()
 
 void WriteCase::getCreationDate()
 {
-    QDateTime value = plmdata->sheetHub()->getCreationDate(m_currentProjectId, 1);
+    QDateTime value = plmdata->treeHub()->getCreationDate(m_currentProjectId, 1);
 
     QCOMPARE(value, QDateTime(QDate(2000, 1, 1), QTime(0, 0, 0)));
 }
@@ -355,17 +344,17 @@ void WriteCase::getCreationDate()
 
 void WriteCase::setUpdateDate()
 {
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(updateDateChanged(int,int,QDateTime)));
+    QSignalSpy spy(plmdata->treeHub(), SIGNAL(updateDateChanged(int,int,QDateTime)));
     QDateTime  date(QDate(2010, 1, 1), QTime(1, 0, 0));
 
-    plmdata->sheetHub()->setUpdateDate(m_currentProjectId, 1, date);
+    plmdata->treeHub()->setUpdateDate(m_currentProjectId, 1, date);
     QCOMPARE(spy.count(), 1);
 
     // make sure the signal was emitted exactly one time
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
 
     QVERIFY(arguments.at(2).toDateTime() == QDateTime(QDate(2010, 1, 1), QTime(1, 0, 0)));
-    QDateTime value = plmdata->sheetHub()->getUpdateDate(m_currentProjectId, 1);
+    QDateTime value = plmdata->treeHub()->getUpdateDate(m_currentProjectId, 1);
 
     QVERIFY(value < QDateTime::currentDateTime());
 }
@@ -374,59 +363,32 @@ void WriteCase::setUpdateDate()
 
 void WriteCase::getUpdateDate()
 {
-    QDateTime value = plmdata->sheetHub()->getUpdateDate(m_currentProjectId, 1);
+    QDateTime value = plmdata->treeHub()->getUpdateDate(m_currentProjectId, 1);
 
     QCOMPARE(value, QDateTime(QDate(2010, 1, 1), QTime(1, 1, 1)));
 }
 
-// ------------------------------------------------------------------------------------
-
-void WriteCase::setContentDate()
-{
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(contentDateChanged(int,int,QDateTime)));
-    QDateTime  date(QDate(2010, 1, 1), QTime(1, 0, 0));
-
-    plmdata->sheetHub()->setContentDate(m_currentProjectId, 1, date);
-    QCOMPARE(spy.count(), 1);
-
-    // make sure the signal was emitted exactly one time
-    QList<QVariant> arguments = spy.takeFirst(); // take the first signal
-
-    QVERIFY(arguments.at(2).toDateTime() == QDateTime(QDate(2010, 1, 1), QTime(1, 0, 0)));
-    QDateTime value = plmdata->sheetHub()->getContentDate(m_currentProjectId, 1);
-
-    QCOMPARE(value, QDateTime(QDate(2010, 1, 1), QTime(1, 0, 0)));
-}
-
-// ------------------------------------------------------------------------------------
-
-void WriteCase::getContentDate()
-{
-    QDateTime value = plmdata->sheetHub()->getContentDate(m_currentProjectId, 1);
-
-    QCOMPARE(value, QDateTime(QDate(2000, 1, 1), QTime(0, 0, 0)));
-}
 
 // ------------------------------------------------------------------------------------
 
 void WriteCase::queue()
 {
-    QString value = plmdata->sheetHub()->getTitle(m_currentProjectId, 1);
+    QString value = plmdata->treeHub()->getTitle(m_currentProjectId, 1);
 
-    QCOMPARE(value, QString("first_title"));
-    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(titleChanged(int,int,QString)));
+    QCOMPARE(value, QString("First title"));
+    QSignalSpy spy(plmdata->treeHub(), SIGNAL(titleChanged(int,int,QString)));
 
-    plmdata->sheetHub()->setTitle(m_currentProjectId, 1, "new_title1");
+    plmdata->treeHub()->setTitle(m_currentProjectId, 1, "new_title1");
     QVERIFY(spy.count() == 1);
-    value = plmdata->sheetHub()->getTitle(m_currentProjectId, 1);
+    value = plmdata->treeHub()->getTitle(m_currentProjectId, 1);
     QCOMPARE(value, QString("new_title1"));
-    plmdata->sheetHub()->setTitle(m_currentProjectId, 1, "new_title2");
-    value = plmdata->sheetHub()->getTitle(m_currentProjectId, 1);
+    plmdata->treeHub()->setTitle(m_currentProjectId, 1, "new_title2");
+    value = plmdata->treeHub()->getTitle(m_currentProjectId, 1);
     QCOMPARE(value, QString("new_title2"));
-    plmdata->sheetHub()->setTitle(m_currentProjectId, 1, "new_title3");
-    value = plmdata->sheetHub()->getTitle(m_currentProjectId, 1);
+    plmdata->treeHub()->setTitle(m_currentProjectId, 1, "new_title3");
+    value = plmdata->treeHub()->getTitle(m_currentProjectId, 1);
     QCOMPARE(value, QString("new_title3"));
-    plmdata->sheetHub()->setTitle(m_currentProjectId, 1, "new_title4");
+    plmdata->treeHub()->setTitle(m_currentProjectId, 1, "new_title4");
 }
 
 // ------------------------------------------------------------------------------------
@@ -434,41 +396,41 @@ void WriteCase::queue()
 void WriteCase::missingProjectError()
 {
     //    QSignalSpy spy(plmdata->errorHub(), SIGNAL(errorSent()));
-    //    plmdata->sheetHub()->getTitle(9999, 1);
+    //    plmdata->treeHub()->getTitle(9999, 1);
     //    QCOMPARE(spy.count(), 1);
 }
 
 // ------------------------------------------------------------------------------------
 
-void WriteCase::addPaper()
+void WriteCase::addTreeItem()
 {
-    SKRResult result = plmdata->sheetHub()->addPaperBelow(m_currentProjectId, 1);
-    int lastId     = plmdata->sheetHub()->getLastAddedId();
-
+    SKRResult result = plmdata->treeHub()->addTreeItemBelow(m_currentProjectId, 1, "TEXT");
+    int lastId     = plmdata->treeHub()->getLastAddedId();
     QVERIFY(result.isSuccess() == true);
     QVERIFY(lastId > 1);
-    int sortOrder1 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, 1);
-    int sortOrder2 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, lastId);
+    int sortOrder1 = plmdata->treeHub()->getSortOrder(m_currentProjectId, 1);
+    int sortOrder2 = plmdata->treeHub()->getSortOrder(m_currentProjectId, lastId);
+    QVERIFY(sortOrder1 + 1000 == sortOrder2);
 
-    QVERIFY(sortOrder1 + 1000 == sortOrder2);
-    result  = plmdata->sheetHub()->addPaperBelow(m_currentProjectId, 100);
-    lastId = plmdata->sheetHub()->getLastAddedId();
+    result  = plmdata->treeHub()->addTreeItemAbove(m_currentProjectId, 1, "TEXT");
+    lastId = plmdata->treeHub()->getLastAddedId();
     QVERIFY(result.isSuccess() == true);
-    QVERIFY(lastId > 1);
-    sortOrder1 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, 100);
-    sortOrder2 = plmdata->sheetHub()->getSortOrder(m_currentProjectId, lastId);
-    QVERIFY(sortOrder1 + 1000 == sortOrder2);
-    result  = plmdata->sheetHub()->addChildPaper(m_currentProjectId, 1);
-    lastId = plmdata->sheetHub()->getLastAddedId();
+    QVERIFY(lastId > 1);    
+    sortOrder1 = plmdata->treeHub()->getSortOrder(m_currentProjectId, 1);
+    sortOrder2 = plmdata->treeHub()->getSortOrder(m_currentProjectId, lastId);
+    QVERIFY(sortOrder1 - 1000 == sortOrder2);
+
+    result  = plmdata->treeHub()->addChildTreeItem(m_currentProjectId, 1, "TEXT");
+    lastId = plmdata->treeHub()->getLastAddedId();
     QVERIFY(result.isSuccess() == true);
     QVERIFY(lastId > 1);
 }
 
 // ------------------------------------------------------------------------------------
 
-void WriteCase::removePaper()
+void WriteCase::removeTreeItem()
 {
-    SKRResult result = plmdata->sheetHub()->removePaper(m_currentProjectId, 1);
+    SKRResult result = plmdata->treeHub()->removeTreeItem(m_currentProjectId, 1);
 
     QVERIFY(result.isSuccess() == true);
 }
@@ -477,19 +439,17 @@ void WriteCase::removePaper()
 
 void WriteCase::property()
 {
-    QSignalSpy spy(plmdata->sheetPropertyHub(),
+    QSignalSpy spy(plmdata->treePropertyHub(),
                    SIGNAL(propertyChanged(int,int,int,QString,QString)));
 
-    plmdata->sheetPropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
+    plmdata->treePropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
     QVERIFY(spy.count() == 1);
-    QString value =  plmdata->sheetPropertyHub()->getProperty(m_currentProjectId,
+    QString value =  plmdata->treePropertyHub()->getProperty(m_currentProjectId,
                                                               1,
                                                               "test0");
 
     QCOMPARE(value, QString("value0"));
-    value =  plmdata->sheetPropertyHub()->getProperty(m_currentProjectId, 1, "test1");
-    QCOMPARE(value, QString("value1"));
-    QHash<int, bool> hash = plmdata->sheetPropertyHub()->getAllIsSystems(
+    QHash<int, bool> hash = plmdata->treePropertyHub()->getAllIsSystems(
         m_currentProjectId);
 
     QVERIFY(hash.size() > 0);
@@ -500,39 +460,50 @@ void WriteCase::property()
 
 void WriteCase::property_replace()
 {
-    QSignalSpy spy(plmdata->sheetPropertyHub(),
+    QSignalSpy spy(plmdata->treePropertyHub(),
                    SIGNAL(propertyChanged(int,int,int,QString,QString)));
 
-    plmdata->sheetPropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
+    SKRResult result = plmdata->treePropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
+    QCOMPARE(result.isSuccess(), true);
     QVERIFY(spy.count() == 1);
     QList<QVariant> arguments = spy.takeFirst();
     int id                    = arguments.at(1).toInt();
 
-    plmdata->sheetPropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
+    plmdata->treePropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
     arguments = spy.takeFirst();
     QCOMPARE(arguments.at(1).toInt(), id);
-    plmdata->sheetPropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
+    plmdata->treePropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
     arguments = spy.takeFirst();
     QCOMPARE(arguments.at(1).toInt(), id);
 }
 
-void WriteCase::getSheetLabel()
+void WriteCase::getTreeLabel()
 {
-    QString value = plmdata->sheetPropertyHub()->getProperty(m_currentProjectId,
+    QString value = plmdata->treePropertyHub()->getProperty(m_currentProjectId,
                                                              1,
                                                              "label");
 
     QCOMPARE(value, "this is a label");
 }
 
-void WriteCase::setSheetLabel()
+void WriteCase::setTreeLabel()
 {
-    plmdata->sheetPropertyHub()->setProperty(m_currentProjectId, 1, "label", "new");
-    QString value = plmdata->sheetPropertyHub()->getProperty(m_currentProjectId,
+    plmdata->treePropertyHub()->setProperty(m_currentProjectId, 1, "label", "new");
+    QString value = plmdata->treePropertyHub()->getProperty(m_currentProjectId,
                                                              1,
                                                              "label");
 
     QCOMPARE(value, "new");
+}
+
+void WriteCase::setTag()
+{
+    SKRResult result = plmdata->tagHub()->setTagRelationship(m_currentProjectId, 2, 1);
+
+    QCOMPARE(result.isSuccess(), true);
+    result = plmdata->tagHub()->setTagRelationship(m_currentProjectId, 2, 1);
+    QCOMPARE(result.isSuccess(), true);
+
 }
 
 QTEST_GUILESS_MAIN(WriteCase)

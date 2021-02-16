@@ -11,24 +11,23 @@ add_definitions(-DSKRIBISTO_DATA_LIBRARY)
 # Find the QtWidgets library
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
-find_package(QuaZip-Qt5 REQUIRED)
+
+
 
 
 set(data_SRCS
     plmdata.cpp
     skrresult.cpp
     skrerrorhub.cpp
-    plmnotehub.cpp
-    plmpaperhub.cpp
-    plmpluginhub.cpp
-    plmpluginloader.cpp
+    skrpluginhub.cpp
+    skrpluginloader.cpp
     plmprojecthub.cpp
-    plmpropertyhub.cpp
     skrtaghub.cpp
-    plmsheethub.cpp
     skrstathub.cpp
     plmutils.cpp
     skrprojectdicthub.cpp
+    skrtreehub.cpp
+    skrpropertyhub.cpp
     tasks/plmprojectmanager.cpp
     tasks/plmsqlqueries.cpp
     tasks/skrwordmeter.cpp
@@ -37,42 +36,33 @@ set(data_SRCS
     tasks/sql/plmimporter.cpp
     tasks/sql/plmproject.cpp
     tasks/sql/plmupgrader.cpp
-    models/plmsheetmodel.cpp
-    models/plmsheetproxymodel.cpp
-    models/plmsheetlistmodel.cpp
-    models/plmnotemodel.cpp
-    models/plmnotelistmodel.cpp
-    models/plmnoteproxymodel.cpp
+    models/skrtreemodel.cpp
+    models/skrtreeproxymodel.cpp
     models/plmprojectlistmodel.cpp
     models/plmdocumentlistmodel.cpp
     models/plmwritedocumentlistmodel.cpp
     models/plmdocumentlistproxymodel.cpp
-    models/plmpropertiesmodel.cpp
-    models/plmpropertiesproxymodel.cpp
-    models/skrpaperitem.cpp
-    models/plmmodels.cpp
-    models/skrpaperlistmodel.cpp
-    models/skrsearchpaperlistproxymodel.cpp
-    models/skrsearchsheetlistproxymodel.cpp
-    models/skrsearchnotelistproxymodel.cpp
+    models/skrpropertiesmodel.cpp
+    models/skrpropertiesproxymodel.cpp
+    models/skrtreeitem.cpp
+    models/skrmodels.cpp
+    models/skrtreelistmodel.cpp
+    models/skrsearchtreelistproxymodel.cpp
     models/skrtagitem.cpp
     models/skrtaglistmodel.cpp
     models/skrsearchtaglistproxymodel.cpp
-)
+    )
 set(data_HDR
-    plmcoreinterface.h
-    plmcoreplugins.h
+    skrcoreinterface.h
+    skrcoreplugins.h
+    skrinterfacesettings.h
     plmdata.h
     skrresult.h
     skrerrorhub.h
-    plmnotehub.h
-    plmpaperhub.h
-    plmpluginhub.h
-    plmpluginloader.h
+    skrpluginhub.h
+    skrpluginloader.h
     plmprojecthub.h
-    plmpropertyhub.h
     skrtaghub.h
-    plmsheethub.h
     plmsignalhub.h
     skrstathub.h
     plmutils.h
@@ -80,6 +70,8 @@ set(data_HDR
     tools.h
     skr.h
     skrprojectdicthub.h
+    skrtreehub.h
+    skrpropertyhub.h
     tasks/plmprojectmanager.h
     tasks/plmsqlqueries.h
     tasks/skrwordmeter.h
@@ -88,29 +80,22 @@ set(data_HDR
     tasks/sql/plmimporter.h
     tasks/sql/plmproject.h
     tasks/sql/plmupgrader.h
-    plminterfacesettings.h
-    models/plmsheetmodel.h
-    models/plmsheetproxymodel.h
-    models/plmsheetlistmodel.h
-    models/plmnotemodel.h
-    models/plmnotelistmodel.h
-    models/plmnoteproxymodel.h
+    models/skrtreemodel.h
+    models/skrtreeproxymodel.h
     models/plmprojectlistmodel.h
     models/plmdocumentlistmodel.h
     models/plmwritedocumentlistmodel.h
     models/plmdocumentlistproxymodel.h
-    models/plmpropertiesmodel.h
-    models/plmpropertiesproxymodel.h
-    models/skrpaperitem.h
-    models/plmmodels.h
-    models/skrpaperlistmodel.h
-    models/skrsearchpaperlistproxymodel.h
-    models/skrsearchsheetlistproxymodel.h
-    models/skrsearchnotelistproxymodel.h
+    models/skrpropertiesmodel.h
+    models/skrpropertiesproxymodel.h
+    models/skrtreeitem.h
+    models/skrmodels.h
+    models/skrtreelistmodel.h
+    models/skrsearchtreelistproxymodel.h
     models/skrtagitem.h
     models/skrtaglistmodel.h
     models/skrsearchtaglistproxymodel.h
-)
+    )
 
 set(QRC
     tasks/sql/sql.qrc
@@ -121,7 +106,38 @@ qt_add_resources(RESOURCES ${QRC})
 # Tell CMake to create the executable
 add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${models_SRCS} ${RESOURCES})
 
-target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml QuaZip::QuaZip)
+target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
 
 
+
+#-------------- QUAZIP --------------------
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+
+
+    if(${SKR_DEV})
+        set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
+
+        set(QUAZIP_QT_MAJOR_VERSION ${QT_MAJOR_VERSION})
+        set(QuaZip-Qt${QT_VERSION_MAJOR}_DIR ${EXTERNAL_INSTALL_LOCATION}/quazip/lib/cmake/QuaZip-Qt${QT_VERSION_MAJOR}-1.1)
+        set(ZLIB_ROOT ${EXTERNAL_INSTALL_LOCATION}/zlib)
+    endif(${SKR_DEV})
+
+
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+
+
+find_package(QuaZip-Qt${QT_VERSION_MAJOR} REQUIRED)
+target_link_libraries(skribisto-data PRIVATE QuaZip::QuaZip)
+target_include_directories(skribisto-data SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
+
+
+#---------------------------------
+
+
+
+
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 install(TARGETS skribisto-data LIBRARY DESTINATION ${KDE_INSTALL_LIBDIR})
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")

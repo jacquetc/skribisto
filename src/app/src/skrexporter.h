@@ -14,8 +14,7 @@ class SKRExporter : public QObject
     Q_PROPERTY(bool printEnabled MEMBER m_printEnabled READ printEnabled WRITE setPrintEnabled NOTIFY printEnabledChanged)
     Q_PROPERTY(SKRExporter::OutputType outputType MEMBER m_outputType READ outputType WRITE setOutputType NOTIFY outputTypeChanged)
     Q_PROPERTY(QUrl outputUrl MEMBER m_outputUrl READ outputUrl WRITE setOutputUrl NOTIFY outputUrlChanged)
-    Q_PROPERTY(QList<int> sheetIdList MEMBER m_sheetIdList READ sheetIdList WRITE setSheetIdList NOTIFY sheetIdListChanged)
-    Q_PROPERTY(QList<int> noteIdList MEMBER m_noteIdList READ noteIdList WRITE setNoteIdList NOTIFY noteIdListChanged)
+    Q_PROPERTY(QList<int> treeItemIdList MEMBER m_treeItemIdList READ treeItemIdList WRITE setTreeItemIdList NOTIFY treeItemIdListChanged)
     Q_PROPERTY(bool includeSynopsis MEMBER m_includeSynopsis READ includeSynopsis WRITE setIncludeSynopsis NOTIFY includeSynopsisChanged)
     Q_PROPERTY(int indentWithTitle MEMBER m_indentWithTitle READ indentWithTitle WRITE setIndentWithTitle NOTIFY indentWithTitleChanged)
     Q_PROPERTY(QString fontFamily MEMBER m_fontFamily READ fontFamily WRITE setFontFamily NOTIFY fontFamilyChanged)
@@ -51,8 +50,8 @@ public:
     SKRExporter::OutputType outputType() const;
     void setOutputType(const SKRExporter::OutputType &outputType);
 
-    QList<int> sheetIdList() const;
-    void setSheetIdList(const QList<int> &sheetIdList);
+    QList<int> treeItemIdList() const;
+    void setTreeItemIdList(const QList<int> &treeItemIdList);
 
     QList<int> noteIdList() const;
     void setNoteIdList(const QList<int> &noteIdList);
@@ -99,7 +98,7 @@ signals:
     void progressChanged(int value);
     void progressMaximumChanged(int value);
     void outputUrlChanged(QUrl url);
-    void sheetIdListChanged(QList<int> list);
+    void treeItemIdListChanged(QList<int> list);
     void noteIdListChanged(QList<int> list);
     void includeSynopsisChanged(bool value);
     void indentWithTitleChanged(int indent);
@@ -112,14 +111,14 @@ signals:
     void textIndentChanged(int value);
 
 private:
-    void createContent(QTextDocument *textDocument, SKR::ItemType paperType, int projectId, int paperId, QList<int> *numbers);
+    void createContent(QTextDocument *textDocument, int projectId, int paperId, QList<int> *numbers);
 
 private:
     int m_projectId;
     bool m_printEnabled;
     OutputType m_outputType;
     QUrl m_outputUrl;
-    QList<int> m_sheetIdList, m_noteIdList;
+    QList<int> m_treeItemIdList, m_noteIdList;
     int m_indentWithTitle;
     bool m_includeSynopsis;
     QString m_fontFamily;

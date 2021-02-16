@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qml/plugins">
+        <file>TextPage/TextPage.qml</file>
+        <file>TextPage/TextPageForm.ui.qml</file>
+    </qresource>
+</RCC>

@@ -7,11 +7,11 @@
 #include <QDir>
 #include <QCoreApplication>
 
-#ifdef Q_OS_WIN
-# include "externals/hunspell/hunspell.hxx"
-#endif // Q_OS_WIN
+//#ifdef Q_OS_WIN
+//# include "externals/hunspell/hunspell.hxx"
+//#endif // Q_OS_WIN
 
-#include <hunspell/hunspell.hxx>
+#include <hunspell.hxx>
 #include "plmutils.h"
 
 SKRSpellChecker::SKRSpellChecker(QObject *parent) :
@@ -114,7 +114,7 @@ Letter:
 
         case QChar::Punctuation_Other:
 
-            if ((c == 0x0027) || (c == 0x2019)) {
+            if ((c == QChar(0x0027)) || (c == QChar(0x2019))) {
                 ++chars;
                 break;
             }
@@ -146,7 +146,7 @@ Letter:
 
 QStringList SKRSpellChecker::suggest(const QString& word)
 {
-    if (!m_isActive) return QStringList();
+    if (!m_isActive || !m_hunspell) return QStringList();
 
 
     std::vector<std::string> suggestionsVector;
@@ -165,7 +165,7 @@ QStringList SKRSpellChecker::suggest(const QString& word)
     // maybe differenciate between latin1 and utf8
     QStringList suggestions;
 
-    for (const std::string& string: suggestionsQVect) {
+    for (const std::string& string: qAsConst(suggestionsQVect)) {
         suggestions.append(QString::fromStdString(string));
     }
 
@@ -287,7 +287,7 @@ QStringList SKRSpellChecker::dictsPaths()
 
     QStringList addonsList = PLMUtils::Dir::addonsPathsList();
 
-    for (const QString& string : addonsList) {
+    for (const QString& string : qAsConst(addonsList)) {
         list.append(string + "/dicts/");
     }
 

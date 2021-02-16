@@ -1,7 +1,7 @@
 {
     "themeName": "Default Light",
     "isEditable": false,
-    "normal": {
+    "colors": {
         "mainTextAreaBackground": "#FFFFFF",
         "mainTextAreaForeground": "#000000",
         "secondaryTextAreaBackground": "#FFFFFF",
@@ -14,30 +14,10 @@
         "accent": "#8BC34A",
         "spellcheck": "#DC0029",
         "toolBarBackground": "#00BCD4",
+        "pageToolBarBackground": "#e6e6e6",
         "divider": "#D6D7D7",
         "menuBackground": "#EDEDED",
         "listItemBackground": "#f5f5f5"
 
-    },
-    "distractionFree": {
-        "mainTextAreaBackground": "#737373",
-        "mainTextAreaForeground": "#EEEEEE",
-        "secondaryTextAreaBackground": "#737373",
-        "secondaryTextAreaForeground": "#EEEEEE",
-        "pageBackground": "#636363",
-        "buttonBackground": "#3F3F3F",
-        "buttonForeground": "#EEEEEE",
-        "buttonIcon": "#EEEEEE",
-        "buttonIconDisabled": "#3F3F3F",
-        "accent": "#8BC34A",
-        "spellcheck": "#FF2E3C",
-        "toolBarBackground": "#3F3ACC",
-        "divider": "#3F3F3F",
-        "menuBackground": "#5A5A5A",
-        "listItemBackground": "#757575"
-
-    }
-
-
-
+   }
 }

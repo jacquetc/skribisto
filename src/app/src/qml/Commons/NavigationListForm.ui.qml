@@ -6,13 +6,11 @@ import ".."
 
 Item {
     id: base
-    property alias listView: listView
-    property alias scrollView: scrollView
     property int scrollBarVerticalPolicy: ScrollBar.AlwaysOff
     property alias goUpToolButton: goUpToolButton
     property alias addToolButton: addToolButton
     property alias treeMenuToolButton: treeMenuToolButton
-    property var toolBarPrimaryColor
+    property alias navigationListStackView: navigationListStackView
 
     SkrPane {
         id: pane
@@ -59,29 +57,19 @@ Item {
                         flat: true
                         text: qsTr("Navigation menu")
                         display: AbstractButton.IconOnly
-                        KeyNavigation.tab: listView
+                        KeyNavigation.tab: navigationListStackView.currentItem
                     }
                 }
             }
 
-            ScrollView {
-                id: scrollView
-                focusPolicy: Qt.StrongFocus
+            StackView {
+                id: navigationListStackView
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                clip: true
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded//scrollBarVerticalPolicy
 
-                ListView {
-                    id: listView
-                    smooth: true
-                    boundsBehavior: Flickable.StopAtBounds
-                    spacing: 1
+                initialItem: stackViewComponent
 
-                    Accessible.name: "Navigation list"
-                    Accessible.role: Accessible.List
-                }
+
             }
         }
     }

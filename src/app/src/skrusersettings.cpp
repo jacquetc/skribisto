@@ -6,40 +6,61 @@
 SKRUserSettings::SKRUserSettings(QObject *parent) : QObject(parent)
 {}
 
-void SKRUserSettings::setProjectSetting(int projectId, const QString& key, int value)
+void SKRUserSettings::setProjectSetting(int projectId, const QString& key, QVariant value)
 {
     QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+
+    setSetting("project_" + unique_identifier, key, value);
+
+}
+
+QVariant SKRUserSettings::getProjectSetting(int projectId, const QString& key,
+                                       QVariant defaultValue)
+{
+    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+
+    return getSetting("project_" + unique_identifier, key, defaultValue);
+
+}
+
+void SKRUserSettings::removeProjectSetting(int projectId, const QString& key)
+{
+    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+
+    removeSetting("project_" + unique_identifier, key);
+}
+
+void SKRUserSettings::setSetting(const QString &group, const QString& key, QVariant value)
+{
+
     QSettings settings;
 
-    settings.beginGroup("project_" + unique_identifier);
+    settings.beginGroup(group);
     settings.setValue(key, value);
     settings.endGroup();
 }
 
-int SKRUserSettings::getProjectSetting(int projectId, const QString& key,
-                                       int defaultValue)
+QVariant SKRUserSettings::getSetting(const QString &group, const QString& key,
+                                       QVariant defaultValue)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
 
-    settings.beginGroup("project_" + unique_identifier);
-    int value = settings.value(key, defaultValue).toInt();
+    settings.beginGroup(group);
+    QVariant value = settings.value(key, defaultValue);
 
     settings.endGroup();
 
     return value;
 }
 
-void SKRUserSettings::removeProjectSetting(int projectId, const QString& key)
+void SKRUserSettings::removeSetting(const QString &group, const QString& key)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
 
-    settings.beginGroup("project_" + unique_identifier);
+    settings.beginGroup(group);
     settings.remove(key);
     settings.endGroup();
 }
-
 QByteArray SKRUserSettings::serializingHash(const QHash<QString, QVariant>& hash) const
 {
     QByteArray array;
@@ -69,9 +90,35 @@ void SKRUserSettings::insertInProjectSettingHash(int             projectId,
                                                  const QVariant& value)
 {
     QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+insertInSomeGroupSettingHash("project_" + unique_identifier, key, hashKey, value);
+}
+
+QVariant SKRUserSettings::getFromProjectSettingHash(int             projectId,
+                                                    const QString & key,
+                                                    const QString & hashKey,
+                                                    const QVariant& defaultValue)
+{
+    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    return getFromSomeGroupSettingHash("project_" + unique_identifier, key, hashKey, defaultValue);
+
+}
+
+void SKRUserSettings::removeFromProjectSettingHash(int            projectId,
+                                                   const QString& key,
+                                                   const QString& hashKey)
+{
+    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    removeFromSomeGroupSettingHash("project_" + unique_identifier, key, hashKey);
+
+}
+
+// --------------------------------------------------------------------
+
+void SKRUserSettings::insertInSomeGroupSettingHash(const QString &settingGroup, const QString &key, const QString &hashKey, const QVariant &value)
+{
     QSettings settings;
 
-    settings.beginGroup("project_" + unique_identifier);
+    settings.beginGroup(settingGroup);
 
     // Serializing default value
     QHash<QString, QVariant> newHash;
@@ -92,15 +139,13 @@ void SKRUserSettings::insertInProjectSettingHash(int             projectId,
     settings.endGroup();
 }
 
-QVariant SKRUserSettings::getFromProjectSettingHash(int             projectId,
-                                                    const QString & key,
-                                                    const QString & hashKey,
-                                                    const QVariant& defaultValue)
+// --------------------------------------------------------------------
+
+QVariant SKRUserSettings::getFromSomeGroupSettingHash(const QString &settingGroup, const QString &key, const QString &hashKey, const QVariant &defaultValue)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
 
-    settings.beginGroup("project_" + unique_identifier);
+    settings.beginGroup(settingGroup);
 
     // Serializing default value
     QHash<QString, QVariant> newHash;
@@ -117,14 +162,13 @@ QVariant SKRUserSettings::getFromProjectSettingHash(int             projectId,
     return hash.value(hashKey, defaultValue);
 }
 
-void SKRUserSettings::removeFromProjectSettingHash(int            projectId,
-                                                   const QString& key,
-                                                   const QString& hashKey)
+// --------------------------------------------------------------------
+
+void SKRUserSettings::removeFromSomeGroupSettingHash(const QString &settingGroup, const QString &key, const QString &hashKey)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
 
-    settings.beginGroup("project_" + unique_identifier);
+    settings.beginGroup(settingGroup);
 
     // Serializing default value
     QHash<QString, QVariant> newHash;
@@ -138,11 +182,9 @@ void SKRUserSettings::removeFromProjectSettingHash(int            projectId,
     hash.remove(hashKey);
 
     // write back
-    QByteArray newArray = serializingHash(newHash);
+    QByteArray newArray = serializingHash(hash);
 
     settings.setValue(key, newArray);
 
     settings.endGroup();
 }
-
-// --------------------------------------------------------------------

@@ -17,9 +17,7 @@ struct SKRSyncDocument
 public:
 
     explicit SKRSyncDocument();
-    SKRSyncDocument(const QString     & paperType,
-                    int                 projectId,
-                    int                 paperId,
+    SKRSyncDocument(const QString &uniqueReference,
                     const QString     & skrTextAreaUniqueObjectName,
                     QQuickTextDocument *qQuickTextDocument);
     SKRSyncDocument(const SKRSyncDocument& syncDocument);
@@ -29,26 +27,18 @@ public:
     SKRSyncDocument   & operator=(const SKRSyncDocument& otherSyncDocument);
     bool                operator==(const SKRSyncDocument& otherSyncDocument) const;
 
-    QString             paperType() const;
-    void                setPaperType(const QString& paperType);
-
     QString             skrTextAreaUniqueObjectName() const;
-    void                setSkrTextAreaUniqueObjectName(
-        const QString& skrTextAreaUniqueObjectName);
-
-    int                 projectId() const;
-    void                setProjectId(int projectId);
-
-    int                 paperId() const;
-    void                setPaperId(int paperId);
+    void                setSkrTextAreaUniqueObjectName(const QString& skrTextAreaUniqueObjectName);
 
     QQuickTextDocument* qQuickTextDocument() const;
     void                setQQuickTextDocument(QQuickTextDocument *qQuickTextDocument);
 
-private:
+    QString uniqueDocumentReference() const;
+    void setUniqueDocumentReference(const QString &uniqueDocumentReference);
 
-    QString                     m_paperType, m_skrTextAreaUniqueObjectName;
-    int                         m_projectId, m_paperId;
+private:
+    QString m_uniqueDocumentReference;
+    QString m_skrTextAreaUniqueObjectName;
     QPointer<QQuickTextDocument>m_qQuickTextDocumentPtr;
 };
 Q_DECLARE_METATYPE(SKRSyncDocument)
@@ -61,14 +51,10 @@ public:
 
     explicit SKRTextBridge(QObject *parent);
 
-    Q_INVOKABLE void subscribeTextDocument(const QString     & paperType,
-                                           int                 projectId,
-                                           int                 paperId,
+    Q_INVOKABLE void subscribeTextDocument(const QString &uniqueDocumentReference,
                                            const QString     & skrTextAreaUniqueObjectName,
                                            QQuickTextDocument *qQuickTextDocument);
-    Q_INVOKABLE void unsubscribeTextDocument(const QString     & paperType,
-                                             int                 projectId,
-                                             int                 paperId,
+    Q_INVOKABLE void unsubscribeTextDocument(const QString &uniqueDocumentReference,
                                              const QString     & skrTextAreaUniqueObjectName,
                                              QQuickTextDocument *qQuickTextDocument);
 
@@ -76,18 +62,14 @@ signals:
 
 private:
 
-    bool isThereAnyOtherSimilarSyncDoc(const QString& paperType,
-                                       int            projectId,
-                                       int            paperId,
+    bool isThereAnyOtherSimilarSyncDoc(const QString &uniqueDocumentReference,
                                        const QString& skrTextAreaUniqueObjectName) const;
 
 
     bool                  isThereAnyOtherSimilarSyncDoc(const SKRSyncDocument& syncDoc)
     const;
 
-    QList<SKRSyncDocument>listOtherSimilarSyncDocs(const QString& paperType,
-                                                   int            projectId,
-                                                   int            paperId,
+    QList<SKRSyncDocument>listOtherSimilarSyncDocs(const QString &uniqueDocumentReference,
                                                    const QString& skrTextAreaUniqueObjectName)
     const;
 

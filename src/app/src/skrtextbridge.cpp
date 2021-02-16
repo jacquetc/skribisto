@@ -5,21 +5,16 @@
 #include <QTextObject>
 
 
-SKRSyncDocument::SKRSyncDocument() : m_paperType(""), m_skrTextAreaUniqueObjectName(""),
-    m_projectId(-1), m_paperId(-1)
+SKRSyncDocument::SKRSyncDocument() :  m_uniqueDocumentReference(""), m_skrTextAreaUniqueObjectName("")
 {}
 
 // --------------------------------------------------------------------------------------
 
-SKRSyncDocument::SKRSyncDocument(const QString     & paperType,
-                                 int                 projectId,
-                                 int                 paperId,
+SKRSyncDocument::SKRSyncDocument(const QString &uniqueDocumentReference,
                                  const QString     & skrTextAreaUniqueObjectName,
                                  QQuickTextDocument *qQuickTextDocument)
 {
-    m_paperId                     = paperId;
-    m_projectId                   = projectId;
-    m_paperType                   = paperType;
+    m_uniqueDocumentReference = uniqueDocumentReference;
     m_skrTextAreaUniqueObjectName = skrTextAreaUniqueObjectName;
     m_qQuickTextDocumentPtr       = qQuickTextDocument;
 }
@@ -28,9 +23,7 @@ SKRSyncDocument::SKRSyncDocument(const QString     & paperType,
 
 SKRSyncDocument::SKRSyncDocument(const SKRSyncDocument& syncDocument)
 {
-    m_paperId                     = syncDocument.paperId();
-    m_projectId                   = syncDocument.projectId();
-    m_paperType                   = syncDocument.paperType();
+    m_uniqueDocumentReference = syncDocument.uniqueDocumentReference();
     m_skrTextAreaUniqueObjectName = syncDocument.skrTextAreaUniqueObjectName();
     m_qQuickTextDocumentPtr       = syncDocument.qQuickTextDocument();
 }
@@ -47,9 +40,7 @@ bool SKRSyncDocument::operator!() const
 SKRSyncDocument& SKRSyncDocument::operator=(const SKRSyncDocument& otherSyncDocument)
 {
     if (Q_LIKELY(&otherSyncDocument != this)) {
-        m_paperId                     = otherSyncDocument.paperId();
-        m_projectId                   = otherSyncDocument.projectId();
-        m_paperType                   = otherSyncDocument.paperType();
+        m_uniqueDocumentReference = otherSyncDocument.uniqueDocumentReference();
         m_skrTextAreaUniqueObjectName = otherSyncDocument.skrTextAreaUniqueObjectName();
         m_qQuickTextDocumentPtr       = otherSyncDocument.qQuickTextDocument();
     }
@@ -67,27 +58,10 @@ SKRSyncDocument::operator bool() const
 // --------------------------------------------------------------------------------------
 
 bool SKRSyncDocument::operator==(const SKRSyncDocument& otherSyncDocument) const {
-    return m_paperType == otherSyncDocument.paperId()
-           && m_projectId == otherSyncDocument.projectId()
-           && m_paperId == otherSyncDocument.paperId()
-           && m_skrTextAreaUniqueObjectName ==
-           otherSyncDocument.skrTextAreaUniqueObjectName()
+    return m_uniqueDocumentReference == otherSyncDocument.uniqueDocumentReference()
+           && m_skrTextAreaUniqueObjectName == otherSyncDocument.skrTextAreaUniqueObjectName()
            && m_qQuickTextDocumentPtr == otherSyncDocument.qQuickTextDocument()
     ;
-}
-
-// --------------------------------------------------------------------------------------
-
-QString SKRSyncDocument::paperType() const
-{
-    return m_paperType;
-}
-
-// --------------------------------------------------------------------------------------
-
-void SKRSyncDocument::setPaperType(const QString& paperType)
-{
-    m_paperType = paperType;
 }
 
 // --------------------------------------------------------------------------------------
@@ -107,35 +81,6 @@ void SKRSyncDocument::setSkrTextAreaUniqueObjectName(
 
 // --------------------------------------------------------------------------------------
 
-int SKRSyncDocument::projectId() const
-{
-    return m_projectId;
-}
-
-// --------------------------------------------------------------------------------------
-
-void SKRSyncDocument::setProjectId(int projectId)
-{
-    m_projectId = projectId;
-}
-
-// --------------------------------------------------------------------------------------
-
-
-int SKRSyncDocument::paperId() const
-{
-    return m_paperId;
-}
-
-// --------------------------------------------------------------------------------------
-
-void SKRSyncDocument::setPaperId(int paperId)
-{
-    m_paperId = paperId;
-}
-
-// --------------------------------------------------------------------------------------
-
 QQuickTextDocument * SKRSyncDocument::qQuickTextDocument() const
 {
     return m_qQuickTextDocumentPtr.data();
@@ -151,6 +96,20 @@ void SKRSyncDocument::setQQuickTextDocument(QQuickTextDocument *qQuickTextDocume
 }
 
 // --------------------------------------------------------------------------------------
+
+QString SKRSyncDocument::uniqueDocumentReference() const
+{
+    return m_uniqueDocumentReference;
+}
+
+// --------------------------------------------------------------------------------------
+
+void SKRSyncDocument::setUniqueDocumentReference(const QString &uniqueDocumentReference)
+{
+    m_uniqueDocumentReference = uniqueDocumentReference;
+}
+
+// --------------------------------------------------------------------------------------
 // ------SKRTextBridge-----------------------------------------------------------------------
 // --------------------------------------------------------------------------------------
 
@@ -161,15 +120,11 @@ SKRTextBridge::SKRTextBridge(QObject *parent) : QObject(parent)
 
 // --------------------------------------------------------------------------------------
 
-void SKRTextBridge::subscribeTextDocument(const QString     & paperType,
-                                          int                 projectId,
-                                          int                 paperId,
+void SKRTextBridge::subscribeTextDocument(const QString &uniqueDocumentReference,
                                           const QString     & skrTextAreaUniqueObjectName,
                                           QQuickTextDocument *qQuickTextDocument)
 {
-    SKRSyncDocument syncDoc = SKRSyncDocument(paperType,
-                                              projectId,
-                                              paperId,
+    SKRSyncDocument syncDoc = SKRSyncDocument(uniqueDocumentReference,
                                               skrTextAreaUniqueObjectName,
                                               qQuickTextDocument);
 
@@ -190,15 +145,11 @@ void SKRTextBridge::subscribeTextDocument(const QString     & paperType,
 
 // --------------------------------------------------------------------------------------
 
-void SKRTextBridge::unsubscribeTextDocument(const QString     & paperType,
-                                            int                 projectId,
-                                            int                 paperId,
+void SKRTextBridge::unsubscribeTextDocument(const QString &uniqueDocumentReference,
                                             const QString     & skrTextAreaUniqueObjectName,
                                             QQuickTextDocument *qQuickTextDocument)
 {
-    SKRSyncDocument syncDoc = SKRSyncDocument(paperType,
-                                              projectId,
-                                              paperId,
+    SKRSyncDocument syncDoc = SKRSyncDocument(uniqueDocumentReference,
                                               skrTextAreaUniqueObjectName,
                                               qQuickTextDocument);
 
@@ -208,9 +159,7 @@ void SKRTextBridge::unsubscribeTextDocument(const QString     & paperType,
 
 // --------------------------------------------------------------------------------------
 
-bool SKRTextBridge::isThereAnyOtherSimilarSyncDoc(const QString& paperType,
-                                                  int            projectId,
-                                                  int            paperId,
+bool SKRTextBridge::isThereAnyOtherSimilarSyncDoc(const QString& uniqueDocumentReference,
                                                   const QString& skrTextAreaUniqueObjectName)
 const
 {
@@ -218,8 +167,7 @@ const
 
     for (const SKRSyncDocument& syncDoc : m_syncDocList) {
         value =
-            (syncDoc.paperType() == paperType && syncDoc.projectId() == projectId &&
-             syncDoc.paperId() == paperId &&
+            (syncDoc.uniqueDocumentReference() == uniqueDocumentReference &&
              syncDoc.skrTextAreaUniqueObjectName() != skrTextAreaUniqueObjectName);
 
         if (value) {
@@ -234,25 +182,20 @@ const
 
 bool SKRTextBridge::isThereAnyOtherSimilarSyncDoc(const SKRSyncDocument& syncDoc) const
 {
-    return this->isThereAnyOtherSimilarSyncDoc(syncDoc.paperType(),
-                                               syncDoc.projectId(),
-                                               syncDoc.paperId(),
+    return this->isThereAnyOtherSimilarSyncDoc(syncDoc.uniqueDocumentReference(),
                                                syncDoc.skrTextAreaUniqueObjectName());
 }
 
 // --------------------------------------------------------------------------------------
 
-QList<SKRSyncDocument>SKRTextBridge::listOtherSimilarSyncDocs(const QString& paperType,
-                                                              int            projectId,
-                                                              int            paperId,
+QList<SKRSyncDocument>SKRTextBridge::listOtherSimilarSyncDocs(const QString &uniqueDocumentReference,
                                                               const QString& skrTextAreaUniqueObjectName)
 const
 {
     QList<SKRSyncDocument> list;
 
     for (const SKRSyncDocument& syncDoc : m_syncDocList) {
-        if ((syncDoc.paperType() == paperType) && (syncDoc.projectId() == projectId) &&
-            (syncDoc.paperId() == paperId) &&
+        if ((syncDoc.uniqueDocumentReference() == uniqueDocumentReference) &&
             (syncDoc.skrTextAreaUniqueObjectName() != skrTextAreaUniqueObjectName)) {
             list.append(syncDoc);
         }
@@ -266,9 +209,7 @@ const
 QList<SKRSyncDocument>SKRTextBridge::listOtherSimilarSyncDocs(
     const SKRSyncDocument& syncDoc) const
 {
-    return this->listOtherSimilarSyncDocs(syncDoc.paperType(),
-                                          syncDoc.projectId(),
-                                          syncDoc.paperId(),
+    return this->listOtherSimilarSyncDocs(syncDoc.uniqueDocumentReference(),
                                           syncDoc.skrTextAreaUniqueObjectName());
 }
 
@@ -309,7 +250,7 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
 
     SKRSyncDocument senderSyncDoc;
 
-    for (const SKRSyncDocument& syncDoc : m_syncDocList) {
+    for (const SKRSyncDocument& syncDoc : qAsConst(m_syncDocList)) {
         if (syncDoc.skrTextAreaUniqueObjectName() == skrTextAreaUniqueObjectName) {
             senderSyncDoc = syncDoc;
             break;
@@ -373,7 +314,7 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
         otherDocSelectionCursor.setPosition(position + charsAdded, QTextCursor::MoveAnchor);
         if(otherDocSelectionCursor.block().text().size() != selectionCursor.block().text().size()){
             otherTextDocument->setMarkdown(textDocument->toMarkdown());
-            qDebug() << "failsafe used for " << senderSyncDoc.paperType() << senderSyncDoc.projectId() << senderSyncDoc.paperId();
+            qDebug() << "failsafe used for " << senderSyncDoc.uniqueDocumentReference();
         }
 
         this->connectContentsChangeSignal(syncDoc);

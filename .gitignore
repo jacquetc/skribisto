@@ -103,3 +103,5 @@ CMakeLists.txt.user.*
 .flatpak-builder/
 build-dir
 build-dir/
+
+.DS_Store
