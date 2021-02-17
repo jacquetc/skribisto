@@ -2354,6 +2354,14 @@
     </message>
 </context>
 <context>
+    <name>TextContextMenu</name>
+    <message>
+        <location filename="../app/src/qml/Commons/TextContextMenu.qml" line="452"/>
+        <source>Learn &quot;%1&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TextContextMenuForm.ui</name>
     <message>
         <location filename="../app/src/qml/Commons/TextContextMenuForm.ui.qml" line="37"/>

@@ -112,19 +112,22 @@ target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_
 
 #-------------- QUAZIP --------------------
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+#if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 
     if(${SKR_DEV})
+    
+    	message("-------------- SKR_DEV is ON ---------------------")
         set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
 
         set(QUAZIP_QT_MAJOR_VERSION ${QT_MAJOR_VERSION})
         set(QuaZip-Qt${QT_VERSION_MAJOR}_DIR ${EXTERNAL_INSTALL_LOCATION}/quazip/lib/cmake/QuaZip-Qt${QT_VERSION_MAJOR}-1.1)
         set(ZLIB_ROOT ${EXTERNAL_INSTALL_LOCATION}/zlib)
+     	message("-------------- QuaZip-Qt${QT_VERSION_MAJOR}_DIR  =  ${QuaZip-Qt${QT_VERSION_MAJOR}_DIR}---------------------")
     endif(${SKR_DEV})
 
 
-endif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+#endif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 
 find_package(QuaZip-Qt${QT_VERSION_MAJOR} REQUIRED)
