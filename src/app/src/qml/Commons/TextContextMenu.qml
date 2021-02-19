@@ -453,6 +453,13 @@ TextContextMenuForm {
 
                     onClicked: {
                         root.suggestionToBeLearned(root.suggestionOriginalWord)
+
+                        root.close()
+                    }
+
+                    contentItem: SkrLabel {
+                        text: addWordButton.text
+
                     }
                 }
 

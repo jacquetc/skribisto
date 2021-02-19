@@ -51,7 +51,7 @@ signals:
     void projectIdChanged(int projectId);
     void suggestionListChanged(QStringList list);
     void suggestionOriginalWordChanged(QString word);
-
+    void shakeTextSoHighlightsTakeEffectCalled();
 public slots:
 
 private:

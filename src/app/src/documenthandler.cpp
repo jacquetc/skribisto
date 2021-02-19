@@ -58,6 +58,10 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 &DocumentHandler::projectIdChanged,
                 m_highlighter,
                 &SKRHighlighter::setProjectId);
+        connect(m_highlighter, &SKRHighlighter::shakeTextSoHighlightsTakeEffectCalled,
+                this,
+                &DocumentHandler::shakeTextSoHighlightsTakeEffectCalled);
+
 
     } else {
         m_textCursor.setPosition(0);
@@ -730,12 +734,5 @@ void DocumentHandler::replaceWord(const QString &word, const QString &newWord)
         //replace:
         m_textCursor.insertText(newWord);
     }
-
-}
-
-void DocumentHandler::learnWord(const QString &word)
-{
-
-    m_highlighter->getSpellChecker()->addWordToUserDict(word);
 
 }

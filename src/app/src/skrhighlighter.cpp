@@ -1,5 +1,6 @@
-#include "skrhighlighter.h"
+﻿#include "skrhighlighter.h"
 #include <QDebug>
+#include <QTextDocument>
 #include <QTextBoundaryFinder>
 #include "plmdata.h"
 
@@ -182,15 +183,18 @@ void SKRHighlighter::highlightBlock(const QString& text)
     for (int k = 0; k < text.length(); ++k) {
         QTextCharFormat finalFormat;
 
-        if (findList.contains(k)) finalFormat.merge(findFormat);
+        if (findList.contains(k)){
+            finalFormat.merge(findFormat);
+        }
 
         if (spellcheckerList.contains(k)) {
             finalFormat.merge(spellcheckFormat);
         }
 
-
         setFormat(k, 1, finalFormat);
     }
+
+    emit shakeTextSoHighlightsTakeEffectCalled();
 }
 
 // -------------------------------------------------------------------

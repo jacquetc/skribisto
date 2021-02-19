@@ -1365,12 +1365,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPage.qml" line="220"/>
+        <location filename="../app/src/qml/ProjectPage/ProjectPage.qml" line="219"/>
         <source>Character count : %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPage.qml" line="223"/>
+        <location filename="../app/src/qml/ProjectPage/ProjectPage.qml" line="222"/>
         <source>Word count : %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1378,37 +1378,37 @@
 <context>
     <name>ProjectPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="101"/>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="102"/>
         <source>Edit project name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="116"/>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="117"/>
         <source>Location :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="157"/>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="158"/>
         <source>Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="165"/>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="168"/>
         <source>Dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="175"/>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="178"/>
         <source>Selected dictionary not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="184"/>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="196"/>
         <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="198"/>
+        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="210"/>
         <source>Statistics</source>
         <translation type="unfinished"></translation>
     </message>

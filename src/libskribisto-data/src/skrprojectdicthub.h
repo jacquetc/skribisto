@@ -22,7 +22,7 @@ public:
     Q_INVOKABLE SKRResult setProjectDictList(int projectId, const QStringList &projectDictList);
 
     Q_INVOKABLE SKRResult addWordToProjectDict(int projectId, const QString &newWord);
-    Q_INVOKABLE SKRResult removeWordFromProjectDict(int projectId, const QString &wordtoRemove);
+    Q_INVOKABLE SKRResult removeWordFromProjectDict(int projectId, const QString &wordToRemove);
 private slots:
 
     void setError(const SKRResult& result);

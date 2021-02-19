@@ -6,6 +6,7 @@ import "../Items"
 import ".."
 
 SkrBasePage {
+    id: base
     width: 400
     height: 400
 
@@ -156,25 +157,51 @@ SkrBasePage {
                                 Layout.fillWidth: true
                                 title: qsTr("Language")
 
-                                RowLayout {
-                                    id: rowLayout1
-                                    anchors.fill: parent
+                                ColumnLayout {
 
-                                    SkrLabel {
-                                        id: label1
-                                        text: qsTr("Dictionary :")
+                                    RowLayout {
+                                        id: rowLayout1
+                                        Layout.fillWidth: true
+
+                                        SkrLabel {
+                                            id: label1
+                                            text: qsTr("Dictionary :")
+                                        }
+
+                                        SkrComboBox {
+                                            id: dictComboBox
+                                        }
+
+                                        SkrLabel {
+                                            id: dictNotFoundLabel
+                                            color: "#ee0000"
+                                            text: qsTr("Selected dictionary not found")
+                                        }
                                     }
 
-                                    SkrComboBox {
-                                        id: dictComboBox
-                                    }
+                                }
+                            }
 
-                                    SkrLabel {
-                                        id: dictNotFoundLabel
-                                        color: "#ee0000"
-                                        text: qsTr("Selected dictionary not found")
+                            SkrGroupBox {
+                                id: projectDictGroupBox
+                                focusPolicy: Qt.TabFocus
+                                Layout.fillWidth: true
+                                title: qsTr("Project dictionary")
+
+                                ColumnLayout {
+
+                                    UserDictPage {
+                                        projectId: base.projectId
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+
+                                        implicitHeight: 300
+                                        implicitWidth: 300
+
                                     }
                                 }
+
+
                             }
 
                             SkrGroupBox {

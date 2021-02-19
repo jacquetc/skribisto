@@ -108,7 +108,7 @@ SKRResult SKRProjectDictHub::addWordToProjectDict(int projectId, const QString& 
 
 
 SKRResult SKRProjectDictHub::removeWordFromProjectDict(int            projectId,
-                                                      const QString& wordtoRemove)
+                                                      const QString& wordToRemove)
 {
     SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
@@ -116,10 +116,10 @@ SKRResult SKRProjectDictHub::removeWordFromProjectDict(int            projectId,
     // find id :
     QHash<int, QVariant> hash;
     QString where      = "t_word";
-    QString whereValue = wordtoRemove;
+    QString whereValue = wordToRemove;
     int     wordId     = -1;
 
-    result = queries.getValueByIds("t_word", hash, where, wordtoRemove);
+    result = queries.getValueByIds("t_word", hash, where, wordToRemove);
 
     IFOK(result) {
         if (hash.isEmpty()) {
@@ -127,7 +127,7 @@ SKRResult SKRProjectDictHub::removeWordFromProjectDict(int            projectId,
         }
     }
     IFOK(result) {
-        wordId = hash.key(wordtoRemove);
+        wordId = hash.key(wordToRemove);
     }
 
     IFOK(result) {
@@ -139,7 +139,7 @@ SKRResult SKRProjectDictHub::removeWordFromProjectDict(int            projectId,
     }
     IFOK(result) {
         queries.commit();
-        emit projectDictWordRemoved(projectId, wordtoRemove);
+        emit projectDictWordRemoved(projectId, wordToRemove);
     }
     IFKO(result) {
         emit errorSent(result);

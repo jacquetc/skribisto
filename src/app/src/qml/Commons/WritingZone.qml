@@ -391,10 +391,23 @@ WritingZoneForm {
 
         Component.onCompleted: {
             textContextMenu.suggestionChosen.connect(documentHandler.replaceWord)
-            textContextMenu.suggestionToBeLearned.connect(documentHandler.learnWord)
         }
 
+        Connections {
+            target: textContextMenu
+            function onSuggestionToBeLearned(word) {
+                plmData.projectDictHub().addWordToProjectDict(root.projectId , word)
+
+            }
+
+
+        }
+
+
+
     }
+
+
 
     //    SkrMenu {
 
@@ -695,6 +708,14 @@ WritingZoneForm {
         highlighter.spellChecker.setUserDict(projectDictList)
     }
 
+
+    Connections {
+        target: documentHandler
+        function onShakeTextSoHighlightsTakeEffectCalled() {
+            textArea.width += 1
+            textArea.width -= 1
+        }
+    }
 
     //-----------------------------------------------------------------------------
     // left scroll area :
