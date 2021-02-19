@@ -72,7 +72,6 @@ Item {
                 id: outlineWritingZone
                 placeholderText: qsTr("Type your outline here...")
                 Layout.fillWidth: true
-                Layout.fillHeight: true
                 Layout.preferredHeight: 400
                 stretch: true
                 leftScrollItemVisible: false
@@ -82,6 +81,14 @@ Item {
                 textAreaStyleForegroundColor: SkrTheme.secondaryTextAreaForeground
                 paneStyleBackgroundColor: SkrTheme.pageBackground
                 textAreaStyleAccentColor: SkrTheme.accent
+
+                Behavior on Layout.preferredHeight {
+                    SpringAnimation {
+                        spring: 5
+                        mass: 0.2
+                        damping: 0.2
+                    }
+                }
             }
         }
 
