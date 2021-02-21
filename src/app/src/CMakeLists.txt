@@ -55,6 +55,7 @@ set(TS_FILES
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_de_DE.ts
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_it_IT.ts
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_ru_RU.ts
+    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_uk_UA.ts
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_pt_BR.ts
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_sp_SP.ts
     )

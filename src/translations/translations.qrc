@@ -6,5 +6,6 @@
         <file>skribisto_pt_BR.qm</file>
         <file>skribisto_sp_SP.qm</file>
         <file>skribisto_ru_RU.qm</file>
+        <file>skribisto_uk_UA.qm</file>
     </qresource>
 </RCC>
