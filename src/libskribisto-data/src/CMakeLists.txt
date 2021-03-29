@@ -121,7 +121,15 @@ target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_
         set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
 
         set(QUAZIP_QT_MAJOR_VERSION ${QT_MAJOR_VERSION})
-        set(QuaZip-Qt${QT_VERSION_MAJOR}_DIR ${EXTERNAL_INSTALL_LOCATION}/quazip/lib/cmake/QuaZip-Qt${QT_VERSION_MAJOR}-1.1)
+
+        if(EXISTS ${EXTERNAL_INSTALL_LOCATION}/quazip/lib)
+            set(QUAZIP_LIB_DIR ${EXTERNAL_INSTALL_LOCATION}/quazip/lib)
+        endif(EXISTS ${EXTERNAL_INSTALL_LOCATION}/quazip/lib)
+        if(EXISTS ${EXTERNAL_INSTALL_LOCATION}/quazip/lib64)
+            set(QUAZIP_LIB_DIR ${EXTERNAL_INSTALL_LOCATION}/quazip/lib64)
+        endif(EXISTS ${EXTERNAL_INSTALL_LOCATION}/quazip/lib64)
+
+        set(QuaZip-Qt${QT_VERSION_MAJOR}_DIR ${QUAZIP_LIB_DIR}/cmake/QuaZip-Qt${QT_VERSION_MAJOR}-1.1)
         set(ZLIB_ROOT ${EXTERNAL_INSTALL_LOCATION}/zlib)
      	message("-------------- QuaZip-Qt${QT_VERSION_MAJOR}_DIR  =  ${QuaZip-Qt${QT_VERSION_MAJOR}_DIR}---------------------")
     endif(${SKR_DEV})
