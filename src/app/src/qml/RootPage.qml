@@ -8,6 +8,7 @@ import eu.skribisto.errorhub 1.0
 
 import "Items"
 import "Commons"
+import "WelcomePage"
 
 
 
@@ -212,16 +213,42 @@ RootPageForm {
         }
 
         onTriggered: {
-            viewManager.loadProjectIndependantPage("WELCOME")
+            welcomePopup.open()
 
         }
     }
 
-    Shortcut {
-        sequence: ""
-        context: Qt.WindowShortcut
-        onActivated: goHomeAction.trigger()
-    }
+    SkrPopup {
+        id: welcomePopup
+        parent: Overlay.overlay
+        x: 0
+        y: 0
+        width: Overlay.overlay.width
+        height: Overlay.overlay.height
+
+        modal: true
+
+        background: Rectangle {
+
+            radius: 10
+            color: SkrTheme.pageBackground
+
+        }
+
+
+        contentItem:
+            WelcomePage {
+                onCloseCalled: welcomePopup.close()
+
+            }
+
+        }
+
+//    Shortcut {
+//        sequence: ""
+//        context: Qt.WindowShortcut
+//        onActivated: goHomeAction.trigger()
+//    }
 
 
 

@@ -4,24 +4,9 @@ import ".."
 
 WelcomePageForm {
     id: root
-    pageType: "WELCOME"
     clip: true
 
-
-    //--------------------------------------------------------
-    //---View buttons-----------------------------------------
-    //--------------------------------------------------------
-
-    viewButtons.viewManager: root.viewManager
-    viewButtons.position: root.position
-
-    viewButtons.onOpenInNewWindowCalled: {
-        skrWindowManager.addWindowForProjectIndependantPageType(pageType)
-    }
-
-    viewButtons.onSplitCalled: function(position){
-        viewManager.loadProjectIndependantPageAt(pageType, position)
-    }
+    signal closeCalled()
 
 
     //--------------------------------------------------------
@@ -29,6 +14,9 @@ WelcomePageForm {
     //--------------------------------------------------------
 
     // pages :
+    goBackButton.onClicked: {
+        closeCalled()
+    }
     projectPageButton.onClicked: {
         stackLayout.currentIndex = 0
         stackLayout.itemAt(0).forceActiveFocus()
@@ -51,6 +39,11 @@ WelcomePageForm {
     }
 
     //pages with tabbar :
+
+    goBackTabButton.onClicked: {
+        closeCalled()
+
+    }
     projectPageTabButton.onClicked: {
         stackLayout.currentIndex = 0
         stackLayout.itemAt(0).forceActiveFocus()
@@ -144,14 +137,6 @@ WelcomePageForm {
 
 
 
-
-    //------------------------------------------------------------------------
-    //-----tool boxes------------------------------------------------------------
-    //-----------------------------------------------------------------------
-
-
-
-    toolBoxes: []
 
 
 }

@@ -5,12 +5,14 @@ import ".."
 import "../Items"
 import "../Commons"
 
-SkrBasePage {
+SkrPane {
     id: base
+    property alias goBackButton: goBackButton
     property alias projectPageButton: projectPageButton
     property alias examplePageButton: examplePageButton
     property alias helpPageButton: helpPageButton
     property alias settingsPageButton: settingsPageButton
+    property alias goBackTabButton: goBackTabButton
     property alias examplePageTabButton: examplePageTabButton
     property alias helpPageTabButton: helpPageTabButton
     property alias projectPageTabButton: projectPageTabButton
@@ -21,41 +23,12 @@ SkrBasePage {
     property alias tabBar: tabBar
     property alias separator: separator
     property alias mainButtonsPane: mainButtonsPane
-    property alias viewButtons: viewButtons
 
 
     ColumnLayout {
         id: columnLayout2
         spacing: 0
         anchors.fill: parent
-
-
-        //-------------------------------------------------
-        //--- Tool bar  ----------------------------------
-        //-------------------------------------------------
-
-        SkrPageToolBar {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 30
-
-
-            RowLayout {
-                anchors.fill: parent
-
-                Item{
-                    id: stretcher
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                }
-
-                SkrViewButtons {
-                    id: viewButtons
-                    Layout.fillHeight: true
-                }
-            }
-
-        }
 
 
 
@@ -65,6 +38,12 @@ SkrBasePage {
             Layout.fillWidth: true
 
 
+            SkrTabButton {
+                id: goBackTabButton
+                text: qsTr("Go Back")
+                closable: false
+                fillTabBarWidth: true
+            }
             SkrTabButton {
                 id: projectPageTabButton
                 text: qsTr("Project")
@@ -107,6 +86,13 @@ SkrBasePage {
                 ColumnLayout {
                     id: columnLayout1
                     anchors.fill: parent
+
+                    SkrToolButton {
+                        id: goBackButton
+                        text: qsTr("Go Back")
+                        display: AbstractButton.IconOnly
+                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    }
 
                     SkrToolButton {
                         id: projectPageButton

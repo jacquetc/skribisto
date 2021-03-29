@@ -1620,27 +1620,27 @@
 <context>
     <name>RootPage</name>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="206"/>
+        <location filename="../app/src/qml/RootPage.qml" line="207"/>
         <source>Show the welcome page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="340"/>
+        <location filename="../app/src/qml/RootPage.qml" line="367"/>
         <source>&amp;File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="390"/>
+        <location filename="../app/src/qml/RootPage.qml" line="417"/>
         <source>&amp;Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="421"/>
+        <location filename="../app/src/qml/RootPage.qml" line="448"/>
         <source>&amp;View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="449"/>
+        <location filename="../app/src/qml/RootPage.qml" line="476"/>
         <source>&amp;Help</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2546,26 +2546,32 @@
 <context>
     <name>WelcomePageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="70"/>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="113"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="43"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="92"/>
+        <source>Go Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="49"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="99"/>
         <source>Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="76"/>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="120"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="55"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="106"/>
         <source>Examples</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="82"/>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="127"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="61"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="113"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="89"/>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="134"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="68"/>
+        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="120"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
