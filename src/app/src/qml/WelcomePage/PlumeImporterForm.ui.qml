@@ -6,7 +6,6 @@ import "../Commons"
 import ".."
 
 Item {
-
     property alias goBackToolButton: goBackToolButton
     property alias importPlumeProjectButton: importPlumeProjectButton
     property alias plumeProjectDetailPathLabel: plumeProjectDetailPathLabel

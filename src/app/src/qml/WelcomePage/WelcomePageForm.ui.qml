@@ -8,21 +8,20 @@ import "../Commons"
 SkrPane {
     id: base
     property alias goBackButton: goBackButton
-    property alias projectPageButton: projectPageButton
-    property alias examplePageButton: examplePageButton
-    property alias helpPageButton: helpPageButton
-    property alias settingsPageButton: settingsPageButton
-    property alias goBackTabButton: goBackTabButton
-    property alias examplePageTabButton: examplePageTabButton
-    property alias helpPageTabButton: helpPageTabButton
-    property alias projectPageTabButton: projectPageTabButton
-    property alias settingsPageTabButton: settingsPageTabButton
 
 
-    property alias stackLayout: stackLayout
-    property alias tabBar: tabBar
+    property alias stackView: stackView
     property alias separator: separator
     property alias mainButtonsPane: mainButtonsPane
+    property alias newButton: newButton
+    property alias recentButton: recentButton
+    property alias exampleButton: exampleButton
+    property alias openButton: openButton
+    property alias importButton: importButton
+    property alias exportButton: exportButton
+    property alias printButton: printButton
+    property alias settingsButton: settingsButton
+    property alias helpButton: helpButton
 
 
     ColumnLayout {
@@ -30,46 +29,6 @@ SkrPane {
         spacing: 0
         anchors.fill: parent
 
-
-
-        SkrTabBar {
-            id: tabBar
-            Layout.preferredHeight: 40
-            Layout.fillWidth: true
-
-
-            SkrTabButton {
-                id: goBackTabButton
-                text: qsTr("Go Back")
-                closable: false
-                fillTabBarWidth: true
-            }
-            SkrTabButton {
-                id: projectPageTabButton
-                text: qsTr("Project")
-                closable: false
-                fillTabBarWidth: true
-            }
-            SkrTabButton {
-                id: examplePageTabButton
-                text: qsTr("Examples")
-                closable: false
-                fillTabBarWidth: true
-            }
-            SkrTabButton {
-                id: settingsPageTabButton
-                text: qsTr("Settings")
-                closable: false
-                fillTabBarWidth: true
-            }
-
-            SkrTabButton {
-                id: helpPageTabButton
-                text: qsTr("Help")
-                closable: false
-                fillTabBarWidth: true
-            }
-        }
 
         RowLayout {
             id: rowLayout
@@ -90,36 +49,97 @@ SkrPane {
                     SkrToolButton {
                         id: goBackButton
                         text: qsTr("Go Back")
+                        focusPolicy: Qt.NoFocus
                         display: AbstractButton.IconOnly
-                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+                        icon {
+                            source: "qrc:///icons/backup/go-previous.svg"
+                        }
                     }
 
                     SkrToolButton {
-                        id: projectPageButton
-                        text: qsTr("Project")
-                        display: AbstractButton.TextOnly
-                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        id: newButton
+                        text: qsTr("New")
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                        icon {
+                            source: "qrc:///icons/backup/document-new.svg"
+                        }
                     }
 
                     SkrToolButton {
-                        id: examplePageButton
+                        id: recentButton
+                        text: qsTr("Recent")
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                    }
+
+                    SkrToolButton {
+                        id: openButton
+                        text: qsTr("Open")
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                    }
+
+                    SkrToolButton {
+                        id: exampleButton
                         text: qsTr("Examples")
-                        display: AbstractButton.TextOnly
-                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                     }
 
                     SkrToolButton {
-                        id: settingsPageButton
+                        id: importButton
+                        text: qsTr("Import")
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                    }
+
+                    SkrToolButton {
+                        id: exportButton
+                        text: qsTr("Export")
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                    }
+
+                    SkrToolButton {
+                        id: printButton
+                        text: qsTr("Print")
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                    }
+
+                    SkrToolButton {
+                        id: settingsButton
                         text: qsTr("Settings")
-                        display: AbstractButton.TextOnly
-                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                     }
 
+
                     SkrToolButton {
-                        id: helpPageButton
+                        id: helpButton
                         text: qsTr("Help")
-                        display: AbstractButton.TextOnly
-                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                     }
 
                     Item {
@@ -156,30 +176,17 @@ SkrPane {
                 }
 
             }
-            StackLayout {
-                id: stackLayout
+            StackView {
+                id: stackView
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                    ProjectPage {
-                        id: projectPage
-                    }
+                initialItem: Item {}
 
-                    ExamplePage {
-                        id: examplePage
-                    }
-
-                    SettingsPage{
-                        id: settingsPage
-                    }
-
-                    HelpPage {
-                        id: helpPage
-                    }
 
             }
         }
-    }    
+    }
 }
 
 /*##^##

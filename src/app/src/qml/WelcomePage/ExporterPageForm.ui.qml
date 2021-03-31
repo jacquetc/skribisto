@@ -6,7 +6,7 @@ import "../Items"
 import "../Commons"
 import ".."
 
-SkrBasePage {
+Item {
 
     property alias exportProjectButton: exportProjectButton
     property alias selectFileToolButton: selectFileToolButton
@@ -35,7 +35,6 @@ SkrBasePage {
 
     property alias progressBar: progressBar
 
-    property alias goBackToolButton: goBackToolButton
 
 
     ColumnLayout {
@@ -46,10 +45,6 @@ SkrBasePage {
             id: rowLayout7
             Layout.fillWidth: true
 
-            SkrToolButton {
-                id: goBackToolButton
-                text: qsTr("Go back")
-            }
 
             SkrLabel {
                 id: titleLabel2
@@ -124,7 +119,7 @@ SkrBasePage {
                         checkButtonsVisible: true
                         treelikeIndentsVisible: true
                         treeIndentMultiplier: 40
-                        KeyNavigation.tab: selectAllTreeItemsToolButton
+                        KeyNavigation.tab: odtButton
                     }
 
                 }

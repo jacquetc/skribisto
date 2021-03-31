@@ -88,7 +88,7 @@ RootPageForm {
     }
 
     showLeftDockButton.action: showLeftDockAction
-        Action {
+    Action {
         id: showLeftDockAction
         icon.source: "qrc:///icons/backup/go-next-view.svg"
         onTriggered: {
@@ -96,14 +96,14 @@ RootPageForm {
         }
     }
 
-        showLeftDockButton.visible: showLeftDockButtonWidth !== 0
-        Behavior on showLeftDockButtonWidth {
-            SpringAnimation {
-                spring: 5
-                mass: 0.2
-                damping: 0.2
-            }
+    showLeftDockButton.visible: showLeftDockButtonWidth !== 0
+    Behavior on showLeftDockButtonWidth {
+        SpringAnimation {
+            spring: 5
+            mass: 0.2
+            damping: 0.2
         }
+    }
 
     //------------------------------------------------
 
@@ -238,17 +238,42 @@ RootPageForm {
 
         contentItem:
             WelcomePage {
-                onCloseCalled: welcomePopup.close()
-
-            }
+            id: welcomePage
+            onCloseCalled: welcomePopup.close()
 
         }
 
-//    Shortcut {
-//        sequence: ""
-//        context: Qt.WindowShortcut
-//        onActivated: goHomeAction.trigger()
-//    }
+    }
+
+
+    Connections {
+        target: welcomePage
+        function onCloseCalled(){
+            rootWindow.protectedSignals.closeWelcomePopupCalled()
+        }
+    }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onOpenWelcomePopupCalled(){
+
+            welcomePopup.open()
+        }
+    }
+
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onCloseWelcomePopupCalled(){
+            welcomePopup.close()
+        }
+    }
+
+    //    Shortcut {
+    //        sequence: ""
+    //        context: Qt.WindowShortcut
+    //        onActivated: goHomeAction.trigger()
+    //    }
 
 
 

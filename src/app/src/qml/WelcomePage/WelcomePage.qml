@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQuick.Controls 2.15
 import eu.skribisto.projecthub 1.0
 import ".."
 
@@ -17,56 +18,55 @@ WelcomePageForm {
     goBackButton.onClicked: {
         closeCalled()
     }
-    projectPageButton.onClicked: {
-        stackLayout.currentIndex = 0
-        stackLayout.itemAt(0).forceActiveFocus()
+    newButton.onClicked: {
+        var item = stackView.push("NewProjectPage.qml", StackView.Immediate)
+        item.forceActiveFocus()
 
     }
-    examplePageButton.onClicked: {
-        stackLayout.currentIndex = 1
-        stackLayout.itemAt(1).forceActiveFocus()
-
+    openButton.onClicked: {
+        openProjectAction.triggered()
     }
-    settingsPageButton.onClicked: {
-        stackLayout.currentIndex = 2
-        stackLayout.itemAt(2).forceActiveFocus()
 
-    }
-    helpPageButton.onClicked: {
-        stackLayout.currentIndex = 3
-        stackLayout.itemAt(3).forceActiveFocus()
+    recentButton.onClicked: {
+        var item = stackView.push("RecentPage.qml")
+        item.forceActiveFocus()
 
     }
 
-    //pages with tabbar :
-
-    goBackTabButton.onClicked: {
-        closeCalled()
-
-    }
-    projectPageTabButton.onClicked: {
-        stackLayout.currentIndex = 0
-        stackLayout.itemAt(0).forceActiveFocus()
+    exampleButton.onClicked: {
+        var item = stackView.push("ExamplePage.qml")
+        item.forceActiveFocus()
 
     }
-    examplePageTabButton.onClicked: {
-        stackLayout.currentIndex = 1
-        stackLayout.itemAt(1).forceActiveFocus()
+
+    importButton.onClicked: {
+        var item = stackView.push("ImporterPage.qml", StackView.Immediate)
+        item.forceActiveFocus()
 
     }
-    settingsPageTabButton.onClicked: {
-        stackLayout.currentIndex = 2
-        stackLayout.itemAt(2).forceActiveFocus()
+
+    exportButton.onClicked: {
+        var item = stackView.push("ExporterPage.qml", StackView.Immediate)
+        item.forceActiveFocus()
 
     }
-    helpPageTabButton.onClicked: {
-        stackLayout.currentIndex = 3
-        stackLayout.itemAt(3).forceActiveFocus()
+
+    printButton.onClicked: {
+        var item = stackView.push("ExporterPage.qml", {"printEnabled": true}, StackView.Immediate)
+        item.forceActiveFocus()
+    }
+    settingsButton.onClicked: {
+        var item = stackView.push("SettingsPage.qml", StackView.Immediate)
+        item.forceActiveFocus()
+
+    }
+    helpButton.onClicked: {
+        var item = stackView.push("HelpPage.qml", StackView.Immediate)
+        item.forceActiveFocus()
 
     }
 
     //compact mode :
-    tabBar.visible: rootWindow.compactMode || width < 800
     mainButtonsPane.visible: !rootWindow.compactMode && width > 800
     separator.visible: !rootWindow.compactMode && width > 800
 
@@ -74,9 +74,20 @@ WelcomePageForm {
 
     Connections {
         target: rootWindow.protectedSignals
-        function onShowProjectPageCalled() {
-            stackLayout.currentIndex = 0
-            stackLayout.itemAt(0).forceActiveFocus()
+        function onShowNewProjectPageCalled() {
+            stackView.pop(StackView.Immediate)
+            var item = stackView.push("NewProjectPage.qml", StackView.Immediate)
+            item.forceActiveFocus()
+
+        }
+    }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onShowRecentPageCalled() {
+            stackView.pop(StackView.Immediate)
+            var item = stackView.push("RecentPage.qml", StackView.Immediate)
+            item.forceActiveFocus()
         }
     }
 
@@ -84,24 +95,54 @@ WelcomePageForm {
     Connections {
         target: rootWindow.protectedSignals
         function onShowExamplePageCalled() {
-            stackLayout.currentIndex = 1
-            stackLayout.itemAt(1).forceActiveFocus()
+            stackView.pop(StackView.Immediate)
+            var item = stackView.push("ExamplePage.qml", StackView.Immediate)
+            item.forceActiveFocus()
+        }
+    }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onShowImportPageCalled() {
+            stackView.pop(StackView.Immediate)
+            var item = stackView.push("ImporterPage.qml", StackView.Immediate)
+            item.forceActiveFocus()
+        }
+    }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onShowExportPageCalled() {
+            stackView.pop(StackView.Immediate)
+            var item = stackView.push("ExporterPage.qml", StackView.Immediate)
+            item.forceActiveFocus()
+        }
+    }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onShowPrintPageCalled() {
+            stackView.pop(StackView.Immediate)
+            var item = stackView.push("ExporterPage.qml", {"printEnabled": true}, StackView.Immediate)
+            item.forceActiveFocus()
         }
     }
 
     Connections {
         target: rootWindow.protectedSignals
         function onShowSettingsPageCalled() {
-            stackLayout.currentIndex = 2
-            stackLayout.itemAt(2).forceActiveFocus()
+            stackView.pop(StackView.Immediate)
+            var item = stackView.push("SettingsPage.qml", StackView.Immediate)
+            item.forceActiveFocus()
         }
     }
 
     Connections {
         target: rootWindow.protectedSignals
         function onShowHelpPageCalled() {
-            stackLayout.currentIndex = 3
-            stackLayout.itemAt(3).forceActiveFocus()
+            stackView.pop(StackView.Immediate)
+            var item = stackView.push("HelpPage.qml", StackView.Immediate)
+            item.forceActiveFocus()
         }
     }
 
@@ -112,22 +153,22 @@ WelcomePageForm {
 
     function init() {
 
-       // rootWindow.rootPage.showWelcomeAction.trigger()
-
+        // rootWindow.rootPage.showWelcomeAction.trigger()
+        var item = stackView.push("RecentPage.qml", StackView.Immediate)
 
     }
-
+    onVisibleChanged: {
+        if (visible) {
+        newButton.forceActiveFocus()
+        }
+    }
 
     onActiveFocusChanged: {
         if (activeFocus) {
-            if(rootWindow.compactMode){
-                projectPageTabButton.forceActiveFocus()
-            }
-            else{
-                projectPageButton.forceActiveFocus()
-            }
+            newButton.forceActiveFocus()
         }
     }
+
 
     Component.onCompleted: {
 

@@ -10,10 +10,6 @@ ExporterPageForm {
     id: root
 
 
-    goBackToolButton.icon.source: "qrc:///icons/backup/go-previous.svg"
-    signal goBackButtonClicked()
-    goBackToolButton.onClicked: goBackButtonClicked()
-
     property bool printEnabled: false
     property int projectId: -2
 

@@ -12,11 +12,6 @@ NewProjectPageForm {
     property string fileName: fileName
     property url folderNameURL
 
-    goBackToolButton.icon.source: "qrc:///icons/backup/go-previous.svg"
-    signal goBackButtonClicked()
-    goBackToolButton.onClicked:  goBackButtonClicked()
-
-
     selectProjectPathToolButton.onClicked: {
         folderDialog.open()
         folderDialog.currentFolder = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)

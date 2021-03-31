@@ -7,6 +7,7 @@ import ".."
 Item {
 
     property alias repeater: repeater
+    property alias gridLayout: gridLayout
     readonly property int columnWidth: 200
 
     ColumnLayout {

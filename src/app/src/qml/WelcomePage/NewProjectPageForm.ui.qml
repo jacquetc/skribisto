@@ -5,7 +5,7 @@ import "../Items"
 import "../Commons"
 import ".."
 
-SkrBasePage {
+Item {
 
     property alias projectFileTextField: projectFileTextField
     property alias createNewProjectButton: createNewProjectButton
@@ -14,7 +14,6 @@ SkrBasePage {
     property alias selectProjectPathToolButton: selectProjectPathToolButton
     property alias projectPathTextField: projectPathTextField
     property alias projectTitleTextField: projectTitleTextField
-    property alias goBackToolButton: goBackToolButton
 
 
     readonly property int columnWidth: 550
@@ -30,11 +29,6 @@ SkrBasePage {
             RowLayout {
                 id: rowLayout2
                 Layout.fillWidth: true
-
-                SkrToolButton {
-                    id: goBackToolButton
-                    text: qsTr("Go back")
-                }
 
                 SkrLabel {
                     id: titleLabel

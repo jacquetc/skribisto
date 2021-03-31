@@ -1,19 +1,18 @@
 import QtQuick 2.15
+import QtQuick.Controls 2.15
 
 ImporterPageForm {
 
 
-    goBackToolButton.icon.source: "qrc:///icons/backup/go-previous.svg"
-    signal goBackButtonClicked()
-    goBackToolButton.onClicked: goBackButtonClicked()
-
     importFromPlumeToolButton.icon.source: "qrc:/pics/skribisto.svg"
     importFromPlumeToolButton.icon.color: "transparent"
     importFromPlumeToolButton.onClicked: {
-        var item = stackView.push("PlumeImporter.qml")
+        var item = stackView.push("PlumeImporter.qml", StackView.Immediate)
+        item.forceActiveFocus()
 
         item.onGoBackButtonClicked.connect(goBackToImporterMainPage)
     }
+
 
     function goBackToImporterMainPage(){
         stackView.pop()

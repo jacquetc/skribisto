@@ -153,5 +153,7 @@
         <file>qml/Commons/OutlinePadForm.ui.qml</file>
         <file>qml/ProjectPage/UserDictPage.qml</file>
         <file>qml/ProjectPage/UserDictPageForm.ui.qml</file>
+        <file>qml/WelcomePage/RecentPage.qml</file>
+        <file>qml/WelcomePage/RecentPageForm.ui.qml</file>
     </qresource>
 </RCC>
