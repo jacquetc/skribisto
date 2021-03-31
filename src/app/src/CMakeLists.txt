@@ -60,7 +60,7 @@ set(TS_FILES
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_sp_SP.ts
     )
 #set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION ${CMAKE_SOURCE_DIR}/src/translations/)
-qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+qt_add_translation(QM_FILES ${TS_FILES})
 configure_file(${CMAKE_SOURCE_DIR}/src/translations/translations.qrc ${CMAKE_BINARY_DIR}/src/app/src COPYONLY)
 
 set(app_SRCS 
