@@ -8,6 +8,7 @@ import eu.skribisto.errorhub 1.0
 
 import "Items"
 import "Commons"
+import "WelcomePage"
 
 
 
@@ -87,7 +88,7 @@ RootPageForm {
     }
 
     showLeftDockButton.action: showLeftDockAction
-        Action {
+    Action {
         id: showLeftDockAction
         icon.source: "qrc:///icons/backup/go-next-view.svg"
         onTriggered: {
@@ -95,14 +96,14 @@ RootPageForm {
         }
     }
 
-        showLeftDockButton.visible: showLeftDockButtonWidth !== 0
-        Behavior on showLeftDockButtonWidth {
-            SpringAnimation {
-                spring: 5
-                mass: 0.2
-                damping: 0.2
-            }
+    showLeftDockButton.visible: showLeftDockButtonWidth !== 0
+    Behavior on showLeftDockButtonWidth {
+        SpringAnimation {
+            spring: 5
+            mass: 0.2
+            damping: 0.2
         }
+    }
 
     //------------------------------------------------
 
@@ -212,16 +213,67 @@ RootPageForm {
         }
 
         onTriggered: {
-            viewManager.loadProjectIndependantPage("WELCOME")
+            welcomePopup.open()
 
         }
     }
 
-    Shortcut {
-        sequence: ""
-        context: Qt.WindowShortcut
-        onActivated: goHomeAction.trigger()
+    SkrPopup {
+        id: welcomePopup
+        parent: Overlay.overlay
+        x: 0
+        y: 0
+        width: Overlay.overlay.width
+        height: Overlay.overlay.height
+
+        modal: true
+
+        background: Rectangle {
+
+            radius: 10
+            color: SkrTheme.pageBackground
+
+        }
+
+
+        contentItem:
+            WelcomePage {
+            id: welcomePage
+            onCloseCalled: welcomePopup.close()
+
+        }
+
     }
+
+
+    Connections {
+        target: welcomePage
+        function onCloseCalled(){
+            rootWindow.protectedSignals.closeWelcomePopupCalled()
+        }
+    }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onOpenWelcomePopupCalled(){
+
+            welcomePopup.open()
+        }
+    }
+
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onCloseWelcomePopupCalled(){
+            welcomePopup.close()
+        }
+    }
+
+    //    Shortcut {
+    //        sequence: ""
+    //        context: Qt.WindowShortcut
+    //        onActivated: goHomeAction.trigger()
+    //    }
 
 
 

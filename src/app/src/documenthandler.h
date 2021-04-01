@@ -161,7 +161,6 @@ public:
     int headingLevel();
 public slots:
     void replaceWord(const QString &word, const QString &newWord);
-    void learnWord(const QString &word);
 
     void addHorizontalLine();
     void indentBlock();
@@ -187,9 +186,11 @@ signals:
     void charCountChanged(int count);
     void wordCountChanged(int count);
 
-
     void suggestionListChanged(const QStringList &list);
     void suggestionOriginalWordChanged(const QString &word);
+
+    void shakeTextSoHighlightsTakeEffectCalled();
+
 private:
 
     QQuickTextDocument *m_textDoc;

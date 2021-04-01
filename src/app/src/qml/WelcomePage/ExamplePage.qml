@@ -31,11 +31,27 @@ ExamplePageForm {
             Accessible.role: Accessible.Button
             Accessible.name: model.title + " " + model.author
 
+            borderColor: activeFocus ? SkrTheme.accent : "transparent"
+            borderWidth:  activeFocus ? 2 : 0
+
+            Keys.onPressed: {
+                if (event.key === Qt.Key_Return){
+                    //TODO: temporary until async is done
+                    Globals.loadingPopupCalled()
+                    loadProjectTimer.start()
+                }
+                if (event.key === Qt.Key_Space){
+                    //TODO: temporary until async is done
+                    Globals.loadingPopupCalled()
+                    loadProjectTimer.start()
+                }
+            }
+
+
             TapHandler {
                 onTapped: {
                     //TODO: temporary until async is done
                     Globals.loadingPopupCalled()
-                    //plmData.projectHub().loadProject(model.skribistoFile)
                     loadProjectTimer.start()
                 }
 
@@ -83,6 +99,7 @@ ExamplePageForm {
                     Layout.fillWidth: true
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignVCenter
+                    focus: true
 
                 }
 
@@ -93,4 +110,13 @@ ExamplePageForm {
 
         }
 
+    //----------------------------------------------------------------------------
+    //------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            gridLayout.children[0].forceActiveFocus()
+        }
+    }
 }

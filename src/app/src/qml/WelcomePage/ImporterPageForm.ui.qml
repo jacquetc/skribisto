@@ -5,8 +5,7 @@ import "../Items"
 import "../Commons"
 import ".."
 
-SkrBasePage {
-    property alias goBackToolButton: goBackToolButton
+Item {
     property alias importFromPlumeToolButton: importFromPlumeToolButton
     property alias stackView: stackView
 
@@ -25,11 +24,6 @@ SkrBasePage {
                 RowLayout {
                     id: rowLayout7
                     Layout.fillWidth: true
-
-                    SkrToolButton {
-                        id: goBackToolButton
-                        text: qsTr("Go back")
-                    }
 
                     SkrLabel {
                         id: titleLabel2

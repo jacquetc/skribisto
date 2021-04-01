@@ -55,11 +55,12 @@ set(TS_FILES
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_de_DE.ts
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_it_IT.ts
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_ru_RU.ts
+    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_uk_UA.ts
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_pt_BR.ts
     ${CMAKE_SOURCE_DIR}/src/translations/skribisto_sp_SP.ts
     )
 #set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION ${CMAKE_SOURCE_DIR}/src/translations/)
-qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+qt_add_translation(QM_FILES ${TS_FILES})
 configure_file(${CMAKE_SOURCE_DIR}/src/translations/translations.qrc ${CMAKE_BINARY_DIR}/src/app/src COPYONLY)
 
 set(app_SRCS 
@@ -227,7 +228,7 @@ target_link_libraries(skribisto PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Co
 #--------------HUNSPELL --------------------
 
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+#if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
     if(${SKR_DEV})
         set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
@@ -238,7 +239,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     endif(${SKR_DEV})
 
 
-endif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+#endif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 
 find_package(hunspell REQUIRED)

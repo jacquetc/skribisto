@@ -17,6 +17,7 @@ PlumeImporterForm {
     signal goBackButtonClicked()
     goBackToolButton.onClicked: goBackButtonClicked()
 
+
     selectPlumeProjectFileToolButton.onClicked:   {
         fileDialog.open()
         fileDialog.folder = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
@@ -48,7 +49,7 @@ PlumeImporterForm {
 
         if(plumeProjectFileTextField.text.length !== 0){
 
-        plmData.projectHub().importPlumeCreatorProject(plumeFileName, targetFileName)
+            plmData.projectHub().importPlumeCreatorProject(plumeFileName, targetFileName)
         }
     }
 

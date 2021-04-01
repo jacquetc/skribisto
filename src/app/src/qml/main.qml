@@ -94,7 +94,7 @@ ApplicationWindow {
     }
     onCompactModeChanged: console.log("compact = " + compactMode)
 
-
+    //Menu
     signal openMainMenuCalled()
     signal openSubMenuCalled(var menu)
 
@@ -123,14 +123,16 @@ ApplicationWindow {
     QtObject {
         id: protectedSignals
 
-            signal showWelcomePageCalled()
+        // Welcome
+            signal openWelcomePopupCalled()
+            signal closeWelcomePopupCalled()
 
         // project:
-            signal showProjectPageCalled()
-            signal showNewProjectWizardCalled()
-            signal showPrintWizardCalled()
-            signal showImportWizardCalled()
-            signal showExportWizardCalled()
+            signal showNewProjectPageCalled()
+            signal showRecentPageCalled()
+            signal showPrintPageCalled()
+            signal showImportPageCalled()
+            signal showExportPageCalled()
         // examples:
             signal showExamplePageCalled()
         // settings:
@@ -499,7 +501,8 @@ ApplicationWindow {
         //shortcut: StandardKey.New
         onTriggered: {
             console.log("New Project")
-            rootPage.viewManager.loadProjectIndependantPage("NEWPROJECT")
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showNewProjectPageCalled()
         }
 
 
@@ -1151,8 +1154,8 @@ ApplicationWindow {
         enabled: skrRootItem.hasPrintSupport()
 
         onTriggered: {
-            rootPage.viewManager.insertAdditionalProperty("printEnabled", true)
-            rootPage.viewManager.loadProjectIndependantPage("EXPORT")
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showPrintPageCalled()
 
         }
     }
@@ -1177,9 +1180,8 @@ ApplicationWindow {
 
         //shortcut: StandardKey
         onTriggered: {
-
-            rootPage.viewManager.loadProjectIndependantPage("IMPORT")
-
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showImportPageCalled()
         }
     }
     //------------------------------------------------------------
@@ -1196,8 +1198,9 @@ ApplicationWindow {
 
         //shortcut: StandardKey.New
         onTriggered: {
-            rootPage.viewManager.loadProjectIndependantPage("EXPORT")
-        }
+
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showExportPageCalled()        }
     }
 
     //------------------------------------------------------------

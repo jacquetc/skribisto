@@ -17,7 +17,7 @@ OutlinePadForm {
 
         if(outlineWritingZone.text.length === 0){
             addOutlineToolButton.visible = true
-            outlineWritingZone.visible = false
+            outlineWritingZone.Layout.preferredHeight = 0
         }
 
 
@@ -47,10 +47,12 @@ OutlinePadForm {
         onTriggered: {
             outlineWritingZone.visible = true
             outlineWritingZone.forceActiveFocus()
-            addOutlineToolButton.visible = false
+            outlineWritingZone.Layout.preferredHeight = 400
         }
     }
     addOutlineToolButton.action: addOutlineAction
+
+    //---------------------------------------------------------
 
 
     //---------------------------------------------------------
