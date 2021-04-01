@@ -18,59 +18,95 @@ WelcomePageForm {
     goBackButton.onClicked: {
         closeCalled()
     }
+
     newButton.onClicked: {
+        priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("NewProjectPage.qml", StackView.Immediate)
         item.forceActiveFocus()
 
     }
-    openButton.onClicked: {
-        openProjectAction.triggered()
-    }
+    openButton.action: openProjectAction
+    saveButton.action: saveAction
+    saveAsButton.action: saveAsAction
+    saveACopyButton.action: saveACopyAction
+    backUpButton.action: backUpAction
 
     recentButton.onClicked: {
+        priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("RecentPage.qml")
         item.forceActiveFocus()
 
     }
 
     exampleButton.onClicked: {
+        priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("ExamplePage.qml")
         item.forceActiveFocus()
 
     }
 
     importButton.onClicked: {
+        priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("ImporterPage.qml", StackView.Immediate)
         item.forceActiveFocus()
 
     }
 
     exportButton.onClicked: {
+        priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("ExporterPage.qml", StackView.Immediate)
         item.forceActiveFocus()
 
     }
 
     printButton.onClicked: {
+        priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("ExporterPage.qml", {"printEnabled": true}, StackView.Immediate)
         item.forceActiveFocus()
     }
     settingsButton.onClicked: {
+        priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("SettingsPage.qml", StackView.Immediate)
         item.forceActiveFocus()
 
     }
     helpButton.onClicked: {
+        priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("HelpPage.qml", StackView.Immediate)
         item.forceActiveFocus()
 
     }
 
+    //--------------------------------------------------------------
+
     //compact mode :
-    mainButtonsPane.visible: !rootWindow.compactMode && width > 800
-    separator.visible: !rootWindow.compactMode && width > 800
+    mainButtonsPane.visible: !rootWindow.compactMode || priv.mainButtonsPaneIsVisible
+    goBackToMenuButton.visible: rootWindow.compactMode && !priv.mainButtonsPaneIsVisible
+    separator.visible: !rootWindow.compactMode
+
+    goBackToMenuButton.onClicked: {
+        stackView.pop()
+        priv.mainButtonsPaneIsVisible = true
+    }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onShowHelpPageCalled() {
+            stackView.pop(StackView.Immediate)
+            var item = stackView.push("HelpPage.qml", StackView.Immediate)
+            item.forceActiveFocus()
+        }
+    }
 
 
+    QtObject{
+        id: priv
+        property bool mainButtonsPaneIsVisible: true
+
+    }
+
+
+    //--------------------------------------------------------------
 
     Connections {
         target: rootWindow.protectedSignals
@@ -154,13 +190,22 @@ WelcomePageForm {
     function init() {
 
         // rootWindow.rootPage.showWelcomeAction.trigger()
-        var item = stackView.push("RecentPage.qml", StackView.Immediate)
 
     }
     onVisibleChanged: {
         if (visible) {
-        newButton.forceActiveFocus()
+            newButton.forceActiveFocus()
+
+            if(rootWindow.compactMode){
+                stackView.pop()
+            }
+            else {
+                var item = stackView.push("RecentPage.qml", StackView.Immediate)
+
+            }
+
         }
+
     }
 
     onActiveFocusChanged: {

@@ -8,6 +8,7 @@ import "../Commons"
 SkrPane {
     id: base
     property alias goBackButton: goBackButton
+    property alias goBackToMenuButton: goBackToMenuButton
 
 
     property alias stackView: stackView
@@ -17,6 +18,10 @@ SkrPane {
     property alias recentButton: recentButton
     property alias exampleButton: exampleButton
     property alias openButton: openButton
+    property alias saveButton: saveButton
+    property alias saveAsButton: saveAsButton
+    property alias saveACopyButton: saveACopyButton
+    property alias backUpButton: backUpButton
     property alias importButton: importButton
     property alias exportButton: exportButton
     property alias printButton: printButton
@@ -80,13 +85,40 @@ SkrPane {
 
                     SkrToolButton {
                         id: openButton
-                        text: qsTr("Open")
                         Layout.fillWidth: true
                         Layout.preferredHeight: 40
                         display: AbstractButton.TextBesideIcon
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                     }
 
+                    SkrToolButton {
+                        id: saveButton
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                    }
+                    SkrToolButton {
+                        id: saveAsButton
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                    }
+                    SkrToolButton {
+                        id: backUpButton
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                    }
+                    SkrToolButton {
+                        id: saveACopyButton
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        display: AbstractButton.TextBesideIcon
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                    }
                     SkrToolButton {
                         id: exampleButton
                         text: qsTr("Examples")
@@ -176,14 +208,28 @@ SkrPane {
                 }
 
             }
-            StackView {
-                id: stackView
+
+            ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                SkrToolButton {
+                    id: goBackToMenuButton
+                    text: qsTr("Go Back to the menu")
+                    display: AbstractButton.IconOnly
+                    Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+                    icon {
+                        source: "qrc:///icons/backup/go-previous.svg"
+                    }
+                }
+                StackView {
+                    id: stackView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
-                initialItem: Item {}
+                    initialItem: Item {}
 
 
+                }
             }
         }
     }
