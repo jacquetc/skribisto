@@ -47,42 +47,42 @@ public:
                            const QString& idName);
 
     SKRResult get(int            id,
-                 const QString& valueName,
-                 QVariant     & out) const;
-    SKRResult getMultipleValues(int id,
-                               const QStringList& valueList,
-                               QHash<QString, QVariant>& out) const;
-    SKRResult getValueByIds(const QString& valueName,
-                           QHash<int, QVariant>& out,
-                           const QString& where       = QString(),
-                           const QVariant& whereValue = QVariant(),
-                           bool sorted                = false) const;
-    SKRResult getValueByIdsWhere(const QString& valueName,
-                                QHash<int, QVariant>& out,
-                                const QHash<QString, QVariant>& where,
-                                bool sorted = false) const;
+                  const QString& valueName,
+                  QVariant     & out) const;
+    SKRResult getMultipleValues(int                       id,
+                                const QStringList       & valueList,
+                                QHash<QString, QVariant>& out) const;
+    SKRResult getValueByIds(const QString       & valueName,
+                            QHash<int, QVariant>& out,
+                            const QString       & where      = QString(),
+                            const QVariant      & whereValue = QVariant(),
+                            bool                  sorted     = false) const;
+    SKRResult getValueByIdsWhere(const QString                 & valueName,
+                                 QHash<int, QVariant>          & out,
+                                 const QHash<QString, QVariant>& where,
+                                 bool                            sorted = false) const;
     SKRResult set(int             id,
-                 const QString & valueName,
-                 const QVariant& value) const;
+                  const QString & valueName,
+                  const QVariant& value) const;
 
-    void     beginTransaction();
-    void     rollback();
-    void     commit();
+    void      beginTransaction();
+    void      rollback();
+    void      commit();
 
 
     SKRResult setCurrentDate(int            id,
-                            const QString& valueName) const;
+                             const QString& valueName) const;
     SKRResult getSortedIds(QList<int>& out) const;
     SKRResult getIds(QList<int>& out) const;
-    bool     idExists(int id) const;
-    bool     resultExists(const QHash<QString, QVariant>& where) const;
+    bool      idExists(int id) const;
+    bool      resultExists(const QHash<QString, QVariant>& where) const;
     SKRResult add(const QHash<QString, QVariant>& values,
-                 int& newId) const;
+                  int                           & newId) const;
     SKRResult removeAll() const;
     SKRResult remove(int id) const;
     SKRResult renumberSortOrder();
     SKRResult setId(int id,
-                   int newId) const;
+                    int newId) const;
 
     SKRResult injectDirectSql(const QString& sqlString);
 
@@ -90,7 +90,7 @@ public:
     SKRResult trimTagRelationshipTable();
     SKRResult trimTreeRelationshipTable();
 
-    QString getIdName() const;
+    QString   getIdName() const;
 
 private:
 

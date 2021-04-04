@@ -27,7 +27,6 @@
 #include "skrinterfacesettings.h"
 
 class SKRCoreInterface : public SKRInterfaceSettings {
-
 public:
 
     virtual ~SKRCoreInterface() {}

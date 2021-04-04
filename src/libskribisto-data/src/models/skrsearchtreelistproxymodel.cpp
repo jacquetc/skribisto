@@ -4,16 +4,15 @@
 
 SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
     :
-      QSortFilterProxyModel(),
-      m_showTrashedFilter(true), m_showNotTrashedFilter(true), m_navigateByBranchesEnabled(
-                                                                   false), m_textFilter(""),
-      m_projectIdFilter(-2), m_parentIdFilter(-2), m_showParentWhenParentIdFilter(false)
+    QSortFilterProxyModel(),
+    m_showTrashedFilter(true), m_showNotTrashedFilter(true), m_navigateByBranchesEnabled(
+        false), m_textFilter(""),
+    m_projectIdFilter(-2), m_parentIdFilter(-2), m_showParentWhenParentIdFilter(false)
 {
     this->setSourceModel(skrmodels->treeListModel());
 
-    m_treeHub = plmdata->treeHub();
+    m_treeHub     = plmdata->treeHub();
     m_propertyHub = plmdata->treePropertyHub();
-
 
 
     this->setSortRole(SKRTreeItem::SortOrderRole);
@@ -31,7 +30,7 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
             Qt::DirectConnection);
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this,
             [this](int
-            projectId) {
+                   projectId) {
         this->clearHistory(projectId);
     });
     connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
@@ -41,17 +40,20 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
 
     // connect this proxy model to all other proxy models using the main model
 
-    SKRTreeListModel *listModel = static_cast<SKRTreeListModel*>(this->sourceModel());
-    connect(this, &SKRSearchTreeListProxyModel::sortOtherProxyModelsCalled, listModel, &SKRTreeListModel::sortOtherProxyModelsCalled);
-    connect(listModel, &SKRTreeListModel::sortOtherProxyModelsCalled, this, [this](){
-        if(this->sender() != this){
+    SKRTreeListModel *listModel = static_cast<SKRTreeListModel *>(this->sourceModel());
+
+    connect(this,
+                       &SKRSearchTreeListProxyModel::sortOtherProxyModelsCalled,
+                                                                      listModel,
+                                                                            &SKRTreeListModel::sortOtherProxyModelsCalled);
+    connect(listModel, &SKRTreeListModel::sortOtherProxyModelsCalled, this, [this]() {
+        if (this->sender() != this) {
             this->sort(0);
         }
     });
 }
 
-
-SKRSearchTreeListProxyModel *SKRSearchTreeListProxyModel::clone()
+SKRSearchTreeListProxyModel * SKRSearchTreeListProxyModel::clone()
 {
     SKRSearchTreeListProxyModel *newInstance = new SKRSearchTreeListProxyModel();
 
@@ -74,11 +76,10 @@ SKRSearchTreeListProxyModel *SKRSearchTreeListProxyModel::clone()
     return newInstance;
 }
 
-int SKRSearchTreeListProxyModel::columnCount(const QModelIndex &parent) const
+int SKRSearchTreeListProxyModel::columnCount(const QModelIndex& parent) const
 {
     return 1;
 }
-
 
 Qt::ItemFlags SKRSearchTreeListProxyModel::flags(const QModelIndex& index) const
 {
@@ -102,8 +103,8 @@ QVariant SKRSearchTreeListProxyModel::data(const QModelIndex& index, int role) c
 
 
     SKRTreeItem *item = static_cast<SKRTreeItem *>(sourceIndex.internalPointer());
-    int projectId      = item->projectId();
-    int treeItemId        = item->treeItemId();
+    int projectId     = item->projectId();
+    int treeItemId    = item->treeItemId();
 
 
     if ((role == Qt::EditRole) && (col == 0)) {
@@ -133,7 +134,7 @@ bool SKRSearchTreeListProxyModel::setData(const QModelIndex& index,
 
 
     SKRTreeItem *item =
-            static_cast<SKRTreeItem *>(sourceIndex.internalPointer());
+        static_cast<SKRTreeItem *>(sourceIndex.internalPointer());
 
     if ((role == Qt::EditRole) && (sourceIndex.column() == 0)) {
         if (item->isProjectItem()) {
@@ -149,7 +150,7 @@ bool SKRSearchTreeListProxyModel::setData(const QModelIndex& index,
 
 
     if ((role == Qt::CheckStateRole) && (sourceIndex.column() == 0)) {
-        int treeItemId               = item->treeItemId();
+        int treeItemId            = item->treeItemId();
         Qt::CheckState checkState = static_cast<Qt::CheckState>(value.toInt());
         m_checkedIdsHash.insert(treeItemId, checkState);
 
@@ -188,11 +189,11 @@ void SKRSearchTreeListProxyModel::checkStateOfAllChildren(int            project
 // --------------------------------------------------------------
 
 void SKRSearchTreeListProxyModel::determineCheckStateOfAllAncestors(
-        int            projectId,
-        int            treeItemId,
-        Qt::CheckState checkState)
+    int            projectId,
+    int            treeItemId,
+    Qt::CheckState checkState)
 {
-    SKRTreeListModel *model    = static_cast<SKRTreeListModel *>(this->sourceModel());
+    SKRTreeListModel *model     = static_cast<SKRTreeListModel *>(this->sourceModel());
     QList<int> ancestorsIdsList = this->getAncestorsList(projectId,
                                                          treeItemId,
                                                          m_showTrashedFilter,
@@ -237,7 +238,7 @@ void SKRSearchTreeListProxyModel::determineCheckStateOfAllAncestors(
                 }
             }
             areNoneOfTheSiblingsChecked = !areAtLeastOneSiblingChecked &&
-                    !areAtLeastOneSiblingPartiallyChecked;
+                                          !areAtLeastOneSiblingPartiallyChecked;
 
             if (areAtLeastOneSiblingChecked) { // but this one
                 ancestorCheckState = Qt::PartiallyChecked;
@@ -285,7 +286,7 @@ void SKRSearchTreeListProxyModel::determineCheckStateOfAllAncestors(
                 }
             }
             areAllSiblingsChecked = !areAtLeastOneSiblingUnchecked &&
-                    !areAtLeastOneSiblingPartiallyChecked;
+                                    !areAtLeastOneSiblingPartiallyChecked;
 
             if (areAllSiblingsChecked) {
                 ancestorCheckState = Qt::Checked;
@@ -321,7 +322,7 @@ void SKRSearchTreeListProxyModel::determineCheckStateOfAllAncestors(
     // for (int ancestorId : ancestorsIdsList) {
     m_checkedIdsHash.insert(ancestorsIdsList.first(), ancestorCheckState);
     QModelIndex modelIndex =
-            model->getModelIndex(projectId, ancestorsIdsList.first()).first();
+        model->getModelIndex(projectId, ancestorsIdsList.first()).first();
 
     emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
                      QVector<int>() << Qt::CheckStateRole);
@@ -346,23 +347,26 @@ void SKRSearchTreeListProxyModel::setTagIdListFilter(const QList<int>& tagIdList
 
 // --------------------------------------------------------------
 
-void SKRSearchTreeListProxyModel::setHideThoseWithAttributesFilter(const QStringList &hideThoseWithAttributesFilter)
+void SKRSearchTreeListProxyModel::setHideThoseWithAttributesFilter(const QStringList& hideThoseWithAttributesFilter)
 {
     m_hideThoseWithAttributesFilter = hideThoseWithAttributesFilter;
 
     emit hideThoseWithAttributesFilterChanged(hideThoseWithAttributesFilter);
+
     this->invalidateFilter();
 }
 
 // --------------------------------------------------------------
 
-void SKRSearchTreeListProxyModel::setShowOnlyWithAttributesFilter(const QStringList &showOnlyWithAttributesFilter)
+void SKRSearchTreeListProxyModel::setShowOnlyWithAttributesFilter(const QStringList& showOnlyWithAttributesFilter)
 {
     m_showOnlyWithAttributesFilter = showOnlyWithAttributesFilter;
 
     emit showOnlyWithAttributesFilterChanged(showOnlyWithAttributesFilter);
+
     this->invalidateFilter();
 }
+
 // --------------------------------------------------------------
 
 QList<int>SKRSearchTreeListProxyModel::getCheckedIdsList() {
@@ -382,8 +386,9 @@ QList<int>SKRSearchTreeListProxyModel::getCheckedIdsList() {
 
     QList<int> allSortedIds = m_treeHub->getAllIds(m_projectIdFilter);
     QList<int> sortedCheckedIds;
-    for(int sortedId : qAsConst(allSortedIds)){
-        if(list.contains(sortedId)){
+
+    for (int sortedId : qAsConst(allSortedIds)) {
+        if (list.contains(sortedId)) {
             sortedCheckedIds.append(sortedId);
         }
     }
@@ -442,7 +447,7 @@ void SKRSearchTreeListProxyModel::setCheckedIdsList(const QList<int>checkedIdsLi
             }
 
             areAllChildrenChecked = !areAtLeastOneChildUnchecked &&
-                    !areAtLeastOneChildPartiallyChecked;
+                                    !areAtLeastOneChildPartiallyChecked;
 
             if (areAtLeastOneChildUnchecked) { // but this one
                 finalState = Qt::PartiallyChecked;
@@ -571,7 +576,8 @@ bool SKRSearchTreeListProxyModel::filterAcceptsRow(int                sourceRow,
     SKRTreeListModel *model = static_cast<SKRTreeListModel *>(this->sourceModel());
 
     //        // avoid project item
-    //        if (item->data(SKRTreeItem::Roles::TreeItemIdRole).toInt() == -1) {
+    //        if (item->data(SKRTreeItem::Roles::TreeItemIdRole).toInt() == -1)
+    // {
     //            value = false;
     //        }
 
@@ -593,7 +599,7 @@ bool SKRSearchTreeListProxyModel::filterAcceptsRow(int                sourceRow,
 
     // project filtering :
     if (value &&
-            (item->data(SKRTreeItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter)) {
+        (item->data(SKRTreeItem::Roles::ProjectIdRole).toInt() == m_projectIdFilter)) {
         value = true;
     }
     else if (value) {
@@ -612,8 +618,8 @@ bool SKRSearchTreeListProxyModel::filterAcceptsRow(int                sourceRow,
 
 
     if (value &&
-            item->data(SKRTreeItem::Roles::TitleRole).toString().contains(m_textFilter,
-                                                                          Qt::CaseInsensitive))
+        item->data(SKRTreeItem::Roles::TitleRole).toString().contains(m_textFilter,
+                                                                      Qt::CaseInsensitive))
     {
         value = true;
     }
@@ -625,40 +631,39 @@ bool SKRSearchTreeListProxyModel::filterAcceptsRow(int                sourceRow,
 
     // treeItemIdListFiltering :
     if (value && (!m_treeItemIdListFilter.isEmpty() || !m_hideTreeItemIdListFilter.isEmpty())) {
-
-
         int showed = false;
-        if(m_treeItemIdListFilter.isEmpty()){
+
+        if (m_treeItemIdListFilter.isEmpty()) {
             showed = true;
         }
-        else if(m_hideTreeItemIdListFilter.isEmpty()){
+        else if (m_hideTreeItemIdListFilter.isEmpty()) {
             showed = false;
         }
-        else { //both are with values
+        else { // both are with values
             showed = false;
         }
 
 
-        if(m_treeItemIdListFilter.contains(treeItemId)){
+        if (m_treeItemIdListFilter.contains(treeItemId)) {
             showed = true;
         }
-        if(m_hideTreeItemIdListFilter.contains(treeItemId)){
+
+        if (m_hideTreeItemIdListFilter.contains(treeItemId)) {
             showed = false;
         }
         value = showed;
-
     }
 
 
     // parentId filtering :
     if (value && (m_parentIdFilter != -2)) {
         if (m_showParentWhenParentIdFilter &&
-                (m_parentIdFilter == treeItemId)) {
+            (m_parentIdFilter == treeItemId)) {
             value = true;
         }
         else {
             SKRTreeListModel *model =
-                    static_cast<SKRTreeListModel *>(this->sourceModel());
+                static_cast<SKRTreeListModel *>(this->sourceModel());
             SKRTreeItem *parentItem = model->getParentTreeItem(item);
 
             if (parentItem) {
@@ -694,36 +699,38 @@ bool SKRSearchTreeListProxyModel::filterAcceptsRow(int                sourceRow,
     }
 
     //  attribute filtering
-    if (value && (!m_showOnlyWithAttributesFilter.isEmpty() || !m_hideThoseWithAttributesFilter.isEmpty()) && (m_projectIdFilter != -2)) {
-        QStringList attributes = m_propertyHub->getProperty(m_projectIdFilter, treeItemId, "attributes").split(";", Qt::SkipEmptyParts);
+    if (value && (!m_showOnlyWithAttributesFilter.isEmpty() || !m_hideThoseWithAttributesFilter.isEmpty()) &&
+        (m_projectIdFilter != -2)) {
+        QStringList attributes = m_propertyHub->getProperty(m_projectIdFilter, treeItemId, "attributes").split(";",
+                                                                                                               Qt::SkipEmptyParts);
 
         int showed = false;
-        if(m_showOnlyWithAttributesFilter.isEmpty()){
+
+        if (m_showOnlyWithAttributesFilter.isEmpty()) {
             showed = true;
         }
-        else if(m_hideThoseWithAttributesFilter.isEmpty()){
+        else if (m_hideThoseWithAttributesFilter.isEmpty()) {
             showed = false;
         }
-        else { //both are with values
+        else { // both are with values
             showed = false;
         }
 
-        for(const QString &attribute : qAsConst(attributes)){
-            if(m_showOnlyWithAttributesFilter.contains(attribute)){
+        for (const QString& attribute : qAsConst(attributes)) {
+            if (m_showOnlyWithAttributesFilter.contains(attribute)) {
                 showed = true;
                 break;
             }
-            if(m_hideThoseWithAttributesFilter.contains(attribute)){
+
+            if (m_hideThoseWithAttributesFilter.contains(attribute)) {
                 showed = false;
                 break;
             }
-
         }
 
 
         value = showed;
     }
-
 
 
     return value;
@@ -741,7 +748,7 @@ void SKRSearchTreeListProxyModel::setProjectIdFilter(int projectIdFilter)
 }
 
 // --------------------------------------------------------------
-//TODO: complete this :
+// TODO: complete this :
 void SKRSearchTreeListProxyModel::clearFilters()
 {
     m_projectIdFilter = -2;
@@ -809,7 +816,7 @@ void SKRSearchTreeListProxyModel::checkAll()
             m_checkedIdsHash.insert(treeItemId, Qt::Checked);
 
             QModelIndex modelIndex =
-                    model->getModelIndex(m_projectIdFilter, treeItemId).first();
+                model->getModelIndex(m_projectIdFilter, treeItemId).first();
 
             emit dataChanged(this->mapFromSource(modelIndex),
                              this->mapFromSource(modelIndex),
@@ -829,8 +836,9 @@ void SKRSearchTreeListProxyModel::checkAllButNonPrintable()
         QList<int> allIdsList = m_treeHub->getAllIds(m_projectIdFilter);
 
         for (int id : qAsConst(allIdsList)) {
-            bool isTrashed = m_treeHub->getTrashed(m_projectIdFilter, id);
-            bool isPrintable = m_propertyHub->getProperty(m_projectIdFilter, id, "printable", "true") == "true" ? true : false;
+            bool isTrashed   = m_treeHub->getTrashed(m_projectIdFilter, id);
+            bool isPrintable =
+                m_propertyHub->getProperty(m_projectIdFilter, id, "printable", "true") == "true" ? true : false;
 
             if (m_showTrashedFilter && isTrashed && isPrintable) {
                 filteredIdsList.append(id);
@@ -853,15 +861,17 @@ void SKRSearchTreeListProxyModel::checkAllButNonPrintable()
     }
     else {
         for (int treeItemId : qAsConst(m_treeItemIdListFilter)) {
-            bool isPrintable = m_propertyHub->getProperty(m_projectIdFilter, treeItemId, "printable", "true") == "true" ? true : false;
-            if(!isPrintable){
+            bool isPrintable =
+                m_propertyHub->getProperty(m_projectIdFilter, treeItemId, "printable", "true") == "true" ? true : false;
+
+            if (!isPrintable) {
                 continue;
             }
 
             m_checkedIdsHash.insert(treeItemId, Qt::Checked);
 
             QModelIndex modelIndex =
-                    model->getModelIndex(m_projectIdFilter, treeItemId).first();
+                model->getModelIndex(m_projectIdFilter, treeItemId).first();
 
             emit dataChanged(this->mapFromSource(modelIndex),
                              this->mapFromSource(modelIndex),
@@ -932,11 +942,10 @@ void SKRSearchTreeListProxyModel::saveProjectSettings(int projectId)
     settings.endGroup();
 }
 
-
 // --------------------------------------------------------------
 
 void SKRSearchTreeListProxyModel::setTreeItemIdListFilter(
-        const QList<int>& treeItemIdListFilter)
+    const QList<int>& treeItemIdListFilter)
 {
     m_treeItemIdListFilter = treeItemIdListFilter;
 
@@ -947,7 +956,7 @@ void SKRSearchTreeListProxyModel::setTreeItemIdListFilter(
 
 // --------------------------------------------------------------
 
-void SKRSearchTreeListProxyModel::setHideTreeItemIdListFilter(const QList<int> &hideTreeItemIdListFilter)
+void SKRSearchTreeListProxyModel::setHideTreeItemIdListFilter(const QList<int>& hideTreeItemIdListFilter)
 {
     m_hideTreeItemIdListFilter = hideTreeItemIdListFilter;
 
@@ -992,8 +1001,9 @@ void SKRSearchTreeListProxyModel::setCurrentTreeItemId(int projectId, int treeIt
 
     if (!item) {
         treeItemId = m_treeHub->getTopTreeItemId(projectId);
-        item    = this->getItem(projectId, treeItemId);
+        item       = this->getItem(projectId, treeItemId);
     }
+
     if (!item) {
         return;
     }
@@ -1056,7 +1066,7 @@ QList<int>SKRSearchTreeListProxyModel::getAncestorsList(int  projectId,
     QList<int> resultAllAncestorsIdList;
 
     QList<int> allAncestorsIdList =
-            m_treeHub->getAllAncestors(projectId, treeItemId);
+        m_treeHub->getAllAncestors(projectId, treeItemId);
 
     for (int ancestorId : qAsConst(allAncestorsIdList)) {
         bool isTrashed = m_treeHub->getTrashed(projectId, ancestorId);
@@ -1082,7 +1092,7 @@ QList<int>SKRSearchTreeListProxyModel::getSiblingsList(int  projectId,
     QList<int> resultAllSiblingsIdList;
 
     QList<int> allSiblingsIdList =
-            m_treeHub->getAllSiblings(projectId, treeItemId);
+        m_treeHub->getAllSiblings(projectId, treeItemId);
 
     for (int ancestorId : allSiblingsIdList) {
         bool isTrashed = m_treeHub->getTrashed(projectId, ancestorId);
@@ -1120,15 +1130,14 @@ void SKRSearchTreeListProxyModel::setShowTrashedFilter(bool showTrashedFilter)
     this->invalidateFilter();
 }
 
-
 // --------------------------------------------------------------
 
 int SKRSearchTreeListProxyModel::getChildrenCount(int projectId, int treeItemId) const
 {
     return this->getChildrenList(projectId,
-                                  treeItemId,
-                                  m_showTrashedFilter,
-                                  m_showNotTrashedFilter).count();
+                                 treeItemId,
+                                 m_showTrashedFilter,
+                                 m_showNotTrashedFilter).count();
 }
 
 // --------------------------------------------------------------
@@ -1156,8 +1165,8 @@ int SKRSearchTreeListProxyModel::findVisualIndex(int projectId, int treeItemId)
 
         if ((this->data(modelIndex,
                         SKRTreeItem::Roles::ProjectIdRole).toInt() == projectId)
-                && (this->data(modelIndex,
-                               SKRTreeItem::Roles::TreeItemIdRole).toInt() == treeItemId)) {
+            && (this->data(modelIndex,
+                           SKRTreeItem::Roles::TreeItemIdRole).toInt() == treeItemId)) {
             visualIndex = i;
             break;
         }
@@ -1221,20 +1230,21 @@ int SKRSearchTreeListProxyModel::getItemIndent(int projectId, int treeItemId)
 
 // -----------------------------------------------------------------
 
-SKRResult SKRSearchTreeListProxyModel::addChildItem(int projectId,
-                                                    int parentTreeItemId,
-                                                    const QString &type)
+SKRResult SKRSearchTreeListProxyModel::addChildItem(int            projectId,
+                                                    int            parentTreeItemId,
+                                                    const QString& type)
 {
     SKRResult result = m_treeHub->addChildTreeItem(projectId, parentTreeItemId, type);
 
-    IFOK(result){
+    IFOK(result) {
         int newTreeItemId =  m_treeHub->getLastAddedId();
+
         result.addData("treeItemId", newTreeItemId);
 
 
         sort(0);
         emit sortOtherProxyModelsCalled();
-        int newVisualIndex = this->findVisualIndex(projectId, newTreeItemId);
+        int  newVisualIndex = this->findVisualIndex(projectId, newTreeItemId);
 
         this->setForcedCurrentIndex(newVisualIndex);
     }
@@ -1243,45 +1253,48 @@ SKRResult SKRSearchTreeListProxyModel::addChildItem(int projectId,
 
 // -----------------------------------------------------------------
 
-SKRResult SKRSearchTreeListProxyModel::addItemAbove(int projectId,
-                                                    int parentTreeItemId,
-                                                    const QString &type)
+SKRResult SKRSearchTreeListProxyModel::addItemAbove(int            projectId,
+                                                    int            parentTreeItemId,
+                                                    const QString& type)
 {
     SKRResult result = m_treeHub->addTreeItemAbove(projectId, parentTreeItemId, type);
 
-    IFOK(result){
+    IFOK(result) {
         int newTreeItemId =  m_treeHub->getLastAddedId();
+
         result.addData("treeItemId", newTreeItemId);
 
 
         sort(0);
         emit sortOtherProxyModelsCalled();
-        int newVisualIndex = this->findVisualIndex(projectId, newTreeItemId);
-
-        this->setForcedCurrentIndex(newVisualIndex);
-    }
-    return result;}
-
-// -----------------------------------------------------------------
-
-SKRResult SKRSearchTreeListProxyModel::addItemBelow(int projectId,
-                                                    int parentTreeItemId,
-                                                    const QString& type)
-{
-    SKRResult result = m_treeHub->addTreeItemBelow(projectId, parentTreeItemId, type);
-    IFOK(result){
-        int newTreeItemId =  m_treeHub->getLastAddedId();
-        result.addData("treeItemId", newTreeItemId);
-
-
-        sort(0);
-        emit sortOtherProxyModelsCalled();
-        int newVisualIndex = this->findVisualIndex(projectId, newTreeItemId);
+        int  newVisualIndex = this->findVisualIndex(projectId, newTreeItemId);
 
         this->setForcedCurrentIndex(newVisualIndex);
     }
     return result;
+}
 
+// -----------------------------------------------------------------
+
+SKRResult SKRSearchTreeListProxyModel::addItemBelow(int            projectId,
+                                                    int            parentTreeItemId,
+                                                    const QString& type)
+{
+    SKRResult result = m_treeHub->addTreeItemBelow(projectId, parentTreeItemId, type);
+
+    IFOK(result) {
+        int newTreeItemId =  m_treeHub->getLastAddedId();
+
+        result.addData("treeItemId", newTreeItemId);
+
+
+        sort(0);
+        emit sortOtherProxyModelsCalled();
+        int  newVisualIndex = this->findVisualIndex(projectId, newTreeItemId);
+
+        this->setForcedCurrentIndex(newVisualIndex);
+    }
+    return result;
 }
 
 // --------------------------------------------------------------
@@ -1294,10 +1307,11 @@ SKRResult SKRSearchTreeListProxyModel::moveUp(int projectId, int treeItemId, int
         return SKRResult();
     }
     SKRResult result = m_treeHub->moveTreeItemUp(projectId, treeItemId);
-    IFOK(result){
+
+    IFOK(result) {
         sort(0);
         emit sortOtherProxyModelsCalled();
-        int newVisualIndex = this->findVisualIndex(projectId, treeItemId);
+        int  newVisualIndex = this->findVisualIndex(projectId, treeItemId);
 
         this->setForcedCurrentIndex(newVisualIndex);
     }
@@ -1314,10 +1328,11 @@ SKRResult SKRSearchTreeListProxyModel::moveDown(int projectId, int treeItemId, i
         return SKRResult();
     }
     SKRResult result = m_treeHub->moveTreeItemDown(projectId, treeItemId);
-    IFOK(result){
+
+    IFOK(result) {
         sort(0);
         emit sortOtherProxyModelsCalled();
-        int newVisualIndex = this->findVisualIndex(projectId, treeItemId);
+        int  newVisualIndex = this->findVisualIndex(projectId, treeItemId);
 
         this->setForcedCurrentIndex(newVisualIndex);
     }
@@ -1333,10 +1348,6 @@ SKRResult SKRSearchTreeListProxyModel::moveDown(int projectId, int treeItemId, i
 /// \param to target item index number
 /// Carefull, this is only used for manually moving a visual item
 void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
-
-
-
-
     if (from == to) return;
 
     int modelFrom = from;
@@ -1344,22 +1355,22 @@ void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
 
 
     QModelIndex fromIndex = this->index(modelFrom, 0);
-    int fromTreeItemId       =
-            this->data(fromIndex, SKRTreeItem::Roles::TreeItemIdRole).toInt();
+    int fromTreeItemId    =
+        this->data(fromIndex, SKRTreeItem::Roles::TreeItemIdRole).toInt();
     int fromProjectId =
-            this->data(fromIndex, SKRTreeItem::Roles::ProjectIdRole).toInt();
+        this->data(fromIndex, SKRTreeItem::Roles::ProjectIdRole).toInt();
 
     QModelIndex toIndex = this->index(modelTo, 0);
-    int toTreeItemId       = this->data(toIndex, SKRTreeItem::Roles::TreeItemIdRole).toInt();
+    int toTreeItemId    = this->data(toIndex, SKRTreeItem::Roles::TreeItemIdRole).toInt();
     int toProjectId     = this->data(toIndex, SKRTreeItem::Roles::ProjectIdRole).toInt();
     int toSortOrder     = this->data(toIndex, SKRTreeItem::Roles::SortOrderRole).toInt();
 
     qDebug() << "fromTreeItemId : " << fromTreeItemId << this->data(fromIndex,
                                                                     SKRTreeItem::Roles::TitleRole)
-                .toString();
+        .toString();
     qDebug() << "toTreeItemId : " << toTreeItemId << this->data(toIndex,
                                                                 SKRTreeItem::Roles::TitleRole).
-                toString();
+        toString();
 
 
     m_treeHub->moveTreeItem(fromProjectId, fromTreeItemId, toTreeItemId, false);
@@ -1367,8 +1378,8 @@ void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
 
     sort(0);
     emit sortOtherProxyModelsCalled();
-    this->invalidate();
 
+    this->invalidate();
 }
 
 // --------------------------------------------------------------
@@ -1415,7 +1426,6 @@ void SKRSearchTreeListProxyModel::trashItemWithChildren(int projectId, int treeI
     }
 
     m_treeHub->setTrashedWithChildren(projectId, treeItemId, true);
-
 }
 
 // --------------------------------------------------------------
@@ -1474,21 +1484,14 @@ void SKRSearchTreeListProxyModel::addHistory(int projectId, int treeItemId)
 
 // --------------------------------------------------------------
 
-void SKRSearchTreeListProxyModel::cut(int projectId, int treeItemId){
-
-}
+void SKRSearchTreeListProxyModel::cut(int projectId, int treeItemId) {}
 
 // --------------------------------------------------------------
 
-void SKRSearchTreeListProxyModel::copy(int projectId, int treeItemId){
-
-}
+void SKRSearchTreeListProxyModel::copy(int projectId, int treeItemId) {}
 
 // --------------------------------------------------------------
 
-void SKRSearchTreeListProxyModel::paste(int targetProjectId, int targetParentId){
-
-}
+void SKRSearchTreeListProxyModel::paste(int targetProjectId, int targetParentId) {}
 
 // --------------------------------------------------------------
-

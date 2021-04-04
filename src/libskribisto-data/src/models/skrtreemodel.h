@@ -87,8 +87,8 @@ private slots:
 
     void populate();
     void clear();
-    void exploitSignalFromPLMData(int                 projectId,
-                                  int                 paperId,
+    void exploitSignalFromPLMData(int                projectId,
+                                  int                paperId,
                                   SKRTreeItem::Roles role);
     void addPaper(int projectId,
                   int paperId);
@@ -96,9 +96,9 @@ private slots:
 private:
 
     SKRTreeItem* findPaperItem(int projectId,
-                                int paperId);
-    void          connectToPLMDataSignals();
-    void          disconnectFromPLMDataSignals();
+                               int paperId);
+    void         connectToPLMDataSignals();
+    void         disconnectFromPLMDataSignals();
 
 private:
 

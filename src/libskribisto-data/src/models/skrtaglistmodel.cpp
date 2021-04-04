@@ -189,14 +189,14 @@ bool SKRTagListModel::setData(const QModelIndex& index, const QVariant& value, i
 
         case SKRTagItem::Roles::CreationDateRole:
             result = plmdata->tagHub()->setCreationDate(projectId,
-                                                       tagId,
-                                                       value.toDateTime());
+                                                        tagId,
+                                                        value.toDateTime());
             break;
 
         case SKRTagItem::Roles::UpdateDateRole:
             result = plmdata->tagHub()->setUpdateDate(projectId,
-                                                     tagId,
-                                                     value.toDateTime());
+                                                      tagId,
+                                                      value.toDateTime());
             break;
         }
 
@@ -289,13 +289,13 @@ SKRTagItem * SKRTagListModel::getItem(int projectId, int tagId)
     }
 
     if (!result_item) {
-    //    qDebug() << "result_item is null";
+        //    qDebug() << "result_item is null";
     }
 
     return result_item;
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 void SKRTagListModel::populate()
 {

@@ -24,7 +24,7 @@ PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent),
 
 SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath, bool hidden)
 {
-    if(!hidden){
+    if (!hidden) {
         emit projectToBeLoaded();
     }
 
@@ -35,14 +35,16 @@ SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath, bool hidden)
 
     IFOK(result) {
         plmdata->treeHub()->renumberSortOrders(projectId);
-        if(!hidden){
+
+        if (!hidden) {
             m_projectsNotModifiedOnceList.append(projectId);
             emit projectLoaded(projectId);
             emit projectCountChanged(this->getProjectCount());
             emit isThereAnyLoadedProjectChanged(true);
 
             this->setActiveProject(projectId);
-            if(urlFilePath.isEmpty()){
+
+            if (urlFilePath.isEmpty()) {
                 this->setProjectNotSavedAnymore(projectId);
             }
         }
@@ -64,7 +66,8 @@ SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path, bool hidden)
 
     IFOK(result) {
         plmdata->treeHub()->renumberSortOrders(projectId);
-        if(!hidden){
+
+        if (!hidden) {
             m_projectsNotModifiedOnceList.append(projectId);
             emit projectLoaded(projectId);
             emit projectCountChanged(this->getProjectCount());
@@ -108,7 +111,6 @@ SKRResult PLMProjectHub::createSilentlyNewSpecificEmptyProject(const QUrl& path,
     return result;
 }
 
-
 SKRResult PLMProjectHub::saveProject(int projectId)
 {
     SKRResult result(this);
@@ -135,11 +137,11 @@ SKRResult PLMProjectHub::saveProject(int projectId)
 void PLMProjectHub::setProjectNotSavedAnymore(int projectId)
 {
     m_projectsNotModifiedOnceList.removeAll(projectId);
+
     if (!m_projectsNotSavedList.contains(projectId)) {
         m_projectsNotSavedList.append(projectId);
     }
     emit projectNotSavedAnymore(projectId);
-
 }
 
 QList<int>PLMProjectHub::projectsNotModifiedOnce() {
@@ -275,10 +277,10 @@ SKRResult PLMProjectHub::backupAProject(int            projectId,
     // then create a copy
     IFOK(result) {
         result =
-                plmProjectManager->saveProjectAs(projectId,
-                                                 type,
-                                                 QUrl::fromLocalFile(backupFile),
-                                                 true);
+            plmProjectManager->saveProjectAs(projectId,
+                                             type,
+                                             QUrl::fromLocalFile(backupFile),
+                                             true);
     }
 
     IFKO(result) {
@@ -465,7 +467,7 @@ SKRResult PLMProjectHub::setPath(int projectId, const QUrl& newUrlPath)
     }
 
     IFOKDO(result, project->setPath(newUrlPath))
-            IFOK(result) {
+    IFOK(result) {
         emit projectPathChanged(projectId, newUrlPath);
     }
 

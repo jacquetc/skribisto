@@ -6,7 +6,6 @@
 #include "skrcoreinterface.h"
 
 namespace SKRCorePlugins {
-
 void addCorePlugins()
 {
     SKRPluginLoader *loader = SKRPluginLoader::instance();

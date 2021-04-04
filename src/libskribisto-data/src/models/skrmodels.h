@@ -45,9 +45,9 @@ public:
 
     Q_INVOKABLE PLMWriteDocumentListModel* writeDocumentListModel();
 
-    SKRTreeModel *treeModel();
-    SKRTreeListModel *treeListModel();
-    SKRTagListModel *tagListModel();
+    SKRTreeModel                         * treeModel();
+    SKRTreeListModel                     * treeListModel();
+    SKRTagListModel                      * tagListModel();
 
 signals:
 

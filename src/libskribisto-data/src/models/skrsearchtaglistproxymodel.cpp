@@ -117,7 +117,6 @@ bool SKRSearchTagListProxyModel::setData(const QModelIndex& index,
     return QSortFilterProxyModel::setData(index, value, role);
 }
 
-
 // --------------------------------------------------------------------------------
 
 void SKRSearchTagListProxyModel::setProjectIdFilter(int projectIdFilter)
@@ -237,8 +236,10 @@ bool SKRSearchTagListProxyModel::filterAcceptsRow(int                sourceRow,
     if (!index.isValid()) {
         return false;
     }
-    SKRTagItem *item       = static_cast<SKRTagItem *>(index.internalPointer());
-    //SKRTagListModel *model = static_cast<SKRTagListModel *>(this->sourceModel());
+    SKRTagItem *item = static_cast<SKRTagItem *>(index.internalPointer());
+
+    // SKRTagListModel *model = static_cast<SKRTagListModel
+    // *>(this->sourceModel());
 
     // project filtering :
     if (value &&
@@ -276,9 +277,8 @@ bool SKRSearchTagListProxyModel::filterAcceptsRow(int                sourceRow,
 
     // hide tag ids
 
-    if(value && !m_hideTagIdListFilter.isEmpty()){
-
-        if(m_hideTagIdListFilter.contains(item->tagId())){
+    if (value && !m_hideTagIdListFilter.isEmpty()) {
+        if (m_hideTagIdListFilter.contains(item->tagId())) {
             value = false;
         }
     }
@@ -344,14 +344,14 @@ void SKRSearchTagListProxyModel::populateRelationshipList()
     }
 }
 
-
 // --------------------------------------------------------------------------------
 
 
-void SKRSearchTagListProxyModel::setHideTagIdListFilter(const QList<int> &hideTagIdListFilter)
+void SKRSearchTagListProxyModel::setHideTagIdListFilter(const QList<int>& hideTagIdListFilter)
 {
     m_hideTagIdListFilter = hideTagIdListFilter;
     emit hideTagIdListFilterChanged(hideTagIdListFilter);
+
     this->invalidateFilter();
 }
 

@@ -33,7 +33,8 @@
 #include <QFileInfo>
 #include <QTimer>
 
-PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKRResult *result, const QString &sqlFile) :
+PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKRResult *result,
+                       const QString& sqlFile) :
     QObject(parent)
 {
     qRegisterMetaType<PLMProject::DBType>("PLMProject::DBType");
@@ -82,37 +83,29 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKR
     }
     setType("skrib");
     IFOK(*result) {
-
-        //verify if db version is usable by this version of Skribisto :
-        bool ok;
+        // verify if db version is usable by this version of Skribisto :
+        bool   ok;
         double dbTemplateVersion = SKRSqlTools::getProjectTemplateDBVersion(result).toDouble(&ok);
 
-        if(!ok){
+        if (!ok) {
             *result = SKRResult(SKRResult::Critical, this, "string_to_double_conversion_failed");
         }
 
-        IFOK(*result){
+        IFOK(*result) {
             double dbVersion =  SKRSqlTools::getProjectDBVersion(result, m_sqlDb);
 
-            IFOK(*result){
-
-                if(dbTemplateVersion <  dbVersion){
-                    //means that Skribisto can't use this db
+            IFOK(*result) {
+                if (dbTemplateVersion <  dbVersion) {
+                    // means that Skribisto can't use this db
                     *result = SKRResult(SKRResult::Critical, this, "db_version_higher_than_skribisto_can_read");
                 }
             }
-
-
         }
-
-
-
-
     }
 
 
     IFKO(*result) {
-        *result = SKRResult(SKRResult::Critical, this, "project_creation_failed");
+        *result     = SKRResult(SKRResult::Critical, this, "project_creation_failed");
         m_projectId = -1;
     }
 }
@@ -165,25 +158,25 @@ QString PLMProject::getTempFileName() const
     return m_sqlDb.databaseName();
 }
 
-//PLMProperty * PLMProject::getProperty(const QString& tableName)
-//{
+// PLMProperty * PLMProject::getProperty(const QString& tableName)
+// {
 //    return m_plmPropertyForTableNameHash.value(tableName);
-//}
+// }
 
-//PLMTree * PLMProject::getTree(const QString& tableName)
-//{
+// PLMTree * PLMProject::getTree(const QString& tableName)
+// {
 //    return m_plmTreeForTableNameHash.value(tableName);
-//}
+// }
 
-//PLMSheetTree * PLMProject::sheetTree()
-//{
+// PLMSheetTree * PLMProject::sheetTree()
+// {
 //    return m_sheetTree;
-//}
+// }
 
-//PLMNoteTree * PLMProject::noteTree()
-//{
+// PLMNoteTree * PLMProject::noteTree()
+// {
 //    return m_noteTree;
-//}
+// }
 
 QString PLMProject::getType() const
 {

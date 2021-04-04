@@ -143,6 +143,9 @@ ApplicationWindow {
             signal showFaqCalled()
             signal showAboutCalled()
             signal showAboutQtCalled()
+
+
+             signal openThemePageCalled()
     }
 
     //------------------------------------------------------------------
@@ -383,7 +386,7 @@ ApplicationWindow {
         }
 
         onTriggered: {
-            Globals.openThemePageCalled()
+            protectedSignals.openThemePageCalled()
         }
 
     }
@@ -403,9 +406,9 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show help content")
-            Globals.showWelcomePageCalled()
-            Globals.showHelpPageCalled()
-            Globals.showHelpContentsCalled()
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showHelpPageCalled()
+            protectedSignals.showHelpContentsCalled()
         }
 
 
@@ -432,9 +435,9 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show FAQ")
-            Globals.showWelcomePageCalled()
-            Globals.showHelpPageCalled()
-            Globals.showFaqCalled()
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showHelpPageCalled()
+            protectedSignals.showFaqCalled()
         }
 
     }
@@ -454,9 +457,9 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show about")
-            Globals.showWelcomePageCalled()
-            Globals.showHelpPageCalled()
-            Globals.showAboutCalled()
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showHelpPageCalled()
+            protectedSignals.showAboutCalled()
         }
 
     }
@@ -477,9 +480,9 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show about Qt")
-            Globals.showWelcomePageCalled()
-            Globals.showHelpPageCalled()
-            Globals.showAboutQtCalled()
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showHelpPageCalled()
+            protectedSignals.showAboutQtCalled()
         }
 
     }

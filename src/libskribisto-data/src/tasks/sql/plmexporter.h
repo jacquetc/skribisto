@@ -40,8 +40,8 @@ public:
 
     explicit PLMExporter(QObject *parent = 0);
     SKRResult exportWholeSQLiteDbTo(PLMProject    *db,
-                              const QString& type,
-                              const QUrl   & fileName);
+                                    const QString& type,
+                                    const QUrl   & fileName);
 
 signals:
 

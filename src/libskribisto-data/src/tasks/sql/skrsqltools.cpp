@@ -13,7 +13,7 @@ SKRSqlTools::SKRSqlTools(QObject *parent) : QObject(parent)
 
 SKRResult SKRSqlTools::executeSQLFile(const QString& fileName, QSqlDatabase& sqlDB) {
     SKRResult result("SKRSqlTools::executeSQLFile");
-    QFile    file(fileName);
+    QFile     file(fileName);
 
     // Read query file content
     file.open(QIODevice::ReadOnly);
@@ -38,21 +38,23 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
     if (sqlDB.driver()->hasFeature(QSqlDriver::Transactions)) {
         // protect TRIGGER's END
         queryStr =
-                queryStr.replace(QRegularExpression("(;.*END)",
-                                                    QRegularExpression::CaseInsensitiveOption
-                                                    | QRegularExpression::MultilineOption),
-                                 "$END");
+            queryStr.replace(QRegularExpression("(;.*END)",
+                                                QRegularExpression::CaseInsensitiveOption
+                                                | QRegularExpression::MultilineOption),
+                             "$END");
+
         // Replace comments and tabs and new lines with space
         queryStr =
-                queryStr.replace(QRegularExpression("(\\/\\*(.)*?\\*\\/|^--.*\\n|\\t|\\n)",
-                                                    QRegularExpression::CaseInsensitiveOption
-                                                    | QRegularExpression::MultilineOption),
-                                 " ");
+            queryStr.replace(QRegularExpression("(\\/\\*(.)*?\\*\\/|^--.*\\n|\\t|\\n)",
+                                                QRegularExpression::CaseInsensitiveOption
+                                                | QRegularExpression::MultilineOption),
+                             " ");
         queryStr = queryStr.replace(";", ";\n");
         queryStr = queryStr.replace("$END", ";END");
 
         queryStr = queryStr.trimmed();
-        //qDebug() << queryStr;
+
+        // qDebug() << queryStr;
 
         // Extracting queries
         QStringList qList = queryStr.split('\n', Qt::SkipEmptyParts);
@@ -77,7 +79,7 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
 
 
         for (const QString& s : qList) {
-            if (re_transaction.match(s).hasMatch()){
+            if (re_transaction.match(s).hasMatch()) {
                 sqlDB.transaction();
             }
             else if (re_commit.match(s).hasMatch()) {
@@ -88,7 +90,7 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
 
                 if (query.lastError().type() != QSqlError::NoError) {
                     result = SKRResult(SKRResult::Critical, "SKRSqlTools::executeSQLString", "sql_error");
-                    result.addData("SQLError", query.lastError().text());
+                    result.addData("SQLError",   query.lastError().text());
                     result.addData("SQL string", s);
                     sqlDB.rollback();
 
@@ -107,11 +109,11 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
         // ...so we need to remove special queries (`begin transaction` and
         // `commit`)
         queryStr =
-                queryStr.replace(QRegularExpression(
-                                     "(\\bbegin.transaction.*;|\\bcommit.*;|\\/\\*(.|\\n)*?\\*\\/|^--.*\\n|\\t|\\n)",
-                                     QRegularExpression::CaseInsensitiveOption
-                                     | QRegularExpression::MultilineOption),
-                                 " ");
+            queryStr.replace(QRegularExpression(
+                                 "(\\bbegin.transaction.*;|\\bcommit.*;|\\/\\*(.|\\n)*?\\*\\/|^--.*\\n|\\t|\\n)",
+                                 QRegularExpression::CaseInsensitiveOption
+                                 | QRegularExpression::MultilineOption),
+                             " ");
         queryStr = queryStr.trimmed();
 
         // Execute each individual queries
@@ -122,7 +124,7 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
 
             if (query.lastError().type() != QSqlError::NoError) {
                 result = SKRResult(SKRResult::Critical, "SKRSqlTools::executeSQLString", "sql_error");
-                result.addData("SQLError", query.lastError().text());
+                result.addData("SQLError",   query.lastError().text());
                 result.addData("SQL string", s);
                 sqlDB.rollback();
                 return result;
@@ -133,17 +135,19 @@ SKRResult SKRSqlTools::executeSQLString(const QString& sqlString, QSqlDatabase& 
     return result;
 }
 
-//------------------------------------------------------------------
+// ------------------------------------------------------------------
 
-QString SKRSqlTools::getProjectTemplateDBVersion(SKRResult *result){
+QString SKRSqlTools::getProjectTemplateDBVersion(SKRResult *result) {
     QString dbVersion = "-2";
-    QFile    file(":/sql/sqlite_project.sql");
-    file.open(QIODevice::ReadOnly);
-    for(const QString &line : QString(file.readAll()).split("\n")){
+    QFile   file(":/sql/sqlite_project.sql");
 
-        if(line.contains("-- skribisto_db_version:")){
+    file.open(QIODevice::ReadOnly);
+
+    for (const QString& line : QString(file.readAll()).split("\n")) {
+        if (line.contains("-- skribisto_db_version:")) {
             QStringList splittedLine = line.split(":");
-            if(splittedLine.count() == 2){
+
+            if (splittedLine.count() == 2) {
                 dbVersion = splittedLine.at(1);
             }
 
@@ -152,15 +156,18 @@ QString SKRSqlTools::getProjectTemplateDBVersion(SKRResult *result){
     }
     file.close();
 
-    if(dbVersion == "-2"){
-        *result = SKRResult(SKRResult::Critical, "SKRSqlTools::getProjectTemplateVersion", "no_db_version_found_in_sql_file");
+    if (dbVersion == "-2") {
+        *result = SKRResult(SKRResult::Critical,
+                            "SKRSqlTools::getProjectTemplateVersion",
+                            "no_db_version_found_in_sql_file");
     }
 
     return dbVersion;
 }
-//------------------------------------------------------------------
 
-double SKRSqlTools::getProjectDBVersion(SKRResult *result, QSqlDatabase& sqlDb){
+// ------------------------------------------------------------------
+
+double SKRSqlTools::getProjectDBVersion(SKRResult *result, QSqlDatabase& sqlDb) {
     double dbVersion = -1;
 
     QSqlQuery query(sqlDb);
@@ -181,7 +188,6 @@ double SKRSqlTools::getProjectDBVersion(SKRResult *result, QSqlDatabase& sqlDb){
     return dbVersion;
 }
 
-
 SKRResult SKRSqlTools::renumberTreeSortOrder(QSqlDatabase& sqlDb)
 {
     SKRResult result("SKRSqlTools::renumberTreeSortOrder");
@@ -201,9 +207,9 @@ SKRResult SKRSqlTools::renumberTreeSortOrder(QSqlDatabase& sqlDb)
     //    qDebug() << query.lastError().text();
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "SKRSqlTools::renumberTreeSortOrder", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
         sqlDb.rollback();
         return result;
@@ -223,20 +229,19 @@ SKRResult SKRSqlTools::renumberTreeSortOrder(QSqlDatabase& sqlDb)
         // we commit after all rows renumbered
 
 
-
         {
-            QString   queryStr = "UPDATE tbl_tree"
-                                 " SET l_sort_order = :value"
-                                 " WHERE l_tree_id = :id"
+            QString queryStr = "UPDATE tbl_tree"
+                               " SET l_sort_order = :value"
+                               " WHERE l_tree_id = :id"
             ;
             query.prepare(queryStr);
             query.bindValue(":id",    id);
             query.bindValue(":value", dest);
             query.exec();
 
-            if(query.lastError().isValid()){
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, "SKRSqlTools::renumberTreeSortOrder", "sql_error");
-                result.addData("SQLError", query.lastError().text());
+                result.addData("SQLError",   query.lastError().text());
                 result.addData("SQL string", queryStr);
                 sqlDb.rollback();
 
@@ -245,19 +250,17 @@ SKRResult SKRSqlTools::renumberTreeSortOrder(QSqlDatabase& sqlDb)
         }
 
 
-
         dest += renumInterval;
     }
 
     return result;
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 SKRResult SKRSqlTools::trimTreePropertyTable(QSqlDatabase& sqlDb)
 {
     SKRResult result("SKRSqlTools::trimTreePropertyTable");
-
 
 
     QSqlQuery query(sqlDb);
@@ -271,9 +274,9 @@ SKRResult SKRSqlTools::trimTreePropertyTable(QSqlDatabase& sqlDb)
     query.prepare(queryStr);
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::trimTreePropertyTable", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
 
         return result;
@@ -286,7 +289,6 @@ SKRResult SKRSqlTools::trimTreePropertyTable(QSqlDatabase& sqlDb)
     }
 
 
-
     // retreive all tree ids
     QList<int> treeIdList;
 
@@ -296,9 +298,9 @@ SKRResult SKRSqlTools::trimTreePropertyTable(QSqlDatabase& sqlDb)
     query.prepare(queryStr);
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::trimTreePropertyTable", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
         return result;
     }
@@ -311,13 +313,12 @@ SKRResult SKRSqlTools::trimTreePropertyTable(QSqlDatabase& sqlDb)
 
     sqlDb.transaction();
 
-    for(int i = 0 ; i< treePropertyIdList.count() ; i++){
+    for (int i = 0; i < treePropertyIdList.count(); i++) {
         int treePropertyId = treePropertyIdList.at(i);
-        int treeCode = treeCodeList.at(i);
+        int treeCode       = treeCodeList.at(i);
 
 
-        if(!treeIdList.contains(treeCode)){
-
+        if (!treeIdList.contains(treeCode)) {
             queryStr = "DELETE FROM tbl_tree_property WHERE l_tree_property_id = :treePropertyId";
 
 
@@ -325,31 +326,26 @@ SKRResult SKRSqlTools::trimTreePropertyTable(QSqlDatabase& sqlDb)
             query.bindValue(":treePropertyId", treePropertyId);
             query.exec();
 
-            if(query.lastError().isValid()){
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, "PLMUpgrader::trimTreePropertyTable", "sql_error");
-                result.addData("SQLError", query.lastError().text());
+                result.addData("SQLError",   query.lastError().text());
                 result.addData("SQL string", queryStr);
                 sqlDb.rollback();
                 return result;
             }
-
-
         }
 
         sqlDb.commit();
-
     }
 
     return result;
 }
 
-
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 SKRResult SKRSqlTools::trimTagRelationshipTable(QSqlDatabase& sqlDb)
 {
     SKRResult result("SKRSqlTools::trimTagRelationshipTable");
-
 
 
     QSqlQuery query(sqlDb);
@@ -363,9 +359,9 @@ SKRResult SKRSqlTools::trimTagRelationshipTable(QSqlDatabase& sqlDb)
     query.prepare(queryStr);
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::trimTagRelationshipTable", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
 
         return result;
@@ -378,7 +374,6 @@ SKRResult SKRSqlTools::trimTagRelationshipTable(QSqlDatabase& sqlDb)
     }
 
 
-
     // retreive all tree ids
     QList<int> treeIdList;
 
@@ -388,9 +383,9 @@ SKRResult SKRSqlTools::trimTagRelationshipTable(QSqlDatabase& sqlDb)
     query.prepare(queryStr);
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::trimTagRelationshipTable", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
         return result;
     }
@@ -403,13 +398,12 @@ SKRResult SKRSqlTools::trimTagRelationshipTable(QSqlDatabase& sqlDb)
 
     sqlDb.transaction();
 
-    for(int i = 0 ; i< tagRelationshipIdList.count() ; i++){
+    for (int i = 0; i < tagRelationshipIdList.count(); i++) {
         int tagRelationshipId = tagRelationshipIdList.at(i);
-        int treeCode = treeCodeList.at(i);
+        int treeCode          = treeCodeList.at(i);
 
 
-        if(!treeIdList.contains(treeCode)){
-
+        if (!treeIdList.contains(treeCode)) {
             queryStr = "DELETE FROM tbl_tag_relationship WHERE l_tag_relationship_id = :tagRelationshipId";
 
 
@@ -417,31 +411,26 @@ SKRResult SKRSqlTools::trimTagRelationshipTable(QSqlDatabase& sqlDb)
             query.bindValue(":treePropertyId", tagRelationshipId);
             query.exec();
 
-            if(query.lastError().isValid()){
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, "PLMUpgrader::trimTagRelationshipTable", "sql_error");
-                result.addData("SQLError", query.lastError().text());
+                result.addData("SQLError",   query.lastError().text());
                 result.addData("SQL string", queryStr);
                 sqlDb.rollback();
                 return result;
             }
-
-
         }
 
         sqlDb.commit();
-
     }
 
     return result;
 }
 
-
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 SKRResult SKRSqlTools::trimTreeRelationshipTable(QSqlDatabase& sqlDb)
 {
     SKRResult result("SKRSqlTools::trimTreeRelationshipTable");
-
 
 
     QSqlQuery query(sqlDb);
@@ -450,15 +439,16 @@ SKRResult SKRSqlTools::trimTreeRelationshipTable(QSqlDatabase& sqlDb)
     QList<int> treeSourceCodeList;
     QList<int> treeReceiverCodeList;
 
-    QString queryStr = "SELECT l_tree_relationship_id, l_tree_source_code, l_tree_receiver_code FROM tbl_tree_relationship";
+    QString queryStr =
+        "SELECT l_tree_relationship_id, l_tree_source_code, l_tree_receiver_code FROM tbl_tree_relationship";
 
 
     query.prepare(queryStr);
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::trimTreeRelationshipTable", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
 
         return result;
@@ -472,7 +462,6 @@ SKRResult SKRSqlTools::trimTreeRelationshipTable(QSqlDatabase& sqlDb)
     }
 
 
-
     // retreive all tree ids
     QList<int> treeIdList;
 
@@ -482,9 +471,9 @@ SKRResult SKRSqlTools::trimTreeRelationshipTable(QSqlDatabase& sqlDb)
     query.prepare(queryStr);
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::trimTreeRelationshipTable", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
         return result;
     }
@@ -497,14 +486,13 @@ SKRResult SKRSqlTools::trimTreeRelationshipTable(QSqlDatabase& sqlDb)
 
     sqlDb.transaction();
 
-    for(int i = 0 ; i< treeRelationshipIdList.count() ; i++){
+    for (int i = 0; i < treeRelationshipIdList.count(); i++) {
         int treeRelationshipId = treeRelationshipIdList.at(i);
-        int treeSourceCode = treeSourceCodeList.at(i);
-        int treeReceiverCode = treeReceiverCodeList.at(i);
+        int treeSourceCode     = treeSourceCodeList.at(i);
+        int treeReceiverCode   = treeReceiverCodeList.at(i);
 
 
-        if(!treeIdList.contains(treeSourceCode) || !treeIdList.contains(treeReceiverCode)){
-
+        if (!treeIdList.contains(treeSourceCode) || !treeIdList.contains(treeReceiverCode)) {
             queryStr = "DELETE FROM tbl_tree_relationship WHERE l_tree_relationship_id = :treeRelationshipId";
 
 
@@ -512,54 +500,47 @@ SKRResult SKRSqlTools::trimTreeRelationshipTable(QSqlDatabase& sqlDb)
             query.bindValue(":treeRelationshipId", treeRelationshipId);
             query.exec();
 
-            if(query.lastError().isValid()){
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, "PLMUpgrader::trimTreeRelationshipTable", "sql_error");
-                result.addData("SQLError", query.lastError().text());
+                result.addData("SQLError",   query.lastError().text());
                 result.addData("SQL string", queryStr);
                 sqlDb.rollback();
                 return result;
             }
-
-
         }
 
         sqlDb.commit();
-
     }
 
     return result;
 }
 
+// ------------------------------------------------------------------------------
 
-
-//------------------------------------------------------------------------------
-
-SKRResult SKRSqlTools::addStringTreeProperty(QSqlDatabase& sqlDb, int tree_id, const QString &name, const QString &value)
+SKRResult SKRSqlTools::addStringTreeProperty(QSqlDatabase& sqlDb, int tree_id, const QString& name,
+                                             const QString& value)
 {
     SKRResult result("SKRSqlTools::addStringTreeProperty");
-
 
 
     QSqlQuery query(sqlDb);
 
     QString queryStr = "INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value)"
-                    "VALUES (:treeCode, :name, 'STRING', :value)";
+                       "VALUES (:treeCode, :name, 'STRING', :value)";
 
 
     query.prepare(queryStr);
     query.bindValue(":treeCode", tree_id);
-    query.bindValue(":name", name);
-    query.bindValue(":value", value);
+    query.bindValue(":name",     name);
+    query.bindValue(":value",    value);
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::addStringTreeProperty", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
     }
 
 
-
     return result;
-
 }
