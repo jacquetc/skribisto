@@ -145,7 +145,13 @@ ApplicationWindow {
             signal showAboutQtCalled()
 
 
-             signal openThemePageCalled()
+            signal openThemePageCalled()
+
+            signal setBreadcrumbCurrentTreeItemCalled(int projectId, int treeItemId)
+
+        Component.onCompleted: {
+            rootWindow.setNavigationTreeItemIdCalled.connect(setBreadcrumbCurrentTreeItemCalled)
+        }
     }
 
     //------------------------------------------------------------------
