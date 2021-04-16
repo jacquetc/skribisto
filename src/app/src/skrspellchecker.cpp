@@ -273,10 +273,10 @@ QStringList SKRSpellChecker::dictsPaths()
 {
     QStringList list;
 
+    QDir dir;
 
 #ifdef Q_OS_LINUX
 
-    QDir dir;
     dir.setPath("/usr/share/hunspell/");
     list.append(dir.path());
 
@@ -284,6 +284,13 @@ QStringList SKRSpellChecker::dictsPaths()
     list.append(dir.path());
 
 #endif // ifdef Q_OS_LINUX
+#ifdef Q_OS_MAC
+    dir.setPath("/Library/Spelling/");
+
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
+#endif // ifdef Q_OS_MAC
 
     QStringList addonsList = PLMUtils::Dir::addonsPathsList();
 

@@ -12,19 +12,19 @@ public:
 
     enum Roles {
         // treeItems :
-        ProjectNameRole  = Qt::UserRole,
-        ProjectIdRole    = Qt::UserRole + 1,
-        TreeItemIdRole      = Qt::UserRole + 2,
+        ProjectNameRole   = Qt::UserRole,
+        ProjectIdRole     = Qt::UserRole + 1,
+        TreeItemIdRole    = Qt::UserRole + 2,
         TitleRole         = Qt::UserRole + 3,
         InternalTitleRole = Qt::UserRole + 4,
-        TypeRole         = Qt::UserRole + 5,
-        LabelRole        = Qt::UserRole + 6,
-        IndentRole       = Qt::UserRole + 7,
-        SortOrderRole    = Qt::UserRole + 8,
-        TrashedRole      = Qt::UserRole + 9,
-        CreationDateRole = Qt::UserRole + 10,
-        UpdateDateRole   = Qt::UserRole + 11,
-        ContentDateRole  = Qt::UserRole + 12,
+        TypeRole          = Qt::UserRole + 5,
+        LabelRole         = Qt::UserRole + 6,
+        IndentRole        = Qt::UserRole + 7,
+        SortOrderRole     = Qt::UserRole + 8,
+        TrashedRole       = Qt::UserRole + 9,
+        CreationDateRole  = Qt::UserRole + 10,
+        UpdateDateRole    = Qt::UserRole + 11,
+        ContentDateRole   = Qt::UserRole + 12,
 
         // implemented in list proxy :
         HasChildrenRole           = Qt::UserRole + 13,
@@ -36,8 +36,8 @@ public:
         ProjectIsActiveRole       = Qt::UserRole + 19,
         IsRenamableRole           = Qt::UserRole + 20,
         IsMovableRole             = Qt::UserRole + 21,
-        CanAddSiblingTreeItemRole    = Qt::UserRole + 22,
-        CanAddChildTreeItemRole      = Qt::UserRole + 23,
+        CanAddSiblingTreeItemRole = Qt::UserRole + 22,
+        CanAddChildTreeItemRole   = Qt::UserRole + 23,
         IsTrashableRole           = Qt::UserRole + 24,
         IsOpenableRole            = Qt::UserRole + 25,
         IsCopyableRole            = Qt::UserRole + 26,
@@ -46,10 +46,10 @@ public:
     Q_ENUM(Roles)
 
     explicit SKRTreeItem();
-    explicit SKRTreeItem(int            projectId,
-                          int            treeItemId,
-                          int            indent,
-                          int            sortOrder);
+    explicit SKRTreeItem(int projectId,
+                         int treeItemId,
+                         int indent,
+                         int sortOrder);
     ~SKRTreeItem();
 
 
@@ -66,15 +66,15 @@ public:
     QVariant            data(int role);
     QList<int>          dataRoles() const;
 
-    SKRTreeItem      * parent(const QList<SKRTreeItem *>& itemList);
+    SKRTreeItem       * parent(const QList<SKRTreeItem *>& itemList);
     int                 row(const QList<SKRTreeItem *>& itemList);
 
     bool                isProjectItem();
     void                setIsProjectItem(int projectId);
 
     int                 childrenCount(const QList<SKRTreeItem *>& itemList);
-    SKRTreeItem      * child(const QList<SKRTreeItem *>& itemList,
-                              int                          row);
+    SKRTreeItem       * child(const QList<SKRTreeItem *>& itemList,
+                              int                         row);
     bool                isRootItem() const;
     void                setIsRootItem();
 

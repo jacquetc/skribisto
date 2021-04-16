@@ -156,8 +156,8 @@ bool PLMUtils::Dir::removeDir(const QString& dirName)
 // }
 
 bool PLMUtils::ProjectsArrayInSettings::modifyProjectModifiedDateInSettingsArray(
-        int     arrayNumber,
-        QString date)
+    int     arrayNumber,
+    QString date)
 {
     QSettings settings;
 
@@ -177,7 +177,7 @@ int PLMUtils::ProjectsArrayInSettings::findProjectInSettingArray(QString fileNam
     }
 
     if (!PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
-                fileName)) {
+            fileName)) {
         return 999;
     }
 
@@ -220,7 +220,7 @@ int PLMUtils::ProjectsArrayInSettings::findProjectInSettingArray(QString fileNam
 }
 
 bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
-        QString fileName)
+    QString fileName)
 {
     QFile file(fileName);
     QSettings settings;
@@ -392,7 +392,7 @@ bool PLMUtils::ProjectsArrayInSettings::isProjectExistingInSettingArray(
 // -------------------------------------------------------------
 
 QHash<QString,
-QString>PLMUtils::ProjectsArrayInSettings::listAllProjectsInSettingsArray()
+      QString>PLMUtils::ProjectsArrayInSettings::listAllProjectsInSettingsArray()
 {
     QSettings settings;
 
@@ -634,8 +634,8 @@ QStringList PLMUtils::Dir::writableAddonsPathsList()
 #ifdef Q_OS_WIN
 
     dir.setPath(
-                QDir::homePath() + "/AppData/Roaming/" +
-                QCoreApplication::organizationName() + "/share/");
+        QDir::homePath() + "/AppData/Roaming/" +
+        QCoreApplication::organizationName() + "/share/");
 
     dir.mkpath(dir.path());
 
@@ -738,16 +738,16 @@ QStringList PLMUtils::Dir::addonsPathsList()
     }
 
     dir.setPath(
-                QDir::homePath() + "/AppData/Roaming/" +
-                QCoreApplication::organizationName() + "/share/");
+        QDir::homePath() + "/AppData/Roaming/" +
+        QCoreApplication::organizationName() + "/share/");
 
     if (dir.isReadable()) {
         list.append(dir.path());
     }
 
     dir.setPath(
-                QDir::homePath() + "/AppData/Roaming/" +
-                QCoreApplication::organizationName());
+        QDir::homePath() + "/AppData/Roaming/" +
+        QCoreApplication::organizationName());
 
     if (dir.isReadable()) {
         list.append(dir.path());

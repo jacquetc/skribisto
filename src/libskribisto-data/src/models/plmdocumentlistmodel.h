@@ -67,7 +67,8 @@ public:
         LasFocusedDateRole = Qt::UserRole + 10
     };
 
-    explicit PLMDocumentListModel(QObject *parent, const QString &tableName);
+    explicit PLMDocumentListModel(QObject       *parent,
+                                  const QString& tableName);
 
     // Header:
     QVariant headerData(int             section,
@@ -89,7 +90,7 @@ public:
                  const QVariant   & value,
                  int                role = Qt::EditRole) override;
 
-    Qt::ItemFlags flags(const QModelIndex& index) const override;
+    Qt::ItemFlags         flags(const QModelIndex& index) const override;
 
 
     QHash<int, QByteArray>roleNames() const override;
@@ -99,9 +100,10 @@ public:
                                         int paperId,
                                         int subWindowId);
     QList<int>            getDocumentIdEverywhere(int projectId,
-                                        int paperId);
+                                                  int paperId);
 
 protected slots:
+
     QString translateRole(Roles role) const;
 
 private slots:
@@ -119,7 +121,6 @@ private slots:
                         const QString& tableName,
                         int            documentId,
                         const QString& fieldName);
-
 
 private:
 

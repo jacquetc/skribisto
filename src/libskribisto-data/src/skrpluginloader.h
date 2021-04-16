@@ -63,7 +63,7 @@ public:
 
     template<typename T>void addPluginType()
     {
-        for(QObject * obj : QPluginLoader::staticInstances()) {
+        for (QObject *obj : QPluginLoader::staticInstances()) {
             T *instance = qobject_cast<T *>(obj);
 
             if (instance) {
@@ -76,10 +76,10 @@ public:
             }
         }
 
-        for(const QString& path : QCoreApplication::libraryPaths()) {
+        for (const QString& path : QCoreApplication::libraryPaths()) {
             QList<QObject *> objects = this->pluginObjectsByDir<T>(path);
 
-            for(QObject * obj : objects) {
+            for (QObject *obj : objects) {
                 T *instance = qobject_cast<T *>(obj);
 
                 if (instance) {
@@ -99,24 +99,27 @@ public:
     {
         QList<T *> list;
 
-        for(SKRPlugin p : m_pluginsListHash.values()) {
+        for (SKRPlugin p : m_pluginsListHash.values()) {
             QObject *object = p.object;
 
 
             SKRCoreInterface *corePlugin = qobject_cast<SKRCoreInterface *>(object);
-            if(!corePlugin){
-                qWarning() << "Plugin" << object->property("shortname").toString() << "is not SKRCoreInterface, ignoring it";
+
+            if (!corePlugin) {
+                qWarning() << "Plugin" << object->property("shortname").toString() <<
+                "is not SKRCoreInterface, ignoring it";
                 continue;
             }
 
-            if(!corePlugin->isPluginEnabledSettingExisting()){
-                if (!object->property("activatedbydefault").toBool()){
+            if (!corePlugin->isPluginEnabledSettingExisting()) {
+                if (!object->property("activatedbydefault").toBool()) {
                     continue;
                 }
             }
 
             bool pluginEnabled = corePlugin->pluginEnabled();
-            if (!pluginEnabled && !includeDisabled){
+
+            if (!pluginEnabled && !includeDisabled) {
                 continue;
             }
 
@@ -158,7 +161,7 @@ private:
         QList<T *> ls;
         QDir plugDir = QDir(dir);
 
-        for(const QString& file : plugDir.entryList(QDir::Files)) {
+        for (const QString& file : plugDir.entryList(QDir::Files)) {
             if (T *plugin =
                     SKRPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file))) {
                 ls.push_back(plugin);
@@ -178,9 +181,9 @@ private:
 
         filter << "*.so" << "*.dll" << "*.dylib";
         QDir::Filters filterFlags(QDir::Files& ~QDir::Executable);
-        QStringList list = plugDir.entryList(filter, filterFlags, QDir::NoSort);
+        QStringList   list = plugDir.entryList(filter, filterFlags, QDir::NoSort);
 
-        for(const QString& file : plugDir.entryList(filter, filterFlags, QDir::NoSort)) {
+        for (const QString& file : plugDir.entryList(filter, filterFlags, QDir::NoSort)) {
             if (T *plugin =
                     SKRPluginLoader::pluginByName<T>(plugDir.absoluteFilePath(file)))
                 if (plugin) {

@@ -122,12 +122,12 @@ public:
 
     explicit SKRPluginHub(QObject *parent = nullptr);
 
-    void     reloadPlugins();
+    void      reloadPlugins();
     SKRResult set(int             projectId,
-                 int             id,
-                 const QString & tableName,
-                 const QString & fieldName,
-                 const QVariant& value);
+                  int             id,
+                  const QString & tableName,
+                  const QString & fieldName,
+                  const QVariant& value);
     QVariant get(int            projectId,
                  int            id,
                  const QString& tableName,
@@ -135,7 +135,7 @@ public:
 
     QList<int>getIds(int            projectId,
                      const QString& tableName) const;
-    SKRResult  ensureTableExists(int            projectId,
+    SKRResult ensureTableExists(int            projectId,
                                 const QString& tableName,
                                 const QString& sqlString);
 

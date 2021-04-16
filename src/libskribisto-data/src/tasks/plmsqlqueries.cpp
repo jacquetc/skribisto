@@ -83,9 +83,9 @@ SKRResult PLMSqlQueries::get(int id, const QString& valueName, QVariant& out) co
         query.bindValue(":id", id);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
 
@@ -102,7 +102,7 @@ SKRResult PLMSqlQueries::get(int id, const QString& valueName, QVariant& out) co
 }
 
 SKRResult PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
-                                          QHash<QString, QVariant>& out) const
+                                           QHash<QString, QVariant>& out) const
 {
     SKRResult result(this);
 
@@ -132,15 +132,15 @@ SKRResult PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
         query.bindValue(":id", id);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
 
 
         while (query.next()) {
-            for(const QString& valueName : valueList) {
+            for (const QString& valueName : valueList) {
                 out.insert(valueName, query.value(valueName));
             }
         }
@@ -148,7 +148,6 @@ SKRResult PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
         if (query.size() == 0) {
             result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
         }
-
     }
 
     return result;
@@ -168,9 +167,9 @@ SKRResult PLMSqlQueries::getSortedIds(QList<int>& out) const
         query.prepare(queryStr);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
 
@@ -199,9 +198,9 @@ SKRResult PLMSqlQueries::getIds(QList<int>& out) const
         query.prepare(queryStr);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
 
@@ -241,12 +240,13 @@ bool PLMSqlQueries::idExists(int id) const
 /// \param whereValue
 /// \param sorted
 /// \return
-/// You can use "id" as 'where' ; result QHash isn't garantied to keep the same order ! Use getSortedIds to have the sort order
-SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
-                                      QHash<int, QVariant>& out,
-                                      const QString& where,
-                                      const QVariant& whereValue,
-                                      bool sorted) const
+/// You can use "id" as 'where' ; result QHash isn't garantied to keep the same
+// order ! Use getSortedIds to have the sort order
+SKRResult PLMSqlQueries::getValueByIds(const QString       & valueName,
+                                       QHash<int, QVariant>& out,
+                                       const QString       & where,
+                                       const QVariant      & whereValue,
+                                       bool                  sorted) const
 {
     out.clear();
     SKRResult result(this);
@@ -262,7 +262,7 @@ SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
                 wh = m_idName;
             }
 
-            auto rx  = QRegularExpression("[><=]^");
+            auto rx = QRegularExpression("[><=]^");
 
             if (!wh.contains(rx)) {
                 wh.append(" =");
@@ -283,9 +283,9 @@ SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
 
@@ -301,10 +301,10 @@ SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
     return result;
 }
 
-SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
-                                           QHash<int, QVariant>& out,
-                                           const QHash<QString, QVariant>& where,
-                                           bool sorted) const
+SKRResult PLMSqlQueries::getValueByIdsWhere(const QString                 & valueName,
+                                            QHash<int, QVariant>          & out,
+                                            const QHash<QString, QVariant>& where,
+                                            bool                            sorted) const
 {
     SKRResult result(this);
 
@@ -322,7 +322,7 @@ SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
                 wh = m_idName;
             }
 
-            auto rx  = QRegularExpression("\\s*[><=]{1,2}$");
+            auto rx         = QRegularExpression("\\s*[><=]{1,2}$");
             QString valueWh = wh;
 
             if (wh.contains(rx)) {
@@ -353,9 +353,9 @@ SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
 
@@ -374,7 +374,7 @@ SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
 bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
 {
     SKRResult result(this);
-    bool     value;
+    bool value;
 
     {
         QSqlQuery query(m_sqlDB);
@@ -405,9 +405,9 @@ bool PLMSqlQueries::resultExists(const QHash<QString, QVariant>& where) const
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
 
@@ -459,9 +459,9 @@ SKRResult PLMSqlQueries::add(const QHash<QString, QVariant>& values, int& newId)
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
 
@@ -481,9 +481,9 @@ SKRResult PLMSqlQueries::removeAll() const
         query.prepare(queryStr);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
     }
@@ -504,9 +504,9 @@ SKRResult PLMSqlQueries::remove(int id) const
         query.bindValue(":id", id);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
     }
@@ -529,9 +529,9 @@ SKRResult PLMSqlQueries::set(int id, const QString& valueName, const QVariant& v
         query.bindValue(":value", value);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
     }
@@ -554,9 +554,9 @@ SKRResult PLMSqlQueries::setId(int id, int newId) const
         query.bindValue(":value", newId);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
     }
@@ -574,9 +574,9 @@ SKRResult PLMSqlQueries::injectDirectSql(const QString& sqlString)
         query.prepare(queryStr);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
     }
@@ -618,9 +618,9 @@ SKRResult PLMSqlQueries::setCurrentDate(int id, const QString& valueName) const
         query.bindValue(":id", id);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, this, "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
     }
@@ -647,9 +647,9 @@ SKRResult PLMSqlQueries::renumberSortOrder()
     //    qDebug() << query.lastError().text();
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, this, "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
     }
 

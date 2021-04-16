@@ -59,7 +59,7 @@ QVariant SKRTreeProxyModel::data(const QModelIndex& index, int role) const
 // -----------------------------------------------------------------------
 
 bool SKRTreeProxyModel::setData(const QModelIndex& index, const QVariant& value,
-                                 int role)
+                                int role)
 {
     QModelIndex sourceIndex = this->mapToSource(index);
 
@@ -90,7 +90,7 @@ void SKRTreeProxyModel::setTrashedFilter(bool showTrashed)
 }
 
 bool SKRTreeProxyModel::filterAcceptsRow(int                sourceRow,
-                                          const QModelIndex& sourceParent) const
+                                         const QModelIndex& sourceParent) const
 {
     QModelIndex index = this->sourceModel()->index(sourceRow, 0, sourceParent);
 

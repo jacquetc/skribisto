@@ -98,7 +98,7 @@ namespace ListQVariantConverter {
 Q_DECL_UNUSED QList<int>convertToInt(const QList<QVariant>& list) {
     QList<int> intList;
 
-    for(const QVariant& variant : list) {
+    for (const QVariant& variant : list) {
         intList.append(variant.toInt());
     }
     return intList;

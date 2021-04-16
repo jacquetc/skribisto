@@ -52,7 +52,7 @@ SKRTreeModel::SKRTreeModel(QObject *parent)
 }
 
 QVariant SKRTreeModel::headerData(int section, Qt::Orientation orientation,
-                                   int role) const
+                                  int role) const
 {
     Q_UNUSED(section)
     Q_UNUSED(orientation)
@@ -62,9 +62,9 @@ QVariant SKRTreeModel::headerData(int section, Qt::Orientation orientation,
 }
 
 bool SKRTreeModel::setHeaderData(int             section,
-                                  Qt::Orientation orientation,
-                                  const QVariant& value,
-                                  int             role)
+                                 Qt::Orientation orientation,
+                                 const QVariant& value,
+                                 int             role)
 {
     if (value != headerData(section, orientation, role)) {
         m_headerData = value;
@@ -218,8 +218,8 @@ bool SKRTreeModel::setData(const QModelIndex& index, const QVariant& value, int 
 
     if (data(index, role) != value) {
         SKRTreeItem *item = static_cast<SKRTreeItem *>(index.internalPointer());
-        int projectId      = item->projectId();
-        int treeItemId        = item->treeItemId();
+        int projectId     = item->projectId();
+        int treeItemId    = item->treeItemId();
         SKRResult result(this);
 
         this->disconnectFromPLMDataSignals();
@@ -357,9 +357,9 @@ QHash<int, QByteArray>SKRTreeModel::roleNames() const {
     QHash<int, QByteArray> roles;
 
     roles[SKRTreeItem::Roles::ProjectNameRole]  = "projectName";
-    roles[SKRTreeItem::Roles::TreeItemIdRole]      = "treeItemId";
+    roles[SKRTreeItem::Roles::TreeItemIdRole]   = "treeItemId";
     roles[SKRTreeItem::Roles::ProjectIdRole]    = "projectId";
-    roles[SKRTreeItem::Roles::TitleRole]         = "name";
+    roles[SKRTreeItem::Roles::TitleRole]        = "name";
     roles[SKRTreeItem::Roles::LabelRole]        = "label";
     roles[SKRTreeItem::Roles::IndentRole]       = "indent";
     roles[SKRTreeItem::Roles::SortOrderRole]    = "sortOrder";
@@ -377,16 +377,14 @@ void SKRTreeModel::populate()
     m_allTreeItems.clear();
 
     for (int projectId : plmdata->projectHub()->getProjectIdList()) {
-
-
         auto idList         = plmdata->treeHub()->getAllIds(projectId);
         auto sortOrdersHash = plmdata->treeHub()->getAllSortOrders(projectId);
         auto indentsHash    = plmdata->treeHub()->getAllIndents(projectId);
 
         for (int sheetId : idList) {
             m_allTreeItems.append(new SKRTreeItem(projectId, sheetId,
-                                                    indentsHash.value(sheetId),
-                                                    sortOrdersHash.value(sheetId)));
+                                                  indentsHash.value(sheetId),
+                                                  sortOrdersHash.value(sheetId)));
         }
     }
     this->endResetModel();
@@ -399,9 +397,9 @@ void SKRTreeModel::clear()
     this->endResetModel();
 }
 
-void SKRTreeModel::exploitSignalFromPLMData(int                 projectId,
-                                             int                 treeItemId,
-                                             SKRTreeItem::Roles role)
+void SKRTreeModel::exploitSignalFromPLMData(int                projectId,
+                                            int                treeItemId,
+                                            SKRTreeItem::Roles role)
 {
     SKRTreeItem *item = this->findPaperItem(projectId, treeItemId);
 
@@ -503,17 +501,24 @@ void SKRTreeModel::addPaper(int projectId, int treeItemId)
 
     if ((plmdata->projectHub()->getProjectIdList().count() == 1) && (paperIndex == 0)) { //
                                                                                          //
+                                                                                         //
                                                                                          // so
+                                                                                         //
                                                                                          //
                                                                                          // no
                                                                                          //
+                                                                                         //
                                                                                          // project
+                                                                                         //
                                                                                          //
                                                                                          // items
                                                                                          //
+                                                                                         //
                                                                                          // and
                                                                                          //
+                                                                                         //
                                                                                          // first
+                                                                                         //
                                                                                          //
                                                                                          // item
         itemIndex = 0;
@@ -523,7 +528,7 @@ void SKRTreeModel::addPaper(int projectId, int treeItemId)
             paperIndex = 1;
         }
 
-        int idBefore             = idList.at(paperIndex - 1);
+        int idBefore            = idList.at(paperIndex - 1);
         SKRTreeItem *itemBefore = this->findPaperItem(projectId, idBefore);
 
         int indexBefore = m_allTreeItems.indexOf(itemBefore);
@@ -543,8 +548,8 @@ void SKRTreeModel::addPaper(int projectId, int treeItemId)
     beginInsertRows(parentIndex, row, row);
 
     m_allTreeItems.insert(itemIndex, new SKRTreeItem(projectId, treeItemId,
-                                                       indentsHash.value(treeItemId),
-                                                       sortOrdersHash.value(treeItemId)));
+                                                     indentsHash.value(treeItemId),
+                                                     sortOrdersHash.value(treeItemId)));
     endInsertRows();
 }
 

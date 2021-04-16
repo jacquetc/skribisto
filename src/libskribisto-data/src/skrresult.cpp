@@ -23,58 +23,58 @@
 SKRResult::SKRResult() :  m_status(SKRResult::OK)
 {
     this->addErrorCode("OK");
-
 }
 
 SKRResult::SKRResult(const QObject *object) :  m_status(SKRResult::OK)
 {
     QString className = object->metaObject()->className();
-    *this = SKRResult(className);
 
+    *this = SKRResult(className);
 }
 
-SKRResult::SKRResult(const QString &className) :  m_status(SKRResult::OK)
+SKRResult::SKRResult(const QString& className) :  m_status(SKRResult::OK)
 {
     this->addErrorCode("OK_" + className.toUpper());
-
 }
 
 SKRResult::SKRResult(const SKRResult& result)
 {
-    m_status       = result.getStatus();
+    m_status        = result.getStatus();
     m_errorCodeList = result.getErrorCodeList();
-    m_dataHashList      = result.getDataHashList();
+    m_dataHashList  = result.getDataHashList();
 }
 
-SKRResult::SKRResult(SKRResult::Status status, const QObject *object, const QString &errorCodeEnd)
+SKRResult::SKRResult(SKRResult::Status status, const QObject *object, const QString& errorCodeEnd)
 {
     QString className = object->metaObject()->className();
 
     *this = SKRResult(status, className, errorCodeEnd);
 }
 
-SKRResult::SKRResult(SKRResult::Status status, const QString &className, const QString &errorCodeEnd)
+SKRResult::SKRResult(SKRResult::Status status, const QString& className, const QString& errorCodeEnd)
 {
     m_status = status;
 
-    //whole errorCode:
+    // whole errorCode:
     QString errorCode;
 
-    switch (status){
+    switch (status) {
     case SKRResult::OK:
         errorCode = "OK_";
         break;
+
     case SKRResult::Warning:
         errorCode = "W_";
         break;
+
     case SKRResult::Critical:
         errorCode = "C_";
         break;
+
     case SKRResult::Fatal:
         errorCode = "F_";
         break;
     }
-
 
 
     errorCode += className.toUpper() + "__";
@@ -108,18 +108,17 @@ SKRResult& SKRResult::operator=(const SKRResult& iResult)
 
 bool SKRResult::operator==(const SKRResult& otherSKRResult) const {
     return m_status == otherSKRResult.getStatus()
-            && m_errorCodeList == otherSKRResult.getErrorCodeList()
-            && m_dataHashList == otherSKRResult.getDataHashList()
-            ;
+           && m_errorCodeList == otherSKRResult.getErrorCodeList()
+           && m_dataHashList == otherSKRResult.getDataHashList()
+    ;
 }
 
 bool SKRResult::operator!=(const SKRResult& otherSKRResult) const {
     return m_status != otherSKRResult.getStatus()
-            || m_errorCodeList != otherSKRResult.getErrorCodeList()
-            || m_dataHashList != otherSKRResult.getDataHashList()
-            ;
+           || m_errorCodeList != otherSKRResult.getErrorCodeList()
+           || m_dataHashList != otherSKRResult.getDataHashList()
+    ;
 }
-
 
 bool SKRResult::isSuccess() const
 {
@@ -133,8 +132,8 @@ bool SKRResult::containsErrorCode(const QString& value) const
 
 bool SKRResult::containsErrorCodeDetail(const QString& value) const
 {
-    for(const QString &codeString : m_errorCodeList){
-        if(codeString.split("__").last() == value){
+    for (const QString& codeString : m_errorCodeList) {
+        if (codeString.split("__").last() == value) {
             return true;
         }
     }
@@ -166,7 +165,7 @@ SKRResult::Status SKRResult::getStatus() const
     return m_status;
 }
 
-void SKRResult::setStatus(const SKRResult::Status &status)
+void SKRResult::setStatus(const SKRResult::Status& status)
 {
     m_status = status;
 }
@@ -176,10 +175,11 @@ void SKRResult::addErrorCode(const QString& value)
     m_errorCodeList.append(value);
 
     QHash<QString, QVariant> emptyHash;
+
     m_dataHashList.append(emptyHash);
 }
 
-QList<QHash<QString, QVariant> > SKRResult::getDataHashList() const
+QList<QHash<QString, QVariant> >SKRResult::getDataHashList() const
 {
     return m_dataHashList;
 }
@@ -192,6 +192,7 @@ void SKRResult::setDataHashList(const QList<QHash<QString, QVariant> >& dataHash
 void SKRResult::addData(const QString& key, const QVariant& value)
 {
     QHash<QString, QVariant> lastHash = m_dataHashList.takeLast();
+
     lastHash.insert(key, value);
     m_dataHashList.append(lastHash);
 }
@@ -201,19 +202,19 @@ QVariant SKRResult::getData(const QString& key, const QVariant& defaultValue) co
     QVariant final = -2;
 
     QList<QHash<QString, QVariant> >::const_reverse_iterator i;
-    for (i = m_dataHashList.crbegin(); i != m_dataHashList.crend(); ++i){
 
+    for (i = m_dataHashList.crbegin(); i != m_dataHashList.crend(); ++i) {
         QHash<QString, QVariant> hash = *i;
         final = hash.value(key, -2);
-        if(final != -2){
+
+        if (final != -2) {
             break;
         }
     }
 
-    if(final == -2){
+    if (final == -2) {
         final = defaultValue;
     }
 
     return final;
-
 }

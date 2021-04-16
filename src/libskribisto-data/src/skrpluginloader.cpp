@@ -9,10 +9,9 @@ SKRPluginLoader::SKRPluginLoader(QObject *parent) : QObject(parent)
 {
     qRegisterMetaType<QList<SKRPlugin> >("QList<SKRPlugin>");
 
-    for(const QString& path : PLMUtils::Dir::addonsPathsList()) {
+    for (const QString& path : PLMUtils::Dir::addonsPathsList()) {
         QCoreApplication::addLibraryPath(path);
     }
-
 
 
     // this->reload();
@@ -105,7 +104,7 @@ QList<SKRPlugin>SKRPluginLoader::listActivated()
     while (i != m_pluginsListHash.constEnd()) {
         SKRPlugin plugin = i.value();
 
-        if(qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled()){
+        if (qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled()) {
             list << plugin;
         }
         ++i;

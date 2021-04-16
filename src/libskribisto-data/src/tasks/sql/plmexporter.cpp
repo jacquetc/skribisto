@@ -25,11 +25,11 @@ PLMExporter::PLMExporter(QObject *parent) : QObject(parent)
 {}
 
 SKRResult PLMExporter::exportWholeSQLiteDbTo(PLMProject    *db,
-                                       const QString& type,
-                                       const QUrl   & fileName)
+                                             const QString& type,
+                                             const QUrl   & fileName)
 {
     SKRResult result(this);
-    QString  finalType = type;
+    QString   finalType = type;
 
     if (type == "skrib") {
         finalType = "SQLITE";

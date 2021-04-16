@@ -34,14 +34,17 @@ public:
     explicit PLMUpgrader(QObject *parent = nullptr);
     static SKRResult upgradeSQLite(QSqlDatabase sqlDb);
 
-    static SKRResult setDbVersion(QSqlDatabase sqlDb, double newVersion);
+    static SKRResult setDbVersion(QSqlDatabase sqlDb,
+                                  double       newVersion);
+
 signals:
 
 public slots:
 
-
 private:
-    static SKRResult movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &tableName);
+
+    static SKRResult movePaperToTree_1_5(QSqlDatabase   sqlDb,
+                                         const QString& tableName);
     static SKRResult transformParentsToFolder_1_5(QSqlDatabase sqlDb);
     static SKRResult dropDeprecatedTables_1_5(QSqlDatabase sqlDb);
     static SKRResult moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb);

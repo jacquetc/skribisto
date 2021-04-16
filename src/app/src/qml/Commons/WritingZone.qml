@@ -712,6 +712,16 @@ WritingZoneForm {
     Connections {
         target: documentHandler
         function onShakeTextSoHighlightsTakeEffectCalled() {
+            if(!shakeTextTimer.running){
+                shakeTextTimer.start()
+            }
+        }
+    }
+
+    Timer {
+        id: shakeTextTimer
+        interval: 50
+        onTriggered: {
             textArea.width += 1
             textArea.width -= 1
         }

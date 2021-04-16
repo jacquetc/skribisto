@@ -1,4 +1,5 @@
 #include <QVariant>
+
 /***************************************************************************
 *   Copyright (C) 2016 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
@@ -21,14 +22,14 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #ifndef SKRIBISTO_DATA_GLOBAL_H
-#define SKRIBISTO_DATA_GLOBAL_H
+# define SKRIBISTO_DATA_GLOBAL_H
 
-#include <QtCore/QtGlobal>
+# include <QtCore/QtGlobal>
 
-#if defined(SKRIBISTO_DATA_LIBRARY)
-# define EXPORT Q_DECL_EXPORT
-#else // if defined(SKRIBISTO_DATA_LIBRARY)
-# define EXPORT Q_DECL_IMPORT
-#endif // if defined(SKRIBISTO_DATA_LIBRARY)
+# if defined(SKRIBISTO_DATA_LIBRARY)
+#  define EXPORT Q_DECL_EXPORT
+# else // if defined(SKRIBISTO_DATA_LIBRARY)
+#  define EXPORT Q_DECL_IMPORT
+# endif // if defined(SKRIBISTO_DATA_LIBRARY)
 
 #endif // SKRIBISTO_DATA_GLOBAL_H

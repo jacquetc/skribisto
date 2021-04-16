@@ -34,7 +34,7 @@ class EXPORT SKRTreeListModel : public QAbstractTableModel {
 
 public:
 
-    explicit SKRTreeListModel(QObject       *parent);
+    explicit SKRTreeListModel(QObject *parent);
 
     // Header:
     QVariant headerData(int             section,
@@ -51,7 +51,7 @@ public:
                       int                column,
                       const QModelIndex& parent = QModelIndex()) const override;
 
-    int      rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    int      rowCount(const QModelIndex& parent    = QModelIndex()) const override;
     int      columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
     QVariant data(const QModelIndex& index,
@@ -67,28 +67,28 @@ public:
     QHash<int, QByteArray>roleNames() const override;
     QModelIndexList       getModelIndex(int projectId,
                                         int treeItemId);
-    SKRTreeItem        * getParentTreeItem(SKRTreeItem *childItem);
-    SKRTreeItem        * getItem(int projectId,
+    SKRTreeItem         * getParentTreeItem(SKRTreeItem *childItem);
+    SKRTreeItem         * getItem(int projectId,
                                   int treeItemId);
 
-    void sortAllTreeItemItems();
+    void                  sortAllTreeItemItems();
 
 private slots:
 
     void populate();
     void clear();
-    void exploitSignalFromPLMData(int                 projectId,
-                                  int                 treeItemId,
+    void exploitSignalFromPLMData(int                projectId,
+                                  int                treeItemId,
                                   SKRTreeItem::Roles role);
 
     void refreshAfterDataAddition(int projectId,
                                   int treeItemId);
     void refreshAfterDataRemove(int projectId,
                                 int treeItemId);
-    void refreshAfterDataMove(int sourceProjectId,
-                              QList<int> sourceTreeItemIds,
-                              int targetProjectId,
-                              int targetTreeItemId);
+    void refreshAfterDataMove(int       sourceProjectId,
+                              QList<int>sourceTreeItemIds,
+                              int       targetProjectId,
+                              int       targetTreeItemId);
     void refreshAfterTrashedStateChanged(int  projectId,
                                          int  treeItemId,
                                          bool newTrashedState);
@@ -99,9 +99,8 @@ private slots:
                                    int treeItemId,
                                    int newIndent);
 
-
-
 signals:
+
     void sortOtherProxyModelsCalled();
 
 private:

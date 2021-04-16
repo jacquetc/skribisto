@@ -37,9 +37,12 @@ class EXPORT PLMProjectHub : public QObject {
 public:
 
     explicit PLMProjectHub(QObject *parent);
-    Q_INVOKABLE SKRResult loadProject(const QUrl& urlFilePath, bool hidden = false);
-    Q_INVOKABLE SKRResult createNewEmptyProject(const QUrl& path, bool hidden = false);
-    SKRResult createSilentlyNewSpecificEmptyProject(const QUrl &path, const QString &sqlFile);
+    Q_INVOKABLE SKRResult loadProject(const QUrl& urlFilePath,
+                                      bool        hidden = false);
+    Q_INVOKABLE SKRResult createNewEmptyProject(const QUrl& path,
+                                                bool        hidden = false);
+    SKRResult             createSilentlyNewSpecificEmptyProject(const QUrl   & path,
+                                                                const QString& sqlFile);
     Q_INVOKABLE SKRResult saveProject(int projectId);
     Q_INVOKABLE SKRResult saveProjectAs(int            projectId,
                                         const QString& type,
@@ -100,7 +103,8 @@ public:
 
 signals:
 
-    void             errorSent(const SKRResult& result) const;
+    void errorSent(const SKRResult& result) const;
+
     ///
     /// \brief projectToBeLoaded
     /// To be used with a direct connection
@@ -129,7 +133,7 @@ signals:
     void projectCountChanged(int count);
 
     void projectIsBackupChanged(int  projectId,
-                                            bool isThisABackup);
+                                bool isThisABackup);
 
 public slots:
 

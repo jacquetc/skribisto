@@ -2862,6 +2862,19 @@
     </message>
 </context>
 <context>
+    <name>UserDictPage</name>
+    <message>
+        <location filename="../app/src/qml/ProjectPage/UserDictPage.qml" line="150"/>
+        <source>Add word to dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/ProjectPage/UserDictPage.qml" line="168"/>
+        <source>Remove word from dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>WelcomePageForm.ui</name>
     <message>
         <source>Project</source>

@@ -143,6 +143,15 @@ ApplicationWindow {
             signal showFaqCalled()
             signal showAboutCalled()
             signal showAboutQtCalled()
+
+
+            signal openThemePageCalled()
+
+            signal setBreadcrumbCurrentTreeItemCalled(int projectId, int treeItemId)
+
+        Component.onCompleted: {
+            rootWindow.setNavigationTreeItemIdCalled.connect(setBreadcrumbCurrentTreeItemCalled)
+        }
     }
 
     //------------------------------------------------------------------
@@ -383,7 +392,7 @@ ApplicationWindow {
         }
 
         onTriggered: {
-            Globals.openThemePageCalled()
+            protectedSignals.openThemePageCalled()
         }
 
     }
@@ -403,9 +412,9 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show help content")
-            Globals.showWelcomePageCalled()
-            Globals.showHelpPageCalled()
-            Globals.showHelpContentsCalled()
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showHelpPageCalled()
+            protectedSignals.showHelpContentsCalled()
         }
 
 
@@ -432,9 +441,9 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show FAQ")
-            Globals.showWelcomePageCalled()
-            Globals.showHelpPageCalled()
-            Globals.showFaqCalled()
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showHelpPageCalled()
+            protectedSignals.showFaqCalled()
         }
 
     }
@@ -454,9 +463,9 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show about")
-            Globals.showWelcomePageCalled()
-            Globals.showHelpPageCalled()
-            Globals.showAboutCalled()
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showHelpPageCalled()
+            protectedSignals.showAboutCalled()
         }
 
     }
@@ -477,9 +486,9 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show about Qt")
-            Globals.showWelcomePageCalled()
-            Globals.showHelpPageCalled()
-            Globals.showAboutQtCalled()
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showHelpPageCalled()
+            protectedSignals.showAboutQtCalled()
         }
 
     }
@@ -574,7 +583,6 @@ ApplicationWindow {
 
         id: openFileDialog
         title: qsTr("Open an existing project")
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.OpenFile
         selectedNameFilter.index: 0
@@ -781,7 +789,6 @@ ApplicationWindow {
 
         id: saveAsFileDialog
         title: qsTr("Save the \"%1\" project as ...").arg(projectName)
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
@@ -854,7 +861,6 @@ ApplicationWindow {
 
         id: saveACopyFileDialog
         title: qsTr("Save a copy of the \"%1\" project as ...").arg(projectName)
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
@@ -1277,7 +1283,6 @@ ApplicationWindow {
 
         id: saveAsBeforeClosingProjectFileDialog
         title: qsTr("Save the %1 project as ...").arg(projectName)
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
@@ -1496,7 +1501,6 @@ ApplicationWindow {
 
         id: saveAsBeforeQuitingFileDialog
         title: qsTr("Save the %1 project as ...").arg(projectName)
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0

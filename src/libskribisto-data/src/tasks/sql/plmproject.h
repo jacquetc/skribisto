@@ -38,24 +38,24 @@ public:
     enum DBType { ProjectDB, UserDB };
     Q_ENUM(DBType)
 
-    explicit PLMProject(QObject    *parent,
-                        int         projectId,
-                        const QUrl& fileName,
-                        SKRResult *result,
+    explicit PLMProject(QObject       *parent,
+                        int            projectId,
+                        const QUrl   & fileName,
+                        SKRResult     *result,
                         const QString& sqlFile = "");
     ~PLMProject();
-    QString       getType() const;
-    void          setType(const QString& value);
-    int           id() const;
+    QString      getType() const;
+    void         setType(const QString& value);
+    int          id() const;
 
-    QString       getTempFileName() const;
+    QString      getTempFileName() const;
 
-    QUrl          getPath() const;
-    SKRResult      setPath(const QUrl& value);
+    QUrl         getPath() const;
+    SKRResult    setPath(const QUrl& value);
 
 
-    QSqlDatabase  getSqlDb() const;
-    QString       getIdNameFromTable(const QString& tableName);
+    QSqlDatabase getSqlDb() const;
+    QString      getIdNameFromTable(const QString& tableName);
 
 signals:
 

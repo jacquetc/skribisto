@@ -43,11 +43,11 @@ SKRResult PLMProjectManager::loadProject(const QUrl& fileName, int& projectId, c
         // Q_FUNC_INFO, "");
         project->deleteLater();
         projectId = -1;
-        result = SKRResult(SKRResult::Critical, this, "project_not_loaded");
+        result    = SKRResult(SKRResult::Critical, this, "project_not_loaded");
         return result;
     }
 
-    IFOK(result){
+    IFOK(result) {
         m_projectForIntMap.insert(projectId, project);
     }
 
@@ -66,10 +66,10 @@ SKRResult PLMProjectManager::saveProject(int projectId)
 // -----------------------------------------------------------------------------
 
 SKRResult PLMProjectManager::saveProjectAs(int projectId,
-                                          const QString& type,
-                                          const QUrl& path, bool isCopy)
+                                           const QString& type,
+                                           const QUrl& path, bool isCopy)
 {
-    SKRResult result(this);
+    SKRResult   result(this);
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {
@@ -128,7 +128,7 @@ QList<int>PLMProjectManager::projectIdList()
 
 SKRResult PLMProjectManager::closeProject(int projectId)
 {
-    SKRResult result(this);
+    SKRResult   result(this);
     PLMProject *project = m_projectForIntMap.value(projectId, 0);
 
     if (!project) {

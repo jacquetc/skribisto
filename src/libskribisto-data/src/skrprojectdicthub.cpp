@@ -40,7 +40,7 @@ QStringList SKRProjectDictHub::getProjectDictList(int projectId) const
 
 
 SKRResult SKRProjectDictHub::setProjectDictList(int                projectId,
-                                               const QStringList& projectDictList)
+                                                const QStringList& projectDictList)
 {
     SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);
@@ -108,7 +108,7 @@ SKRResult SKRProjectDictHub::addWordToProjectDict(int projectId, const QString& 
 
 
 SKRResult SKRProjectDictHub::removeWordFromProjectDict(int            projectId,
-                                                      const QString& wordToRemove)
+                                                       const QString& wordToRemove)
 {
     SKRResult result(this);
     PLMSqlQueries queries(projectId, m_tableName);

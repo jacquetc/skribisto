@@ -25,33 +25,32 @@
 SKRTreeItem::SKRTreeItem() :
     m_invalidatedRoles(), m_isRootItem(false)
 {
-    m_treeHub    = plmdata->treeHub();
+    m_treeHub     = plmdata->treeHub();
     m_propertyHub = plmdata->treePropertyHub();
 
 
-    m_data.insert(Roles::ProjectIdRole, -2);
-    m_data.insert(Roles::TreeItemIdRole,   -2);
-    m_data.insert(Roles::IndentRole,    -2);
-    m_data.insert(Roles::SortOrderRole, 99999999);
+    m_data.insert(Roles::ProjectIdRole,  -2);
+    m_data.insert(Roles::TreeItemIdRole, -2);
+    m_data.insert(Roles::IndentRole,     -2);
+    m_data.insert(Roles::SortOrderRole,  99999999);
 }
 
-SKRTreeItem::SKRTreeItem(int            projectId,
-                         int            treeItemId,
-                         int            indent,
-                         int            sortOrder) :
+SKRTreeItem::SKRTreeItem(int projectId,
+                         int treeItemId,
+                         int indent,
+                         int sortOrder) :
 
     m_invalidatedRoles(), m_isRootItem(false)
 {
-    m_treeHub    = plmdata->treeHub();
+    m_treeHub     = plmdata->treeHub();
     m_propertyHub = plmdata->treePropertyHub();
 
-    m_data.insert(Roles::ProjectIdRole, projectId);
-    m_data.insert(Roles::TreeItemIdRole,   treeItemId);
-    m_data.insert(Roles::IndentRole,    indent);
-    m_data.insert(Roles::SortOrderRole, sortOrder);
+    m_data.insert(Roles::ProjectIdRole,  projectId);
+    m_data.insert(Roles::TreeItemIdRole, treeItemId);
+    m_data.insert(Roles::IndentRole,     indent);
+    m_data.insert(Roles::SortOrderRole,  sortOrder);
 
     this->invalidateAllData();
-
 }
 
 SKRTreeItem::~SKRTreeItem()
@@ -86,8 +85,8 @@ QVariant SKRTreeItem::data(int role)
     //            metaEnum.valueToKey(role);
 
     if (m_invalidatedRoles.contains(role)) {
-        int projectId = this->projectId();
-        int treeItemId   = this->treeItemId();
+        int projectId  = this->projectId();
+        int treeItemId = this->treeItemId();
 
 
         switch (role) {
@@ -404,7 +403,7 @@ SKRTreeItem * SKRTreeItem::child(const QList<SKRTreeItem *>& itemList, int row)
             return nullptr;
         }
 
-        int childrenCount       = 0;
+        int childrenCount      = 0;
         SKRTreeItem *childItem = nullptr;
 
         // switch between multiple projects or one project
@@ -458,8 +457,8 @@ SKRTreeItem * SKRTreeItem::child(const QList<SKRTreeItem *>& itemList, int row)
 
     while (iterator.hasNext()) {
         SKRTreeItem *nextItem = iterator.next();
-        QString thisTitle      = this->data(SKRTreeItem::Roles::TitleRole).toString();
-        QString nextTitle      = nextItem->data(SKRTreeItem::Roles::TitleRole).toString();
+        QString thisTitle     = this->data(SKRTreeItem::Roles::TitleRole).toString();
+        QString nextTitle     = nextItem->data(SKRTreeItem::Roles::TitleRole).toString();
 
         if (nextItem->indent() > indent) {
             if (nextItem->indent() == indent + 1) {
@@ -491,16 +490,15 @@ void SKRTreeItem::setIsRootItem()
 
     m_data.clear();
     m_invalidatedRoles.clear();
-    m_data.insert(Roles::TreeItemIdRole,   -2);
-    m_data.insert(Roles::IndentRole,    -2);
-    m_data.insert(Roles::SortOrderRole, -90000000);
+    m_data.insert(Roles::TreeItemIdRole, -2);
+    m_data.insert(Roles::IndentRole,     -2);
+    m_data.insert(Roles::SortOrderRole,  -90000000);
 }
 
 bool SKRTreeItem::isProjectItem()
 {
     return this->indent() == 0  && this->treeItemId() == 0 ? true : false;
 }
-
 
 int SKRTreeItem::projectId()
 {

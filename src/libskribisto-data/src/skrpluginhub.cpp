@@ -27,13 +27,13 @@ SKRPluginHub::SKRPluginHub(QObject *parent) : SKRPluginLoader(parent)
     qRegisterMetaType<SKRCommand>("SKRCommand");
 }
 
-void     SKRPluginHub::reloadPlugins()
+void      SKRPluginHub::reloadPlugins()
 {}
 
 SKRResult SKRPluginHub::set(int projectId, int id,
-                           const QString& tableName,
-                           const QString& fieldName,
-                           const QVariant& value)
+                            const QString& tableName,
+                            const QString& fieldName,
+                            const QVariant& value)
 {
     SKRResult result(this);
     PLMSqlQueries queries(projectId, tableName);
@@ -59,8 +59,8 @@ QVariant SKRPluginHub::get(int            projectId,
                            const QString& fieldName) const
 {
     SKRResult result(this);
-    QVariant var;
-    QVariant value;
+    QVariant  var;
+    QVariant  value;
     PLMSqlQueries queries(projectId, tableName);
 
     result = queries.get(id, fieldName, var);
@@ -93,8 +93,8 @@ QList<int>SKRPluginHub::getIds(int            projectId,
 }
 
 SKRResult SKRPluginHub::ensureTableExists(int            projectId,
-                                         const QString& tableName,
-                                         const QString& sqlString)
+                                          const QString& tableName,
+                                          const QString& sqlString)
 {
     SKRResult result(this);
 

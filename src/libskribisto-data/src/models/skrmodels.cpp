@@ -22,10 +22,10 @@
 
 SKRModels::SKRModels(QObject *parent) : QObject(parent)
 {
-    m_instance       = this;
+    m_instance      = this;
     m_treeModel     = new SKRTreeModel(this);
     m_treeListModel = new SKRTreeListModel(this);
-    m_tagListModel   = new SKRTagListModel(this);
+    m_tagListModel  = new SKRTagListModel(this);
 
     m_writeDocumentListModel = new PLMWriteDocumentListModel(this);
 }

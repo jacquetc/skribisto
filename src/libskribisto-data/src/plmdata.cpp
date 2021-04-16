@@ -13,12 +13,12 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
 
     m_treeHub         = new SKRTreeHub(this);
     m_treePropertyHub = new SKRPropertyHub(this,
-                                            "tbl_tree_property",
-                                            "l_tree_code");
+                                           "tbl_tree_property",
+                                           "l_tree_code");
     m_tagHub         = new SKRTagHub(this);
     m_projectDictHub = new SKRProjectDictHub(this);
     m_pluginHub      = new SKRPluginHub(this);
-    m_statHub      = new SKRStatHub(this);
+    m_statHub        = new SKRStatHub(this);
 
     connect(m_treeHub,
             &SKRTreeHub::projectModified,
@@ -52,9 +52,6 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
             &PLMProjectHub::errorSent,
             m_errorHub,
             &SKRErrorHub::addError);
-
-
-
 }
 
 // -----------------------------------------------------------------------------
@@ -126,7 +123,7 @@ SKRProjectDictHub * PLMData::projectDictHub()
 
 // -----------------------------------------------------------------------------
 
-SKRStatHub *PLMData::statHub()
+SKRStatHub * PLMData::statHub()
 {
     return m_statHub;
 }
