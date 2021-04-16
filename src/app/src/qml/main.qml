@@ -583,7 +583,6 @@ ApplicationWindow {
 
         id: openFileDialog
         title: qsTr("Open an existing project")
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.OpenFile
         selectedNameFilter.index: 0
@@ -790,7 +789,6 @@ ApplicationWindow {
 
         id: saveAsFileDialog
         title: qsTr("Save the \"%1\" project as ...").arg(projectName)
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
@@ -863,7 +861,6 @@ ApplicationWindow {
 
         id: saveACopyFileDialog
         title: qsTr("Save a copy of the \"%1\" project as ...").arg(projectName)
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
@@ -1286,7 +1283,6 @@ ApplicationWindow {
 
         id: saveAsBeforeClosingProjectFileDialog
         title: qsTr("Save the %1 project as ...").arg(projectName)
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
@@ -1505,7 +1501,6 @@ ApplicationWindow {
 
         id: saveAsBeforeQuitingFileDialog
         title: qsTr("Save the %1 project as ...").arg(projectName)
-        modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
