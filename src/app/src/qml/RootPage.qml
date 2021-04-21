@@ -223,7 +223,7 @@ RootPageForm {
         parent: Overlay.overlay
         x: 0
         y: 0
-        width: Overlay.overlay.width
+        width: Overlay.overlay.width >= 1000 ? 1000 : Overlay.overlay.width
         height: Overlay.overlay.height
 
         modal: true

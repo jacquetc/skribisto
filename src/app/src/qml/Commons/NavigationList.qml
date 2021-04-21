@@ -770,10 +770,18 @@ NavigationListForm {
                             }
 
 
+                            swipe.onOpened: closeSwipeTimer.start()
                             //                            Item {
                             //                                anchors.fill: parent
                             //                                z:1
 
+                            Timer{
+                                id: closeSwipeTimer
+                                interval: 3000
+                                onTriggered: {
+                                    swipeDelegate.swipe.close()
+                                }
+                            }
 
                             HoverHandler {
                                 id: itemHoverHandler
