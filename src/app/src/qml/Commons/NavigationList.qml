@@ -288,6 +288,7 @@ NavigationListForm {
         //console.log(currentProjectId, currentParentId, navigationListStackView.currentItem.visualModel.items.count)
 
         navigationListStackView.currentItem.proxyModel.addChildItem(currentProjectId, currentParentId, type)
+        navigationListStackView.currentItem.listView.positionViewAtEnd()
         navigationListStackView.currentItem.listView.currentItem.editName()
     }
 

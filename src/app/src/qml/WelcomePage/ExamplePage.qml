@@ -6,6 +6,8 @@ import ".."
 
 ExamplePageForm {
 
+    signal closeCalled()
+
 
     repeater.model: ListModel{
         ListElement{
@@ -39,11 +41,15 @@ ExamplePageForm {
                     //TODO: temporary until async is done
                     Globals.loadingPopupCalled()
                     loadProjectTimer.start()
+                    closeCalled()
+
                 }
                 if (event.key === Qt.Key_Space){
                     //TODO: temporary until async is done
                     Globals.loadingPopupCalled()
                     loadProjectTimer.start()
+                    closeCalled()
+
                 }
             }
 
@@ -53,6 +59,8 @@ ExamplePageForm {
                     //TODO: temporary until async is done
                     Globals.loadingPopupCalled()
                     loadProjectTimer.start()
+                    closeCalled()
+
                 }
 
                 onGrabChanged: {

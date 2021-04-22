@@ -11,6 +11,7 @@ import ".."
 RecentPageForm {
     id: root
 
+    signal closeCalled()
 
     //----------------------------------------------
     //-Recent projects list ------------------------------
@@ -75,12 +76,15 @@ RecentPageForm {
                     // open project
 
                     if(plmData.projectHub().isURLAlreadyLoaded(model.fileName)){
+                        closeCalled()
                     }
                     else {
                         //TODO: temporary until async is done
                         Globals.loadingPopupCalled()
                         //plmData.projectHub().loadProject(model.fileName)
                         loadProjectTimer.start()
+                        closeCalled()
+
                     }
 
 
@@ -195,6 +199,7 @@ RecentPageForm {
                         Layout.preferredWidth: 30
 
                         text: "..."
+                        icon.source: "qrc:///icons/backup/overflow-menu.svg"
                         flat: true
                         focusPolicy: Qt.NoFocus
 

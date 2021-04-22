@@ -12,6 +12,7 @@ PlumeImporterForm {
 
     property string plumeFileName: ""
     property string targetFileName: ""
+    signal closeCalled()
 
     goBackToolButton.icon.source: "qrc:///icons/backup/go-previous.svg"
     signal goBackButtonClicked()
@@ -50,6 +51,7 @@ PlumeImporterForm {
         if(plumeProjectFileTextField.text.length !== 0){
 
             plmData.projectHub().importPlumeCreatorProject(plumeFileName, targetFileName)
+            closeCalled()
         }
     }
 

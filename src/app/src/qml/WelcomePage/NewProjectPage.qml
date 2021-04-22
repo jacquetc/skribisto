@@ -8,7 +8,7 @@ import ".."
 NewProjectPageForm {
     id: root
 
-
+    signal closeCalled()
     property string fileName: fileName
     property url folderNameURL
 
@@ -136,7 +136,8 @@ NewProjectPageForm {
         projectFileTextField.text = ""
         projectFileTextFiledEdited = false
         projectPathTextField.text = skrQMLTools.translateURLToLocalFile(LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation))
-        goBackButtonClicked()
+
+        closeCalled()
     }
 
 

@@ -4,7 +4,7 @@ import eu.skribisto.projecthub 1.0
 import ".."
 
 WelcomePageForm {
-    id: root
+    id: welcomePage
     clip: true
 
     signal closeCalled()
@@ -22,6 +22,7 @@ WelcomePageForm {
     newButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("NewProjectPage.qml", StackView.Immediate)
+        item.closeCalled.connect(welcomePage.closeCalled)
         item.forceActiveFocus()
 
     }
@@ -34,6 +35,7 @@ WelcomePageForm {
     recentButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("RecentPage.qml")
+        item.closeCalled.connect(welcomePage.closeCalled)
         item.forceActiveFocus()
 
     }
@@ -41,6 +43,7 @@ WelcomePageForm {
     exampleButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("ExamplePage.qml")
+        item.closeCalled.connect(welcomePage.closeCalled)
         item.forceActiveFocus()
 
     }
@@ -48,6 +51,7 @@ WelcomePageForm {
     importButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("ImporterPage.qml", StackView.Immediate)
+        item.closeCalled.connect(welcomePage.closeCalled)
         item.forceActiveFocus()
 
     }
@@ -113,6 +117,7 @@ WelcomePageForm {
         function onShowNewProjectPageCalled() {
             stackView.pop(StackView.Immediate)
             var item = stackView.push("NewProjectPage.qml", StackView.Immediate)
+            item.closeCalled.connect(welcomePage.closeCalled)
             item.forceActiveFocus()
 
         }
@@ -123,6 +128,7 @@ WelcomePageForm {
         function onShowRecentPageCalled() {
             stackView.pop(StackView.Immediate)
             var item = stackView.push("RecentPage.qml", StackView.Immediate)
+            item.closeCalled.connect(welcomePage.closeCalled)
             item.forceActiveFocus()
         }
     }
@@ -133,6 +139,7 @@ WelcomePageForm {
         function onShowExamplePageCalled() {
             stackView.pop(StackView.Immediate)
             var item = stackView.push("ExamplePage.qml", StackView.Immediate)
+            item.closeCalled.connect(welcomePage.closeCalled)
             item.forceActiveFocus()
         }
     }
@@ -142,6 +149,7 @@ WelcomePageForm {
         function onShowImportPageCalled() {
             stackView.pop(StackView.Immediate)
             var item = stackView.push("ImporterPage.qml", StackView.Immediate)
+            item.closeCalled.connect(welcomePage.closeCalled)
             item.forceActiveFocus()
         }
     }
@@ -201,6 +209,7 @@ WelcomePageForm {
             }
             else {
                 var item = stackView.push("RecentPage.qml", StackView.Immediate)
+                item.closeCalled.connect(welcomePage.closeCalled)
 
             }
 
