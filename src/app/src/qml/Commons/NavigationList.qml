@@ -619,11 +619,11 @@ NavigationListForm {
 
                     }
                     displaced: Transition {
-                             NumberAnimation { properties: "x,y"; duration: 250 }
-                         }
+                        NumberAnimation { properties: "x,y"; duration: 250 }
+                    }
 
                     moveDisplaced: Transition {
-                             NumberAnimation { properties: "x,y"; duration: 250 }
+                        NumberAnimation { properties: "x,y"; duration: 250 }
                     }
                     QtObject{
                         id: p_section
@@ -1065,7 +1065,9 @@ NavigationListForm {
                                                 cancelDragTimer.stop()
                                                 priv.dragging = false
                                                 content.dragging = false
-                                                //content.Drag.drop()
+                                                if(!dropArea.containsDrag){
+                                                    content.Drag.drop()
+                                                }
                                             }
                                         }
                                         enabled: true

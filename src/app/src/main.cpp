@@ -75,24 +75,29 @@ void startCore()
 
 // -------------------------------------------------------
 
-void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
-    QByteArray localMsg = msg.toLocal8Bit();
-    const char *file = context.file ? context.file : "";
+    QByteArray  localMsg = msg.toLocal8Bit();
+    const char *file     = context.file ? context.file : "";
     const char *function = context.function ? context.function : "";
+
     switch (type) {
     case QtDebugMsg:
         fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
         break;
+
     case QtInfoMsg:
         fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
         break;
+
     case QtWarningMsg:
         fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
         break;
+
     case QtCriticalMsg:
         fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
         break;
+
     case QtFatalMsg:
         fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
         break;
@@ -143,8 +148,8 @@ int main(int argc, char *argv[])
 #ifdef SKR_DEBUG
     QQmlDebuggingEnabler enabler;
 
-    // QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
-    //qInstallMessageHandler(myMessageOutput);
+    QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
+    qInstallMessageHandler(myMessageOutput);
 #endif // SKR_DEBUG
 
     // Allows qml styling
@@ -157,7 +162,7 @@ int main(int argc, char *argv[])
 
 #if QT_VERSION >= 0x051400
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
-                Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
+        Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 #else // if QT_VERSION >= 0x051400
 
     // qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
@@ -166,6 +171,7 @@ int main(int argc, char *argv[])
 
 
     QApplication app(argc, argv);
+
     // icons :
     // qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
 
@@ -203,7 +209,7 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine(qApp);
 
-    PLMData   *data                            = new PLMData(&engine);
+    PLMData *data         = new PLMData(&engine);
     SKRRootItem *rootItem = new SKRRootItem(&engine);
     rootItem->applyLanguageFromSettings();
 
@@ -211,10 +217,10 @@ int main(int argc, char *argv[])
     SKRModels *models                          = new SKRModels(&engine);
     SKRFonts  *skrFonts                        = new SKRFonts(&engine);
     SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(&engine);
-    SKRQMLTools   *skrQMLTools                 = new SKRQMLTools(&engine);
-    SKRTextBridge *skrTextBridge               = new SKRTextBridge(&engine);
-    SKRUserSettings *skrUserSettings         = new SKRUserSettings(&engine);
-    SKRTreeManager *skrTreeManager         = new SKRTreeManager(&engine);
+    SKRQMLTools     *skrQMLTools               = new SKRQMLTools(&engine);
+    SKRTextBridge   *skrTextBridge             = new SKRTextBridge(&engine);
+    SKRUserSettings *skrUserSettings           = new SKRUserSettings(&engine);
+    SKRTreeManager  *skrTreeManager            = new SKRTreeManager(&engine);
 
     qmlRegisterUncreatableType<SKRResult>("eu.skribisto.result",
                                           1,
@@ -280,17 +286,16 @@ int main(int argc, char *argv[])
 
 
     qmlRegisterUncreatableType<PLMWriteDocumentListModel>(
-                "eu.skribisto.writedocumentlistmodel",
-                1,
-                0,
-                "PLMWriteDocumentListModel",
-                "Can't instantiate PLMWriteDocumentListModel");
+        "eu.skribisto.writedocumentlistmodel",
+        1,
+        0,
+        "PLMWriteDocumentListModel",
+        "Can't instantiate PLMWriteDocumentListModel");
 
     qmlRegisterType<SKRSearchTreeListProxyModel>("eu.skribisto.searchtreelistproxymodel",
                                                  1,
                                                  0,
                                                  "SKRSearchTreeListProxyModel");
-
 
 
     qmlRegisterType<SKRSearchTagListProxyModel>("eu.skribisto.searchtaglistproxymodel",
@@ -340,10 +345,9 @@ int main(int argc, char *argv[])
                                   "SKRClipboard");
 
     qmlRegisterType<SKRViewManager>("eu.skribisto.viewmanager",
-                                  1,
-                                  0,
-                                  "SKRViewManager");
-
+                                    1,
+                                    0,
+                                    "SKRViewManager");
 
 
     const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
@@ -362,18 +366,12 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("skrTreeManager", skrTreeManager);
 
 
-
-
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl& objUrl) {
         if (!obj && (url == objUrl)) QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
 
     skrWindowManager->restoreWindows();
-
-
-
-
 
 
     //            QCoreApplication *app = qApp;

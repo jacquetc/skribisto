@@ -44,34 +44,34 @@ FocusScope {
 
         keys: ["application/skribisto-tree-item"]
         onEntered: {
-            dropIndicator.border.color = SkrTheme.accent
+            dropIndicator.visible = true
         }
         onExited: {
-            dropIndicator.border.color = "transparent"
+            dropIndicator.visible = false
 
         }
 
         onDropped: {
+            console.log("dropped")
             if(drop.proposedAction === Qt.MoveAction){
-
                 viewManager.loadTreeItemAt(drag.source.projectId, drag.source.treeItemId, position)
-                dropIndicator.border.color = "transparent"
 
             }
+            dropIndicator.visible = false
         }
-
 
 
 
     }
 
+
     Rectangle {
         id: dropIndicator
         anchors.fill: parent
-        enabled: border.color === SkrTheme.accent
+        visible: false
         z: 1
         color: "transparent"
-        border.color: "transparent"
+        border.color: SkrTheme.accent
         border.width: 4
 
     }

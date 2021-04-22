@@ -107,7 +107,7 @@ public:
 
             if (!corePlugin) {
                 qWarning() << "Plugin" << object->property("shortname").toString() <<
-                "is not SKRCoreInterface, ignoring it";
+                    "is not SKRCoreInterface, ignoring it";
                 continue;
             }
 
@@ -142,8 +142,9 @@ private:
         QObject *plugin = loader.instance();
 
         if (!plugin) {
-            qDebug() << "loader.instance() AT : " + fileName;
-            qDebug() << "loader.instance() : " + loader.errorString();
+            //            qDebug() << "loader.instance() AT : " + fileName;
+            //            qDebug() << "loader.instance() : " +
+            // loader.errorString();
 
             // to clean up if wrong libs loaded :
             plugin->deleteLater();
