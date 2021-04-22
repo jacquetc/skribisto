@@ -335,8 +335,8 @@ SKRResult SKRTagHub::set(int             projectId,
 QVariant SKRTagHub::get(int projectId, int tagId, const QString& fieldName) const
 {
     SKRResult result(this);
-    QVariant var;
-    QVariant value;
+    QVariant  var;
+    QVariant  value;
     PLMSqlQueries queries(projectId, "tbl_tag");
 
     result = queries.get(tagId, fieldName, var);
@@ -360,7 +360,7 @@ int SKRTagHub::getLastAddedId()
 
 int SKRTagHub::getTopPaperId(int projectId) const
 {
-    int value      = -2;
+    int value       = -2;
     QList<int> list = this->getAllTagIds(projectId);
 
     if (!list.isEmpty()) {
@@ -375,8 +375,8 @@ int SKRTagHub::getTopPaperId(int projectId) const
 // --------------------------------------------------------------------------------
 
 
-QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
-                                       int                 tagId) const
+QList<int>SKRTagHub::getItemIdsFromTag(int projectId,
+                                       int tagId) const
 {
     SKRResult result(this);
 
@@ -412,12 +412,11 @@ QList<int>SKRTagHub::getItemIdsFromTag(int                 projectId,
     return list;
 }
 
-
 // --------------------------------------------------------------------------------
 
 
-QList<int>SKRTagHub::getTagsFromItemId(int                 projectId,
-                                       int                 treeItemId) const
+QList<int>SKRTagHub::getTagsFromItemId(int projectId,
+                                       int treeItemId) const
 {
     SKRResult result(this);
 
@@ -427,7 +426,6 @@ QList<int>SKRTagHub::getTagsFromItemId(int                 projectId,
     QHash<QString, QVariant> where;
 
     where.insert("l_tree_code", treeItemId);
-
 
 
     PLMSqlQueries queries(projectId, "tbl_tag_relationship");
@@ -454,9 +452,9 @@ QList<int>SKRTagHub::getTagsFromItemId(int                 projectId,
 // --------------------------------------------------------------------------------
 
 
-SKRResult SKRTagHub::setTagRelationship(int                 projectId,
-                                        int                 treeItemId,
-                                        int                 tagId)
+SKRResult SKRTagHub::setTagRelationship(int projectId,
+                                        int treeItemId,
+                                        int tagId)
 {
     SKRResult result(this);
 
@@ -466,7 +464,7 @@ SKRResult SKRTagHub::setTagRelationship(int                 projectId,
     QHash<QString, QVariant> where;
 
     where.insert("l_tree_code", treeItemId);
-    where.insert("l_tag_code", tagId);
+    where.insert("l_tag_code",  tagId);
 
     PLMSqlQueries queries(projectId, "tbl_tag_relationship");
 
@@ -505,8 +503,8 @@ SKRResult SKRTagHub::setTagRelationship(int                 projectId,
             int newId = -2;
             QHash<QString, QVariant> values;
 
-                values.insert("l_tree_code", treeItemId);
-            values.insert("l_tag_code", tagId);
+            values.insert("l_tree_code", treeItemId);
+            values.insert("l_tag_code",  tagId);
 
             result = queries.add(values, newId);
             IFKO(result) {
@@ -538,9 +536,9 @@ SKRResult SKRTagHub::setTagRelationship(int                 projectId,
 
 // --------------------------------------------------------------------------------
 
-SKRResult SKRTagHub::removeTagRelationship(int                 projectId,
-                                           int                 treeItemId,
-                                           int                 tagId)
+SKRResult SKRTagHub::removeTagRelationship(int projectId,
+                                           int treeItemId,
+                                           int tagId)
 {
     SKRResult result(this);
 
@@ -548,8 +546,9 @@ SKRResult SKRTagHub::removeTagRelationship(int                 projectId,
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
-    where.insert("l_tag_code", tagId);
-        where.insert("l_tree_code", treeItemId);
+
+    where.insert("l_tag_code",  tagId);
+    where.insert("l_tree_code", treeItemId);
 
     PLMSqlQueries queries(projectId,  "tbl_tag_relationship");
 

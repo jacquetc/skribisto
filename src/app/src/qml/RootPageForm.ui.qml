@@ -64,10 +64,13 @@ Item {
 
             }
 
-            Item {
-                Layout.preferredHeight: 1
+            Breadcrumb {
+                id: breadcrumb
+                Layout.preferredHeight: 30
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 Layout.fillWidth: true
             }
+
 
             SkrToolButton {
                 id: themeColorButton
@@ -76,6 +79,7 @@ Item {
                 Layout.preferredWidth: 30
 
             }
+
             SkrToolButton {
                 id: showRightDockButton
 
@@ -84,6 +88,7 @@ Item {
 
                 focusPolicy: Qt.NoFocus
             }
+
         }
 
 

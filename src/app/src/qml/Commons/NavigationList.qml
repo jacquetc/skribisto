@@ -23,11 +23,14 @@ NavigationListForm {
     property int openedProjectId: -2
     property int openedTreeItemId: -2
 
+
     QtObject{
         id: priv
         property int currentParentId: -2
         property int currentProjectId: -2
         property int currentTreeItemId: -2
+        property bool dragging: false
+        property bool renaming: false
 
     }
 
@@ -49,6 +52,47 @@ NavigationListForm {
     }
 
     Component.onCompleted: {
+    }
+    function setCurrentTreeItemParentId(projectId, treeItemParentId){
+
+
+        //find parent id
+        var ancestorsList = proxyModel.getAncestorsList(projectId, treeItemParentId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)
+
+
+
+        //compare with current parent id
+
+        if(projectId === root.currentProjectId & treeItemParentId === root.currentParentId){
+            navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(projectId, -1)
+        }
+
+        else {
+            navigationListStackView.pop(null)
+            ancestorsList.reverse()
+            ancestorsList.push(treeItemParentId)
+
+            //project item
+            navigationListStackView.get(0).projectId = projectId
+            navigationListStackView.get(0).treeItemId = 0
+            navigationListStackView.get(0).init()
+            navigationListStackView.get(0).setCurrent()
+
+
+            for(var i = 1 ; i < ancestorsList.length ; i++){
+                var newItem = navigationListStackView.push(stackViewComponent, {"projectId": projectId, "treeItemId": ancestorsList[i] } )
+                newItem.setCurrent()
+            }
+
+            var lastNewItem = navigationListStackView.push(stackViewComponent, {"projectId": projectId, "parentId":  treeItemParentId} )
+            lastNewItem.setCurrent()
+            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(priv.currentProjectId, priv.currentParentId)
+
+
+        }
+
+        sidePopupListModel.clear()
+        determineIfGoUpButtonEnabled()
     }
 
     function setCurrentTreeItemId(projectId, treeItemId){
@@ -86,10 +130,13 @@ NavigationListForm {
                 newItem.setCurrent()
             }
 
+
+
         }
 
         sidePopupListModel.clear()
         determineIfGoUpButtonEnabled()
+
 
         //
     }
@@ -119,6 +166,7 @@ NavigationListForm {
             //var parentTreeItemId = proxyModel.getAncestorsList(root.currentProjectId, root.currentTreeItemId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)[0]
             navigationListStackView.pop()
             navigationListStackView.currentItem.setCurrent()
+            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(priv.currentProjectId, priv.currentParentId)
 
 
         }
@@ -240,15 +288,16 @@ NavigationListForm {
         //console.log(currentProjectId, currentParentId, navigationListStackView.currentItem.visualModel.items.count)
 
         navigationListStackView.currentItem.proxyModel.addChildItem(currentProjectId, currentParentId, type)
+        navigationListStackView.currentItem.listView.positionViewAtEnd()
         navigationListStackView.currentItem.listView.currentItem.editName()
     }
 
     function getIconUrlFromPageType(type){
-       return skrTreeManager.getIconUrlFromPageType(type)
+        return skrTreeManager.getIconUrlFromPageType(type)
     }
 
     function getPageTypeText(type){
-       return skrTreeManager.getPageTypeText(type)
+        return skrTreeManager.getPageTypeText(type)
     }
 
 
@@ -262,12 +311,12 @@ NavigationListForm {
             model: skrTreeManager.getPageTypeList(true);
 
             SkrMenuItem{
-                    text: getPageTypeText(modelData)
-                    property string type: modelData
-                    icon.source: getIconUrlFromPageType(modelData)
-                    onTriggered: {
-                        addItemAtCurrentParent(type)
-                    }
+                text: getPageTypeText(modelData)
+                property string type: modelData
+                icon.source: getIconUrlFromPageType(modelData)
+                onTriggered: {
+                    addItemAtCurrentParent(type)
+                }
 
             }
         }
@@ -308,8 +357,6 @@ NavigationListForm {
 
 
     //----------------------------------------------------------------------------
-
-
 
 
 
@@ -368,7 +415,11 @@ NavigationListForm {
                 priv.currentParentId = parentId
                 priv.currentTreeItemId = treeItemId
 
+                listView.positionViewAtIndex(currentIndex, ListView.Contain)
+
             }
+
+
 
 
             onActiveFocusChanged: {
@@ -410,6 +461,83 @@ NavigationListForm {
                     listView.section.delegate = null
                 }
 
+            }
+
+            Item {
+                id: topDraggingMover
+                anchors.top:  scrollView.top
+                anchors.right:  scrollView.right
+                anchors.left:  scrollView.left
+                height: 30
+                z: 1
+
+                visible: priv.dragging
+
+                HoverHandler {
+                    onHoveredChanged: {
+                        if(hovered){
+                            topDraggingMoverTimer.start()
+                        }
+                        else {
+                            topDraggingMoverTimer.stop()
+                        }
+                    }
+                }
+
+                Timer {
+                    id: topDraggingMoverTimer
+                    repeat: true
+                    interval: 10
+                    onTriggered: {
+                        if(listView.atYBeginning){
+                            listView.contentY  = 0
+                        }
+                        else {
+                            listView.contentY  = listView.contentY - 2
+
+                        }
+                    }
+
+                }
+
+            }
+
+            Item {
+                id: bottomDraggingMover
+                anchors.bottom:  scrollView.bottom
+                anchors.right:  scrollView.right
+                anchors.left:  scrollView.left
+                height: 30
+                z: 1
+
+                visible: priv.dragging
+
+                HoverHandler {
+                    onHoveredChanged: {
+                        if(hovered){
+                            bottomDraggingMoverTimer.start()
+                        }
+                        else {
+                            bottomDraggingMoverTimer.stop()
+                        }
+                    }
+                }
+
+                Timer {
+                    id: bottomDraggingMoverTimer
+                    repeat: true
+                    interval: 10
+                    onTriggered: {
+                        if(listView.atYEnd){
+                            listView.positionViewAtEnd()
+                        }
+                        else {
+                            listView.contentY  = listView.contentY + 2
+
+                        }
+                    }
+
+                }
             }
 
 
@@ -490,8 +618,13 @@ NavigationListForm {
                         }
 
                     }
+                    displaced: Transition {
+                        NumberAnimation { properties: "x,y"; duration: 250 }
+                    }
 
-
+                    moveDisplaced: Transition {
+                        NumberAnimation { properties: "x,y"; duration: 250 }
+                    }
                     QtObject{
                         id: p_section
                         property string parentTitle: ""
@@ -579,6 +712,7 @@ NavigationListForm {
                             }
 
                             function editName() {
+                                priv.renaming = true
                                 state = "edit_name"
                                 titleTextFieldForceActiveFocusTimer.start()
                                 titleTextField.selectAll()
@@ -594,6 +728,7 @@ NavigationListForm {
                             }
 
                             function editLabel() {
+                                priv.renaming = true
                                 state = "edit_label"
                                 labelTextFieldForceActiveFocusTimer.start()
                                 labelTextField.selectAll()
@@ -770,10 +905,18 @@ NavigationListForm {
                             }
 
 
+                            swipe.onOpened: closeSwipeTimer.start()
                             //                            Item {
                             //                                anchors.fill: parent
                             //                                z:1
 
+                            Timer{
+                                id: closeSwipeTimer
+                                interval: 3000
+                                onTriggered: {
+                                    swipeDelegate.swipe.close()
+                                }
+                            }
 
                             HoverHandler {
                                 id: itemHoverHandler
@@ -834,9 +977,9 @@ NavigationListForm {
                                     addSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId
                                     addSideNavigationListPopupTimer.parentItem = swipeDelegate
                                     addSideNavigationListPopupTimer.listView = listView
-//                                            console.log("popupId", stackViewBaseItem.popupId)
+                                    //                                            console.log("popupId", stackViewBaseItem.popupId)
 
-                                addSideNavigationListPopupTimer.start()
+                                    addSideNavigationListPopupTimer.start()
                                 }
 
                             }
@@ -861,6 +1004,9 @@ NavigationListForm {
                                     if(drop.proposedAction === Qt.MoveAction){
 
                                         console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
+                                        listView.interactive = true
+                                        priv.dragging = false
+                                        cancelDragTimer.stop()
                                         proxyModel.moveItem(moveSourceInt, content.visualIndex)
 
                                     }
@@ -885,7 +1031,7 @@ NavigationListForm {
                                     width: parent.width
                                     height: swipeDelegate.height
 
-                                    Drag.active: dragHandler.active
+                                    Drag.active: mouseDragHandler.active | touchDragHandler.active
                                     Drag.source: content
                                     Drag.hotSpot.x: width / 2
                                     Drag.hotSpot.y: height / 2
@@ -895,7 +1041,7 @@ NavigationListForm {
                                     //Drag.dragType: Drag.Automatic
 
                                     borderWidth: 2
-                                    borderColor: dragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
+                                    borderColor: touchDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
                                     Behavior on borderColor {
                                         ColorAnimation {
                                             duration: 200
@@ -904,18 +1050,51 @@ NavigationListForm {
 
                                     property bool dragging: false
                                     DragHandler {
-                                        id: dragHandler
-                                        //acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                                        id: mouseDragHandler
+                                        acceptedDevices: PointerDevice.Mouse
                                         //xAxis.enabled: false
                                         //grabPermissions: PointerHandler.TakeOverForbidden
 
                                         onActiveChanged: {
                                             if (active) {
+                                                listView.interactive = false
                                                 moveSourceInt = content.visualIndex
+                                                priv.dragging = true
                                                 cancelDragTimer.stop()
                                             } else {
-                                                content.Drag.drop()
+                                                cancelDragTimer.stop()
+                                                priv.dragging = false
                                                 content.dragging = false
+                                                if(!dropArea.containsDrag){
+                                                    content.Drag.drop()
+                                                }
+                                            }
+                                        }
+                                        enabled: true
+
+                                        grabPermissions: PointerHandler.CanTakeOverFromItems |PointerHandler.CanTakeOverFromAnything
+                                    }
+
+                                    DragHandler {
+                                        id: touchDragHandler
+                                        acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
+                                        //xAxis.enabled: false
+                                        //grabPermissions: PointerHandler.TakeOverForbidden
+
+                                        onActiveChanged: {
+                                            if (active) {
+                                                listView.interactive = false
+                                                moveSourceInt = content.visualIndex
+                                                priv.dragging = true
+                                                cancelDragTimer.stop()
+                                            } else {
+                                                listView.interactive = true
+                                                cancelDragTimer.stop()
+                                                priv.dragging = false
+                                                content.dragging = false
+                                                if(!dropArea.containsDrag){
+                                                    content.Drag.drop()
+                                                }
                                             }
                                         }
                                         enabled: content.dragging
@@ -928,6 +1107,7 @@ NavigationListForm {
                                         repeat: false
                                         interval: 3000
                                         onTriggered: {
+                                            priv.dragging = false
                                             content.dragging = false
                                         }
                                     }
@@ -944,10 +1124,19 @@ NavigationListForm {
                                                 eventPoint.accepted = false
                                                 return
                                             }
+                                            if(eventPoint.event.device.type === PointerDevice.Mouse){
+                                                listView.interactive = false
+                                            }
+
+                                            if(eventPoint.event.device.type === PointerDevice.TouchScreen | eventPoint.event.device.type === PointerDevice.Stylus ){
+                                                listView.interactive = true
+                                            }
 
                                             listView.currentIndex = model.index
+                                            priv.currentTreeItemId = model.treeItemId
 
-                                            if(model.type === "FOLDER" || model.type === "PROJECT" ){
+                                            if(plmData.treePropertyHub().getProperty(model.projectId, model.treeItemId,
+                                                                                     "can_add_child_paper", "true") === "true"){
                                                 goToChildAction.trigger()
                                             }
                                             else{
@@ -964,8 +1153,16 @@ NavigationListForm {
                                                 eventPoint.accepted = false
                                                 return
                                             }
+                                            if(eventPoint.event.device.type === PointerDevice.Mouse ){
+                                                listView.interactive = false
+                                            }
+
+                                            if(eventPoint.event.device.type === PointerDevice.TouchScreen | eventPoint.event.device.type === PointerDevice.Stylus ){
+                                                listView.interactive = true
+                                            }
                                             //console.log("double tapped")
                                             listView.currentIndex = model.index
+                                            priv.currentTreeItemId = model.treeItemId
 
 
                                             if(model.hasChildren){
@@ -976,18 +1173,6 @@ NavigationListForm {
                                             }
 
                                             eventPoint.accepted = true
-                                        }
-
-                                        onLongPressed: { // needed to activate the grab handler
-
-                                            //                        if(content.dragging){
-                                            //                            eventPoint.accepted = false
-                                            //                            return
-                                            //                        }
-
-
-                                            content.dragging = true
-                                            cancelDragTimer.start()
                                         }
 
 
@@ -1005,6 +1190,7 @@ NavigationListForm {
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.RightButton
                                         onTapped: {
+                                            listView.interactive = eventPoint.event.device.type === PointerDevice.Mouse
 
                                             if(menu.visible){
                                                 menu.close()
@@ -1013,6 +1199,7 @@ NavigationListForm {
 
 
                                             listView.currentIndex = model.index
+                                            priv.currentTreeItemId = model.treeItemId
                                             menu.open()
                                             eventPoint.accepted = true
                                         }
@@ -1025,7 +1212,9 @@ NavigationListForm {
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.MiddleButton
                                         onTapped: {
+                                            listView.interactive = eventPoint.event.device.type === PointerDevice.Mouse
                                             listView.currentIndex = model.index
+                                            priv.currentTreeItemId = model.treeItemId
                                             swipeDelegate.forceActiveFocus()
                                             openDocumentInAnotherViewAction.trigger()
                                             eventPoint.accepted = true
@@ -1039,13 +1228,32 @@ NavigationListForm {
                                         anchors.fill: parent
                                         acceptedButtons: Qt.NoButton
                                         onWheel: {
+                                            listView.interactive = false
                                             listView.flick(0, wheel.angleDelta.y * 50)
                                             wheel.accepted = true
                                         }
 
-                                        enabled: dragHandler.enabled
+                                        enabled: listView.interactive === false
                                     }
 
+
+                                    TapHandler {
+                                        acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
+
+                                        onLongPressed: { // needed to activate the grab handler
+
+                                            //                        if(content.dragging){
+                                            //                            eventPoint.accepted = false
+                                            //                            return
+                                            //                        }
+
+
+                                            content.dragging = true
+                                            listView.interactive = false
+                                            cancelDragTimer.start()
+                                        }
+
+                                    }
 
 
                                     Action {
@@ -1074,6 +1282,7 @@ NavigationListForm {
 
                                             var newItem = navigationListStackView.push(stackViewComponent, {"projectId": model.projectId, "parentId":  model.treeItemId} )
                                             newItem.setCurrent()
+                                            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(priv.currentProjectId, priv.currentParentId)
 
 
                                             //                                        currentProject = model.projectId
@@ -1322,10 +1531,10 @@ NavigationListForm {
 
 
                                                     hoverEnabled: true
-//                                                    ToolTip.delay: 1000
-//                                                    ToolTip.timeout: 5000
-//                                                    ToolTip.visible: hovered
-//                                                    ToolTip.text: qsTr("")
+                                                    //                                                    ToolTip.delay: 1000
+                                                    //                                                    ToolTip.timeout: 5000
+                                                    //                                                    ToolTip.visible: hovered
+                                                    //                                                    ToolTip.text: qsTr("")
 
 
 
@@ -1440,6 +1649,7 @@ NavigationListForm {
                                                             //fix bug while new lone child
                                                             titleLabel.visible = true
                                                             labelLayout.visible = true
+                                                            priv.renaming = false
                                                         }
 
                                                         //Keys.priority: Keys.AfterItem
@@ -1493,6 +1703,7 @@ NavigationListForm {
                                                             //fix bug while new lone child
                                                             titleLabel.visible = true
                                                             labelLayout.visible = true
+                                                            priv.renaming = false
                                                         }
 
                                                         //Keys.priority: Keys.AfterItem
@@ -1731,7 +1942,7 @@ NavigationListForm {
                                                 setCurrentTreeItemIdTimer.treeItemId = model.treeItemId
                                                 setCurrentTreeItemIdTimer.start()
                                                 root.openDocumentInNewWindow(model.projectId, model.treeItemId)
-//                                                setCurrentTreeItemId(model.projectId, model.treeItemId)
+                                                //                                                setCurrentTreeItemId(model.projectId, model.treeItemId)
 
 
                                             }
@@ -1801,8 +2012,8 @@ NavigationListForm {
                                     }
 
                                     MenuSeparator {
-                                        height: !model.isCopyable || !model.canAddChildTreeItem ? 0: undefined
-                                        visible: model.isCopyable && model.canAddChildTreeItem
+                                        height: !model.isMovable || !model.isCopyable || !model.canAddChildTreeItem ? 0: undefined
+                                        visible: model.isMovable || model.isCopyable || model.canAddChildTreeItem
                                     }
 
                                     SkrMenuItem {
@@ -1873,7 +2084,7 @@ NavigationListForm {
 
 
                                     MenuSeparator {
-                                        height: !(model.canAddSiblingTreeItem && model.canAddChildTreeItem) ? 0: undefined
+                                        height: !(model.canAddSiblingTreeItem || model.canAddChildTreeItem) ? 0: undefined
                                         visible: (model.canAddSiblingTreeItem || model.canAddChildTreeItem)
                                     }
 
@@ -2525,7 +2736,9 @@ NavigationListForm {
 
     onActiveFocusChanged: {
         if (activeFocus) {
-            navigationListStackView.currentItem.forceActiveFocus()
+            if(!priv.renaming){
+                navigationListStackView.currentItem.forceActiveFocus()
+            }
         }
     }
 

@@ -9,10 +9,9 @@ SKRPluginLoader::SKRPluginLoader(QObject *parent) : QObject(parent)
 {
     qRegisterMetaType<QList<SKRPlugin> >("QList<SKRPlugin>");
 
-    for(const QString& path : PLMUtils::Dir::addonsPathsList()) {
+    for (const QString& path : PLMUtils::Dir::addonsPathsList()) {
         QCoreApplication::addLibraryPath(path);
     }
-
 
 
     // this->reload();
@@ -105,7 +104,7 @@ QList<SKRPlugin>SKRPluginLoader::listActivated()
     while (i != m_pluginsListHash.constEnd()) {
         SKRPlugin plugin = i.value();
 
-        if(qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled()){
+        if (qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled()) {
             list << plugin;
         }
         ++i;
@@ -135,13 +134,16 @@ QObject * SKRPluginLoader::pluginObjectByName(const QString& fileName)
                                 "version").toString());
         plugin->setProperty("mandatory",
                             loader.metaData().value("MetaData").toObject().value(
-                                "mandatory").toString());
+                                "mandatory").toBool());
         plugin->setProperty("shortname",
                             loader.metaData().value("MetaData").toObject().value(
                                 "shortname").toString());
         plugin->setProperty("longname",
                             loader.metaData().value("MetaData").toObject().value(
                                 "longname").toString());
+        plugin->setProperty("type",
+                            loader.metaData().value("MetaData").toObject().value(
+                                "type").toString());
     }
 
     return plugin;

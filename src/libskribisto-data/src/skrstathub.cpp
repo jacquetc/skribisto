@@ -3,27 +3,23 @@
 
 SKRStatHub::SKRStatHub(QObject *parent) : QObject(parent)
 {
-//    connect(plmdata->sheetHub(), &PLMPaperHub::wordCountChanged,      this, &SKRStatHub::updateWordStats);
-//    connect(plmdata->noteHub(),  &PLMPaperHub::wordCountChanged,      this, &SKRStatHub::updateWordStats);
-//    connect(plmdata->sheetHub(), &PLMPaperHub::characterCountChanged, this, &SKRStatHub::updateCharacterStats);
-//    connect(plmdata->noteHub(),  &PLMPaperHub::characterCountChanged, this, &SKRStatHub::updateCharacterStats);
+    connect(plmdata->treeHub(), &SKRTreeHub::trashedChanged,
+            this, &SKRStatHub::setTreeItemTrashed);
 
-//    connect(plmdata->sheetHub(), &PLMPaperHub::trashedChanged,        this, &SKRStatHub::setSheetTrashed);
-//    connect(plmdata->noteHub(),  &PLMPaperHub::trashedChanged,        this, &SKRStatHub::setNoteTrashed);
-
-//    connect(plmdata->sheetHub(), &PLMPaperHub::paperRemoved,          this, &SKRStatHub::removeSheetFromStat);
-//    connect(plmdata->noteHub(),  &PLMPaperHub::paperRemoved,          this, &SKRStatHub::removeNoteFromStat);
+    connect(plmdata->treeHub(), &SKRTreeHub::treeItemRemoved,
+            this, &SKRStatHub::removeTreeItemFromStat);
 }
 
-int SKRStatHub::getSheetTotalCount(SKRStatHub::StatType type, int project)
+int SKRStatHub::getTreeItemTotalCount(SKRStatHub::StatType type, int project)
 {
-    int totalCount                             = 0;
-    QHash<int, QHash<QString, int> > paperHash = m_sheetHashByProjectHash.value(project,
-                                                                                QHash<int, QHash<QString, int> >());
+    int totalCount                                = 0;
+    QHash<int, QHash<QString, int> > treeItemHash = m_treeItemHashByProjectHash.value(project,
+                                                                                      QHash<int,
+                                                                                            QHash<QString, int> >());
 
-    QHash<int, QHash<QString, int> >::const_iterator i = paperHash.constBegin();
+    QHash<int, QHash<QString, int> >::const_iterator i = treeItemHash.constBegin();
 
-    while (i != paperHash.constEnd()) {
+    while (i != treeItemHash.constEnd()) {
         QHash<QString, int> hash = i.value();
 
         if (!hash.value("isTrashed", 0)) {
@@ -45,87 +41,58 @@ int SKRStatHub::getSheetTotalCount(SKRStatHub::StatType type, int project)
 
 // ---------------------------------------------------------------------------------
 
-int SKRStatHub::getNoteTotalCount(SKRStatHub::StatType type, int project)
+void SKRStatHub::updateWordStats(int  projectId,
+                                 int  treeItemId,
+                                 int  wordCount,
+                                 bool triggerProjectModifiedSignal)
 {
-    int totalCount                             = 0;
-    QHash<int, QHash<QString, int> > paperHash = m_noteHashByProjectHash.value(project,
-                                                                               QHash<int, QHash<QString, int> >());
-
-    QHash<int, QHash<QString, int> >::const_iterator i = paperHash.constBegin();
-
-    while (i != paperHash.constEnd()) {
-        QHash<QString, int> hash = i.value();
-
-        if (!hash.value("isTrashed", 0)) {
-            switch (type) {
-            case SKRStatHub::Character:
-                totalCount += hash.value("characterCount", 0);
-                break;
-
-            case SKRStatHub::Word:
-                totalCount += hash.value("wordCount", 0);
-                break;
-            }
-        }
-        ++i;
-    }
-
-    return totalCount;
-}
-
-// ---------------------------------------------------------------------------------
-
-void SKRStatHub::updateWordStats(SKR::ItemType paperType, int projectId, int paperId, int wordCount, bool triggerProjectModifiedSignal)
-{
-
-       QHash<int, QHash<QString, int> > projectHash = m_noteHashByProjectHash.value(projectId);
-       SKRPropertyHub * propertyHub = plmdata->treePropertyHub();
-       SKRTreeHub    *treeHub    = plmdata->treeHub();
+    QHash<int, QHash<QString, int> > projectHash = m_treeItemHashByProjectHash.value(projectId);
+    SKRPropertyHub *propertyHub                  = plmdata->treePropertyHub();
+    SKRTreeHub     *treeHub                      = plmdata->treeHub();
 
 
     // ------------- get trashed
-    bool isTrashed = treeHub->getTrashed(projectId, paperId);
+    bool isTrashed = treeHub->getTrashed(projectId, treeItemId);
 
     // ------------- update word_count
 
     if (wordCount != -1) {
-        propertyHub->setProperty(projectId, paperId, "word_count", QString::number(wordCount), true, triggerProjectModifiedSignal);
+        propertyHub->setProperty(projectId,
+                                 treeItemId,
+                                 "word_count",
+                                 QString::number(wordCount),
+                                 true,
+                                 triggerProjectModifiedSignal);
     }
 
     // ------------- update general stats
 
-    QHash<QString, int> paperHash = projectHash.value(paperId);
+    QHash<QString, int> treeItemHash = projectHash.value(treeItemId);
 
     if (wordCount != -1) {
-        paperHash.insert("wordCount", wordCount);
+        treeItemHash.insert("wordCount", wordCount);
     }
-    paperHash.insert("isTrashed", isTrashed);
-    projectHash.insert(paperId, paperHash);
+    treeItemHash.insert("isTrashed", isTrashed);
+    projectHash.insert(treeItemId, treeItemHash);
 
     int totalCount = 0;
 
-    if (paperType == SKR::Note) {
-        m_noteHashByProjectHash.insert(projectId, projectHash);
-        totalCount = getNoteTotalCount(SKRStatHub::Word, projectId);
-    }
-    else if (paperType == SKR::Sheet) {
-        m_sheetHashByProjectHash.insert(projectId, projectHash);
-        totalCount = getSheetTotalCount(SKRStatHub::Word, projectId);
-    }
+    m_treeItemHashByProjectHash.insert(projectId, projectHash);
+    totalCount = getTreeItemTotalCount(SKRStatHub::Word, projectId);
 
-    emit statsChanged(SKRStatHub::Word, paperType, projectId, totalCount);
+    emit statsChanged(SKRStatHub::Word, projectId, totalCount);
 
 
     // -------------update parents' charCountWithChildren:
 
     // get all ancestors
-    QList<int> ancestors = treeHub->getAllAncestors(projectId, paperId);
+    QList<int> ancestors = treeHub->getAllAncestors(projectId, treeItemId);
 
-    ancestors.prepend(paperId);
+    ancestors.prepend(treeItemId);
 
     // for each ancestor, get all children
 
-    for (int ancestorId : ancestors) {
+    for (int ancestorId : qAsConst(ancestors)) {
         QList<int> children = treeHub->getAllChildren(projectId, ancestorId);
 
         // remove trashed
@@ -142,7 +109,7 @@ void SKRStatHub::updateWordStats(SKR::ItemType paperType, int projectId, int pap
 
         int totalChildrenCount = 0;
 
-        for (int childId : children) {
+        for (int childId : qAsConst(children)) {
             QHash<QString, int> childHash = projectHash.value(childId, QHash<QString, int>());
 
             totalChildrenCount += childHash.value("wordCount", 0);
@@ -161,56 +128,57 @@ void SKRStatHub::updateWordStats(SKR::ItemType paperType, int projectId, int pap
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::updateCharacterStats(SKR::ItemType paperType, int projectId, int paperId, int characterCount, bool triggerProjectModifiedSignal)
+void SKRStatHub::updateCharacterStats(int  projectId,
+                                      int  treeItemId,
+                                      int  characterCount,
+                                      bool triggerProjectModifiedSignal)
 {
-
-    QHash<int, QHash<QString, int> > projectHash = m_noteHashByProjectHash.value(projectId);
-    SKRPropertyHub * propertyHub = plmdata->treePropertyHub();
-    SKRTreeHub    *treeHub    = plmdata->treeHub();
+    QHash<int, QHash<QString, int> > projectHash = m_treeItemHashByProjectHash.value(projectId);
+    SKRPropertyHub *propertyHub                  = plmdata->treePropertyHub();
+    SKRTreeHub     *treeHub                      = plmdata->treeHub();
 
     // ------------- get trashed
-    bool isTrashed = treeHub->getTrashed(projectId, paperId);
+    bool isTrashed = treeHub->getTrashed(projectId, treeItemId);
 
     // ------------- update char_count
 
     if (characterCount != -1) {
-        propertyHub->setProperty(projectId, paperId, "char_count", QString::number(characterCount), true, triggerProjectModifiedSignal);
+        propertyHub->setProperty(projectId,
+                                 treeItemId,
+                                 "char_count",
+                                 QString::number(characterCount),
+                                 true,
+                                 triggerProjectModifiedSignal);
     }
 
     // ------------- update general stats
 
-    QHash<QString, int> paperHash = projectHash.value(paperId);
+    QHash<QString, int> treeItemHash = projectHash.value(treeItemId);
 
     if (characterCount != -1) {
-        paperHash.insert("characterCount", characterCount);
+        treeItemHash.insert("characterCount", characterCount);
     }
 
-    paperHash.insert("isTrashed", isTrashed);
-    projectHash.insert(paperId, paperHash);
+    treeItemHash.insert("isTrashed", isTrashed);
+    projectHash.insert(treeItemId, treeItemHash);
 
     int totalCount = 0;
 
-    if (paperType == SKR::Note) {
-        m_noteHashByProjectHash.insert(projectId, projectHash);
-        totalCount = getNoteTotalCount(SKRStatHub::Character, projectId);
-    }
-    else if (paperType == SKR::Sheet) {
-        m_sheetHashByProjectHash.insert(projectId, projectHash);
-        totalCount = getSheetTotalCount(SKRStatHub::Character, projectId);
-    }
+    m_treeItemHashByProjectHash.insert(projectId, projectHash);
+    totalCount = getTreeItemTotalCount(SKRStatHub::Character, projectId);
 
-    emit statsChanged(SKRStatHub::Character, paperType, projectId, totalCount);
+    emit statsChanged(SKRStatHub::Character, projectId, totalCount);
 
     // -------------update parents' charCountWithChildren:
 
     // get all ancerstors
-    QList<int> ancestors = treeHub->getAllAncestors(projectId, paperId);
+    QList<int> ancestors = treeHub->getAllAncestors(projectId, treeItemId);
 
-    ancestors.prepend(paperId);
+    ancestors.prepend(treeItemId);
 
     // for each ancestor, get all children
 
-    for (int ancestorId : ancestors) {
+    for (int ancestorId : qAsConst(ancestors)) {
         QList<int> children = treeHub->getAllChildren(projectId, ancestorId);
 
         // remove trashed
@@ -227,7 +195,7 @@ void SKRStatHub::updateCharacterStats(SKR::ItemType paperType, int projectId, in
 
         int totalChildrenCount = 0;
 
-        for (int childId : children) {
+        for (int childId : qAsConst(children)) {
             QHash<QString, int> childHash = projectHash.value(childId, QHash<QString, int>());
 
             totalChildrenCount += childHash.value("characterCount", 0);
@@ -246,46 +214,23 @@ void SKRStatHub::updateCharacterStats(SKR::ItemType paperType, int projectId, in
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::setSheetTrashed(int projectId, int sheetId, bool isTrashed)
+void SKRStatHub::setTreeItemTrashed(int projectId, int treeItemId, bool isTrashed)
 {
     Q_UNUSED(isTrashed)
-    updateCharacterStats(SKR::Sheet, projectId, sheetId);
-    updateWordStats(SKR::Sheet, projectId, sheetId);
+    updateCharacterStats(projectId, treeItemId);
+    updateWordStats(projectId, treeItemId);
 }
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::setNoteTrashed(int projectId, int noteId, bool isTrashed)
-{
-    Q_UNUSED(isTrashed)
-    updateCharacterStats(SKR::Note, projectId, noteId);
-    updateWordStats(SKR::Note, projectId, noteId);
-}
-
-// ---------------------------------------------------------------------------------
-
-void SKRStatHub::removeSheetFromStat(int projectId, int sheetId)
+void SKRStatHub::removeTreeItemFromStat(int projectId, int treeItemId)
 {
     // if not done, trash it, needed for cleaner calculation
-    setSheetTrashed(projectId, sheetId, true);
+    setTreeItemTrashed(projectId, treeItemId, true);
 
-    // delete ref to paperId
-    QHash<int, QHash<QString, int> > projectHash = m_sheetHashByProjectHash.value(projectId);
+    // delete ref to treeItemId
+    QHash<int, QHash<QString, int> > projectHash = m_treeItemHashByProjectHash.value(projectId);
 
-    projectHash.remove(sheetId);
-    m_sheetHashByProjectHash.insert(projectId, projectHash);
-}
-
-// ---------------------------------------------------------------------------------
-
-void SKRStatHub::removeNoteFromStat(int projectId, int noteId)
-{
-    // if not done, trash it, needed for cleaner calculation
-    setNoteTrashed(projectId, noteId, true);
-
-    // delete ref to paperId
-    QHash<int, QHash<QString, int> > projectHash = m_noteHashByProjectHash.value(projectId);
-
-    projectHash.remove(noteId);
-    m_noteHashByProjectHash.insert(projectId, projectHash);
+    projectHash.remove(treeItemId);
+    m_treeItemHashByProjectHash.insert(projectId, projectHash);
 }

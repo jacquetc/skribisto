@@ -36,36 +36,38 @@ class EXPORT SKRSearchTreeListProxyModel : public QSortFilterProxyModel {
     Q_PROPERTY(
         QStringList hideThoseWithAttributesFilter MEMBER m_hideThoseWithAttributesFilter WRITE setHideThoseWithAttributesFilter NOTIFY hideThoseWithAttributesFilterChanged)
 
-
 public:
 
     explicit SKRSearchTreeListProxyModel();
 
-    Q_INVOKABLE SKRSearchTreeListProxyModel *clone();
+    Q_INVOKABLE SKRSearchTreeListProxyModel* clone();
 
-    int      columnCount(const QModelIndex& parent = QModelIndex()) const override;
+    int                                      columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
-    Qt::ItemFlags flags(const QModelIndex& index) const;
+    Qt::ItemFlags                            flags(const QModelIndex& index) const;
 
-    QVariant      data(const QModelIndex& index,
-                       int                role) const;
-    bool          setData(const QModelIndex& index,
-                          const QVariant   & value,
-                          int                role);
+    QVariant                                 data(const QModelIndex& index,
+                                                  int                role) const;
+    bool                                     setData(const QModelIndex& index,
+                                                     const QVariant   & value,
+                                                     int                role);
 
     Q_INVOKABLE void      setProjectIdFilter(int projectIdFilter);
     void                  clearFilters();
 
-    Q_INVOKABLE SKRResult addChildItem(int projectId,
-                                       int parentTreeItemId, const QString &type);
-    Q_INVOKABLE SKRResult addItemAbove(int projectId,
-                                       int parentTreeItemId, const QString &type);
-    Q_INVOKABLE SKRResult      addItemBelow(int projectId,
-                                       int parentTreeItemId, const QString &type);
-    Q_INVOKABLE SKRResult      moveUp(int projectId,
+    Q_INVOKABLE SKRResult addChildItem(int            projectId,
+                                       int            parentTreeItemId,
+                                       const QString& type);
+    Q_INVOKABLE SKRResult addItemAbove(int            projectId,
+                                       int            parentTreeItemId,
+                                       const QString& type);
+    Q_INVOKABLE SKRResult addItemBelow(int            projectId,
+                                       int            parentTreeItemId,
+                                       const QString& type);
+    Q_INVOKABLE SKRResult moveUp(int projectId,
                                  int treeItemId,
                                  int visualIndex);
-    Q_INVOKABLE SKRResult      moveDown(int projectId,
+    Q_INVOKABLE SKRResult moveDown(int projectId,
                                    int treeItemId,
                                    int visualIndex);
     Q_INVOKABLE void      moveItem(int from,
@@ -83,7 +85,7 @@ public:
                                           int treeItemId);
 
     Q_INVOKABLE void      setCurrentTreeItemId(int projectId,
-                                            int treeItemId);
+                                               int treeItemId);
     void                  setShowTrashedFilter(bool showTrashedFilter);
 
     void                  setShowNotTrashedFilter(bool showNotTrashedFilter);
@@ -93,27 +95,27 @@ public:
     void                  setParentIdFilter(int parentIdFilter);
     void                  setShowParentWhenParentIdFilter(bool showParent);
 
-    void setHideThoseWithAttributesFilter(const QStringList &hideThoseWithAttributesFilter);
+    void                  setHideThoseWithAttributesFilter(const QStringList& hideThoseWithAttributesFilter);
 
-    void setShowOnlyWithAttributesFilter(const QStringList &showOnlyWithAttributesFilter);
+    void                  setShowOnlyWithAttributesFilter(const QStringList& showOnlyWithAttributesFilter);
     Q_INVOKABLE QList<int>getChildrenList(int  projectId,
                                           int  treeItemId,
                                           bool getTrashed,
                                           bool getNotTrashed) const;
 
-    Q_INVOKABLE int getChildrenCount(int  projectId,
-                                     int  treeItemId) const;
+    Q_INVOKABLE int getChildrenCount(int projectId,
+                                     int treeItemId) const;
 
 
     Q_INVOKABLE QList<int>getAncestorsList(int  projectId,
-                               int  treeItemId,
-                               bool getTrashed,
-                               bool getNotTrashed);
+                                           int  treeItemId,
+                                           bool getTrashed,
+                                           bool getNotTrashed);
 
     Q_INVOKABLE QList<int>getSiblingsList(int  projectId,
-                              int  treeItemId,
-                              bool getTrashed,
-                              bool getNotTrashed);
+                                          int  treeItemId,
+                                          bool getTrashed,
+                                          bool getNotTrashed);
 
     void                  setTreeItemIdListFilter(const QList<int>& treeItemIdListFilter);
     void                  setHideTreeItemIdListFilter(const QList<int>& hideTreeItemIdListFilter);
@@ -132,30 +134,32 @@ public:
                                                             int            treeItemId,
                                                             Qt::CheckState checkState);
 
-    void                  setTagIdListFilter(const QList<int>& tagIdListFilter);
+    void                               setTagIdListFilter(const QList<int>& tagIdListFilter);
 
-    Q_INVOKABLE void      clearCheckedList();
-    Q_INVOKABLE void      checkAll();
-    Q_INVOKABLE void      checkAllButNonPrintable();
-    Q_INVOKABLE void      checkNone();
-    Q_INVOKABLE QList<int>getCheckedIdsList();
-    Q_INVOKABLE void      setCheckedIdsList(const QList<int>checkedIdsList);
-    Q_INVOKABLE QList<int>findIdsTrashedAtTheSameTimeThan(int projectId,
+    Q_INVOKABLE void                   clearCheckedList();
+    Q_INVOKABLE void                   checkAll();
+    Q_INVOKABLE void                   checkAllButNonPrintable();
+    Q_INVOKABLE void                   checkNone();
+    Q_INVOKABLE QList<int>             getCheckedIdsList();
+    Q_INVOKABLE void                   setCheckedIdsList(const QList<int>checkedIdsList);
+    Q_INVOKABLE QList<int>             findIdsTrashedAtTheSameTimeThan(int projectId,
+                                                                       int treeItemId);
+
+    Q_INVOKABLE void                   deleteDefinitively(int projectId,
                                                           int treeItemId);
 
-    Q_INVOKABLE void      deleteDefinitively(int projectId,
-                                             int treeItemId);
+    Q_DECL_DEPRECATED Q_INVOKABLE int  getLastOfHistory(int projectId);
+    Q_DECL_DEPRECATED Q_INVOKABLE void removeLastOfHistory(int projectId);
+    Q_DECL_DEPRECATED Q_INVOKABLE void addHistory(int projectId,
+                                                  int treeItemId);
+    Q_DECL_DEPRECATED Q_INVOKABLE void clearHistory(int projectId);
 
-    Q_DECL_DEPRECATED Q_INVOKABLE int       getLastOfHistory(int projectId);
-    Q_DECL_DEPRECATED Q_INVOKABLE void      removeLastOfHistory(int projectId);
-    Q_DECL_DEPRECATED Q_INVOKABLE void      addHistory(int projectId,
-                                     int treeItemId);
-    Q_DECL_DEPRECATED Q_INVOKABLE void      clearHistory(int projectId);
-
-    Q_INVOKABLE void cut(int projectId, int treeItemId);
-    Q_INVOKABLE void copy(int projectId, int treeItemId);
-    Q_INVOKABLE void paste(int targetProjectId, int targetParentId);
-
+    Q_INVOKABLE void                   cut(int projectId,
+                                           int treeItemId);
+    Q_INVOKABLE void                   copy(int projectId,
+                                            int treeItemId);
+    Q_INVOKABLE void                   paste(int targetProjectId,
+                                             int targetParentId);
 
 signals:
 
@@ -187,7 +191,7 @@ protected:
 private:
 
     SKRTreeItem* getItem(int projectId,
-                          int treeItemId);
+                         int treeItemId);
 
 private slots:
 

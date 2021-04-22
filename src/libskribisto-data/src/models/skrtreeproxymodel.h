@@ -45,9 +45,14 @@ signals:
 public slots:
 
     void setTrashedFilter(bool showTrashed);
+
 protected:
-    bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+
+    bool filterAcceptsRow(int                sourceRow,
+                          const QModelIndex& sourceParent) const;
+
 private:
+
     bool m_showTrashed;
 };
 

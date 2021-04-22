@@ -45,14 +45,14 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 
         QSqlQuery query(sqlDb);
         QString   queryStr =
-                "CREATE TABLE tbl_project_dict (l_project_dict_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ON CONFLICT ROLLBACK UNIQUE ON CONFLICT ROLLBACK, t_word TEXT UNIQUE ON CONFLICT REPLACE NOT NULL ON CONFLICT ROLLBACK);"
-                ;
+            "CREATE TABLE tbl_project_dict (l_project_dict_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ON CONFLICT ROLLBACK UNIQUE ON CONFLICT ROLLBACK, t_word TEXT UNIQUE ON CONFLICT REPLACE NOT NULL ON CONFLICT ROLLBACK);"
+        ;
         query.prepare(queryStr);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
 
@@ -83,8 +83,8 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     if (dbVersion == 1.1) {
         double newDbVersion = 1.2;
 
-        QString   queryStr =
-                R""""(PRAGMA foreign_keys = 0;
+        QString queryStr =
+            R""""(PRAGMA foreign_keys = 0;
 
                 CREATE TABLE temp_table AS SELECT * FROM tbl_sheet_note;
 
@@ -120,7 +120,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
                 )"""";
 
 
-                result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
+        result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
 
 
         IFKO(result) {
@@ -145,8 +145,8 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     if (dbVersion == 1.2) {
         double newDbVersion = 1.3;
 
-        QString   queryStr =
-                R""""(
+        QString queryStr =
+            R""""(
                 PRAGMA foreign_keys = 0;
 
                 CREATE TABLE tbl_stat_history (
@@ -177,7 +177,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
                 )"""";
 
 
-                result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
+        result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
 
 
         IFKO(result) {
@@ -195,6 +195,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     IFKO(result) {
         return result;
     }
+
     // ---------------------------------
 
     // from 1.3 to 1.4
@@ -202,8 +203,8 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
         double newDbVersion = 1.4;
 
 
-        QString   queryStr =
-                R""""(PRAGMA foreign_keys = 0;
+        QString queryStr =
+            R""""(PRAGMA foreign_keys = 0;
 
                 CREATE TABLE sqlitestudio_temp_table AS SELECT *
                 FROM tbl_tag;
@@ -245,7 +246,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
                 )"""";
 
 
-                result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
+        result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
 
 
         IFKO(result) {
@@ -258,12 +259,12 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
         IFOK(result) {
             dbVersion = newDbVersion;
         }
-
     }
 
     IFKO(result) {
         return result;
     }
+
     // ---------------------------------
 
     // from 1.4 to 1.5
@@ -271,9 +272,8 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
         double newDbVersion = 1.5;
 
 
-
-        QString   queryStr =
-                R""""(PRAGMA foreign_keys = 0;
+        QString queryStr =
+            R""""(PRAGMA foreign_keys = 0;
 
                 CREATE TABLE tbl_tree (
                     l_tree_id    INTEGER  PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT
@@ -402,30 +402,29 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
                 )"""";
 
 
-                result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
-
+        result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
 
 
         // migrate tables
 
-        //-- from tbl_sheet to tbl_tree
+        // -- from tbl_sheet to tbl_tree
         IFOKDO(result, PLMUpgrader::movePaperToTree_1_5(sqlDb, "tbl_sheet"));
 
 
-
-        //-- from tbl_note to tbl_tree
+        // -- from tbl_note to tbl_tree
         IFOKDO(result, PLMUpgrader::movePaperToTree_1_5(sqlDb, "tbl_note"));
 
 
-        // transform parents sheet/note in tree in folders, move parent as first child of folder
+        // transform parents sheet/note in tree in folders, move parent as first
+        // child of folder
         IFOKDO(result, PLMUpgrader::transformParentsToFolder_1_5(sqlDb));
 
 
-        //-- remove from paper codes from tbl_tag_relationship
+        // -- remove from paper codes from tbl_tag_relationship
 
 
         queryStr =
-                R""""(PRAGMA foreign_keys = 0;
+            R""""(PRAGMA foreign_keys = 0;
 
                 CREATE TABLE sqlitestudio_temp_table AS SELECT *
                                                           FROM tbl_tag_relationship;
@@ -492,26 +491,20 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
                 )"""";
 
 
-                IFOKDO(result, SKRSqlTools::executeSQLString(queryStr, sqlDb));
+        IFOKDO(result, SKRSqlTools::executeSQLString(queryStr, sqlDb));
 
 
-        //-- drop deprecated tables
+        // -- drop deprecated tables
 
         IFOKDO(result, PLMUpgrader::dropDeprecatedTables_1_5(sqlDb));
 
         IFOKDO(result, SKRSqlTools::renumberTreeSortOrder(sqlDb));
 
 
-
-
-
         IFKO(result) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "cant_upgrade");
             result.addData("dbVersion", newDbVersion);
         }
-
-
-
 
 
         IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
@@ -524,13 +517,14 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     IFKO(result) {
         return result;
     }
+
     // ---------------------------------
 
     // from 1.5 to 1.6
     if (dbVersion == 1.5) {
         double newDbVersion = 1.6;
 
-        //increment all indent in tree
+        // increment all indent in tree
         QString queryStr = "UPDATE tbl_tree SET l_indent = l_indent + 1;";
 
         IFOKDO(result, SKRSqlTools::executeSQLString(queryStr, sqlDb));
@@ -538,17 +532,17 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
         // create project item in tree
 
         queryStr =
-                R""""(PRAGMA foreign_keys = 0;
+            R""""(PRAGMA foreign_keys = 0;
                 INSERT INTO tbl_tree (l_tree_id,l_sort_order, l_indent, t_type)
                         VALUES (0, -1, 0, 'PROJECT');
 
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_renamable', 'BOOL', 'true');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_movable', 'BOOL', 'false');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_sibling_paper', 'BOOL', 'false');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_child_paper', 'BOOL', 'true');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_trashable', 'BOOL', 'false');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_openable', 'BOOL', 'true');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_copyable', 'BOOL', 'false');
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_renamable', 'BOOL', 'true', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_movable', 'BOOL', 'false', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'can_add_sibling_paper', 'BOOL', 'false', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'can_add_child_paper', 'BOOL', 'true', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_trashable', 'BOOL', 'false', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_openable', 'BOOL', 'true', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_copyable', 'BOOL', 'false', 1);
 
 
                 PRAGMA foreign_keys = 1;
@@ -557,15 +551,13 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
         IFOKDO(result, SKRSqlTools::executeSQLString(queryStr, sqlDb));
 
 
-
-
         // move all synopsis to text secondary content
 
         IFOKDO(result, PLMUpgrader::moveSynopsisToSecondaryContent_1_6(sqlDb));
 
 
         queryStr =
-                R""""(PRAGMA foreign_keys = 0;
+            R""""(PRAGMA foreign_keys = 0;
 
         CREATE TABLE sqlitestudio_temp_table AS SELECT *
                                                   FROM tbl_tree_relationship;
@@ -608,13 +600,11 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
         IFOKDO(result, SKRSqlTools::trimTreeRelationshipTable(sqlDb));
 
 
-
         IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
 
         IFOK(result) {
             dbVersion = newDbVersion;
         }
-
     }
     IFKO(result) {
         return result;
@@ -635,7 +625,7 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     return result;
 }
 
-//---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 SKRResult PLMUpgrader::setDbVersion(QSqlDatabase sqlDb, double newVersion) {
     SKRResult result("SKRSqlTools::setDbVersion");
@@ -648,9 +638,9 @@ SKRResult PLMUpgrader::setDbVersion(QSqlDatabase sqlDb, double newVersion) {
     query.bindValue(":newVersion", newVersion);
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::setDbVersion", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
     }
 
@@ -660,9 +650,9 @@ SKRResult PLMUpgrader::setDbVersion(QSqlDatabase sqlDb, double newVersion) {
         query.prepare(queryStr);
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::setDbVersion", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
         }
     }
@@ -673,38 +663,39 @@ SKRResult PLMUpgrader::setDbVersion(QSqlDatabase sqlDb, double newVersion) {
     return result;
 }
 
-//---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
-SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &tableName)
+SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString& tableName)
 {
     SKRResult result("movePaperToTree_1_5");
-    QString tableId;
-    QString propertyTable;
-    QString propertyTableCode;
-    QString treeRelationshipCode;
+    QString   tableId;
+    QString   propertyTable;
+    QString   propertyTableCode;
+    QString   treeRelationshipCode;
 
 
-    if(tableName == "tbl_sheet"){
-        tableId = "l_sheet_id";
-        propertyTable = "tbl_sheet_property";
-        propertyTableCode =  "l_sheet_code";
+    if (tableName == "tbl_sheet") {
+        tableId              = "l_sheet_id";
+        propertyTable        = "tbl_sheet_property";
+        propertyTableCode    =  "l_sheet_code";
         treeRelationshipCode = "l_tree_receiver_code";
     }
-    if(tableName == "tbl_note"){
-        tableId = "l_note_id";
-        propertyTable = "tbl_note_property";
-        propertyTableCode =  "l_note_code";
+
+    if (tableName == "tbl_note") {
+        tableId              = "l_note_id";
+        propertyTable        = "tbl_note_property";
+        propertyTableCode    =  "l_note_code";
         treeRelationshipCode = "l_tree_source_code";
     }
 
 
-    //retrieve sorted orders list from tree table to find the sort order to start from
-
+    // retrieve sorted orders list from tree table to find the sort order to
+    // start from
 
 
     QList<int> treeSortOrderList;
-    QSqlQuery query(sqlDb);
-    QString   queryStr = "SELECT l_sort_order FROM tbl_tree ORDER BY l_sort_order";
+    QSqlQuery  query(sqlDb);
+    QString    queryStr = "SELECT l_sort_order FROM tbl_tree ORDER BY l_sort_order";
 
 
     query.prepare(queryStr);
@@ -712,9 +703,9 @@ SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &ta
 
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::movePaperToTree_1_5", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
 
         return result;
@@ -725,16 +716,16 @@ SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &ta
     }
 
     int startingSortOrder = 0;
-    if(!treeSortOrderList.isEmpty()){
+
+    if (!treeSortOrderList.isEmpty()) {
         startingSortOrder = treeSortOrderList.last();
     }
 
 
-
-
-    //retrieve sorted id list from paper table
+    // retrieve sorted id list from paper table
 
     QList<int> originalIdList;
+
     queryStr = "SELECT " + tableId + " FROM " + tableName + " ORDER BY l_sort_order";
 
 
@@ -743,9 +734,9 @@ SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &ta
 
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::movePaperToTree_1_5", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
 
         return result;
@@ -756,36 +747,44 @@ SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &ta
     }
 
 
-    //for each, retreive it from table
+    // for each, retreive it from table
 
     sqlDb.transaction();
 
-    for(int originalId : originalIdList){
-        queryStr = "INSERT INTO tbl_tree (t_title, l_sort_order, l_indent, t_type, m_primary_content, dt_created, dt_updated, dt_trashed, b_trashed)"
-                        "VALUES ("
-"                       (SELECT t_title FROM " + tableName + " WHERE " + tableId + " = :paperId),"
-"                       (SELECT l_sort_order FROM " + tableName + " WHERE " + tableId + " = :paperId) + :startingSortOrder,"
-"                       (SELECT l_indent FROM " + tableName + " WHERE " + tableId + " = :paperId),"
-"                       'TEXT',"
-"                       (SELECT m_content FROM " + tableName + " WHERE " + tableId + " = :paperId),"
-"                       (SELECT dt_created FROM " + tableName + " WHERE " + tableId + " = :paperId),"
-"                       (SELECT dt_updated FROM " + tableName + " WHERE " + tableId + " = :paperId),"
-"                       (SELECT dt_trashed FROM " + tableName + " WHERE " + tableId + " = :paperId),"
-"                       (SELECT b_trashed FROM " + tableName + " WHERE " + tableId + " = :paperId)"
-")";
+    for (int originalId : originalIdList) {
+        queryStr =
+            "INSERT INTO tbl_tree (t_title, l_sort_order, l_indent, t_type, m_primary_content, dt_created, dt_updated, dt_trashed, b_trashed)"
+            "VALUES ("
+            "                       (SELECT t_title FROM " + tableName + " WHERE " + tableId + " = :paperId),"
+                                                                                               "                       (SELECT l_sort_order FROM "
+            + tableName + " WHERE " + tableId + " = :paperId) + :startingSortOrder,"
+                                                "                       (SELECT l_indent FROM "
+            + tableName + " WHERE " + tableId + " = :paperId),"
+                                                "                       'TEXT',"
+                                                "                       (SELECT m_content FROM "
+            + tableName + " WHERE " + tableId + " = :paperId),"
+                                                "                       (SELECT dt_created FROM "
+            + tableName + " WHERE " + tableId + " = :paperId),"
+                                                "                       (SELECT dt_updated FROM "
+            + tableName + " WHERE " + tableId + " = :paperId),"
+                                                "                       (SELECT dt_trashed FROM "
+            + tableName + " WHERE " + tableId + " = :paperId),"
+                                                "                       (SELECT b_trashed FROM "
+            + tableName + " WHERE " + tableId + " = :paperId)"
+                                                ")";
 
 
         query.prepare(queryStr);
 
-        query.bindValue(":paperId", originalId);
+        query.bindValue(":paperId",           originalId);
         query.bindValue(":startingSortOrder", startingSortOrder);
 
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::movePaperToTree_1_5", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
             sqlDb.rollback();
             return result;
@@ -793,13 +792,12 @@ SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &ta
         int newTreeId = query.lastInsertId().toInt();
 
 
-
-
-        //retreive property id list from property table
+        // retreive property id list from property table
 
         QList<int> originalPropertyIdList;
-        QSqlQuery query(sqlDb);
-        QString   queryStr = "SELECT l_property_id FROM " + propertyTable + " WHERE " + propertyTableCode + " = :paperId";
+        QSqlQuery  query(sqlDb);
+        QString    queryStr = "SELECT l_property_id FROM " + propertyTable + " WHERE " + propertyTableCode +
+                              " = :paperId";
 
 
         query.prepare(queryStr);
@@ -808,9 +806,9 @@ SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &ta
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::movePaperToTree_1_5", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
             sqlDb.rollback();
 
@@ -822,58 +820,61 @@ SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &ta
         }
 
 
-        for(int originalPropertyId : originalPropertyIdList){
-
+        for (int originalPropertyId : originalPropertyIdList) {
             // add properties with new paper code
 
-            queryStr = "INSERT INTO tbl_tree_property (l_tree_code , t_name, t_value_type, m_value, dt_created, dt_updated, b_system)"
-                        "VALUES ("
-"                       :newTreeId,"
-"                       (SELECT t_name FROM " + propertyTable + " WHERE l_property_id = :propertyId),"
-"                       'STRING',"
-"                       (SELECT t_value FROM " + propertyTable + " WHERE l_property_id = :propertyId),"
-"                       (SELECT dt_created FROM " + propertyTable + " WHERE l_property_id = :propertyId),"
-"                       (SELECT dt_updated FROM " + propertyTable + " WHERE l_property_id = :propertyId),"
-"                       (SELECT b_system FROM " + propertyTable + " WHERE l_property_id = :propertyId)"
-")";
-
+            queryStr =
+                "INSERT INTO tbl_tree_property (l_tree_code , t_name, t_value_type, m_value, dt_created, dt_updated, b_system)"
+                "VALUES ("
+                "                       :newTreeId,"
+                "                       (SELECT t_name FROM " + propertyTable +
+                " WHERE l_property_id = :propertyId),"
+                "                       'STRING',"
+                "                       (SELECT t_value FROM "
+                + propertyTable + " WHERE l_property_id = :propertyId),"
+                                  "                       (SELECT dt_created FROM "
+                + propertyTable + " WHERE l_property_id = :propertyId),"
+                                  "                       (SELECT dt_updated FROM "
+                + propertyTable + " WHERE l_property_id = :propertyId),"
+                                  "                       (SELECT b_system FROM "
+                + propertyTable + " WHERE l_property_id = :propertyId)"
+                                  ")";
 
 
             query.prepare(queryStr);
 
-            query.bindValue(":newTreeId", newTreeId);
+            query.bindValue(":newTreeId",  newTreeId);
             query.bindValue(":propertyId", originalPropertyId);
 
             query.exec();
 
-            if(query.lastError().isValid()){
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, "PLMUpgrader::movePaperToTree_1_5", "sql_error");
-                result.addData("SQLError", query.lastError().text());
+                result.addData("SQLError",   query.lastError().text());
                 result.addData("SQL string", queryStr);
                 sqlDb.rollback();
 
                 return result;
             }
-
         }
 
 
+        // update tag relationship table to fill tree code depending of paper id
 
-        //update tag relationship table to fill tree code depending of paper id
-
-        queryStr = "UPDATE tbl_tag_relationship SET l_tree_code = :newTreeId WHERE " + propertyTableCode + " = :paperId";
+        queryStr = "UPDATE tbl_tag_relationship SET l_tree_code = :newTreeId WHERE " + propertyTableCode +
+                   " = :paperId";
 
 
         query.prepare(queryStr);
 
-        query.bindValue(":paperId", originalId);
+        query.bindValue(":paperId",   originalId);
         query.bindValue(":newTreeId", newTreeId);
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::movePaperToTree_1_5", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
             sqlDb.rollback();
 
@@ -881,58 +882,51 @@ SKRResult PLMUpgrader::movePaperToTree_1_5(QSqlDatabase sqlDb, const QString &ta
         }
 
 
+        // update sheet note relationship table to fill tree source/receiver
+        // code depending of paper id
 
-        //update sheet note relationship table to fill tree source/receiver code depending of paper id
-
-        queryStr = "UPDATE tbl_sheet_note SET " + treeRelationshipCode + " = :newTreeId WHERE " + propertyTableCode + " = :paperId";
+        queryStr = "UPDATE tbl_sheet_note SET " + treeRelationshipCode + " = :newTreeId WHERE " + propertyTableCode +
+                   " = :paperId";
 
 
         query.prepare(queryStr);
 
-        query.bindValue(":paperId", originalId);
+        query.bindValue(":paperId",   originalId);
         query.bindValue(":newTreeId", newTreeId);
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::movePaperToTree_1_5", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
             sqlDb.rollback();
 
             return result;
         }
-
-
-
-
     }
 
 
     sqlDb.commit();
 
 
-
     return result;
 }
 
-//---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 SKRResult PLMUpgrader::transformParentsToFolder_1_5(QSqlDatabase sqlDb)
 {
     SKRResult result("SKRSqlTools::transformParentsToFolder_1_5");
 
 
-
-
-
-    //retrieve sorted id with indent list
+    // retrieve sorted id with indent list
 
     QList<int> treeIdList;
     QList<int> treeIndentList;
     QList<int> treeSortOrderList;
-    QSqlQuery query(sqlDb);
-    QString   queryStr = "SELECT l_tree_id, l_indent, l_sort_order FROM tbl_tree ORDER BY l_sort_order";
+    QSqlQuery  query(sqlDb);
+    QString    queryStr = "SELECT l_tree_id, l_indent, l_sort_order FROM tbl_tree ORDER BY l_sort_order";
 
 
     query.prepare(queryStr);
@@ -940,9 +934,9 @@ SKRResult PLMUpgrader::transformParentsToFolder_1_5(QSqlDatabase sqlDb)
 
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::transformParentsToFolder_1_5", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
 
         return result;
@@ -955,53 +949,54 @@ SKRResult PLMUpgrader::transformParentsToFolder_1_5(QSqlDatabase sqlDb)
     }
 
 
-
     // create folders
 
     sqlDb.transaction();
 
     QString treeQueryStr = "INSERT INTO tbl_tree (t_title, l_indent, l_sort_order, t_type, dt_trashed, b_trashed)"
-"                       VALUES ("
-"                       (SELECT t_title FROM tbl_tree WHERE l_tree_id = :treeId),"
-"                       (SELECT l_indent FROM tbl_tree WHERE l_tree_id = :treeId),"
-"                       :newSortOrder,"
-"                       'FOLDER',"
-"                       (SELECT dt_trashed FROM tbl_tree WHERE l_tree_id = :treeId),"
-"                       (SELECT b_trashed FROM tbl_tree WHERE l_tree_id = :treeId)"
-")";
+                           "                       VALUES ("
+                           "                       (SELECT t_title FROM tbl_tree WHERE l_tree_id = :treeId),"
+                           "                       (SELECT l_indent FROM tbl_tree WHERE l_tree_id = :treeId),"
+                           "                       :newSortOrder,"
+                           "                       'FOLDER',"
+                           "                       (SELECT dt_trashed FROM tbl_tree WHERE l_tree_id = :treeId),"
+                           "                       (SELECT b_trashed FROM tbl_tree WHERE l_tree_id = :treeId)"
+                           ")";
 
 
     QString incrementIndentQueryStr = "UPDATE tbl_tree SET l_indent = :newIndent WHERE l_tree_id = :treeId";
 
-    QString isItSynopsisFolderQueryStr = "SELECT l_tree_property_id FROM tbl_tree_property WHERE t_name = 'is_synopsis_folder' AND m_value = 'true' AND l_tree_code = :treeId";
+    QString isItSynopsisFolderQueryStr =
+        "SELECT l_tree_property_id FROM tbl_tree_property WHERE t_name = 'is_synopsis_folder' AND m_value = 'true' AND l_tree_code = :treeId";
 
     int previousIdIndent = -1;
-    for(int i = treeIdList.count() - 1 ; i >= 0 ; i--){
+
+    for (int i = treeIdList.count() - 1; i >= 0; i--) {
         int currentTreeId = treeIdList.at(i);
         int currentIndent = treeIndentList.at(i);
 
-        if(i < treeIdList.count() - 1){
+        if (i < treeIdList.count() - 1) {
             previousIdIndent = treeIndentList.at(i + 1);
         }
 
 
-        if(previousIdIndent > currentIndent){
+        if (previousIdIndent > currentIndent) {
             int currentSortOrder = treeSortOrderList.at(i);
-
 
 
             // create folder
             query.prepare(treeQueryStr);
 
-            query.bindValue(":treeId", currentTreeId);
+            query.bindValue(":treeId",       currentTreeId);
             query.bindValue(":newSortOrder", currentSortOrder - 1);
 
             query.exec();
-            if(query.lastError().isValid()){
+
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, "PLMUpgrader::transformParentsToFolder_1_5", "sql_error");
-                result.addData("SQLError", query.lastError().text());
-                result.addData("SQL string", queryStr);
-                result.addData("treeId", currentTreeId);
+                result.addData("SQLError",     query.lastError().text());
+                result.addData("SQL string",   queryStr);
+                result.addData("treeId",       currentTreeId);
                 result.addData("newSortOrder", currentSortOrder - 1);
                 sqlDb.rollback();
 
@@ -1014,34 +1009,36 @@ SKRResult PLMUpgrader::transformParentsToFolder_1_5(QSqlDatabase sqlDb)
 
             query.prepare(incrementIndentQueryStr);
 
-            query.bindValue(":treeId", currentTreeId);
+            query.bindValue(":treeId",    currentTreeId);
             query.bindValue(":newIndent", currentIndent + 1);
 
             query.exec();
-            if(query.lastError().isValid()){
+
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, "PLMUpgrader::transformParentsToFolder_1_5", "sql_error");
-                result.addData("SQLError", query.lastError().text());
+                result.addData("SQLError",   query.lastError().text());
                 result.addData("SQL string", queryStr);
-                result.addData("treeId", currentTreeId);
-                result.addData("sortOrder", currentSortOrder);
-                result.addData("newIndent", currentIndent + 1);
+                result.addData("treeId",     currentTreeId);
+                result.addData("sortOrder",  currentSortOrder);
+                result.addData("newIndent",  currentIndent + 1);
                 sqlDb.rollback();
 
                 return result;
             }
 
-            //check if it is synopsis folder
+            // check if it is synopsis folder
 
 
             query.prepare(isItSynopsisFolderQueryStr);
 
             query.bindValue(":treeId", currentTreeId);
             query.exec();
-            if(query.lastError().isValid()){
+
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, "PLMUpgrader::transformParentsToFolder_1_5", "sql_error");
-                result.addData("SQLError", query.lastError().text());
+                result.addData("SQLError",   query.lastError().text());
                 result.addData("SQL string", queryStr);
-                result.addData("treeId", currentTreeId);
+                result.addData("treeId",     currentTreeId);
                 sqlDb.rollback();
 
                 return result;
@@ -1049,33 +1046,28 @@ SKRResult PLMUpgrader::transformParentsToFolder_1_5(QSqlDatabase sqlDb)
 
 
             QList<int> synopsisFolderList;
+
             while (query.next()) {
                 synopsisFolderList.append(query.value(0).toInt());
             }
 
-            if(!synopsisFolderList.isEmpty()){
+            if (!synopsisFolderList.isEmpty()) {
                 SKRSqlTools::addStringTreeProperty(sqlDb, newFolderTreeId, "is_synopsis_folder", "true");
             }
-
-
         }
-
     }
     IFOK(result) {
         sqlDb.commit();
     }
 
 
-
-
     // remnumber tree
-
 
 
     return result;
 }
 
-//---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 SKRResult PLMUpgrader::dropDeprecatedTables_1_5(QSqlDatabase sqlDb)
 {
@@ -1085,8 +1077,8 @@ SKRResult PLMUpgrader::dropDeprecatedTables_1_5(QSqlDatabase sqlDb)
 
     // drop deprecated tables
 
-    QString   queryStr =
-            R""""(PRAGMA foreign_keys = 0;
+    QString queryStr =
+        R""""(PRAGMA foreign_keys = 0;
 
             DROP TRIGGER trg_delete_properties;
             DROP VIEW v_property_sheet;
@@ -1106,22 +1098,22 @@ SKRResult PLMUpgrader::dropDeprecatedTables_1_5(QSqlDatabase sqlDb)
     result = SKRSqlTools::executeSQLString(queryStr, sqlDb);
 
     return result;
-
 }
 
-//---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
 {
     SKRResult result("SKRSqlTools::moveSynopsisToSecondaryContent_1_6");
 
-    //retrieve synopsis lists
+    // retrieve synopsis lists
 
     QList<int> synopsisRelationshipIdList;
     QList<int> sourceIdList;
     QList<int> receiverIdList;
-    QSqlQuery query(sqlDb);
-    QString   queryStr = "SELECT l_tree_relationship_id, l_tree_source_code, l_tree_receiver_code FROM tbl_tree_relationship WHERE b_synopsis = 1";
+    QSqlQuery  query(sqlDb);
+    QString    queryStr =
+        "SELECT l_tree_relationship_id, l_tree_source_code, l_tree_receiver_code FROM tbl_tree_relationship WHERE b_synopsis = 1";
 
 
     query.prepare(queryStr);
@@ -1129,9 +1121,9 @@ SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
 
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::moveSynopsisToSecondaryContent_1_6", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
 
         return result;
@@ -1145,28 +1137,26 @@ SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
 
 
     QList<int> synopsisTreeIdList = sourceIdList;
-    QList<int> textIdList = receiverIdList;
+    QList<int> textIdList         = receiverIdList;
 
 
-    //for each synopsis, move to corresponding secondary content
+    // for each synopsis, move to corresponding secondary content
 
     sqlDb.transaction();
 
-    for(int i = 0; i < synopsisRelationshipIdList.count(); i++){
-
-
-
-        queryStr = "UPDATE tbl_tree SET m_secondary_content = (SELECT m_primary_content FROM tbl_tree WHERE l_tree_id = :synopsisTreeId) WHERE l_tree_id = :textId";
+    for (int i = 0; i < synopsisRelationshipIdList.count(); i++) {
+        queryStr =
+            "UPDATE tbl_tree SET m_secondary_content = (SELECT m_primary_content FROM tbl_tree WHERE l_tree_id = :synopsisTreeId) WHERE l_tree_id = :textId";
 
         query.prepare(queryStr);
-        query.bindValue(":textId", textIdList.at(i));
+        query.bindValue(":textId",         textIdList.at(i));
         query.bindValue(":synopsisTreeId", synopsisTreeIdList.at(i));
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::moveSynopsisToSecondaryContent_1_6", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
             sqlDb.rollback();
 
@@ -1174,7 +1164,7 @@ SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
         }
 
 
-        //remove relationship
+        // remove relationship
         int synopsisRelationshipId = synopsisRelationshipIdList.at(i);
 
         queryStr = "DELETE FROM tbl_tree_relationship WHERE l_tree_relationship_id = :synopsisRelationshipId";
@@ -1183,9 +1173,9 @@ SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::moveSynopsisToSecondaryContent_1_6", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
             sqlDb.rollback();
 
@@ -1193,7 +1183,7 @@ SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
         }
 
 
-        //remove synopsis tree row
+        // remove synopsis tree row
 
         queryStr = "DELETE FROM tbl_tree WHERE l_tree_id = :synopsisTreeId";
         query.prepare(queryStr);
@@ -1201,23 +1191,21 @@ SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::moveSynopsisToSecondaryContent_1_6", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
             sqlDb.rollback();
 
             return result;
         }
-
-
-
     }
 
 
-    //delete Outlines folder
+    // delete Outlines folder
 
     QList<int> synopsisFolderIdList;
+
     queryStr = "SELECT l_tree_code FROM tbl_tree_property WHERE t_name = 'is_synopsis_folder' AND m_value = 'true'";
 
 
@@ -1226,9 +1214,9 @@ SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
 
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, "PLMUpgrader::moveSynopsisToSecondaryContent_1_6", "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
         sqlDb.rollback();
 
@@ -1239,17 +1227,17 @@ SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
         synopsisFolderIdList.append(query.value(0).toInt());
     }
 
-    for(int synopsisFolderId : synopsisFolderIdList){
+    for (int synopsisFolderId : synopsisFolderIdList) {
         queryStr = "DELETE FROM tbl_tree WHERE l_tree_id = :synopsisFolderId";
         query.prepare(queryStr);
 
-        query.bindValue(":synopsisFolderId",synopsisFolderId);
+        query.bindValue(":synopsisFolderId", synopsisFolderId);
 
         query.exec();
 
-        if(query.lastError().isValid()){
+        if (query.lastError().isValid()) {
             result = SKRResult(SKRResult::Critical, "PLMUpgrader::moveSynopsisToSecondaryContent_1_6", "sql_error");
-            result.addData("SQLError", query.lastError().text());
+            result.addData("SQLError",   query.lastError().text());
             result.addData("SQL string", queryStr);
             sqlDb.rollback();
 
@@ -1262,5 +1250,3 @@ SKRResult PLMUpgrader::moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb)
 
     return result;
 }
-
-

@@ -34,13 +34,10 @@ GroupBox {
             font.pointSize: bigTitleEnabled ? Qt.application.font.pointSize * 1.5 :  Qt.application.font.pointSize
             color: SkrTheme.buttonForeground
             elide: Text.ElideRight
-            Rectangle {
 
+            SkrFocusIndicator {
                 anchors.fill: parent
-                color: "transparent"
-                border.color: SkrTheme.accent
-                border.width: control.activeFocus ? 1 : 0
-                radius: 4
+                visible: control.activeFocus
 
             }
         }

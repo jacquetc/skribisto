@@ -1,23 +1,24 @@
 /***************************************************************************
- *   Copyright (C) 2021 by Cyril Jacquet                                 *
- *   cyril.jacquet@skribisto.eu                                        *
- *                                                                         *
- *  Filename: skrtreemanager.cpp                                                   *
- *  This file is part of Skribisto.                                    *
- *                                                                         *
- *  Skribisto is free software: you can redistribute it and/or modify  *
- *  it under the terms of the GNU General Public License as published by   *
- *  the Free Software Foundation, either version 3 of the License, or      *
- *  (at your option) any later version.                                    *
- *                                                                         *
- *  Skribisto is distributed in the hope that it will be useful,       *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
- *  GNU General Public License for more details.                           *
- *                                                                         *
- *  You should have received a copy of the GNU General Public License      *
- *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
- ***************************************************************************/
+*   Copyright (C) 2021 by Cyril Jacquet                                 *
+*   cyril.jacquet@skribisto.eu                                        *
+*                                                                         *
+*  Filename: skrtreemanager.cpp
+*                                                  *
+*  This file is part of Skribisto.                                    *
+*                                                                         *
+*  Skribisto is free software: you can redistribute it and/or modify  *
+*  it under the terms of the GNU General Public License as published by   *
+*  the Free Software Foundation, either version 3 of the License, or      *
+*  (at your option) any later version.                                    *
+*                                                                         *
+*  Skribisto is distributed in the hope that it will be useful,       *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+*  GNU General Public License for more details.                           *
+*                                                                         *
+*  You should have received a copy of the GNU General Public License      *
+*  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
+***************************************************************************/
 #include "skrtreemanager.h"
 #include "plmdata.h"
 #include "skrpageinterface.h"
@@ -27,23 +28,27 @@ SKRTreeManager::SKRTreeManager(QObject *parent) : QObject(parent)
     plmdata->pluginHub()->addPluginType<SKRPageInterface>();
 
 
-    connect(plmdata->treeHub(), &SKRTreeHub::treeItemAdded, this, [this](int projectId, int treeItemId){
+    connect(plmdata->treeHub(), &SKRTreeHub::treeItemAdded, this, [this](int projectId, int treeItemId) {
         QString pageType = plmdata->treeHub()->getType(projectId, treeItemId);
         this->finaliseAfterCreationOfTreeItem(projectId, treeItemId, pageType);
     });
 
+
+    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, [this](int projectId) {
+        this->updateAllCharAndWordCount(projectId);
+    });
 }
 
-//---------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------
 
-QUrl SKRTreeManager::getIconUrlFromPageType(const QString &pageType) const
+QUrl SKRTreeManager::getIconUrlFromPageType(const QString& pageType) const
 {
     QUrl url;
 
-    if(pageType == "PROJECT"){
+    if (pageType == "PROJECT") {
         url = "qrc:///icons/backup/address-book-new.svg";
     }
-    else if(pageType == "FOLDER"){
+    else if (pageType == "FOLDER") {
         url = "qrc:///icons/backup/document-open.svg";
     }
     else {
@@ -51,8 +56,9 @@ QUrl SKRTreeManager::getIconUrlFromPageType(const QString &pageType) const
     }
 
     QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
-    for ( SKRPageInterface *plugin: qAsConst(pluginList)){
-        if(pageType == plugin->pageType()){
+
+    for (SKRPageInterface *plugin: qAsConst(pluginList)) {
+        if (pageType == plugin->pageType()) {
             url = plugin->pageTypeIconUrl();
         }
     }
@@ -61,13 +67,13 @@ QUrl SKRTreeManager::getIconUrlFromPageType(const QString &pageType) const
     return url;
 }
 
-//---------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------
 
 QStringList SKRTreeManager::getPageTypeList(bool constructibleOnly = true) const
 {
     QStringList stringList;
 
-    if(!constructibleOnly){
+    if (!constructibleOnly) {
         stringList << "PROJECT";
     }
 
@@ -75,8 +81,9 @@ QStringList SKRTreeManager::getPageTypeList(bool constructibleOnly = true) const
 
 
     QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
-    for ( SKRPageInterface *plugin: qAsConst(pluginList)){
-        if(constructibleOnly && !plugin->isConstructible()){
+
+    for (SKRPageInterface *plugin: qAsConst(pluginList)) {
+        if (constructibleOnly && !plugin->isConstructible()) {
             continue;
         }
         else {
@@ -87,23 +94,23 @@ QStringList SKRTreeManager::getPageTypeList(bool constructibleOnly = true) const
     return stringList;
 }
 
+// ---------------------------------------------------------------------------------
 
-//---------------------------------------------------------------------------------
-
-QString SKRTreeManager::getPageTypeText(const QString &pageType) const
+QString SKRTreeManager::getPageTypeText(const QString& pageType) const
 {
     QString text;
 
-    if(pageType == "PROJECT"){
+    if (pageType == "PROJECT") {
         text = tr("Project");
     }
-    else if(pageType == "FOLDER"){
+    else if (pageType == "FOLDER") {
         text = tr("Folder");
     }
 
     QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
-    for ( SKRPageInterface *plugin: qAsConst(pluginList)){
-        if(pageType == plugin->pageType()){
+
+    for (SKRPageInterface *plugin: qAsConst(pluginList)) {
+        if (pageType == plugin->pageType()) {
             text = plugin->visualText();
         }
     }
@@ -111,46 +118,67 @@ QString SKRTreeManager::getPageTypeText(const QString &pageType) const
     return text;
 }
 
-//---------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------
 
-QString SKRTreeManager::getPageDetailText(const QString &pageType) const
+QString SKRTreeManager::getPageDetailText(const QString& pageType) const
 {
     QString text;
 
     QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
-    for ( SKRPageInterface *plugin: qAsConst(pluginList)){
-        if(pageType == plugin->pageType()){
+
+    for (SKRPageInterface *plugin: qAsConst(pluginList)) {
+        if (pageType == plugin->pageType()) {
             text = plugin->pageDetailText();
             break;
         }
-
     }
 
     return text;
-
 }
 
-//---------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------
+
+void SKRTreeManager::updateCharAndWordCount(int projectId, int treeItemId, const QString& pageType, bool sameThread)
+{
+    QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
+
+    for (SKRPageInterface *plugin: qAsConst(pluginList)) {
+        if (pageType == plugin->pageType()) {
+            plugin->updateCharAndWordCount(projectId, treeItemId, sameThread);
+            break;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------
+
+void SKRTreeManager::updateAllCharAndWordCount(int projectId)
+{
+    QList<int> allIds = plmdata->treeHub()->getAllIds(projectId);
+
+    for (int treeItemId : qAsConst(allIds)) {
+        QString pageType = plmdata->treeHub()->getType(projectId, treeItemId);
+        this->updateCharAndWordCount(projectId, treeItemId, pageType);
+    }
+}
+
+// ---------------------------------------------------------------------------------
 
 
-SKRResult SKRTreeManager::finaliseAfterCreationOfTreeItem(int projectId, int treeItemId, const QString &pageType)
+SKRResult SKRTreeManager::finaliseAfterCreationOfTreeItem(int projectId, int treeItemId, const QString& pageType)
 {
     SKRResult result(this);
 
     QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
-    for ( SKRPageInterface *plugin: qAsConst(pluginList)){
-        if(pageType == plugin->pageType()){
+
+    for (SKRPageInterface *plugin: qAsConst(pluginList)) {
+        if (pageType == plugin->pageType()) {
             result = plugin->finaliseAfterCreationOfTreeItem(projectId, treeItemId);
             break;
         }
-
     }
 
     return result;
-
 }
 
-//---------------------------------------------------------------------------------
-
-
-
+// ---------------------------------------------------------------------------------

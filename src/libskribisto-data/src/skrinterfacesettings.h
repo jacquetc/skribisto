@@ -26,7 +26,6 @@
 #include <QSettings>
 
 class SKRInterfaceSettings {
-
 public:
 
     virtual ~SKRInterfaceSettings() {}
@@ -42,8 +41,7 @@ public:
         return settings.value("Plugins/" + this->name() + "-enabled", QVariant()) == QVariant() ? false : true;
     }
 
-
-    bool            pluginEnabled() const
+    bool pluginEnabled() const
     {
         QSettings settings;
 

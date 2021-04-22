@@ -100,8 +100,8 @@ public slots:
 
 signals:
 
-    void sendNotification(int resultType,
-                          QString           content);
+    void sendNotification(int     resultType,
+                          QString content);
 
     //    void errorSent(const QString &errorCode, const QString &origin, const
     // QString &message);

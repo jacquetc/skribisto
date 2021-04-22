@@ -22,18 +22,19 @@ public:
     }
 
     SKRResult createNewEmptyDatabase(int& projectId);
-    SKRResult createNewSpecificEmptyDatabase(int &projectId, const QString &sqlFile);
-    SKRResult loadProject(const QUrl& fileName,
-                         int       & projectId,
+    SKRResult createNewSpecificEmptyDatabase(int          & projectId,
+                                             const QString& sqlFile);
+    SKRResult loadProject(const QUrl   & fileName,
+                          int          & projectId,
                           const QString& sqlFile = "");
     SKRResult saveProject(int projectId);
     SKRResult saveProjectAs(int            projectId,
-                           const QString& type,
-                           const QUrl   & path,
-                           bool           isCopy = false);
+                            const QString& type,
+                            const QUrl   & path,
+                            bool           isCopy = false);
     PLMProject* project(int projectId);
     QList<int>  projectIdList();
-    SKRResult    closeProject(int projectId);
+    SKRResult   closeProject(int projectId);
 
 signals:
 

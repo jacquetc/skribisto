@@ -22,6 +22,10 @@ NavigationForm {
          stackView.get(0, StackView.DontLoad).setCurrentTreeItemId(projectId, treeItemId)
     }
 
+    function setNavigationTreeItemParentId(projectId, treeItemParentId){
+         stackView.get(0, StackView.DontLoad).setCurrentTreeItemParentId(projectId, treeItemParentId)
+    }
+
     Component {
         id: navigationListComponent
 

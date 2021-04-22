@@ -1,35 +1,34 @@
 /***************************************************************************
- *   Copyright (C) 2021 by Cyril Jacquet                                 *
- *   cyril.jacquet@skribisto.eu                                        *
- *                                                                         *
- *  Filename: skrpropertyhub.cpp                                                   *
- *  This file is part of Skribisto.                                    *
- *                                                                         *
- *  Skribisto is free software: you can redistribute it and/or modify  *
- *  it under the terms of the GNU General Public License as published by   *
- *  the Free Software Foundation, either version 3 of the License, or      *
- *  (at your option) any later version.                                    *
- *                                                                         *
- *  Skribisto is distributed in the hope that it will be useful,       *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
- *  GNU General Public License for more details.                           *
- *                                                                         *
- *  You should have received a copy of the GNU General Public License      *
- *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
- ***************************************************************************/
+*   Copyright (C) 2021 by Cyril Jacquet                                 *
+*   cyril.jacquet@skribisto.eu                                        *
+*                                                                         *
+*  Filename: skrpropertyhub.cpp
+*                                                  *
+*  This file is part of Skribisto.                                    *
+*                                                                         *
+*  Skribisto is free software: you can redistribute it and/or modify  *
+*  it under the terms of the GNU General Public License as published by   *
+*  the Free Software Foundation, either version 3 of the License, or      *
+*  (at your option) any later version.                                    *
+*                                                                         *
+*  Skribisto is distributed in the hope that it will be useful,       *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+*  GNU General Public License for more details.                           *
+*                                                                         *
+*  You should have received a copy of the GNU General Public License      *
+*  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
+***************************************************************************/
 #include "skrpropertyhub.h"
 #include "tools.h"
 #include "tasks/plmsqlqueries.h"
 
-SKRPropertyHub::SKRPropertyHub(QObject *parent,
+SKRPropertyHub::SKRPropertyHub(QObject       *parent,
                                const QString& tableName,
                                const QString& codeFieldName)
     : QObject(parent), m_tableName(tableName), m_codeFieldName(codeFieldName),
-      m_last_added_id(-1)
-{
-
-}
+    m_last_added_id(-1)
+{}
 
 QHash<int, QString>SKRPropertyHub::getAllNames(int projectId) const
 {
@@ -152,17 +151,17 @@ QList<int>SKRPropertyHub::getAllIdsWithPaperCode(int projectId, int treeItemCode
     return list;
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 SKRResult SKRPropertyHub::setProperty(int            projectId,
                                       int            treeItemCode,
                                       const QString& name,
                                       const QString& value,
-                                      bool isSystem,
-                                      bool isSilent,
-                                      bool triggerProjectModifiedSignal)
+                                      bool           isSystem,
+                                      bool           isSilent,
+                                      bool           triggerProjectModifiedSignal)
 {
     SKRResult result(this);
     int propertyId = -2;
@@ -176,7 +175,6 @@ SKRResult SKRPropertyHub::setProperty(int            projectId,
             propertyId = getLastAddedId();
         }
     }
-
 
 
     PLMSqlQueries queries(projectId, m_tableName);
@@ -199,7 +197,8 @@ SKRResult SKRPropertyHub::setProperty(int            projectId,
     IFOKDO(result, queries.get(propertyId, m_codeFieldName, variant));
     IFOK(result) {
         emit propertyChanged(projectId, propertyId, treeItemCode, name, value);
-        if(triggerProjectModifiedSignal && !isSilent){
+
+        if (triggerProjectModifiedSignal && !isSilent) {
             emit projectModified(projectId);
         }
     }
@@ -209,8 +208,6 @@ SKRResult SKRPropertyHub::setProperty(int            projectId,
 
     return result;
 }
-
-
 
 // ---------------------------------------------------------------------
 
@@ -235,7 +232,8 @@ SKRResult SKRPropertyHub::setId(int projectId, int propertyId, int newId)
     }
     IFOK(result) {
         emit idChanged(projectId, propertyId, newId);
-        if(!isSilent){
+
+        if (!isSilent) {
             emit projectModified(projectId);
         }
     }
@@ -251,7 +249,7 @@ SKRResult SKRPropertyHub::setValue(int projectId, int propertyId, const QString&
     PLMSqlQueries queries(projectId, m_tableName);
     QVariant variant;
 
-    queries.get(propertyId, "t_name",             variant);
+    queries.get(propertyId, "t_name",        variant);
     QString name = variant.toString();
 
     queries.get(propertyId, m_codeFieldName, variant);
@@ -272,7 +270,8 @@ SKRResult SKRPropertyHub::setValue(int projectId, int propertyId, const QString&
     }
     IFOK(result) {
         emit propertyChanged(projectId, propertyId, treeItemCode, name, value);
-        if(!isSilent){
+
+        if (!isSilent) {
             emit projectModified(projectId);
         }
     }
@@ -286,7 +285,7 @@ SKRResult SKRPropertyHub::setName(int projectId, int propertyId, const QString& 
     PLMSqlQueries queries(projectId, m_tableName);
     QVariant variant;
 
-    queries.get(propertyId, "m_value",            variant);
+    queries.get(propertyId, "m_value",       variant);
     QString value = variant.toString();
 
     queries.get(propertyId, m_codeFieldName, variant);
@@ -307,10 +306,10 @@ SKRResult SKRPropertyHub::setName(int projectId, int propertyId, const QString& 
     }
     IFOK(result) {
         emit propertyChanged(projectId, propertyId, treeItemCode, name, value);
-        if(!isSilent){
+
+        if (!isSilent) {
             emit projectModified(projectId);
         }
-
     }
     return result;
 }
@@ -320,8 +319,8 @@ SKRResult SKRPropertyHub::setName(int projectId, int propertyId, const QString& 
 QString SKRPropertyHub::getName(int projectId, int propertyId)
 {
     SKRResult result(this);
-    QString  string;
-    QVariant out;
+    QString   string;
+    QVariant  out;
 
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -363,7 +362,8 @@ SKRResult SKRPropertyHub::setPaperCode(int projectId, int propertyId, int treeIt
     }
     IFOK(result) {
         emit propertyChanged(projectId, propertyId, treeItemCode, name, value);
-        if(!isSilent){
+
+        if (!isSilent) {
             emit projectModified(projectId);
         }
     }
@@ -416,11 +416,12 @@ SKRResult SKRPropertyHub::setCreationDate(int              projectId,
         emit errorSent(result);
     }
     IFOK(result) {
-        if(!isSilent){
+        if (!isSilent) {
             emit projectModified(projectId);
         }
 
-        // emit propertyChanged(projectId, propertyId, treeItemCode, name, value);
+        // emit propertyChanged(projectId, propertyId, treeItemCode, name,
+        // value);
     }
     return result;
 }
@@ -429,7 +430,7 @@ SKRResult SKRPropertyHub::setCreationDate(int              projectId,
 
 QDateTime SKRPropertyHub::getCreationDate(int projectId, int propertyId) const
 {
-    SKRResult  result;
+    SKRResult result;
     QDateTime date;
     QVariant  out;
 
@@ -473,11 +474,12 @@ SKRResult SKRPropertyHub::setModificationDate(int              projectId,
         emit errorSent(result);
     }
     IFOK(result) {
-        if(!isSilent){
+        if (!isSilent) {
             emit projectModified(projectId);
         }
 
-        // emit propertyChanged(projectId, propertyId, treeItemCode, name, value);
+        // emit propertyChanged(projectId, propertyId, treeItemCode, name,
+        // value);
     }
     return result;
 }
@@ -486,7 +488,7 @@ SKRResult SKRPropertyHub::setModificationDate(int              projectId,
 
 QDateTime SKRPropertyHub::getModificationDate(int projectId, int propertyId) const
 {
-    SKRResult  result;
+    SKRResult result;
     QDateTime date;
     QVariant  out;
 
@@ -526,11 +528,12 @@ SKRResult SKRPropertyHub::setIsSystem(int projectId, int propertyId, bool isSyst
         emit errorSent(result);
     }
     IFOK(result) {
-        if(!isSilent){
+        if (!isSilent) {
             emit projectModified(projectId);
         }
 
-        // emit propertyChanged(projectId, propertyId, treeItemCode, name, value);
+        // emit propertyChanged(projectId, propertyId, treeItemCode, name,
+        // value);
     }
     return result;
 }
@@ -541,7 +544,7 @@ SKRResult SKRPropertyHub::setIsSystem(int projectId, int propertyId, bool isSyst
 bool SKRPropertyHub::getIsSystem(int projectId, int propertyId) const
 {
     SKRResult result(this);
-    bool     value;
+    bool value;
     QVariant out;
 
     PLMSqlQueries queries(projectId, m_tableName);
@@ -580,11 +583,12 @@ SKRResult SKRPropertyHub::setIsSilent(int projectId, int propertyId, bool isSile
         emit errorSent(result);
     }
     IFOK(result) {
-        if(!isSilent){
+        if (!isSilent) {
             emit projectModified(projectId);
         }
 
-        // emit propertyChanged(projectId, propertyId, treeItemCode, name, value);
+        // emit propertyChanged(projectId, propertyId, treeItemCode, name,
+        // value);
     }
     return result;
 }
@@ -594,7 +598,7 @@ SKRResult SKRPropertyHub::setIsSilent(int projectId, int propertyId, bool isSile
 bool SKRPropertyHub::getIsSilent(int projectId, int propertyId) const
 {
     SKRResult result(this);
-    bool     value;
+    bool value;
     QVariant out;
 
     PLMSqlQueries queries(projectId, m_tableName);
@@ -613,14 +617,14 @@ QString SKRPropertyHub::getProperty(int projectId, int treeItemCode,
                                     const QString& name) const
 {
     SKRResult result(this);
-    QString  value;
+    QString   value;
 
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
     QHash<QString, QVariant> where;
 
     where.insert(m_codeFieldName, treeItemCode);
-    where.insert("t_name",             name);
+    where.insert("t_name",        name);
     result = queries.getValueByIdsWhere("m_value", out, where);
 
     if (out.isEmpty()) {
@@ -658,8 +662,8 @@ QString SKRPropertyHub::getProperty(int            projectId,
 QString SKRPropertyHub::getPropertyById(int projectId, int propertyId) const
 {
     SKRResult result(this);
-    QString  value;
-    QVariant out;
+    QString   value;
+    QVariant  out;
 
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -676,14 +680,14 @@ QString SKRPropertyHub::getPropertyById(int projectId, int propertyId) const
 int SKRPropertyHub::getPropertyId(int projectId, int treeItemCode, const QString& name) const
 {
     SKRResult result(this);
-    int  value = -2;
+    int value = -2;
 
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
     QHash<QString, QVariant> where;
 
     where.insert(m_codeFieldName, treeItemCode);
-    where.insert("t_name",             name);
+    where.insert("t_name",        name);
     result = queries.getValueByIdsWhere("m_value", out, where);
 
     if (out.isEmpty()) {
@@ -700,6 +704,7 @@ int SKRPropertyHub::getPropertyId(int projectId, int treeItemCode, const QString
 
     return value;
 }
+
 // -----------------------------------------------------------------------------
 
 int SKRPropertyHub::getLastAddedId()
@@ -720,7 +725,7 @@ SKRResult SKRPropertyHub::addProperty(int projectId, int treeItemCode, int impos
 
     if (imposedPropertyId != -1) values.insert(queries.getIdName(), imposedPropertyId);
     int newPropertyId = -1;
-    SKRResult result    = queries.add(values, newPropertyId);
+    SKRResult result  = queries.add(values, newPropertyId);
 
     IFKO(result) {
         queries.rollback();
@@ -742,7 +747,7 @@ SKRResult SKRPropertyHub::removeProperty(int projectId, int propertyId)
     bool isSilent = this->getIsSilent(projectId, propertyId);
 
     PLMSqlQueries queries(projectId, m_tableName);
-    SKRResult result = queries.remove(propertyId);
+    SKRResult     result = queries.remove(propertyId);
 
     IFKO(result) {
         queries.rollback();
@@ -750,7 +755,8 @@ SKRResult SKRPropertyHub::removeProperty(int projectId, int propertyId)
     IFOK(result) {
         queries.commit();
         emit propertyRemoved(projectId, propertyId);
-        if(!isSilent){
+
+        if (!isSilent) {
             emit projectModified(projectId);
         }
     }
@@ -768,7 +774,7 @@ bool SKRPropertyHub::propertyExists(int projectId, int treeItemCode, const QStri
     QHash<QString, QVariant> where;
 
     where.insert(m_codeFieldName, treeItemCode);
-    where.insert("t_name",             name);
+    where.insert("t_name",        name);
 
     return queries.resultExists(where);
 }
@@ -783,7 +789,7 @@ int SKRPropertyHub::findPropertyId(int projectId, int treeItemCode, const QStrin
     QHash<QString, QVariant> where;
 
     where.insert(m_codeFieldName, treeItemCode);
-    where.insert("t_name",             name);
+    where.insert("t_name",        name);
     result = queries.getValueByIdsWhere(m_codeFieldName, out, where);
 
     IFOK(result) {

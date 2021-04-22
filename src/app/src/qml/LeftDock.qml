@@ -167,6 +167,12 @@ LeftDockForm {
         }
     }
 
+    Connections{
+        target: rootWindow
+        function onSetNavigationTreeItemParentIdCalled(projectId, treeItemParentId){
+            navigationView.setNavigationTreeItemParentId(projectId, treeItemParentId)
+        }
+    }
 
 
     Connections{

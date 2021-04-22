@@ -10,8 +10,6 @@ TextPageForm {
     id: root
 
     pageType: "TEXT"
-    property int projectId: -2
-    property int treeItemId: -2
 
 
     property string title: {return getTitle()}
@@ -107,7 +105,7 @@ TextPageForm {
     //---------------------------------------------------------
 
     function clearWritingZone(){
-        if(treeItemId !== -2 && projectId !== -2 && milestone === -2){
+        if(root.treeItemId !== -2 && root.projectId !== -2 && milestone === -2){
             contentSaveTimer.stop()
             saveContent()
             saveCurrentCursorPositionAndYTimer.stop()
@@ -429,7 +427,7 @@ TextPageForm {
 
     function saveCurrentCursorPositionAndY(){
 
-        if(treeItemId !== -2 || projectId !== -2){
+        if(root.treeItemId !== -2 || root.projectId !== -2){
             var positionKey
             var yKey
 
@@ -507,10 +505,11 @@ TextPageForm {
         var result
         if(isSecondary){
             result = plmData.treeHub().setSecondaryContent(projectId, treeItemId, writingZone.text)
-
         }
         else {
             result = plmData.treeHub().setPrimaryContent(projectId, treeItemId, writingZone.text)
+            if(!contentSaveTimer.running)
+                skrTreeManager.updateCharAndWordCount(projectId, treeItemId, root.pageType, true)
 
         }
 

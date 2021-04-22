@@ -33,6 +33,13 @@ EditViewForm {
     centerTextCursorToolButton.action: centerTextCursorAction
     themesToolButton.action: themesColorAction
 
+    swipeView.onCurrentIndexChanged: {
+        var i = 0
+        for(i = 0; i < swipeView.count; i++){
+
+           swipeView.itemAt(i).enabled = i === swipeView.currentIndex
+        }
+    }
 
     Action{
         id: sizeAction

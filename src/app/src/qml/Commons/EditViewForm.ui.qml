@@ -41,6 +41,7 @@ Item {
                 id: mainPage
                 padding: 2
 
+
                 ColumnLayout {
                     id: mainPageLayout
                     anchors.top: parent.top

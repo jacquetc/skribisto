@@ -64,7 +64,7 @@ public:
 
     explicit SKRResult();
     SKRResult(const QObject *object);
-    SKRResult(const QString &className);
+    SKRResult(const QString& className);
     SKRResult(const SKRResult& result);
 
     SKRResult(SKRResult::Status status,

@@ -51,7 +51,7 @@ PLMImporter::PLMImporter(QObject *parent) :
 QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
                                              const QUrl   & fileName,
                                              int            projectId,
-                                             SKRResult     & result)
+                                             SKRResult    & result)
 {
     if (type == "SQLITE") {
         // create temp file
@@ -93,7 +93,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
 
         // open temp file
         QSqlDatabase sqlDb =
-                QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
+            QSqlDatabase::addDatabase("QSQLITE", QString::number(projectId));
         sqlDb.setHostName("localhost");
         sqlDb.setDatabaseName(tempFileName);
 
@@ -151,10 +151,11 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
 
 // -----------------------------------------------------------------------------------------------
 
-QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& result, const QString &sqlFile)
+QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& result, const QString& sqlFile)
 {
     bool isSpecificSqlFile = true;
-    if(sqlFile.isEmpty()){
+
+    if (sqlFile.isEmpty()) {
         isSpecificSqlFile = false;
     }
 
@@ -203,7 +204,8 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
     // new project :
 
     QString sqlFileName;
-    if(isSpecificSqlFile){
+
+    if (isSpecificSqlFile) {
         sqlFileName = sqlFile;
     }
     else {
@@ -215,15 +217,15 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
     // fetch db version
 
     QString dbVersion = "-2";
-    IFOK(result){
+
+    IFOK(result) {
         dbVersion = SKRSqlTools::getProjectTemplateDBVersion(&result);
     }
 
 
-
     QString sqlString =
-            QString("INSERT INTO tbl_project (dbl_database_version) VALUES (%1)")
-            .arg(dbVersion);
+        QString("INSERT INTO tbl_project (dbl_database_version) VALUES (%1)")
+        .arg(dbVersion);
 
     IFOKDO(result, SKRSqlTools::executeSQLString(sqlString, sqlDb));
 
@@ -244,7 +246,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
 
         {
             const QString possibleCharacters(
-                        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
             const int randomStringLength = 12;
 
             for (int i = 0; i < randomStringLength; ++i)
@@ -263,7 +265,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
         QSqlQuery query(sqlDb);
         QString   queryStr = "UPDATE tbl_project SET t_project_unique_identifier = :value"
                              " WHERE l_project_id = :id"
-                ;
+        ;
 
         query.prepare(queryStr);
         query.bindValue(":value", value);
@@ -277,6 +279,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
     // clean-up :
     sqlDb.transaction();
     PLMSqlQueries treeQueries(sqlDb, "tbl_tree", "l_tree_id");
+
     IFOKDO(result, treeQueries.renumberSortOrder());
     sqlDb.commit();
 
@@ -287,15 +290,16 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
 
 SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, const QUrl& skribistoFileName)
 {
-    QString sqlFile = ":/sql/sqlite_project_1_6.sql";
-    SKRResult result = plmdata->projectHub()->createSilentlyNewSpecificEmptyProject(skribistoFileName, sqlFile);
+    QString   sqlFile = ":/sql/sqlite_project_1_6.sql";
+    SKRResult result  = plmdata->projectHub()->createSilentlyNewSpecificEmptyProject(skribistoFileName, sqlFile);
 
     int projectId = -2;
-    IFOK(result){
+
+    IFOK(result) {
         projectId = result.getData("projectId", -2).toInt();
     }
 
-    if(projectId == -2){
+    if (projectId == -2) {
         result = SKRResult(SKRResult::Critical, this, "plume_cant_create_empty_project");
         return result;
     }
@@ -317,7 +321,6 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     JlCompress::extractDir(plumeFileName.toLocalFile(), tempDirPath);
 
 
-
     // ----------- create text folder---------------------------------------
 
 
@@ -330,7 +333,6 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
     IFOKDO(result, plmdata->treeHub()->setSortOrder(projectId, textFolderId, 1000));
     IFOKDO(result, plmdata->treeHub()->setTitle(projectId, textFolderId, "text"));
-
 
 
     // ----------- create attend folder---------------------------------------
@@ -347,9 +349,6 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     IFOKDO(result, plmdata->treeHub()->setTitle(projectId, attendFolderId, "attendance"));
 
 
-
-
-
     // ----------- create note folder---------------------------------------
 
 
@@ -362,9 +361,6 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
     IFOKDO(result, plmdata->treeHub()->setSortOrder(projectId, noteFolderId, 90000000));
     IFOKDO(result, plmdata->treeHub()->setTitle(projectId, noteFolderId, "note"));
-
-
-
 
 
     // ----------------------------- read
@@ -397,14 +393,14 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     while (attendXml.readNextStartElement() && attendXml.name().toString() == "plume-attendance") {
         QStringList rolesNames  = attendXml.attributes().value("rolesNames").toString().split("--", Qt::SkipEmptyParts);
         QStringList levelsNames =
-                attendXml.attributes().value("levelsNames").toString().split("--", Qt::SkipEmptyParts);
+            attendXml.attributes().value("levelsNames").toString().split("--", Qt::SkipEmptyParts);
 
         QStringList box_1Names = attendXml.attributes().value("box_1").toString().split("--", Qt::SkipEmptyParts);
         QStringList box_2Names = attendXml.attributes().value("box_2").toString().split("--", Qt::SkipEmptyParts);
         QStringList box_3Names = attendXml.attributes().value("box_3").toString().split("--", Qt::SkipEmptyParts);
 
         QStringList spinBox_1Names =
-                attendXml.attributes().value("spinBox_1").toString().split("--", Qt::SkipEmptyParts);
+            attendXml.attributes().value("spinBox_1").toString().split("--", Qt::SkipEmptyParts);
 
 
         while (attendXml.readNextStartElement() && attendXml.name().toString() == "group") {
@@ -426,7 +422,8 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
             while (attendXml.readNextStartElement() && attendXml.name().toString() == "obj") {
                 int attendNumber = attendXml.attributes().value("number").toInt();
                 QString objName  = attendXml.attributes().value("name").toString();
-                result = this->createNote(projectId, 2, attendNumber, objName, tempDirPath + "/attend/A", attendFolderId);
+                result =
+                    this->createNote(projectId, 2, attendNumber, objName, tempDirPath + "/attend/A", attendFolderId);
                 IFOK(result) {
                     int objNoteId = result.getData("treeItemId", -2).toInt();
 
@@ -451,9 +448,6 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
     // ----------------------------- read
     // tree---------------------------------------
-
-
-
 
 
     QFileInfo treeFileInfo(tempDirPath + "/tree");
@@ -485,23 +479,20 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
         IFOKDO(result, plmdata->projectHub()->setProjectName(projectId, projectName));
 
 
-
-
-        while (xml.readNextStartElement()){
-            if(xml.name().toString() == "trash") {
+        while (xml.readNextStartElement()) {
+            if (xml.name().toString() == "trash") {
                 xml.skipCurrentElement();
                 continue;
             }
-            if(xml.name().toString() == "book") {
-                IFOKDO(result, this->readXMLRecursivelyAndCreatePaper(projectId, 1, &xml, tempDirPath, textFolderId, noteFolderId));
 
+            if (xml.name().toString() == "book") {
+                IFOKDO(result,
+                       this->readXMLRecursivelyAndCreatePaper(projectId, 1, &xml, tempDirPath, textFolderId,
+                                                              noteFolderId));
             }
         }
-        while (xml.readNext() != QXmlStreamReader::EndDocument){
 
-        }
-
-
+        while (xml.readNext() != QXmlStreamReader::EndDocument) {}
     }
 
     IFKO(result) {
@@ -509,7 +500,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
         return result;
     }
 
-    if (xml.hasError() && xml.error() != QXmlStreamReader::PrematureEndOfDocumentError) {
+    if (xml.hasError() && (xml.error() != QXmlStreamReader::PrematureEndOfDocumentError)) {
         result = SKRResult(SKRResult::Critical, this, "error_in_tree_xml");
 
         result.addData("xmlError", QString("%1\nLine %2, column %3")
@@ -537,7 +528,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
     if (!dictFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         result = SKRResult(SKRResult::Critical, this, "cant_open_dict_file");
-        result.addData("filePath", dictFileInfo.absoluteFilePath());
+        result.addData("filePath",  dictFileInfo.absoluteFilePath());
         result.addData("fileError", dictFile.error());
         return result;
     }
@@ -552,11 +543,9 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     plmdata->projectDictHub()->setProjectDictList(projectId, dictWords);
 
 
-
     // transform texts with children in folders
 
     IFOKDO(result, transformParentsToFolder(projectId));
-
 
 
     // save
@@ -572,15 +561,15 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     return result;
 }
 
-//-----------------------------------------------------------
+// -----------------------------------------------------------
 
 
-SKRResult PLMImporter::transformParentsToFolder(int projectId){
+SKRResult PLMImporter::transformParentsToFolder(int projectId) {
     SKRResult result;
     QSqlDatabase sqlDb = plmProjectManager->project(projectId)->getSqlDb();
 
 
-    //retrieve sorted id with indent list
+    // retrieve sorted id with indent list
 
     QList<int> treeIdList;
     QList<int> treeIndentList;
@@ -595,9 +584,9 @@ SKRResult PLMImporter::transformParentsToFolder(int projectId){
 
     query.exec();
 
-    if(query.lastError().isValid()){
+    if (query.lastError().isValid()) {
         result = SKRResult(SKRResult::Critical, this, "sql_error");
-        result.addData("SQLError", query.lastError().text());
+        result.addData("SQLError",   query.lastError().text());
         result.addData("SQL string", queryStr);
 
         return result;
@@ -610,23 +599,23 @@ SKRResult PLMImporter::transformParentsToFolder(int projectId){
         typeList.append(query.value(2).toString());
     }
 
-    //remove project item (the first one)
+    // remove project item (the first one)
     treeIdList.takeFirst();
     treeIndentList.takeFirst();
     treeSortOrderList.takeFirst();
     typeList.takeFirst();
 
-    //remove folders
+    // remove folders
 
     QList<int> indexesToRemove;
-    for(int k = 0; k < typeList.count(); k++){
-        if(typeList.at(k) == "TEXT"){
+
+    for (int k = 0; k < typeList.count(); k++) {
+        if (typeList.at(k) == "TEXT") {
             indexesToRemove.append(k);
         }
-
     }
 
-    for(int m = indexesToRemove.count() - 1; m >= 0; m++){
+    for (int m = indexesToRemove.count() - 1; m >= 0; m++) {
         treeIdList.removeAt(m);
         treeIndentList.removeAt(m);
         treeSortOrderList.removeAt(m);
@@ -634,51 +623,51 @@ SKRResult PLMImporter::transformParentsToFolder(int projectId){
     }
 
 
-
     // create folders
 
     sqlDb.transaction();
 
     QString treeQueryStr = "INSERT INTO tbl_tree (t_title, l_indent, l_sort_order, t_type, dt_trashed, b_trashed)"
-"                       VALUES ("
-"                       (SELECT t_title FROM tbl_tree WHERE l_tree_id = :treeId),"
-"                       (SELECT l_indent FROM tbl_tree WHERE l_tree_id = :treeId),"
-"                       :newSortOrder,"
-"                       'FOLDER',"
-"                       (SELECT dt_trashed FROM tbl_tree WHERE l_tree_id = :treeId),"
-"                       (SELECT b_trashed FROM tbl_tree WHERE l_tree_id = :treeId)"
-")";
+                           "                       VALUES ("
+                           "                       (SELECT t_title FROM tbl_tree WHERE l_tree_id = :treeId),"
+                           "                       (SELECT l_indent FROM tbl_tree WHERE l_tree_id = :treeId),"
+                           "                       :newSortOrder,"
+                           "                       'FOLDER',"
+                           "                       (SELECT dt_trashed FROM tbl_tree WHERE l_tree_id = :treeId),"
+                           "                       (SELECT b_trashed FROM tbl_tree WHERE l_tree_id = :treeId)"
+                           ")";
 
 
     QString incrementIndentQueryStr = "UPDATE tbl_tree SET l_indent = :newIndent WHERE l_tree_id = :treeId";
 
     int previousIdIndent = -1;
-    for(int i = treeIdList.count() - 1 ; i >= 0 ; i--){
+
+    for (int i = treeIdList.count() - 1; i >= 0; i--) {
         int currentTreeId = treeIdList.at(i);
         int currentIndent = treeIndentList.at(i);
 
-        if(i < treeIdList.count() - 1){
+        if (i < treeIdList.count() - 1) {
             previousIdIndent = treeIndentList.at(i + 1);
         }
 
 
-        if(previousIdIndent > currentIndent){
+        if (previousIdIndent > currentIndent) {
             int currentSortOrder = treeSortOrderList.at(i);
-
 
 
             // create folder
             query.prepare(treeQueryStr);
 
-            query.bindValue(":treeId", currentTreeId);
+            query.bindValue(":treeId",       currentTreeId);
             query.bindValue(":newSortOrder", currentSortOrder - 1);
 
             query.exec();
-            if(query.lastError().isValid()){
+
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, this, "sql_error");
-                result.addData("SQLError", query.lastError().text());
-                result.addData("SQL string", queryStr);
-                result.addData("treeId", currentTreeId);
+                result.addData("SQLError",     query.lastError().text());
+                result.addData("SQL string",   queryStr);
+                result.addData("treeId",       currentTreeId);
                 result.addData("newSortOrder", currentSortOrder - 1);
                 sqlDb.rollback();
 
@@ -691,26 +680,23 @@ SKRResult PLMImporter::transformParentsToFolder(int projectId){
 
             query.prepare(incrementIndentQueryStr);
 
-            query.bindValue(":treeId", currentTreeId);
+            query.bindValue(":treeId",    currentTreeId);
             query.bindValue(":newIndent", currentIndent + 1);
 
             query.exec();
-            if(query.lastError().isValid()){
+
+            if (query.lastError().isValid()) {
                 result = SKRResult(SKRResult::Critical, this, "sql_error");
-                result.addData("SQLError", query.lastError().text());
+                result.addData("SQLError",   query.lastError().text());
                 result.addData("SQL string", queryStr);
-                result.addData("treeId", currentTreeId);
-                result.addData("sortOrder", currentSortOrder);
-                result.addData("newIndent", currentIndent + 1);
+                result.addData("treeId",     currentTreeId);
+                result.addData("sortOrder",  currentSortOrder);
+                result.addData("newIndent",  currentIndent + 1);
                 sqlDb.rollback();
 
                 return result;
             }
-
-
-
         }
-
     }
 
     IFOK(result) {
@@ -718,54 +704,54 @@ SKRResult PLMImporter::transformParentsToFolder(int projectId){
     }
 
 
-
-
     return result;
 }
 
-//-----------------------------------------------------------
+// -----------------------------------------------------------
 
-SKRResult PLMImporter::readXMLRecursivelyAndCreatePaper(int                     projectId,
-                                                        int                     indent,
+SKRResult PLMImporter::readXMLRecursivelyAndCreatePaper(int projectId,
+                                                        int indent,
                                                         QXmlStreamReader *xml,
-                                                        const QString         & tempDirPath,
+                                                        const QString& tempDirPath,
                                                         int textFolderId, int noteFolderId)
 {
     SKRResult result;
 
-    if(!xml->readNextStartElement()){
+    if (!xml->readNextStartElement()) {
         xml->readElementText();
         return result;
     }
     else {
-        if(xml->name().toString() == "separator"){
+        if (xml->name().toString() == "separator") {
             xml->skipCurrentElement();
         }
         else {
-            IFOKDO(result, this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath, textFolderId, noteFolderId));
-            IFOKDO(result, readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath, textFolderId, noteFolderId));
+            IFOKDO(result,
+                   this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath, textFolderId, noteFolderId));
+            IFOKDO(result,
+                   readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath, textFolderId,
+                                                    noteFolderId));
         }
     }
 
     while (xml->readNextStartElement()) {
-
-        if(xml->name().toString() == "separator"){
+        if (xml->name().toString() == "separator") {
             xml->skipCurrentElement();
             continue;
         }
-        IFOKDO(result, this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath, textFolderId, noteFolderId));
-        IFOKDO(result, readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath, textFolderId, noteFolderId));
-
+        IFOKDO(result,
+               this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath, textFolderId, noteFolderId));
+        IFOKDO(result,
+               readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath, textFolderId, noteFolderId));
     }
 
     return result;
 }
 
-
-SKRResult PLMImporter::createPapersAndAssociations(int                     projectId,
-                                                   int                     indent,
+SKRResult PLMImporter::createPapersAndAssociations(int projectId,
+                                                   int indent,
                                                    const QXmlStreamReader& xml,
-                                                   const QString         & tempDirPath,
+                                                   const QString& tempDirPath,
                                                    int textFolderId, int noteFolderId)
 {
     SKRResult result(this);
@@ -835,8 +821,6 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
     }
 
 
-
-
     result = plmdata->treeHub()->setTreeRelationship(projectId, noteId, sheetId);
 
 
@@ -845,7 +829,6 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
     }
 
     // create write synopsis
-
 
 
     QFileInfo synFileInfo(tempDirPath + "/text/S" + QString::number(plumeId) + ".html");
@@ -896,7 +879,6 @@ SKRResult PLMImporter::createPapersAndAssociations(int                     proje
     }
 
 
-
     return result;
 }
 
@@ -921,7 +903,6 @@ SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const 
     IFOKDO(result, plmdata->treeHub()->setIndent(projectId, noteId, parentFolderIndent + indent));
     IFOKDO(result, plmdata->treeHub()->setTitle(projectId, noteId, name));
     IFOKDO(result, plmdata->treeHub()->setType(projectId, noteId, "TEXT"));
-
 
 
     // fetch text

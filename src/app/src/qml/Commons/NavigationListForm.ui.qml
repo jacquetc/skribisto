@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.15
 import "../Items"
 import ".."
 
-Item {
+FocusScope {
     id: base
     property int scrollBarVerticalPolicy: ScrollBar.AlwaysOff
     property alias goUpToolButton: goUpToolButton
