@@ -18,28 +18,38 @@ Item {
 
     function generateBreadcrumb(projectId, treeItemId){
         pathModel.clear()
+        // root :
+        pathModel.append({"text": "", "projectId": -1, "treeItemId": -1})
 
-        var ancestorList = plmData.treeHub().getAllAncestors(projectId, treeItemId)
+        // lone project
+        if(projectId !== -1 &  treeItemId === 0 ){
+            var projectTitle = plmData.projectHub().getProjectName(projectId)
+            pathModel.append({"text": projectTitle, "projectId": projectId, "treeItemId": treeItemId})
 
-        var i
-        for(i = ancestorList.length - 1; i >=0 ; i--){
-            var ancestorId = ancestorList[i]
-            var title
-            if(ancestorId === 0){
-                title = plmData.projectHub().getProjectName(projectId)
-            }
-            else {
-                title = plmData.treeHub().getTitle(projectId, ancestorId)
-            }
-
-            pathModel.append({"text": title, "projectId": projectId, "treeItemId": ancestorId})
-            console.log("bread:", ancestorId)
         }
+        else {
+
+            var ancestorList = plmData.treeHub().getAllAncestors(projectId, treeItemId)
+
+            var i
+            for(i = ancestorList.length - 1; i >=0 ; i--){
+                var ancestorId = ancestorList[i]
+                var title
+                if(ancestorId === 0){
+                    title = plmData.projectHub().getProjectName(projectId)
+                }
+                else {
+                    title = plmData.treeHub().getTitle(projectId, ancestorId)
+                }
+
+                pathModel.append({"text": title, "projectId": projectId, "treeItemId": ancestorId})
+                console.log("bread:", ancestorId)
+            }
 
 
-        var currentTitle = plmData.treeHub().getTitle(projectId, treeItemId)
-        pathModel.append({"text": currentTitle, "projectId": projectId, "treeItemId": treeItemId})
-
+            var currentTitle = plmData.treeHub().getTitle(projectId, treeItemId)
+            pathModel.append({"text": currentTitle, "projectId": projectId, "treeItemId": treeItemId})
+        }
 
     }
 
@@ -47,15 +57,42 @@ Item {
         id: pathModel
     }
 
-    Row{
+    Rectangle {
         anchors.fill: parent
-        Repeater {
-            model: pathModel
+        radius: 4
+        border.width: 1
+        border.color: SkrTheme.divider
+        color: SkrTheme.menuBackground
 
-            SkrButton {
-                text: model.text
-                property int projectId: model.projectId
-                property int treeItemId: model.treeItemId
+        Row{
+            id: row
+            anchors.fill: parent
+            spacing: 1
+            padding: 0
+            Repeater {
+                model: pathModel
+
+                SkrToolButton {
+                    text: model.text
+                    display: AbstractButton.TextOnly
+                    focusPolicy: Qt.NoFocus
+                    anchors.top: row.top
+                    anchors.bottom: row.bottom
+
+                    property int projectId: model.projectId
+                    property int treeItemId: model.treeItemId
+
+
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.right: parent.right
+                        width: 2
+
+                        color: SkrTheme.divider
+                    }
+
+                }
             }
         }
     }

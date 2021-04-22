@@ -20,7 +20,6 @@ NavigationForm {
 
     function setNavigationTreeItemId(projectId, treeItemId){
          stackView.get(0, StackView.DontLoad).setCurrentTreeItemId(projectId, treeItemId)
-        rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(projectId, treeItemId)
     }
 
     Component {

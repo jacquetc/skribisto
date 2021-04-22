@@ -146,11 +146,9 @@ ApplicationWindow {
 
 
             signal openThemePageCalled()
-
             signal setBreadcrumbCurrentTreeItemCalled(int projectId, int treeItemId)
 
         Component.onCompleted: {
-            rootWindow.setNavigationTreeItemIdCalled.connect(setBreadcrumbCurrentTreeItemCalled)
         }
     }
 

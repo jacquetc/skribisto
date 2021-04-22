@@ -10,8 +10,6 @@ TextPageForm {
     id: root
 
     pageType: "TEXT"
-    property int projectId: -2
-    property int treeItemId: -2
 
 
     property string title: {return getTitle()}

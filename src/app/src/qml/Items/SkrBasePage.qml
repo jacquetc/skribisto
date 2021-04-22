@@ -27,48 +27,51 @@ FocusScope {
     onActiveFocusChanged: {
         if(activeFocus){
             viewManager.focusedPosition = position
+            if(projectId !== -1 & treeItemId !== -1){
+                rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(projectId, treeItemId)
+            }
         }
     }
 
 
 
-        DropArea {
-            id: dropArea
-            anchors.fill: parent
+    DropArea {
+        id: dropArea
+        anchors.fill: parent
 
 
 
-            keys: ["application/skribisto-tree-item"]
-            onEntered: {
-                dropIndicator.border.color = SkrTheme.accent
-            }
-            onExited: {
-                dropIndicator.border.color = "transparent"
-
-            }
-
-            onDropped: {
-                if(drop.proposedAction === Qt.MoveAction){
-
-                    viewManager.loadTreeItemAt(drag.source.projectId, drag.source.treeItemId, position)
-                    dropIndicator.border.color = "transparent"
-
-                }
-            }
-
-
-
+        keys: ["application/skribisto-tree-item"]
+        onEntered: {
+            dropIndicator.border.color = SkrTheme.accent
+        }
+        onExited: {
+            dropIndicator.border.color = "transparent"
 
         }
 
-        Rectangle {
-            id: dropIndicator
-            anchors.fill: parent
-            enabled: border.color === SkrTheme.accent
-            z: 1
-            color: "transparent"
-            border.color: "transparent"
-            border.width: 4
+        onDropped: {
+            if(drop.proposedAction === Qt.MoveAction){
+
+                viewManager.loadTreeItemAt(drag.source.projectId, drag.source.treeItemId, position)
+                dropIndicator.border.color = "transparent"
+
+            }
+        }
+
+
+
+
+    }
+
+    Rectangle {
+        id: dropIndicator
+        anchors.fill: parent
+        enabled: border.color === SkrTheme.accent
+        z: 1
+        color: "transparent"
+        border.color: "transparent"
+        border.width: 4
 
     }
 

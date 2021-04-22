@@ -88,10 +88,13 @@ NavigationListForm {
                 newItem.setCurrent()
             }
 
+
+
         }
 
         sidePopupListModel.clear()
         determineIfGoUpButtonEnabled()
+
 
         //
     }
@@ -121,6 +124,7 @@ NavigationListForm {
             //var parentTreeItemId = proxyModel.getAncestorsList(root.currentProjectId, root.currentTreeItemId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)[0]
             navigationListStackView.pop()
             navigationListStackView.currentItem.setCurrent()
+            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(priv.currentProjectId, priv.currentParentId)
 
 
         }
@@ -314,8 +318,6 @@ NavigationListForm {
 
 
 
-
-
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
@@ -370,7 +372,11 @@ NavigationListForm {
                 priv.currentParentId = parentId
                 priv.currentTreeItemId = treeItemId
 
+                listView.positionViewAtIndex(currentIndex, ListView.Contain)
+
             }
+
+
 
 
             onActiveFocusChanged: {
@@ -569,8 +575,13 @@ NavigationListForm {
                         }
 
                     }
+                    displaced: Transition {
+                             NumberAnimation { properties: "x,y"; duration: 250 }
+                         }
 
-
+                    moveDisplaced: Transition {
+                             NumberAnimation { properties: "x,y"; duration: 250 }
+                    }
                     QtObject{
                         id: p_section
                         property string parentTitle: ""
@@ -1217,6 +1228,7 @@ NavigationListForm {
 
                                             var newItem = navigationListStackView.push(stackViewComponent, {"projectId": model.projectId, "parentId":  model.treeItemId} )
                                             newItem.setCurrent()
+                                            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(priv.currentProjectId, priv.currentParentId)
 
 
                                             //                                        currentProject = model.projectId
