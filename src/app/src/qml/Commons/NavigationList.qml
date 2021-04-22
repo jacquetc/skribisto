@@ -23,11 +23,13 @@ NavigationListForm {
     property int openedProjectId: -2
     property int openedTreeItemId: -2
 
+
     QtObject{
         id: priv
         property int currentParentId: -2
         property int currentProjectId: -2
         property int currentTreeItemId: -2
+        property bool dragging: false
 
     }
 
@@ -244,11 +246,11 @@ NavigationListForm {
     }
 
     function getIconUrlFromPageType(type){
-       return skrTreeManager.getIconUrlFromPageType(type)
+        return skrTreeManager.getIconUrlFromPageType(type)
     }
 
     function getPageTypeText(type){
-       return skrTreeManager.getPageTypeText(type)
+        return skrTreeManager.getPageTypeText(type)
     }
 
 
@@ -262,12 +264,12 @@ NavigationListForm {
             model: skrTreeManager.getPageTypeList(true);
 
             SkrMenuItem{
-                    text: getPageTypeText(modelData)
-                    property string type: modelData
-                    icon.source: getIconUrlFromPageType(modelData)
-                    onTriggered: {
-                        addItemAtCurrentParent(type)
-                    }
+                text: getPageTypeText(modelData)
+                property string type: modelData
+                icon.source: getIconUrlFromPageType(modelData)
+                onTriggered: {
+                    addItemAtCurrentParent(type)
+                }
 
             }
         }
@@ -410,6 +412,83 @@ NavigationListForm {
                     listView.section.delegate = null
                 }
 
+            }
+
+            Item {
+                id: topDraggingMover
+                anchors.top:  scrollView.top
+                anchors.right:  scrollView.right
+                anchors.left:  scrollView.left
+                height: 30
+                z: 1
+
+                visible: priv.dragging
+
+                HoverHandler {
+                    onHoveredChanged: {
+                        if(hovered){
+                            topDraggingMoverTimer.start()
+                        }
+                        else {
+                            topDraggingMoverTimer.stop()
+                        }
+                    }
+                }
+
+                Timer {
+                    id: topDraggingMoverTimer
+                    repeat: true
+                    interval: 10
+                    onTriggered: {
+                        if(listView.atYBeginning){
+                            listView.contentY  = 0
+                        }
+                        else {
+                            listView.contentY  = listView.contentY - 2
+
+                        }
+                    }
+
+                }
+
+            }
+
+            Item {
+                id: bottomDraggingMover
+                anchors.bottom:  scrollView.bottom
+                anchors.right:  scrollView.right
+                anchors.left:  scrollView.left
+                height: 30
+                z: 1
+
+                visible: priv.dragging
+
+                HoverHandler {
+                    onHoveredChanged: {
+                        if(hovered){
+                            bottomDraggingMoverTimer.start()
+                        }
+                        else {
+                            bottomDraggingMoverTimer.stop()
+                        }
+                    }
+                }
+
+                Timer {
+                    id: bottomDraggingMoverTimer
+                    repeat: true
+                    interval: 10
+                    onTriggered: {
+                        if(listView.atYEnd){
+                            listView.positionViewAtEnd()
+                        }
+                        else {
+                            listView.contentY  = listView.contentY + 2
+
+                        }
+                    }
+
+                }
             }
 
 
@@ -842,9 +921,9 @@ NavigationListForm {
                                     addSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId
                                     addSideNavigationListPopupTimer.parentItem = swipeDelegate
                                     addSideNavigationListPopupTimer.listView = listView
-//                                            console.log("popupId", stackViewBaseItem.popupId)
+                                    //                                            console.log("popupId", stackViewBaseItem.popupId)
 
-                                addSideNavigationListPopupTimer.start()
+                                    addSideNavigationListPopupTimer.start()
                                 }
 
                             }
@@ -869,6 +948,9 @@ NavigationListForm {
                                     if(drop.proposedAction === Qt.MoveAction){
 
                                         console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
+                                        listView.interactive = true
+                                        priv.dragging = false
+                                        cancelDragTimer.stop()
                                         proxyModel.moveItem(moveSourceInt, content.visualIndex)
 
                                     }
@@ -893,7 +975,7 @@ NavigationListForm {
                                     width: parent.width
                                     height: swipeDelegate.height
 
-                                    Drag.active: dragHandler.active
+                                    Drag.active: mouseDragHandler.active | touchDragHandler.active
                                     Drag.source: content
                                     Drag.hotSpot.x: width / 2
                                     Drag.hotSpot.y: height / 2
@@ -903,7 +985,7 @@ NavigationListForm {
                                     //Drag.dragType: Drag.Automatic
 
                                     borderWidth: 2
-                                    borderColor: dragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
+                                    borderColor: touchDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
                                     Behavior on borderColor {
                                         ColorAnimation {
                                             duration: 200
@@ -912,18 +994,47 @@ NavigationListForm {
 
                                     property bool dragging: false
                                     DragHandler {
-                                        id: dragHandler
-                                        //acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                                        id: mouseDragHandler
+                                        acceptedDevices: PointerDevice.Mouse
                                         //xAxis.enabled: false
                                         //grabPermissions: PointerHandler.TakeOverForbidden
 
                                         onActiveChanged: {
                                             if (active) {
+                                                listView.interactive = false
                                                 moveSourceInt = content.visualIndex
+                                                priv.dragging = true
                                                 cancelDragTimer.stop()
                                             } else {
-                                                content.Drag.drop()
+                                                cancelDragTimer.stop()
+                                                priv.dragging = false
                                                 content.dragging = false
+                                                //content.Drag.drop()
+                                            }
+                                        }
+                                        enabled: true
+
+                                        grabPermissions: PointerHandler.CanTakeOverFromItems |PointerHandler.CanTakeOverFromAnything
+                                    }
+
+                                    DragHandler {
+                                        id: touchDragHandler
+                                        acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
+                                        //xAxis.enabled: false
+                                        //grabPermissions: PointerHandler.TakeOverForbidden
+
+                                        onActiveChanged: {
+                                            if (active) {
+                                                listView.interactive = false
+                                                moveSourceInt = content.visualIndex
+                                                priv.dragging = true
+                                                cancelDragTimer.stop()
+                                            } else {
+                                                listView.interactive = true
+                                                cancelDragTimer.stop()
+                                                priv.dragging = false
+                                                content.dragging = false
+                                                //content.Drag.drop()
                                             }
                                         }
                                         enabled: content.dragging
@@ -936,6 +1047,7 @@ NavigationListForm {
                                         repeat: false
                                         interval: 3000
                                         onTriggered: {
+                                            priv.dragging = false
                                             content.dragging = false
                                         }
                                     }
@@ -951,6 +1063,13 @@ NavigationListForm {
                                             if(content.dragging){
                                                 eventPoint.accepted = false
                                                 return
+                                            }
+                                            if(eventPoint.event.device.type === PointerDevice.Mouse){
+                                                listView.interactive = false
+                                            }
+
+                                            if(eventPoint.event.device.type === PointerDevice.TouchScreen | eventPoint.event.device.type === PointerDevice.Stylus ){
+                                                listView.interactive = true
                                             }
 
                                             listView.currentIndex = model.index
@@ -972,6 +1091,13 @@ NavigationListForm {
                                                 eventPoint.accepted = false
                                                 return
                                             }
+                                            if(eventPoint.event.device.type === PointerDevice.Mouse ){
+                                                listView.interactive = false
+                                            }
+
+                                            if(eventPoint.event.device.type === PointerDevice.TouchScreen | eventPoint.event.device.type === PointerDevice.Stylus ){
+                                                listView.interactive = true
+                                            }
                                             //console.log("double tapped")
                                             listView.currentIndex = model.index
 
@@ -984,18 +1110,6 @@ NavigationListForm {
                                             }
 
                                             eventPoint.accepted = true
-                                        }
-
-                                        onLongPressed: { // needed to activate the grab handler
-
-                                            //                        if(content.dragging){
-                                            //                            eventPoint.accepted = false
-                                            //                            return
-                                            //                        }
-
-
-                                            content.dragging = true
-                                            cancelDragTimer.start()
                                         }
 
 
@@ -1013,6 +1127,7 @@ NavigationListForm {
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.RightButton
                                         onTapped: {
+                                            listView.interactive = eventPoint.event.device.type === PointerDevice.Mouse
 
                                             if(menu.visible){
                                                 menu.close()
@@ -1033,6 +1148,7 @@ NavigationListForm {
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.MiddleButton
                                         onTapped: {
+                                            listView.interactive = eventPoint.event.device.type === PointerDevice.Mouse
                                             listView.currentIndex = model.index
                                             swipeDelegate.forceActiveFocus()
                                             openDocumentInAnotherViewAction.trigger()
@@ -1047,13 +1163,32 @@ NavigationListForm {
                                         anchors.fill: parent
                                         acceptedButtons: Qt.NoButton
                                         onWheel: {
+                                            listView.interactive = false
                                             listView.flick(0, wheel.angleDelta.y * 50)
                                             wheel.accepted = true
                                         }
 
-                                        enabled: dragHandler.enabled
+                                        enabled: listView.interactive === false
                                     }
 
+
+                                    TapHandler {
+                                        acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
+
+                                        onLongPressed: { // needed to activate the grab handler
+
+                                            //                        if(content.dragging){
+                                            //                            eventPoint.accepted = false
+                                            //                            return
+                                            //                        }
+
+
+                                            content.dragging = true
+                                            listView.interactive = false
+                                            cancelDragTimer.start()
+                                        }
+
+                                    }
 
 
                                     Action {
@@ -1330,10 +1465,10 @@ NavigationListForm {
 
 
                                                     hoverEnabled: true
-//                                                    ToolTip.delay: 1000
-//                                                    ToolTip.timeout: 5000
-//                                                    ToolTip.visible: hovered
-//                                                    ToolTip.text: qsTr("")
+                                                    //                                                    ToolTip.delay: 1000
+                                                    //                                                    ToolTip.timeout: 5000
+                                                    //                                                    ToolTip.visible: hovered
+                                                    //                                                    ToolTip.text: qsTr("")
 
 
 
@@ -1739,7 +1874,7 @@ NavigationListForm {
                                                 setCurrentTreeItemIdTimer.treeItemId = model.treeItemId
                                                 setCurrentTreeItemIdTimer.start()
                                                 root.openDocumentInNewWindow(model.projectId, model.treeItemId)
-//                                                setCurrentTreeItemId(model.projectId, model.treeItemId)
+                                                //                                                setCurrentTreeItemId(model.projectId, model.treeItemId)
 
 
                                             }
