@@ -25,6 +25,7 @@
 #include "skrpageinterface.h"
 #include "skrcoreinterface.h"
 #include "skrexporterinterface.h"
+#include "skrwordmeter.h"
 
 class TextPage : public QObject,
                  public SKRCoreInterface,
@@ -80,6 +81,10 @@ public:
     SKRResult finaliseAfterCreationOfTreeItem(int projectId,
                                               int treeItemId);
 
+    void      updateCharAndWordCount(int  projectId,
+                                     int  treeItemId,
+                                     bool sameThread = false)  override;
+
     // exporter
     QTextDocumentFragment generateExporterTextFragment(int                projectId,
                                                        int                treeItemId,
@@ -87,6 +92,10 @@ public:
                                                        SKRResult        & result) const;
 
 signals:
+
+private:
+
+    SKRWordMeter *m_wordMeter;
 };
 
 #endif // TEXTPAGE_H

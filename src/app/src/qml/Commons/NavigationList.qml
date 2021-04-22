@@ -1092,7 +1092,9 @@ NavigationListForm {
                                                 cancelDragTimer.stop()
                                                 priv.dragging = false
                                                 content.dragging = false
-                                                //content.Drag.drop()
+                                                if(!dropArea.containsDrag){
+                                                    content.Drag.drop()
+                                                }
                                             }
                                         }
                                         enabled: content.dragging

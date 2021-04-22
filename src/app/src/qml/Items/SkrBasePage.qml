@@ -52,7 +52,6 @@ FocusScope {
         }
 
         onDropped: {
-            console.log("dropped")
             if(drop.proposedAction === Qt.MoveAction){
                 viewManager.loadTreeItemAt(drag.source.projectId, drag.source.treeItemId, position)
 

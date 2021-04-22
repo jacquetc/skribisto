@@ -22,7 +22,16 @@
 #include "plmdata.h"
 
 TextPage::TextPage(QObject *parent) : QObject(parent)
-{}
+{
+    m_wordMeter = new SKRWordMeter(this);
+
+    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, plmdata->statHub(),
+            &SKRStatHub::updateCharacterStats);
+    connect(m_wordMeter,
+            &SKRWordMeter::wordCountCalculated,
+            plmdata->statHub(),
+            &SKRStatHub::updateWordStats);
+}
 
 // ---------------------------------------------------
 
@@ -39,6 +48,15 @@ SKRResult TextPage::finaliseAfterCreationOfTreeItem(int projectId, int treeItemI
 
 
     return result;
+}
+
+// ---------------------------------------------------
+
+void TextPage::updateCharAndWordCount(int projectId, int treeItemId, bool sameThread)
+{
+    QString primaryContent = plmdata->treeHub()->getPrimaryContent(projectId, treeItemId);
+
+    m_wordMeter->countText(projectId, treeItemId, primaryContent, sameThread, false);
 }
 
 // ---------------------------------------------------

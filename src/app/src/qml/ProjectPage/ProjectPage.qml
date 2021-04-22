@@ -21,6 +21,7 @@ ProjectPageForm {
         dictNotFoundLabel.visible = false
         populateDictComboBox()
         determineCurrentDictComboBoxValue()
+        populateStatistics()
     }
 
 
@@ -204,16 +205,22 @@ ProjectPageForm {
     //----Stats---------------------------------------------------
     //---------------------------------------------------------------
 
+    function populateStatistics(){
+        var countString = skrRootItem.toLocaleIntString(plmData.statHub().getTreeItemTotalCount(SKRStatHub.Character, root.projectId))
+
+        charCountLabel.text = qsTr("Character count : %1").arg(countString)
+        countString = skrRootItem.toLocaleIntString(plmData.statHub().getTreeItemTotalCount(SKRStatHub.Word, root.projectId))
+        wordCountLabel.text = qsTr("Word count : %1").arg(countString)
+    }
+
+
     Connections {
         target: plmData.statHub()
-        function onStatsChanged(statType, paperType, projectId, count){
+        function onStatsChanged(statType, projectId, count){
             if(projectId !== root.projectId){
                 return
             }
 
-            if(paperType === SKR.Note){
-                return
-            }
             var countString = skrRootItem.toLocaleIntString(count)
             if(statType === SKRStatHub.Character){
                 charCountLabel.text = qsTr("Character count : %1").arg(countString)
@@ -224,6 +231,7 @@ ProjectPageForm {
 
         }
     }
+
 
 
 

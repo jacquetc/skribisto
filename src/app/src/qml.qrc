@@ -140,7 +140,6 @@
         <file>qml/WelcomePage/ProjectPageForm.ui.qml</file>
         <file>qml/WelcomePage/PlumeImporter.qml</file>
         <file>qml/WelcomePage/ImporterPageForm.ui.qml</file>
-        <file>qml/Commons/SkrPagePluginInfoBase.qml</file>
         <file>qml/Commons/NewItemPopup.qml</file>
         <file>qml/Commons/NewItemPopupForm.ui.qml</file>
         <file>qml/Items/SkrSplitViewHandler.qml</file>

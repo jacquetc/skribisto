@@ -43,12 +43,15 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
     SKRTreeListModel *listModel = static_cast<SKRTreeListModel *>(this->sourceModel());
 
     connect(this,
-                       &SKRSearchTreeListProxyModel::sortOtherProxyModelsCalled,
-                                                                      listModel,
-                                                                            &SKRTreeListModel::sortOtherProxyModelsCalled);
+            &SKRSearchTreeListProxyModel::sortOtherProxyModelsCalled,
+            listModel,
+            &SKRTreeListModel::sortOtherProxyModelsCalled);
     connect(listModel, &SKRTreeListModel::sortOtherProxyModelsCalled, this, [this]() {
         if (this->sender() != this) {
-            this->sort(0);
+            QTimer::singleShot(20, this, [this] {
+                this->invalidateFilter();
+                this->sort(0);
+            });
         }
     });
 }
@@ -1309,6 +1312,7 @@ SKRResult SKRSearchTreeListProxyModel::moveUp(int projectId, int treeItemId, int
     SKRResult result = m_treeHub->moveTreeItemUp(projectId, treeItemId);
 
     IFOK(result) {
+        this->invalidateFilter();
         sort(0);
         emit sortOtherProxyModelsCalled();
         int  newVisualIndex = this->findVisualIndex(projectId, treeItemId);
@@ -1330,6 +1334,7 @@ SKRResult SKRSearchTreeListProxyModel::moveDown(int projectId, int treeItemId, i
     SKRResult result = m_treeHub->moveTreeItemDown(projectId, treeItemId);
 
     IFOK(result) {
+        this->invalidateFilter();
         sort(0);
         emit sortOtherProxyModelsCalled();
         int  newVisualIndex = this->findVisualIndex(projectId, treeItemId);

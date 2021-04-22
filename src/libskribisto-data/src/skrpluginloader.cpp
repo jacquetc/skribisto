@@ -134,13 +134,16 @@ QObject * SKRPluginLoader::pluginObjectByName(const QString& fileName)
                                 "version").toString());
         plugin->setProperty("mandatory",
                             loader.metaData().value("MetaData").toObject().value(
-                                "mandatory").toString());
+                                "mandatory").toBool());
         plugin->setProperty("shortname",
                             loader.metaData().value("MetaData").toObject().value(
                                 "shortname").toString());
         plugin->setProperty("longname",
                             loader.metaData().value("MetaData").toObject().value(
                                 "longname").toString());
+        plugin->setProperty("type",
+                            loader.metaData().value("MetaData").toObject().value(
+                                "type").toString());
     }
 
     return plugin;

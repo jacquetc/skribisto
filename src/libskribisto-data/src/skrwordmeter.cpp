@@ -2,13 +2,12 @@
 
 #include <QTextDocument>
 
-SKRWordMeterWorker::SKRWordMeterWorker(QObject             *parent,
-                                       const SKR::ItemType& paperType,
-                                       int                  projectId,
-                                       int                  paperId,
-                                       const QString      & text,
-                                       bool                 triggerProjectModifiedSignal) :
-    QThread(parent), m_paperType(paperType), m_projectId(projectId), m_paperId(paperId), m_text(text),
+SKRWordMeterWorker::SKRWordMeterWorker(QObject       *parent,
+                                       int            projectId,
+                                       int            treeItemId,
+                                       const QString& text,
+                                       bool           triggerProjectModifiedSignal) :
+    QThread(parent), m_projectId(projectId), m_treeItemId(treeItemId), m_text(text),
     m_triggerProjectModifiedSignal(triggerProjectModifiedSignal)
 {}
 
@@ -35,7 +34,7 @@ void SKRWordMeterWorker::countWords()
         wordCount += 1;
     }
 
-    emit wordCountCalculated(m_paperType, m_projectId, m_paperId, wordCount, m_triggerProjectModifiedSignal);
+    emit wordCountCalculated(m_projectId, m_treeItemId, wordCount, m_triggerProjectModifiedSignal);
 }
 
 void SKRWordMeterWorker::countCharacters()
@@ -47,7 +46,7 @@ void SKRWordMeterWorker::countCharacters()
 
     int charCount = plainText.count();
 
-    emit characterCountCalculated(m_paperType, m_projectId, m_paperId, charCount,  m_triggerProjectModifiedSignal);
+    emit characterCountCalculated(m_projectId, m_treeItemId, charCount,  m_triggerProjectModifiedSignal);
 }
 
 void SKRWordMeterWorker::run()
@@ -60,17 +59,15 @@ void SKRWordMeterWorker::run()
 SKRWordMeter::SKRWordMeter(QObject *parent) : QObject(parent)
 {}
 
-void SKRWordMeter::countText(const SKR::ItemType& paperType,
-                             int                  projectId,
-                             int                  paperId,
-                             const QString      & text,
-                             bool                 sameThread,
-                             bool                 triggerProjectModifiedSignal)
+void SKRWordMeter::countText(int            projectId,
+                             int            treeItemId,
+                             const QString& text,
+                             bool           sameThread,
+                             bool           triggerProjectModifiedSignal)
 {
     SKRWordMeterWorker *worker = new SKRWordMeterWorker(this,
-                                                        paperType,
                                                         projectId,
-                                                        paperId,
+                                                        treeItemId,
                                                         text,
                                                         triggerProjectModifiedSignal);
 
