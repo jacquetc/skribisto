@@ -30,6 +30,7 @@ NavigationListForm {
         property int currentProjectId: -2
         property int currentTreeItemId: -2
         property bool dragging: false
+        property bool renaming: false
 
     }
 
@@ -51,6 +52,47 @@ NavigationListForm {
     }
 
     Component.onCompleted: {
+    }
+    function setCurrentTreeItemParentId(projectId, treeItemParentId){
+
+
+        //find parent id
+        var ancestorsList = proxyModel.getAncestorsList(projectId, treeItemParentId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)
+
+
+
+        //compare with current parent id
+
+        if(projectId === root.currentProjectId & treeItemParentId === root.currentParentId){
+            navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(projectId, -1)
+        }
+
+        else {
+            navigationListStackView.pop(null)
+            ancestorsList.reverse()
+            ancestorsList.push(treeItemParentId)
+
+            //project item
+            navigationListStackView.get(0).projectId = projectId
+            navigationListStackView.get(0).treeItemId = 0
+            navigationListStackView.get(0).init()
+            navigationListStackView.get(0).setCurrent()
+
+
+            for(var i = 1 ; i < ancestorsList.length ; i++){
+                var newItem = navigationListStackView.push(stackViewComponent, {"projectId": projectId, "treeItemId": ancestorsList[i] } )
+                newItem.setCurrent()
+            }
+
+            var lastNewItem = navigationListStackView.push(stackViewComponent, {"projectId": projectId, "parentId":  treeItemParentId} )
+            lastNewItem.setCurrent()
+            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(priv.currentProjectId, priv.currentParentId)
+
+
+        }
+
+        sidePopupListModel.clear()
+        determineIfGoUpButtonEnabled()
     }
 
     function setCurrentTreeItemId(projectId, treeItemId){
@@ -669,6 +711,7 @@ NavigationListForm {
                             }
 
                             function editName() {
+                                priv.renaming = true
                                 state = "edit_name"
                                 titleTextFieldForceActiveFocusTimer.start()
                                 titleTextField.selectAll()
@@ -684,6 +727,7 @@ NavigationListForm {
                             }
 
                             function editLabel() {
+                                priv.renaming = true
                                 state = "edit_label"
                                 labelTextFieldForceActiveFocusTimer.start()
                                 labelTextField.selectAll()
@@ -1084,8 +1128,10 @@ NavigationListForm {
                                             }
 
                                             listView.currentIndex = model.index
+                                            priv.currentTreeItemId = model.treeItemId
 
-                                            if(model.type === "FOLDER" || model.type === "PROJECT" ){
+                                            if(plmData.treePropertyHub().getProperty(model.projectId, model.treeItemId,
+                                                                                     "can_add_child_paper", "true") === "true"){
                                                 goToChildAction.trigger()
                                             }
                                             else{
@@ -1111,6 +1157,7 @@ NavigationListForm {
                                             }
                                             //console.log("double tapped")
                                             listView.currentIndex = model.index
+                                            priv.currentTreeItemId = model.treeItemId
 
 
                                             if(model.hasChildren){
@@ -1147,6 +1194,7 @@ NavigationListForm {
 
 
                                             listView.currentIndex = model.index
+                                            priv.currentTreeItemId = model.treeItemId
                                             menu.open()
                                             eventPoint.accepted = true
                                         }
@@ -1161,6 +1209,7 @@ NavigationListForm {
                                         onTapped: {
                                             listView.interactive = eventPoint.event.device.type === PointerDevice.Mouse
                                             listView.currentIndex = model.index
+                                            priv.currentTreeItemId = model.treeItemId
                                             swipeDelegate.forceActiveFocus()
                                             openDocumentInAnotherViewAction.trigger()
                                             eventPoint.accepted = true
@@ -1595,6 +1644,7 @@ NavigationListForm {
                                                             //fix bug while new lone child
                                                             titleLabel.visible = true
                                                             labelLayout.visible = true
+                                                            priv.renaming = false
                                                         }
 
                                                         //Keys.priority: Keys.AfterItem
@@ -1648,6 +1698,7 @@ NavigationListForm {
                                                             //fix bug while new lone child
                                                             titleLabel.visible = true
                                                             labelLayout.visible = true
+                                                            priv.renaming = false
                                                         }
 
                                                         //Keys.priority: Keys.AfterItem
@@ -1956,8 +2007,8 @@ NavigationListForm {
                                     }
 
                                     MenuSeparator {
-                                        height: !model.isCopyable || !model.canAddChildTreeItem ? 0: undefined
-                                        visible: model.isCopyable && model.canAddChildTreeItem
+                                        height: !model.isMovable || !model.isCopyable || !model.canAddChildTreeItem ? 0: undefined
+                                        visible: model.isMovable || model.isCopyable || model.canAddChildTreeItem
                                     }
 
                                     SkrMenuItem {
@@ -2028,7 +2079,7 @@ NavigationListForm {
 
 
                                     MenuSeparator {
-                                        height: !(model.canAddSiblingTreeItem && model.canAddChildTreeItem) ? 0: undefined
+                                        height: !(model.canAddSiblingTreeItem || model.canAddChildTreeItem) ? 0: undefined
                                         visible: (model.canAddSiblingTreeItem || model.canAddChildTreeItem)
                                     }
 
@@ -2680,7 +2731,9 @@ NavigationListForm {
 
     onActiveFocusChanged: {
         if (activeFocus) {
-            navigationListStackView.currentItem.forceActiveFocus()
+            if(!priv.renaming){
+                navigationListStackView.currentItem.forceActiveFocus()
+            }
         }
     }
 

@@ -19,12 +19,15 @@ Item {
     function generateBreadcrumb(projectId, treeItemId){
         pathModel.clear()
         // root :
-        pathModel.append({"text": "", "projectId": -1, "treeItemId": -1})
-
+        pathModel.append({"text": "/", "projectId": -1, "treeItemId": -1, "pageType": ""})
+        if(treeItemId === -2){
+        }
         // lone project
-        if(projectId !== -1 &  treeItemId === 0 ){
+        else if(projectId !== -1 &  treeItemId === 0 ){
+
             var projectTitle = plmData.projectHub().getProjectName(projectId)
-            pathModel.append({"text": projectTitle, "projectId": projectId, "treeItemId": treeItemId})
+            pathModel.append({"text": projectTitle, "projectId": projectId, "treeItemId": treeItemId,
+                             "pageType": plmData.treeHub().getType(projectId, treeItemId)})
 
         }
         else {
@@ -42,13 +45,14 @@ Item {
                     title = plmData.treeHub().getTitle(projectId, ancestorId)
                 }
 
-                pathModel.append({"text": title, "projectId": projectId, "treeItemId": ancestorId})
-                console.log("bread:", ancestorId)
+                pathModel.append({"text": title, "projectId": projectId, "treeItemId": ancestorId,
+                                 "pageType": plmData.treeHub().getType(projectId, ancestorId)})
             }
 
 
             var currentTitle = plmData.treeHub().getTitle(projectId, treeItemId)
-            pathModel.append({"text": currentTitle, "projectId": projectId, "treeItemId": treeItemId})
+            pathModel.append({"text": currentTitle, "projectId": projectId, "treeItemId": treeItemId,
+                             "pageType": plmData.treeHub().getType(projectId, treeItemId)})
         }
 
     }
@@ -74,13 +78,31 @@ Item {
 
                 SkrToolButton {
                     text: model.text
-                    display: AbstractButton.TextOnly
+                    display: model.index === 0 ? AbstractButton.TextOnly : AbstractButton.TextBesideIcon
                     focusPolicy: Qt.NoFocus
                     anchors.top: row.top
                     anchors.bottom: row.bottom
 
                     property int projectId: model.projectId
                     property int treeItemId: model.treeItemId
+                    property string pageType: model.pageType
+
+                    icon {
+                        source: skrTreeManager.getIconUrlFromPageType(pageType)
+
+                        height: 22
+                        width: 22
+                    }
+
+                    onClicked: {
+                        if(model.index === 0){
+                            rootWindow.setNavigationTreeItemIdCalled(projectId, treeItemId)
+                        }
+                        else if(plmData.treePropertyHub().getProperty(projectId, treeItemId,
+                                                                     "can_add_child_paper", "true") === "true"){
+                            rootWindow.setNavigationTreeItemParentIdCalled(projectId, treeItemId)
+                        }
+                    }
 
 
                     Rectangle {
@@ -88,7 +110,6 @@ Item {
                         anchors.bottom: parent.bottom
                         anchors.right: parent.right
                         width: 2
-
                         color: SkrTheme.divider
                     }
 

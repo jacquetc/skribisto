@@ -536,13 +536,13 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
                 INSERT INTO tbl_tree (l_tree_id,l_sort_order, l_indent, t_type)
                         VALUES (0, -1, 0, 'PROJECT');
 
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_renamable', 'BOOL', 'true');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_movable', 'BOOL', 'false');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_sibling_paper', 'BOOL', 'false');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_child_paper', 'BOOL', 'true');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_trashable', 'BOOL', 'false');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_openable', 'BOOL', 'true');
-                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_copyable', 'BOOL', 'false');
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_renamable', 'BOOL', 'true', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_movable', 'BOOL', 'false', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'can_add_sibling_paper', 'BOOL', 'false', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'can_add_child_paper', 'BOOL', 'true', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_trashable', 'BOOL', 'false', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_openable', 'BOOL', 'true', 1);
+                INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value, b_system) VALUES (0, 'is_copyable', 'BOOL', 'false', 1);
 
 
                 PRAGMA foreign_keys = 1;

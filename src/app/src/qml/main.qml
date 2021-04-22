@@ -116,6 +116,7 @@ ApplicationWindow {
 
 
     signal setNavigationTreeItemIdCalled(int projectId, int treeItemId)
+    signal setNavigationTreeItemParentIdCalled(int projectId, int treeItemParentId)
 
 
 
