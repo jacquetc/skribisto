@@ -29,6 +29,7 @@ FocusScope {
             viewManager.focusedPosition = position
             if(projectId !== -1 & treeItemId !== -1){
                 rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(projectId, treeItemId)
+                rootWindow.setNavigationTreeItemIdCalled(projectId, treeItemId)
             }
         }
     }
