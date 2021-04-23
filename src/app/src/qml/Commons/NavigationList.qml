@@ -1135,12 +1135,13 @@ NavigationListForm {
                                             listView.currentIndex = model.index
                                             priv.currentTreeItemId = model.treeItemId
 
+                                            //console.log("tapped")
                                             if(plmData.treePropertyHub().getProperty(model.projectId, model.treeItemId,
                                                                                      "can_add_child_paper", "true") === "true"){
-                                                goToChildAction.trigger()
+                                                goToChildTimer.start()
                                             }
                                             else{
-                                                openDocumentAction.trigger()
+                                                openDocumentTimer.start()
                                             }
 
 
@@ -1149,6 +1150,8 @@ NavigationListForm {
                                         }
 
                                         onDoubleTapped: {
+                                            openDocumentTimer.stop()
+                                            goToChildTimer.stop()
                                             if(content.dragging){
                                                 eventPoint.accepted = false
                                                 return
@@ -1164,16 +1167,11 @@ NavigationListForm {
                                             listView.currentIndex = model.index
                                             priv.currentTreeItemId = model.treeItemId
 
-
-                                            if(model.hasChildren){
-                                                //TODO: open folder outline
-                                            }
-                                            else{
-                                                openDocumentAction.trigger()
-                                            }
+                                            openDocumentAction.trigger()
 
                                             eventPoint.accepted = true
                                         }
+
 
 
                                         onGrabChanged: {
@@ -1183,7 +1181,23 @@ NavigationListForm {
 
                                         grabPermissions: PointerHandler.ApprovesTakeOverByHandlersOfDifferentType
                                     }
+                                    Timer {
+                                        id: openDocumentTimer
+                                        interval: 100
+                                        onTriggered: {
+                                            openDocumentAction.trigger()
 
+                                        }
+                                    }
+
+                                    Timer {
+                                        id: goToChildTimer
+                                        interval: 100
+                                        onTriggered: {
+                                            goToChildAction.trigger()
+
+                                        }
+                                    }
 
                                     TapHandler {
                                         id: rightClickTapHandler
@@ -1547,11 +1561,11 @@ NavigationListForm {
                                                         TapHandler{
 
                                                             onSingleTapped: {
-                                                                tapHandler.singleTapped(point)
+                                                                tapHandler.singleTapped(eventPoint)
                                                             }
 
                                                             onDoubleTapped: {
-                                                                tapHandler.doubleTapped(point)
+                                                                tapHandler.doubleTapped(eventPoint)
                                                             }
 
                                                             onGrabChanged: {
@@ -1566,11 +1580,11 @@ NavigationListForm {
                                                             acceptedButtons: Qt.RightButton
 
                                                             onSingleTapped: {
-                                                                rightClickTapHandler.singleTapped(point)
+                                                                rightClickTapHandler.singleTapped(eventPoint)
                                                             }
 
                                                             onDoubleTapped: {
-                                                                rightClickTapHandler.doubleTapped(point)
+                                                                rightClickTapHandler.doubleTapped(eventPoint)
                                                             }
 
                                                             onGrabChanged: {
@@ -1585,11 +1599,11 @@ NavigationListForm {
                                                             acceptedButtons: Qt.MiddleButton
 
                                                             onSingleTapped: {
-                                                                middleClickTapHandler.singleTapped(point)
+                                                                middleClickTapHandler.singleTapped(eventPoint)
                                                             }
 
                                                             onDoubleTapped: {
-                                                                middleClickTapHandler.doubleTapped(point)
+                                                                middleClickTapHandler.doubleTapped(eventPoint)
                                                             }
 
                                                             onGrabChanged: {

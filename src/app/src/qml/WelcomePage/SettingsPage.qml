@@ -11,6 +11,7 @@ import ".."
 import "../Items"
 
 SettingsPageForm {
+    signal closeCalled()
 
     Component.onCompleted: {
         checkOnBackUpEveryCheckBox()
@@ -116,7 +117,8 @@ SettingsPageForm {
     }
 
     openThemePageButton.onClicked: {
-        rootWindow.openThemePageCalled()
+        rootWindow.protectedSignals.openThemePageCalled()
+        closeCalled()
     }
 
 

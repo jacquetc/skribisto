@@ -75,5 +75,66 @@ FocusScope {
 
     }
 
+    Keys.onPressed: {
+        if (event.key === Qt.Key_F2){
+            if(control.projectId !== -2){
+            renameDialog.projectId = control.projectId
+            renameDialog.treeItemId = control.treeItemId
+            renameDialog.treeItemTitle = plmData.treeHub().getTitle(control.projectId, control.treeItemId)
+            renameDialog.open()
+            }
+        }
+    }
 
+
+    SimpleDialog {
+        id: renameDialog
+        property int projectId: -2
+        property int treeItemId: -2
+        property string treeItemTitle: ""
+        title: "Rename an  item"
+        //text: qsTr("The project %1 is not saved. Do you want to save it before quiting ?").arg(projectName)
+        contentItem: SkrTextField {
+            id: renameTextField
+                text: renameDialog.treeItemTitle
+
+                onAccepted: {
+                    renameDialog.accept()
+                }
+
+        }
+
+        standardButtons: Dialog.Ok  | Dialog.Cancel
+
+        onRejected: {
+            renameDialog.treeItemTitle = ""
+
+        }
+
+        onDiscarded: {
+
+
+            renameDialog.treeItemTitle = ""
+
+        }
+
+        onAccepted: {
+            plmData.treeHub().setTitle(renameDialog.projectId, renameDialog.treeItemId, renameTextField.text)
+
+            renameDialog.treeItemTitle = ""
+        }
+
+        onActiveFocusChanged: {
+            if(activeFocus){
+                contentItem.forceActiveFocus()
+            }
+
+        }
+
+        onOpened: {
+                        contentItem.forceActiveFocus()
+                        renameTextField.selectAll()
+        }
+
+    }
 }

@@ -395,6 +395,14 @@ ApplicationWindow {
         }
 
     }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onOpenThemePageCalled(){
+            viewManager.loadProjectIndependantPage("THEME")
+        }
+    }
+
     //------------------------------------------------------------------
     //---------Help Content---------------------------------------------
     //------------------------------------------------------------------

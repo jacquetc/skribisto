@@ -1,0 +1,9 @@
+{
+    "type" :            "page",
+    "shortname" :       "ThemePage",
+    "longname" :        "Skribisto Theme Page",
+    "version" :         "1.0",
+    "mandatory" :    true,
+    "activatedbydefault" :    true,
+    "dependencies" :    []
+}
