@@ -18,7 +18,7 @@ TextPageForm {
        var fetchedTitle =  plmData.treeHub().getTitle(projectId, treeItemId)
 
         if(isSecondary){
-            return qsTr("Outline of %1").arg(fetchedTitle)
+            return qsTr("Plan of %1").arg(fetchedTitle)
         }
         else {
             return fetchedTitle
@@ -68,6 +68,52 @@ TextPageForm {
         saveCurrentCursorPositionAndY()
         viewManager.insertAdditionalProperty("isSecondary", isSecondary)
         viewManager.loadTreeItemAt(projectId, treeItemId, position)
+    }
+
+
+
+    //--------------------------------------------------------
+    //---Tool bar-----------------------------------------
+    //--------------------------------------------------------
+
+    Connections{
+        target: plmData.treePropertyHub()
+        function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
+            if(projectId === root.projectId && treeItemId === root.treeItemId){
+
+                if(name === "word_count"){
+                    countPriv.wordCount = value
+                    updateCountLabel()
+                }
+            }
+        }
+    }
+
+    Connections{
+        target: plmData.treePropertyHub()
+        function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
+            if(projectId === root.projectId && treeItemId === root.treeItemId){
+
+                if(name === "char_count"){
+                    countPriv.characterCount = value
+                    updateCountLabel()
+
+                }
+            }
+        }
+    }
+
+    QtObject{
+        id: countPriv
+        property string wordCount: ""
+        property string characterCount: ""
+    }
+
+    function updateCountLabel(){
+        var wordCountString = skrRootItem.toLocaleIntString(countPriv.wordCount)
+        var characterCountString = skrRootItem.toLocaleIntString(countPriv.characterCount)
+
+        countLabel.text = qsTr("%1 words, %2 characters").arg(wordCountString).arg(characterCountString)
     }
 
     //--------------------------------------------------------

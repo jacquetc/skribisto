@@ -5,6 +5,7 @@ import QtQml.Models 2.15
 import QtQml 2.15
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.errorhub 1.0
+import eu.skribisto.result 1.0
 
 import "Items"
 import "Commons"
@@ -30,6 +31,206 @@ RootPageForm {
             SkrTheme.light = !SkrTheme.light
         }
     }
+
+    //-------------------------------------------------------------------------
+    //---- notification ----------------------------------------------------------
+    //-------------------------------------------------------------------------
+
+
+    SkrToolButton {
+        id: notificationButton
+
+        width: 20
+        height: 20
+        x: rootPage.width -20
+        y: rootPage.height -20
+
+
+        padding: 0
+        action: notificationButtonAction
+    }
+
+    Action{
+        id: notificationButtonAction
+        icon{
+            source: "qrc:///icons/backup/dialog-messages.svg"
+            width: 50
+            height: 50
+        }
+        checkable: true
+
+        onTriggered: {
+            //show notification list
+            if(notificationPopup.visible && notificationButtonAction.checked === false){
+                notificationPopup.close()
+                return
+            }
+            if(!notificationPopup.visible){
+                notificationPopup.open()
+            }
+
+        }
+    }
+
+
+    SkrPopup {
+        id: notificationPopup
+        property point windowPoint: rootPage.mapFromItem(notificationButton.parent, notificationButton.x, notificationButton.y)
+        x:  windowPoint.x - width + notificationButton.width
+        y: windowPoint.y - height
+        width: 300
+        height: notificationListModel.count > 4 ? 4*120 : notificationListModel.count * 120
+        modal: false
+        focus: false
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        clip: true
+
+        onVisibleChanged: {
+            if(!notificationPopup.visible){
+                notificationButtonAction.checked = false
+            }
+        }
+
+        background: Item {
+
+        }
+
+        Connections{
+            target: plmData.errorHub()
+            function onSendNotification(errorType, content){
+                notificationListModel.append({"errorType": errorType, "content": content})
+
+                if(!notificationPopup.visible){
+                    notificationPopup.open()
+                    notificationButtonAction.checked = true
+                }
+
+                if(notificationCloseTimer.running){
+                    notificationCloseTimer.stop()
+                    notificationCloseTimer.start()
+                }
+            }
+        }
+        Timer{
+            id: notificationCloseTimer
+            repeat: false
+            interval: 5000
+            onTriggered: { notificationButtonAction.checked = false }
+        }
+
+        ListModel{
+            id: notificationListModel
+        }
+
+        ListView{
+            id: notificationListView
+            anchors.fill: parent
+            model: notificationListModel
+            delegate: Rectangle {
+
+                height: 120
+                width: notificationListView.width
+                color: SkrTheme.pageBackground
+                border.width: 1
+                border.color: SkrTheme.buttonBackground
+                radius: 10
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 1
+
+
+                    RowLayout{
+                        Layout.fillWidth: true
+
+                        SkrToolButton{
+                            id: errorTypeButton
+                            icon.source: model.errorType === SKRResult.Ok ?
+                                             "qrc:///icons/backup/data-information.svg" : (model.errorType === SKRResult.Warning ?
+                                                                                               "qrc:///icons/backup/data-warning.svg" : (model.errorType === SKRResult.Critical ?
+                                                                                                                                             "qrc:///icons/backup/data-error.svg"  : (model.errorType === SKRResult.Fatal ?
+                                                                                                                                                                                          "qrc:///icons/backup/data-error.svg"  :  "" )))
+                            icon.color: "transparent"
+                        }
+
+                        SkrLabel{
+                            id: errorTypeLabel
+                            Layout.fillWidth: true
+                            text:model.errorType === SKRResult.Ok ?
+                                     qsTr("Ok") : (model.errorType === SKRResult.Warning ?
+                                                       qsTr("Warning") : (model.errorType === SKRResult.Critical ?
+                                                                              qsTr("Critical") : (model.errorType === SKRResult.Fatal ?
+                                                                                                      qsTr("Fatal")  :  "Fatal" )))
+
+                        }
+                        SkrToolButton{
+                            id: copyErrorButton
+                            icon.source: "qrc:///icons/backup/edit-copy.svg"
+
+                            onClicked: {
+                                textArea.selectAll()
+                                textArea.copy()
+                                textArea.deselect()
+                            }
+                        }
+                        SkrToolButton{
+                            id: deleteErrorButton
+                            icon.source: "qrc:///icons/backup/window-close.svg"
+
+                            onClicked: {
+                                if(notificationListModel.count === 1){
+                                    notificationPopup.close()
+                                }
+
+                                notificationListModel.remove(model.index)
+
+                            }
+
+                        }
+
+
+                    }
+                    ScrollView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        id: scrollView
+                        padding: 1
+                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                        TextArea {
+                            id: textArea
+                            //width:  scrollView.width
+                            readOnly: true
+                            color: SkrTheme.buttonForeground
+                            wrapMode: TextEdit.Wrap
+                            text: model.content
+                            topPadding: 0
+                            bottomPadding: 0
+                            background: SkrPane{
+
+                            }
+                            selectByMouse: true
+
+                            onTextChanged: {
+                                textArea.cursorPosition = textArea.text.length
+
+                            }
+
+                        }
+                    }
+
+
+                }
+
+            }
+        }
+
+    }
+
+    //-------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
     //------------------------------------------------------------
     //------------------------------------------------------------
@@ -484,7 +685,7 @@ RootPageForm {
             MenuSeparator{}
 
             SkrMenuItem {
-                //action: themePageAction
+                action: themesColorAction
             }
 
             MenuSeparator{}

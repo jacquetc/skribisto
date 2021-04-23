@@ -1104,7 +1104,7 @@ ApplicationWindow {
 
             //no backup path set
             if (backupPaths === ""){
-                //TODO: send notification, backup not configured
+                plmData.errorHub().addWarning(qsTr("Back up failed: The backup is not configured"))
 
                 return
             }
@@ -1121,7 +1121,7 @@ ApplicationWindow {
 
                 //no project path
                 if (!plmData.projectHub().getPath(projectId)){
-                    //TODO: send notification, project not yet saved once
+                    plmData.errorHub().addWarning(qsTr("Back up failed:  the project must be saved at least once"))
 
                     break
                 }
@@ -1133,8 +1133,7 @@ ApplicationWindow {
 
 
                     if (!path){
-                        //TODO: send notification
-                        console.log("backup path empty")
+                        plmData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 can't be used").arg(backupPathList[j]))
                         continue
                     }
 
@@ -1143,6 +1142,7 @@ ApplicationWindow {
                     var result = plmData.projectHub().backupAProject(projectId, "skrib", path)
 
                     if (result.containsErrorCodeDetail("path_is_readonly")){
+                        plmData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 is read only").arg(path))
 
                     }
 

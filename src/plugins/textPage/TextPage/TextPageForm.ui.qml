@@ -21,6 +21,8 @@ SkrBasePage {
     property alias viewButtons: viewButtons
     property alias titleLabel: titleLabel
 
+    property alias countLabel: countLabel
+
 
     clip: true
 
@@ -53,6 +55,12 @@ SkrBasePage {
 
                 }
 
+                SkrLabel{
+                    id: countLabel
+                    verticalAlignment: Qt.AlignVCenter
+                    horizontalAlignment: Qt.AlignHCenter
+                }
+
                 SkrViewButtons {
                     id: viewButtons
                     Layout.fillHeight: true
@@ -74,8 +82,8 @@ SkrBasePage {
 
             Item {
                 id: leftBase
-//                Layout.preferredWidth: leftBasePreferredWidth
-//                Layout.maximumWidth: leftBasePreferredWidth
+                //                Layout.preferredWidth: leftBasePreferredWidth
+                //                Layout.maximumWidth: leftBasePreferredWidth
                 Layout.minimumWidth: 20
                 visible: !Globals.compactMode
                 Layout.fillHeight: true
@@ -144,7 +152,7 @@ SkrBasePage {
                 id: rightBase
                 visible: !Globals.compactMode
                 Layout.fillHeight: true
-//                Layout.preferredWidth: rightBasePreferredWidth
+                //                Layout.preferredWidth: rightBasePreferredWidth
                 Layout.minimumWidth: 20
 
                 //Layout.maximumWidth: 300
