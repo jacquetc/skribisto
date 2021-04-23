@@ -16,7 +16,11 @@ GroupBox {
         color: "transparent"
     }
 
-
+    Keys.onPressed: {
+        if (event.key === Qt.Key_Tab){
+            Globals.setFocusTemporarilyVisible()
+        }
+    }
 
     label:
         RowLayout {
@@ -37,9 +41,10 @@ GroupBox {
 
             SkrFocusIndicator {
                 anchors.fill: parent
-                visible: control.activeFocus
+                visible: control.activeFocus & Globals.focusVisible
 
             }
+
         }
         Rectangle {
             id: separator

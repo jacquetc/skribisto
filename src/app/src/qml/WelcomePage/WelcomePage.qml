@@ -71,6 +71,7 @@ WelcomePageForm {
     settingsButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
         var item = stackView.push("SettingsPage.qml", StackView.Immediate)
+        item.closeCalled.connect(welcomePage.closeCalled)
         item.forceActiveFocus()
 
     }
@@ -177,6 +178,7 @@ WelcomePageForm {
         function onShowSettingsPageCalled() {
             stackView.pop(StackView.Immediate)
             var item = stackView.push("SettingsPage.qml", StackView.Immediate)
+            item.closeCalled.connect(welcomePage.closeCalled)
             item.forceActiveFocus()
         }
     }

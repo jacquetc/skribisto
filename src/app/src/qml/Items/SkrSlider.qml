@@ -12,8 +12,13 @@ Slider {
     SkrFocusIndicator {
         parent: control.background
         anchors.fill: control.background
-        visible: control.activeFocus
+        visible: control.activeFocus & Globals.focusVisible
 
+    }
+    Keys.onPressed: {
+        if (event.key === Qt.Key_Tab){
+            Globals.setFocusTemporarilyVisible()
+        }
     }
 
 

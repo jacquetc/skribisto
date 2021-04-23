@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qml/plugins">
+        <file>ThemePage/ThemePage.qml</file>
+        <file>ThemePage/ThemePageForm.ui.qml</file>
+    </qresource>
+</RCC>

@@ -65,8 +65,6 @@
         <file>qml/WriteOverview/SheetOverviewToolForm.ui.qml</file>
         <file>qml/Commons/NotePad.qml</file>
         <file>qml/Commons/NotePadForm.ui.qml</file>
-        <file>qml/Theme/ThemePage.qml</file>
-        <file>qml/Theme/ThemePageForm.ui.qml</file>
         <file>qml/SkrTheme.qml</file>
         <file>qml/Items/SkrButton.qml</file>
         <file>qml/Items/SkrToolButton.qml</file>

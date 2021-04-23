@@ -3,20 +3,44 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.themes 1.0
-import ".."
-import "../Items"
+
+import "../../Items"
+import "../../Commons"
+import "../.."
 
 
 
 ThemePageForm {
-    property string pageType: "theme"
-    property string title: "Themes"
+    id: root
+    property string pageType: "THEME"
+    property string title: qsTr("Themes")
     clip: true
 
     Component.onCompleted: {
         populateThemeListModel()
         populateColorPropertiesListModel()
     }
+
+    //--------------------------------------------------------
+    //---View buttons-----------------------------------------
+    //--------------------------------------------------------
+
+    viewButtons.viewManager: root.viewManager
+    viewButtons.position: root.position
+
+    viewButtons.onOpenInNewWindowCalled: {
+        saveContent()
+        saveCurrentCursorPositionAndY()
+        skrWindowManager.addWindowForProjectIndependantPageType(root.pageType)
+    }
+
+    viewButtons.onSplitCalled: function(position){
+        saveContent()
+        saveCurrentCursorPositionAndY()
+        viewManager.loadProjectIndependantPageAt(root.pageType, position)
+    }
+    titleLabel.text: title
+
 
     //-------------------------------------------------------------
     //-----theme list-----------------------------------------------
@@ -152,6 +176,23 @@ ThemePageForm {
                 }
             }
 
+
+            Item {
+                id: stretcher3
+                Layout.minimumWidth: 50
+            }
+
+            SkrRoundButton{
+                text: "\u2713"
+            }
+
+            SkrRoundButton{
+                text: "\u2713"
+            }
+
+            SkrRoundButton{
+                text: "\u2713"
+            }
 
         }
     }
