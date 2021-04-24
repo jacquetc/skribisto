@@ -11,7 +11,7 @@
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="109"/>
         <source>label: %1</source>
-        <translation>marque: %1</translation>
+        <translation>marque : %1</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="114"/>
@@ -644,12 +644,12 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="73"/>
         <source>Select none</source>
-        <translation type="unfinished">Ne rien sélectionner</translation>
+        <translation>Ne rien sélectionner</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="73"/>
         <source>Select all</source>
-        <translation type="unfinished">Tout sélectionner</translation>
+        <translation>Tout sélectionner</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="143"/>
@@ -674,17 +674,17 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="208"/>
         <source>.pdf</source>
-        <translation type="unfinished">.pdf</translation>
+        <translation>.pdf</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="269"/>
         <source>Levels with titles: %1</source>
-        <translation type="unfinished">Niveaux avec les titres : %1</translation>
+        <translation>Niveaux avec les titres : %1</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="373"/>
         <source>Export &quot;%1&quot; project as ...</source>
-        <translation type="unfinished">Exporter le projet &quot;%1&quot; dans ...</translation>
+        <translation>Exporter le projet &quot;%1&quot; dans ...</translation>
     </message>
 </context>
 <context>
@@ -692,52 +692,52 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="51"/>
         <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
-        <translation type="unfinished">&lt;h2&gt;Imprimer&lt;/h2&gt;</translation>
+        <translation>&lt;h2&gt;Imprimer&lt;/h2&gt;</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="51"/>
         <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
-        <translation type="unfinished">&lt;h2&gt;Exporter&lt;/h2&gt;</translation>
+        <translation>&lt;h2&gt;Exporter&lt;/h2&gt;</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
         <source>OpenDocument</source>
-        <translation type="unfinished">OpenDocument</translation>
+        <translation>OpenDocument</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
         <source>Text</source>
-        <translation type="unfinished">Texte</translation>
+        <translation>Texte</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
         <source>Markdown</source>
-        <translation type="unfinished">Markdown</translation>
+        <translation>Markdown</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
         <source>HTML</source>
-        <translation type="unfinished">HTML</translation>
+        <translation>HTML</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="169"/>
         <source>Include outline in each sheet</source>
-        <translation type="unfinished">Inclure le plan dans chaque feuille</translation>
+        <translation>Inclure le plan dans chaque feuille</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="175"/>
         <source>Numbered</source>
-        <translation type="unfinished">Numéroté</translation>
+        <translation>Numéroté</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="181"/>
         <source>Add tags</source>
-        <translation type="unfinished">Ajouter les étiquettes</translation>
+        <translation>Ajouter les étiquettes</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="199"/>
         <source>Text size :</source>
-        <translation type="unfinished">Taille du texte :</translation>
+        <translation>Taille du texte :</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="217"/>
