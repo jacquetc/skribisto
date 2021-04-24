@@ -12,7 +12,8 @@ app.depends = libskribisto-data
 #app.depends = 3rdparty
 plugins.depends = app
 
-TRANSLATIONS = translations/skribisto_fr_FR.ts \
+TRANSLATIONS = translations/skribisto_en.ts \
+translations/skribisto_fr_FR.ts \
 translations/skribisto_it_IT.ts \
 translations/skribisto_de_DE.ts \
 translations/skribisto_es.ts \

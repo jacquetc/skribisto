@@ -50,15 +50,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(GNUInstallDirs)
 include(FeatureSummary)
 # translations :
-set(TS_FILES
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_fr_FR.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_de_DE.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_it_IT.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_ru_RU.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_uk_UA.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_pt_BR.ts
-    ${CMAKE_SOURCE_DIR}/src/translations/skribisto_sp_SP.ts
-    )
+file(GLOB_RECURSE TS_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/translations/skribisto_*.ts")
+
 #set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION ${CMAKE_SOURCE_DIR}/src/translations/)
 qt_add_translation(QM_FILES ${TS_FILES})
 configure_file(${CMAKE_SOURCE_DIR}/src/translations/translations.qrc ${CMAKE_BINARY_DIR}/src/app/src COPYONLY)
