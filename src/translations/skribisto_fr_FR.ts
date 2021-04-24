@@ -71,12 +71,12 @@
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="603"/>
         <source>Enter label</source>
-        <translation></translation>
+        <translation>Enter label</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="990"/>
         <source>Set label</source>
-        <translation></translation>
+        <translation>Set label</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1219"/>
@@ -139,147 +139,147 @@
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="60"/>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="61"/>
         <source>Snow</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="62"/>
         <source>Azure</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="63"/>
         <source>Beige</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="64"/>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="65"/>
         <source>Red</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="66"/>
         <source>Dark red</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="67"/>
         <source>Pale Green</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="68"/>
         <source>Chartreuse</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="69"/>
         <source>Green</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="70"/>
         <source>Dark green</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="71"/>
         <source>Light cyan</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="72"/>
         <source>Cyan</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="73"/>
         <source>Dark cyan</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="74"/>
         <source>Blue</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="75"/>
         <source>Dark blue</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="76"/>
         <source>Light pink</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="77"/>
         <source>Pink</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="78"/>
         <source>Hot pink</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="79"/>
         <source>Magenta</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="80"/>
         <source>Dark magenta</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="81"/>
         <source>Light yellow</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="82"/>
         <source>Yellow</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="83"/>
         <source>Gold</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="84"/>
         <source>Orange</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="85"/>
         <source>Dark orange</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="86"/>
         <source>Grey</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="87"/>
         <source>Dark grey</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="108"/>
         <source>Color: %1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -508,13 +508,13 @@
     <message>
         <location filename="../app/src/qml/EmptyPage.qml" line="69"/>
         <source>&lt;h2&gt;Open a document&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/EmptyPage.qml" line="74"/>
         <source>- Drag an drop here
 - Click here then select a document in Navigation</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -522,7 +522,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/ExamplePageForm.ui.qml" line="23"/>
         <source>&lt;h2&gt;Examples&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -654,22 +654,22 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="143"/>
         <source>.odt</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="160"/>
         <source>.txt</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="176"/>
         <source>.md</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="192"/>
         <source>.html</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="208"/>
@@ -1006,7 +1006,7 @@
     <message>
         <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="70"/>
         <source>Non printable</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1056,7 +1056,7 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="681"/>
         <source>label:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="683"/>
@@ -1096,7 +1096,7 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1653"/>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enter name</source>
@@ -1129,7 +1129,7 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2014"/>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2039"/>
@@ -1164,22 +1164,22 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2307"/>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="680"/>
         <source>is a folder</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1701"/>
         <source>Enter title</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1924"/>
         <source>Open in another view</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1466,12 +1466,12 @@
     <message>
         <location filename="../app/src/qml/Commons/OutlinePad.qml" line="30"/>
         <source>Open outline</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/OutlinePad.qml" line="45"/>
         <source>Add outline</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1484,7 +1484,7 @@
     <message>
         <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="73"/>
         <source>Type your outline here...</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1502,7 +1502,7 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="119"/>
         <source>has %1 sub-items</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="126"/>
@@ -1527,7 +1527,7 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="704"/>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="745"/>
@@ -1592,7 +1592,7 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1831"/>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1850"/>
@@ -1637,7 +1637,7 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="2031"/>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1866,7 +1866,7 @@
     <message>
         <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="189"/>
         <source>Project dictionary</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="211"/>
@@ -2266,7 +2266,7 @@
     <message>
         <location filename="../app/src/qml/RootPage.qml" line="408"/>
         <source>Show the welcome page</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -2371,7 +2371,7 @@
     <message>
         <location filename="../app/src/qml/RootPageOld.qml" line="1509"/>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/RootPageOld.qml" line="1540"/>
@@ -2832,82 +2832,82 @@
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="145"/>
         <source>Main text background</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="146"/>
         <source>Main text foreground</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="147"/>
         <source>Secondary text background</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="148"/>
         <source>Secondary text foreground</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="149"/>
         <source>Page background</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="150"/>
         <source>Button background</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="151"/>
         <source>Button foreground</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="152"/>
         <source>Button icon</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="154"/>
         <source>Accent</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="155"/>
         <source>Spellcheck</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="156"/>
         <source>ToolBar background</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="158"/>
         <source>Divider</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="159"/>
         <source>Menu background</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="153"/>
         <source>Button icon (disabled)</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="160"/>
         <source>List item background</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="157"/>
         <source>Page ToolBar background</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -2916,17 +2916,17 @@
         <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="102"/>
         <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="158"/>
         <source>Split</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="130"/>
         <source>Close view</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="171"/>
         <source>Split vertically</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="182"/>
@@ -3007,7 +3007,7 @@
     <message>
         <location filename="../app/src/qml/Commons/TextContextMenu.qml" line="452"/>
         <source>Learn &quot;%1&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -3330,12 +3330,12 @@
     <message>
         <location filename="../app/src/qml/ProjectPage/UserDictPage.qml" line="150"/>
         <source>Add word to dictionary</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/ProjectPage/UserDictPage.qml" line="168"/>
         <source>Remove word from dictionary</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -3367,17 +3367,17 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="56"/>
         <source>Go Back</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="67"/>
         <source>New</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="79"/>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Open</source>
@@ -3746,7 +3746,7 @@
     <message>
         <location filename="../app/src/qml/main.qml" line="1009"/>
         <source>Loading a project</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 </TS>
