@@ -499,11 +499,6 @@
         <source>Levels with titles: %1</source>
         <translation type="unfinished">Niveaux avec les titres : %1</translation>
     </message>
-    <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="373"/>
-        <source>Export &quot;%1&quot; project as ...</source>
-        <translation type="unfinished">Exporter le projet &quot;%1&quot; dans ...</translation>
-    </message>
 </context>
 <context>
     <name>ExporterPageForm.ui</name>
@@ -1200,11 +1195,6 @@
         <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="73"/>
         <source>Show outline</source>
         <translation>Afficher le plan</translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="146"/>
-        <source>Type your note here...</source>
-        <translation>Taper votre note ici...</translation>
     </message>
 </context>
 <context>
@@ -2699,11 +2689,6 @@
         <source>Normal</source>
         <translation>Normal</translation>
     </message>
-    <message>
-        <location filename="../plugins/themePage/themepage.h" line="61"/>
-        <source>Text</source>
-        <translation type="unfinished">Texte</translation>
-    </message>
 </context>
 <context>
     <name>ThemePageForm.ui</name>
@@ -3221,11 +3206,6 @@
         <translation type="vanished">Enregistrer sous...</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="798"/>
-        <source>Save the &quot;%1&quot; project as ...</source>
-        <translation>Enregistrer le projet &quot;%1&quot; sous ...</translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/main.qml" line="835"/>
         <location filename="../app/src/qml/main.qml" line="908"/>
         <source>This path is read-only, please choose another path.</source>
@@ -3235,11 +3215,6 @@
         <location filename="../app/src/qml/main.qml" line="848"/>
         <source>Save a Copy</source>
         <translation>Enregistrer une copie</translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="870"/>
-        <source>Save a copy of the &quot;%1&quot; project as ...</source>
-        <translation>Enregistrer une copie du projet &quot;%1&quot; sous ...</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1091"/>
@@ -3265,18 +3240,6 @@
         <location filename="../app/src/qml/main.qml" line="1341"/>
         <source>&amp;Close &quot;%1&quot; project</source>
         <translation>&amp;Fermer le projet &quot;%1&quot;</translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1253"/>
-        <location filename="../app/src/qml/main.qml" line="1478"/>
-        <source>The project %1 is not saved. Do you want to save it before quiting ?</source>
-        <translation>Le projet %1 n&apos;est pas enregistré. Voulez-vous l&apos;enregistrer avant de quitter ?</translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1294"/>
-        <location filename="../app/src/qml/main.qml" line="1512"/>
-        <source>Save the %1 project as ...</source>
-        <translation>Enregistrer le projet %1 sous...</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1392"/>
@@ -3344,11 +3307,6 @@
         <location filename="../app/src/qml/main.qml" line="359"/>
         <source>Center vertically the text cursor</source>
         <translation>Centrer verticallement le curseur de texte</translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="760"/>
-        <source>Save As...</source>
-        <translation>Enregistrer sous...</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="442"/>
