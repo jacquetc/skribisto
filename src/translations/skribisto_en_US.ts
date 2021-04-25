@@ -460,8 +460,8 @@
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="373"/>
-        <source>Export &quot;%1&quot; project as ...</source>
-        <translation>Export &quot;%1&quot; project as …</translation>
+        <source>Export &quot;%1&quot; project as …</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -632,12 +632,12 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="171"/>
         <source>Share</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Share</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="185"/>
         <source>Print</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Print</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="190"/>
@@ -647,7 +647,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="195"/>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Export</translation>
     </message>
 </context>
 <context>
@@ -759,7 +759,7 @@
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="242"/>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2084"/>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paste</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="249"/>
@@ -805,7 +805,7 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="683"/>
         <source>navigation item</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">navigation item</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1279"/>
@@ -825,17 +825,17 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1440"/>
         <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open document in a window</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1511"/>
         <source>This project is a backup</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">This project is a backup</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1653"/>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Enter label</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1701"/>
@@ -845,7 +845,7 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1904"/>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1924"/>
@@ -855,7 +855,7 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1945"/>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open in new window</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1971"/>
@@ -865,52 +865,52 @@
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1993"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Rename</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2014"/>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Set label</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2039"/>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cut</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2061"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Copy</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2111"/>
         <source>Add before</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add before</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2151"/>
         <source>Add after</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add after</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2193"/>
         <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add a sub-item</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2242"/>
         <source>Move up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Move up</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2272"/>
         <source>Move down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Move down</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2307"/>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Send to trash</translation>
     </message>
 </context>
 <context>
@@ -982,7 +982,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="92"/>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Select</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="99"/>
@@ -1005,7 +1005,7 @@
     <message>
         <location filename="../app/src/qml/Commons/NotePad.qml" line="323"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Rename</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NotePad.qml" line="352"/>
@@ -1020,7 +1020,7 @@
     <message>
         <location filename="../app/src/qml/Commons/NotePad.qml" line="370"/>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Send to trash</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NotePad.qml" line="392"/>
@@ -1094,7 +1094,7 @@
     </message>
     <message>
         <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="146"/>
-        <source>Type your note here...</source>
+        <source>Type your note here …</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1148,7 +1148,7 @@
     </message>
     <message>
         <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="73"/>
-        <source>Type your outline here...</source>
+        <source>Type your outline here …</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1157,12 +1157,12 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="105"/>
         <source>Level %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Level %1</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="114"/>
         <source>label: %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">label: %1</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="119"/>
@@ -1172,7 +1172,7 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="126"/>
         <source>navigation item</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">navigation item</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="382"/>
@@ -1187,17 +1187,17 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="422"/>
         <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open document in a window</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="704"/>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Enter label</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="745"/>
         <source>Enter name</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Enter name</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="942"/>
@@ -1227,17 +1227,17 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1719"/>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1738"/>
         <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open in new tab</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1758"/>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open in new window</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1781"/>
@@ -1252,57 +1252,57 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1812"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Rename</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1831"/>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Set label</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1850"/>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cut</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1871"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Copy</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1892"/>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paste</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1914"/>
         <source>Add before</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add before</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1938"/>
         <source>Add after</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add after</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1958"/>
         <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add a sub-item</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1988"/>
         <source>Move up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Move up</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="2009"/>
         <source>Move down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Move down</translation>
     </message>
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="2031"/>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Send to trash</translation>
     </message>
 </context>
 <context>
@@ -1310,7 +1310,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="26"/>
         <source>Go back</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Go back</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="31"/>
@@ -1330,7 +1330,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="76"/>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Select</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/PlumeImporterForm.ui.qml" line="83"/>
@@ -1500,7 +1500,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="52"/>
         <source>Opened</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Opened</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="55"/>
@@ -1553,12 +1553,12 @@
     <message>
         <location filename="../app/src/qml/Commons/RestoreListView.qml" line="230"/>
         <source>Select none</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Select none</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/RestoreListView.qml" line="230"/>
         <source>Select all</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Select all</translation>
     </message>
 </context>
 <context>
@@ -1571,7 +1571,7 @@
     <message>
         <location filename="../app/src/qml/Commons/RestoreListViewForm.ui.qml" line="63"/>
         <source>Select all</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Select all</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/RestoreListViewForm.ui.qml" line="70"/>
@@ -1619,19 +1619,19 @@
         <location filename="../app/src/qml/Note/RightDock.qml" line="146"/>
         <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="195"/>
         <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Show edit tool box</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Note/RightDock.qml" line="183"/>
         <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="231"/>
         <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Show properties tool box</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Note/RightDock.qml" line="212"/>
         <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="260"/>
         <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Show tags tool box</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/RightDock.qml" line="57"/>
@@ -1900,7 +1900,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="149"/>
         <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Center vertically the text cursor</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="160"/>
@@ -1910,7 +1910,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="168"/>
         <source>Check spelling</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Check spelling</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="178"/>
@@ -1960,7 +1960,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="355"/>
         <source>Quick print</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Quick print</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="368"/>
@@ -1970,22 +1970,22 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="373"/>
         <source>Add tags</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add tags</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="384"/>
         <source>Text size :</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Text size :</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="401"/>
         <source>Text indent :</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Text indent :</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="413"/>
         <source>Top margin :</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Top margin :</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="435"/>
@@ -2005,7 +2005,7 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="464"/>
         <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Show properties tool box</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="469"/>
@@ -2023,7 +2023,7 @@
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="57"/>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Display</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="69"/>
@@ -2066,22 +2066,22 @@
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="101"/>
         <source>Level %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Level %1</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="109"/>
         <source>label: %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">label: %1</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="114"/>
         <source>has children</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">has children</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="121"/>
         <source>navigation item</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">navigation item</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="377"/>
@@ -2096,17 +2096,17 @@
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="417"/>
         <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open document in a window</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="594"/>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Enter label</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="635"/>
         <source>Enter name</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Enter name</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="832"/>
@@ -2136,17 +2136,17 @@
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1610"/>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1629"/>
         <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open in new tab</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1649"/>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open in new window</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1672"/>
@@ -2161,57 +2161,57 @@
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1703"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Rename</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1722"/>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Set label</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1741"/>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cut</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1762"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Copy</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1783"/>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paste</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1805"/>
         <source>Add before</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add before</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1829"/>
         <source>Add after</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add after</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1849"/>
         <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Add a sub-item</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1879"/>
         <source>Move up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Move up</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1900"/>
         <source>Move down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Move down</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1922"/>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Send to trash</translation>
     </message>
 </context>
 <context>
@@ -2326,7 +2326,7 @@
     <message>
         <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="182"/>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open in new window</translation>
     </message>
 </context>
 <context>
@@ -2334,7 +2334,7 @@
     <message>
         <location filename="../app/src/qml/Commons/TagPad.qml" line="347"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Rename</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/TagPad.qml" line="375"/>
@@ -2469,6 +2469,7 @@
     <name>ThemePage</name>
     <message>
         <location filename="../plugins/themePage/ThemePage/ThemePage.qml" line="16"/>
+        <location filename="../plugins/themePage/themepage.h" line="61"/>
         <source>Themes</source>
         <translation>Themes</translation>
     </message>
@@ -2498,13 +2499,8 @@
         <translation>Theme page</translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/themepage.h" line="61"/>
-        <source>Text</source>
-        <translation type="unfinished">Text</translation>
-    </message>
-    <message>
         <location filename="../plugins/themePage/themepage.h" line="65"/>
-        <source>Write here any text, be it a scene or a note</source>
+        <source>Choose or modify your themes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2513,7 +2509,7 @@
     <message>
         <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="84"/>
         <source>Themes</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Themes</translation>
     </message>
     <message>
         <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="138"/>
@@ -2645,12 +2641,12 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="142"/>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Export</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="151"/>
         <source>Print</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Print</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="160"/>
@@ -2742,17 +2738,17 @@
     <message>
         <location filename="../app/src/qml/Write/WriteRightDock.qml" line="163"/>
         <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Show edit tool box</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Write/WriteRightDock.qml" line="200"/>
         <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Show properties tool box</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Write/WriteRightDock.qml" line="229"/>
         <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Show tags tool box</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Write/WriteRightDock.qml" line="266"/>
@@ -2770,12 +2766,12 @@
     <message>
         <location filename="../app/src/qml/main.qml" line="359"/>
         <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Center vertically the text cursor</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="386"/>
         <source>Themes</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Themes</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="413"/>
@@ -2834,12 +2830,29 @@
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="760"/>
-        <source>Save As...</source>
+        <source>Save As …</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="798"/>
-        <source>Save the &quot;%1&quot; project as ...</source>
+        <source>Save the &quot;%1&quot; project as …</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="870"/>
+        <source>Save a copy of the &quot;%1&quot; project as …</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1251"/>
+        <location filename="../app/src/qml/main.qml" line="1476"/>
+        <source>The project %1 is not saved. Do you want to save it before quitting ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="1292"/>
+        <location filename="../app/src/qml/main.qml" line="1510"/>
+        <source>Save the %1 project as …</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2851,11 +2864,6 @@
     <message>
         <location filename="../app/src/qml/main.qml" line="848"/>
         <source>Save a Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="870"/>
-        <source>Save a copy of the &quot;%1&quot; project as ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2904,18 +2912,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1251"/>
-        <location filename="../app/src/qml/main.qml" line="1476"/>
-        <source>The project %1 is not saved. Do you want to save it before quiting ?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1292"/>
-        <location filename="../app/src/qml/main.qml" line="1510"/>
-        <source>Save the %1 project as ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/main.qml" line="1339"/>
         <source>&amp;Close &quot;%1&quot; project</source>
         <translation type="unfinished"></translation>
@@ -2928,37 +2924,37 @@
     <message>
         <location filename="../app/src/qml/main.qml" line="1596"/>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cut</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1614"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Copy</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1632"/>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paste</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1655"/>
         <source>Italic</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Italic</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1686"/>
         <source>Bold</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Bold</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1717"/>
         <source>Strike</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Strike</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1747"/>
         <source>Underline</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Underline</translation>
     </message>
 </context>
 </TS>
