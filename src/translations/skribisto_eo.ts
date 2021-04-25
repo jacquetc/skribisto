@@ -201,10 +201,5 @@
 </context>
 <context>
     <name>main</name>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="487"/>
-        <source>About &amp;Qt</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 </TS>

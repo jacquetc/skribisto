@@ -183,10 +183,5 @@
 </context>
 <context>
     <name>main</name>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1747"/>
-        <source>Underline</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 </TS>
