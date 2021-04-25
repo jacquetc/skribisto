@@ -2876,7 +2876,7 @@
     <message>
         <location filename="../app/src/qml/main.qml" line="58"/>
         <source>test</source>
-        <translation type="unfinished"></translation>
+        <translation>test</translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="850"/>
