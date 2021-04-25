@@ -3,6 +3,21 @@
 <TS version="2.1" language="fr_FR">
 <context>
     <name></name>
+    <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="62"/>
+        <source>Azure</source>
+        <translation>Azure</translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="61"/>
+        <source>Snow</source>
+        <translation>Neige</translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="60"/>
+        <source>White</source>
+        <translation>Blanc</translation>
+    </message>
 </context>
 <context>
     <name>CheckableTree</name>
