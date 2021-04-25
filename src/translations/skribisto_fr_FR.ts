@@ -139,7 +139,7 @@
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="60"/>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>Blanc</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="61"/>
@@ -159,7 +159,7 @@
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="64"/>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Noir</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="65"/>
@@ -2957,6 +2957,19 @@
         <location filename="../app/src/qml/main.qml" line="386"/>
         <source>Themes</source>
         <translation>Thèmes</translation>
+    </message>
+</context>
+<context>
+    <name></name>
+    <message>
+        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="60"/>
+        <source>White</source>
+        <translation>Blanc</translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="58"/>
+        <source>test</source>
+        <translation>teeeest</translation>
     </message>
 </context>
 </TS>
