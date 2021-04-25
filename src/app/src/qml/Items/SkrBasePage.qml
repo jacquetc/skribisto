@@ -93,7 +93,6 @@ FocusScope {
         property int treeItemId: -2
         property string treeItemTitle: ""
         title: "Rename an  item"
-        //text: qsTr("The project %1 is not saved. Do you want to save it before quiting ?").arg(projectName)
         contentItem: SkrTextField {
             id: renameTextField
                 text: renameDialog.treeItemTitle

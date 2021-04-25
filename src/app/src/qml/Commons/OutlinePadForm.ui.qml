@@ -70,7 +70,7 @@ Item {
 
             WritingZone {
                 id: outlineWritingZone
-                placeholderText: qsTr("Type your outline here...")
+                placeholderText: qsTr("Type your outline here …")
                 Layout.fillWidth: true
                 Layout.preferredHeight: 400
                 stretch: true
