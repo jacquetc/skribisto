@@ -140,18 +140,8 @@
 <context>
     <name>ColorChooser</name>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="67"/>
-        <source>Pale Green</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="75"/>
         <source>Dark blue</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="83"/>
-        <source>Gold</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2571,11 +2561,6 @@
 </context>
 <context>
     <name>SkrTheme</name>
-    <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="152"/>
-        <source>Button icon</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="157"/>
         <source>Page ToolBar background</source>
