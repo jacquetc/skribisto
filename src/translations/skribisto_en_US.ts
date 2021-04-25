@@ -426,22 +426,22 @@
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="73"/>
         <source>Select all</source>
-        <translation type="unfinished"></translation>
+        <translation>Select all</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="143"/>
         <source>.odt</source>
-        <translation type="unfinished"></translation>
+        <translation>.odt</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="160"/>
         <source>.txt</source>
-        <translation type="unfinished"></translation>
+        <translation>.txt</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="176"/>
         <source>.md</source>
-        <translation type="unfinished"></translation>
+        <translation>.md</translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="192"/>
@@ -2422,47 +2422,47 @@
     <message>
         <location filename="../plugins/textPage/TextPage/TextPage.qml" line="21"/>
         <source>Plan of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Plan of %1</translation>
     </message>
     <message>
         <location filename="../plugins/textPage/TextPage/TextPage.qml" line="116"/>
         <source>%1 words, %2 characters</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 words, %2 characters</translation>
     </message>
     <message>
         <location filename="../plugins/textPage/TextPage/TextPage.qml" line="624"/>
         <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Show edit tool box</translation>
     </message>
     <message>
         <location filename="../plugins/textPage/TextPage/TextPage.qml" line="639"/>
         <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Show properties tool box</translation>
     </message>
     <message>
         <location filename="../plugins/textPage/TextPage/TextPage.qml" line="656"/>
         <source>Show outline tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Show outline tool box</translation>
     </message>
     <message>
         <location filename="../plugins/textPage/TextPage/TextPage.qml" line="676"/>
         <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>Show tags tool box</translation>
     </message>
     <message>
         <location filename="../plugins/textPage/textpage.h" line="49"/>
         <source>Text page</source>
-        <translation type="unfinished"></translation>
+        <translation>Text page</translation>
     </message>
     <message>
         <location filename="../plugins/textPage/textpage.h" line="62"/>
         <source>Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Text</translation>
     </message>
     <message>
         <location filename="../plugins/textPage/textpage.h" line="66"/>
         <source>Write here any text, be it a scene or a note</source>
-        <translation type="unfinished"></translation>
+        <translation>Write here any text, be it a scene or a note</translation>
     </message>
 </context>
 <context>
@@ -2470,37 +2470,37 @@
     <message>
         <location filename="../plugins/themePage/ThemePage/ThemePage.qml" line="16"/>
         <source>Themes</source>
-        <translation type="unfinished"></translation>
+        <translation>Themes</translation>
     </message>
     <message>
         <location filename="../plugins/themePage/ThemePage/ThemePage.qml" line="164"/>
         <source>Edit theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Edit theme</translation>
     </message>
     <message>
         <location filename="../plugins/themePage/ThemePage/ThemePage.qml" line="351"/>
         <source>Edit color</source>
-        <translation type="unfinished"></translation>
+        <translation>Edit color</translation>
     </message>
     <message>
         <location filename="../plugins/themePage/ThemePage/ThemePage.qml" line="391"/>
         <source>Distraction free</source>
-        <translation type="unfinished"></translation>
+        <translation>Distraction free</translation>
     </message>
     <message>
         <location filename="../plugins/themePage/ThemePage/ThemePage.qml" line="391"/>
         <source>Normal</source>
-        <translation type="unfinished"></translation>
+        <translation>Normal</translation>
     </message>
     <message>
         <location filename="../plugins/themePage/themepage.h" line="48"/>
         <source>Theme page</source>
-        <translation type="unfinished"></translation>
+        <translation>Theme page</translation>
     </message>
     <message>
         <location filename="../plugins/themePage/themepage.h" line="61"/>
         <source>Text</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Text</translation>
     </message>
     <message>
         <location filename="../plugins/themePage/themepage.h" line="65"/>
