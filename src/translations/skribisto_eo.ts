@@ -87,11 +87,6 @@
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/ProjectPage/ProjectPageForm.ui.qml" line="168"/>
-        <source>Dictionary :</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>ProjectSubPage</name>
