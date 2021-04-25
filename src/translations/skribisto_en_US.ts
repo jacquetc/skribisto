@@ -2763,200 +2763,205 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../app/src/qml/main.qml" line="217"/>
+        <location filename="../app/src/qml/main.qml" line="218"/>
         <source>Fullscreen</source>
         <translation>Fullscreen</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="359"/>
+        <location filename="../app/src/qml/main.qml" line="360"/>
         <source>Center vertically the text cursor</source>
         <translation>Center vertically the text cursor</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="386"/>
+        <location filename="../app/src/qml/main.qml" line="387"/>
         <source>Themes</source>
         <translation>Themes</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="413"/>
+        <location filename="../app/src/qml/main.qml" line="414"/>
         <source>&amp;Contents</source>
         <translation>&amp;Contents</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="442"/>
+        <location filename="../app/src/qml/main.qml" line="443"/>
         <source>&amp;FAQ</source>
         <translation>&amp;FAQ</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="464"/>
+        <location filename="../app/src/qml/main.qml" line="465"/>
         <source>&amp;About</source>
         <translation>&amp;About</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="487"/>
+        <location filename="../app/src/qml/main.qml" line="488"/>
         <source>About &amp;Qt</source>
         <translation>About &amp;Qt</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="510"/>
+        <location filename="../app/src/qml/main.qml" line="511"/>
         <source>&amp;New Project</source>
         <translation>&amp;New Project</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="538"/>
+        <location filename="../app/src/qml/main.qml" line="539"/>
         <source>&amp;Check spelling</source>
         <translation>&amp;Check spelling</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="570"/>
+        <location filename="../app/src/qml/main.qml" line="571"/>
         <source>&amp;Open Project</source>
         <translation>&amp;Open Project</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="592"/>
+        <location filename="../app/src/qml/main.qml" line="593"/>
         <source>Open an existing project</source>
         <translation>Open an existing project</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="637"/>
+        <location filename="../app/src/qml/main.qml" line="638"/>
         <source>Save</source>
         <translation>Save</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="708"/>
+        <location filename="../app/src/qml/main.qml" line="709"/>
         <source>Save All</source>
         <translation>Save All</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="735"/>
+        <location filename="../app/src/qml/main.qml" line="736"/>
         <source>Ctrl+Shift+S</source>
         <translation>Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="760"/>
+        <location filename="../app/src/qml/main.qml" line="761"/>
         <source>Save As …</source>
         <translation>Save As …</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="798"/>
+        <location filename="../app/src/qml/main.qml" line="799"/>
         <source>Save the &quot;%1&quot; project as …</source>
         <translation>Save the &quot;%1&quot; project as …</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="870"/>
+        <location filename="../app/src/qml/main.qml" line="871"/>
         <source>Save a copy of the &quot;%1&quot; project as …</source>
         <translation>Save a copy of the &quot;%1&quot; project as …</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1251"/>
-        <location filename="../app/src/qml/main.qml" line="1476"/>
+        <location filename="../app/src/qml/main.qml" line="1252"/>
+        <location filename="../app/src/qml/main.qml" line="1477"/>
         <source>The project %1 is not saved. Do you want to save it before quitting ?</source>
         <translation>The project %1 is not saved. Do you want to save it before quitting ?</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1292"/>
-        <location filename="../app/src/qml/main.qml" line="1510"/>
+        <location filename="../app/src/qml/main.qml" line="1293"/>
+        <location filename="../app/src/qml/main.qml" line="1511"/>
         <source>Save the %1 project as …</source>
         <translation>Save the %1 project as …</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="835"/>
-        <location filename="../app/src/qml/main.qml" line="908"/>
+        <location filename="../app/src/qml/main.qml" line="836"/>
+        <location filename="../app/src/qml/main.qml" line="909"/>
         <source>This path is read-only, please choose another path.</source>
         <translation>This path is read-only, please choose another path.</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="848"/>
+        <location filename="../app/src/qml/main.qml" line="58"/>
+        <source>test</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/main.qml" line="849"/>
         <source>Save a Copy</source>
         <translation>Save a Copy</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1009"/>
+        <location filename="../app/src/qml/main.qml" line="1010"/>
         <source>Loading a project</source>
         <translation>Loading a project</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1091"/>
+        <location filename="../app/src/qml/main.qml" line="1092"/>
         <source>Back up</source>
         <translation>Back up</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1107"/>
+        <location filename="../app/src/qml/main.qml" line="1108"/>
         <source>Back up failed: The backup is not configured</source>
         <translation>Back up failed: The backup is not configured</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1124"/>
+        <location filename="../app/src/qml/main.qml" line="1125"/>
         <source>Back up failed:  the project must be saved at least once</source>
         <translation>Back up failed:  the project must be saved at least once</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1136"/>
+        <location filename="../app/src/qml/main.qml" line="1137"/>
         <source>Back up failed: The backup path %1 can&apos;t be used</source>
         <translation>Back up failed: The backup path %1 can&apos;t be used</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1145"/>
+        <location filename="../app/src/qml/main.qml" line="1146"/>
         <source>Back up failed: The backup path %1 is read only</source>
         <translation>Back up failed: The backup path %1 is read only</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1161"/>
+        <location filename="../app/src/qml/main.qml" line="1162"/>
         <source>&amp;Print</source>
         <translation>&amp;Print</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1187"/>
+        <location filename="../app/src/qml/main.qml" line="1188"/>
         <source>&amp;Import</source>
         <translation>&amp;Import</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1205"/>
+        <location filename="../app/src/qml/main.qml" line="1206"/>
         <source>&amp;Export</source>
         <translation>&amp;Export</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1339"/>
+        <location filename="../app/src/qml/main.qml" line="1340"/>
         <source>&amp;Close &quot;%1&quot; project</source>
         <translation>&amp;Close &quot;%1&quot; project</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1390"/>
+        <location filename="../app/src/qml/main.qml" line="1391"/>
         <source>&amp;Quit</source>
         <translation>&amp;Quit</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1596"/>
+        <location filename="../app/src/qml/main.qml" line="1597"/>
         <source>Cut</source>
         <translation>Cut</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1614"/>
+        <location filename="../app/src/qml/main.qml" line="1615"/>
         <source>Copy</source>
         <translation>Copy</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1632"/>
+        <location filename="../app/src/qml/main.qml" line="1633"/>
         <source>Paste</source>
         <translation>Paste</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1655"/>
+        <location filename="../app/src/qml/main.qml" line="1656"/>
         <source>Italic</source>
         <translation>Italic</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1686"/>
+        <location filename="../app/src/qml/main.qml" line="1687"/>
         <source>Bold</source>
         <translation>Bold</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1717"/>
+        <location filename="../app/src/qml/main.qml" line="1718"/>
         <source>Strike</source>
         <translation>Strike</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/main.qml" line="1747"/>
+        <location filename="../app/src/qml/main.qml" line="1748"/>
         <source>Underline</source>
         <translation>Underline</translation>
     </message>
