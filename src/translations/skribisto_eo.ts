@@ -39,11 +39,6 @@
 </context>
 <context>
     <name>ImporterPageForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/WelcomePage/ImporterPageForm.ui.qml" line="30"/>
-        <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>LeftDock</name>
@@ -154,11 +149,6 @@
 </context>
 <context>
     <name>SheetOverviewTree</name>
-    <message>
-        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="397"/>
-        <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>SkrTabButtonForm.ui</name>
