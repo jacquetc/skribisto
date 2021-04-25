@@ -140,18 +140,8 @@
 <context>
     <name>ColorChooser</name>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="63"/>
-        <source>Beige</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="67"/>
         <source>Pale Green</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="71"/>
-        <source>Light cyan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -160,18 +150,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="79"/>
-        <source>Magenta</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="83"/>
         <source>Gold</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="87"/>
-        <source>Dark grey</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -523,11 +503,6 @@
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="73"/>
         <source>Select all</source>
         <translation type="unfinished">Tout sélectionner</translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="192"/>
-        <source>.html</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="208"/>
@@ -994,11 +969,6 @@
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="2272"/>
         <source>Move down</source>
         <translation type="unfinished">Déplacer vers le bas</translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1924"/>
-        <source>Open in another view</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2602,18 +2572,8 @@
 <context>
     <name>SkrTheme</name>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="148"/>
-        <source>Secondary text foreground</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/SkrTheme.qml" line="152"/>
         <source>Button icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="158"/>
-        <source>Divider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3092,11 +3052,6 @@
         <translation>Aide</translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="79"/>
-        <source>Recent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open</source>
         <translation type="obsolete">Ouvrir</translation>
     </message>
@@ -3341,11 +3296,6 @@
         <location filename="../app/src/qml/main.qml" line="1478"/>
         <source>The project %1 is not saved. Do you want to save it before quiting ?</source>
         <translation>Le projet %1 n&apos;est pas enregistré. Voulez-vous l&apos;enregistrer avant de quitter ?</translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1147"/>
-        <source>Back up failed: The backup path %1 is read only</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1294"/>
