@@ -3,11 +3,6 @@
 <TS version="2.1" language="fr_FR">
 <context>
     <name></name>
-    <message id="translation-test">
-        <location filename="../app/src/qml/main.qml" line="1108"/>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>CheckableTree</name>
@@ -79,12 +74,12 @@
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="603"/>
         <source>Enter label</source>
-        <translation></translation>
+        <translation>Marquez</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="990"/>
         <source>Set label</source>
-        <translation></translation>
+        <translation>Marquer</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1219"/>
@@ -487,10 +482,6 @@
         <translation type="vanished">Papier :</translation>
     </message>
     <message>
-        <source></source>
-        <translation></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="129"/>
         <source>Check spelling</source>
         <translation>Vérifie l&apos;orthographe</translation>
@@ -859,10 +850,6 @@
         <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="158"/>
         <source>Back up</source>
         <translation>Faire une copie de secours</translation>
-    </message>
-    <message>
-        <source></source>
-        <translation></translation>
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="185"/>
@@ -1771,10 +1758,6 @@
         <translation type="vanished">Tout enregistrer</translation>
     </message>
     <message>
-        <source></source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Create an empty project at start</source>
         <translation type="vanished">Créer un projet vide au démarrage</translation>
     </message>
@@ -2257,10 +2240,6 @@
         <location filename="../app/src/qml/RootPage.qml" line="162"/>
         <source>Critical</source>
         <translation>Critique</translation>
-    </message>
-    <message>
-        <source></source>
-        <translation></translation>
     </message>
     <message>
         <source>Overview</source>
@@ -3734,11 +3713,6 @@
         <location filename="../app/src/qml/main.qml" line="1478"/>
         <source>The project %1 is not saved. Do you want to save it before quiting ?</source>
         <translation>Le projet %1 n&apos;est pas enregistré. Voulez-vous l&apos;enregistrer avant de quitter ?</translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1107"/>
-        <source>teeeest</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../app/src/qml/main.qml" line="1109"/>
