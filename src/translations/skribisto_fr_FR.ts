@@ -139,11 +139,6 @@
 </context>
 <context>
     <name>ColorChooser</name>
-    <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="75"/>
-        <source>Dark blue</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>DeletedListView</name>
@@ -2561,11 +2556,6 @@
 </context>
 <context>
     <name>SkrTheme</name>
-    <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="157"/>
-        <source>Page ToolBar background</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>SkrViewButtons</name>

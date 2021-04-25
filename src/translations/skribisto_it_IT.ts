@@ -3,22 +3,12 @@
 <TS version="2.1" language="it_IT">
 <context>
     <name>CheckableTree</name>
-    <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="990"/>
-        <source>Set label</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>ColorChooser</name>
     <message>
         <location filename="../app/src/qml/Commons/ColorChooser.qml" line="65"/>
         <source>Red</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="81"/>
-        <source>Light yellow</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -41,11 +31,6 @@
 </context>
 <context>
     <name>ExporterPage</name>
-    <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="73"/>
-        <source>Select none</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>ExporterPageForm.ui</name>
@@ -60,11 +45,6 @@
 </context>
 <context>
     <name>FileMenuPageForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="62"/>
-        <source>New project</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>HelpPageForm.ui</name>
@@ -86,11 +66,6 @@
 <context>
     <name>NavigationList</name>
     <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="272"/>
-        <source>Add</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/Commons/NavigationList.qml" line="1971"/>
         <source>Set as active project</source>
         <translation type="unfinished"></translation>
@@ -107,11 +82,6 @@
 </context>
 <context>
     <name>NewProjectPageForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="59"/>
-        <source>Project title :</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>NotePad</name>
@@ -126,11 +96,6 @@
 </context>
 <context>
     <name>NoteSearchItemForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/NoteOverview/NoteSearchItemForm.ui.qml" line="81"/>
-        <source>Note overview list</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>OutlinePad</name>
@@ -143,11 +108,6 @@
     <message>
         <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1398"/>
         <source>all c: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1988"/>
-        <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -176,11 +136,6 @@
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="33"/>
-        <source>Properties</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>RecentPage</name>
@@ -204,11 +159,6 @@
 </context>
 <context>
     <name>RootPage</name>
-    <message>
-        <location filename="../app/src/qml/RootPage.qml" line="163"/>
-        <source>Fatal</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>RootPageForm.ui</name>
@@ -233,11 +183,6 @@
 <context>
     <name>SettingsPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="105"/>
-        <source>Interface language :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="324"/>
         <source>Save every</source>
         <translation type="unfinished"></translation>
@@ -245,22 +190,12 @@
 </context>
 <context>
     <name>SheetOverviewToolForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/WriteOverview/SheetOverviewToolForm.ui.qml" line="80"/>
-        <source>Tree indentation :</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>SheetOverviewTree</name>
     <message>
         <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1280"/>
         <source>c: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/WriteOverview/SheetOverviewTree.qml" line="1849"/>
-        <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -280,11 +215,6 @@
 </context>
 <context>
     <name>TagPad</name>
-    <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="751"/>
-        <source>Tag name</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>TagPadForm.ui</name>
@@ -320,11 +250,6 @@
 </context>
 <context>
     <name>WriteOverviewPageForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/WriteOverview/WriteOverviewPageForm.ui.qml" line="156"/>
-        <source>Unfocus</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>WriteRightDock</name>
@@ -334,11 +259,6 @@
     <message>
         <location filename="../app/src/qml/main.qml" line="487"/>
         <source>About &amp;Qt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1124"/>
-        <source>Back up failed:  the project must be saved at least once</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
