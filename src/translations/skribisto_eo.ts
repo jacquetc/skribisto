@@ -9,11 +9,6 @@
 </context>
 <context>
     <name>ColorChooser</name>
-    <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="65"/>
-        <source>Red</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>EditView</name>
@@ -37,11 +32,6 @@
 </context>
 <context>
     <name>ExporterPageForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="175"/>
-        <source>Numbered</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>FileMenuPage</name>
@@ -68,11 +58,6 @@
 </context>
 <context>
     <name>NavigationList</name>
-    <message>
-        <location filename="../app/src/qml/Commons/NavigationList.qml" line="1971"/>
-        <source>Set as active project</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>NavigationListForm.ui</name>
@@ -108,11 +93,6 @@
 </context>
 <context>
     <name>OverviewTree</name>
-    <message>
-        <location filename="../app/src/qml/OverviewPage/OverviewTree.qml" line="1398"/>
-        <source>all c: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>PlumeImporterForm.ui</name>
@@ -151,11 +131,6 @@
 </context>
 <context>
     <name>RestoreListViewForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/Commons/RestoreListViewForm.ui.qml" line="63"/>
-        <source>Select all</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>RightDock</name>
@@ -188,11 +163,6 @@
 </context>
 <context>
     <name>SettingsPageForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="202"/>
-        <source>Backup paths :</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>SheetOverviewToolForm.ui</name>
@@ -210,11 +180,6 @@
 </context>
 <context>
     <name>SkrTheme</name>
-    <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="151"/>
-        <source>Button foreground</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>SkrViewButtons</name>
@@ -256,11 +221,6 @@
 </context>
 <context>
     <name>WelcomePageForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="56"/>
-        <source>Go Back</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>WriteLeftDock</name>
@@ -279,11 +239,6 @@
     <message>
         <location filename="../app/src/qml/main.qml" line="487"/>
         <source>About &amp;Qt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1749"/>
-        <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
