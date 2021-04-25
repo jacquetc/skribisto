@@ -143,7 +143,7 @@ Item {
 
             WritingZone {
                 id: noteWritingZone
-                placeholderText: qsTr("Type your note here...")
+                placeholderText: qsTr("Type your note here …")
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.preferredHeight: 400

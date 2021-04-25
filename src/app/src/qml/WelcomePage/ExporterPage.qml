@@ -370,7 +370,7 @@ ExporterPageForm {
         property string type: ""
 
         id: exportFileDialog
-        title: qsTr("Export \"%1\" project as ...").arg(projectName)
+        title: qsTr("Export \"%1\" project as …").arg(projectName)
         modality: Qt.ApplicationModal
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile

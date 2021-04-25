@@ -10,6 +10,11 @@ SKRErrorHub::SKRErrorHub(QObject *parent) : QObject(parent)
     qRegisterMetaType<QList<SKRResult> >("QList<SKRResult>");
 }
 
+void SKRErrorHub::addWarning(const QString& warningText)
+{
+    emit sendNotification(SKRResult::Warning, warningText);
+}
+
 void SKRErrorHub::addError(SKRResult result)
 {
     m_resultList.append(result);

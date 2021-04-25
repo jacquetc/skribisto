@@ -58,11 +58,11 @@ public:
     }
 
     QString visualText() const {
-        return tr("Text");
+        return tr("Themes");
     }
 
     QString pageDetailText() const {
-        return tr("Write here any text, be it a scene or a note");
+        return tr("Choose or modify your themes");
     }
 
     QString pageUrl() const {

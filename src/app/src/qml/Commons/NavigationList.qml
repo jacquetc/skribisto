@@ -1183,7 +1183,7 @@ NavigationListForm {
                                     }
                                     Timer {
                                         id: openDocumentTimer
-                                        interval: 100
+                                        interval: 150
                                         onTriggered: {
                                             openDocumentAction.trigger()
 
@@ -1192,7 +1192,7 @@ NavigationListForm {
 
                                     Timer {
                                         id: goToChildTimer
-                                        interval: 100
+                                        interval: 150
                                         onTriggered: {
                                             goToChildAction.trigger()
 

@@ -757,7 +757,7 @@ ApplicationWindow {
     Action {
 
         id: saveAsAction
-        text: qsTr("Save As...")
+        text: qsTr("Save As …")
         icon {
             source: "qrc:///icons/backup/document-save-as.svg"
             height: 50
@@ -795,7 +795,7 @@ ApplicationWindow {
         property string projectName: ""
 
         id: saveAsFileDialog
-        title: qsTr("Save the \"%1\" project as ...").arg(projectName)
+        title: qsTr("Save the \"%1\" project as …").arg(projectName)
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
@@ -867,7 +867,7 @@ ApplicationWindow {
         property string projectName: ""
 
         id: saveACopyFileDialog
-        title: qsTr("Save a copy of the \"%1\" project as ...").arg(projectName)
+        title: qsTr("Save a copy of the \"%1\" project as …").arg(projectName)
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
@@ -1104,7 +1104,7 @@ ApplicationWindow {
 
             //no backup path set
             if (backupPaths === ""){
-                //TODO: send notification, backup not configured
+                plmData.errorHub().addWarning(qsTr("Back up failed: The backup is not configured"))
 
                 return
             }
@@ -1121,7 +1121,7 @@ ApplicationWindow {
 
                 //no project path
                 if (!plmData.projectHub().getPath(projectId)){
-                    //TODO: send notification, project not yet saved once
+                    plmData.errorHub().addWarning(qsTr("Back up failed:  the project must be saved at least once"))
 
                     break
                 }
@@ -1133,8 +1133,7 @@ ApplicationWindow {
 
 
                     if (!path){
-                        //TODO: send notification
-                        console.log("backup path empty")
+                        plmData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 can't be used").arg(backupPathList[j]))
                         continue
                     }
 
@@ -1143,6 +1142,7 @@ ApplicationWindow {
                     var result = plmData.projectHub().backupAProject(projectId, "skrib", path)
 
                     if (result.containsErrorCodeDetail("path_is_readonly")){
+                        plmData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 is read only").arg(path))
 
                     }
 
@@ -1248,7 +1248,7 @@ ApplicationWindow {
 
         id: saveOrNotBeforeClosingProjectDialog
         title: "Warning"
-        text: qsTr("The project %1 is not saved. Do you want to save it before quiting ?").arg(projectName)
+        text: qsTr("The project %1 is not saved. Do you want to save it before quitting ?").arg(projectName)
         standardButtons: Dialog.Save  | Dialog.Discard | Dialog.Cancel
 
         onRejected: {
@@ -1289,7 +1289,7 @@ ApplicationWindow {
         property string projectName: ""
 
         id: saveAsBeforeClosingProjectFileDialog
-        title: qsTr("Save the %1 project as ...").arg(projectName)
+        title: qsTr("Save the %1 project as …").arg(projectName)
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
@@ -1397,7 +1397,7 @@ ApplicationWindow {
         //        shortcut: StandardKey.Quit
         property bool quitConfirmed: false
         onTriggered: {
-            console.log("quiting")
+            console.log("quitting")
 
 
             // determine if all projects are saved
@@ -1413,10 +1413,10 @@ ApplicationWindow {
                 }
                 else {
 
-                    saveOrNotBeforeQuitingDialog.projectId = projectId
-                    saveOrNotBeforeQuitingDialog.projectName = plmData.projectHub().getProjectName(projectId)
-                    saveOrNotBeforeQuitingDialog.open()
-                    //saveAsBeforeQuitingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+                    saveOrNotBeforeQuittingDialog.projectId = projectId
+                    saveOrNotBeforeQuittingDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                    saveOrNotBeforeQuittingDialog.open()
+                    //saveAsBeforeQuittingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
 
                 }
 
@@ -1471,9 +1471,9 @@ ApplicationWindow {
         property int projectId: -2
         property string projectName: ""
 
-        id: saveOrNotBeforeQuitingDialog
+        id: saveOrNotBeforeQuittingDialog
         title: "Warning"
-        text: qsTr("The project %1 is not saved. Do you want to save it before quiting ?").arg(projectName)
+        text: qsTr("The project %1 is not saved. Do you want to save it before quitting ?").arg(projectName)
         standardButtons: Dialog.Save  | Dialog.Discard | Dialog.Cancel
 
         onRejected: {
@@ -1491,9 +1491,9 @@ ApplicationWindow {
             var result = plmData.projectHub().saveProject(projectId)
             if (result.containsErrorCodeDetail("no_path")){
                 var errorProjectId = result.getData("projectId", -2);
-                saveAsBeforeQuitingFileDialog.projectId = errorProjectId
-                saveAsBeforeQuitingFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
-                saveAsBeforeQuitingFileDialog.open()
+                saveAsBeforeQuittingFileDialog.projectId = errorProjectId
+                saveAsBeforeQuittingFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                saveAsBeforeQuittingFileDialog.open()
             }
             else {
                 quitAction.trigger()
@@ -1506,8 +1506,8 @@ ApplicationWindow {
         property int projectId: -2
         property string projectName: ""
 
-        id: saveAsBeforeQuitingFileDialog
-        title: qsTr("Save the %1 project as ...").arg(projectName)
+        id: saveAsBeforeQuittingFileDialog
+        title: qsTr("Save the %1 project as …").arg(projectName)
         folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
