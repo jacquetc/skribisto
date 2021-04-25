@@ -3,11 +3,6 @@
 <TS version="2.1" language="eo_001">
 <context>
     <name></name>
-    <message id="translation-test">
-        <location filename="../app/src/qml/main.qml" line="1108"/>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>CheckableTree</name>
@@ -2873,11 +2868,6 @@
     <message>
         <location filename="../app/src/qml/main.qml" line="1091"/>
         <source>Back up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1107"/>
-        <source>teeeest</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

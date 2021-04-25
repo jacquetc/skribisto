@@ -1797,12 +1797,6 @@
 </context>
 <context>
     <name>S:</name>
-    <message>
-        <location filename="../../cmake/build-Superbuild-Desktop_Qt_5_15_2_clang_64bit-Debug/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1189"/>
-        <source></source>
-        <comment>translate this letter according to the shortcut * letter y)es</comment>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>SettingsPage</name>
