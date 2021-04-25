@@ -1105,6 +1105,7 @@ ApplicationWindow {
             //no backup path set
             if (backupPaths === ""){
                 var test = qsTr("teeeest")
+                var test2 = qsTrId("translation-test")
                 plmData.errorHub().addWarning(qsTr("Back up failed: The backup is not configured"))
 
                 return

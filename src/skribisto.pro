@@ -12,14 +12,7 @@ app.depends = libskribisto-data
 #app.depends = 3rdparty
 plugins.depends = app
 
-TRANSLATIONS = translations/skribisto_en.ts \
-translations/skribisto_fr_FR.ts \
-translations/skribisto_it_IT.ts \
-translations/skribisto_de_DE.ts \
-translations/skribisto_es.ts \
-translations/skribisto_ru_RU.ts \
-translations/skribisto_pt_BR.ts \
-translations/skribisto_uk_UA.ts
+TRANSLATIONS = translations/skribisto_en_US.ts
 
 ## Generate translations
 #TRANSLATIONS += $$files($$top_srcdir/translations/plume-creator_*.ts)
