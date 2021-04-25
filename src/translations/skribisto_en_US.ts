@@ -6,7 +6,7 @@
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="95"/>
         <source>Level %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Level %1</translation>
     </message>
     <message>
         <location filename="../app/src/qml/Commons/CheckableTree.qml" line="102"/>
