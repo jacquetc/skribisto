@@ -15,11 +15,6 @@
 </context>
 <context>
     <name>EditViewForm.ui</name>
-    <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="99"/>
-        <source>Display</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>EmptyPage</name>
@@ -73,11 +68,6 @@
 </context>
 <context>
     <name>NotePad</name>
-    <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="523"/>
-        <source>note related to the current sheet</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
@@ -146,11 +136,6 @@
 </context>
 <context>
     <name>RootPageOld</name>
-    <message>
-        <location filename="../app/src/qml/RootPageOld.qml" line="297"/>
-        <source>Warning</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>SKRExporter</name>
@@ -198,11 +183,6 @@
 </context>
 <context>
     <name>TextPage</name>
-    <message>
-        <location filename="../plugins/textPage/TextPage/TextPage.qml" line="639"/>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>ThemePage</name>
