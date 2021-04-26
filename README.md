@@ -7,11 +7,11 @@
 Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or 
 write hundreds of notes. The tools are designed to be most unobstrusive, so you can write, write and write a bit more without too much distraction.
 
-With Skribisto, the user can create and organize text papers (called "sheets"). Exactly the same is possible with the notes. Sheets can link to a synopsis and multiple notes, or create them on the fly while writing.
+With Skribisto, the user can create and organize items, such as texts. Texts can have its own plan and can be linked to other items, or create them on the fly while writing.
 
 What Skribisto is not : LibreOffice, Calligra or Word. Any project can be exported to .odt so as to make use of these complete text processors formatting abilities before printing.
 
-Accessibility is too often forgotten. I'm trying to keep the interface accessible for screen readers, as much as Qt let me implement it. Jaws and NVDA are my screen readers for testing. Please contact me if there is a glaring lack in the accessibility.
+Accessibility is too often forgotten. I'm trying to keep the interface accessible for screen readers, as much as Qt let me implement it. Jaws and NVDA are my screen readers for testing. Please contact me if there is a glaring lack in the accessibility. Some technical choices have already been made so as to not hinder accessibility, like the seemingly strange choice of a classic drop-down menu on the top left of the window.
 
 ## Goals
 
@@ -49,8 +49,8 @@ Skribisto will add to these features with :
 - **importing old Plume Creator projects**
 - **texts overview**
 - **notes overview**
-- Windows 10 support
-- Examples
+- **Windows 10 support**
+- **Examples**
 - Help page
 - project management
 - each note or text can take snapshots
@@ -62,6 +62,8 @@ Medium term goals are :
 - Gallery tab to manage all external documents/images
 - Android support
 
+Other features will be implemented more for fun. Thanks to the plugin system, Skribisto can accomodate other goals than writing. I wound personally like a whiteboard on which one can draft away quickly his/her thouthgs, a bit like One Note.
+
 
 ## For tech people, under the hood
 
@@ -69,7 +71,18 @@ All the application is rewritten from scratch using C++ Qt for back-end and QML 
 
 Each project is a SQLite3 file, more robust than the zipped projects in Plume.
 
+More and more, Skribisto allows to be extended with plugins. For now, plugins allow:
 
+- add new pages types, combining theses interfaces: 
+  - SKRCoreInterface, mandatory to allow activition/deactivation of plugins
+  - SKRPageInterface, gives the details of a page, its QML view and the necessary to be an item in the navigation
+  - SKRPageExporterInterface, allow a page to export their content to be exported/printed
+
+Plugin interfaces to come soon :
+- exemples
+- project templates
+- import
+- export
 
 ## Build it, test it
 
@@ -222,7 +235,7 @@ To help with translation, go [here](https://www.transifex.com/skribisto/skribist
 
 If your language isn't listed and you want to translate it, please create an (issue)[https://github.com/jacquetc/skribisto/issues] or send me an email at cyril.jacquet@skribisto.eu and I'll add it.
 
-## Transififex integration with Skribisto
+## Transifex integration with Skribisto
 
 The source language is en_US (american english), the file is [src/translations/skribisto_en_US.ts](https://github.com/jacquetc/skribisto/blob/master/src/translations/skribisto_en_US.ts) from the "develop" branch. The en_US translation file is the only translation updated when a new to-be-translated sentence is added on the source code. 
 
