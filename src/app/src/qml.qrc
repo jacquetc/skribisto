@@ -4,8 +4,6 @@
         <file>qml/Globals.qml</file>
         <file>qml/main.qml</file>
         <file>qml/qmldir</file>
-        <file>qml/RootPageOld.qml</file>
-        <file>qml/RootPageFormOld.ui.qml</file>
         <file>qml/SkrSettings.qml</file>
         <file>qml/Write/WriteLeftDock.qml</file>
         <file>qml/Write/WriteLeftDockForm.ui.qml</file>
