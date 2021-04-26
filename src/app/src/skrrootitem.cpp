@@ -69,7 +69,13 @@ void SKRRootItem::setCurrentTranslationLanguageCode(const QString& langCode)
     qDebug() << "findTranslationDir" << findTranslationDir();
 
     if (skribistoTranslator->load(locale, "skribisto", "_", findTranslationDir())) {
-        settings.setValue("lang", locale.name());
+        QString name = locale.name();
+
+        if ((name == "eo_001")) {
+            name = "eo";
+        }
+
+        settings.setValue("lang", name);
 
 
         qApp->installTranslator(skribistoTranslator);
@@ -139,6 +145,10 @@ QVariantMap SKRRootItem::findAvailableTranslationsMap() const {
             QString langCode = translator.language();
 
             QLocale locale(langCode);
+
+            if ((langCode == "eo_001")) {
+                langCode = "eo";
+            }
 
             QString langName = locale.nativeLanguageName();
 

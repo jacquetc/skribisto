@@ -52,23 +52,6 @@ foreach(TS_FILEPATH ${TS_FILES})
 
 endforeach(TS_FILEPATH)
 
-## translations :
-### update only en_US translation
-##configure_file(skribisto_en_US.ts ${CMAKE_BINARY_DIR}/src/translations COPYONLY)
-#qt_create_translation(QM_EN_US_FILE ${CMAKE_SOURCE_DIR}/src "skribisto_en_US.ts" OPTIONS -no-obsolete)
-#message("QM_EN_US_FILE")
-#message(${QM_EN_US_FILE})
 
-### create qm and copy all .qm files
-#file(GLOB_RECURSE TS_FILES CONFIGURE_DEPENDS "skribisto_*.ts")
-##configure_file("skribisto_de_DE.ts" ${CMAKE_BINARY_DIR}/src/translations COPYONLY)
-#set(FF "${CMAKE_SOURCE_DIR}/src/translations/skribisto_de_DE.ts")
-##set_source_files_properties(${FF} PROPERTIES OUTPUT_LOCATION "${CMAKE_BINARY_DIR}/src/translations")
-#qt_add_translation(QM_FILES ${FF})
-##configure_file(${CMAKE_SOURCE_DIR}/src/translations/translations.qrc ${CMAKE_BINARY_DIR}/src/app/src COPYONLY)
-
-#message("QM_FILES")
-#message(${TS_FILES})
-#message(${QM_FILES})
-
+# make the ts files visible in the IDE
 add_custom_target(translations SOURCES ${TS_FILES})
