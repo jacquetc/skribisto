@@ -49,12 +49,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Some defaults are set for OpenBSD as well (info and man pages).
 include(GNUInstallDirs)
 include(FeatureSummary)
-# translations :
-file(GLOB_RECURSE TS_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/translations/skribisto_*.ts")
 
-#set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION ${CMAKE_SOURCE_DIR}/src/translations/)
-qt_add_translation(QM_FILES ${TS_FILES})
-configure_file(${CMAKE_SOURCE_DIR}/src/translations/translations.qrc ${CMAKE_BINARY_DIR}/src/app/src COPYONLY)
+
+# translations :
+## update only en_US translation
+#qt_create_translation(QM_EN_US_FILE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/translations/skribisto_en_US.ts)
+#message("QM_EN_US_FILE")
+#message(${QM_EN_US_FILE})
+
+
+### create qm and copy all .qm files
+#file(GLOB_RECURSE TS_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/translations/skribisto_*.ts")
+##set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION ${CMAKE_BINARY_DIR}/src/app/src)
+#qt_add_translation(QM_FILES ${TS_FILES})
+#configure_file(${CMAKE_SOURCE_DIR}/src/translations/translations.qrc ${CMAKE_BINARY_DIR}/src/app/src COPYONLY)
 
 set(app_SRCS 
     main.cpp
@@ -129,8 +137,6 @@ set(QRC pics.qrc
     ${CMAKE_SOURCE_DIR}/resources/examples/examples.qrc
     ${TEST_FILES_QRC}
     ${CMAKE_SOURCE_DIR}/readme.qrc
-
-    ${CMAKE_BINARY_DIR}/src/app/src/translations.qrc
     )
 
 # needed to allow qML debugging :

@@ -1,9 +1,11 @@
 #include "skrrootitem.h"
+#include "plmutils.h"
 #include <QLocale>
 #include <QLibraryInfo>
 #include <QApplication>
 #include <QSettings>
 #include <QFont>
+#include <QDebug>
 
 SKRRootItem::SKRRootItem(QObject *parent) : QObject(parent)
 {
@@ -63,7 +65,9 @@ void SKRRootItem::setCurrentTranslationLanguageCode(const QString& langCode)
         qApp->removeTranslator(skribistoTranslator);
     }
 
-    if (skribistoTranslator->load(locale, "skribisto", "_", ":/translations")) {
+    qDebug() << "findTranslationDir" << findTranslationDir();
+
+    if (skribistoTranslator->load(locale, "skribisto", "_", findTranslationDir())) {
         settings.setValue("lang", locale.name());
 
 
@@ -90,11 +94,36 @@ void SKRRootItem::setCurrentTranslationLanguageCode(const QString& langCode)
     emit currentTranslationLanguageCodeChanged(locale.name());
 }
 
+QString SKRRootItem::findTranslationDir() const {
+    QStringList addonsPathsList = PLMUtils::Dir::addonsPathsList();
+
+    QString dirPath;
+    QDir    dir;
+
+    for (const QString& path : qAsConst(addonsPathsList)) {
+        dir.setPath(path + "/translations");
+
+        QStringList fileList = dir.entryList(QDir::Files | QDir::NoDotAndDotDot);
+
+        for (const QString& file : qAsConst(fileList)) {
+            if (file.right(3) == ".qm") {
+                dirPath = path  + "/translations";
+                break;
+            }
+        }
+
+        if (!dirPath.isEmpty()) {
+            break;
+        }
+    }
+    return dirPath;
+}
+
 QString SKRRootItem::skribistoVersion() const {
     QStringList strings;
 
     strings << QString::number(SKR_VERSION_MAJOR) <<
-    QString::number(SKR_VERSION_MINOR) <<  QString::number(SKR_VERSION_PATCH);
+        QString::number(SKR_VERSION_MINOR) <<  QString::number(SKR_VERSION_PATCH);
 
 
     return strings.join(".");
@@ -102,26 +131,30 @@ QString SKRRootItem::skribistoVersion() const {
 
 QString SKRRootItem::toLocaleDateTimeFormat(const QDateTime& dateTime) const {
     QLocale locale(m_langCode);
+
     return dateTime.toString(locale.dateTimeFormat());
 }
 
-QString SKRRootItem::toLocaleIntString(int number) const{
+QString SKRRootItem::toLocaleIntString(int number) const {
     QLocale locale(m_langCode);
+
     return locale.toString(number);
 }
 
-QString SKRRootItem::getQtVersion() const{
+QString SKRRootItem::getQtVersion() const {
     return QString(QT_VERSION_STR);
 }
 
 bool SKRRootItem::hasPrintSupport() const {
 #ifdef SKR_PRINT_SUPPORT
-   return true;
-#else
+    return true;
+
+#else // ifdef SKR_PRINT_SUPPORT
     return false;
+
 #endif // SKR_PRINT_SUPPORT
 }
-QString SKRRootItem::defaultFontFamily() const {
 
-return qGuiApp->font().family().replace(", ","");
+QString SKRRootItem::defaultFontFamily() const {
+    return qGuiApp->font().family().replace(", ", "");
 }

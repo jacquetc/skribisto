@@ -101,6 +101,7 @@ endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 add_subdirectory(src/app/src)
 add_subdirectory(src/plugins)
+add_subdirectory(src/translations)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})

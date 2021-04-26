@@ -55,6 +55,7 @@ ApplicationWindow {
         rootWindow.raise()
 
         toBeLoadedTimer.start()
+        qsTr("test")
     }
 
     Timer {

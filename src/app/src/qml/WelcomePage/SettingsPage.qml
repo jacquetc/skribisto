@@ -90,7 +90,7 @@ SettingsPageForm {
 
     // interface languages :
 
-
+    //TODO: make it dynamic
     ListModel {
         id: langModel
         ListElement { text: "english (US)"; langCode: "en_US" }
@@ -105,6 +105,7 @@ SettingsPageForm {
     langComboBox.onCurrentValueChanged: {
         if(langComboBox.activeFocus){
             skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
+            //TODO: trigger for on the fly translation update
         }
     }
 

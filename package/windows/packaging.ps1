@@ -18,6 +18,7 @@ C:/Qt/Tools/Ninja/ninja.exe
 
 # clean
 Remove-Item -Recurse -Path package
+
 # copy
 mkdir package
 copy skribisto/bin/* package/
