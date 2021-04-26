@@ -1361,84 +1361,6 @@
     </message>
 </context>
 <context>
-    <name>RootPageFormOld.ui</name>
-    <message>
-        <source>Main menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show list of tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>RootPageOld</name>
-    <message>
-        <source>Welcome</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Gallery</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Warning</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Critical</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Fatal</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Theme</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;View</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Skribisto %1 created by Cyril Jacquet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>SKRExporter</name>
     <message>
         <source>Tags:</source>
@@ -2390,10 +2312,6 @@
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>test</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
