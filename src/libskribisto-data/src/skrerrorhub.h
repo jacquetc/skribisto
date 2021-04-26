@@ -97,6 +97,9 @@ public:
 public slots:
 
     void addWarning(const QString& warningText);
+    void addOk(const QString& infoText);
+    void addFatal(const QString& fatalText);
+
     void addError(SKRResult result);
 
 signals:

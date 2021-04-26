@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="de_DE">
+<TS version="2.1" language="en_US">
 <context>
     <name>CheckableTree</name>
     <message>
@@ -1454,6 +1454,13 @@
     </message>
 </context>
 <context>
+    <name>SKRRootItem</name>
+    <message>
+        <source>No translation found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SKRTreeManager</name>
     <message>
         <source>Project</source>
@@ -1476,6 +1483,10 @@
     </message>
     <message>
         <source>Enter a path to back up to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please restart Skribisto to apply the change</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2094,6 +2105,13 @@
     </message>
     <message>
         <source>Remove word from dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WelcomePage</name>
+    <message>
+        <source>Skribisto %1 created by Cyril Jacquet</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

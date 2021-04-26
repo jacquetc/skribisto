@@ -14,13 +14,14 @@ SettingsPageForm {
     signal closeCalled()
 
     Component.onCompleted: {
+        determineAvailableTranslations()
+        determineCurrentTranslation()
         checkOnBackUpEveryCheckBox()
         populateBackupPathListView()
 
         checkOnSaveEveryCheckBox()
         backUpOnceADayIfNeeded()
 
-        langComboBox.currentIndex = langComboBox.indexOfValue(skrRootItem.getLanguageFromSettings())
 
         populateCheckSpellingComboBox()
         checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(SkrSettings.spellCheckingSettings.spellCheckingLangCode)
@@ -90,12 +91,21 @@ SettingsPageForm {
 
     // interface languages :
 
-    //TODO: make it dynamic
+    function determineAvailableTranslations(){
+        langModel.clear()
+
+        var translationsMap = skrRootItem.findAvailableTranslationsMap()
+
+        for(var translation in translationsMap){
+            langModel.append({"text": translationsMap[translation] + " (" + translation + ")", "langCode": translation})
+        }
+    }
+    function determineCurrentTranslation(){
+        langComboBox.currentIndex = langComboBox.indexOfValue(skrRootItem.getLanguageFromSettings())
+    }
+
     ListModel {
         id: langModel
-        ListElement { text: "english (US)"; langCode: "en_US" }
-        ListElement { text: "français (France)"; langCode: "fr_FR" }
-        ListElement { text: "deutsch"; langCode: "de_DE" }
     }
 
 
@@ -106,7 +116,8 @@ SettingsPageForm {
         if(langComboBox.activeFocus){
             skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
             //TODO: trigger for on the fly translation update
-        }
+            plmData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
+       }
     }
 
 

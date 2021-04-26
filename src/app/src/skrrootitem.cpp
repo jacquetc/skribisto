@@ -1,5 +1,6 @@
 #include "skrrootitem.h"
 #include "plmutils.h"
+#include "plmdata.h"
 #include <QLocale>
 #include <QLibraryInfo>
 #include <QApplication>
@@ -117,6 +118,45 @@ QString SKRRootItem::findTranslationDir() const {
         }
     }
     return dirPath;
+}
+
+QVariantMap SKRRootItem::findAvailableTranslationsMap() const {
+    QVariantMap translationMap;
+
+    QString dirPath = findTranslationDir();
+
+    QDir dir;
+
+    dir.setPath(dirPath);
+    QStringList filters;
+
+    filters << "*.qm";
+    QStringList fileList = dir.entryList(filters, QDir::Files | QDir::NoDotAndDotDot);
+    QTranslator translator;
+
+    for (const QString& file : qAsConst(fileList)) {
+        if (translator.load(file, dirPath)) {
+            QString langCode = translator.language();
+
+            QLocale locale(langCode);
+
+            QString langName = locale.nativeLanguageName();
+
+            if ((langCode == "vls") && langName.isEmpty()) {
+                langName = "Westvlams";
+            }
+
+            translationMap.insert(langCode, langName);
+            qDebug() << langCode << langName;
+        }
+    }
+
+    if (translationMap.isEmpty()) {
+        plmdata->errorHub()->addWarning(tr("No translation found."));
+    }
+
+
+    return translationMap;
 }
 
 QString SKRRootItem::skribistoVersion() const {

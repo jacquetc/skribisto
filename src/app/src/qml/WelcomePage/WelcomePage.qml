@@ -219,6 +219,10 @@ WelcomePageForm {
 
     }
 
+    versionLabel.text: qsTr("Skribisto %1 created by Cyril Jacquet").arg(skrRootItem.skribistoVersion())
+
+
+
     onActiveFocusChanged: {
         if (activeFocus) {
             newButton.forceActiveFocus()
