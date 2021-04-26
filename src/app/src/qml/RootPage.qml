@@ -145,22 +145,56 @@ RootPageForm {
 
                         SkrToolButton{
                             id: errorTypeButton
-                            icon.source: model.errorType === SKRResult.Ok ?
-                                             "qrc:///icons/backup/data-information.svg" : (model.errorType === SKRResult.Warning ?
-                                                                                               "qrc:///icons/backup/data-warning.svg" : (model.errorType === SKRResult.Critical ?
-                                                                                                                                             "qrc:///icons/backup/data-error.svg"  : (model.errorType === SKRResult.Fatal ?
-                                                                                                                                                                                          "qrc:///icons/backup/data-error.svg"  :  "" )))
+                            icon.source: {
+                                var icon
+                                switch (model.errorType){
+                                case 0:
+                                    icon = "qrc:///icons/backup/data-information.svg"
+                                    break
+                                case SKRResult.Warning:
+                                    icon = "qrc:///icons/backup/data-warning.svg"
+                                    break
+                                case SKRResult.Critical:
+                                    icon = "qrc:///icons/backup/data-error.svg"
+                                    break
+                                case SKRResult.Fatal:
+                                    icon = "qrc:///icons/backup/data-error.svg"
+                                    break
+                                default:
+                                    icon = "Unknown"
+                                    break
+                                }
+                                return icon
+                            }
+
                             icon.color: "transparent"
                         }
 
                         SkrLabel{
                             id: errorTypeLabel
                             Layout.fillWidth: true
-                            text:model.errorType === SKRResult.Ok ?
-                                     qsTr("Ok") : (model.errorType === SKRResult.Warning ?
-                                                       qsTr("Warning") : (model.errorType === SKRResult.Critical ?
-                                                                              qsTr("Critical") : (model.errorType === SKRResult.Fatal ?
-                                                                                                      qsTr("Fatal")  :  "Fatal" )))
+                            text: {
+                                var errorType
+                                switch (model.errorType){
+                                case 0:
+                                    errorType = qsTr("Ok")
+                                    break
+                                case SKRResult.Warning:
+                                    errorType = qsTr("Warning")
+                                    break
+                                case SKRResult.Critical:
+                                    errorType = qsTr("Critical")
+                                    break
+                                case SKRResult.Fatal:
+                                    errorType = qsTr("Fatal")
+                                    break
+                                default:
+                                    errorType = "Unknown"
+                                    break
+                                }
+                                return errorType
+
+                            }
 
                         }
                         SkrToolButton{

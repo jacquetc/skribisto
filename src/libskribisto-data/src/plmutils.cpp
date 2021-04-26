@@ -697,8 +697,19 @@ QStringList PLMUtils::Dir::addonsPathsList()
         }
     }
 
-    dir.setPath(":/");
+    // translations while in dev
+    dir.setPath(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    dir.cdUp();
+    list.append(dir.path());
 
+    if (dir.cd("translations")) {
+        if (dir.isReadable()) {
+            list.append(dir.path());
+        }
+    }
+
+    dir.setPath(":/");
     list.append(dir.path());
 
 

@@ -208,6 +208,36 @@ After you modified the code you want in whichever git branch you want, type this
 cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/local/eu.skribisto.skribisto.yml --force-clean && flatpak install local-repo eu.skribisto.skribisto -y --reinstall
 ```
 
+## Translation :
+
+![alt text](https://www.transifex.com/_/charts/redirects/skribisto/skribisto/image_png/ "Translation advancement")
+
+
+SKribisto uses Transifex to manage translation from english to any language.
+
+https://www.transifex.com/skribisto/skribisto/
+
+
+To help with translation, go [here](https://www.transifex.com/skribisto/skribisto/) and click on the "Help translate" button.
+
+If your language isn't listed and you want to translate it, please create an (issue)[https://github.com/jacquetc/skribisto/issues] or send me an email at cyril.jacquet@skribisto.eu and I'll add it.
+
+## Transififex integration with Skribisto
+
+The source language is en_US (american english), the file is [src/translations/skribisto_en_US.ts](https://github.com/jacquetc/skribisto/blob/master/src/translations/skribisto_en_US.ts) from the "develop" branch. The en_US translation file is the only translation updated when a new to-be-translated sentence is added on the source code. 
+
+There is no need to manualy use Qt's lupdate or lrelease. Any push request with any translation file other than skribisto_en_US.ts will be rejected.
+
+Each time the project is built, skribisto_en_US.ts is automatically updated. Moreover, all the languages are compiled in ".qm" files at build time.
+
+Any new language is detected without any declaration in the source code.
+
+Transifex updates all languages with the new sentences without intervention.
+
+The process is written in this [CMakeLists.txt](https://github.com/jacquetc/skribisto/blob/master/src/translations/skribisto_de_DE.ts)
+
+Thank you to the Scribus project to have written a clean way to automatise translation. [See here](https://github.com/scribusproject/scribus/blob/master/resources/translations/CMakeLists.txt). I learnt a lot from it.
+
 ## To contact me :
 
 cyril.jacquet@skribisto.eu

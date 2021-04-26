@@ -36,25 +36,30 @@ class SKRRootItem : public QObject {
 public:
 
     explicit SKRRootItem(QObject *parent);
-    Q_INVOKABLE void    setCurrentTranslationLanguageCode(
+    Q_INVOKABLE void        setCurrentTranslationLanguageCode(
         const QString& langCode = "default");
 
-    Q_INVOKABLE void    applyLanguageFromSettings();
-    Q_INVOKABLE QString getLanguageFromSettings() const;
+    Q_INVOKABLE void        applyLanguageFromSettings();
+    Q_INVOKABLE QString     getLanguageFromSettings() const;
 
 
-    Q_INVOKABLE QString skribistoVersion() const;
-    Q_INVOKABLE QString toLocaleDateTimeFormat(const QDateTime& dateTime) const;
-    Q_INVOKABLE QString toLocaleIntString(int number) const;
+    Q_INVOKABLE QString     skribistoVersion() const;
+    Q_INVOKABLE QString     toLocaleDateTimeFormat(const QDateTime& dateTime) const;
+    Q_INVOKABLE QString     toLocaleIntString(int number) const;
 
-    Q_INVOKABLE QString getQtVersion() const;
-    Q_INVOKABLE bool hasPrintSupport() const;
-    Q_INVOKABLE QString defaultFontFamily() const;
+    Q_INVOKABLE QString     getQtVersion() const;
+    Q_INVOKABLE bool        hasPrintSupport() const;
+    Q_INVOKABLE QString     defaultFontFamily() const;
+
+    Q_INVOKABLE QVariantMap findAvailableTranslationsMap() const;
+
 signals:
 
     void currentTranslationLanguageCodeChanged(const QString& langCode);
 
 private:
+
+    QString findTranslationDir() const;
 
     QString getEmptyString() {
         return "";

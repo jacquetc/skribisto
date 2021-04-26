@@ -15,6 +15,16 @@ void SKRErrorHub::addWarning(const QString& warningText)
     emit sendNotification(SKRResult::Warning, warningText);
 }
 
+void SKRErrorHub::addOk(const QString& okText)
+{
+    emit sendNotification(SKRResult::OK, okText);
+}
+
+void SKRErrorHub::addFatal(const QString& fatalText)
+{
+    emit sendNotification(SKRResult::Fatal, fatalText);
+}
+
 void SKRErrorHub::addError(SKRResult result)
 {
     m_resultList.append(result);
