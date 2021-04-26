@@ -210,9 +210,8 @@ cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/packa
 
 ## Translation :
 
-<a target="_blank" style="text-decoration:none; color:black; font-size:66%" href="/projects/p/undefined/resource/src-translations-skribisto-en-us-ts--develop/" 
-title="See more information on Transifex.com">Top translations: undefined » src-translations-skribisto-en-us-ts--develop</a><br/>
-<img border="0" src="/projects/p/undefined/resource/src-translations-skribisto-en-us-ts--develop/chart/image_png"/><br/><a target="_blank" href="/"><img border="0" src="https://cdn.transifex.com/txc/static/charts/images/tx-logo-micro.c5603f91c780.png"/></a>
+![alt text](https://www.transifex.com/_/charts/redirects/skribisto/skribisto/image_png/ "Translation advancement")
+
 
 SKribisto uses Transifex to manage translation from english to any language.
 
