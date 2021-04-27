@@ -721,6 +721,9 @@ RootPageForm {
             SkrMenuItem {
                 action: themesColorAction
             }
+            SkrMenuItem {
+                action: firstStepsAction
+            }
 
             MenuSeparator{}
 

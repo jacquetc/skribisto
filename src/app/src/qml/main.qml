@@ -57,9 +57,9 @@ ApplicationWindow {
         toBeLoadedTimer.start()
 
 
-        // First time wizard
-        loader_firstTimeWizard.active =  SkrSettings.interfaceSettings.firstLaunch
-        //SkrSettings.interfaceSettings.firstLaunch = false
+        // First Steps wizard
+        loader_firstStepsWizard.active =  SkrSettings.interfaceSettings.firstLaunch
+        SkrSettings.interfaceSettings.firstLaunch = false
 
     }
 
@@ -84,23 +84,41 @@ ApplicationWindow {
     }
 
     //------------------------------------------------------------------
-    //--------- First Time Wizard --------------------------------------------------
+    //--------- First Steps Wizard --------------------------------------------------
     //------------------------------------------------------------------
 
-    // À faire : Déplacer les liaisons de position du composant dans le Loader.
-    //       Vérifier toutes les utilisations de "parent" à l'intérieur de l'élément racine du composant.
-    //       Rename all outer uses of the id "firstTimeWizard" to "loader_firstTimeWizard.item".
     Component {
-        id: component_firstTimeWizard
-        FirstTimeWizard {
-            id: firstTimeWizard
+        id: component_firstStepsWizard
+        FirstStepsWizard {
+            id: firstStepsWizard
 
-            onClosed: loader_firstTimeWizard.active = false
+            onClosed: loader_firstStepsWizard.active = false
         }
     }
     Loader {
-        id: loader_firstTimeWizard
-        sourceComponent: component_firstTimeWizard
+        id: loader_firstStepsWizard
+        sourceComponent: component_firstStepsWizard
+    }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onShowFirstStepsWizardCalled() {
+            loader_firstStepsWizard.active = true
+        }
+    }
+
+    Action{
+        id: firstStepsAction
+        text: qsTr("First steps")
+        icon {
+            source: ""
+            height: 50
+            width: 50
+        }
+
+        onTriggered: {
+            protectedSignals.showFirstStepsWizardCalled()
+        }
     }
 
     //------------------------------------------------------------------
@@ -170,6 +188,8 @@ ApplicationWindow {
             signal showFaqCalled()
             signal showAboutCalled()
             signal showAboutQtCalled()
+
+            signal showFirstStepsWizardCalled()
 
 
             signal openThemePageCalled()

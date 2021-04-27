@@ -67,7 +67,7 @@ SkrPopup {
 
                     SkrLabel{
                         Layout.alignment: Qt.AlignHCenter
-                        text: qsTr("<h1>Skribisto</h1>")
+                        text: qsTr("<h1>First steps with Skribisto</h1>")
                     }
 
                     Image {
@@ -77,12 +77,6 @@ SkrPopup {
                         Layout.preferredHeight: 200
                         Layout.preferredWidth: 200
                     }
-
-                    SkrLabel{
-                        Layout.alignment: Qt.AlignHCenter
-                        text: qsTr("<h2>First steps</h2>")
-                    }
-
 
                     SkrLabel{
                         text: qsTr("Welcome to Skribisto !")

@@ -525,9 +525,17 @@
     </message>
 </context>
 <context>
-    <name>FirstTimeWizard</name>
+    <name>FirstStepsWizard</name>
     <message>
         <source>Go Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h1&gt;First steps with Skribisto&lt;/h1&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to Skribisto !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -536,18 +544,6 @@
     </message>
     <message>
         <source>Next</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;h1&gt;Skribisto&lt;/h1&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;h2&gt;First steps&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Welcome to Skribisto !</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2339,6 +2335,10 @@
     </message>
     <message>
         <source>Underline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>First steps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
