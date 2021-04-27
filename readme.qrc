@@ -2,6 +2,5 @@
     <qresource prefix="/">
         <file>README.md</file>
         <file>Credits</file>
-        <file>release_notes</file>
     </qresource>
 </RCC>

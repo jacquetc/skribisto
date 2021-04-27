@@ -55,6 +55,12 @@ ApplicationWindow {
         rootWindow.raise()
 
         toBeLoadedTimer.start()
+
+
+        // First Steps wizard
+        loader_firstStepsWizard.active =  SkrSettings.interfaceSettings.firstLaunch
+        SkrSettings.interfaceSettings.firstLaunch = false
+
     }
 
     Timer {
@@ -75,6 +81,44 @@ ApplicationWindow {
 
     Component.onDestruction: {
         skrWindowManager.unSubscribeWindow(rootWindow)
+    }
+
+    //------------------------------------------------------------------
+    //--------- First Steps Wizard --------------------------------------------------
+    //------------------------------------------------------------------
+
+    Component {
+        id: component_firstStepsWizard
+        FirstStepsWizard {
+            id: firstStepsWizard
+
+            onClosed: loader_firstStepsWizard.active = false
+        }
+    }
+    Loader {
+        id: loader_firstStepsWizard
+        sourceComponent: component_firstStepsWizard
+    }
+
+    Connections {
+        target: rootWindow.protectedSignals
+        function onShowFirstStepsWizardCalled() {
+            loader_firstStepsWizard.active = true
+        }
+    }
+
+    Action{
+        id: firstStepsAction
+        text: qsTr("First steps")
+        icon {
+            source: ""
+            height: 50
+            width: 50
+        }
+
+        onTriggered: {
+            protectedSignals.showFirstStepsWizardCalled()
+        }
     }
 
     //------------------------------------------------------------------
@@ -144,6 +188,8 @@ ApplicationWindow {
             signal showFaqCalled()
             signal showAboutCalled()
             signal showAboutQtCalled()
+
+            signal showFirstStepsWizardCalled()
 
 
             signal openThemePageCalled()

@@ -40,7 +40,7 @@ include_directories("${CMAKE_SOURCE_DIR}/src/app/src/qml/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-install(TARGETS skribisto-plugin-textPage LIBRARY DESTINATION "${PLUGIN_INSTALL_DIR}/skribisto")
+install(TARGETS skribisto-plugin-textPage LIBRARY DESTINATION "${KDE_INSTALL_PLUGINDIR}/skribisto")
 message("----------------PLUGIN_INSTALL_DIR---------------")
 message("${PLUGIN_INSTALL_DIR}")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
