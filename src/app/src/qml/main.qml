@@ -55,6 +55,12 @@ ApplicationWindow {
         rootWindow.raise()
 
         toBeLoadedTimer.start()
+
+
+        // First time wizard
+        loader_firstTimeWizard.active =  SkrSettings.interfaceSettings.firstLaunch
+        //SkrSettings.interfaceSettings.firstLaunch = false
+
     }
 
     Timer {
@@ -75,6 +81,26 @@ ApplicationWindow {
 
     Component.onDestruction: {
         skrWindowManager.unSubscribeWindow(rootWindow)
+    }
+
+    //------------------------------------------------------------------
+    //--------- First Time Wizard --------------------------------------------------
+    //------------------------------------------------------------------
+
+    // À faire : Déplacer les liaisons de position du composant dans le Loader.
+    //       Vérifier toutes les utilisations de "parent" à l'intérieur de l'élément racine du composant.
+    //       Rename all outer uses of the id "firstTimeWizard" to "loader_firstTimeWizard.item".
+    Component {
+        id: component_firstTimeWizard
+        FirstTimeWizard {
+            id: firstTimeWizard
+
+            onClosed: loader_firstTimeWizard.active = false
+        }
+    }
+    Loader {
+        id: loader_firstTimeWizard
+        sourceComponent: component_firstTimeWizard
     }
 
     //------------------------------------------------------------------

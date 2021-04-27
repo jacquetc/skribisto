@@ -7,6 +7,7 @@ QtObject {
 
     property Settings interfaceSettings: Settings{
         category: "interface"
+        property bool firstLaunch: true
         property bool menuButtonsInStatusBar: false
         property bool minimalistMenuTabs: false
 

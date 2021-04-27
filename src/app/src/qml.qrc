@@ -152,5 +152,6 @@
         <file>qml/WelcomePage/RecentPageForm.ui.qml</file>
         <file>qml/Breadcrumb.qml</file>
         <file>qml/Items/SkrFocusIndicator.qml</file>
+        <file>qml/FirstTimeWizard.qml</file>
     </qresource>
 </RCC>
