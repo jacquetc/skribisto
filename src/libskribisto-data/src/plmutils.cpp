@@ -739,6 +739,12 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
+    // flatpak
+    dir.setPath("/app/share/skribisto/");
+
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
 
 #endif // ifdef Q_OS_LINUX
 #ifdef Q_OS_WIN
