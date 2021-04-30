@@ -6,6 +6,8 @@ import ".."
 
 TextArea {
     id: root
+
+    antialiasing: true
     property bool styleElevation: false
     property string styleBackgroundColor: "#FFFFFF"
     property string styleForegroundColor: "#000000"
@@ -274,7 +276,7 @@ TextArea {
 
                 if(drop.hasHtml){
 
-                    documentHandler.insertHtml(cursorPosition, drop.html)
+                    documentHandler.insertHtml(cursorPosition,  skrRootItem.cleanUpHtml(drop.html))
                 }
 
                 else if(drop.hasText){
@@ -658,5 +660,196 @@ TextArea {
 
     }
 
+
+    //--------------------------------------------------------------
+    //--------Wheel---------------------------------------------
+    //--------------------------------------------------------------
+
+    WheelHandler {
+        onWheel: {
+            moveViewYCalled(-event.angleDelta.y / 2, false)
+
+        }
+
+    }
+
+    //--------------------------------------------------------------
+    //--------Highlighter---------------------------------------------
+    //--------------------------------------------------------------
+    function paintUnderlineForSpellcheck(positionList, blockBegin, blockEnd, uniqueBlock) {
+        if(paintUnderlineForSpellcheckTimer.running){
+            paintUnderlineForSpellcheckTimer.stop()
+        }
+
+        paintUnderlineForSpellcheckTimer.positionList = positionList
+        paintUnderlineForSpellcheckTimer.blockBegin = blockBegin
+        paintUnderlineForSpellcheckTimer.blockEnd = blockEnd
+        paintUnderlineForSpellcheckTimer.uniqueBlock = uniqueBlock
+        paintUnderlineForSpellcheckTimer.start()
+    }
+    Timer{
+        id: paintUnderlineForSpellcheckTimer
+        property var positionList
+        property int blockBegin
+        property int blockEnd
+        property bool uniqueBlock
+
+        interval: 20
+        onTriggered:{
+
+
+            canvas.positionList = positionList
+            canvas.blockBegin = blockBegin
+            canvas.blockEnd = blockEnd
+            canvas.uniqueBlock = uniqueBlock
+            //            canvas.pointList = []
+            //            canvas.charWidthList = []
+            //            //console.log(positionList)
+            //            for (var i = 0; i < positionList.length; i++) {
+            //                var position = positionList[i]
+            //                var rectangle = root.positionToRectangle(position)
+
+            //                //            if(rectangle.height < font.pointSize){
+            //                //               return
+            //                //            }
+
+            //                var nextRectangle = root.positionToRectangle(position + 1)
+            //                canvas.pointList.push(Qt.point(rectangle.x, rectangle.y + rectangle.height))
+            //                var charWidth = nextRectangle.x - rectangle.x
+            //                if(charWidth < 0){
+            //                    canvas.charWidthList.push(canvas.charWidthList[canvas.charWidthList.lenght - 1])
+            //                }
+            //                else {
+            //                    canvas.charWidthList.push(charWidth)
+            //                }
+            //            }
+
+
+            //            var blockBeginRectangle = root.positionToRectangle(blockBegin)
+            //            var blockEndRectangle = root.positionToRectangle(blockEnd)
+            //            var blockRectangle = Qt.rect(0, blockBeginRectangle.y,
+            //                                         canvas.width, canvas.height)
+            //            canvas.blockRect = blockRectangle
+            //            //canvas.markDirty(blockRectangle)
+            canvas.requestPaint()
+        }
+
+    }
+
+Connections{
+ target: SkrSettings.spellCheckingSettings
+ function onSpellCheckingActivationChanged(){
+     canvas.spellcheckEnabled = SkrSettings.spellCheckingSettings.spellCheckingActivation
+        canvas.requestPaint()
+
+
+ }
+}
+
+
+    Canvas {
+        id: canvas
+        anchors.fill: parent
+        renderStrategy: Canvas.Immediate
+        renderTarget: Canvas.FramebufferObject
+
+        property var positionList: []
+        property int blockBegin: -1
+        property int blockEnd: -1
+        property bool uniqueBlock: false
+        property bool spellcheckEnabled: true
+
+
+        onPaint: {
+
+            var pointList = []
+            var charWidthList = []
+            //console.log(positionList)
+            for (var i = 0; i < positionList.length; i++) {
+                var position = positionList[i]
+                var rectangle = root.positionToRectangle(position)
+
+                //            if(rectangle.height < font.pointSize){
+                //               return
+                //            }
+
+                var nextRectangle = root.positionToRectangle(position + 1)
+                pointList.push(Qt.point(rectangle.x, rectangle.y + rectangle.height))
+                var charWidth = nextRectangle.x - rectangle.x
+                if(charWidth < 0){
+                    charWidthList.push(charWidthList[charWidthList.lenght - 1])
+                }
+                else {
+                    charWidthList.push(charWidth)
+                }
+            }
+
+
+            if(uniqueBlock){
+            var blockBeginRectangle = root.positionToRectangle(blockBegin)
+            var blockEndRectangle = root.positionToRectangle(blockEnd)
+            var blockRectangle = Qt.rect(0, blockBeginRectangle.y,
+                                         canvas.width, canvas.height)
+        }
+
+
+
+
+
+
+
+            var ctx = getContext("2d");
+            //ctx.reset();
+            //console.log(pointList)
+            //ctx.fillStyle = Qt.rgba(1, 0, 0, 1);
+            //console.log(blockRect)
+            ctx.setLineDash([2, 4]);
+            ctx.strokeStyle = SkrTheme.spellcheck
+            ctx.beginPath();
+
+//            var temporaryPointList
+            if(uniqueBlock) {
+                ctx.clearRect(blockRectangle.x, blockRectangle.y, blockRectangle.width, blockRectangle.height)
+
+//                for(var m in pointList){
+//                    var point = pointList[m]
+//                    if(point.y <= blockRectangle.y && point.y >= blockRectangle.y + blockRectangle.height){
+//                        temporaryPointList.push(point)
+//                    }
+
+//                }
+
+
+
+
+            }
+            else{
+                ctx.clearRect(0, 0, canvas.width, canvas.height)
+               // temporaryPointList = pointList
+            }
+
+            //
+            if(spellcheckEnabled){
+            for (var k = 0; k < pointList.length; k++) {
+                var spellcheckPoint =  pointList[k]
+                //console.log(spellcheckPoint.x)
+                //ctx.fillRect(spellcheckPoint.x, spellcheckPoint.y, charWidthList[i], 1);
+                //console.log("y:", spellcheckPoint.y)
+
+
+                ctx.moveTo(spellcheckPoint.x, spellcheckPoint.y)
+                ctx.lineTo(spellcheckPoint.x + charWidthList[k], spellcheckPoint.y)
+                ctx.moveTo(spellcheckPoint.x, spellcheckPoint.y + 1)
+                ctx.lineTo(spellcheckPoint.x + charWidthList[k], spellcheckPoint.y  + 1)
+                //ctx.roundedRect(0, 0, root.width, root.height, 4, 4)
+            }
+            ctx.stroke();
+            }
+
+
+        }
+
+
+    }
 
 }

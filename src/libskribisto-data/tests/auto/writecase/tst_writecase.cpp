@@ -63,6 +63,7 @@ private Q_SLOTS:
     // tag
     void setTag();
 
+    void cleanUpHtml();
 
 private:
 
@@ -226,8 +227,8 @@ void WriteCase::setTrashed()
     QSignalSpy spy(plmdata->treeHub(), SIGNAL(trashedChanged(int,int,bool)));
 
     SKRResult result = plmdata->treeHub()->setTrashedWithChildren(m_currentProjectId,
-                                                                 55,
-                                                                 true);
+                                                                  55,
+                                                                  true);
 
     QCOMPARE(result.isSuccess(), true);
     QVERIFY(spy.count() == 2);
@@ -368,7 +369,6 @@ void WriteCase::getUpdateDate()
     QCOMPARE(value, QDateTime(QDate(2010, 1, 1), QTime(1, 1, 1)));
 }
 
-
 // ------------------------------------------------------------------------------------
 
 void WriteCase::queue()
@@ -405,22 +405,24 @@ void WriteCase::missingProjectError()
 void WriteCase::addTreeItem()
 {
     SKRResult result = plmdata->treeHub()->addTreeItemBelow(m_currentProjectId, 1, "TEXT");
-    int lastId     = plmdata->treeHub()->getLastAddedId();
+    int lastId       = plmdata->treeHub()->getLastAddedId();
+
     QVERIFY(result.isSuccess() == true);
     QVERIFY(lastId > 1);
     int sortOrder1 = plmdata->treeHub()->getSortOrder(m_currentProjectId, 1);
     int sortOrder2 = plmdata->treeHub()->getSortOrder(m_currentProjectId, lastId);
+
     QVERIFY(sortOrder1 + 1000 == sortOrder2);
 
-    result  = plmdata->treeHub()->addTreeItemAbove(m_currentProjectId, 1, "TEXT");
+    result = plmdata->treeHub()->addTreeItemAbove(m_currentProjectId, 1, "TEXT");
     lastId = plmdata->treeHub()->getLastAddedId();
     QVERIFY(result.isSuccess() == true);
-    QVERIFY(lastId > 1);    
+    QVERIFY(lastId > 1);
     sortOrder1 = plmdata->treeHub()->getSortOrder(m_currentProjectId, 1);
     sortOrder2 = plmdata->treeHub()->getSortOrder(m_currentProjectId, lastId);
     QVERIFY(sortOrder1 - 1000 == sortOrder2);
 
-    result  = plmdata->treeHub()->addChildTreeItem(m_currentProjectId, 1, "TEXT");
+    result = plmdata->treeHub()->addChildTreeItem(m_currentProjectId, 1, "TEXT");
     lastId = plmdata->treeHub()->getLastAddedId();
     QVERIFY(result.isSuccess() == true);
     QVERIFY(lastId > 1);
@@ -445,8 +447,8 @@ void WriteCase::property()
     plmdata->treePropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
     QVERIFY(spy.count() == 1);
     QString value =  plmdata->treePropertyHub()->getProperty(m_currentProjectId,
-                                                              1,
-                                                              "test0");
+                                                             1,
+                                                             "test0");
 
     QCOMPARE(value, QString("value0"));
     QHash<int, bool> hash = plmdata->treePropertyHub()->getAllIsSystems(
@@ -464,6 +466,7 @@ void WriteCase::property_replace()
                    SIGNAL(propertyChanged(int,int,int,QString,QString)));
 
     SKRResult result = plmdata->treePropertyHub()->setProperty(m_currentProjectId, 1, "test1", "value1");
+
     QCOMPARE(result.isSuccess(), true);
     QVERIFY(spy.count() == 1);
     QList<QVariant> arguments = spy.takeFirst();
@@ -480,8 +483,8 @@ void WriteCase::property_replace()
 void WriteCase::getTreeLabel()
 {
     QString value = plmdata->treePropertyHub()->getProperty(m_currentProjectId,
-                                                             1,
-                                                             "label");
+                                                            1,
+                                                            "label");
 
     QCOMPARE(value, "this is a label");
 }
@@ -490,8 +493,8 @@ void WriteCase::setTreeLabel()
 {
     plmdata->treePropertyHub()->setProperty(m_currentProjectId, 1, "label", "new");
     QString value = plmdata->treePropertyHub()->getProperty(m_currentProjectId,
-                                                             1,
-                                                             "label");
+                                                            1,
+                                                            "label");
 
     QCOMPARE(value, "new");
 }
@@ -503,7 +506,14 @@ void WriteCase::setTag()
     QCOMPARE(result.isSuccess(), true);
     result = plmdata->tagHub()->setTagRelationship(m_currentProjectId, 2, 1);
     QCOMPARE(result.isSuccess(), true);
+}
 
+void WriteCase::cleanUpHtml() {
+    QString html = "style=\" font-family:'Cantarell'; font-size:16pt; font-weight:400; font-style:normal;\"";
+
+    html.remove(QRegularExpression(" font-family:.*?;"));
+
+    qDebug() << html;
 }
 
 QTEST_GUILESS_MAIN(WriteCase)

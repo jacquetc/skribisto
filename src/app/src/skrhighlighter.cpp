@@ -180,6 +180,7 @@ void SKRHighlighter::highlightBlock(const QString& text)
         }
 
 
+QList<int> spellcheckPositionList;
     for (int k = 0; k < text.length(); ++k) {
         QTextCharFormat finalFormat;
 
@@ -188,11 +189,14 @@ void SKRHighlighter::highlightBlock(const QString& text)
         }
 
         if (spellcheckerList.contains(k)) {
-            finalFormat.merge(spellcheckFormat);
+            //finalFormat.merge(spellcheckFormat);
+            // bug fix:
+           spellcheckPositionList.append(currentBlock().position() + k);
         }
 
         setFormat(k, 1, finalFormat);
     }
+    emit paintUnderlineForSpellcheckCalled(spellcheckPositionList, currentBlock());
 
     emit shakeTextSoHighlightsTakeEffectCalled();
 }

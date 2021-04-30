@@ -10,11 +10,11 @@ SKRSyncDocument::SKRSyncDocument() :  m_uniqueDocumentReference(""), m_skrTextAr
 
 // --------------------------------------------------------------------------------------
 
-SKRSyncDocument::SKRSyncDocument(const QString &uniqueDocumentReference,
+SKRSyncDocument::SKRSyncDocument(const QString     & uniqueDocumentReference,
                                  const QString     & skrTextAreaUniqueObjectName,
                                  QQuickTextDocument *qQuickTextDocument)
 {
-    m_uniqueDocumentReference = uniqueDocumentReference;
+    m_uniqueDocumentReference     = uniqueDocumentReference;
     m_skrTextAreaUniqueObjectName = skrTextAreaUniqueObjectName;
     m_qQuickTextDocumentPtr       = qQuickTextDocument;
 }
@@ -23,7 +23,7 @@ SKRSyncDocument::SKRSyncDocument(const QString &uniqueDocumentReference,
 
 SKRSyncDocument::SKRSyncDocument(const SKRSyncDocument& syncDocument)
 {
-    m_uniqueDocumentReference = syncDocument.uniqueDocumentReference();
+    m_uniqueDocumentReference     = syncDocument.uniqueDocumentReference();
     m_skrTextAreaUniqueObjectName = syncDocument.skrTextAreaUniqueObjectName();
     m_qQuickTextDocumentPtr       = syncDocument.qQuickTextDocument();
 }
@@ -40,7 +40,7 @@ bool SKRSyncDocument::operator!() const
 SKRSyncDocument& SKRSyncDocument::operator=(const SKRSyncDocument& otherSyncDocument)
 {
     if (Q_LIKELY(&otherSyncDocument != this)) {
-        m_uniqueDocumentReference = otherSyncDocument.uniqueDocumentReference();
+        m_uniqueDocumentReference     = otherSyncDocument.uniqueDocumentReference();
         m_skrTextAreaUniqueObjectName = otherSyncDocument.skrTextAreaUniqueObjectName();
         m_qQuickTextDocumentPtr       = otherSyncDocument.qQuickTextDocument();
     }
@@ -104,7 +104,7 @@ QString SKRSyncDocument::uniqueDocumentReference() const
 
 // --------------------------------------------------------------------------------------
 
-void SKRSyncDocument::setUniqueDocumentReference(const QString &uniqueDocumentReference)
+void SKRSyncDocument::setUniqueDocumentReference(const QString& uniqueDocumentReference)
 {
     m_uniqueDocumentReference = uniqueDocumentReference;
 }
@@ -120,7 +120,7 @@ SKRTextBridge::SKRTextBridge(QObject *parent) : QObject(parent)
 
 // --------------------------------------------------------------------------------------
 
-void SKRTextBridge::subscribeTextDocument(const QString &uniqueDocumentReference,
+void SKRTextBridge::subscribeTextDocument(const QString     & uniqueDocumentReference,
                                           const QString     & skrTextAreaUniqueObjectName,
                                           QQuickTextDocument *qQuickTextDocument)
 {
@@ -145,7 +145,7 @@ void SKRTextBridge::subscribeTextDocument(const QString &uniqueDocumentReference
 
 // --------------------------------------------------------------------------------------
 
-void SKRTextBridge::unsubscribeTextDocument(const QString &uniqueDocumentReference,
+void SKRTextBridge::unsubscribeTextDocument(const QString     & uniqueDocumentReference,
                                             const QString     & skrTextAreaUniqueObjectName,
                                             QQuickTextDocument *qQuickTextDocument)
 {
@@ -188,7 +188,7 @@ bool SKRTextBridge::isThereAnyOtherSimilarSyncDoc(const SKRSyncDocument& syncDoc
 
 // --------------------------------------------------------------------------------------
 
-QList<SKRSyncDocument>SKRTextBridge::listOtherSimilarSyncDocs(const QString &uniqueDocumentReference,
+QList<SKRSyncDocument>SKRTextBridge::listOtherSimilarSyncDocs(const QString& uniqueDocumentReference,
                                                               const QString& skrTextAreaUniqueObjectName)
 const
 {
@@ -284,11 +284,11 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
     selectionCursor.setPosition(position,              QTextCursor::MoveAnchor);
     selectionCursor.setPosition(position + charsAdded, QTextCursor::KeepAnchor);
 
-    //qDebug() << "selectionCursor" << selectionCursor.selectedText();
+    // qDebug() << "selectionCursor" << selectionCursor.selectedText();
 
     QTextDocumentFragment docFragment = selectionCursor.selection();
 
-    for (const SKRSyncDocument& syncDoc : otherSyncDocs) {
+    for (const SKRSyncDocument& syncDoc : qAsConst(otherSyncDocs)) {
         if (!syncDoc.qQuickTextDocument()) {
             continue;
         }
@@ -310,10 +310,11 @@ void SKRTextBridge::useTextBridge(int position, int charsRemoved, int charsAdded
         otherDocSelectionCursor.insertFragment(docFragment);
 
 
-        //fail safe :
+        // fail safe :
         otherDocSelectionCursor.setPosition(position + charsAdded, QTextCursor::MoveAnchor);
-        if(otherDocSelectionCursor.block().text().size() != selectionCursor.block().text().size()){
-            otherTextDocument->setMarkdown(textDocument->toMarkdown());
+
+        if (otherDocSelectionCursor.block().text().size() != selectionCursor.block().text().size()) {
+            otherTextDocument->setHtml(textDocument->toHtml());
             qDebug() << "failsafe used for " << senderSyncDoc.uniqueDocumentReference();
         }
 

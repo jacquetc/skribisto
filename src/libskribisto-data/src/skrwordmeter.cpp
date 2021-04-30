@@ -15,7 +15,7 @@ void SKRWordMeterWorker::countWords()
 {
     QTextDocument textDocument;
 
-    textDocument.setMarkdown(m_text);
+    textDocument.setHtml(m_text);
     QString plainText = textDocument.toPlainText();
 
     plainText.replace(QRegularExpression("\\n+|\\t+"), " ");
@@ -41,7 +41,7 @@ void SKRWordMeterWorker::countCharacters()
 {
     QTextDocument textDocument;
 
-    textDocument.setMarkdown(m_text);
+    textDocument.setHtml(m_text);
     QString plainText = textDocument.toPlainText();
 
     int charCount = plainText.count();

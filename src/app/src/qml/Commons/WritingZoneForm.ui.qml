@@ -18,9 +18,8 @@ FocusScope {
     property alias leftScrollItem: leftScrollItem
     property alias leftTouch1: leftTouch1
     property alias leftScrollTouchArea: leftScrollTouchArea
-    property alias leftScrollMouseArea: leftScrollMouseArea
-    property alias rightScrollMouseArea: rightScrollMouseArea
     property alias rightScrollTouchArea: rightScrollTouchArea
+    property alias rightScrollItem: rightScrollItem
     property alias placeholderText: textArea.placeholderText
 
     property alias leftScrollItemVisible: leftScrollItem.visible
@@ -59,11 +58,8 @@ FocusScope {
                             }
                         ]
                     }
-                    MouseArea {
-                        id: leftScrollMouseArea
-                        z: 0
-                        anchors.fill: parent
-                    }
+
+
                 }
                 ScrollView {
                     id: scrollView
@@ -127,11 +123,6 @@ FocusScope {
                                 id: rightTouch1
                             }
                         ]
-                    }
-                    MouseArea {
-                        id: rightScrollMouseArea
-                        z: 0
-                        anchors.fill: parent
                     }
                 }
             }

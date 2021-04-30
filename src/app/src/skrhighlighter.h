@@ -52,6 +52,9 @@ signals:
     void suggestionListChanged(QStringList list);
     void suggestionOriginalWordChanged(QString word);
     void shakeTextSoHighlightsTakeEffectCalled();
+    void paintUnderlineForSpellcheckCalled(QList<int>        positionList,
+                                           const QTextBlock& textBloc);
+
 public slots:
 
 private:
