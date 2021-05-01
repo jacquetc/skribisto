@@ -9,7 +9,7 @@ SKRFonts::SKRFonts(QObject *parent) : QObject(parent)
     QStringList unfilteredFamilies =
         database.families(QFontDatabase::WritingSystem::Latin);
 
-    for (const QString& family : unfilteredFamilies) {
+    for (const QString& family : qAsConst(unfilteredFamilies)) {
         if (database.isPrivateFamily(family)) {
             continue;
         }

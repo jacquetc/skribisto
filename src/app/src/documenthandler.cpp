@@ -21,7 +21,9 @@ DocumentHandler::DocumentHandler(QObject *parent) :
     m_selectionStart(0),
     m_selectionEnd(0),
     m_projectId(-2),
-    m_paperId(-2)
+    m_paperId(-2),
+    m_previousBlockCount(-1),
+    m_blockIdCount(-1)
 {}
 
 QQuickTextDocument * DocumentHandler::textDocument() const
@@ -48,9 +50,9 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 this,
                 &DocumentHandler::canRedoChanged);
         m_textCursor =
-                textDocument->textDocument()->rootFrame()->firstCursorPosition();
+            textDocument->textDocument()->rootFrame()->firstCursorPosition();
         m_selectionCursor =
-                textDocument->textDocument()->rootFrame()->firstCursorPosition();
+            textDocument->textDocument()->rootFrame()->firstCursorPosition();
 
         m_highlighter = new SKRHighlighter(m_textDoc->textDocument());
         m_highlighter->setProjectId(m_projectId);
@@ -62,7 +64,10 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 this,
                 &DocumentHandler::shakeTextSoHighlightsTakeEffectCalled);
 
-
+        connect(m_highlighter,
+                &SKRHighlighter::paintUnderlineForSpellcheckCalled,
+                this,
+                &DocumentHandler::paintUnderlineForSpellcheck);
     } else {
         m_textCursor.setPosition(0);
     }
@@ -410,7 +415,7 @@ void DocumentHandler::setAlignment(Qt::Alignment alignment)
 bool DocumentHandler::bulletList() const
 {
     return m_textCursor.currentList() &&
-            m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
+           m_textCursor.currentList()->format().style() == QTextListFormat::ListDisc;
 }
 
 void DocumentHandler::setBulletList(bool bulletList)
@@ -431,7 +436,7 @@ void DocumentHandler::setBulletList(bool bulletList)
 bool DocumentHandler::numberedList() const
 {
     return m_textCursor.currentList() &&
-            m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
+           m_textCursor.currentList()->format().style() == QTextListFormat::ListDecimal;
 }
 
 void DocumentHandler::setNumberedList(bool numberedList)
@@ -464,7 +469,7 @@ void DocumentHandler::setId(const int projectId, const int paperId)
 
     //    QString text = plmdata->sheetHub()->getContent(projectId, paperId);
 
-    //m_selectionCursor.select(QTextCursor::Document);
+    // m_selectionCursor.select(QTextCursor::Document);
 
     //    m_selectionCursor.insertHtml(text);
 
@@ -569,11 +574,12 @@ void DocumentHandler::decrementHeadingLevel()
     QTextBlockFormat f = m_textCursor.blockFormat();
 
     int currentLevel = f.headingLevel();
-    int newLevel = 0;
-    if(currentLevel == 0){
+    int newLevel     = 0;
+
+    if (currentLevel == 0) {
         newLevel = 0;
     }
-    else if(newLevel == 6){
+    else if (newLevel == 6) {
         newLevel = 6;
     }
     else {
@@ -589,11 +595,12 @@ void DocumentHandler::incrementHeadingLevel()
     QTextBlockFormat f = m_textCursor.blockFormat();
 
     int currentLevel = f.headingLevel();
-    int newLevel = 0;
-    if(currentLevel == 0){
+    int newLevel     = 0;
+
+    if (currentLevel == 0) {
         newLevel = 6;
     }
-    else if(newLevel == 1){
+    else if (newLevel == 1) {
         newLevel = 1;
     }
     else {
@@ -651,14 +658,13 @@ void DocumentHandler::addHorizontalLine()
     m_textCursor.endEditBlock();
 }
 
-
-void DocumentHandler::insertDocumentFragment(const QTextDocumentFragment &fragment){
-
+void DocumentHandler::insertDocumentFragment(const QTextDocumentFragment& fragment) {
     m_selectionCursor.beginEditBlock();
+
     if (m_selectionCursor.selectedText().isEmpty()) {
         m_textCursor.insertFragment(fragment);
     }
-    else{
+    else {
         m_selectionCursor.insertFragment(fragment);
     }
 
@@ -676,36 +682,37 @@ QString DocumentHandler::suggestionOriginalWord() const
     return m_suggestionOriginalWord;
 }
 
-QString DocumentHandler::getHtmlAtSelection(int start, int end){
-
+QString DocumentHandler::getHtmlAtSelection(int start, int end) {
     setSelectionStart(start);
     setSelectionEnd(end);
 
     return m_selectionCursor.selection().toHtml();
-
 }
-void DocumentHandler::insertHtml(int position, const QString &html){
+
+void DocumentHandler::insertHtml(int position, const QString& html) {
     setCursorPosition(position);
     m_textCursor.insertHtml(html);
 }
 
-//------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 bool DocumentHandler::isWordMisspelled(int cursorPosition)
 {
     QTextCursor textCursor(m_textDoc->textDocument());
+
     textCursor.setPosition(cursorPosition);
     textCursor.movePosition(QTextCursor::StartOfWord);
     textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
-    QString text = textCursor.selectedText();
+
     return !m_highlighter->getSpellChecker()->spell(textCursor.selectedText());
 }
 
-//------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 void DocumentHandler::listAndSendSpellSuggestions(int cursorPosition)
 {
     QTextCursor textCursor(m_textDoc->textDocument());
+
     textCursor.setPosition(cursorPosition);
     textCursor.movePosition(QTextCursor::StartOfWord);
     textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
@@ -713,26 +720,106 @@ void DocumentHandler::listAndSendSpellSuggestions(int cursorPosition)
 
 
     QStringList list = m_highlighter->getSpellChecker()->suggest(word);
+
     qDebug() << "list;" << list;
     m_suggestionList = list;
     emit suggestionListChanged(list);
+
     m_suggestionOriginalWord = word;
     emit suggestionOriginalWordChanged(word);
-
-
-
 }
 
-void DocumentHandler::replaceWord(const QString &word, const QString &newWord)
+void DocumentHandler::replaceWord(const QString& word, const QString& newWord)
 {
-    //verify
+    // verify
 
     m_textCursor.movePosition(QTextCursor::StartOfWord);
     m_textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
 
-    if(m_textCursor.selectedText() == word){
-        //replace:
+    if (m_textCursor.selectedText() == word) {
+        // replace:
         m_textCursor.insertText(newWord);
     }
+}
 
+void DocumentHandler::paintUnderlineForSpellcheck(QList<int>positionList, QTextBlock textBlock) {
+    bool blockCountChanged = false;
+
+    // qDebug() << "pre " << textBlock.blockNumber() << positionList;
+
+
+    if (m_previousBlockCount != m_textDoc->textDocument()->blockCount()) {
+        blockCountChanged = true;
+    }
+
+
+    if (textBlock.userData() == nullptr) {
+        BlockUserData *userData = new BlockUserData;
+        userData->id    = m_blockIdCount;
+        m_blockIdCount += 1;
+        textBlock.setUserData(userData);
+    }
+    BlockUserData *userData = static_cast<BlockUserData *>(textBlock.userData());
+
+    userData->spellcheckPositionList = positionList;
+
+    m_blockIdAndspellcheckPositionHash.insert(userData->id, userData->spellcheckPositionList);
+
+    //    emit paintUnderlineForSpellcheckCalled(positionList,
+    //                                           textBlock.position(),
+    //                                           textBlock.position() +
+    //                                           textBlock.text().count(),
+    // true);
+
+    //    if (blockCountChanged) {
+    QList<int> allPositionList;
+
+    for (int i = 0; i < m_textDoc->textDocument()->blockCount(); i++) {
+        QTextBlock otherTextBlock = m_textDoc->textDocument()->findBlockByNumber(i);
+
+        if (!otherTextBlock.isValid()) {
+            qDebug() << "invalid:" << textBlock.blockNumber();
+            continue;
+        }
+
+        if (textBlock.userData() == nullptr) {
+            BlockUserData *userData = new BlockUserData;
+            userData->id    = m_blockIdCount;
+            m_blockIdCount += 1;
+            otherTextBlock.setUserData(userData);
+        }
+
+
+        // if (textBlock < otherTextBlock) {
+        BlockUserData *userData = static_cast<BlockUserData *>(otherTextBlock.userData());
+
+        if (userData == nullptr) {
+            continue;
+        }
+
+        allPositionList << userData->spellcheckPositionList;
+
+        // qDebug() << otherTextBlock.blockNumber() << ":" <<
+        // allPositionList;
+
+        //                emit
+        // paintUnderlineForSpellcheckCalled(otherPositionList,
+        // otherTextBlock.position(),
+        //
+        //
+        //
+        //
+        //
+        //                                         otherTextBlock.position()
+        // + otherTextBlock.text().count());
+        // }
+    }
+
+    emit paintUnderlineForSpellcheckCalled(allPositionList, 0,
+                                           m_textDoc->textDocument()->characterCount(), false);
+
+    //    }
+
+
+    m_previousBlockCount = m_textDoc->textDocument()->blockCount();
 }

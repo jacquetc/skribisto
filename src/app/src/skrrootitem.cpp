@@ -169,6 +169,33 @@ QVariantMap SKRRootItem::findAvailableTranslationsMap() const {
     return translationMap;
 }
 
+// ------------------------------------------------------
+
+QString SKRRootItem::cleanUpHtml(const QString& html)
+{
+    QString text = html;
+
+    QStringList styleToRemoveList;
+
+    styleToRemoveList << "font-family";
+    styleToRemoveList << "font-size";
+    styleToRemoveList << "font-style";
+    styleToRemoveList << "margin-left";
+    styleToRemoveList << "margin-right";
+    styleToRemoveList << "margin-top";
+    styleToRemoveList << "margin-bottom";
+    styleToRemoveList << "-qt-block-indent";
+    styleToRemoveList << "-qt-user-state";
+    styleToRemoveList << "text-indent";
+
+    for (const QString& style : qAsConst(styleToRemoveList)) text.remove(QRegularExpression(" " + style + ":.*?;"));
+    text.remove(QRegularExpression("<h[0-9].*?>"));
+    text.remove(QRegularExpression("<h[0-9]>"));
+    return text;
+}
+
+// ------------------------------------------------------
+
 QString SKRRootItem::skribistoVersion() const {
     QStringList strings;
 

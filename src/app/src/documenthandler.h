@@ -29,6 +29,10 @@
 #include "skrhighlighter.h"
 
 
+struct BlockUserData : public QTextBlockUserData {
+    QList<int>spellcheckPositionList;
+    int       id;
+};
 
 class DocumentHandler : public QObject {
     Q_OBJECT
@@ -124,7 +128,7 @@ public:
     bool                numberedList() const;
     void                setNumberedList(bool numberedList);
 
-    Q_INVOKABLE void                setId(const int projectId,
+    Q_INVOKABLE void    setId(const int projectId,
                               const int paperId);
     int                 paperId() const;
 
@@ -142,25 +146,30 @@ public:
         return m_highlighter;
     }
 
-    Q_INVOKABLE QString getHtmlAtSelection(int start, int end);
+    Q_INVOKABLE QString getHtmlAtSelection(int start,
+                                           int end);
 
-    Q_INVOKABLE void insertHtml(int position, const QString &html);
+    Q_INVOKABLE void    insertHtml(int            position,
+                                   const QString& html);
 
 
     Q_INVOKABLE bool isWordMisspelled(int cursorPosition);
     Q_INVOKABLE void listAndSendSpellSuggestions(int cursorPosition);
 
-    QString suggestionOriginalWord() const;
+    QString          suggestionOriginalWord() const;
 
-    QStringList suggestionList() const;
+    QStringList      suggestionList() const;
 
     Q_INVOKABLE void decrementHeadingLevel();
     Q_INVOKABLE void incrementHeadingLevel();
-    void setHeadingLevel(int headingLevel);
+    void             setHeadingLevel(int headingLevel);
     Q_INVOKABLE void removeHeadingLevel();
-    int headingLevel();
+    int              headingLevel();
+
 public slots:
-    void replaceWord(const QString &word, const QString &newWord);
+
+    void replaceWord(const QString& word,
+                     const QString& newWord);
 
     void addHorizontalLine();
     void indentBlock();
@@ -168,7 +177,7 @@ public slots:
 
     void undo();
     void redo();
-    void insertDocumentFragment(const QTextDocumentFragment &fragment);
+    void insertDocumentFragment(const QTextDocumentFragment& fragment);
 
 signals:
 
@@ -186,10 +195,19 @@ signals:
     void charCountChanged(int count);
     void wordCountChanged(int count);
 
-    void suggestionListChanged(const QStringList &list);
-    void suggestionOriginalWordChanged(const QString &word);
+    void suggestionListChanged(const QStringList& list);
+    void suggestionOriginalWordChanged(const QString& word);
 
     void shakeTextSoHighlightsTakeEffectCalled();
+    void paintUnderlineForSpellcheckCalled(QList<int>positionList,
+                                           int       blockBegin,
+                                           int       blockEnd,
+                                           bool      uniqueBlock);
+
+private slots:
+
+    void paintUnderlineForSpellcheck(QList<int> positionList,
+                                     QTextBlock textBlock);
 
 private:
 
@@ -211,6 +229,9 @@ private:
     QString m_suggestionOriginalWord;
     QStringList m_suggestionList;
 
+    int m_previousBlockCount;
+    int m_blockIdCount;
+    QHash<int, QList<int> >m_blockIdAndspellcheckPositionHash;
 };
 
 #endif // DOCUMENTHANDLER_H

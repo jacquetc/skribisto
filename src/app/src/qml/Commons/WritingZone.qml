@@ -17,6 +17,7 @@ WritingZoneForm {
     property string name: ""
 
     textArea.persistentSelection: true
+    textArea.textFormat: TextEdit.RichText
 
     property int textPointSize: 12
     onTextPointSizeChanged: {
@@ -613,6 +614,8 @@ WritingZoneForm {
                 // activate
                 SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(determineSpellCheckerActivation)
                 determineSpellCheckerActivation()
+                paintUnderlineForSpellcheckCalled.connect(textArea.paintUnderlineForSpellcheck)
+
 
                 //lang
                 SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.connect(determineSpellCheckerLanguageCode)
@@ -753,25 +756,25 @@ WritingZoneForm {
         //                        touchPoints[touch].startY)
     }
 
-    leftScrollMouseArea.onPressAndHold: {
+//    leftScrollMouseArea.onPressAndHold: {
 
-    }
-    leftScrollMouseArea.onWheel: {
+//    }
+//    leftScrollMouseArea.onWheel: {
 
 
-        var deltaY = wheel.angleDelta.y *10
+//        var deltaY = wheel.angleDelta.y *10
 
-        flickable.flick(0, deltaY)
+//        flickable.flick(0, deltaY)
 
-        if (flickable.atYBeginning && wheel.angleDelta.y > 0) {
-            flickable.returnToBounds()
-            return
-        }
-        if (flickable.atYEnd && wheel.angleDelta.y < 0) {
-            flickable.returnToBounds()
-            return
-        }
-    }
+//        if (flickable.atYBeginning && wheel.angleDelta.y > 0) {
+//            flickable.returnToBounds()
+//            return
+//        }
+//        if (flickable.atYEnd && wheel.angleDelta.y < 0) {
+//            flickable.returnToBounds()
+//            return
+//        }
+//    }
 
 
     // right scroll area :
@@ -799,24 +802,24 @@ WritingZoneForm {
         //                        touchPoints[touch].startY)
     }
 
-    rightScrollMouseArea.onPressAndHold: {
+//    rightScrollMouseArea.onPressAndHold: {
 
-    }
-    rightScrollMouseArea.onWheel: {
+//    }
+//    rightScrollMouseArea.onWheel: {
 
-        var deltaY = wheel.angleDelta.y *10
+//        var deltaY = wheel.angleDelta.y *10
 
-        flickable.flick(0, deltaY)
+//        flickable.flick(0, deltaY)
 
-        if (flickable.atYBeginning && wheel.angleDelta.y > 0) {
-            flickable.returnToBounds()
-            return
-        }
-        if (flickable.atYEnd && wheel.angleDelta.y < 0) {
-            flickable.returnToBounds()
-            return
-        }
-    }
+//        if (flickable.atYBeginning && wheel.angleDelta.y > 0) {
+//            flickable.returnToBounds()
+//            return
+//        }
+//        if (flickable.atYEnd && wheel.angleDelta.y < 0) {
+//            flickable.returnToBounds()
+//            return
+//        }
+//    }
 
     
     // scrollView :
@@ -845,6 +848,8 @@ WritingZoneForm {
             if(textCenteringEnabled && flickable.contentY + value + 20 > flickable.contentHeight + textArea.viewHeight / 2){
                 flickable.contentY = flickable.contentHeight - textArea.viewHeight + textArea.viewHeight / 2
                 contentYBehavior.enabled = true
+                flickable.returnToBounds()
+                contentYBehavior.enabled = true
                 return
             }
             else if(!textCenteringEnabled && flickable.contentY + value + 20 > flickable.contentHeight){
@@ -872,6 +877,25 @@ WritingZoneForm {
         }
     }
 
+    // wheel :
+
+    WheelHandler{
+        id: leftWheelHandler
+        target: leftScrollItem
+        onWheel: {
+            textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
+
+        }
+    }
+
+    WheelHandler{
+        id: rightWheelHandler
+        target: rightScrollItem
+        onWheel: {
+            textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
+
+        }
+    }
     //--------------------------------------------------------------------------------
     //focus :
 

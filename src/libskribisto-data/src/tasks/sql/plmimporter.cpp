@@ -801,7 +801,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int projectId,
 
     sheetDoc.setHtml(QString::fromUtf8(textLines));
 
-    IFOKDO(result, plmdata->treeHub()->setPrimaryContent(projectId, sheetId, sheetDoc.toMarkdown()));
+    IFOKDO(result, plmdata->treeHub()->setPrimaryContent(projectId, sheetId, sheetDoc.toHtml()));
 
 
     IFKO(result) {
@@ -854,7 +854,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int projectId,
     QTextDocument synDoc;
 
     synDoc.setHtml(QString::fromUtf8(lines));
-    IFOKDO(result, plmdata->treeHub()->setSecondaryContent(projectId, sheetId, synDoc.toMarkdown()));
+    IFOKDO(result, plmdata->treeHub()->setSecondaryContent(projectId, sheetId, synDoc.toHtml()));
 
 
     // associate "attendance" notes
@@ -930,7 +930,7 @@ SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const 
     QTextDocument noteDoc;
 
     noteDoc.setHtml(QString::fromUtf8(lines));
-    IFOKDO(result, plmdata->treeHub()->setPrimaryContent(projectId, noteId, noteDoc.toMarkdown()));
+    IFOKDO(result, plmdata->treeHub()->setPrimaryContent(projectId, noteId, noteDoc.toHtml()));
 
 
     return result;

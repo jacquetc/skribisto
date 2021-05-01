@@ -24,6 +24,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
+#include <QTextDocument>
 
 PLMUpgrader::PLMUpgrader(QObject *parent) : QObject(parent)
 {}
@@ -615,6 +616,136 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     // from 1.6 to 1.7
     if (dbVersion == 1.6) {
         double newDbVersion = 1.7;
+
+        // fetch all TEXT items
+        QString queryStr = "SELECT l_tree_id FROM tbl_tree WHERE t_type = 'TEXT';";
+
+        QSqlQuery query(sqlDb);
+
+        query.prepare(queryStr);
+        query.exec();
+
+        if (query.lastError().isValid()) {
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+            result.addData("SQLError",   query.lastError().text());
+            result.addData("SQL string", queryStr);
+            return result;
+        }
+
+        QList<int> textIdList;
+
+        while (query.next()) {
+            textIdList.append(query.value(0).toInt());
+        }
+
+        // fetch all properties with can_add_child_paper
+
+        queryStr = "SELECT l_tree_code FROM tbl_tree_property WHERE t_name='can_add_child_paper'";
+
+
+        query.prepare(queryStr);
+        query.exec();
+
+        if (query.lastError().isValid()) {
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+            result.addData("SQLError",   query.lastError().text());
+            result.addData("SQL string", queryStr);
+            return result;
+        }
+
+        QList<int> treeCodeList;
+
+        while (query.next()) {
+            treeCodeList.append(query.value(0).toInt());
+        }
+
+        // remove already set properties from idList
+        QList<int> otherTextIdList = textIdList;
+
+        for (int treeCode : treeCodeList) {
+            otherTextIdList.removeAll(treeCode);
+        }
+
+
+        // apply properties to all TEXT items
+        sqlDb.transaction();
+
+        for (int treeItemId : otherTextIdList) {
+            queryStr =
+                "INSERT INTO tbl_tree_property(l_tree_code, t_name, t_value_type, m_value) VALUES(:treeItemId, 'can_add_child_paper', 'INT', 'false');";
+
+
+            query.prepare(queryStr);
+            query.bindValue(":treeItemId", treeItemId);
+            query.exec();
+
+            if (query.lastError().isValid()) {
+                result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+                result.addData("SQLError",   query.lastError().text());
+                result.addData("SQL string", queryStr);
+                return result;
+            }
+        }
+
+        QTextDocument *textDocument = new QTextDocument();
+
+        for (int treeItemId : qAsConst(textIdList)) {
+            // convert TEXT markdown content into HTML
+
+            queryStr = "SELECT m_primary_content FROM tbl_tree WHERE l_tree_id=:treeItemId";
+            query.prepare(queryStr);
+            query.bindValue(":treeItemId", treeItemId);
+            query.exec();
+
+            if (query.lastError().isValid()) {
+                result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+                result.addData("SQLError",   query.lastError().text());
+                result.addData("SQL string", queryStr);
+                return result;
+            }
+
+            QString content;
+
+            while (query.next()) {
+                content = query.value(0).toString();
+            }
+
+            textDocument->setMarkdown(content);
+            QString html = textDocument->toHtml();
+
+            queryStr = "UPDATE tbl_tree SET m_primary_content=:html WHERE l_tree_id=:treeItemId";
+            query.prepare(queryStr);
+            query.bindValue(":treeItemId", treeItemId);
+            query.bindValue(":html",       html);
+            query.exec();
+
+            if (query.lastError().isValid()) {
+                result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+                result.addData("SQLError",   query.lastError().text());
+                result.addData("SQL string", queryStr);
+                return result;
+            }
+        }
+        textDocument->deleteLater();
+
+        IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
+
+        IFOK(result) {
+            sqlDb.commit();
+        }
+        IFOK(result) {
+            dbVersion = newDbVersion;
+        }
+    }
+    IFKO(result) {
+        return result;
+    }
+
+    // ---------------------------------
+
+    // from 1.7 to 1.8
+    if (dbVersion == 1.7) {
+        double newDbVersion = 1.8;
 
         // fill here
     }

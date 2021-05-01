@@ -19,27 +19,27 @@
 #include "skrexporterinterface.h"
 
 SKRExporter::SKRExporter(QObject *parent) : QObject(parent), m_projectId(-2), m_printEnabled(false),
-    m_outputType(OutputType::Odt), m_indentWithTitle(0), m_includeSynopsis(false), m_tagsEnabled(false), m_numbered(false),
+    m_outputType(OutputType::Odt), m_indentWithTitle(0), m_includeSynopsis(false), m_tagsEnabled(false), m_numbered(
+        false),
     m_quick(false)
 {
     plmdata->pluginHub()->addPluginType<SKRExporterInterface>();
 
-    m_fontFamily    = qGuiApp->font().family().replace(", ","");
+    m_fontFamily    = qGuiApp->font().family().replace(", ", "");
     m_fontPointSize = qGuiApp->font().pointSize();
     m_textTopMargin = 2;
-    m_textIndent = 2;
+    m_textIndent    = 2;
 }
 
 // --------------------------------------------------------------------------------------
 
 void SKRExporter::run()
 {
-    if (m_projectId == -2 || m_treeItemIdList.isEmpty()) {
+    if ((m_projectId == -2) || m_treeItemIdList.isEmpty()) {
         return;
     }
 
     emit progressMaximumChanged(m_treeItemIdList.count());
-
 
 
     m_charFormat.setFontFamily(m_fontFamily);
@@ -49,9 +49,10 @@ void SKRExporter::run()
 
 
     QTextDocument *finalDocument = new QTextDocument(this);
-    QString projectTitle = plmdata->projectHub()->getProjectName(m_projectId);
+    QString projectTitle         = plmdata->projectHub()->getProjectName(m_projectId);
 
     QTextCursor textCursor(finalDocument);
+
     if (!m_quick) {
         // project title :
 
@@ -76,7 +77,6 @@ void SKRExporter::run()
     for (int treeItemId : qAsConst(m_treeItemIdList)) {
         this->createContent(finalDocument, m_projectId, treeItemId, &treeItemNumbers);
     }
-
 
 
     // set size and bold with headers for ODT, PDF, Print
@@ -187,8 +187,8 @@ void SKRExporter::createContent(QTextDocument *textDocument, int projectId,
 
     QString type = treeHub->getType(projectId, treeItemId);
 
-    //TODO: temp until other types are done
-    if(type != "TEXT"){
+    // TODO: temp until other types are done
+    if (type != "TEXT") {
         return;
     }
 
@@ -264,7 +264,7 @@ void SKRExporter::createContent(QTextDocument *textDocument, int projectId,
 
             QString tagsMd = tagsStringList.join(" ; ");
 
-            tagsDoc.setMarkdown(tagsMd);
+            tagsDoc.setHtml(tagsMd);
             QTextCursor cursor(&tagsDoc);
             cursor.select(QTextCursor::Document);
             cursor.mergeCharFormat(m_charFormat);
@@ -294,7 +294,7 @@ void SKRExporter::createContent(QTextDocument *textDocument, int projectId,
         synopsisIsEmpty = synopsisMd.isEmpty();
 
         if (!synopsisIsEmpty) {
-            synopsisDoc.setMarkdown(synopsisMd);
+            synopsisDoc.setHtml(synopsisMd);
             QTextCursor cursor(&synopsisDoc);
 
             cursor.select(QTextCursor::Document);
@@ -322,7 +322,7 @@ void SKRExporter::createContent(QTextDocument *textDocument, int projectId,
     QString contentMd = treeHub->getPrimaryContent(projectId, treeItemId);
 
     if (!contentMd.isEmpty()) {
-        contentDoc.setMarkdown(contentMd);
+        contentDoc.setHtml(contentMd);
         QTextCursor cursor(&contentDoc);
         cursor.select(QTextCursor::Document);
         qDebug() << "cursor.selectedText()" << cursor.selectedText().count();
@@ -330,8 +330,6 @@ void SKRExporter::createContent(QTextDocument *textDocument, int projectId,
         cursor.mergeCharFormat(m_charFormat);
 
         if (m_includeSynopsis && !synopsisIsEmpty) {
-
-
             cursor.movePosition(QTextCursor::Start);
             QTextBlockFormat blockFormat;
             blockFormat.setAlignment(Qt::AlignLeft);

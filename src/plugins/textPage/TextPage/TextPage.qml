@@ -377,10 +377,10 @@ TextPageForm {
         if(milestone === -2){
 
             if(isSecondary){
-                writingZone.text = plmData.treeHub().getSecondaryContent(_projectId, _treeItemId)
+                writingZone.text = skrRootItem.cleanUpHtml(plmData.treeHub().getSecondaryContent(_projectId, _treeItemId))
             }
             else {
-                writingZone.text = plmData.treeHub().getPrimaryContent(_projectId, _treeItemId)
+                writingZone.text = skrRootItem.cleanUpHtml(plmData.treeHub().getPrimaryContent(_projectId, _treeItemId))
             }
 
         }
@@ -549,11 +549,15 @@ TextPageForm {
     function saveContent(){
         //console.log("saving text")
         var result
+
+        var text = skrRootItem.cleanUpHtml(writingZone.text)
+
+
         if(isSecondary){
-            result = plmData.treeHub().setSecondaryContent(projectId, treeItemId, writingZone.text)
+            result = plmData.treeHub().setSecondaryContent(projectId, treeItemId, text)
         }
         else {
-            result = plmData.treeHub().setPrimaryContent(projectId, treeItemId, writingZone.text)
+            result = plmData.treeHub().setPrimaryContent(projectId, treeItemId, text)
             if(!contentSaveTimer.running)
                 skrTreeManager.updateCharAndWordCount(projectId, treeItemId, root.pageType, true)
 

@@ -3,7 +3,7 @@
 --
 -- Text encoding used: UTF-8
 --
--- skribisto_db_version:1.6
+-- skribisto_db_version:1.7
 
 PRAGMA foreign_keys = off;
 BEGIN TRANSACTION;
