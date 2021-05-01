@@ -1167,7 +1167,7 @@ NavigationListForm {
                                             listView.currentIndex = model.index
                                             priv.currentTreeItemId = model.treeItemId
 
-                                            openDocumentAction.trigger()
+                                            openDocumentTimer.start()
 
                                             eventPoint.accepted = true
                                         }

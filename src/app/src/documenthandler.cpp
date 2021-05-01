@@ -703,7 +703,6 @@ bool DocumentHandler::isWordMisspelled(int cursorPosition)
     textCursor.setPosition(cursorPosition);
     textCursor.movePosition(QTextCursor::StartOfWord);
     textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
-    QString text = textCursor.selectedText();
 
     return !m_highlighter->getSpellChecker()->spell(textCursor.selectedText());
 }

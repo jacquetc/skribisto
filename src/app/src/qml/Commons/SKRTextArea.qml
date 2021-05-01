@@ -740,7 +740,9 @@ Connections{
  target: SkrSettings.spellCheckingSettings
  function onSpellCheckingActivationChanged(){
      canvas.spellcheckEnabled = SkrSettings.spellCheckingSettings.spellCheckingActivation
-        canvas.requestPaint()
+     if(canvas.available){
+       canvas.requestPaint()
+     }
 
 
  }
