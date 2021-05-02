@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.15
 
 FocusScope {
     id: base
+    clip: true
     property alias text: textArea.text
     property bool stretch: stretch
     property int textAreaWidth: 999999
