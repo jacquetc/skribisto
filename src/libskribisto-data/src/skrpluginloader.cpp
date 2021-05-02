@@ -249,7 +249,7 @@ QObject * SKRPluginLoader::pluginObjectByName(const QString& fileName)
         plugin->setProperty("fileName", fileName);
         plugin->setProperty("activatedByDefault",
                             loader.metaData().value("MetaData").toObject().value(
-                                "activatedbydefault").toBool());
+                                "activatedByDefault").toBool());
         plugin->setProperty("version",
                             loader.metaData().value("MetaData").toObject().value(
                                 "version").toString());
