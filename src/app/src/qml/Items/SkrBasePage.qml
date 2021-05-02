@@ -63,6 +63,23 @@ FocusScope {
 
     }
 
+    Shortcut{
+        id: newIdenticalPageShortcut
+        enabled: control.activeFocus && control.treeItemId > -1
+        sequence: "Ctrl+Return"
+        onActivated: {
+            var result = plmData.treeHub().addTreeItemBelow(control.projectId, control.treeItemId, control.pageType)
+            var newTreeItemAdded = result.getData("treeItemId", -1)
+            if(newTreeItemAdded === -1){
+                plmData.errorHub().addWarning(qsTr("newIdenticalPageShortcut: Item not created"))
+            }
+            else {
+                viewManager.loadTreeItem(control.projectId, newTreeItemAdded)
+            }
+        }
+
+    }
+
 
     Rectangle {
         id: dropIndicator

@@ -1751,6 +1751,13 @@
     </message>
 </context>
 <context>
+    <name>SkrBasePage</name>
+    <message>
+        <source>newIdenticalPageShortcut: Item not created</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SkrTabButtonForm.ui</name>
     <message>
         <source>Close</source>
