@@ -1069,6 +1069,20 @@
     </message>
 </context>
 <context>
+    <name>PluginPage</name>
+    <message>
+        <source>%1 (mandatory)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PluginPageForm.ui</name>
+    <message>
+        <source>Restart to apply changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PlumeImporterForm.ui</name>
     <message>
         <source>Go back</source>
@@ -1567,6 +1581,10 @@
     </message>
     <message>
         <source>Reset dock configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Development mode</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

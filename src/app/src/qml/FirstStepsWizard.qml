@@ -28,6 +28,11 @@ SkrPopup {
 
     }
 
+    function setPage(pageName){
+        if(pageName === "pluginPage"){
+            stackView.currentIndex = 2
+        }
+    }
 
     contentItem: SkrPane {
         anchors.fill: parent
@@ -94,7 +99,7 @@ SkrPopup {
                 }
 
 
-                ColumnLayout {
+                PluginPage {
                     id: pluginsPage
 
                 }

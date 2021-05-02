@@ -60,7 +60,7 @@ public:
     Q_INVOKABLE SKRTagHub        * tagHub();
     Q_INVOKABLE SKRProjectDictHub* projectDictHub();
     Q_INVOKABLE SKRStatHub       * statHub();
-    SKRPluginHub                 * pluginHub();
+    Q_INVOKABLE SKRPluginHub     * pluginHub();
 
 signals:
 

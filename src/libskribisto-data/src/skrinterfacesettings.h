@@ -38,21 +38,21 @@ public:
     {
         QSettings settings;
 
-        return settings.value("Plugins/" + this->name() + "-enabled", QVariant()) == QVariant() ? false : true;
+        return settings.value("plugins/" + this->name() + "-enabled", QVariant()) == QVariant() ? false : true;
     }
 
     bool pluginEnabled() const
     {
         QSettings settings;
 
-        return settings.value("Plugins/" + this->name() + "-enabled", true).toBool();
+        return settings.value("plugins/" + this->name() + "-enabled", true).toBool();
     }
 
     void setPluginEnabled(bool pluginEnabled)
     {
         QSettings settings;
 
-        return settings.setValue("Plugins/" + this->name() + "-enabled", pluginEnabled);
+        return settings.setValue("plugins/" + this->name() + "-enabled", pluginEnabled);
     }
 };
 

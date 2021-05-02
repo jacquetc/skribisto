@@ -38,6 +38,7 @@ Item {
     property alias fontFamilyComboBox: fontFamilyComboBox
     property alias textTopMarginSlider: textTopMarginSlider
     property alias textIndentSlider: textIndentSlider
+    property alias devModeCheckBox: devModeCheckBox
 
     SkrPane {
         id: pane2
@@ -53,11 +54,9 @@ Item {
             contentWidth: scrollView.width
             contentHeight: pillarLayout.implicitHeight
 
-            SKRPillarLayout {
+            ColumnLayout {
                 id: pillarLayout
                 width: scrollView.width
-                columns: ((pillarLayout.width / columnWidth) | 0 )
-                maxColumns: 3
 
                 SkrGroupBox {
                     id: accessibilityGroupBox
@@ -467,6 +466,11 @@ Item {
                             SkrButton {
                                 id: resetDockConfButton
                                 text: qsTr("Reset dock configuration")
+                            }
+
+                            SkrSwitch {
+                                id: devModeCheckBox
+                                text: qsTr("Development mode")
                             }
                         }
                     }

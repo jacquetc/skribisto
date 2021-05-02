@@ -41,45 +41,45 @@ public:
 
     explicit TextPage(QObject *parent = nullptr);
     ~TextPage();
-    QString name() const {
+    QString name() const override {
         return "TextPage";
     }
 
-    QString displayedName() const {
+    QString displayedName() const override {
         return tr("Text page");
     }
 
-    QString use() const {
+    QString use() const override {
         return "Display a page for text";
     }
 
     // Page
-    QString pageType() const {
+    QString pageType() const override {
         return "TEXT";
     }
 
-    QString visualText() const {
+    QString visualText() const override {
         return tr("Text");
     }
 
-    QString pageDetailText() const {
+    QString pageDetailText() const override {
         return tr("Write here any text, be it a scene or a note");
     }
 
-    QString pageUrl() const {
+    QString pageUrl() const override {
         return "qrc:///qml/plugins/TextPage/TextPage.qml";
     }
 
-    bool isConstructible() const {
+    bool isConstructible() const override {
         return true;
     }
 
-    QString pageTypeIconUrl() const {
+    QString pageTypeIconUrl() const override {
         return "qrc:///icons/backup/story-editor.svg";
     }
 
     SKRResult finaliseAfterCreationOfTreeItem(int projectId,
-                                              int treeItemId);
+                                              int treeItemId) override;
 
     void      updateCharAndWordCount(int  projectId,
                                      int  treeItemId,
@@ -89,7 +89,7 @@ public:
     QTextDocumentFragment generateExporterTextFragment(int                projectId,
                                                        int                treeItemId,
                                                        const QVariantMap& exportProperties,
-                                                       SKRResult        & result) const;
+                                                       SKRResult        & result) const override;
 
 signals:
 

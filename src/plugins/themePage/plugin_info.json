@@ -4,6 +4,6 @@
     "longname" :        "Skribisto Theme Page",
     "version" :         "1.0",
     "mandatory" :    true,
-    "activatedbydefault" :    true,
+    "activatedByDefault" :    true,
     "dependencies" :    []
 }

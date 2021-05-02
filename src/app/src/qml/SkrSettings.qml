@@ -120,6 +120,10 @@ QtObject {
         property bool tagsEnabled: false
     }
 
+    property Settings devSettings: Settings{
+        category: "dev"
+        property bool devModeEnabled: false
+    }
 
     property int initialTextWidth: 0
 

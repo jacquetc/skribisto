@@ -89,28 +89,149 @@ SKRPluginLoader::~SKRPluginLoader()
 // ---------------------------------------------------------------------------
 
 
-QList<SKRPlugin>SKRPluginLoader::listAll()
+QStringList SKRPluginLoader::listAllByName()
 {
-    return m_pluginsListHash.values();
+    QStringList nameList;
+
+    for (SKRPlugin plugin : m_pluginsListHash.values()) {
+        nameList << plugin.name;
+    }
+
+    return nameList;
 }
 
 // ---------------------------------------------------------------------------
 
-QList<SKRPlugin>SKRPluginLoader::listActivated()
+QStringList SKRPluginLoader::listActivatedByName()
 {
-    QList<SKRPlugin> list;
+    QStringList nameList;
     QHash<QString, SKRPlugin>::const_iterator i = m_pluginsListHash.constBegin();
 
     while (i != m_pluginsListHash.constEnd()) {
         SKRPlugin plugin = i.value();
 
         if (qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled()) {
-            list << plugin;
+            nameList << plugin.name;
         }
         ++i;
     }
 
-    return list;
+    return nameList;
+}
+
+// ---------------------------------------------------------------------------
+
+QString SKRPluginLoader::getDisplayedName(const QString& pluginName) const
+{
+    QString name;
+    QHash<QString, SKRPlugin>::const_iterator i = m_pluginsListHash.constBegin();
+
+    while (i != m_pluginsListHash.constEnd()) {
+        SKRPlugin plugin = i.value();
+
+        if (plugin.name == pluginName) {
+            if (qobject_cast<SKRCoreInterface *>(plugin.object)) {
+                SKRCoreInterface *coreInterface = qobject_cast<SKRCoreInterface *>(plugin.object);
+                name = coreInterface->displayedName();
+                break;
+            }
+        }
+        ++i;
+    }
+    return name;
+}
+
+// ---------------------------------------------------------------------------
+
+QString SKRPluginLoader::getUse(const QString& pluginName) const
+{
+    QString name;
+    QHash<QString, SKRPlugin>::const_iterator i = m_pluginsListHash.constBegin();
+
+    while (i != m_pluginsListHash.constEnd()) {
+        SKRPlugin plugin = i.value();
+
+        if (plugin.name == pluginName) {
+            if (qobject_cast<SKRCoreInterface *>(plugin.object)) {
+                SKRCoreInterface *coreInterface = qobject_cast<SKRCoreInterface *>(plugin.object);
+                name = coreInterface->use();
+                break;
+            }
+        }
+        ++i;
+    }
+    return name;
+}
+
+// ---------------------------------------------------------------------------
+
+bool SKRPluginLoader::getMandatory(const QString& pluginName) const
+{
+    bool mandatory                              = false;
+    QHash<QString, SKRPlugin>::const_iterator i = m_pluginsListHash.constBegin();
+
+    while (i != m_pluginsListHash.constEnd()) {
+        SKRPlugin plugin = i.value();
+
+        if (plugin.name == pluginName) {
+            if (plugin.object->property("mandatory").isValid()) {
+                mandatory = plugin.object->property("mandatory").toBool();
+            }
+            break;
+        }
+        ++i;
+    }
+    return mandatory;
+}
+
+// ---------------------------------------------------------------------------
+
+bool SKRPluginLoader::isThisPluginEnabled(const QString& pluginName)
+{
+    QHash<QString, SKRPlugin>::const_iterator i = m_pluginsListHash.constBegin();
+
+    while (i != m_pluginsListHash.constEnd()) {
+        SKRPlugin plugin = i.value();
+
+        if (plugin.name == pluginName) {
+            if (qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled()) {
+                return true;
+            }
+        }
+        ++i;
+    }
+
+    return false;
+}
+
+// ---------------------------------------------------------------------------
+void SKRPluginLoader::setPluginEnabled(const QString& pluginName, bool enabled) {
+    QHash<QString, SKRPlugin>::const_iterator i = m_pluginsListHash.constBegin();
+
+    while (i != m_pluginsListHash.constEnd()) {
+        SKRPlugin plugin = i.value();
+
+        if (plugin.name == pluginName) {
+            if (qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled() != enabled) {
+                qobject_cast<SKRCoreInterface *>(plugin.object)->setPluginEnabled(enabled);
+            }
+            break;
+        }
+        ++i;
+    }
+}
+
+// ---------------------------------------------------------------------------
+void SKRPluginLoader::enablePlugin(const QString& pluginName)
+{
+    setPluginEnabled(pluginName, true);
+}
+
+// ---------------------------------------------------------------------------
+
+void SKRPluginLoader::disablePlugin(const QString& pluginName)
+{
+    setPluginEnabled(pluginName, true);
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +247,7 @@ QObject * SKRPluginLoader::pluginObjectByName(const QString& fileName)
         qDebug() << "loader.instance() : " + loader.errorString();
     } else {
         plugin->setProperty("fileName", fileName);
-        plugin->setProperty("activatedbydefault",
+        plugin->setProperty("activatedByDefault",
                             loader.metaData().value("MetaData").toObject().value(
                                 "activatedbydefault").toBool());
         plugin->setProperty("version",
