@@ -131,7 +131,13 @@ TextPageForm {
 
     writingZone.stretch: root.width < 300 ? true : viewManager.rootWindow.compactMode
 
+    previousWritingZone.maximumTextAreaWidth: SkrSettings.textSettings.textWidth
+    previousWritingZone.textPointSize: SkrSettings.textSettings.textPointSize
+    previousWritingZone.textFontFamily: SkrSettings.textSettings.textFontFamily
+    previousWritingZone.textIndent: SkrSettings.textSettings.textIndent
+    previousWritingZone.textTopMargin: SkrSettings.textSettings.textTopMargin
 
+    previousWritingZone.stretch: root.width < 300 ? true : viewManager.rootWindow.compactMode
     // focus
     Connections {
         enabled: viewManager.focusedPosition === position
@@ -523,6 +529,19 @@ TextPageForm {
 
     }
 
+    //needed to adapt width to a shrinking window
+    Binding on previousWritingZone.textAreaWidth {
+        when: !Globals.compactMode && middleBase.width - 40 < previousWritingZone.maximumTextAreaWidth
+        value: previousWritingZone.width - 40
+        restoreMode: Binding.RestoreBindingOrValue
+
+    }
+    Binding on previousWritingZone.textAreaWidth {
+        when: !Globals.compactMode && middleBase.width - 40 >= previousWritingZone.maximumTextAreaWidth
+        value: previousWritingZone.maximumTextAreaWidth
+        restoreMode: Binding.RestoreBindingOrValue
+
+    }
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
 
