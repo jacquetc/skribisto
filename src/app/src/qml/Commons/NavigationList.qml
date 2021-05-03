@@ -607,7 +607,7 @@ NavigationListForm {
 
                     // move :
                     addDisplaced:      Transition {
-                        NumberAnimation { properties: "x,y"; duration: 500 }
+                        NumberAnimation { properties: "x,y"; duration: 250 }
                     }
 
 
@@ -1065,9 +1065,9 @@ NavigationListForm {
                                                 cancelDragTimer.stop()
                                                 priv.dragging = false
                                                 content.dragging = false
-                                                if(!dropArea.containsDrag){
+                                                //if(!dropArea.containsDrag){
                                                     content.Drag.drop()
-                                                }
+                                                //}
                                             }
                                         }
                                         enabled: true
@@ -1092,9 +1092,9 @@ NavigationListForm {
                                                 cancelDragTimer.stop()
                                                 priv.dragging = false
                                                 content.dragging = false
-                                                if(!dropArea.containsDrag){
+                                                //if(!dropArea.containsDrag){
                                                     content.Drag.drop()
-                                                }
+                                               // }
                                             }
                                         }
                                         enabled: content.dragging

@@ -12,7 +12,7 @@ SkrBasePage {
     height: 600
 
     property alias writingZone: writingZone
-    property alias previousWritingZone: previousWritingZone
+    property alias loader_previousWritingZone: loader_previousWritingZone
     property alias minimap: minimap
     property alias rightPaneScrollMouseArea: rightPaneScrollMouseArea
     property alias rightPaneScrollTouchArea: rightPaneScrollTouchArea
@@ -134,20 +134,15 @@ SkrBasePage {
                 ColumnLayout {
                     anchors.fill: parent
 
-                    WritingZone {
-                        id: previousWritingZone
+                    Loader {
+                        id: loader_previousWritingZone
+
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 200
-                        textAreaStyleElevation: true
-                        minimalTextAreaWidth: 100
-                        textCenteringEnabled: false
-
-                        textAreaStyleBackgroundColor: SkrTheme.mainTextAreaBackground
-                        textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
-                        textAreaStyleAccentColor: SkrTheme.accent
-                        paneStyleBackgroundColor: SkrTheme.pageBackground
-
+                        Layout.preferredHeight: active ? 200 : 0
+                        sourceComponent: component_previousWritingZone
+                        active: false
                     }
+
 
                     WritingZone {
                         id: writingZone
@@ -190,6 +185,8 @@ SkrBasePage {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
+
+
                         MultiPointTouchArea {
                             id: rightPaneScrollTouchArea
                             z: 1
@@ -201,6 +198,7 @@ SkrBasePage {
                                     id: leftTouch2
                                 }
                             ]
+
                         }
 
                         MouseArea {

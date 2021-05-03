@@ -1961,6 +1961,14 @@
         <source>Write here any text, be it a scene or a note</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Close quick view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open quick view</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ThemePage</name>

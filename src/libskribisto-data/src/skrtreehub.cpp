@@ -1430,6 +1430,47 @@ SKRResult SKRTreeHub::removeTreeRelationship(int projectId, int sourceTreeItemId
 
 // ----------------------------------------------------------------------------------------
 
+int SKRTreeHub::getPreviousTreeItemIdOfTheSameType(int projectId, int treeItemId)
+{
+    SKRResult result(this);
+    int previousTreeItemId = -1;
+
+    QList<int> allIds = this->getAllIds(projectId);
+
+    int thisItemIndex    = allIds.indexOf(treeItemId);
+    QString thisItemType = this->getType(projectId, treeItemId);
+
+    if (thisItemIndex == -1) {
+        result = SKRResult(SKRResult::Critical, this, "no_index_found");
+    }
+
+    if (thisItemIndex <= 1) {
+        return -1;
+    }
+
+    IFOK(result) {
+        for (int i = thisItemIndex - 1; i >= 0; i--) {
+            int potentiallyPreviousItemId = allIds.at(i);
+
+            if (!this->getTrashed(projectId, potentiallyPreviousItemId)) {
+                QString previousItemType = this->getType(projectId, potentiallyPreviousItemId);
+
+                if (previousItemType == thisItemType) {
+                    previousTreeItemId = potentiallyPreviousItemId;
+                    break;
+                }
+            }
+        }
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return previousTreeItemId;
+}
+
+// ----------------------------------------------------------------------------------------
+
 SKRResult SKRTreeHub::setTrashedDateToNow(int projectId, int treeItemId)
 {
     return set(projectId, treeItemId, "dt_trashed", QDateTime::currentDateTime());
