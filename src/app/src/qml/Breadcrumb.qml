@@ -65,7 +65,7 @@ Item {
         anchors.fill: parent
         radius: 4
         border.width: 1
-        border.color: SkrTheme.divider
+        border.color: SkrTheme.pageBackground
         color: SkrTheme.menuBackground
 
         Row{

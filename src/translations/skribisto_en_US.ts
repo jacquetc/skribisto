@@ -1756,6 +1756,10 @@
         <source>newIdenticalPageShortcut: Item not created</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Rename an item</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SkrTabButtonForm.ui</name>
@@ -1977,19 +1981,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Edit theme</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Edit color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Distraction free</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Normal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2000,6 +1992,50 @@
         <source>Choose or modify your themes</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set as light theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set as dark theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set as distraction free theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename a theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove a theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you really want to remove the theme &quot;%1&quot;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Primary text %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Distraction free</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ThemePageForm.ui</name>
@@ -2008,15 +2044,55 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Color properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Colors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Example</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>list item</source>
+        <source>Button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>button</source>
+        <source>Button (disabled)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tool Button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tool Button (disabled)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Round button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Round button (disabled)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch (checked)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2028,19 +2104,35 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Primary text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Secondary text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Color properties</source>
+        <source>Tool bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Colors</source>
+        <source>Page tool bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Distraction free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force a color mode:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

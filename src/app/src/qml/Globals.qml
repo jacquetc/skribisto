@@ -26,10 +26,6 @@ QtObject {
         }
     }
 
-    //FullScreen
-    signal fullScreenCalled(bool value)
-    property bool fullScreen: false
-
     signal resetDockConfCalled()
 
     //    signal openMainMenuCalled()
