@@ -129,7 +129,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
         }
 
 
-        for (const QString& string : optimization) {
+        for (const QString& string : qAsConst(optimization)) {
             QSqlQuery query(sqlDb);
 
             query.prepare(string);

@@ -688,7 +688,7 @@ NavigationListForm {
                                 rightMargin: 5
                             }
 
-                            height: 50
+                            height: 40
 
                             padding: 0
                             topInset: 0
@@ -995,9 +995,15 @@ NavigationListForm {
                                 keys: ["application/skribisto-tree-item"]
                                 onEntered: {
 
+                                    console.log("entered")
                                     content.sourceIndex = drag.source.visualIndex
                                     visualModel.items.move(drag.source.visualIndex,
                                                            content.visualIndex)
+                                }
+                                onExited: {
+
+                                    console.log("exited")
+
                                 }
 
                                 onDropped: {
@@ -2388,6 +2394,10 @@ NavigationListForm {
                                         visible: false
                                     }
                                     PropertyChanges {
+                                        target: swipeDelegate
+                                        height: 50
+                                    }
+                                    PropertyChanges {
                                         target: labelLayout
                                         visible: false
                                     }
@@ -2409,6 +2419,10 @@ NavigationListForm {
                                     PropertyChanges {
                                         target: titleLabel
                                         visible: false
+                                    }
+                                    PropertyChanges {
+                                        target: swipeDelegate
+                                        height: 50
                                     }
                                     PropertyChanges {
                                         target: labelLayout
@@ -2556,7 +2570,7 @@ NavigationListForm {
                 target: sideNavigationPopup
                 property: "headerHeight"
                 value: sideNavigationLoader.item.listView.contentHeight -
-                       sideNavigationLoader.item.listView.count * 50
+                       sideNavigationLoader.item.listView.count * 40
             }
 
             //-----------------------------------

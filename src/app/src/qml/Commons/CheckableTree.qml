@@ -334,7 +334,7 @@ ListView {
                     verticalCenter: parent.verticalCenter
                 }
                 width: delegateRoot.width
-                height: 50
+                height: 40
 
                 padding: 1
 
@@ -832,6 +832,10 @@ ListView {
                         visible: false
                     }
                     PropertyChanges {
+                        target: content
+                        height: 50
+                    }
+                    PropertyChanges {
                         target: labelLayout
                         visible: false
                     }
@@ -853,6 +857,10 @@ ListView {
                     PropertyChanges {
                         target: titleLabel
                         visible: false
+                    }
+                    PropertyChanges {
+                        target: content
+                        height: 50
                     }
                     PropertyChanges {
                         target: labelLayout

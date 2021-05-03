@@ -13,6 +13,7 @@ Item {
     property alias mainMenuButton: mainMenuButton
     property alias showWelcomeButton: showWelcomeButton
     property alias baseForDrawers: baseForDrawers
+    property alias distractionFreeButton: distractionFreeButton
     property alias themeColorButton: themeColorButton
     property alias showLeftDockButton: showLeftDockButton
     property alias showRightDockButton: showRightDockButton
@@ -71,6 +72,14 @@ Item {
                 Layout.fillWidth: true
             }
 
+
+            SkrToolButton {
+                id: distractionFreeButton
+
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 30
+
+            }
 
             SkrToolButton {
                 id: themeColorButton

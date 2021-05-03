@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.themes 1.0
+import QtQuick.Window 2.15
 
 import "../../Items"
 import "../../Commons"
@@ -20,6 +21,11 @@ ThemePageForm {
         populateThemeListModel()
         populateColorPropertiesListModel()
     }
+    Component.onDestruction: {
+           if(rootWindow.visibility !== Window.FullScreen){
+               SkrTheme.setDistractionFree(false)
+           }
+    }
 
     //--------------------------------------------------------
     //---View buttons-----------------------------------------
@@ -29,14 +35,10 @@ ThemePageForm {
     viewButtons.position: root.position
 
     viewButtons.onOpenInNewWindowCalled: {
-        saveContent()
-        saveCurrentCursorPositionAndY()
         skrWindowManager.addWindowForProjectIndependantPageType(root.pageType)
     }
 
     viewButtons.onSplitCalled: function(position){
-        saveContent()
-        saveCurrentCursorPositionAndY()
         viewManager.loadProjectIndependantPageAt(root.pageType, position)
     }
     titleLabel.text: title
@@ -48,17 +50,10 @@ ThemePageForm {
 
     addThemeButton.icon.source: "qrc:///icons/backup/edit-copy.svg"
     addThemeButton.onClicked: {
-        SkrTheme.duplicate(currentTheme, qsTr("%1 (copy)".arg(currentTheme)))
+        SkrTheme.duplicate(selectedTheme, qsTr("%1 (copy)".arg(selectedTheme)))
         populateThemeListModel()
     }
 
-    //--------------------------------------------------------
-
-    removeThemeButton.icon.source: "qrc:///icons/backup/edit-delete.svg"
-    removeThemeButton.onClicked: {
-        SkrTheme.remove(currentlySelectedTheme)
-        populateThemeListModel()
-    }
     //--------------------------------------------------------
 
 
@@ -71,7 +66,7 @@ ThemePageForm {
     function populateThemeListModel(){
         themeListModel.clear()
         var list = SkrTheme.getThemeList()
-
+        list.sort()
 
         var i
         for(i = 0 ; i < list.length ; i++) {
@@ -86,8 +81,10 @@ ThemePageForm {
 
     //--------------------------------------------------------
 
-    property string currentTheme: SkrTheme.currentThemeName
-    property string currentlySelectedTheme: ""
+    readonly property string currentLightThemeName: SkrTheme.currentLightThemeName
+    readonly property string currentDarkThemeName: SkrTheme.currentDarkThemeName
+    readonly property string currentDistractionFreeThemeName: SkrTheme.currentDistractionFreeThemeName
+    property string selectedTheme: ""
 
 
     themeListView.delegate: SkrListItemPane {
@@ -105,7 +102,7 @@ ThemePageForm {
 
             onSingleTapped: {
                 themeListView.currentIndex = model.index
-                currentlySelectedTheme = model.text
+                selectedTheme = model.text
                 themeDelegateRoot.forceActiveFocus()
                 eventPoint.accepted = true
             }
@@ -113,9 +110,8 @@ ThemePageForm {
             onDoubleTapped: {
                 //console.log("double tapped")
                 themeListView.currentIndex = model.index
-                currentlySelectedTheme = model.text
+                selectedTheme = model.text
                 SkrTheme.currentThemeName = model.text
-
                 eventPoint.accepted = true
             }
         }
@@ -138,7 +134,7 @@ ThemePageForm {
                 color:  SkrTheme.accent
                 Layout.fillHeight: true
                 Layout.preferredWidth: 5
-                visible: model.text === currentTheme
+                visible: model.text === selectedTheme
             }
 
 
@@ -161,7 +157,7 @@ ThemePageForm {
                 Layout.preferredWidth: 40
 
                 id: editThemeToolButton
-                text: qsTr("Edit theme")
+                text: qsTr("Rename")
                 flat: true
                 display: AbstractButton.IconOnly
                 enabled: model.isEditable
@@ -169,10 +165,8 @@ ThemePageForm {
                 icon.source: "qrc:///icons/backup/edit-rename.svg"
 
                 onClicked: {
-
-                    themeListView.currentIndex = model.index
-                    currentlySelectedTheme = model.text
-                    SkrTheme.currentThemeName = model.text
+                    renameDialog.name = model.text
+                    renameDialog.open()
                 }
             }
 
@@ -183,25 +177,169 @@ ThemePageForm {
             }
 
             SkrRoundButton{
-                text: "\u2713"
+                id: lightButton
+                display: AbstractButton.IconOnly
+                text: SkrTheme.currentLightThemeName === model.text ? qsTr("Light") :  qsTr("Set as light theme")
+                icon{
+                    source:  SkrTheme.currentLightThemeName === model.text ? "qrc:///icons/backup/color-picker-white.svg" : ""
+                    color: "transparent"
+                }
+                onClicked:{
+                    SkrTheme.currentLightThemeName = model.text
+
+                }
             }
 
             SkrRoundButton{
-                text: "\u2713"
+                id: darkButton
+                display: AbstractButton.IconOnly
+                text: SkrTheme.currentDarkThemeName === model.text ? qsTr("Dark") : qsTr("Set as dark theme")
+                icon {
+                    source: SkrTheme.currentDarkThemeName === model.text ? "qrc:///icons/backup/color-picker-black.svg" : ""
+                    color: "transparent"
+                }
+
+
+                onClicked:{
+                    SkrTheme.currentDarkThemeName = model.text
+                }
             }
 
             SkrRoundButton{
-                text: "\u2713"
+                id: distractionFreeButton
+                display: AbstractButton.IconOnly
+                text: SkrTheme.currentDistractionFreeThemeName === model.text ? qsTr("Distraction free") : qsTr("Set as distraction free theme")
+                icon.source: SkrTheme.currentDistractionFreeThemeName === model.text ? "qrc:///icons/backup/view-fullscreen.svg" : ""
+
+                onClicked:{
+                    SkrTheme.currentDistractionFreeThemeName = model.text
+
+                }
+
             }
 
         }
     }
+
+    //-------------------------------------------------------------
+    //----- delete theme --------------------------------------------
+    //-------------------------------------------------------------
+
+
+    SimpleDialog {
+        id: renameDialog
+        property string name: ""
+        title: qsTr("Rename a theme")
+        contentItem: SkrTextField {
+            id: renameTextField
+            text: renameDialog.name
+
+            onAccepted: {
+                renameDialog.accept()
+            }
+
+        }
+
+        standardButtons: Dialog.Ok  | Dialog.Cancel
+
+        onRejected: {
+            renameDialog.name = ""
+
+        }
+
+        onDiscarded: {
+
+
+            renameDialog.name = ""
+
+        }
+
+        onAccepted: {
+
+            SkrTheme.rename(renameDialog.name, renameTextField.text)
+            populateThemeListModel()
+            renameDialog.name = ""
+        }
+
+        onActiveFocusChanged: {
+            if(activeFocus){
+                contentItem.forceActiveFocus()
+            }
+
+        }
+
+        onOpened: {
+            contentItem.forceActiveFocus()
+            renameTextField.selectAll()
+        }
+
+    }
+
+    //-------------------------------------------------------------
+    //----- rename theme --------------------------------------------
+    //-------------------------------------------------------------
+
+
+    //--------------------------------------------------------
+
+    removeThemeButton.icon.source: "qrc:///icons/backup/edit-delete.svg"
+    removeThemeButton.onClicked: {
+        removeDialog.name = selectedTheme
+        removeDialog.open()
+        populateThemeListModel()
+    }
+
+
+    SimpleDialog {
+        id: removeDialog
+        property string name: ""
+        title: qsTr("Remove a theme")
+        text: qsTr("Do you really want to remove the theme \"%1\"?").arg(removeDialog.name)
+
+
+        standardButtons: Dialog.Ok  | Dialog.Cancel
+
+        onRejected: {
+            removeDialog.name = ""
+
+        }
+
+        onDiscarded: {
+
+
+            removeDialog.name = ""
+
+        }
+
+        onAccepted: {
+            SkrTheme.remove(removeDialog.name)
+            populateThemeListModel()
+            removeDialog.name = ""
+        }
+
+        onActiveFocusChanged: {
+            if(activeFocus){
+                contentItem.forceActiveFocus()
+            }
+
+        }
+
+        onOpened: {
+            contentItem.forceActiveFocus()
+            removeDialog.selectAll()
+        }
+
+    }
+
+
     //-------------------------------------------------------------
     //------color properties--------------------------------------------
     //-------------------------------------------------------------
 
-    onCurrentThemeChanged: {
+    onSelectedThemeChanged: {
+        SkrTheme.selectedThemeName = selectedTheme
         populateColorPropertiesListModel()
+        removeThemeButton.enabled = SkrTheme.isThemeEditable(selectedTheme)
     }
 
     ListModel {
@@ -212,43 +350,34 @@ ThemePageForm {
     function populateColorPropertiesListModel(){
         colorPropertiesModel.clear()
 
-        var propertyHumanNamesList = SkrTheme.getPropertyHumanNames()
-        var propertyExactNamesList = SkrTheme.getColorPropertyExactNames()
-        var propertyValuesList = SkrTheme.getColorPropertyValues()
+        var propertyHumanNamesMap = SkrTheme.getPropertyHumanNames()
+        var propertyValuesMap = SkrTheme.selectedColorsMap
 
-        var df_propertyHumanNamesList = []
-        var df_propertyExactNamesList = []
-        var df_propertyValuesList = []
+        var list = []
+        for(var name in propertyValuesMap) {
+            list.push(name)
+        }
+        list.sort()
+
+
 
         //is editable ?
-        var isEditable = SkrTheme.isThemeEditable(currentTheme)
+        var isEditable = SkrTheme.isThemeEditable(selectedTheme)
 
-        //sort by distractionFree or not, add normal to model
 
-        var i
-        for(i = 0 ; i < propertyExactNamesList.length ; i++) {
-            var isDistractionFree = propertyExactNamesList[i].slice(0, 15) === "distractionFree"
+        for(var i in list) {
+            var exactName = list[i]
+            if(SkrTheme.changedColorsMap[exactName]){
+                colorPropertiesModel.append({"text": propertyHumanNamesMap[exactName], "propertyExactName": exactName, "color": SkrTheme.changedColorsMap[exactName], "isEditable": isEditable})
+            }
+            else{
+                colorPropertiesModel.append({"text": propertyHumanNamesMap[exactName], "propertyExactName": exactName, "color": propertyValuesMap[exactName], "isEditable": isEditable})
 
-            if(isDistractionFree){
-                df_propertyHumanNamesList.push(propertyHumanNamesList[i])
-                df_propertyExactNamesList.push(propertyExactNamesList[i])
-                df_propertyValuesList.push(propertyValuesList[i])
             }
 
-            else {
-                var isDistractionFreeString = "false"
-                colorPropertiesModel.append({"text": propertyHumanNamesList[i], "propertyExactName": propertyExactNamesList[i], "color": propertyValuesList[i], "isDistractionFree": isDistractionFreeString, "isEditable": isEditable})
-            }
-        }
-
-        //add distraction free to model
-
-        var k
-        for(k = 0 ; k < df_propertyExactNamesList.length ; k++) {
-
-            colorPropertiesModel.append({"text": df_propertyHumanNamesList[k], "propertyExactName": df_propertyExactNamesList[k], "color": df_propertyValuesList[k], "isDistractionFree": "true", "isEditable": isEditable})
 
         }
+
 
 
 
@@ -289,8 +418,8 @@ ThemePageForm {
 
                 if(model.isEditable){
 
-                colorDialog.currentColor = model.color
-                colorDialog.open()
+                    colorDialog.currentColor = model.color
+                    colorDialog.open()
                 }
 
                 eventPoint.accepted = true
@@ -371,29 +500,43 @@ ThemePageForm {
 
 
 
-    propertiesListView.section.property: "isDistractionFree"
-    propertiesListView.section.criteria: ViewSection.FullString
-    propertiesListView.section.labelPositioning: ViewSection.CurrentLabelAtStart |
-                                                 ViewSection.InlineLabels
-    propertiesListView.section.delegate: propertiesSectionHeading
 
-    // The delegate for each section header
-    Component {
-        id: propertiesSectionHeading
-        Rectangle {
-            width: propertiesListView.width
-            height: childrenRect.height
-            color: SkrTheme.buttonBackground
+    //-------------------------------------------------------------------------
+    //-------Examples ----------------------------------------------------------
+    //-------------------------------------------------------------------------
 
-            required property string section
+    forceLightButton.onClicked:{
+        SkrTheme.forceCurrentColorMode(SKRThemes.Light)
+    }
 
-            SkrLabel {
-                text: section === "true" ? qsTr("Distraction free") : qsTr("Normal")
-                font.bold: true
-                color: SkrTheme.buttonForeground
-                //font.pixelSize: 20
-            }
-        }
+    forceDarkButton.onClicked:{
+        SkrTheme.forceCurrentColorMode(SKRThemes.Dark)
+    }
+
+    forceDistractionFreeButton.onClicked:{
+        SkrTheme.forceCurrentColorMode(SKRThemes.DistractionFree)
+    }
+
+    primaryTextAreaSample.textArea.text: qsTr("Primary text %1").arg("erroor")
+
+
+
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+
+    resetThemeButton.onClicked: {
+        SkrTheme.resetColorProperties()
+        populateColorPropertiesListModel()
+    }
+
+    saveThemeButton.onClicked: {
+        SkrTheme.saveColorProperties()
+
+        // shake to apply highlight color
+        primaryTextAreaSample.textArea.width += 1
+        primaryTextAreaSample.textArea.width -= 1
     }
 
 
@@ -412,8 +555,8 @@ ThemePageForm {
 
 
         onAccepted: {
-
-            SkrTheme.setColorProperty(currentProperty, colorDialog.color)
+            var colorString = skrQMLTools.colorString(colorDialog.color)
+            SkrTheme.setColorProperty(currentProperty, colorString)
             populateColorPropertiesListModel()
         }
     }

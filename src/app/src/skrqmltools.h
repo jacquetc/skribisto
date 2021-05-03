@@ -69,6 +69,10 @@ public:
     Q_INVOKABLE QString mnemonic(const QString& text) {
         return QKeySequence::mnemonic(text).toString();
     }
+
+    Q_INVOKABLE QString colorString(const QColor& color) {
+        return color.name().toLower();
+    }
 };
 
 #endif // SKRQMLTOOLS_H

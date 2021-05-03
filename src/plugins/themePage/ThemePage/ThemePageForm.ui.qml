@@ -18,6 +18,15 @@ SkrBasePage {
 
     property alias viewButtons: viewButtons
     property alias titleLabel: titleLabel
+
+    property alias forceLightButton: forceLightButton
+    property alias forceDarkButton: forceDarkButton
+    property alias forceDistractionFreeButton: forceDistractionFreeButton
+    property alias primaryTextAreaSample: primaryTextAreaSample
+
+    property alias saveThemeButton: saveThemeButton
+    property alias resetThemeButton: resetThemeButton
+
     clip: true
 
     ColumnLayout {
@@ -141,14 +150,79 @@ SkrBasePage {
                             id: columnLayout5
                             anchors.fill: parent
 
+
+                            RowLayout {
+                                Layout.fillWidth: true
+
+                                SkrLabel{
+                                    text: qsTr("Force a color mode:")
+                                }
+                                SkrButton{
+                                    id: forceLightButton
+                                    text: qsTr("Light")
+                                    icon.source: "qrc:///icons/backup/color-picker-white.svg"
+
+                                }
+                                SkrButton{
+                                    id: forceDarkButton
+                                    text: qsTr("Dark")
+                                    icon.source: "qrc:///icons/backup/color-picker-black.svg"
+
+                                }
+                                SkrButton{
+                                    id: forceDistractionFreeButton
+                                    text: qsTr("Distraction free")
+                                    icon.source: "qrc:///icons/backup/view-fullscreen.svg"
+
+                                }
+
+                            }
+
+
+
                             SkrToolBar {
                                 Layout.fillWidth: true
 
-                                SkrToolButton {
-                                    icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                RowLayout {
+                                    anchors.fill: parent
+                                    SkrLabel {
+                                        text: qsTr("Tool bar")
+                                    }
+                                    Item{
+                                        Layout.fillWidth: true
+                                    }
+                                    SkrToolButton {
+                                        icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                    }
+                                    SkrToolButton {
+                                        icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                        enabled: false
+                                    }
                                 }
                             }
 
+                            SkrPageToolBar {
+                                Layout.fillWidth: true
+
+                                RowLayout {
+                                    anchors.fill: parent
+
+                                    SkrLabel {
+                                        text: qsTr("Page tool bar")
+                                    }
+                                    Item{
+                                        Layout.fillWidth: true
+                                    }
+
+                                    SkrToolButton {
+                                        icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                    }
+                                    SkrToolButton {
+                                        icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                        enabled: false
+                                    }
+                                }
+                            }
                             ListView {
                                 id: exampleListView
                                 Layout.fillWidth: true
@@ -162,7 +236,7 @@ SkrBasePage {
 
                                 model: ListModel {
                                     ListElement {
-                                        text: qsTr("list item")
+                                        text: qsTr("List item")
                                     }
                                 }
 
@@ -180,37 +254,64 @@ SkrBasePage {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 50
 
-                                RowLayout {
+                                GridLayout {
                                     anchors.fill: parent
 
                                     SkrButton {
-                                        text: qsTr("button")
+                                        text: qsTr("Button")
                                         icon.source: "qrc:///icons/backup/edit-copy.svg"
 
                                     }
                                     SkrButton {
-                                        text: qsTr("button")
+                                        text: qsTr("Button (disabled)")
                                         icon.source: "qrc:///icons/backup/edit-copy.svg"
                                         enabled: false
 
                                     }
 
                                     SkrToolButton {
-                                        flat: true
-                                        text: qsTr("button")
+                                        text: qsTr("Tool Button")
                                         icon.source: "qrc:///icons/backup/edit-copy.svg"
                                     }
 
                                     SkrToolButton {
-                                        flat: true
-                                        text: qsTr("button")
+                                        text: qsTr("Tool Button")
+                                        display: AbstractButton.TextBesideIcon
+                                        icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                    }
+
+                                    SkrToolButton {
+                                        text: qsTr("Tool Button (disabled)")
                                         icon.source: "qrc:///icons/backup/edit-copy.svg"
                                         enabled: false
+                                    }
+
+                                    SkrRoundButton {
+                                        text: qsTr("Round button")
+                                        icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                    }
+
+                                    SkrRoundButton {
+                                        text: qsTr("Round button")
+                                        display: AbstractButton.IconOnly
+                                        icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                    }
+
+                                    SkrRoundButton {
+                                        text: qsTr("Round button (disabled)")
+                                        icon.source: "qrc:///icons/backup/edit-copy.svg"
+                                        enabled: false
+                                    }
+                                    SkrSwitch {
+                                        text: qsTr("Switch (checked)")
+                                        display: AbstractButton.IconOnly
+                                        checked: true
+
                                     }
 
                                     SkrSwitch {
                                         text: qsTr("Switch")
-                                        checked: true
+                                        checked: false
 
                                     }
                                 }
@@ -229,16 +330,19 @@ SkrBasePage {
                                         Layout.preferredWidth: pageBackgroundExample.width / 2
 
                                         clip: true
-                                        spellCheckerKilled: true
+                                        spellCheckerKilled: false
                                         leftScrollItemVisible: true
                                         stretch: true
                                         textArea.placeholderText: qsTr("Outline")
-                                        textArea.text: qsTr("Primary text")
 
                                         textAreaStyleBackgroundColor: SkrTheme.mainTextAreaBackground
                                         textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
                                         paneStyleBackgroundColor: SkrTheme.pageBackground
                                         textAreaStyleAccentColor: SkrTheme.accent
+
+                                        Component.onCompleted: {
+                                            primaryTextAreaSample.determineSpellCheckerLanguageCode()
+                                        }
                                     }
                                 }
                             }
@@ -312,6 +416,27 @@ SkrBasePage {
                                 id: colorCodeTextField
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 50
+                            }
+
+                        }
+                    }
+                    SkrGroupBox {
+                        id: saveGroupBox
+                        Layout.fillWidth: true
+                        focusPolicy: Qt.TabFocus
+
+                        title: qsTr("Save")
+
+                        RowLayout {
+                            id: columnLayout7
+                            anchors.fill: parent
+                            SkrButton{
+                                id: resetThemeButton
+                                text: qsTr("Reset theme")
+                            }
+                            SkrButton{
+                                id: saveThemeButton
+                                text: qsTr("Save theme")
                             }
 
                         }

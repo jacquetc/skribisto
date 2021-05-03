@@ -28,9 +28,18 @@ RootPageForm {
 
         icon.source: "qrc:///icons/backup/whitebalance.svg"
         onTriggered: {
-            SkrTheme.light = !SkrTheme.light
+            if(SkrTheme.light){
+                SkrTheme.setDark()
+            }
+            else{
+                SkrTheme.setLight()
+            }
+
         }
+
     }
+
+    distractionFreeButton.action: fullscreenAction
 
     //-------------------------------------------------------------------------
     //---- notification ----------------------------------------------------------
@@ -403,7 +412,7 @@ RootPageForm {
     property bool fullscreen_left_drawer_visible: false
     property bool fullscreen_right_drawer_visible: false
     Connections {
-        target: Globals
+        target: rootWindow.protectedSignals
         function onFullScreenCalled(value) {
             if(value){
                 //save previous conf

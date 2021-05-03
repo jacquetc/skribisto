@@ -192,6 +192,8 @@ ApplicationWindow {
 
             signal showFirstStepsWizardCalled(string page)
 
+            signal fullScreenCalled(bool value)
+
 
             signal openThemePageCalled()
             signal setBreadcrumbCurrentTreeItemCalled(int projectId, int treeItemId)
@@ -238,7 +240,7 @@ ApplicationWindow {
 
 
     Connections {
-        target: Globals
+        target: protectedSignals
         function onFullScreenCalled(value) {
             console.log("fullscreen")
             if(value){
@@ -248,6 +250,7 @@ ApplicationWindow {
             else {
                 visibility = Window.AutomaticVisibility
             }
+            SkrTheme.setDistractionFree(value)
 
         }
     }
@@ -271,8 +274,7 @@ ApplicationWindow {
         //shortcut: StandardKey.FullScreen
         checkable: true
         onCheckedChanged: {
-            Globals.fullScreen = fullscreenAction.checked
-            Globals.fullScreenCalled(fullscreenAction.checked)
+            protectedSignals.fullScreenCalled(fullscreenAction.checked)
         }
     }
 
