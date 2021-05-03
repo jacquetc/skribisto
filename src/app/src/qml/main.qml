@@ -102,8 +102,9 @@ ApplicationWindow {
 
     Connections {
         target: rootWindow.protectedSignals
-        function onShowFirstStepsWizardCalled() {
+        function onShowFirstStepsWizardCalled(page) {
             loader_firstStepsWizard.active = true
+            loader_firstStepsWizard.item.setPage(page)
         }
     }
 
@@ -117,7 +118,7 @@ ApplicationWindow {
         }
 
         onTriggered: {
-            protectedSignals.showFirstStepsWizardCalled()
+            protectedSignals.showFirstStepsWizardCalled("")
         }
     }
 
@@ -189,7 +190,7 @@ ApplicationWindow {
             signal showAboutCalled()
             signal showAboutQtCalled()
 
-            signal showFirstStepsWizardCalled()
+            signal showFirstStepsWizardCalled(string page)
 
 
             signal openThemePageCalled()
@@ -330,8 +331,7 @@ ApplicationWindow {
                 isTestProject = true
 
             }
-            else {
-                if (arguments[arg].slice(-6) === ".skrib"){
+            else if (arguments[arg].slice(-6) === ".skrib"){
 
 
                     oneProjectInArgument = true
@@ -344,7 +344,10 @@ ApplicationWindow {
                     openArgumentTimer.fileName = url
                     openArgumentTimer.start()
 
-                }
+
+            }
+            else if(arguments[arg] === "--firstStepsAtPluginPage"){
+            openFirstStepWithPluginPageTimer.start()
             }
         }
         //        if(!isTestProject & oneProjectInArgument){
@@ -354,7 +357,7 @@ ApplicationWindow {
         //            //            writeOverviewWindowAction.trigger()
         //        }
 
-
+        // if create empty project at start is true :
         if (!isTestProject & !oneProjectInArgument & plmData.projectHub().getProjectCount() === 0 & SkrSettings.behaviorSettings.createEmptyProjectAtStart === true) {
             //TODO: temporary until async is done
             Globals.loadingPopupCalled()
@@ -364,6 +367,15 @@ ApplicationWindow {
 
             //show Write window
             //            writeOverviewWindowAction.trigger()
+
+        }
+    }
+
+    Timer{
+        id: openFirstStepWithPluginPageTimer
+        interval: 110
+        onTriggered: {
+            protectedSignals.showFirstStepsWizardCalled("pluginPage")
 
         }
     }

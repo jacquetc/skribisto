@@ -57,8 +57,17 @@ public:
     // void reload();
 
 
-    QList<SKRPlugin>         listAll();
-    QList<SKRPlugin>         listActivated();
+    Q_INVOKABLE QStringList  listAllByName();
+    Q_INVOKABLE QString      getDisplayedName(const QString& pluginName) const;
+    Q_INVOKABLE QString      getUse(const QString& pluginName) const;
+    Q_INVOKABLE bool         getMandatory(const QString& pluginName) const;
+
+    Q_INVOKABLE QStringList  listActivatedByName();
+    Q_INVOKABLE void         enablePlugin(const QString& pluginName);
+    Q_INVOKABLE void         disablePlugin(const QString& pluginName);
+    Q_INVOKABLE void         setPluginEnabled(const QString& pluginName,
+                                              bool           enabled);
+    Q_INVOKABLE bool         isThisPluginEnabled(const QString& pluginName);
 
 
     template<typename T>void addPluginType()
@@ -112,7 +121,7 @@ public:
             }
 
             if (!corePlugin->isPluginEnabledSettingExisting()) {
-                if (!object->property("activatedbydefault").toBool()) {
+                if (!object->property("activatedByDefault").toBool()) {
                     continue;
                 }
             }

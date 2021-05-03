@@ -755,31 +755,39 @@ SettingsPageForm {
     // ---- advanced --------------------------------
     // --------------------------------------------
 
-    Settings {
-        id: leftDockSettings
-        category : "writeLeftDock"
-        property var dockSplitView
-        property bool navigationFrameFolded
-        property int width
-    }
+//    Settings {
+//        id: leftDockSettings
+//        category : "writeLeftDock"
+//        property var dockSplitView
+//        property bool navigationFrameFolded
+//        property int width
+//    }
 
 
-    Settings {
-        id: rightDockSettings
-        category: "writeRightDock"
-        property var dockSplitView
-        property bool editFrameFolded
-        property bool notePadFrameFolded
-        property bool tagPadFrameFolded
-        property int width
-        //        property bool documentFrameFolded: documentFrame.folded ? true : false
-    }
+//    Settings {
+//        id: rightDockSettings
+//        category: "writeRightDock"
+//        property var dockSplitView
+//        property bool editFrameFolded
+//        property bool notePadFrameFolded
+//        property bool tagPadFrameFolded
+//        property int width
+//        //        property bool documentFrameFolded: documentFrame.folded ? true : false
+//    }
 
 
     resetDockConfButton.onClicked: {
 
         Globals.resetDockConfCalled()
 
+    }
+
+    devModeCheckBox.checked: SkrSettings.devSettings.devModeEnabled
+    Binding {
+        target: SkrSettings.devSettings
+        property: "devModeEnabled"
+        value: devModeCheckBox.checked
+        restoreMode: Binding.RestoreBindingOrValue
     }
 
 

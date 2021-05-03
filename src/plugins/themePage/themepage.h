@@ -40,45 +40,45 @@ public:
 
     explicit ThemePage(QObject *parent = nullptr);
     ~ThemePage();
-    QString name() const {
+    QString name() const  override {
         return "ThemePage";
     }
 
-    QString displayedName() const {
+    QString displayedName() const override {
         return tr("Theme page");
     }
 
-    QString use() const {
+    QString use() const override {
         return "Display a page for the theme";
     }
 
     // Page
-    QString pageType() const {
+    QString pageType() const override {
         return "THEME";
     }
 
-    QString visualText() const {
+    QString visualText() const override {
         return tr("Themes");
     }
 
-    QString pageDetailText() const {
+    QString pageDetailText() const override {
         return tr("Choose or modify your themes");
     }
 
-    QString pageUrl() const {
+    QString pageUrl() const override {
         return "qrc:///qml/plugins/ThemePage/ThemePage.qml";
     }
 
-    bool isConstructible() const {
+    bool isConstructible() const  override {
         return false;
     }
 
-    QString pageTypeIconUrl() const {
+    QString pageTypeIconUrl() const override {
         return "qrc:///icons/backup/color-picker-white.svg";
     }
 
     SKRResult finaliseAfterCreationOfTreeItem(int projectId,
-                                              int treeItemId);
+                                              int treeItemId) override;
 
     void      updateCharAndWordCount(int  projectId,
                                      int  treeItemId,

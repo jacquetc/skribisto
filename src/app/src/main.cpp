@@ -241,6 +241,13 @@ int main(int argc, char *argv[])
                                            "SKRTreeHub",
                                            "Can't instantiate SKRTreeHub");
 
+    qmlRegisterUncreatableType<SKRPluginHub>("eu.skribisto.pluginhub",
+                                             1,
+                                             0,
+                                             "SKRPluginHub",
+                                             "Can't instantiate SKRPluginHub");
+
+
     qmlRegisterUncreatableType<SKRTagHub>("eu.skribisto.taghub",
                                           1,
                                           0,
@@ -385,5 +392,23 @@ int main(int argc, char *argv[])
     if (engine.rootObjects().isEmpty()) return -1;
 
 
-    return app.exec();
+    int returnCode = app.exec();
+
+    // restart :
+    if (returnCode == -1)
+    {
+        QProcess *proc = new QProcess();
+        proc->start(QCoreApplication::applicationFilePath(), app.arguments());
+    }
+
+    // restart with Fist step opened and at plugin page:
+    if (returnCode == -2)
+    {
+        QStringList args = app.arguments();
+        args << "--firstStepsAtPluginPage";
+        QProcess *proc = new QProcess();
+        proc->start(QCoreApplication::applicationFilePath(), args);
+    }
+
+    return returnCode;
 }

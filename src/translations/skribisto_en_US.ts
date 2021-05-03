@@ -1069,6 +1069,20 @@
     </message>
 </context>
 <context>
+    <name>PluginPage</name>
+    <message>
+        <source>%1 (mandatory)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PluginPageForm.ui</name>
+    <message>
+        <source>Restart to apply changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PlumeImporterForm.ui</name>
     <message>
         <source>Go back</source>
@@ -1569,6 +1583,10 @@
         <source>Reset dock configuration</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Development mode</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SheetOverviewToolForm.ui</name>
@@ -1729,6 +1747,13 @@
     </message>
     <message>
         <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SkrBasePage</name>
+    <message>
+        <source>newIdenticalPageShortcut: Item not created</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1934,6 +1959,14 @@
     </message>
     <message>
         <source>Write here any text, be it a scene or a note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close quick view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open quick view</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

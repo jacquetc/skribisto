@@ -68,6 +68,8 @@ OutlinePadForm {
 
             root.projectId = -2
             root.treeItemId = -2
+            outlineWritingZone.treeItemId = -2
+            outlineWritingZone.projectId = -2
         }
 
         outlineWritingZone.setCursorPosition(0)
@@ -139,7 +141,7 @@ OutlinePadForm {
 
     function openDocument(_projectId, _treeItemId, milestone) {
         // save current
-        if(projectId !== _projectId && treeItemId !== _treeItemId ){ //meaning it hasn't just used the constructor
+        if(projectId !== _projectId || treeItemId !== _treeItemId ){ //meaning it hasn't just used the constructor
             clearWritingZone()
         }
 

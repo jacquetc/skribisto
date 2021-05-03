@@ -12,6 +12,7 @@ SkrBasePage {
     height: 600
 
     property alias writingZone: writingZone
+    property alias loader_previousWritingZone: loader_previousWritingZone
     property alias minimap: minimap
     property alias rightPaneScrollMouseArea: rightPaneScrollMouseArea
     property alias rightPaneScrollTouchArea: rightPaneScrollTouchArea
@@ -130,17 +131,33 @@ SkrBasePage {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
 
-                WritingZone {
-                    id: writingZone
+                ColumnLayout {
                     anchors.fill: parent
-                    textAreaStyleElevation: true
-                    minimalTextAreaWidth: 100
-                    textCenteringEnabled: SkrSettings.behaviorSettings.centerTextCursor
 
-                    textAreaStyleBackgroundColor: SkrTheme.mainTextAreaBackground
-                    textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
-                    textAreaStyleAccentColor: SkrTheme.accent
-                    paneStyleBackgroundColor: SkrTheme.pageBackground
+                    Loader {
+                        id: loader_previousWritingZone
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: active ? 200 : 0
+                        sourceComponent: component_previousWritingZone
+                        active: false
+                    }
+
+
+                    WritingZone {
+                        id: writingZone
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        textAreaStyleElevation: true
+                        minimalTextAreaWidth: 100
+                        textCenteringEnabled: SkrSettings.behaviorSettings.centerTextCursor
+
+                        textAreaStyleBackgroundColor: SkrTheme.mainTextAreaBackground
+                        textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
+                        textAreaStyleAccentColor: SkrTheme.accent
+                        paneStyleBackgroundColor: SkrTheme.pageBackground
+
+                    }
 
                 }
 
@@ -168,6 +185,8 @@ SkrBasePage {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
+
+
                         MultiPointTouchArea {
                             id: rightPaneScrollTouchArea
                             z: 1
@@ -179,6 +198,7 @@ SkrBasePage {
                                     id: leftTouch2
                                 }
                             ]
+
                         }
 
                         MouseArea {

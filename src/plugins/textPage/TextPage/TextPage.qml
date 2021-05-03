@@ -15,7 +15,7 @@ TextPageForm {
     property string title: {return getTitle()}
 
     function getTitle(){
-       var fetchedTitle =  plmData.treeHub().getTitle(projectId, treeItemId)
+        var fetchedTitle =  plmData.treeHub().getTitle(projectId, treeItemId)
 
         if(isSecondary){
             return qsTr("Plan of %1").arg(fetchedTitle)
@@ -130,8 +130,6 @@ TextPageForm {
     writingZone.textTopMargin: SkrSettings.textSettings.textTopMargin
 
     writingZone.stretch: root.width < 300 ? true : viewManager.rootWindow.compactMode
-
-
     // focus
     Connections {
         enabled: viewManager.focusedPosition === position
@@ -146,6 +144,7 @@ TextPageForm {
 
     Component.onCompleted: {
         openDocument(projectId, treeItemId, isSecondary, milestone)
+        determineIfPreviousWritingMustBeVisible()
     }
 
     //---------------------------------------------------------
@@ -161,6 +160,8 @@ TextPageForm {
 
             root.projectId = -2
             root.treeItemId = -2
+            writingZone.treeItemId = -2
+            writingZone.projectId = -2
         }
 
         writingZone.setCursorPosition(0)
@@ -359,7 +360,7 @@ TextPageForm {
 
     function openDocument(_projectId, _treeItemId, isSecondary, milestone) {
         // save current
-        if(projectId !== _projectId && treeItemId !== _treeItemId ){ //meaning it hasn't just used the constructor
+        if(projectId !== _projectId || treeItemId !== _treeItemId ){ //meaning it hasn't just used the constructor
             clearWritingZone()
         }
 
@@ -523,6 +524,7 @@ TextPageForm {
 
     }
 
+
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
 
@@ -612,6 +614,8 @@ TextPageForm {
 
 
 
+
+
     //------------------------------------------------------------------------
     //-----tool boxes------------------------------------------------------------
     //-----------------------------------------------------------------------
@@ -691,4 +695,338 @@ TextPageForm {
 
         }
     }
+
+
+    //-----------------------------------------------------------
+    //-------Previous writing zone------------------------------------------
+    //-----------------------------------------------------------
+
+    Component {
+        id: component_previousWritingZone
+        WritingZone {
+            id: previousWritingZone
+
+            property int previousTextItemTreeItemId: -2
+
+            textAreaStyleElevation: true
+            minimalTextAreaWidth: 100
+            textCenteringEnabled: false
+
+            textAreaStyleBackgroundColor: SkrTheme.mainTextAreaBackground
+            textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
+            textAreaStyleAccentColor: SkrTheme.accent
+            paneStyleBackgroundColor: SkrTheme.pageBackground
+
+
+
+            maximumTextAreaWidth: SkrSettings.textSettings.textWidth
+            textPointSize: SkrSettings.textSettings.textPointSize
+            textFontFamily: SkrSettings.textSettings.textFontFamily
+            textIndent: SkrSettings.textSettings.textIndent
+            textTopMargin: SkrSettings.textSettings.textTopMargin
+
+            stretch: root.width < 300 ? true : viewManager.rootWindow.compactMode
+
+            //needed to adapt width to a shrinking window
+            Binding on textAreaWidth {
+                when: !Globals.compactMode && middleBase.width - 40 < maximumTextAreaWidth
+                value: width - 40
+                restoreMode: Binding.RestoreBindingOrValue
+
+            }
+            Binding on textAreaWidth {
+                when: !Globals.compactMode && middleBase.width - 40 >= maximumTextAreaWidth
+                value: maximumTextAreaWidth
+                restoreMode: Binding.RestoreBindingOrValue
+
+            }
+
+            SkrToolButton{
+                id: closePreviousWritingZoneButton
+                parent: previousWritingZone.textArea
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                focusPolicy: Qt.NoFocus
+
+                width: 30
+                height: 30
+                text: qsTr("Close quick view")
+                icon{
+                    source: "qrc:///icons/backup/view-close.svg"
+                }
+
+                onClicked:{
+
+                        loader_previousWritingZone.active = false
+                }
+            }
+
+            Component.onCompleted: {
+                var previousTextItemTreeItemId = plmData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
+                openPreviousDocument(root.projectId, previousTextItemTreeItemId, root.isSecondary, root.milestone)
+
+                previousWritingZone.setCursorPosition(previousWritingZone.textArea.length)
+
+
+            }
+
+
+            //---------------------------------------------------------
+
+            function clearPreviousWritingZone(){
+                if(previousTextItemTreeItemId !== -2 && root.projectId !== -2 && milestone === -2){
+                    previousContentSaveTimer.stop()
+                    savePreviousContent()
+                    var uniqueDocumentReference = projectId + "_" + previousTextItemTreeItemId + "_" + (isSecondary ? "secondary" : "primary")
+                    skrTextBridge.unsubscribeTextDocument(uniqueDocumentReference, previousWritingZone.textArea.objectName, previousWritingZone.textArea.textDocument)
+
+                    previousTextItemTreeItemId = -2
+                }
+
+                previousWritingZone.clear()
+            }
+            //---------------------------------------------------------
+
+            function runActionsBeforeDestruction() {
+                clearPreviousWritingZone()
+            }
+
+            Component.onDestruction: {
+                runActionsBeforeDestruction()
+            }
+
+            //---------------------------------------------------------
+            // modifiable :
+
+            property bool isModifiable: true
+
+            Connections{
+                target: plmData.treePropertyHub()
+                function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
+                    if(projectId === root.projectId && treeItemId === previousWritingZone.previousTextItemTreeItemId){
+
+                        if(name === "modifiable"){
+                            determineModifiable()
+                        }
+                    }
+                }
+            }
+
+            Timer{
+                id: determineModifiableTimer
+                repeat: false
+                interval: 200
+                onTriggered: {
+                    determineModifiable()
+                }
+            }
+
+
+
+
+            function determineModifiable(){
+
+                previousWritingZone.isModifiable = plmData.treePropertyHub().getProperty(projectId, previousTextItemTreeItemId, "modifiable", "true") === "true"
+
+                if(!previousWritingZone.isModifiable !== previousWritingZone.textArea.readOnly){
+                    previousWritingZone.textArea.readOnly = !previousWritingZone.isModifiable
+                    previousWritingZone.setCursorPosition(previousWritingZone.textArea.length)
+                }
+
+            }
+
+          //---------------------------------------------------------
+            QtObject {
+                id: previousDocumentPrivate
+                property bool contentSaveTimerAllowedToStart: true
+            }
+            //---------------------------------------------------------
+
+            // save content once after writing:
+            textArea.onTextChanged: {
+
+                //avoid first text change, when blank HTML is inserted
+                if(previousWritingZone.textArea.length === 0
+                        && plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                    return
+                }
+
+                if(previousContentSaveTimer.running){
+                    previousContentSaveTimer.stop()
+                }
+                if(previousDocumentPrivate.contentSaveTimerAllowedToStart){
+                    previousContentSaveTimer.start()
+                }
+            }
+            Timer{
+                id: previousContentSaveTimer
+                repeat: false
+                interval: 200
+                onTriggered: savePreviousContent()
+            }
+
+            function savePreviousContent(){
+                //console.log("saving text")
+                var result
+
+                var text = skrRootItem.cleanUpHtml(previousWritingZone.text)
+
+
+                if(isSecondary){
+                    result = plmData.treeHub().setSecondaryContent(projectId, previousTextItemTreeItemId, text)
+                }
+                else {
+                    result = plmData.treeHub().setPrimaryContent(projectId, previousTextItemTreeItemId, text)
+                    if(!previousContentSaveTimer.running)
+                        skrTreeManager.updateCharAndWordCount(projectId, previousTextItemTreeItemId, root.pageType, true)
+
+                }
+
+                if (!result.success){
+                    console.log("saving text failed", projectId, previousTextItemTreeItemId)
+                }
+                else {
+                    //console.log("saving text success", projectId, treeItemId)
+
+                }
+            }
+
+
+            //---------------------------------------------------------
+
+
+            function openPreviousDocument(_projectId, _treeItemId, isSecondary, milestone) {
+                // save current
+                if(projectId !== _projectId || previousTextItemTreeItemId !== _treeItemId ){ //meaning it hasn't just used the constructor
+                    clearPreviousWritingZone()
+                }
+
+                previousDocumentPrivate.contentSaveTimerAllowedToStart = false
+
+                previousTextItemTreeItemId = _treeItemId
+                previousWritingZone.projectId = _projectId
+
+                previousWritingZone.setCursorPosition(0)
+
+                if(milestone === -2){
+
+                    if(isSecondary){
+                        previousWritingZone.text = skrRootItem.cleanUpHtml(plmData.treeHub().getSecondaryContent(_projectId, _treeItemId))
+                    }
+                    else {
+                        previousWritingZone.text = skrRootItem.cleanUpHtml(plmData.treeHub().getPrimaryContent(_projectId, _treeItemId))
+                    }
+
+                }
+                else {
+                    //TODO: if milestone
+                }
+
+                previousWritingZone.setCursorPosition(previousWritingZone.textArea.length)
+
+
+                //title = getTitle()
+
+                if(milestone === -2){
+                    var uniqueDocumentReference = projectId + "_" + previousTextItemTreeItemId + "_" + (isSecondary ? "secondary" : "primary")
+                    skrTextBridge.subscribeTextDocument(uniqueDocumentReference,
+                                                        previousWritingZone.textArea.objectName,
+                                                        previousWritingZone.textArea.textDocument)
+                }
+
+                previousWritingZone.documentHandler.indentEverywhere = SkrSettings.textSettings.textIndent
+                previousWritingZone.documentHandler.topMarginEverywhere = SkrSettings.textSettings.textTopMargin
+
+
+                if(milestone === -2){
+                    documentPrivate.contentSaveTimerAllowedToStart = true
+                }
+
+                //        leftDock.setCurrentPaperId(projectId, paperId)
+                //        leftDock.setOpenedPaperId(projectId, paperId)
+
+                determineModifiableTimer.start()
+
+            }
+
+
+
+        }
+    }
+
+    SkrToolButton{
+        id: openPreviousWritingZoneButton
+        parent: writingZone.textArea
+        anchors.right: parent.right
+        anchors.top: parent.top
+        focusPolicy: Qt.NoFocus
+
+        width: 30
+        height: 30
+        text: qsTr("Open quick view")
+        icon{
+            source: "qrc:///icons/backup/arrow-down.svg"
+        }
+
+        onClicked:{
+            if(plmData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId) > 0){
+                loader_previousWritingZone.active = true
+            }
+        }
+    }
+
+    Connections{
+        target: plmData.treeHub()
+        function onTrashedChanged(projectId, treeItemId, newTrashedState){
+            determineIfPreviousWritingTreeItemIdChanged()
+        }
+    }
+    Connections{
+        target: plmData.treeHub()
+        function onTreeItemAdded(projectId, treeItemId){
+            determineIfPreviousWritingTreeItemIdChanged()
+        }
+    }
+    Connections{
+        target: plmData.treeHub()
+        function onTreeItemRemoved(projectId, treeItemId){
+            determineIfPreviousWritingTreeItemIdChanged()
+        }
+    }
+    Connections{
+        target: plmData.treeHub()
+        function onTreeItemMoved(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId){
+            determineIfPreviousWritingTreeItemIdChanged()
+        }
+    }
+
+    function determineIfPreviousWritingTreeItemIdChanged(){
+        if(loader_previousWritingZone.active){
+            var newTreeItemId = plmData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
+            if(loader_previousWritingZone.item.previousTextItemTreeItemId !== newTreeItemId){
+
+                if(newTreeItemId === -1){
+                    determineIfPreviousWritingMustBeVisible()
+                }
+                else {
+                    loader_previousWritingZone.active = false
+                    loader_previousWritingZone.active = true
+                }
+
+
+            }
+        }
+    }
+    function determineIfPreviousWritingMustBeVisible(){
+        var newTreeItemId = plmData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
+        if(newTreeItemId === -1){
+        loader_previousWritingZone.active = false
+            openPreviousWritingZoneButton.visible = false
+        }
+        else{
+            openPreviousWritingZoneButton.visible = true
+        }
+
+    }
+
 }

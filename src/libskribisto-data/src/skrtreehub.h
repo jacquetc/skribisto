@@ -196,6 +196,9 @@ public:
                                                  int sourceTreeItemId,
                                                  int receiverTreeItemId);
 
+    Q_INVOKABLE int getPreviousTreeItemIdOfTheSameType(int projectId,
+                                                       int treeItemId);
+
 private:
 
     SKRResult setTrashedDateToNow(int projectId,

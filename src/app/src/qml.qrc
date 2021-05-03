@@ -153,5 +153,7 @@
         <file>qml/Breadcrumb.qml</file>
         <file>qml/Items/SkrFocusIndicator.qml</file>
         <file>qml/FirstStepsWizard.qml</file>
+        <file>qml/Commons/PluginPage.qml</file>
+        <file>qml/Commons/PluginPageForm.ui.qml</file>
     </qresource>
 </RCC>
