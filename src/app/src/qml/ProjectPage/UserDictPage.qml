@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQml.Models 2.15
 import eu.skribisto.projectdicthub 1.0
 import "../Items"
+import "../Commons"
 import ".."
 
 
@@ -109,6 +110,8 @@ UserDictPageForm {
             SkrLabel {
                 text: model.word
                 anchors.fill: parent
+                anchors.leftMargin: 3
+                anchors.rightMargin: 3
                 horizontalAlignment: Qt.AlignLeft
                 verticalAlignment: Qt.AlignVCenter
 
@@ -150,12 +153,59 @@ UserDictPageForm {
         text: qsTr("Add word to dictionary")
         icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
+            addWordToDProjectDictDialog.open()
             //TODO : popup to add word
-            plmData.projectDictHub().addWordToProjectDict(root.projectId, word)
 
         }
     }
     addWordButton.action: addWordAction
+
+    SimpleDialog {
+        id: addWordToDProjectDictDialog
+        title: qsTr("Add a word to the project dictionary")
+        contentItem: SkrTextField {
+            id: addWordTextField
+            text: ""
+
+            onAccepted: {
+                addWordToDProjectDictDialog.accept()
+            }
+
+        }
+
+        standardButtons: Dialog.Ok  | Dialog.Cancel
+
+        onRejected: {
+            addWordTextField.text = ""
+
+        }
+
+        onDiscarded: {
+
+
+            addWordTextField.text = ""
+
+        }
+
+        onAccepted: {
+
+            plmData.projectDictHub().addWordToProjectDict(root.projectId, addWordTextField.text)
+            addWordTextField.text = ""
+        }
+
+        onActiveFocusChanged: {
+            if(activeFocus){
+                contentItem.forceActiveFocus()
+            }
+
+        }
+
+        onOpened: {
+            addWordTextField.text = ""
+            contentItem.forceActiveFocus()
+        }
+
+    }
 
     QtObject {
         id: priv

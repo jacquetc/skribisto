@@ -20,7 +20,7 @@ SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
             this->rehighlight();
         }
     }
-            );
+    );
 
     connect(plmdata->projectDictHub(), &SKRProjectDictHub::projectDictWordAdded, this,
             [this](int projectId, const QString& newWord) {
@@ -29,7 +29,7 @@ SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
             this->rehighlight();
         }
     }
-            );
+    );
 
     connect(plmdata->projectDictHub(), &SKRProjectDictHub::projectDictWordRemoved, this,
             [this](int projectId, const QString& wordToBeRemoved) {
@@ -38,7 +38,9 @@ SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
             this->rehighlight();
         }
     }
-            );
+    );
+
+    //TODO: add dynamic project dict
 
     connect(spellChecker, &SKRSpellChecker::activated, this, [this](bool activated) {
         if (activated) {
@@ -46,7 +48,7 @@ SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
             this->rehighlight();
         }
     }
-            );
+    );
 }
 
 // -------------------------------------------------------------------
@@ -144,7 +146,7 @@ void SKRHighlighter::highlightBlock(const QString& text)
                         // orateur-né
                         wordFinder.toNextBoundary();
                         int nextWordLength = wordFinder.toNextBoundary() -
-                                             (wordStart + wordLength + 1);
+                                (wordStart + wordLength + 1);
                         wordFinder.toPreviousBoundary();
                         wordFinder.toPreviousBoundary();
 
@@ -180,7 +182,7 @@ void SKRHighlighter::highlightBlock(const QString& text)
         }
 
 
-QList<int> spellcheckPositionList;
+    QList<int> spellcheckPositionList;
     for (int k = 0; k < text.length(); ++k) {
         QTextCharFormat finalFormat;
 
@@ -191,7 +193,7 @@ QList<int> spellcheckPositionList;
         if (spellcheckerList.contains(k)) {
             //finalFormat.merge(spellcheckFormat);
             // bug fix:
-           spellcheckPositionList.append(currentBlock().position() + k);
+            spellcheckPositionList.append(currentBlock().position() + k);
         }
 
         setFormat(k, 1, finalFormat);
@@ -259,6 +261,7 @@ void SKRHighlighter::setProjectId(int projectId)
     if (projectId != -2) {
         m_userDictList.clear();
         m_userDictList = plmdata->projectDictHub()->getProjectDictList(projectId);
+        m_userDictList.append(plmdata->projectDictHub()->getProjectDynamicDictList(projectId));
     }
 
     // set user dict

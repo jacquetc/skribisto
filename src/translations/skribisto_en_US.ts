@@ -2159,6 +2159,10 @@
         <source>Remove word from dictionary</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Add a word to the project dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>WelcomePage</name>
