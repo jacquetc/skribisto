@@ -74,8 +74,8 @@ public:
               const QString   & className,
               const QString   & errorCodeEnd);
 
-    Q_INVOKABLE bool                            operator!() const;
-    Q_INVOKABLE                                 operator bool() const;
+    bool                                        operator!() const;
+    operator bool() const;
     Q_INVOKABLE SKRResult                     & operator=(const SKRResult& iResult);
     bool                                        operator==(const SKRResult& otherSKRResult) const;
     bool                                        operator!=(const SKRResult& otherSKRResult) const;

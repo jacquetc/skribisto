@@ -157,7 +157,8 @@ QVariantMap SKRRootItem::findAvailableTranslationsMap() const {
             }
 
             translationMap.insert(langCode, langName);
-            qDebug() << langCode << langName;
+
+            // qDebug() << langCode << langName;
         }
     }
 

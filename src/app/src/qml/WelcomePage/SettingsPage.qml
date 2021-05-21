@@ -100,7 +100,7 @@ SettingsPageForm {
         if(langComboBox.activeFocus){
             skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
             skrWindowManager.retranslate()
-            //plmData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
+
        }
     }
 

@@ -55,7 +55,6 @@ ComboBox {
         font: control.font
     }
     onTextRoleChanged: {
-        console.log("1 control.textRole", control.textRole)
         determineModelWidth()
     }
 
@@ -83,7 +82,6 @@ ComboBox {
         if(control.textRole && model){
             for(var i = 0; i < model.count; i++){
                 textMetrics.text = model.get(i)[control.textRole]
-                console.log("r", model.get(i)[control.textRole])
                 modelWidth = Math.max(textMetrics.width, modelWidth)
             }
         }

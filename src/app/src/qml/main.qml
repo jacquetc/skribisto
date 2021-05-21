@@ -1201,6 +1201,9 @@ ApplicationWindow {
                         plmData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 is read only").arg(path))
 
                     }
+                    if(result.isSuccess()){
+                        plmData.errorHub().addOk(qsTr("Back up successful"))
+                    }
 
                 }
             }

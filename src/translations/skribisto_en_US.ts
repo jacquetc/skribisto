@@ -2386,5 +2386,9 @@
         <source>&amp;User manual</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Back up successful</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>

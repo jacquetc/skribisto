@@ -93,6 +93,7 @@ RootPageForm {
         focus: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         clip: true
+        enabled: visible
 
         onVisibleChanged: {
             if(!notificationPopup.visible){
@@ -118,6 +119,7 @@ RootPageForm {
                     notificationCloseTimer.stop()
                     notificationCloseTimer.start()
                 }
+                notificationListView.positionViewAtEnd()
             }
         }
         Timer{
