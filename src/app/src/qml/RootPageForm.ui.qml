@@ -47,6 +47,7 @@ Item {
             SkrToolButton {
                 id: mainMenuButton
                 text: qsTr("Main menu")
+                visible: SkrSettings.accessibilitySettings.showMenuButton
                 focusPolicy: Qt.NoFocus
                 padding: 2
                 Layout.preferredHeight: 30

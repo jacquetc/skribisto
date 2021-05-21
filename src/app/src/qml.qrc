@@ -5,21 +5,11 @@
         <file>qml/main.qml</file>
         <file>qml/qmldir</file>
         <file>qml/SkrSettings.qml</file>
-        <file>qml/Write/WriteLeftDock.qml</file>
-        <file>qml/Write/WriteLeftDockForm.ui.qml</file>
-        <file>qml/Write/WritePage.qml</file>
-        <file>qml/Write/WritePageForm.ui.qml</file>
-        <file>qml/Note/NotePage.qml</file>
-        <file>qml/Note/NotePageForm.ui.qml</file>
         <file>qml/Commons/Navigation.qml</file>
         <file>qml/Commons/NavigationForm.ui.qml</file>
         <file>qml/Commons/NavigationListForm.ui.qml</file>
         <file>qml/Commons/DocumentListView.qml</file>
         <file>qml/Commons/DocumentListViewForm.ui.qml</file>
-        <file>qml/Write/WriteRightDock.qml</file>
-        <file>qml/Write/WriteRightDockForm.ui.qml</file>
-        <file>qml/Projects/ProjectsMainPage.qml</file>
-        <file>qml/Projects/ProjectsMainPageForm.ui.qml</file>
         <file>qml/Gallery/GalleryPageForm.ui.qml</file>
         <file>qml/Gallery/GalleryPage.qml</file>
         <file>qml/Commons/WritingZone.qml</file>
@@ -29,10 +19,6 @@
         <file>qml/WriteOverview/LeftDockForm.ui.qml</file>
         <file>qml/WriteOverview/LeftDock.qml</file>
         <file>qml/WriteOverview/WriteOverviewPageForm.ui.qml</file>
-        <file>qml/Note/LeftDock.qml</file>
-        <file>qml/Note/LeftDockForm.ui.qml</file>
-        <file>qml/Note/RightDock.qml</file>
-        <file>qml/Note/RightDockForm.ui.qml</file>
         <file>qml/NoteOverview/LeftDock.qml</file>
         <file>qml/NoteOverview/NoteOverviewPage.qml</file>
         <file>qml/NoteOverview/LeftDockForm.ui.qml</file>
@@ -48,10 +34,6 @@
         <file>qml/Commons/RestoreListView.qml</file>
         <file>qml/Commons/RestoreListViewForm.ui.qml</file>
         <file>qml/Commons/CheckableTree.qml</file>
-        <file>qml/Projects/ProjectSubPage.qml</file>
-        <file>qml/Projects/ProjectTab.qml</file>
-        <file>qml/Projects/ProjectTabForm.ui.qml</file>
-        <file>qml/Projects/ProjectSupPageForm.ui.qml</file>
         <file>qml/Commons/SKRPillarLayout.qml</file>
         <file>qml/WriteOverview/SheetOverviewTree.qml</file>
         <file>qml/WriteOverview/SheetOverviewTreeForm.ui.qml</file>
@@ -126,8 +108,6 @@
         <file>qml/WelcomePage/HelpPage.qml</file>
         <file>qml/WelcomePage/HelpContentsForm.ui.qml</file>
         <file>qml/WelcomePage/HelpContents.qml</file>
-        <file>qml/WelcomePage/FAQForm.ui.qml</file>
-        <file>qml/WelcomePage/FAQ.qml</file>
         <file>qml/WelcomePage/AboutForm.ui.qml</file>
         <file>qml/WelcomePage/About.qml</file>
         <file>qml/WelcomePage/ImporterPage.qml</file>

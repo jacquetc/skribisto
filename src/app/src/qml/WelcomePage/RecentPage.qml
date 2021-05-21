@@ -152,24 +152,29 @@ RecentPageForm {
                         Layout.fillHeight: true
 
                         RowLayout{
+                            id: rowLayout3
                             anchors.fill: parent
 
-                            SkrLabel {
-                                id: titleLabel
 
-                                Layout.fillWidth: true
-                                Layout.topMargin: 2
-                                Layout.leftMargin: 4
-                                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                Layout.fillHeight: true
+                                SkrLabel {
+                                    id: titleLabel
 
-                                text: model.title
-                                font.strikeout: !model.exists
-                            }
+                                    Layout.fillWidth: true
+                                    Layout.topMargin: 2
+                                    Layout.leftMargin: 4
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+
+                                    text: model.title
+                                    font.strikeout: !model.exists
+                                    font.bold: true
+                                }
+
 
                             ColumnLayout {
-                                id: columnLayout2
+                                id: columnLayout3
                                 spacing: 1
-
+                                Layout.maximumWidth: rowLayout3.width / 2
                                 Layout.fillHeight: true
                                 //                                Layout.fillWidth: true
 
@@ -186,6 +191,8 @@ RecentPageForm {
                                     id: fileNameLabel
 
                                     text: skrQMLTools.translateURLToLocalFile(model.fileName)
+                                    elide: Text.ElideMiddle
+                                    Layout.maximumWidth: rowLayout3.width / 2
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter

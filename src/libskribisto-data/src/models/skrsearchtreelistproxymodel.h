@@ -72,6 +72,9 @@ public:
                                    int visualIndex);
     Q_INVOKABLE void      moveItem(int from,
                                    int to);
+    Q_INVOKABLE void      moveItemById(int fromProjectId,
+                                       int fromTreeItemId,
+                                       int toTreeItemId);
     Q_INVOKABLE int       goUp();
 
     Q_INVOKABLE void      trashItemWithChildren(int projectId,

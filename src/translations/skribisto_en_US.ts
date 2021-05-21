@@ -531,14 +531,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;h1&gt;First steps with Skribisto&lt;/h1&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Welcome to Skribisto !</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Previous</source>
         <translation type="unfinished"></translation>
     </message>
@@ -546,23 +538,54 @@
         <source>Next</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>First steps with Skribisto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome in Skribisto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a language:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default dictionary :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This assistant will help you set up Skribisto to your liking. To begin with, please select the best options for your use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Help with accessibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HelpContentsForm.ui</name>
+    <message>
+        <source>User manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frequently Asked Questions</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>HelpPageForm.ui</name>
-    <message>
-        <source>Contents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>FAQ</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>About Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -747,6 +770,10 @@
     </message>
     <message>
         <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Item menu</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1081,6 +1108,26 @@
         <source>Restart to apply changes</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Plugins</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Classic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Writing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Plugin selection can be changed later in settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Personalized</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PlumeImporterForm.ui</name>
@@ -1160,59 +1207,6 @@
     </message>
     <message>
         <source>Statistics</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>ProjectSubPage</name>
-    <message>
-        <source>Write this project&apos;s new name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Character count : %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Word count : %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>ProjectSupPageForm.ui</name>
-    <message>
-        <source>Edit project name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Location :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Dictionary :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selected dictionary not found</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Statistics</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>ProjectTabForm.ui</name>
-    <message>
-        <source>Close project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1444,10 +1438,6 @@
         <source>Enter a path to back up to</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Please restart Skribisto to apply the change</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>SettingsPageForm.ui</name>
@@ -1456,27 +1446,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Allow swipe gesture between tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show menu bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Interface language :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set main menu in status bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Minimalist menu tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1585,6 +1559,14 @@
     </message>
     <message>
         <source>Development mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Help with accessibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show menu button</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2229,29 +2211,6 @@
     </message>
 </context>
 <context>
-    <name>WriteLeftDock</name>
-    <message>
-        <source>&amp;Navigation dock</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show recent sheets</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>WriteOverviewPage</name>
     <message>
         <source>The focus is currently on %1</source>
@@ -2262,45 +2221,6 @@
     <name>WriteOverviewPageForm.ui</name>
     <message>
         <source>Unfocus</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>WriteRightDock</name>
-    <message>
-        <source>&amp;Tools dock</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Properties</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show notes tool box</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2316,10 +2236,6 @@
     </message>
     <message>
         <source>Themes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Contents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2464,6 +2380,10 @@
     </message>
     <message>
         <source>First steps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

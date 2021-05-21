@@ -10,7 +10,6 @@ Item {
     property alias stackView: stackView
     property alias tabBar: tabBar
     property alias helpTabButton: helpTabButton
-    property alias faqTabButton: faqTabButton
     property alias aboutTabButton: aboutTabButton
     property alias aboutQtTabButton: aboutQtTabButton
 
@@ -27,12 +26,7 @@ Item {
 
                 SkrTabButton {
                     id: helpTabButton
-                    text: qsTr("Contents")
-                    closable: false
-                }
-                SkrTabButton {
-                    id: faqTabButton
-                    text: qsTr("FAQ")
+                    text: qsTr("Help")
                     closable: false
                 }
                 SkrTabButton {

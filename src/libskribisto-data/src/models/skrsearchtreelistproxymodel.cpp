@@ -16,7 +16,7 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
 
 
     this->setSortRole(SKRTreeItem::SortOrderRole);
-    this->setDynamicSortFilter(false);
+    this->setDynamicSortFilter(true);
 
 
     connect(plmdata->projectHub(),
@@ -225,7 +225,7 @@ void SKRSearchTreeListProxyModel::determineCheckStateOfAllAncestors(
             bool areAtLeastOneSiblingPartiallyChecked = false;
             bool areAtLeastOneSiblingUnchecked        = false;
 
-            for (int siblingId : siblingsIdsList) {
+            for (int siblingId : qAsConst(siblingsIdsList)) {
                 Qt::CheckState state = m_checkedIdsHash.value(siblingId, Qt::Unchecked);
 
                 if (state == Qt::Checked) {
@@ -273,7 +273,7 @@ void SKRSearchTreeListProxyModel::determineCheckStateOfAllAncestors(
             bool areAtLeastOneSiblingPartiallyChecked = false;
             bool areAtLeastOneSiblingUnchecked        = false;
 
-            for (int siblingId : siblingsIdsList) {
+            for (int siblingId : qAsConst(siblingsIdsList)) {
                 Qt::CheckState state = m_checkedIdsHash.value(siblingId, Qt::Unchecked);
 
                 if (state == Qt::Checked) {
@@ -495,7 +495,7 @@ QList<int>SKRSearchTreeListProxyModel::findIdsTrashedAtTheSameTimeThan(int proje
 
 
     if (!m_treeItemIdListFilter.isEmpty()) {
-        for (int id : m_treeItemIdListFilter) {
+        for (int id : qAsConst(m_treeItemIdListFilter)) {
             QDateTime childDate = m_treeHub->getTrashedDate(projectId, id);
 
             if (qAbs(childDate.secsTo(parentDate)) < 1) {
@@ -509,7 +509,7 @@ QList<int>SKRSearchTreeListProxyModel::findIdsTrashedAtTheSameTimeThan(int proje
                                                        m_showTrashedFilter,
                                                        m_showNotTrashedFilter);
 
-        for (int id : childrenIds) {
+        for (int id : qAsConst(childrenIds)) {
             QDateTime childDate = m_treeHub->getTrashedDate(projectId, id);
 
             if (qAbs(childDate.secsTo(parentDate)) < 1) {
@@ -1097,7 +1097,7 @@ QList<int>SKRSearchTreeListProxyModel::getSiblingsList(int  projectId,
     QList<int> allSiblingsIdList =
         m_treeHub->getAllSiblings(projectId, treeItemId);
 
-    for (int ancestorId : allSiblingsIdList) {
+    for (int ancestorId : qAsConst(allSiblingsIdList)) {
         bool isTrashed = m_treeHub->getTrashed(projectId, ancestorId);
 
         if (getTrashed && isTrashed) {
@@ -1353,6 +1353,10 @@ SKRResult SKRSearchTreeListProxyModel::moveDown(int projectId, int treeItemId, i
 /// \param to target item index number
 /// Carefull, this is only used for manually moving a visual item
 void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
+    qDebug() << "from : " << from;
+    qDebug() << "to : " << to;
+    qDebug() << "---------";
+
     if (from == to) return;
 
     int modelFrom = from;
@@ -1378,6 +1382,19 @@ void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
         toString();
 
 
+    m_treeHub->moveTreeItem(fromProjectId, fromTreeItemId, toTreeItemId, false);
+
+
+    sort(0);
+    emit sortOtherProxyModelsCalled();
+
+    this->invalidate();
+}
+
+// --------------------------------------------------------------
+
+void SKRSearchTreeListProxyModel::moveItemById(int fromProjectId, int fromTreeItemId, int toTreeItemId)
+{
     m_treeHub->moveTreeItem(fromProjectId, fromTreeItemId, toTreeItemId, false);
 
 

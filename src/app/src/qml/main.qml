@@ -469,8 +469,8 @@ ApplicationWindow {
 
     Action {
 
-        id: showHelpContentAction
-        text: qsTr("&Contents")
+        id: showUserManualAction
+        text: qsTr("&User manual")
         icon {
             source: "qrc:///icons/backup/system-help.svg"
             height: 50
@@ -478,10 +478,8 @@ ApplicationWindow {
         }
 
         onTriggered: {
-            console.log("show help content")
-            protectedSignals.openWelcomePopupCalled()
-            protectedSignals.showHelpPageCalled()
-            protectedSignals.showHelpContentsCalled()
+            console.log("show user manual")
+            Qt.openUrlExternally("https://manual.skribisto.eu/en_US/manual.html")
         }
 
 
@@ -489,7 +487,7 @@ ApplicationWindow {
     Shortcut {
         sequence:  StandardKey.HelpContents
         context: Qt.ApplicationShortcut
-        onActivated: showHelpAction.trigger()
+        onActivated: showUserManualAction.trigger()
     }
 
     //------------------------------------------------------------------
@@ -508,9 +506,7 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show FAQ")
-            protectedSignals.openWelcomePopupCalled()
-            protectedSignals.showHelpPageCalled()
-            protectedSignals.showFaqCalled()
+            Qt.openUrlExternally("https://manual.skribisto.eu/en_US/faq.html")
         }
 
     }

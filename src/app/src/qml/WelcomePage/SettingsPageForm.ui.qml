@@ -15,16 +15,15 @@ Item {
     property alias backupHoursDial: backupHoursDial
 
     property alias accessibilityGroupBox: accessibilityGroupBox
+    property alias accessibilityCheckBox: accessibilityCheckBox
 
-    property alias menuButtonsInStatusBarSwitch: menuButtonsInStatusBarSwitch
-    property alias showMenuBarCheckBox: showMenuBarCheckBox
+    property alias showMenuButtonCheckBox: showMenuButtonCheckBox
     property alias backUpOnceADayCheckBox: backUpOnceADayCheckBox
     property alias backupPathListView: backupPathListView
     property alias removeBackupPathButton: removeBackupPathButton
     property alias addBackupPathButton: addBackupPathButton
     property alias showPropertiesCheckBox: showPropertiesCheckBox
     property alias resetDockConfButton: resetDockConfButton
-    property alias allowSwipeBetweenTabsCheckBox: allowSwipeBetweenTabsCheckBox
     property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
     readonly property int columnWidth: 550
     property alias langComboBox: langComboBox
@@ -33,7 +32,6 @@ Item {
     property alias openThemePageButton: openThemePageButton
     property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
     property alias centerTextCursorSwitch: centerTextCursorSwitch
-    property alias minimalistMenuTabsSwitch: minimalistMenuTabsSwitch
     property alias textPointSizeSlider: textPointSizeSlider
     property alias fontFamilyComboBox: fontFamilyComboBox
     property alias textTopMarginSlider: textTopMarginSlider
@@ -70,15 +68,14 @@ Item {
                         anchors.fill: parent
 
                         SkrSwitch {
-                            id: allowSwipeBetweenTabsCheckBox
-                            text: qsTr("Allow swipe gesture between tabs")
+                            id: accessibilityCheckBox
+                            text: qsTr("Help with accessibility")
 
                         }
 
                         SkrSwitch {
-                            id: showMenuBarCheckBox
-                            visible: false
-                            text: qsTr("Show menu bar")
+                            id: showMenuButtonCheckBox
+                            text: qsTr("Show menu button")
 
                         }
                     }
@@ -107,18 +104,7 @@ Item {
                             SkrComboBox {
                                 id: langComboBox
                                 wheelEnabled: true
-                                Layout.minimumWidth: 200
                             }
-                        }
-                        SkrSwitch {
-                            id: menuButtonsInStatusBarSwitch
-                            text: qsTr("Set main menu in status bar")
-
-                        }
-                        SkrSwitch {
-                            id: minimalistMenuTabsSwitch
-                            text: qsTr("Minimalist menu tabs")
-
                         }
 
                         SkrButton {
@@ -169,8 +155,6 @@ Item {
 
                         RowLayout {
                             id: rowLayout5
-                            width: 100
-                            height: 100
 
                             SkrLabel {
                                 id: label
