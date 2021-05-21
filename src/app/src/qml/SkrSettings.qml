@@ -8,9 +8,6 @@ QtObject {
     property Settings interfaceSettings: Settings{
         category: "interface"
         property bool firstLaunch: true
-        property bool menuButtonsInStatusBar: false
-        property bool minimalistMenuTabs: false
-
     }
 
     property Settings backupSettings: Settings{
@@ -31,8 +28,8 @@ QtObject {
     }
     property Settings accessibilitySettings: Settings{
         category: "accessibility"
-        property bool allowSwipeBetweenTabs: false
-        property bool showMenuBar: false
+        property bool accessibilityEnabled: false
+        property bool showMenuButton: false
 
     }
 

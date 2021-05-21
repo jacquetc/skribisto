@@ -439,7 +439,12 @@ QHash<int, QByteArray>SKRTreeListModel::roleNames() const {
 void SKRTreeListModel::populate()
 {
     this->beginResetModel();
+    this->resetAllTreeItemsList();
+    this->endResetModel();
+}
 
+void SKRTreeListModel::resetAllTreeItemsList()
+{
     m_allTreeItems.clear();
 
     for (int projectId : plmdata->projectHub()->getProjectIdList()) {
@@ -453,7 +458,6 @@ void SKRTreeListModel::populate()
                                                   sortOrdersHash.value(treeItemId)));
         }
     }
-    this->endResetModel();
 }
 
 void SKRTreeListModel::clear()
@@ -609,12 +613,20 @@ void SKRTreeListModel::refreshAfterDataMove(int       sourceProjectId,
                                             int       targetProjectId,
                                             int       targetTreeItemId)
 {
+    // this->resetAllTreeItemsList();
+
+    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
+        item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
+    }
+
     this->sortAllTreeItemItems();
 
-    for (SKRTreeItem *item : m_allTreeItems) {
-        item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
-        this->exploitSignalFromPLMData(targetProjectId, item->treeItemId(), SKRTreeItem::Roles::SortOrderRole);
-    }
+    //    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
+    //        qDebug() << "sortOrder" << item->sortOrder();
+
+    // this->exploitSignalFromPLMData(targetProjectId, item->treeItemId(),
+    // SKRTreeItem::Roles::SortOrderRole);
+    //    }
 
     //    this->exploitSignalFromPLMData(targetProjectId, targetTreeItemId,
     // SKRTreeItem::Roles::SortOrderRole);

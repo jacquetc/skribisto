@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
 import QtQuick.Layouts 1.15
 import QtQml 2.15
+import eu.skribisto.spellchecker 1.0
 
 import "Items"
 import "Commons"
@@ -27,10 +28,17 @@ SkrPopup {
         color: SkrTheme.pageBackground
 
     }
+    Component.onCompleted: {
+        determineAvailableTranslations()
+        determineCurrentTranslation()
+        populateCheckSpellingComboBox()
+        checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(SkrSettings.spellCheckingSettings.spellCheckingLangCode)
+
+    }
 
     function setPage(pageName){
         if(pageName === "pluginPage"){
-            stackView.currentIndex = 2
+            swipeView.currentIndex = 2
         }
     }
 
@@ -47,23 +55,25 @@ SkrPopup {
                 display: AbstractButton.IconOnly
                 Layout.alignment: Qt.AlignTop | Qt.AlignLeft
                 icon {
-                    source: "qrc:///icons/backup/go-previous.svg"
+                    source: "qrc:///icons/backup/arrow-down.svg"
                 }
 
                 onClicked: root.close()
             }
 
             SwipeView {
-                id: stackView
+                id: swipeView
+                clip: true
                 Layout.fillHeight: true
                 Layout.fillWidth: true
 
 
+
                 onCurrentIndexChanged: {
                     var i = 0
-                    for(i = 0; i < stackView.count; i++){
+                    for(i = 0; i < swipeView.count; i++){
 
-                        stackView.itemAt(i).enabled = i === stackView.currentIndex
+                        swipeView.itemAt(i).enabled = i === swipeView.currentIndex
                     }
                 }
 
@@ -72,7 +82,7 @@ SkrPopup {
 
                     SkrLabel{
                         Layout.alignment: Qt.AlignHCenter
-                        text: qsTr("<h1>First steps with Skribisto</h1>")
+                        text: "<h1>" + qsTr("First steps with Skribisto") + "</h1>"
                     }
 
                     Image {
@@ -84,8 +94,75 @@ SkrPopup {
                     }
 
                     SkrLabel{
-                        text: qsTr("Welcome to Skribisto !")
+                        text: qsTr("Welcome in Skribisto")
+                        font.bold: true
                     }
+
+                    SkrLabel{
+                        text: qsTr("This assistant will help you set up Skribisto to your liking. To begin with, please select the best options for your use.")
+                        font.bold: true
+                    }
+
+                    RowLayout{
+                        SkrLabel{
+                            text: qsTr("Select a language:")
+                        }
+                        SkrComboBox {
+                            id: langComboBox
+                            wheelEnabled: true
+                            model: langModel
+                            textRole: "text"
+                            valueRole: "langCode"
+                            onCurrentValueChanged: {
+                                if(langComboBox.activeFocus){
+                                    skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
+                                    skrWindowManager.retranslate()
+                                    //plmData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
+                                }
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        id: rowLayout5
+
+                        SkrLabel {
+                            id: label
+                            text: qsTr("Default dictionary :")
+                        }
+
+                        SkrComboBox {
+                            id: checkSpellingComboBox
+                            wheelEnabled: true
+                            model: checkSpellingComboBoxModel
+                            textRole: "text"
+                            valueRole: "dictCode"
+                            onCurrentValueChanged: {
+                                if(checkSpellingComboBox.activeFocus){
+                                    SkrSettings.spellCheckingSettings.spellCheckingLangCode = langComboBox.currentValue
+                                }
+                            }
+                        }
+                    }
+
+
+                    SkrSwitch {
+                        id: accessibilityCheckBox
+                        text: qsTr("Help with accessibility")
+                        checked: SkrSettings.accessibilitySettings.accessibilityEnabled
+                        Binding {
+                            target: SkrSettings.accessibilitySettings
+                            property: "accessibilityEnabled"
+                            value: accessibilityCheckBox.checked
+                            restoreMode: Binding.RestoreBindingOrValue
+                        }
+
+                        onCheckedChanged: {
+                            SkrSettings.accessibilitySettings.showMenuButton = accessibilityCheckBox.checked
+                        }
+
+                    }
+
 
                     Item {
                         Layout.fillHeight: true
@@ -127,24 +204,24 @@ SkrPopup {
                     }
 
                     onClicked: {
-                        stackView.decrementCurrentIndex()
+                        swipeView.decrementCurrentIndex()
                     }
 
                 }
                 Item{
                     Layout.fillWidth: true
 
-                PageIndicator {
-                    count: stackView.count
-                    currentIndex: stackView.currentIndex
-                    interactive: true
-                    anchors.centerIn: parent
-                    onCurrentIndexChanged: {
-                        stackView.currentIndex = currentIndex
+                    PageIndicator {
+                        count: swipeView.count
+                        currentIndex: swipeView.currentIndex
+                        interactive: true
+                        anchors.centerIn: parent
+                        onCurrentIndexChanged: {
+                            swipeView.currentIndex = currentIndex
+                        }
                     }
-                }
 
-}
+                }
 
 
                 SkrToolButton {
@@ -157,7 +234,7 @@ SkrPopup {
                     }
 
                     onClicked: {
-                        stackView.incrementCurrentIndex()
+                        swipeView.incrementCurrentIndex()
                     }
 
                 }
@@ -169,4 +246,64 @@ SkrPopup {
 
     }
 
+
+    // interface languages :
+
+    function determineAvailableTranslations(){
+        langModel.clear()
+
+        var translationsMap = skrRootItem.findAvailableTranslationsMap()
+
+        for(var translation in translationsMap){
+            langModel.append({"text": translationsMap[translation] + " (" + translation + ")", "langCode": translation})
+        }
+    }
+    function determineCurrentTranslation(){
+        langComboBox.currentIndex = langComboBox.indexOfValue(skrRootItem.getLanguageFromSettings())
+    }
+
+    ListModel {
+        id: langModel
+    }
+
+
+
+
+    Connections {
+        target: skrRootItem
+        function onCurrentTranslationLanguageCodeChanged(langCode){
+            langComboBox.currentIndex = langComboBox.indexOfValue(langCode)
+        }
+    }
+
+
+    // spell checking combo box :
+
+    SKRSpellChecker {
+        id : spellChecker
+    }
+
+    ListModel {
+        id: checkSpellingComboBoxModel
+    }
+
+    function populateCheckSpellingComboBox(){
+
+        var dictList = spellChecker.dictList()
+
+        var i;
+        for(i = 0 ; i < dictList.length ; i++){
+            checkSpellingComboBoxModel.append({"text": dictList[i], "dictCode": dictList[i]})
+        }
+
+    }
+
+
+    Connections {
+        target: SkrSettings.spellCheckingSettings
+        function onSpellCheckingLangCodeChanged(){
+            var value = SkrSettings.spellCheckingSettings.spellCheckingLangCode
+            checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(value)
+        }
+    }
 }

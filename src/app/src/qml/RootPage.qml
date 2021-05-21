@@ -748,7 +748,7 @@ RootPageForm {
             title: qsTr("&Help")
 
             SkrMenuItem {
-                action: showHelpContentAction
+                action: showUserManualAction
             }
 
             SkrMenuItem {

@@ -10,6 +10,18 @@ ComboBox {
     Material.foreground: SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
 
+    property bool sizeToContents: true
+    property int modelWidth: 50
+
+    implicitWidth: sizeToContents
+                   ? (modelWidth + leftPadding + contentItem.leftPadding
+                      + rightPadding + contentItem.rightPadding)
+                   : contentItem.implicitWidth
+
+
+    Component.onCompleted: {
+        determineModelWidth()
+    }
 
     SkrFocusIndicator {
         parent: control.background
@@ -24,68 +36,122 @@ ComboBox {
     }
 
     delegate: ItemDelegate {
+        id: delegate
         width: control.width
         contentItem: Label {
-            text: model.modelData === undefined ? model.text : model.modelData
+            id: label
+            text: control.textRole ? (Array.isArray(control.model) ? modelData[control.textRole] : model[control.textRole]) : modelData
             color: SkrTheme.buttonForeground
             font: control.font
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
         highlighted: control.highlightedIndex === index
+        hoverEnabled: control.hoverEnabled
+    }
+
+    TextMetrics {
+        id: textMetrics
+        font: control.font
+    }
+    onTextRoleChanged: {
+        console.log("1 control.textRole", control.textRole)
+        determineModelWidth()
+    }
+
+    onModelChanged: {
+        modelCountConnection.enabled = true
+        determineModelWidth()
+    }
+
+    Component.onDestruction: {
+        modelCountConnection.enabled = false
+    }
+
+    Connections{
+        id: modelCountConnection
+        target: model
+        enabled: false
+        function onCountChanged(){
+            determineModelWidth()
+        }
+    }
+
+    function determineModelWidth(){
+
+
+        if(control.textRole && model){
+            for(var i = 0; i < model.count; i++){
+                textMetrics.text = model.get(i)[control.textRole]
+                console.log("r", model.get(i)[control.textRole])
+                modelWidth = Math.max(textMetrics.width, modelWidth)
+            }
+        }
+        else {
+            if(Array.isArray(control.model)){
+                for(var j = 0; j < model.length; j++){
+                    textMetrics.text = model[j]
+                    modelWidth = Math.max(textMetrics.width, modelWidth)
+                }
+            }
+
+
+        }
 
     }
 
-//        SkrListItemPane {
-//            id: inner_delegateRoot
-//            height: 30
-//            focus: true
+    //        SkrListItemPane {
+    //            id: inner_delegateRoot
+    //            height: 30
+    //            focus: true
 
-//            Accessible.name: model.dataValue
-//            Accessible.role: Accessible.ListItem
+    //            Accessible.name: model.dataValue
+    //            Accessible.role: Accessible.ListItem
 
-//            anchors {
-//                left: Qt.isQtObject(parent) ? parent.left : undefined
-//                right: Qt.isQtObject(parent) ? parent.right : undefined
-//                leftMargin: 5
-//                rightMargin: 5
-//            }
-
-
-//            TapHandler {
-//                id: inner_tapHandler
-
-//                onSingleTapped: {
-
-//                    eventPoint.accepted = true
-//                }
+    //            anchors {
+    //                left: Qt.isQtObject(parent) ? parent.left : undefined
+    //                right: Qt.isQtObject(parent) ? parent.right : undefined
+    //                leftMargin: 5
+    //                rightMargin: 5
+    //            }
 
 
-//                onGrabChanged: {
-//                    point.accepted = false
-//                }
-//            }
+    //            TapHandler {
+    //                id: inner_tapHandler
+
+    //                onSingleTapped: {
+
+    //                    eventPoint.accepted = true
+    //                }
+
+
+    //                onGrabChanged: {
+    //                    point.accepted = false
+    //                }
+    //            }
 
 
 
-//            SkrLabel {
-//                text: modelData
-//                anchors.fill: parent
-//                horizontalAlignment: Qt.AlignLeft
-//                verticalAlignment: Qt.AlignVCenter
+    //            SkrLabel {
+    //                text: modelData
+    //                anchors.fill: parent
+    //                horizontalAlignment: Qt.AlignLeft
+    //                verticalAlignment: Qt.AlignVCenter
 
-//                highlighted: control.highlightedIndex === index
-//            }
+    //                highlighted: control.highlightedIndex === index
+    //            }
 
 
-//}
+    //}
 
-//}
+    //}
 
     popup: SkrPopup {
         y: control.height - 1
         width: control.width
-        implicitHeight: 400
+
+        property int listViewContentHeight: listView.contentHeight
+        implicitHeight: listViewContentHeight > 400 ? 400 : listViewContentHeight
         padding: 1
 
         contentItem: SkrListItemPane{
@@ -101,6 +167,7 @@ ComboBox {
                 implicitHeight: contentHeight
 
                 ListView {
+                    id: listView
                     clip: true
                     model: control.popup.visible ? control.delegateModel : null
                     currentIndex: control.highlightedIndex
@@ -110,9 +177,9 @@ ComboBox {
 
 
 
-                    }
-
                 }
+
+            }
 
 
 

@@ -107,6 +107,7 @@ private:
 
     void connectToPLMDataSignals();
     void disconnectFromPLMDataSignals();
+    void resetAllTreeItemsList();
 
 private:
 

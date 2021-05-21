@@ -65,6 +65,23 @@ PluginPageForm {
 
 
 
+    //--------------------------------------------------------
+
+    classicThemeButton.onClicked: {
+        pluginThemeComboBox.currentIndex = 0
+
+    }
+
+    //--------------------------------------------------------
+
+    writingThemeButton.onClicked: {
+        pluginThemeComboBox.currentIndex = 1
+    }
+    //--------------------------------------------------------
+
+    personalizedThemeButton.onClicked: {
+        pluginThemeComboBox.currentIndex = 2
+    }
 
     //--------------------------------------------------------
 

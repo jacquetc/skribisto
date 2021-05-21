@@ -18,19 +18,6 @@ HelpPageForm {
         stackView.pop()
     }
 
-
-    faqTabButton.onClicked: showFaq()
-    Connections {
-        target: rootWindow.protectedSignals
-        function onShowFaqCalled() {showFaq() }
-    }
-
-    function showFaq(){
-        stackView.pop()
-        tabBar.currentIndex = 1
-        var item = stackView.push(Qt.createComponent("FAQ.qml"))
-    }
-
     aboutTabButton.onClicked: showAbout()
     Connections {
         target: rootWindow.protectedSignals

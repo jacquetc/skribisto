@@ -72,22 +72,6 @@ SettingsPageForm {
     // --------------------------------------------
 
 
-    menuButtonsInStatusBarSwitch.checked: SkrSettings.interfaceSettings.menuButtonsInStatusBar
-    Binding {
-        target: SkrSettings.interfaceSettings
-        property: "menuButtonsInStatusBar"
-        value: menuButtonsInStatusBarSwitch.checked
-        restoreMode: Binding.RestoreBindingOrValue
-    }
-
-    minimalistMenuTabsSwitch.checked: SkrSettings.interfaceSettings.minimalistMenuTabs
-    Binding {
-        target: SkrSettings.interfaceSettings
-        property: "minimalistMenuTabs"
-        value: minimalistMenuTabsSwitch.checked
-        restoreMode: Binding.RestoreBindingOrValue
-    }
-
 
     // interface languages :
 
@@ -115,8 +99,8 @@ SettingsPageForm {
     langComboBox.onCurrentValueChanged: {
         if(langComboBox.activeFocus){
             skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
-            //TODO: trigger for on the fly translation update
-            plmData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
+            skrWindowManager.retranslate()
+            //plmData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
        }
     }
 
@@ -164,19 +148,23 @@ SettingsPageForm {
     // ---- accessibility --------------------------------
     // --------------------------------------------
 
-    allowSwipeBetweenTabsCheckBox.checked: SkrSettings.accessibilitySettings.allowSwipeBetweenTabs
+    accessibilityCheckBox.checked: SkrSettings.accessibilitySettings.accessibilityEnabled
     Binding {
         target: SkrSettings.accessibilitySettings
-        property: "allowSwipeBetweenTabs"
-        value: allowSwipeBetweenTabsCheckBox.checked
+        property: "accessibilityEnabled"
+        value: accessibilityCheckBox.checked
         restoreMode: Binding.RestoreBindingOrValue
     }
 
-    showMenuBarCheckBox.checked: SkrSettings.accessibilitySettings.showMenuBar
+    accessibilityCheckBox.onCheckedChanged: {
+        showMenuButtonCheckBox.checked = accessibilityCheckBox.checked
+    }
+
+    showMenuButtonCheckBox.checked: SkrSettings.accessibilitySettings.showMenuButton
     Binding {
         target: SkrSettings.accessibilitySettings
-        property: "showMenuBar"
-        value: showMenuBarCheckBox.checked
+        property: "showMenuButton"
+        value: showMenuButtonCheckBox.checked
         restoreMode: Binding.RestoreBindingOrValue
     }
 
@@ -395,7 +383,7 @@ SettingsPageForm {
                         //if (!activeFocus) {
                         //accepted()
                         //}
-                        console.log("editing finished")
+                        //console.log("editing finished")
 
                         model.path = text
 
@@ -409,12 +397,12 @@ SettingsPageForm {
 
                     Keys.onPressed: {
                         if (event.key === Qt.Key_Return){
-                            console.log("Return key pressed path")
+                            //console.log("Return key pressed path")
                             editingFinished()
                             event.accepted = true
                         }
                         if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
-                            console.log("Ctrl Return key pressed title")
+                            //console.log("Ctrl Return key pressed title")
 
                             backupFolderDialog.open()
                             backupFolderDialog.currentFolder = model.path
@@ -823,12 +811,6 @@ SettingsPageForm {
 
     }
 
-    checkSpellingComboBox.onCurrentValueChanged: {
-        if(checkSpellingComboBox.activeFocus){
-            SkrSettings.spellCheckingSettings.spellCheckingLangCode = langComboBox.currentValue
-        }
-    }
-
 
     Connections {
         target: SkrSettings.spellCheckingSettings
@@ -837,6 +819,12 @@ SettingsPageForm {
             checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(value)
         }
     }
+    checkSpellingComboBox.onCurrentValueChanged: {
+        if(checkSpellingComboBox.activeFocus){
+            SkrSettings.spellCheckingSettings.spellCheckingLangCode = langComboBox.currentValue
+        }
+    }
+
 
 
 }

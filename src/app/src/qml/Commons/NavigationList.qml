@@ -32,6 +32,8 @@ NavigationListForm {
         property bool dragging: false
         property bool renaming: false
 
+        property bool devModeEnabled: SkrSettings.devSettings.devModeEnabled
+
     }
 
     onCurrentParentIdChanged: {
@@ -382,6 +384,8 @@ NavigationListForm {
 
             // used to remember the source when moving an item
             property int moveSourceInt: -2
+            property int moveSourceTreeItemId: -2
+            property int moveSourceProjectId: -2
 
             focus: false
 
@@ -691,6 +695,8 @@ NavigationListForm {
                             height: 40
 
                             padding: 0
+                            topPadding: 0
+                            bottomPadding: 0
                             topInset: 0
                             bottomInset: 0
 
@@ -995,14 +1001,14 @@ NavigationListForm {
                                 keys: ["application/skribisto-tree-item"]
                                 onEntered: {
 
-                                    console.log("entered")
+                                    //console.log("entered")
                                     content.sourceIndex = drag.source.visualIndex
                                     visualModel.items.move(drag.source.visualIndex,
                                                            content.visualIndex)
                                 }
                                 onExited: {
 
-                                    console.log("exited")
+                                    //console.log("exited")
 
                                 }
 
@@ -1010,10 +1016,12 @@ NavigationListForm {
                                     if(drop.proposedAction === Qt.MoveAction){
 
                                         console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
+                                        cancelDragTimer.stop()
                                         listView.interactive = true
                                         priv.dragging = false
-                                        cancelDragTimer.stop()
                                         proxyModel.moveItem(moveSourceInt, content.visualIndex)
+                                        //proxyModel.moveItemById(moveSourceProjectId, moveSourceTreeItemId, content.treeItemId)
+
 
                                     }
                                 }
@@ -1065,6 +1073,8 @@ NavigationListForm {
                                             if (active) {
                                                 listView.interactive = false
                                                 moveSourceInt = content.visualIndex
+                                                moveSourceTreeItemId = content.treeItemId
+                                                moveSourceProjectId = content.projectId
                                                 priv.dragging = true
                                                 cancelDragTimer.stop()
                                             } else {
@@ -1091,6 +1101,8 @@ NavigationListForm {
                                             if (active) {
                                                 listView.interactive = false
                                                 moveSourceInt = content.visualIndex
+                                                moveSourceTreeItemId = content.treeItemId
+                                                moveSourceProjectId = content.projectId
                                                 priv.dragging = true
                                                 cancelDragTimer.stop()
                                             } else {
@@ -1782,12 +1794,28 @@ NavigationListForm {
 
                                             }
 
+
+                                            SkrLabel {
+                                                id: devLabel
+                                                text:  model.index + "-" + model.treeItemId + "-" + model.sortOrder
+                                                visible: + priv.devModeEnabled
+                                                elide: Text.ElideNone
+                                                Layout.bottomMargin: 2
+                                                Layout.rightMargin: 4
+                                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                                horizontalAlignment: Qt.AlignRight
+                                                Layout.fillHeight: true
+                                                //Layout.preferredWidth: 30
+
+
+                                            }
+
                                             SkrToolButton {
                                                 id: menuButton
                                                 Layout.fillHeight: true
                                                 Layout.preferredWidth: 30
 
-                                                text: "..."
+                                                text: qsTr("Item menu")
                                                 icon.source: "qrc:///icons/backup/overflow-menu.svg"
                                                 flat: true
                                                 focusPolicy: Qt.NoFocus
