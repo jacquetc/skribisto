@@ -1,7 +1,9 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import eu.skribisto.projectdicthub 1.0
+import eu.skribisto.spellchecker 1.0
 import "../Items"
 import "../Commons"
 import ".."
@@ -154,21 +156,73 @@ UserDictPageForm {
         icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
             addWordToDProjectDictDialog.open()
-            //TODO : popup to add word
 
         }
     }
     addWordButton.action: addWordAction
 
+    SKRSpellChecker {
+        id : spellChecker
+
+        Component.onCompleted: {
+            var lang = plmData.projectHub().getLangCode(root.projectId)
+            if(lang){
+                spellChecker.setLangCode(plmData.projectHub().getLangCode(root.projectId))
+                spellChecker.setUserDict(plmData.projectDictHub().getProjectDictList(root.projectId))
+
+
+        }
+    }
+    }
+
+
+    Connections{
+        target: plmData.projectHub()
+        function onLangCodeChanged(projectId, newLang){
+            if(projectId === root.projectId){
+                spellChecker.setLangCode(newLang)
+                spellChecker.setUserDict(plmData.projectDictHub().getProjectDictList(root.projectId))
+            }
+        }
+    }
+
     SimpleDialog {
         id: addWordToDProjectDictDialog
         title: qsTr("Add a word to the project dictionary")
-        contentItem: SkrTextField {
-            id: addWordTextField
-            text: ""
+        width: 400
+        contentItem: ColumnLayout {
+            SkrTextField {
+                id: addWordTextField
+                Layout.alignment: Qt.AlignCenter
+                Layout.fillWidth: true
+                text: ""
 
-            onAccepted: {
-                addWordToDProjectDictDialog.accept()
+                onAccepted: {
+                    if(spellChecker.spell(addWordTextField.text)){
+                        addWordToDProjectDictDialog.accept()
+                    }
+                }
+
+                onTextChanged: {
+                    if(!spellChecker.active){
+                        label.text = ""
+
+                    }
+                    else if(spellChecker.spell(addWordTextField.text)){
+                        label.text = qsTr("Word already in dictionary")
+                    }
+                    else {
+                        label.text = ""
+                    }
+                }
+            }
+
+            SkrLabel {
+                id: label
+                Layout.alignment: Qt.AlignCenter
+                Layout.fillWidth: true
+
+
             }
 
         }
@@ -195,14 +249,14 @@ UserDictPageForm {
 
         onActiveFocusChanged: {
             if(activeFocus){
-                contentItem.forceActiveFocus()
+                addWordTextField.forceActiveFocus()
             }
 
         }
 
         onOpened: {
             addWordTextField.text = ""
-            contentItem.forceActiveFocus()
+            addWordTextField.forceActiveFocus()
         }
 
     }

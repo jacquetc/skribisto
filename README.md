@@ -11,18 +11,14 @@
       - [Interfaces](#interfaces)
       - [Existing plugins](#existing-plugins)
   * [Build it, test it](#build-it--test-it)
+    + [The quickest and the easiest for development](#the-quickest-and-the-easiest-for-development)
+      - [Building prerequisites](#building-prerequisites)
+      - [Building](#building)
+      - [Running it](#running-it)
     + [Windows](#windows)
-      - [By hand, for development](#by-hand--for-development)
-        * [Building prerequisites](#building-prerequisites)
-        * [Building](#building)
-        * [Running it](#running-it)
         * [Automated building & packaging](#automated-building---packaging)
     + [Linux](#linux)
-      - [The quickest, for development](#the-quickest--for-development)
-        * [Building prerequisites](#building-prerequisites-1)
-        * [Building](#building-1)
-        * [Running it](#running-it-1)
-      - [By hand, for development](#by-hand--for-development-1)
+      - [By hand, for development but not the easiest](#by-hand--for-development-but-not-the-easiest)
       - [Flatpak](#flatpak)
         * [Flatpak prerequisites](#flatpak-prerequisites)
         * [Flatpak from GitHub master branch](#flatpak-from-github-master-branch)
@@ -168,7 +164,7 @@ Each project is a SQLite3 file, more robust than the zipped projects in Plume.
    Contains all the translation sources. DO NOT TOUCH directly. See the [Translation](#translation) section for details.
 
 ### Languages used
-    - C++ with Qt5 (later Qt6)
+    - C++ with Qt 5.15 (later Qt6)
     - QML and Qt Quick
     - Qt's Javascript
     - SQL basics with SQLite3 only for the skribisto-data library.
@@ -199,31 +195,45 @@ Plugin interfaces to come soon :
 
 ## Build it, test it
 
-### Windows
+### The quickest and the easiest for development
 
-#### By hand, for development
+Tested on Ubuntu 20.04, Fedora 33/34, Windows 10, MacOS Big Sur
 
-Install Qt 5.15.2 on Windows 10
+Minimum Qt : 5.15
+If you have not Qt 5.15, use the Qt installer found at [Qt website](https://www.qt.io/download-open-source)
+Install 5.15 Desktop or superior and Qt Creator
 
-##### Building prerequisites 
+#### Building prerequisites 
 
 - Download the latest from GitHub, then you can use Qt Creator to open the superbuild at *cmake/Superbuild/CMakeLists.txt* in the project. 
-- Configure against Qt 5.15 MinGW minimum to be sure.
+- Configure against Qt 5.15 minimum to be sure.
 - **Before** compiling it, set the build directory (in Projects tab) to *build_skribisto_Release* just outside the skribisto folder
+    - Example:
+    
+       Git repo: /home/cyril/Devel/skribisto
+       
+       Superbuild's CMakeLists.txt: /home/cyril/Devel/skribisto/make/Superbuild/CMakeLists.txt
+       
+       Superbuild's build directory: /home/cyril/Devel/build_skribisto_Release
+
 - add the CMake variable QT_VERSION_MAJOR and set its value to 5 or 6 depending of your Qt version, apply the change
-- Build it against 
-- After successfully compiling it, close the Skribisto-Superbuild project
+- Compile it
+- Ignore errors about Skribisto, we only want to build dependencies
+- After compiling it, close the Skribisto-Superbuild project
 
-##### Building 
+#### Building 
 
-- Open CMakeLists.txt_ at the root of the project
+- Open CMakeLists.txt at the root of the project
 - In Qt Creator, in Projects tab, in the build subsection, add the CMake variable SKR_DEV (bool) and set its value to "ON", apply the change
 - Compile it
 
-##### Running it
+#### Running it
 
 - Run skribisto, optionally with --testProject
 
+
+
+### Windows
 
 ##### Automated building & packaging
 - install Inno Setup found at https://jrsoftware.org/isdl.php
@@ -234,33 +244,7 @@ Install Qt 5.15.2 on Windows 10
 
 ### Linux
 
-#### The quickest, for development
-
-Minimum Qt : 5.15
-If you have not Qt 5.15, use the Qt installer found at [Qt website](https://www.qt.io/download-open-source)
-Install 5.15 Desktop or superior and Qt Creator
-
-##### Building prerequisites 
-
-- Download the latest from GitHub, then you can use Qt Creator to open the superbuild at *cmake/Superbuild/CMakeLists.txt* in the project. 
-- Configure against Qt 5.15 minimum to be sure.
-- **Before** compiling it, set the build directory (in Projects tab) to *build_skribisto_Release* just outside the skribisto folder
-- add the CMake variable QT_VERSION_MAJOR and set its value to 5 or 6 depending of your Qt version, apply the change
-- Build it against 
-- After successfully compiling it, close the Skribisto-Superbuild project
-
-##### Building 
-
-- Open CMakeLists.txt_ at the root of the project
-- In Qt Creator, in Projects tab, in the build subsection, add the CMake variable SKR_DEV (bool) and set its value to "ON", apply the change
-- Compile it
-
-##### Running it
-
-- Run skribisto, optionally with --testProject
-
-
-#### By hand, for development
+#### By hand, for development but not the easiest
 
 Needed sources and libs :
 - hunspell (devel)

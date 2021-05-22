@@ -130,10 +130,10 @@ Letter:
         if (is_word || ((i == count) && (index != -1))) {
             if (!is_uppercase && !is_number) {
                 if (m_encodingFix == "latin1") return m_hunspell->spell(
-                        word.toLatin1().toStdString());
+                            word.toLatin1().toStdString());
 
                 if (m_encodingFix == "utf8") return m_hunspell->spell(
-                        word.toUtf8().toStdString());
+                            word.toUtf8().toStdString());
             }
             index        = -1;
             is_word      = false;
@@ -152,15 +152,15 @@ QStringList SKRSpellChecker::suggest(const QString& word)
     std::vector<std::string> suggestionsVector;
 
     if (m_encodingFix == "latin1") suggestionsVector = m_hunspell->suggest(
-            word.toLatin1().toStdString());
+                word.toLatin1().toStdString());
 
     if (m_encodingFix == "utf8") suggestionsVector = m_hunspell->suggest(
-            word.toUtf8().toStdString());
+                word.toUtf8().toStdString());
 
 
     QVector<std::string> suggestionsQVect =  QVector<std::string>(
-        suggestionsVector.begin(),
-        suggestionsVector.end());
+                suggestionsVector.begin(),
+                suggestionsVector.end());
 
     // maybe differenciate between latin1 and utf8
     QStringList suggestions;
@@ -192,6 +192,12 @@ void SKRSpellChecker::addWordToDict(const QString& word)
 
 void SKRSpellChecker::addWordToUserDict(const QString& word, bool emitSignal)
 {
+
+    //forbid if word already in the dictionary
+    if(this->spell(word)){
+        return;
+    }
+
     addWordToDict(word);
 
     if (!m_userDict.contains(word)) {
@@ -214,9 +220,19 @@ bool SKRSpellChecker::isActive()
 
 void SKRSpellChecker::removeWordFromUserDict(const QString& word, bool emitSignal)
 {
-    if (m_encodingFix == "latin1") m_hunspell->remove(word.toLatin1().toStdString());
+    // doesn't remove from spellchecker if it exists by default in the original dict
+    if(!m_langCode.isEmpty()){
+    SKRSpellChecker tempSpellChecker(this);
+    tempSpellChecker.setLangCode(m_langCode);
 
-    if (m_encodingFix == "utf8") m_hunspell->remove(word.toUtf8().toStdString());
+    if(!tempSpellChecker.spell(word)){
+
+        if (m_encodingFix == "latin1") m_hunspell->remove(word.toLatin1().toStdString());
+
+        if (m_encodingFix == "utf8") m_hunspell->remove(word.toUtf8().toStdString());
+
+    }
+    }
 
     m_userDict.removeAll(word);
 
@@ -231,7 +247,7 @@ void SKRSpellChecker::removeWordFromUserDict(const QString& word, bool emitSigna
 
 void SKRSpellChecker::clearUserDict()
 {
-    for (const QString& word : m_userDict) {
+    for (const QString& word : qAsConst(m_userDict)) {
         removeWordFromUserDict(word, false);
     }
     emit userDictChanged(m_userDict);

@@ -2,6 +2,7 @@ import QtQuick 2.15
 import Qt.labs.platform 1.1 as LabPlatform
 import QtQml 2.15
 import eu.skribisto.result 1.0
+import eu.skribisto.spellchecker 1.0
 import "../Items"
 import ".."
 
@@ -12,11 +13,17 @@ NewProjectPageForm {
     property string fileName: fileName
     property url folderNameURL
 
+
+    Component.onCompleted: {
+        populateDictComboBox()
+        determineCurrentDictComboBoxValue()
+
+    }
+
+
     selectProjectPathToolButton.onClicked: {
         folderDialog.open()
         folderDialog.currentFolder = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
-
-
     }
 
 
@@ -118,6 +125,8 @@ NewProjectPageForm {
 
         }
 
+        // set lang code
+        plmData.projectHub().setLangCode(projectId, dictComboBox.currentValue)
 
         plmData.projectHub().saveProject(projectId)
         plmData.projectHub().closeProject(projectId)
@@ -140,6 +149,40 @@ NewProjectPageForm {
         closeCalled()
     }
 
+
+
+    //--------------------------------------------------
+
+    // dict combo box :
+
+    SKRSpellChecker {
+        id : spellChecker
+    }
+
+    ListModel {
+        id: dictComboBoxModel
+    }
+
+    dictComboBox.model: dictComboBoxModel
+    dictComboBox.textRole: "text"
+    dictComboBox.valueRole: "dictCode"
+
+    function populateDictComboBox(){
+
+        var dictList = spellChecker.dictList()
+
+        var i;
+        for(i = 0 ; i < dictList.length ; i++){
+            dictComboBoxModel.append({"text": dictList[i], "dictCode": dictList[i]})
+        }
+    }
+
+    function determineCurrentDictComboBoxValue(){
+
+        var langCode = SkrSettings.spellCheckingSettings.spellCheckingLangCode
+        dictComboBox.currentIndex = dictComboBox.indexOfValue(langCode)
+
+    }
 
 
     //--------------------------------------------------

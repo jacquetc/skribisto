@@ -19,7 +19,7 @@ public:
 
     Q_INVOKABLE SKRResult   getError();
 
-    Q_INVOKABLE QStringList getProjectDynamicDictList(int projectId) const;
+//    Q_INVOKABLE QStringList getProjectDynamicDictList(int projectId) const;
     Q_INVOKABLE QStringList getProjectDictList(int projectId) const;
     Q_INVOKABLE SKRResult   setProjectDictList(int                projectId,
                                                const QStringList& projectDictList);

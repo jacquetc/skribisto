@@ -127,7 +127,7 @@ signals:
     void projectNameChanged(int            projectId,
                             const QString& newProjectName);
     void langCodeChanged(int            projectId,
-                         const QString& newProjectName);
+                         const QString& newLang);
     void projectSaved(int projectId);
     void projectNotSavedAnymore(int projectId);
     void projectCountChanged(int count);

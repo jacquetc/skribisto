@@ -14,6 +14,7 @@ Item {
     property alias selectProjectPathToolButton: selectProjectPathToolButton
     property alias projectPathTextField: projectPathTextField
     property alias projectTitleTextField: projectTitleTextField
+    property alias dictComboBox: dictComboBox
 
 
     readonly property int columnWidth: 550
@@ -118,6 +119,21 @@ Item {
                         editable: true
                     }
                 }
+
+                RowLayout {
+                    id: rowLayout1
+                    Layout.fillWidth: true
+
+                    SkrLabel {
+                        id: label1
+                        text: qsTr("Dictionary :")
+                    }
+
+                    SkrComboBox {
+                        id: dictComboBox
+                    }
+                }
+
                 RowLayout {
                     id: rowLayout4
                     Layout.alignment: Qt.AlignHCenter

@@ -40,8 +40,6 @@ SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
     }
     );
 
-    //TODO: add dynamic project dict
-
     connect(spellChecker, &SKRSpellChecker::activated, this, [this](bool activated) {
         if (activated) {
             this->getSpellChecker()->setUserDict(m_userDictList);
@@ -261,7 +259,7 @@ void SKRHighlighter::setProjectId(int projectId)
     if (projectId != -2) {
         m_userDictList.clear();
         m_userDictList = plmdata->projectDictHub()->getProjectDictList(projectId);
-        m_userDictList.append(plmdata->projectDictHub()->getProjectDynamicDictList(projectId));
+//        m_userDictList.append(plmdata->projectDictHub()->getProjectDynamicDictList(projectId));
     }
 
     // set user dict

@@ -848,6 +848,10 @@
         <source>Create</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Dictionary :</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NotePad</name>
@@ -2156,11 +2160,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove word from dictionary</source>
+        <source>Add a word to the project dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add a word to the project dictionary</source>
+        <source>Word already in dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove word from dictionary</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

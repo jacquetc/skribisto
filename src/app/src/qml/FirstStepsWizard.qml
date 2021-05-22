@@ -118,6 +118,8 @@ SkrPopup {
                                     skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
                                     skrWindowManager.retranslate()
                                     //plmData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
+
+                                    checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(langComboBox.currentValue)
                                 }
                             }
                         }
