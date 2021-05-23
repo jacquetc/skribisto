@@ -2,8 +2,7 @@
 *   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: skrtreemanager.h
-*                                                  *
+*  Filename: hemingwaypagetoolbox.cpp                                                   *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -19,37 +18,19 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRTREEMANAGER_H
-#define SKRTREEMANAGER_H
+#include "hemingwaypagetoolbox.h"
+#include "plmdata.h"
 
-#include <QObject>
-#include <QQmlComponent>
-#include "skrresult.h"
+HemingwayPageToolbox::HemingwayPageToolbox(QObject *parent) : QObject(parent)
+{
 
-class SKRTreeManager : public QObject {
-    Q_OBJECT
+}
 
-public:
+// ---------------------------------------------------
 
-    explicit SKRTreeManager(QObject *parent = nullptr);
-    Q_INVOKABLE QUrl        getIconUrlFromPageType(const QString& pageType) const;
-    Q_INVOKABLE QStringList getPageTypeList(bool constructibleOnly) const;
-    Q_INVOKABLE QString     getPageTypeText(const QString& pageType) const;
-    Q_INVOKABLE QString     getPageDetailText(const QString& pageType) const;
-    Q_INVOKABLE void        updateCharAndWordCount(int            projectId,
-                                                   int            treeItemId,
-                                                   const QString& pageType,
-                                                   bool           sameThread = false);
-    Q_INVOKABLE void updateAllCharAndWordCount(int projectId);
-    Q_INVOKABLE QStringList findToolboxUrlsForPage(const QString& pageType) const;
+HemingwayPageToolbox::~HemingwayPageToolbox()
+{}
 
-private:
 
-    Q_INVOKABLE SKRResult finaliseAfterCreationOfTreeItem(int            projectId,
-                                                          int            treeItemId,
-                                                          const QString& pageType);
+// ---------------------------------------------------
 
-signals:
-};
-
-#endif // SKRTREEMANAGER_H

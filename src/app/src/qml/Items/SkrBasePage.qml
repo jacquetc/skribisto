@@ -14,7 +14,7 @@ FocusScope {
     property string pageType: ""
     property var additionalPropertiesForSavingView: ({})
 
-    property list<Component> toolBoxes
+    property list<Component> toolboxes
 
     signal closeViewCalled()
 

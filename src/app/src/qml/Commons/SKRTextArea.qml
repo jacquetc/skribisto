@@ -121,10 +121,32 @@ TextArea {
         initialCursorPositionX = -1
         initialCursorPosition = -1
 
+
+        for(var i in keysPriv.additionalKeyFunctions){
+            var keyFunction = keysPriv.additionalKeyFunctions[i]
+            var returnCode = keyFunction(event)
+            if(returnCode){
+                return
+            }
+        }
+
         event.accepted = false
 
     }
 
+
+    QtObject{
+        id: keysPriv
+        property var additionalKeyFunctions: []
+    }
+
+    function addAdditionalKeyFunction(_function){
+        keysPriv.additionalKeyFunctions.push(_function)
+    }
+
+    function removeAdditionalKeyFunction(_function){
+        keysPriv.additionalKeyFunctions = keysPriv.additionalKeyFunctions.filter(item => item !== _function)
+    }
 
     //--------------------------------------------------------------------------------
     //--------Text centering----------------------------------------------------------

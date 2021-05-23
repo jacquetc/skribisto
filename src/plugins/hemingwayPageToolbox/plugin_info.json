@@ -1,0 +1,9 @@
+{
+    "type" :            "pageToolbox",
+    "shortname" :       "HemingwayPageToolbox",
+    "longname" :        "Skribisto Hemingway Page Toolbox",
+    "version" :         "1.0",
+    "mandatory" :    false,
+    "activatedByDefault" :    true,
+    "dependencies" :    ["textPage"]
+}

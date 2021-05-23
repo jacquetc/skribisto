@@ -23,6 +23,7 @@
 
 TextPage::TextPage(QObject *parent) : QObject(parent)
 {
+
     m_wordMeter = new SKRWordMeter(this);
 
     connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, plmdata->statHub(),

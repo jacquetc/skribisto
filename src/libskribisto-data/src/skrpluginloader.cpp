@@ -110,7 +110,7 @@ QStringList SKRPluginLoader::listActivatedByName()
     while (i != m_pluginsListHash.constEnd()) {
         SKRPlugin plugin = i.value();
 
-        if (qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled()) {
+        if (dynamic_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled()) {
             nameList << plugin.name;
         }
         ++i;
@@ -130,8 +130,8 @@ QString SKRPluginLoader::getDisplayedName(const QString& pluginName) const
         SKRPlugin plugin = i.value();
 
         if (plugin.name == pluginName) {
-            if (qobject_cast<SKRCoreInterface *>(plugin.object)) {
-                SKRCoreInterface *coreInterface = qobject_cast<SKRCoreInterface *>(plugin.object);
+            if (dynamic_cast<SKRCoreInterface *>(plugin.object)) {
+                SKRCoreInterface *coreInterface = dynamic_cast<SKRCoreInterface *>(plugin.object);
                 name = coreInterface->displayedName();
                 break;
             }
@@ -152,8 +152,8 @@ QString SKRPluginLoader::getUse(const QString& pluginName) const
         SKRPlugin plugin = i.value();
 
         if (plugin.name == pluginName) {
-            if (qobject_cast<SKRCoreInterface *>(plugin.object)) {
-                SKRCoreInterface *coreInterface = qobject_cast<SKRCoreInterface *>(plugin.object);
+            if (dynamic_cast<SKRCoreInterface *>(plugin.object)) {
+                SKRCoreInterface *coreInterface = dynamic_cast<SKRCoreInterface *>(plugin.object);
                 name = coreInterface->use();
                 break;
             }
@@ -194,7 +194,12 @@ bool SKRPluginLoader::isThisPluginEnabled(const QString& pluginName)
         SKRPlugin plugin = i.value();
 
         if (plugin.name == pluginName) {
-            if (qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled()) {
+            SKRCoreInterface *corePlugin = dynamic_cast<SKRCoreInterface *>(plugin.object);
+            if(!corePlugin){
+                qDebug() << plugin.name << "is not SKRCoreInterface";
+                return false;
+            }
+            else if (corePlugin->pluginEnabled()) {
                 return true;
             }
         }
@@ -212,8 +217,8 @@ void SKRPluginLoader::setPluginEnabled(const QString& pluginName, bool enabled) 
         SKRPlugin plugin = i.value();
 
         if (plugin.name == pluginName) {
-            if (qobject_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled() != enabled) {
-                qobject_cast<SKRCoreInterface *>(plugin.object)->setPluginEnabled(enabled);
+            if (dynamic_cast<SKRCoreInterface *>(plugin.object)->pluginEnabled() != enabled) {
+                dynamic_cast<SKRCoreInterface *>(plugin.object)->setPluginEnabled(enabled);
             }
             break;
         }

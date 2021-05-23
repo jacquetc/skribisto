@@ -14,7 +14,7 @@ Item {
     property alias navigationView: navigationView
 
     property alias scrollView: scrollView
-    property alias toolBoxLayout: toolBoxLayout
+    property alias toolboxLayout: toolboxLayout
     property alias hideDockToolButton: hideDockToolButton
 
     RowLayout {
@@ -67,12 +67,12 @@ Item {
                     Flickable {
                         boundsBehavior: Flickable.StopAtBounds
                         contentWidth: scrollView.width
-                        contentHeight: toolBoxLayout.childrenRect.height
+                        contentHeight: toolboxLayout.childrenRect.height
                         clip: true
 
 
                         Column {
-                            id: toolBoxLayout
+                            id: toolboxLayout
                             spacing: 0
                             anchors.fill: parent
 

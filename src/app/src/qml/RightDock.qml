@@ -12,10 +12,10 @@ RightDockForm {
         target: viewManager
         function onFocusedChanged(position, projectId, treeItemId, pageType) {
 
-            var toolBoxes = viewManager.getToolBoxesFrom(position)
+            var toolboxes = viewManager.getToolboxesFrom(position)
 
             toolButtonModel.clear()
-            toolBoxRepeater.model = toolBoxes
+            toolboxRepeater.model = toolboxes
             // var pageType = viewManager.focusedPositionPageType
         }
     }
@@ -34,10 +34,10 @@ RightDockForm {
 
 
     Component {
-        id: toolBoxLoaderComponent
+        id: toolboxLoaderComponent
 
         Loader{
-            id: toolBoxLoader
+            id: toolboxLoader
             sourceComponent: modelData
 
 
@@ -45,26 +45,26 @@ RightDockForm {
 
             onLoaded: {
 
-                //toolBoxFlickable.contentHeight = toolBoxLayout.childrenRect.height
+                //toolboxFlickable.contentHeight = toolboxLayout.childrenRect.height
 
-                var iconSource = toolBoxLoader.item.iconSource
-                var showButtonText = toolBoxLoader.item.showButtonText
+                var iconSource = toolboxLoader.item.iconSource
+                var showButtonText = toolboxLoader.item.showButtonText
                 toolButtonModel.append({"iconSource": iconSource, "showButtonText": showButtonText,
-                                           "toolBox": toolBoxLoader})
+                                           "toolbox": toolboxLoader})
 
             }
 
             Binding {
-                target: toolBoxLoader.item
-                when: toolBoxLoader.status === Loader.Ready
+                target: toolboxLoader.item
+                when: toolboxLoader.status === Loader.Ready
                 property: "height"
-                value: toolBoxLoader.item.implicitHeight
+                value: toolboxLoader.item.implicitHeight
 
             }
 
         }
     }
-    toolBoxRepeater.delegate: toolBoxLoaderComponent
+    toolboxRepeater.delegate: toolboxLoaderComponent
 
 
     //--------------------------------------------------------------
@@ -91,7 +91,7 @@ RightDockForm {
             onLoaded: {
                 toolButtonLoader.item.iconSource = model.iconSource
                 toolButtonLoader.item.text = model.showButtonText
-                toolButtonLoader.item.toolBox =  model.toolBox
+                toolButtonLoader.item.toolbox =  model.toolbox
             }
 
 
@@ -107,15 +107,15 @@ RightDockForm {
             checkable: true
             icon.source: iconSource
 
-            property var toolBox
+            property var toolbox
             property string iconSource
 
             onCheckedChanged: {
-                toolBox.visible = toolButton.checked
+                toolbox.visible = toolButton.checked
             }
 
             Binding on checked{
-                value: toolBox.visible
+                value: toolbox.visible
                 delayed: true
                 restoreMode: Binding.RestoreBindingOrValue
             }

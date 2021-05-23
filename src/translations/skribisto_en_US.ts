@@ -590,6 +590,28 @@
     </message>
 </context>
 <context>
+    <name>HemingwayPageToolbox</name>
+    <message>
+        <source>Hemingway Page Toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Hemingway toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HemingwayPageToolboxForm.ui</name>
+    <message>
+        <source>Forbid erasing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hemingway</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ImporterPageForm.ui</name>
     <message>
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>

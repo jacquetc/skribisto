@@ -145,6 +145,7 @@ TextPageForm {
     Component.onCompleted: {
         openDocument(projectId, treeItemId, isSecondary, milestone)
         determineIfPreviousWritingMustBeVisible()
+        determineAndAddToolboxPlugins()
     }
 
     //---------------------------------------------------------
@@ -622,12 +623,23 @@ TextPageForm {
 
 
 
-    toolBoxes: [editViewComponent, propertyPadComponent, outlinePadComponent, tagPadComponent]
+    toolboxes: [editViewComponent, propertyPadComponent, outlinePadComponent, tagPadComponent]
+
+    function determineAndAddToolboxPlugins(){
+        var toolboxUrlList = skrTreeManager.findToolboxUrlsForPage(root.pageType)
+
+        for(var i in toolboxUrlList){
+            var url = toolboxUrlList[i]
+            var pluginComponent = Qt.createComponent(url, Component.PreferSynchronous, root)
+            toolboxes.push(pluginComponent)
+        }
+
+    }
 
     Component {
         id: editViewComponent
 
-        SkrToolBox{
+        SkrToolbox{
 
             showButtonText: qsTr( "Show edit tool box")
             iconSource: "qrc:///icons/backup/format-text-italic.svg"
@@ -642,7 +654,7 @@ TextPageForm {
     Component {
         id: propertyPadComponent
 
-        SkrToolBox{
+        SkrToolbox{
 
             showButtonText: qsTr( "Show properties tool box")
             iconSource: "qrc:///icons/backup/configure.svg"
@@ -659,7 +671,7 @@ TextPageForm {
     Component {
         id: outlinePadComponent
 
-        SkrToolBox{
+        SkrToolbox{
 
             showButtonText: qsTr( "Show outline tool box")
             iconSource: "qrc:///icons/backup/story-editor.svg"
@@ -679,7 +691,7 @@ TextPageForm {
     Component {
         id: tagPadComponent
 
-        SkrToolBox{
+        SkrToolbox{
 
             showButtonText: qsTr( "Show tags tool box")
             iconSource: "qrc:///icons/backup/tag.svg"
