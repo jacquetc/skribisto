@@ -37,6 +37,7 @@ Item {
     property alias textTopMarginSlider: textTopMarginSlider
     property alias textIndentSlider: textIndentSlider
     property alias devModeCheckBox: devModeCheckBox
+    property alias pluginPageButton: pluginPageButton
 
     SkrPane {
         id: pane2
@@ -105,12 +106,12 @@ Item {
                                 id: langComboBox
                                 wheelEnabled: true
                             }
+                            SkrButton {
+                                id: openThemePageButton
+                                text: qsTr("Manage themes")
+                            }
                         }
 
-                        SkrButton {
-                            id: openThemePageButton
-                            text: qsTr("Manage themes")
-                        }
                     }
                 }
 
@@ -132,6 +133,12 @@ Item {
                         SkrSwitch {
                             id: centerTextCursorSwitch
                             text: qsTr("Center vertically the text cursor")
+                        }
+
+
+                        SkrButton {
+                            id: pluginPageButton
+                            text: qsTr("Manage plugins")
                         }
                     }
                 }

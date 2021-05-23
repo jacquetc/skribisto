@@ -527,10 +527,6 @@
 <context>
     <name>FirstStepsWizard</name>
     <message>
-        <source>Go Back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Previous</source>
         <translation type="unfinished"></translation>
     </message>
@@ -560,6 +556,18 @@
     </message>
     <message>
         <source>Help with accessibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Plugin selection can be changed later in settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please restart to apply changes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1131,10 +1139,6 @@
 <context>
     <name>PluginPageForm.ui</name>
     <message>
-        <source>Restart to apply changes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Plugins</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1144,10 +1148,6 @@
     </message>
     <message>
         <source>Writing</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Plugin selection can be changed later in settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1464,6 +1464,14 @@
         <source>Enter a path to back up to</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please restart to apply changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsPageForm.ui</name>
@@ -1593,6 +1601,10 @@
     </message>
     <message>
         <source>Show menu button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage plugins</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

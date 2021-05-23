@@ -7,7 +7,7 @@ import eu.skribisto.pluginhub 1.0
 
 PluginPageForm {
 
-
+    property alias pluginModel: pluginModel
     ListModel{
         id: pluginModel
     }
@@ -83,17 +83,5 @@ PluginPageForm {
         pluginThemeComboBox.currentIndex = 2
     }
 
-    //--------------------------------------------------------
-
-    restartButton.onClicked: {
-        for(var i = 0; i < pluginModel.count; i++){
-            var item = pluginModel.get(i)
-
-            plmData.pluginHub().setPluginEnabled(item.pluginName, item.enabled)
-        }
-
-
-        Qt.exit(-2)
-    }
 
 }

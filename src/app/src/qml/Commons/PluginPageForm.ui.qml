@@ -11,7 +11,6 @@ Item {
     width: 400
     height: 400
 
-    property alias restartButton: restartButton
     property alias pluginList: pluginList
     property alias classicThemeButton: classicThemeButton
     property alias writingThemeButton: writingThemeButton
@@ -77,14 +76,5 @@ Item {
             }
         }
 
-        SkrLabel{
-            Layout.alignment: Qt.AlignHCenter
-            text: qsTr("Plugin selection can be changed later in settings.")
-        }
-        SkrButton {
-            id: restartButton
-            Layout.alignment: Qt.AlignHCenter
-            text: qsTr("Restart to apply changes")
-        }
     }
 }

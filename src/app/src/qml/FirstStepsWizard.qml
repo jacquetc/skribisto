@@ -49,8 +49,8 @@ SkrPopup {
             anchors.fill: parent
 
             SkrToolButton {
-                id: goBackButton
-                text: qsTr("Go Back")
+                id: closeButton
+                text: qsTr("Close")
                 focusPolicy: Qt.NoFocus
                 display: AbstractButton.IconOnly
                 Layout.alignment: Qt.AlignTop | Qt.AlignLeft
@@ -177,10 +177,37 @@ SkrPopup {
 
                 }
 
+                Item{
 
-                PluginPage {
-                    id: pluginsPage
+                    ColumnLayout{
+                        anchors.fill: parent
+                        PluginPage {
+                            id: pluginsPage
+                            Layout.fillHeight: true
+                            Layout.fillWidth: true
+                        }
 
+
+                        SkrLabel{
+                            Layout.alignment: Qt.AlignHCenter
+                            text: qsTr("Plugin selection can be changed later in settings.")
+                        }
+                        SkrButton {
+                            id: restartButton
+                            Layout.alignment: Qt.AlignHCenter
+                            text: qsTr("Please restart to apply changes")
+                            onClicked: {
+                                for(var i = 0; i < pluginsPage.pluginModel.count; i++){
+                                    var item = pluginsPage.pluginModel.get(i)
+
+                                    plmData.pluginHub().setPluginEnabled(item.pluginName, item.enabled)
+                                }
+
+
+                                Qt.exit(-2)
+                            }
+                        }
+                    }
                 }
 
                 NewProjectPage {
