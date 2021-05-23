@@ -409,6 +409,7 @@ Item {
         focusedPrivate.focusedPageType = pageType
         focusedPrivate.focusedTreeItemId = treeItemId
         focusedPrivate.focusedProjectId = projectId
+        focusedPage = loader.item
 
         focusedChanged(focusedPosition, projectId, treeItemId, pageType)
     }
@@ -416,6 +417,7 @@ Item {
     readonly property string focusedPageType: focusedPrivate.focusedPageType
     readonly property int focusedTreeItemId: focusedPrivate.focusedTreeItemId
     readonly property int focusedProjectId: focusedPrivate.focusedProjectId
+    property var focusedPage
 
     QtObject {
         id: focusedPrivate
@@ -557,7 +559,7 @@ Item {
 
     //---------------------------------------------------------------
 
-    function getToolBoxesFrom(position){
+    function getToolboxesFrom(position){
 
         var loader = getLoaderFrom(position)
 
@@ -566,7 +568,7 @@ Item {
         }
 
         var item = loader.item
-        return item.toolBoxes
+        return item.toolboxes
 
 
     }

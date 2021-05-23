@@ -22,11 +22,12 @@
 #include "skrtreemanager.h"
 #include "plmdata.h"
 #include "skrpageinterface.h"
+#include "skrpagetoolboxinterface.h"
 
 SKRTreeManager::SKRTreeManager(QObject *parent) : QObject(parent)
 {
     plmdata->pluginHub()->addPluginType<SKRPageInterface>();
-
+    plmdata->pluginHub()->addPluginType<SKRPageToolboxInterface>();
 
     connect(plmdata->treeHub(), &SKRTreeHub::treeItemAdded, this, [this](int projectId, int treeItemId) {
         QString pageType = plmdata->treeHub()->getType(projectId, treeItemId);
@@ -161,6 +162,23 @@ void SKRTreeManager::updateAllCharAndWordCount(int projectId)
         this->updateCharAndWordCount(projectId, treeItemId, pageType);
     }
 }
+
+// ---------------------------------------------------------------------------------
+
+
+QStringList SKRTreeManager::findToolboxUrlsForPage(const QString &pageType) const
+{
+    QStringList list;
+    QList<SKRPageToolboxInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageToolboxInterface>();
+
+    for (SKRPageToolboxInterface *plugin: qAsConst(pluginList)) {
+        if (plugin->associatedPageTypes().contains(pageType)) {
+            list << plugin->qmlUrl();
+        }
+    }
+    return list;
+}
+
 
 // ---------------------------------------------------------------------------------
 

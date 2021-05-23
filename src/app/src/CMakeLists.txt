@@ -102,6 +102,7 @@ set(app_SRCS
     skrexporterinterface.h
     skrtreemanager.cpp
     skrtreemanager.h
+    skrpagetoolboxinterface.h
     )
 
 set(QML qml.qrc
@@ -163,9 +164,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(GUI_TYPE  "WIN32")
 
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-#IF (APPLE)
-#SET(GUI_TYPE MACOSX_BUNDLE)
-#ENDIF (APPLE)
 
 
 

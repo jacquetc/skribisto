@@ -19,6 +19,46 @@ SKRResult SKRProjectDictHub::getError()
 // --------------------------------------------------------------------
 
 
+//QStringList SKRProjectDictHub::getProjectDynamicDictList(int projectId) const
+//{
+//    SKRResult result(this);
+//    QHash<int, QVariant> hash;
+//    QStringList final;
+
+//    PLMSqlQueries queries(projectId, "tbl_tree");
+
+//    result = queries.getValueByIds("t_title", hash);
+//    IFOK(result) {
+//        final = HashIntQVariantConverter::convertToIntQString(hash).values();
+
+//        QList<QString>::iterator i = final.begin();
+
+//        while (i != final.end()) {
+//            if ((*i).contains(" ")) {
+//                QStringList splitTitle = (*i).split(" ", Qt::SkipEmptyParts);
+//                *i = splitTitle.takeFirst();
+
+//                for (const QString& titlePart : qAsConst(splitTitle)) {
+//                    final.append(titlePart);
+//                }
+//            }
+//            ++i;
+//        }
+
+
+//        // sort alphabetically
+//        final.sort(Qt::CaseInsensitive);
+//    }
+
+//    IFKO(result) {
+//        emit errorSent(result);
+//    }
+//    return final;
+//}
+
+// --------------------------------------------------------------------
+
+
 QStringList SKRProjectDictHub::getProjectDictList(int projectId) const
 {
     SKRResult result(this);

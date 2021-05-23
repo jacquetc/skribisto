@@ -2,8 +2,7 @@
 *   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: skrtreemanager.h
-*                                                  *
+*  Filename: hemingwaypagetoolbox.h                                                   *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -19,37 +18,52 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRTREEMANAGER_H
-#define SKRTREEMANAGER_H
+#ifndef HEMINGWAYPAGETOOLBOX_H
+#define HEMINGWAYPAGETOOLBOX_H
 
 #include <QObject>
-#include <QQmlComponent>
-#include "skrresult.h"
+#include "skrpagetoolboxinterface.h"
 
-class SKRTreeManager : public QObject {
+class HemingwayPageToolbox : public QObject,
+//                 public SKRCoreInterface,
+                 public SKRPageToolboxInterface{
     Q_OBJECT
+    Q_PLUGIN_METADATA(
+        IID "eu.skribisto.HemingwayPageToolboxPlugin/1.0" FILE
+        "plugin_info.json")
+    Q_INTERFACES(/*SKRCoreInterface, */SKRPageToolboxInterface)
 
 public:
 
-    explicit SKRTreeManager(QObject *parent = nullptr);
-    Q_INVOKABLE QUrl        getIconUrlFromPageType(const QString& pageType) const;
-    Q_INVOKABLE QStringList getPageTypeList(bool constructibleOnly) const;
-    Q_INVOKABLE QString     getPageTypeText(const QString& pageType) const;
-    Q_INVOKABLE QString     getPageDetailText(const QString& pageType) const;
-    Q_INVOKABLE void        updateCharAndWordCount(int            projectId,
-                                                   int            treeItemId,
-                                                   const QString& pageType,
-                                                   bool           sameThread = false);
-    Q_INVOKABLE void updateAllCharAndWordCount(int projectId);
-    Q_INVOKABLE QStringList findToolboxUrlsForPage(const QString& pageType) const;
+    explicit HemingwayPageToolbox(QObject *parent = nullptr);
+    ~HemingwayPageToolbox();
+    QString name() const override {
+        return "HemingwayPageToolbox";
+    }
+
+    QString displayedName() const override {
+        return tr("Hemingway Page Toolbox");
+    }
+
+    QString use() const override {
+        return "Display a toolbox for Hemingway writing game";
+    }
+
+    QStringList  associatedPageTypes() const override {
+        QStringList list;
+        list << "TEXT";
+        return list;
+    }
+
+    QString qmlUrl() const override {
+        return "qrc:///qml/plugins/HemingwayPageToolbox/HemingwayPageToolbox.qml";
+    }
+
+
+signals:
 
 private:
 
-    Q_INVOKABLE SKRResult finaliseAfterCreationOfTreeItem(int            projectId,
-                                                          int            treeItemId,
-                                                          const QString& pageType);
-
-signals:
 };
 
-#endif // SKRTREEMANAGER_H
+#endif // HEMINGWAYPAGETOOLBOX_H

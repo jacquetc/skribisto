@@ -26,8 +26,6 @@
 SKRViewManager::SKRViewManager(QObject *parent) : QObject(parent)
 {
 
-
-    //populateFromPlugins();
 }
 
 SKRWindowManager *SKRViewManager::windowManager() const
@@ -52,13 +50,6 @@ void SKRViewManager::setRootWindow(QObject *rootWindow)
     emit rootWindowChanged(rootWindow);
 }
 
-
-//---------------------------------------------------------------------------------
-
-//void SKRViewManager::populateFromPlugins()
-//{
-//}
-//---------------------------------------------------------------------------------
 
 QUrl SKRViewManager::getQmlUrlFromPageType(const QString &pageType) const
 {

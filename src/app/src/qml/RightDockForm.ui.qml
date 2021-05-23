@@ -9,7 +9,7 @@ Item {
     width: 400
     height: 400
 
-    property alias toolBoxRepeater: toolBoxRepeater
+    property alias toolboxRepeater: toolboxRepeater
     property alias toolButtonRepeater: toolButtonRepeater
     property alias scrollView: scrollView
     property alias hideDockToolButton: hideDockToolButton
@@ -72,22 +72,22 @@ Item {
                     ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
                     Flickable {
-                        id: toolBoxFlickable
+                        id: toolboxFlickable
                         boundsBehavior: Flickable.StopAtBounds
                         contentWidth: scrollView.width
-                        contentHeight: toolBoxLayout.childrenRect.height
+                        contentHeight: toolboxLayout.childrenRect.height
                         clip: true
 
 
                         Column {
-                            id: toolBoxLayout
+                            id: toolboxLayout
                             spacing: 0
                             anchors.top: parent.top
                             anchors.left: parent.left
                             anchors.right: parent.right
 
                             Repeater {
-                                id: toolBoxRepeater
+                                id: toolboxRepeater
                             }
                         }
                     }

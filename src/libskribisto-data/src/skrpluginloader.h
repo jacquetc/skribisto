@@ -73,7 +73,7 @@ public:
     template<typename T>void addPluginType()
     {
         for (QObject *obj : QPluginLoader::staticInstances()) {
-            T *instance = qobject_cast<T *>(obj);
+            T *instance = dynamic_cast<T *>(obj);
 
             if (instance) {
                 SKRPlugin plugin(obj->property("shortname").toString(), obj->property(
@@ -89,7 +89,7 @@ public:
             QList<QObject *> objects = this->pluginObjectsByDir<T>(path);
 
             for (QObject *obj : objects) {
-                T *instance = qobject_cast<T *>(obj);
+                T *instance = dynamic_cast<T *>(obj);
 
                 if (instance) {
                     SKRPlugin plugin(obj->property("shortname").toString(), obj->property(
@@ -112,7 +112,7 @@ public:
             QObject *object = p.object;
 
 
-            SKRCoreInterface *corePlugin = qobject_cast<SKRCoreInterface *>(object);
+            SKRCoreInterface *corePlugin = dynamic_cast<SKRCoreInterface *>(object);
 
             if (!corePlugin) {
                 qWarning() << "Plugin" << object->property("shortname").toString() <<
@@ -163,7 +163,7 @@ private:
         }
 
 
-        return qobject_cast<T *>(plugin);
+        return dynamic_cast<T *>(plugin);
     }
 
     template<typename T>QList<T *>pluginByDir(const QString& dir)

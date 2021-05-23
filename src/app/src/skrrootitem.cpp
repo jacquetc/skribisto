@@ -33,6 +33,7 @@ QString SKRRootItem::getLanguageFromSettings() const {
     return langCode;
 }
 
+
 void SKRRootItem::setCurrentTranslationLanguageCode(const QString& langCode)
 {
     QSettings settings;
@@ -66,7 +67,7 @@ void SKRRootItem::setCurrentTranslationLanguageCode(const QString& langCode)
         qApp->removeTranslator(skribistoTranslator);
     }
 
-    qDebug() << "findTranslationDir" << findTranslationDir();
+    //qDebug() << "findTranslationDir" << findTranslationDir();
 
     if (skribistoTranslator->load(locale, "skribisto", "_", findTranslationDir())) {
         QString name = locale.name();
@@ -157,7 +158,8 @@ QVariantMap SKRRootItem::findAvailableTranslationsMap() const {
             }
 
             translationMap.insert(langCode, langName);
-            qDebug() << langCode << langName;
+
+            // qDebug() << langCode << langName;
         }
     }
 

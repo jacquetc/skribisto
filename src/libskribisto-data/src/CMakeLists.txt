@@ -54,7 +54,6 @@ set(data_SRCS
     )
 set(data_HDR
     skrcoreinterface.h
-    skrcoreplugins.h
     skrinterfacesettings.h
     plmdata.h
     skrresult.h

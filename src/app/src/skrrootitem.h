@@ -30,8 +30,6 @@ class SKRRootItem : public QObject {
     Q_OBJECT
     Q_PROPERTY(
         QString currentTranslationLanguageCode READ getLanguageFromSettings WRITE setCurrentTranslationLanguageCode NOTIFY currentTranslationLanguageCodeChanged)
-    Q_PROPERTY(
-        QString dynTr READ getEmptyString NOTIFY currentTranslationLanguageCodeChanged)
 
 public:
 
@@ -63,9 +61,6 @@ private:
 
     QString findTranslationDir() const;
 
-    QString getEmptyString() {
-        return "";
-    }
 
     QString m_langCode;
     QTranslator *skribistoTranslator;
