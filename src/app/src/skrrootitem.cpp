@@ -1,6 +1,6 @@
 #include "skrrootitem.h"
 #include "plmutils.h"
-#include "plmdata.h"
+#include "skrdata.h"
 #include <QLocale>
 #include <QLibraryInfo>
 #include <QApplication>
@@ -164,7 +164,7 @@ QVariantMap SKRRootItem::findAvailableTranslationsMap() const {
     }
 
     if (translationMap.isEmpty()) {
-        plmdata->errorHub()->addWarning(tr("No translation found."));
+        skrdata->errorHub()->addWarning(tr("No translation found."));
     }
 
 

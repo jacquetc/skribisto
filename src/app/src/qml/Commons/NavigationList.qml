@@ -438,7 +438,7 @@ NavigationListForm {
                 var projectId = stackViewBaseItem.projectId
                 var parentId = stackViewBaseItem.parentId
                 if (parentId === 0 && projectId !== -2) {
-                    var projectTitle = plmData.projectHub().getProjectName(projectId)
+                    var projectTitle = skrData.projectHub().getProjectName(projectId)
 
                     p_section.parentTitle = projectTitle
                     listView.section.delegate = sectionHeading
@@ -1154,7 +1154,7 @@ NavigationListForm {
                                             priv.currentTreeItemId = model.treeItemId
 
                                             //console.log("tapped")
-                                            if(plmData.treePropertyHub().getProperty(model.projectId, model.treeItemId,
+                                            if(skrData.treePropertyHub().getProperty(model.projectId, model.treeItemId,
                                                                                      "can_add_child_paper", "true") === "true"){
                                                 goToChildTimer.start()
                                             }
@@ -2008,7 +2008,7 @@ NavigationListForm {
                                         }
                                         onTriggered: {
                                             console.log("set active project", model.projectId)
-                                            plmData.projectHub().setActiveProject(model.projectId)
+                                            skrData.projectHub().setActiveProject(model.projectId)
                                         }
                                     }
 

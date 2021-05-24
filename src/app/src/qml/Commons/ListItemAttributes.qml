@@ -16,7 +16,7 @@ Item {
     }
 
     Connections {
-        target: plmData.treePropertyHub()
+        target: skrData.treePropertyHub()
         function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
             if(projectId === root.projectId && treeItemId === root.treeItemId){
                 listModel.clear()
@@ -36,15 +36,15 @@ Item {
     function createVisualAttributes(){
 
         var propertyName = "printable"
-        if(!(plmData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "true") === "true"? true : false)){
+        if(!(skrData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "true") === "true"? true : false)){
             listModel.append(createDictFromPropertyName(propertyName))
         }
         propertyName = "modifiable"
-        if(!(plmData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "true") === "true"? true : false)){
+        if(!(skrData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "true") === "true"? true : false)){
             listModel.append(createDictFromPropertyName(propertyName))
         }
         propertyName = "favorite"
-        if(plmData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "false") === "true"? true : false){
+        if(skrData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "false") === "true"? true : false){
             listModel.append(createDictFromPropertyName(propertyName))
         }
 

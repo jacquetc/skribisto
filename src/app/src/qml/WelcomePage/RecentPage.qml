@@ -75,13 +75,13 @@ RecentPageForm {
                 onDoubleTapped: {
                     // open project
 
-                    if(plmData.projectHub().isURLAlreadyLoaded(model.fileName)){
+                    if(skrData.projectHub().isURLAlreadyLoaded(model.fileName)){
                         closeCalled()
                     }
                     else {
                         //TODO: temporary until async is done
                         Globals.loadingPopupCalled()
-                        //plmData.projectHub().loadProject(model.fileName)
+                        //skrData.projectHub().loadProject(model.fileName)
                         loadProjectTimer.start()
                         closeCalled()
 
@@ -99,7 +99,7 @@ RecentPageForm {
                 repeat: false
                 interval: 100
                 onTriggered: {
-                    plmData.projectHub().loadProject(model.fileName)
+                    skrData.projectHub().loadProject(model.fileName)
 
                 }
 
@@ -263,7 +263,7 @@ RecentPageForm {
                                 enabled: contextMenuItemIndex === model.index | itemButtonsIndex === model.index
                                 onTriggered: {
                                     console.log("close project action")
-                                    plmData.projectHub().closeProject(model.projectId)
+                                    skrData.projectHub().closeProject(model.projectId)
 
                                 }
                             }

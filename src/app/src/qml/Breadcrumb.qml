@@ -25,34 +25,34 @@ Item {
         // lone project
         else if(projectId !== -1 &  treeItemId === 0 ){
 
-            var projectTitle = plmData.projectHub().getProjectName(projectId)
+            var projectTitle = skrData.projectHub().getProjectName(projectId)
             pathModel.append({"text": projectTitle, "projectId": projectId, "treeItemId": treeItemId,
-                             "pageType": plmData.treeHub().getType(projectId, treeItemId)})
+                             "pageType": skrData.treeHub().getType(projectId, treeItemId)})
 
         }
         else {
 
-            var ancestorList = plmData.treeHub().getAllAncestors(projectId, treeItemId)
+            var ancestorList = skrData.treeHub().getAllAncestors(projectId, treeItemId)
 
             var i
             for(i = ancestorList.length - 1; i >=0 ; i--){
                 var ancestorId = ancestorList[i]
                 var title
                 if(ancestorId === 0){
-                    title = plmData.projectHub().getProjectName(projectId)
+                    title = skrData.projectHub().getProjectName(projectId)
                 }
                 else {
-                    title = plmData.treeHub().getTitle(projectId, ancestorId)
+                    title = skrData.treeHub().getTitle(projectId, ancestorId)
                 }
 
                 pathModel.append({"text": title, "projectId": projectId, "treeItemId": ancestorId,
-                                 "pageType": plmData.treeHub().getType(projectId, ancestorId)})
+                                 "pageType": skrData.treeHub().getType(projectId, ancestorId)})
             }
 
 
-            var currentTitle = plmData.treeHub().getTitle(projectId, treeItemId)
+            var currentTitle = skrData.treeHub().getTitle(projectId, treeItemId)
             pathModel.append({"text": currentTitle, "projectId": projectId, "treeItemId": treeItemId,
-                             "pageType": plmData.treeHub().getType(projectId, treeItemId)})
+                             "pageType": skrData.treeHub().getType(projectId, treeItemId)})
         }
 
     }
@@ -98,7 +98,7 @@ Item {
                         if(model.index === 0){
                             rootWindow.setNavigationTreeItemIdCalled(projectId, treeItemId)
                         }
-                        else if(plmData.treePropertyHub().getProperty(projectId, treeItemId,
+                        else if(skrData.treePropertyHub().getProperty(projectId, treeItemId,
                                                                      "can_add_child_paper", "true") === "true"){
                             rootWindow.setNavigationTreeItemParentIdCalled(projectId, treeItemId)
                         }

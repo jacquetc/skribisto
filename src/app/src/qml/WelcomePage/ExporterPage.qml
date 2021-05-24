@@ -16,21 +16,21 @@ ExporterPageForm {
 
 
     Connections {
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onActiveProjectChanged(projectId){
             root.projectId = projectId
             treeProxyModel.projectIdFilter = projectId
             treeProxyModel.checkAllButNonPrintable()
-            projectLabel.text = plmData.projectHub().getProjectName(projectId)
+            projectLabel.text = skrData.projectHub().getProjectName(projectId)
         }
     }
 
     Component.onCompleted: {
-        var activeProjectId = plmData.projectHub().getActiveProject()
+        var activeProjectId = skrData.projectHub().getActiveProject()
         root.projectId = activeProjectId
         treeProxyModel.projectIdFilter = activeProjectId
         treeProxyModel.checkAllButNonPrintable()
-        projectLabel.text = plmData.projectHub().getProjectName(activeProjectId)
+        projectLabel.text = skrData.projectHub().getProjectName(activeProjectId)
 
         initTypes()
         loadFontFamily()
@@ -355,10 +355,10 @@ ExporterPageForm {
     property url targetFile
 
     selectFileToolButton.onClicked: {
-        var activeProjectId = plmData.projectHub().getActiveProject()
+        var activeProjectId = skrData.projectHub().getActiveProject()
         exportFileDialog.projectId = activeProjectId
 
-        exportFileDialog.projectName = plmData.projectHub().getProjectName(activeProjectId)
+        exportFileDialog.projectName = skrData.projectHub().getProjectName(activeProjectId)
         exportFileDialog.type = settings.type
         exportFileDialog.open()
     }

@@ -207,19 +207,19 @@ ApplicationWindow {
     //------------------------------------------------------------------
 
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onActiveProjectChanged(projectId){
 
-            rootWindow.title = "Skribisto - %1".arg(plmData.projectHub().getProjectName(projectId))
+            rootWindow.title = "Skribisto - %1".arg(skrData.projectHub().getProjectName(projectId))
         }
     }
 
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectNameChanged(projectId, newTitle){
-            var activeProjectId = plmData.projectHub().getActiveProject()
+            var activeProjectId = skrData.projectHub().getActiveProject()
             if(projectId === activeProjectId){
-                rootWindow.title = "Skribisto - %1".arg(plmData.projectHub().getProjectName(projectId))
+                rootWindow.title = "Skribisto - %1".arg(skrData.projectHub().getProjectName(projectId))
 
             }
         }
@@ -321,7 +321,7 @@ ApplicationWindow {
             //console.log("argument : " , arguments[arg])
 
             if (arguments[arg] === "--testProject") {
-                //                var result = plmData.projectHub().loadProject(
+                //                var result = skrData.projectHub().loadProject(
                 //                            testProjectFileName)
                 //TODO: temporary until async is done
                 Globals.loadingPopupCalled()
@@ -353,19 +353,19 @@ ApplicationWindow {
             }
         }
         //        if(!isTestProject & oneProjectInArgument){
-        //            var result = plmData.projectHub().loadProject(
+        //            var result = skrData.projectHub().loadProject(
         //                        projectInArgument)
         //            //show Write window
         //            //            writeOverviewWindowAction.trigger()
         //        }
 
         // if create empty project at start is true :
-        if (!isTestProject & !oneProjectInArgument & plmData.projectHub().getProjectCount() === 0 & SkrSettings.behaviorSettings.createEmptyProjectAtStart === true) {
+        if (!isTestProject & !oneProjectInArgument & skrData.projectHub().getProjectCount() === 0 & SkrSettings.behaviorSettings.createEmptyProjectAtStart === true) {
             //TODO: temporary until async is done
             Globals.loadingPopupCalled()
             openArgumentTimer.fileName = ""
             openArgumentTimer.start()
-            //plmData.projectHub().loadProject("")
+            //skrData.projectHub().loadProject("")
 
             //show Write window
             //            writeOverviewWindowAction.trigger()
@@ -391,10 +391,10 @@ ApplicationWindow {
         repeat: false
         interval: 100
         onTriggered: {
-            var result = plmData.projectHub().loadProject(fileName)
+            var result = skrData.projectHub().loadProject(fileName)
             console.log("project loaded : " + result.success)
             console.log("projectFileName :", testProjectFileName.toString(), "\n")
-            //plmData.projectHub().setProjectName(1, "test")
+            //skrData.projectHub().setProjectName(1, "test")
 
             if(!result.success){
                 return
@@ -655,7 +655,7 @@ ApplicationWindow {
             var file = openFileDialog.file
 
 
-            if(plmData.projectHub().isURLAlreadyLoaded(file)){
+            if(skrData.projectHub().isURLAlreadyLoaded(file)){
 
             }
             else {
@@ -679,7 +679,7 @@ ApplicationWindow {
 
         interval: 100
         onTriggered: {
-            var result = plmData.projectHub().loadProject(fileName)
+            var result = skrData.projectHub().loadProject(fileName)
         }
     }
 
@@ -700,8 +700,8 @@ ApplicationWindow {
 
         //shortcut: StandardKey.Save
         onTriggered: {
-            var projectId = plmData.projectHub().getActiveProject()
-            var result = plmData.projectHub().saveProject(projectId)
+            var projectId = skrData.projectHub().getActiveProject()
+            var result = skrData.projectHub().saveProject(projectId)
 
             if (result.containsErrorCodeDetail("no_path")){
                 saveAsFileDialog.open()
@@ -719,9 +719,9 @@ ApplicationWindow {
     }
 
     Connections {
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onActiveProjectChanged(projectId){
-            if (!plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+            if (!skrData.projectHub().isProjectNotModifiedOnce(projectId)){
                 saveAction.enabled = true
             }
             else{
@@ -732,10 +732,10 @@ ApplicationWindow {
     }
 
     Connections {
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectNotSavedAnymore(projectId){
-            if (projectId === plmData.projectHub().getActiveProject()
-                    && !plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+            if (projectId === skrData.projectHub().getActiveProject()
+                    && !skrData.projectHub().isProjectNotModifiedOnce(projectId)){
                 saveAction.enabled = true
             }
         }
@@ -743,9 +743,9 @@ ApplicationWindow {
     }
 
     Connections {
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectSaved(projectId){
-            if (projectId === plmData.projectHub().getActiveProject()){
+            if (projectId === skrData.projectHub().getActiveProject()){
                 saveAction.enabled = false
             }
         }
@@ -771,13 +771,13 @@ ApplicationWindow {
 
         //shortcut: "Ctrl+Shift+S"
         onTriggered: {
-            var projectIdList = plmData.projectHub().getProjectIdList()
-            var projectCount = plmData.projectHub().getProjectCount()
+            var projectIdList = skrData.projectHub().getProjectIdList()
+            var projectCount = skrData.projectHub().getProjectCount()
 
             var i;
             for (i = 0; i < projectCount ; i++ ){
                 var projectId = projectIdList[i]
-                var result = plmData.projectHub().saveProject(projectId)
+                var result = skrData.projectHub().saveProject(projectId)
 
                 if (result.containsErrorCodeDetail("no_path")){
                     var errorProjectId = result.getData("projectId", -2);
@@ -795,7 +795,7 @@ ApplicationWindow {
     }
 
     Connections {
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onIsThereAnyLoadedProjectChanged(value){
             saveAction.enabled = value
             saveAsAction.enabled = value
@@ -823,17 +823,17 @@ ApplicationWindow {
 
         //shortcut: StandardKey.SaveAs
         onTriggered: {
-            var projectId = plmData.projectHub().getActiveProject()
+            var projectId = skrData.projectHub().getActiveProject()
             saveACopyFileDialog.projectId = projectId
-            saveACopyFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
+            saveACopyFileDialog.projectName = skrData.projectHub().getProjectName(projectId)
             saveAsFileDialog.open()
 
 
-            if(!plmData.projectHub().getPath(projectId) && skrQMLTools.isURLSchemeQRC(plmData.projectHub().getPath(projectId))){
+            if(!skrData.projectHub().getPath(projectId) && skrQMLTools.isURLSchemeQRC(skrData.projectHub().getPath(projectId))){
                 saveAsFileDialog.folder = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
             }
             else {
-                saveAsFileDialog.currentFile = skrQMLTools.translateURLToLocalFile(plmData.projectHub().getPath(projectId))
+                saveAsFileDialog.currentFile = skrQMLTools.translateURLToLocalFile(skrData.projectHub().getPath(projectId))
             }
 
         }
@@ -864,15 +864,15 @@ ApplicationWindow {
                 file = file + ".skrib"
             }
             if(projectId == -2){
-                projectId = plmData.projectHub().getActiveProject()
+                projectId = skrData.projectHub().getActiveProject()
             }
 
 
             if(projectName == ""){
-                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
+                projectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
             }
 
-            var result = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = skrData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
             if (result.containsErrorCodeDetail("path_is_readonly")){
                 // Dialog:
@@ -910,9 +910,9 @@ ApplicationWindow {
 
         //shortcut: StandardKey.SaveAs
         onTriggered: {
-            var projectId = plmData.projectHub().getActiveProject()
+            var projectId = skrData.projectHub().getActiveProject()
             saveACopyFileDialog.projectId = projectId
-            saveACopyFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
+            saveACopyFileDialog.projectName = skrData.projectHub().getProjectName(projectId)
             saveACopyFileDialog.open()
 
         }
@@ -937,15 +937,15 @@ ApplicationWindow {
                 file = file + ".skrib"
             }
             if(projectId == -2){
-                projectId = plmData.projectHub().getActiveProject()
+                projectId = skrData.projectHub().getActiveProject()
             }
             console.log("FileDialog :" , projectId)
 
             if(projectName == ""){
-                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
+                projectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
             }
 
-            var result = plmData.projectHub().saveAProjectCopy(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = skrData.projectHub().saveAProjectCopy(projectId, "skrib", Qt.resolvedUrl(file))
 
             if (result.containsErrorCodeDetail("path_is_readonly")){
                 // Dialog:
@@ -1110,14 +1110,14 @@ ApplicationWindow {
     }
 
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectToBeLoaded(){
             loadingPopup.open()
             loadingPopupTimeoutTimer.start()
         }
     }
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectLoaded(projectId){
             closeLoadingPopupTimer.start()
         }
@@ -1160,13 +1160,13 @@ ApplicationWindow {
 
             //no backup path set
             if (backupPaths === ""){
-                plmData.errorHub().addWarning(qsTr("Back up failed: The backup is not configured"))
+                skrData.errorHub().addWarning(qsTr("Back up failed: The backup is not configured"))
 
                 return
             }
 
-            var projectIdList = plmData.projectHub().getProjectIdList()
-            var projectCount = plmData.projectHub().getProjectCount()
+            var projectIdList = skrData.projectHub().getProjectIdList()
+            var projectCount = skrData.projectHub().getProjectCount()
 
 
             // all projects :
@@ -1176,8 +1176,8 @@ ApplicationWindow {
 
 
                 //no project path
-                if (!plmData.projectHub().getPath(projectId)){
-                    plmData.errorHub().addWarning(qsTr("Back up failed:  the project must be saved at least once"))
+                if (!skrData.projectHub().getPath(projectId)){
+                    skrData.errorHub().addWarning(qsTr("Back up failed:  the project must be saved at least once"))
 
                     break
                 }
@@ -1189,20 +1189,20 @@ ApplicationWindow {
 
 
                     if (!path){
-                        plmData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 can't be used").arg(backupPathList[j]))
+                        skrData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 can't be used").arg(backupPathList[j]))
                         continue
                     }
 
 
 
-                    var result = plmData.projectHub().backupAProject(projectId, "skrib", path)
+                    var result = skrData.projectHub().backupAProject(projectId, "skrib", path)
 
                     if (result.containsErrorCodeDetail("path_is_readonly")){
-                        plmData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 is read only").arg(path))
+                        skrData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 is read only").arg(path))
 
                     }
                     if(result.isSuccess()){
-                        plmData.errorHub().addOk(qsTr("Back up successful"))
+                        skrData.errorHub().addOk(qsTr("Back up successful"))
                     }
 
                 }
@@ -1289,13 +1289,13 @@ ApplicationWindow {
 
     function closeProject(projectId){
 
-        var savedBool = plmData.projectHub().isProjectSaved(projectId)
-        if(savedBool || plmData.projectHub().isProjectNotModifiedOnce(projectId)){
-            plmData.projectHub().closeProject(projectId)
+        var savedBool = skrData.projectHub().isProjectSaved(projectId)
+        if(savedBool || skrData.projectHub().isProjectNotModifiedOnce(projectId)){
+            skrData.projectHub().closeProject(projectId)
         }
         else{
             saveOrNotBeforeClosingProjectDialog.projectId = projectId
-            saveOrNotBeforeClosingProjectDialog.projectName = plmData.projectHub().getProjectName(projectId)
+            saveOrNotBeforeClosingProjectDialog.projectName = skrData.projectHub().getProjectName(projectId)
             saveOrNotBeforeClosingProjectDialog.open()
         }
     }
@@ -1316,7 +1316,7 @@ ApplicationWindow {
         }
 
         onDiscarded: {
-            plmData.projectHub().closeProject(projectId)
+            skrData.projectHub().closeProject(projectId)
             saveOrNotBeforeClosingProjectDialog.close()
 
         }
@@ -1324,16 +1324,16 @@ ApplicationWindow {
         onAccepted: {
 
 
-            var result = plmData.projectHub().saveProject(projectId)
+            var result = skrData.projectHub().saveProject(projectId)
             if (result.containsErrorCodeDetail("no_path")){
                 var errorProjectId = result.getData("projectId", -2);
                 saveAsBeforeClosingProjectFileDialog.projectId = errorProjectId
-                saveAsBeforeClosingProjectFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                saveAsBeforeClosingProjectFileDialog.projectName = skrData.projectHub().getProjectName(projectId)
                 saveAsBeforeClosingProjectFileDialog.open()
                 saveAsBeforeClosingProjectFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
             }
             else {
-                plmData.projectHub().closeProject(projectId)
+                skrData.projectHub().closeProject(projectId)
             }
             saveOrNotBeforeClosingProjectDialog.close()
 
@@ -1361,15 +1361,15 @@ ApplicationWindow {
                 file = file + ".skrib"
             }
             if(projectId == -2){
-                projectId = plmData.projectHub().getActiveProject()
+                projectId = skrData.projectHub().getActiveProject()
             }
             console.log("FileDialog :" , projectId)
 
             if(projectName == ""){
-                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
+                projectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
             }
 
-            var result = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = skrData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
             if (result.containsErrorCodeDetail("path_is_readonly")){
                 // Dialog:
@@ -1377,12 +1377,12 @@ ApplicationWindow {
 
             }
             else{
-                plmData.projectHub().closeProject(projectId)
+                skrData.projectHub().closeProject(projectId)
                 saveOrNotBeforeClosingProjectDialog.close()
             }
         }
         onRejected: {
-            plmData.projectHub().closeProject(projectId)
+            skrData.projectHub().closeProject(projectId)
             saveOrNotBeforeClosingProjectDialog.close()
         }
     }
@@ -1396,7 +1396,7 @@ ApplicationWindow {
     Action {
         id: closeCurrentProjectAction
         text: qsTr("&Close \"%1\" project").arg(activeProjectName)
-        enabled: plmData.projectHub().isThereAnyLoadedProject
+        enabled: skrData.projectHub().isThereAnyLoadedProject
         icon {
             source: "qrc:///icons/backup/document-close.svg"
             height: 50
@@ -1406,7 +1406,7 @@ ApplicationWindow {
         //shortcut: StandardKey.New
         onTriggered: {
             console.log("Close Project")
-            var activeProjectId = plmData.projectHub().getActiveProject()
+            var activeProjectId = skrData.projectHub().getActiveProject()
             closeProject(activeProjectId)
         }
 
@@ -1415,17 +1415,17 @@ ApplicationWindow {
 
 
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onActiveProjectChanged(){
-            activeProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
+            activeProjectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
         }
     }
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectNameChanged(projectId, newTitle){
-            var activeProjectId = plmData.projectHub().getActiveProject()
+            var activeProjectId = skrData.projectHub().getActiveProject()
             if(projectId === activeProjectId){
-                activeProjectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
+                activeProjectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
             }
         }
     }
@@ -1462,18 +1462,18 @@ ApplicationWindow {
             // determine if all projects are saved
 
 
-            var projectsNotSavedList = plmData.projectHub().projectsNotSaved()
+            var projectsNotSavedList = skrData.projectHub().projectsNotSaved()
             var i;
             for (i = 0; i < projectsNotSavedList.length ; i++ ){
                 var projectId = projectsNotSavedList[i]
 
-                if(plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                if(skrData.projectHub().isProjectNotModifiedOnce(projectId)){
                     continue
                 }
                 else {
 
                     saveOrNotBeforeQuittingDialog.projectId = projectId
-                    saveOrNotBeforeQuittingDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                    saveOrNotBeforeQuittingDialog.projectName = skrData.projectHub().getProjectName(projectId)
                     saveOrNotBeforeQuittingDialog.open()
                     //saveAsBeforeQuittingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
 
@@ -1487,7 +1487,7 @@ ApplicationWindow {
 
                 skrUserSettings.setSetting("window", "numberOfWindows", skrWindowManager.getNumberOfWindows())
                 quitConfirmed = true
-                plmData.projectHub().closeAllProjects()
+                skrData.projectHub().closeAllProjects()
                 Globals.quitCalled()
                 
 
@@ -1540,18 +1540,18 @@ ApplicationWindow {
         }
 
         onDiscarded: {
-            plmData.projectHub().closeProject(projectId)
+            skrData.projectHub().closeProject(projectId)
             quitAction.trigger()
         }
 
         onAccepted: {
 
 
-            var result = plmData.projectHub().saveProject(projectId)
+            var result = skrData.projectHub().saveProject(projectId)
             if (result.containsErrorCodeDetail("no_path")){
                 var errorProjectId = result.getData("projectId", -2);
                 saveAsBeforeQuittingFileDialog.projectId = errorProjectId
-                saveAsBeforeQuittingFileDialog.projectName = plmData.projectHub().getProjectName(projectId)
+                saveAsBeforeQuittingFileDialog.projectName = skrData.projectHub().getProjectName(projectId)
                 saveAsBeforeQuittingFileDialog.open()
             }
             else {
@@ -1579,15 +1579,15 @@ ApplicationWindow {
                 file = file + ".skrib"
             }
             if(projectId == -2){
-                projectId = plmData.projectHub().getActiveProject()
+                projectId = skrData.projectHub().getActiveProject()
             }
             console.log("FileDialog :" , projectId)
 
             if(projectName == ""){
-                projectName = plmData.projectHub().getProjectName(plmData.projectHub().getActiveProject())
+                projectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
             }
 
-            var result = plmData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = skrData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
 
             if (result.containsErrorCodeDetail("path_is_readonly")){
                 // Dialog:

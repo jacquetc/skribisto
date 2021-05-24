@@ -13,13 +13,13 @@ PluginPageForm {
     }
 
     Component.onCompleted: {
-        var pluginsNameList = plmData.pluginHub().listAllByName()
+        var pluginsNameList = skrData.pluginHub().listAllByName()
 
         for(var i in pluginsNameList){
             var pluginName = pluginsNameList[i]
-            var enabled = plmData.pluginHub().isThisPluginEnabled(pluginName)
-            var displayedName = plmData.pluginHub().getDisplayedName(pluginName)
-            var mandatory = plmData.pluginHub().getMandatory(pluginName)
+            var enabled = skrData.pluginHub().isThisPluginEnabled(pluginName)
+            var displayedName = skrData.pluginHub().getDisplayedName(pluginName)
+            var mandatory = skrData.pluginHub().getMandatory(pluginName)
 
             if(!mandatory ||     SkrSettings.devSettings.devModeEnabled){
                 pluginModel.append({"pluginName": pluginName, "displayedName": displayedName, "enabled": enabled, "mandatory": mandatory})

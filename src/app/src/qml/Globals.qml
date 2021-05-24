@@ -16,7 +16,7 @@ QtObject {
 
     function setMultipleProject() {
 
-        if(plmData.projectHub().getProjectCount() > 1){
+        if(skrData.projectHub().getProjectCount() > 1){
 
             multipleProjects = true
         }
@@ -99,6 +99,6 @@ QtObject {
     }
 
     Component.onCompleted: {
-        plmData.projectHub().onProjectLoaded.connect(setMultipleProject)
+        skrData.projectHub().onProjectLoaded.connect(setMultipleProject)
     }
 }

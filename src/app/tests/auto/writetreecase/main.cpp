@@ -2,7 +2,7 @@
 #include <QQmlEngine>
 #include <QQmlContext>
 
-#include "plmdata.h"
+#include "skrdata.h"
 
 class TestSetup : public QObject
 {
@@ -12,9 +12,9 @@ public:
 public slots:
     void qmlEngineAvailable(QQmlEngine *engine)
     {
-        PLMData *data = new PLMData(qApp);
+        SKRData *data = new SKRData(qApp);
         qDebug() << "vvvvv";
-        engine->rootContext()->setContextProperty("plmData", data);
+        engine->rootContext()->setContextProperty("skrData", data);
     }
 };
 

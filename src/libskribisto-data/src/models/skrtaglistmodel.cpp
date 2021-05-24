@@ -27,29 +27,29 @@ SKRTagListModel::SKRTagListModel(QObject *parent)
     m_rootItem = new SKRTagItem();
     m_rootItem->setIsRootItem();
 
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectLoaded,
             this,
             &SKRTagListModel::populate);
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectClosed,
             this,
             &SKRTagListModel::populate);
 
 
-    connect(plmdata->tagHub(),
+    connect(skrdata->tagHub(),
             &SKRTagHub::tagAdded,
             this,
             &SKRTagListModel::refreshAfterDataAddition);
 
 
-    connect(plmdata->tagHub(),
+    connect(skrdata->tagHub(),
             &SKRTagHub::tagRemoved,
             this,
             &SKRTagListModel::populate);
 
 
-    this->connectToPLMDataSignals();
+    this->connectToSKRDataSignals();
 }
 
 QVariant SKRTagListModel::headerData(int section, Qt::Orientation orientation,
@@ -159,7 +159,7 @@ bool SKRTagListModel::setData(const QModelIndex& index, const QVariant& value, i
         int tagId        = item->tagId();
         SKRResult result(this);
 
-        this->disconnectFromPLMDataSignals();
+        this->disconnectFromSKRDataSignals();
 
         switch (role) {
         case SKRTagItem::Roles::ProjectIdRole:
@@ -174,33 +174,33 @@ bool SKRTagListModel::setData(const QModelIndex& index, const QVariant& value, i
 
         case SKRTagItem::Roles::NameRole:
 
-            result = plmdata->tagHub()->setTagName(projectId, tagId, value.toString());
+            result = skrdata->tagHub()->setTagName(projectId, tagId, value.toString());
             break;
 
         case SKRTagItem::Roles::ColorRole:
 
-            result = plmdata->tagHub()->setTagColor(projectId, tagId, value.toString());
+            result = skrdata->tagHub()->setTagColor(projectId, tagId, value.toString());
             break;
 
         case SKRTagItem::Roles::TextColorRole:
 
-            result = plmdata->tagHub()->setTagTextColor(projectId, tagId, value.toString());
+            result = skrdata->tagHub()->setTagTextColor(projectId, tagId, value.toString());
             break;
 
         case SKRTagItem::Roles::CreationDateRole:
-            result = plmdata->tagHub()->setCreationDate(projectId,
+            result = skrdata->tagHub()->setCreationDate(projectId,
                                                         tagId,
                                                         value.toDateTime());
             break;
 
         case SKRTagItem::Roles::UpdateDateRole:
-            result = plmdata->tagHub()->setUpdateDate(projectId,
+            result = skrdata->tagHub()->setUpdateDate(projectId,
                                                       tagId,
                                                       value.toDateTime());
             break;
         }
 
-        this->connectToPLMDataSignals();
+        this->connectToSKRDataSignals();
 
         if (!result.isSuccess()) {
             return false;
@@ -303,8 +303,8 @@ void SKRTagListModel::populate()
 
     m_allTagItems.clear();
 
-    for (int projectId : plmdata->projectHub()->getProjectIdList()) {
-        auto idList = plmdata->tagHub()->getAllTagIds(projectId);
+    for (int projectId : skrdata->projectHub()->getProjectIdList()) {
+        auto idList = skrdata->tagHub()->getAllTagIds(projectId);
 
         for (int tagId : idList) {
             m_allTagItems.append(new SKRTagItem(projectId, tagId));
@@ -320,7 +320,7 @@ void SKRTagListModel::clear()
     this->endResetModel();
 }
 
-void SKRTagListModel::exploitSignalFromPLMData(int               projectId,
+void SKRTagListModel::exploitSignalFromSKRData(int               projectId,
                                                int               tagId,
                                                SKRTagItem::Roles role)
 {
@@ -366,43 +366,43 @@ void SKRTagListModel::refreshAfterDataAddition(int projectId, int tagId)
     endInsertRows();
 }
 
-void SKRTagListModel::connectToPLMDataSignals()
+void SKRTagListModel::connectToSKRDataSignals()
 {
-    m_dataConnectionsList << this->connect(plmdata->tagHub(),
+    m_dataConnectionsList << this->connect(skrdata->tagHub(),
                                            &SKRTagHub::nameChanged, this,
                                            [this](int projectId, int tagId,
                                                   const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, tagId, SKRTagItem::Roles::NameRole);
+        this->exploitSignalFromSKRData(projectId, tagId, SKRTagItem::Roles::NameRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->tagHub(),
+    m_dataConnectionsList << this->connect(skrdata->tagHub(),
                                            &SKRTagHub::colorChanged, this,
                                            [this](int projectId, int tagId,
                                                   const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, tagId, SKRTagItem::Roles::ColorRole);
+        this->exploitSignalFromSKRData(projectId, tagId, SKRTagItem::Roles::ColorRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->tagHub(),
+    m_dataConnectionsList << this->connect(skrdata->tagHub(),
                                            &SKRTagHub::textColorChanged, this,
                                            [this](int projectId, int tagId,
                                                   const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, tagId, SKRTagItem::Roles::TextColorRole);
+        this->exploitSignalFromSKRData(projectId, tagId, SKRTagItem::Roles::TextColorRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->tagHub(),
+    m_dataConnectionsList << this->connect(skrdata->tagHub(),
                                            &SKRTagHub::updateDateChanged, this,
                                            [this](int projectId, int tagId,
                                                   const QDateTime& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, tagId,
+        this->exploitSignalFromSKRData(projectId, tagId,
                                        SKRTagItem::Roles::UpdateDateRole);
     }, Qt::UniqueConnection);
 }
 
-void SKRTagListModel::disconnectFromPLMDataSignals()
+void SKRTagListModel::disconnectFromSKRDataSignals()
 {
     // disconnect from PLMPaperHub signals :
     for (const QMetaObject::Connection& connection : m_dataConnectionsList) {

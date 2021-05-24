@@ -451,7 +451,7 @@ Item {
             pageType = "EMPTY"
         }
         else {
-            pageType = plmData.treeHub().getType(projectId, treeItemId)
+            pageType = skrData.treeHub().getType(projectId, treeItemId)
         }
 
         if(!isViewVisible(position)){
@@ -576,9 +576,9 @@ Item {
     //---------------------------------------------------------------
 
     Connections {
-        target:plmData.projectHub()
+        target:skrData.projectHub()
         function onProjectLoaded(_projectId) {
-            if(plmData.projectHub().getProjectCount() === 1){
+            if(skrData.projectHub().getProjectCount() === 1){
 
                 restoreProjectOpenedItems(_projectId)
                 postProjectLoadedTimer.start()
@@ -597,7 +597,7 @@ Item {
     //---------------------------------------------------------------
 
     Connections {
-        target:plmData.projectHub()
+        target:skrData.projectHub()
         function onProjectToBeClosed(_projectId) {
             saveProjectOpenedItems(_projectId)
             closePagesByProject(_projectId)
@@ -653,7 +653,7 @@ Item {
     //---------------------------------------------------------------
 
     Connections {
-        target:plmData.treeHub()
+        target:skrData.treeHub()
         function onTreeItemRemoved(_projectId, _treeItemId) {
 
             closePagesWithTreeItemId(_projectId, _treeItemId)
@@ -664,7 +664,7 @@ Item {
     //---------------------------------------------------------------
 
     Connections {
-        target:plmData.treeHub()
+        target:skrData.treeHub()
         function ontrashedChanged(_projectId, _treeItemId, newTrashedState) {
             if(newTrashedState){
                 closePagesWithTreeItemId(_projectId, _treeItemId)

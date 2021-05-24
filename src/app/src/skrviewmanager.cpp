@@ -19,7 +19,7 @@
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 #include "skrviewmanager.h"
-#include "plmdata.h"
+#include "skrdata.h"
 #include "skrpageinterface.h"
 
 
@@ -89,7 +89,7 @@ QUrl SKRViewManager::getQmlUrlFromPageType(const QString &pageType) const
         url = "qrc:///qml/EmptyPage.qml";
     }
 
-    QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
+    QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
     for ( SKRPageInterface *plugin: qAsConst(pluginList)){
         if(pageType == plugin->pageType()){
             url = plugin->pageUrl();

@@ -20,7 +20,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "skrtreemodel.h"
-#include "plmdata.h"
+#include "skrdata.h"
 #include "skrpropertyhub.h"
 #include "skr.h"
 
@@ -33,22 +33,22 @@ SKRTreeModel::SKRTreeModel(QObject *parent)
     m_rootItem = new SKRTreeItem();
     m_rootItem->setIsRootItem();
 
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectLoaded,
             this,
             &SKRTreeModel::populate);
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectClosed,
             this,
             &SKRTreeModel::populate);
 
 
-    //    connect(plmdata->treeHub(),
+    //    connect(skrdata->treeHub(),
     //            &SKRTreeHub::paperAdded,
     //            this,
     //            &SKRTreeModel::addPaper);
 
-    this->connectToPLMDataSignals();
+    this->connectToSKRDataSignals();
 }
 
 QVariant SKRTreeModel::headerData(int section, Qt::Orientation orientation,
@@ -222,11 +222,11 @@ bool SKRTreeModel::setData(const QModelIndex& index, const QVariant& value, int 
         int treeItemId    = item->treeItemId();
         SKRResult result(this);
 
-        this->disconnectFromPLMDataSignals();
+        this->disconnectFromSKRDataSignals();
 
         switch (role) {
         case SKRTreeItem::Roles::ProjectNameRole:
-            result = plmdata->projectHub()->setProjectName(projectId, value.toString());
+            result = skrdata->projectHub()->setProjectName(projectId, value.toString());
             break;
 
         case SKRTreeItem::Roles::ProjectIdRole:
@@ -240,43 +240,43 @@ bool SKRTreeModel::setData(const QModelIndex& index, const QVariant& value, int 
             break;
 
         case SKRTreeItem::Roles::TitleRole:
-            result = plmdata->treeHub()->setTitle(projectId, treeItemId, value.toString());
+            result = skrdata->treeHub()->setTitle(projectId, treeItemId, value.toString());
             break;
 
         case SKRTreeItem::Roles::LabelRole:
-            result = plmdata->treePropertyHub()->setProperty(projectId, treeItemId,
+            result = skrdata->treePropertyHub()->setProperty(projectId, treeItemId,
                                                              "label", value.toString());
             break;
 
         case SKRTreeItem::Roles::IndentRole:
-            result = plmdata->treeHub()->setIndent(projectId, treeItemId, value.toInt());
+            result = skrdata->treeHub()->setIndent(projectId, treeItemId, value.toInt());
             break;
 
         case SKRTreeItem::Roles::SortOrderRole:
-            result = plmdata->treeHub()->setSortOrder(projectId, treeItemId, value.toInt());
+            result = skrdata->treeHub()->setSortOrder(projectId, treeItemId, value.toInt());
             break;
 
         case SKRTreeItem::Roles::TrashedRole:
-            result = plmdata->treeHub()->setTrashedWithChildren(projectId,
+            result = skrdata->treeHub()->setTrashedWithChildren(projectId,
                                                                 treeItemId,
                                                                 value.toBool());
             break;
 
         case SKRTreeItem::Roles::CreationDateRole:
-            result = plmdata->treeHub()->setCreationDate(projectId,
+            result = skrdata->treeHub()->setCreationDate(projectId,
                                                          treeItemId,
                                                          value.toDateTime());
             break;
 
         case SKRTreeItem::Roles::UpdateDateRole:
-            result = plmdata->treeHub()->setUpdateDate(projectId,
+            result = skrdata->treeHub()->setUpdateDate(projectId,
                                                        treeItemId,
                                                        value.toDateTime());
             break;
 
 
         case SKRTreeItem::Roles::CharCountRole:
-            result = plmdata->treePropertyHub()->setProperty(projectId,
+            result = skrdata->treePropertyHub()->setProperty(projectId,
                                                              treeItemId,
                                                              "char_count",
                                                              QString::number(
@@ -285,7 +285,7 @@ bool SKRTreeModel::setData(const QModelIndex& index, const QVariant& value, int 
 
         case SKRTreeItem::Roles::WordCountRole:
 
-            result = plmdata->treePropertyHub()->setProperty(projectId,
+            result = skrdata->treePropertyHub()->setProperty(projectId,
                                                              treeItemId,
                                                              "word_count",
                                                              QString::number(
@@ -294,7 +294,7 @@ bool SKRTreeModel::setData(const QModelIndex& index, const QVariant& value, int 
         }
 
 
-        this->connectToPLMDataSignals();
+        this->connectToSKRDataSignals();
 
         if (!result.isSuccess()) {
             return false;
@@ -376,10 +376,10 @@ void SKRTreeModel::populate()
 
     m_allTreeItems.clear();
 
-    for (int projectId : plmdata->projectHub()->getProjectIdList()) {
-        auto idList         = plmdata->treeHub()->getAllIds(projectId);
-        auto sortOrdersHash = plmdata->treeHub()->getAllSortOrders(projectId);
-        auto indentsHash    = plmdata->treeHub()->getAllIndents(projectId);
+    for (int projectId : skrdata->projectHub()->getProjectIdList()) {
+        auto idList         = skrdata->treeHub()->getAllIds(projectId);
+        auto sortOrdersHash = skrdata->treeHub()->getAllSortOrders(projectId);
+        auto indentsHash    = skrdata->treeHub()->getAllIndents(projectId);
 
         for (int sheetId : idList) {
             m_allTreeItems.append(new SKRTreeItem(projectId, sheetId,
@@ -397,7 +397,7 @@ void SKRTreeModel::clear()
     this->endResetModel();
 }
 
-void SKRTreeModel::exploitSignalFromPLMData(int                projectId,
+void SKRTreeModel::exploitSignalFromSKRData(int                projectId,
                                             int                treeItemId,
                                             SKRTreeItem::Roles role)
 {
@@ -440,9 +440,9 @@ void SKRTreeModel::addPaper(int projectId, int treeItemId)
     QModelIndex parentIndex;
     int row = 0;
 
-    auto idList         = plmdata->treeHub()->getAllIds(projectId);
-    auto sortOrdersHash = plmdata->treeHub()->getAllSortOrders(projectId);
-    auto indentsHash    = plmdata->treeHub()->getAllIndents(projectId);
+    auto idList         = skrdata->treeHub()->getAllIds(projectId);
+    auto sortOrdersHash = skrdata->treeHub()->getAllSortOrders(projectId);
+    auto indentsHash    = skrdata->treeHub()->getAllIndents(projectId);
 
 
     int paperIndex      = idList.indexOf(treeItemId);
@@ -451,7 +451,7 @@ void SKRTreeModel::addPaper(int projectId, int treeItemId)
 
     bool parentFound = false;
 
-    if (plmdata->projectHub()->getProjectIdList().count() > 1) {
+    if (skrdata->projectHub()->getProjectIdList().count() > 1) {
         if (paperIndex == 0) {
             parentIndex = this->getModelIndex(projectId, -1).first();
             row         = 0;
@@ -499,7 +499,7 @@ void SKRTreeModel::addPaper(int projectId, int treeItemId)
 
     int itemIndex = 0;
 
-    if ((plmdata->projectHub()->getProjectIdList().count() == 1) && (paperIndex == 0)) { //
+    if ((skrdata->projectHub()->getProjectIdList().count() == 1) && (paperIndex == 0)) { //
                                                                                          //
                                                                                          //
                                                                                          // so
@@ -577,17 +577,17 @@ SKRTreeItem * SKRTreeModel::findPaperItem(int projectId, int treeItemId)
     return item;
 }
 
-void SKRTreeModel::connectToPLMDataSignals()
+void SKRTreeModel::connectToSKRDataSignals()
 {
-    m_dataConnectionsList << this->connect(plmdata->treeHub(),
+    m_dataConnectionsList << this->connect(skrdata->treeHub(),
                                            &SKRTreeHub::titleChanged, this,
                                            [this](int projectId, int treeItemId,
                                                   const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId, SKRTreeItem::Roles::TitleRole);
+        this->exploitSignalFromSKRData(projectId, treeItemId, SKRTreeItem::Roles::TitleRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->treePropertyHub(),
+    m_dataConnectionsList << this->connect(skrdata->treePropertyHub(),
                                            &SKRPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
                                                   int            paperCode,
@@ -596,54 +596,54 @@ void SKRTreeModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "label") this->exploitSignalFromPLMData(projectId, paperCode,
+        if (name == "label") this->exploitSignalFromSKRData(projectId, paperCode,
                                                             SKRTreeItem::Roles::LabelRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->treeHub(),
+    m_dataConnectionsList << this->connect(skrdata->treeHub(),
                                            &SKRTreeHub::treeItemIdChanged, this,
                                            [this](int projectId, int treeItemId,
                                                   int value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::TreeItemIdRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList << this->connect(plmdata->treeHub(),
+    m_dataConnectionsList << this->connect(skrdata->treeHub(),
                                            &SKRTreeHub::indentChanged, this,
                                            [this](int projectId, int treeItemId,
                                                   int value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::IndentRole);
     }, Qt::UniqueConnection);
 
-    m_dataConnectionsList.append(this->connect(plmdata->treeHub(),
+    m_dataConnectionsList.append(this->connect(skrdata->treeHub(),
                                                &SKRTreeHub::sortOrderChanged, this,
                                                [this](int projectId, int treeItemId,
                                                       int value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::SortOrderRole);
     }));
 
-    m_dataConnectionsList << this->connect(plmdata->treeHub(),
+    m_dataConnectionsList << this->connect(skrdata->treeHub(),
                                            &SKRTreeHub::updateDateChanged, this,
                                            [this](int projectId, int treeItemId,
                                                   const QDateTime& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::UpdateDateRole);
     }, Qt::UniqueConnection);
-    m_dataConnectionsList << this->connect(plmdata->treeHub(),
+    m_dataConnectionsList << this->connect(skrdata->treeHub(),
                                            &SKRTreeHub::trashedChanged, this,
                                            [this](int projectId, int treeItemId,
                                                   bool value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::TrashedRole);
     }, Qt::UniqueConnection);
-    m_dataConnectionsList << this->connect(plmdata->treePropertyHub(),
+    m_dataConnectionsList << this->connect(skrdata->treePropertyHub(),
                                            &SKRPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
                                                   int            paperCode,
@@ -652,11 +652,11 @@ void SKRTreeModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "char_count") this->exploitSignalFromPLMData(projectId, paperCode,
+        if (name == "char_count") this->exploitSignalFromSKRData(projectId, paperCode,
                                                                  SKRTreeItem::Roles::
                                                                  CharCountRole);
     }, Qt::UniqueConnection);
-    m_dataConnectionsList << this->connect(plmdata->treePropertyHub(),
+    m_dataConnectionsList << this->connect(skrdata->treePropertyHub(),
                                            &SKRPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
                                                   int            paperCode,
@@ -665,13 +665,13 @@ void SKRTreeModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "word_count") this->exploitSignalFromPLMData(projectId, paperCode,
+        if (name == "word_count") this->exploitSignalFromSKRData(projectId, paperCode,
                                                                  SKRTreeItem::Roles::
                                                                  WordCountRole);
     }, Qt::UniqueConnection);
 }
 
-void SKRTreeModel::disconnectFromPLMDataSignals()
+void SKRTreeModel::disconnectFromSKRDataSignals()
 {
     // disconnect from PLMPaperHub signals :
     for (const QMetaObject::Connection& connection : m_dataConnectionsList) {

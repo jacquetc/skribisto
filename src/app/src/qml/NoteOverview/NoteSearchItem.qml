@@ -12,7 +12,7 @@ NoteSearchItemForm {
 
 
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onActiveProjectChanged(projectId){
 
             noteOverviewSearchProxyModel.projectIdFilter = projectId

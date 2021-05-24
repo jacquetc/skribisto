@@ -1,12 +1,12 @@
 #include "skrstathub.h"
-#include "plmdata.h"
+#include "skrdata.h"
 
 SKRStatHub::SKRStatHub(QObject *parent) : QObject(parent)
 {
-    connect(plmdata->treeHub(), &SKRTreeHub::trashedChanged,
+    connect(skrdata->treeHub(), &SKRTreeHub::trashedChanged,
             this, &SKRStatHub::setTreeItemTrashed);
 
-    connect(plmdata->treeHub(), &SKRTreeHub::treeItemRemoved,
+    connect(skrdata->treeHub(), &SKRTreeHub::treeItemRemoved,
             this, &SKRStatHub::removeTreeItemFromStat);
 }
 
@@ -47,8 +47,8 @@ void SKRStatHub::updateWordStats(int  projectId,
                                  bool triggerProjectModifiedSignal)
 {
     QHash<int, QHash<QString, int> > projectHash = m_treeItemHashByProjectHash.value(projectId);
-    SKRPropertyHub *propertyHub                  = plmdata->treePropertyHub();
-    SKRTreeHub     *treeHub                      = plmdata->treeHub();
+    SKRPropertyHub *propertyHub                  = skrdata->treePropertyHub();
+    SKRTreeHub     *treeHub                      = skrdata->treeHub();
 
 
     // ------------- get trashed
@@ -134,8 +134,8 @@ void SKRStatHub::updateCharacterStats(int  projectId,
                                       bool triggerProjectModifiedSignal)
 {
     QHash<int, QHash<QString, int> > projectHash = m_treeItemHashByProjectHash.value(projectId);
-    SKRPropertyHub *propertyHub                  = plmdata->treePropertyHub();
-    SKRTreeHub     *treeHub                      = plmdata->treeHub();
+    SKRPropertyHub *propertyHub                  = skrdata->treePropertyHub();
+    SKRTreeHub     *treeHub                      = skrdata->treeHub();
 
     // ------------- get trashed
     bool isTrashed = treeHub->getTrashed(projectId, treeItemId);

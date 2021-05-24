@@ -119,7 +119,7 @@ LeftDockForm {
     navigationView.navigationListProxyModel: navigationProxyModel
 
     Connections {
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onActiveProjectChanged(projectId){
             navigationProxyModel.projectIdFilter = projectId
             navigationProxyModel.parentIdFilter = -1
@@ -153,7 +153,7 @@ LeftDockForm {
 
         var i
         for(i = 0 ; i < treeItemIdList.length ; i++){
-            plmData.treeHub().untrashOnlyOneTreeItem(projectId, treeItemIdList[i])
+            skrData.treeHub().untrashOnlyOneTreeItem(projectId, treeItemIdList[i])
         }
 
 
@@ -187,7 +187,7 @@ LeftDockForm {
     //----------------------------------------------------------
 
     Connections {
-        target:plmData.projectHub()
+        target:skrData.projectHub()
         function onProjectLoaded(_projectId) {
             onProjectLoadedTimer.projectId = _projectId
             onProjectLoadedTimer.start()

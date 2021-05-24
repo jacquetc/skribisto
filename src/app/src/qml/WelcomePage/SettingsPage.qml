@@ -593,7 +593,7 @@ SettingsPageForm {
         }
 
         Connections {
-            target: plmData.projectHub()
+            target: skrData.projectHub()
             function onProjectLoaded(projectId){
                 backUpOnceADayIfNeeded()
 
@@ -616,8 +616,8 @@ SettingsPageForm {
                 return
             }
 
-            var projectIdList = plmData.projectHub().getProjectIdList()
-            var projectCount = plmData.projectHub().getProjectCount()
+            var projectIdList = skrData.projectHub().getProjectIdList()
+            var projectCount = skrData.projectHub().getProjectCount()
 
 
             // all projects :
@@ -627,7 +627,7 @@ SettingsPageForm {
 
 
                 //no project path
-                if (plmData.projectHub().getPath(projectId) === ""){
+                if (skrData.projectHub().getPath(projectId) === ""){
                     //TODO: send notification, project not yet saved once
 
                     break
@@ -647,7 +647,7 @@ SettingsPageForm {
 
 
                     // check if wanted backup exists already at paths
-                    var isBackupThere = plmData.projectHub().doesBackupOfTheDayExistAtPath(projectId, skrQMLTools.getURLFromLocalFile(path))
+                    var isBackupThere = skrData.projectHub().doesBackupOfTheDayExistAtPath(projectId, skrQMLTools.getURLFromLocalFile(path))
 
                     if(isBackupThere){
                         break
@@ -655,7 +655,7 @@ SettingsPageForm {
 
                     // back up :
 
-                    var result = plmData.projectHub().backupAProject(projectId, "skrib", skrQMLTools.getURLFromLocalFile(path))
+                    var result = skrData.projectHub().backupAProject(projectId, "skrib", skrQMLTools.getURLFromLocalFile(path))
 
                     if (result.containsErrorCodeDetail("path_is_readonly")){
                         //TODO: notification

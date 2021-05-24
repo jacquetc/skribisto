@@ -12,7 +12,7 @@
 #include <QRegularExpression>
 
 
-// #include "plmdata.h"
+// #include "skrdata.h"
 
 DocumentHandler::DocumentHandler(QObject *parent) :
     QObject(parent),
@@ -467,7 +467,7 @@ void DocumentHandler::setId(const int projectId, const int paperId)
     m_projectId = projectId;
     m_paperId   = paperId;
 
-    //    QString text = plmdata->sheetHub()->getContent(projectId, paperId);
+    //    QString text = skrdata->sheetHub()->getContent(projectId, paperId);
 
     // m_selectionCursor.select(QTextCursor::Document);
 

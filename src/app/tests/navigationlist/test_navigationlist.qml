@@ -26,7 +26,7 @@ ApplicationWindow {
     property url testProjectFileName: "qrc:/testfiles/skribisto_test_project.skrib"
 
     Component.onCompleted:{
-    var result = plmData.projectHub().loadProject(testProjectFileName)
+    var result = skrData.projectHub().loadProject(testProjectFileName)
         navigationView.setNavigationTreeItemId(1, 21)
     }
 
@@ -90,7 +90,7 @@ ApplicationWindow {
 
             var i
             for(i = 0 ; i < treeIdList.length ; i++){
-                plmData.sheetHub().untrashOnlyOnePaper(projectId, treeIdList[i])
+                skrData.sheetHub().untrashOnlyOnePaper(projectId, treeIdList[i])
             }
 
 

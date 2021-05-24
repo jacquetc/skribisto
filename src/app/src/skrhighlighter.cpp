@@ -2,7 +2,7 @@
 #include <QDebug>
 #include <QTextDocument>
 #include <QTextBoundaryFinder>
-#include "plmdata.h"
+#include "skrdata.h"
 
 SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
     : QSyntaxHighlighter(parentDoc), m_spellCheckerSet(false), m_projectId(-2)
@@ -11,7 +11,7 @@ SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
 
     this->setSpellChecker(spellChecker);
 
-    connect(plmdata->projectDictHub(),
+    connect(skrdata->projectDictHub(),
             &SKRProjectDictHub::projectDictFullyChanged,
             this,
             [this](int projectId, const QStringList& newProjectDict) {
@@ -22,7 +22,7 @@ SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
     }
     );
 
-    connect(plmdata->projectDictHub(), &SKRProjectDictHub::projectDictWordAdded, this,
+    connect(skrdata->projectDictHub(), &SKRProjectDictHub::projectDictWordAdded, this,
             [this](int projectId, const QString& newWord) {
         if (projectId == this->getProjectId()) {
             this->getSpellChecker()->addWordToUserDict(newWord);
@@ -31,7 +31,7 @@ SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
     }
     );
 
-    connect(plmdata->projectDictHub(), &SKRProjectDictHub::projectDictWordRemoved, this,
+    connect(skrdata->projectDictHub(), &SKRProjectDictHub::projectDictWordRemoved, this,
             [this](int projectId, const QString& wordToBeRemoved) {
         if (projectId == this->getProjectId()) {
             this->getSpellChecker()->removeWordFromUserDict(wordToBeRemoved);
@@ -258,8 +258,8 @@ void SKRHighlighter::setProjectId(int projectId)
     // get userdict
     if (projectId != -2) {
         m_userDictList.clear();
-        m_userDictList = plmdata->projectDictHub()->getProjectDictList(projectId);
-//        m_userDictList.append(plmdata->projectDictHub()->getProjectDynamicDictList(projectId));
+        m_userDictList = skrdata->projectDictHub()->getProjectDictList(projectId);
+//        m_userDictList.append(skrdata->projectDictHub()->getProjectDynamicDictList(projectId));
     }
 
     // set user dict

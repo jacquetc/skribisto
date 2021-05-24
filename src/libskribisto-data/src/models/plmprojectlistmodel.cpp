@@ -22,7 +22,7 @@
 #include "plmprojectlistmodel.h"
 #include <QFileInfo>
 #include <QSettings>
-#include "plmdata.h"
+#include "skrdata.h"
 
 PLMProjectListModel::PLMProjectListModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -179,9 +179,9 @@ void PLMProjectListModel::populate()
         // is project opened ?
         m_allRecentProjects.append(projectItem);
 
-        for (int projectId : plmdata->projectHub()->getProjectIdList()) {
-            QString projectName = plmdata->projectHub()->getProjectName(projectId);
-            QUrl    projectPath = plmdata->projectHub()->getPath(projectId);
+        for (int projectId : skrdata->projectHub()->getProjectIdList()) {
+            QString projectName = skrdata->projectHub()->getProjectName(projectId);
+            QUrl    projectPath = skrdata->projectHub()->getPath(projectId);
 
             if ((projectName == projectItem->title) &&
                 (projectPath == projectItem->fileName)) {

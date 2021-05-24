@@ -102,22 +102,22 @@ NewProjectPageForm {
         //TODO: test fileName
 
         // create new hidden empty project
-        var result = plmData.projectHub().createNewEmptyProject(fileName, true)
+        var result = skrData.projectHub().createNewEmptyProject(fileName, true)
 
         if(!result){
             return
         }
 
-        var projectId = plmData.projectHub().getLastLoaded()
+        var projectId = skrData.projectHub().getLastLoaded()
         //console.log("new project : getLastLoaded : ", projectId)
-        plmData.projectHub().setProjectName(projectId, projectTitleTextField.text)
+        skrData.projectHub().setProjectName(projectId, projectTitleTextField.text)
 
         //        var firstSheetId = -2
         for(var i = 1; i <= partSpinBox.value ; ++i){
-            var result = plmData.treeHub().addChildTreeItem(projectId, 0, "TEXT")
+            var result = skrData.treeHub().addChildTreeItem(projectId, 0, "TEXT")
             //console.log("new project : add sheet : ", result.isSuccess())
-            var treeItemId = plmData.treeHub().getLastAddedId()
-            plmData.treeHub().setTitle(projectId, treeItemId, qsTr("Part ") + i)
+            var treeItemId = skrData.treeHub().getLastAddedId()
+            skrData.treeHub().setTitle(projectId, treeItemId, qsTr("Part ") + i)
 
             //            if(sheetId === 1){
             //                firstSheetId = sheetId
@@ -126,14 +126,14 @@ NewProjectPageForm {
         }
 
         // set lang code
-        plmData.projectHub().setLangCode(projectId, dictComboBox.currentValue)
+        skrData.projectHub().setLangCode(projectId, dictComboBox.currentValue)
 
-        plmData.projectHub().saveProject(projectId)
-        plmData.projectHub().closeProject(projectId)
-        plmData.projectHub().loadProject(fileName)
+        skrData.projectHub().saveProject(projectId)
+        skrData.projectHub().closeProject(projectId)
+        skrData.projectHub().loadProject(fileName)
 
 
-        projectId = plmData.projectHub().getLastLoaded()
+        projectId = skrData.projectHub().getLastLoaded()
         rootWindow.viewManager.loadTreeItemAt(projectId, 1, Qt.TopLeftCorner)
 
 

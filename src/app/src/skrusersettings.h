@@ -6,7 +6,7 @@
 #include <QString>
 #include <QVariant>
 #include <QHash>
-#include "plmdata.h"
+#include "skrdata.h"
 
 class SKRUserSettings : public QObject {
     Q_OBJECT

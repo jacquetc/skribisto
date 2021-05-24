@@ -20,7 +20,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmdocumentlistmodel.h"
-#include "plmdata.h"
+#include "skrdata.h"
 #include <QDebug>
 
 PLMDocumentListModel::PLMDocumentListModel(QObject *parent, const QString& tableName)
@@ -28,11 +28,11 @@ PLMDocumentListModel::PLMDocumentListModel(QObject *parent, const QString& table
 {
     qRegisterMetaType<QList<PLMDocumentListItem> >("QList<PLMSheetListItem>");
 
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectLoaded,
             this,
             &PLMDocumentListModel::populate);
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectClosed,
             this,
             &PLMDocumentListModel::populate);
@@ -87,7 +87,7 @@ QVariant PLMDocumentListModel::data(const QModelIndex& index, int role) const
     QString tableName = m_allDocuments.at(row).tableName;
 
     //    if (role == Qt::DisplayRole  && (col == 0)) {
-    //        return plmdata->userHub()->get(projectId, tableName, documentId,
+    //        return skrdata->userHub()->get(projectId, tableName, documentId,
     // "t_title");
     //    }
 
@@ -101,44 +101,44 @@ QVariant PLMDocumentListModel::data(const QModelIndex& index, int role) const
     //    }
 
     //    if (role == PLMDocumentListModel::PaperCodeRole && (col == 0)) {
-    //        return plmdata->userHub()->get(projectId, tableName, documentId,
+    //        return skrdata->userHub()->get(projectId, tableName, documentId,
     // "l_paper_code");
     //    }
 
     //    if (role == PLMDocumentListModel::NameRole && (col == 0)) {
-    //        return plmdata->userHub()->get(projectId, tableName, documentId,
+    //        return skrdata->userHub()->get(projectId, tableName, documentId,
     // "t_title");
     //    }
 
     //    if (role == PLMDocumentListModel::TypeRole && (col == 0)) {
-    //        return plmdata->userHub()->get(projectId, tableName, documentId,
+    //        return skrdata->userHub()->get(projectId, tableName, documentId,
     // "t_type");
     //    }
 
     //    if (role == PLMDocumentListModel::SubWindowRole && (col == 0)) {
-    //        return plmdata->userHub()->get(projectId, tableName, documentId,
+    //        return skrdata->userHub()->get(projectId, tableName, documentId,
     // "l_subwindow");
     //    }
 
     //    if (role == PLMDocumentListModel::CursorPosRole && (col == 0)) {
-    //        return plmdata->userHub()->get(projectId, tableName, documentId,
+    //        return skrdata->userHub()->get(projectId, tableName, documentId,
     // "l_cursor_pos");
     //    }
 
     //    if (role == PLMDocumentListModel::PropertyRole && (col == 0)) {
-    //        return plmdata->userHub()->get(projectId, tableName, documentId,
+    //        return skrdata->userHub()->get(projectId, tableName, documentId,
     // "t_property");
     //    }
 
 
     //    if (role == PLMDocumentListModel::UpdateDateRole && (col == 0)) {
-    //        return plmdata->userHub()->get(projectId, tableName, documentId,
+    //        return skrdata->userHub()->get(projectId, tableName, documentId,
     // "dt_updated");
     //    }
 
 
     //    if (role == PLMDocumentListModel::LasFocusedDateRole && (col == 0)) {
-    //        return plmdata->userHub()->get(projectId, tableName, documentId,
+    //        return skrdata->userHub()->get(projectId, tableName, documentId,
     //                                       "dt_last_focused");
     //    }
 
@@ -389,7 +389,7 @@ void PLMDocumentListModel::populate()
     //    m_allDocuments.clear();
     //     foreach(int projectId, plmProjectManager->projectIdList()) {
     //            QList<int> results;
-    //            plmdata->userHub()->getIds(projectId, m_tableName, results);
+    //            skrdata->userHub()->getIds(projectId, m_tableName, results);
 
     //            for (int documentId :  results) {
     //                m_allDocuments.append(PLMDocumentListItem(projectId,

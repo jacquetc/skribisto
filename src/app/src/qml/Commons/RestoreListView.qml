@@ -116,7 +116,7 @@ RestoreListViewForm {
 
     Connections {
 
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectClosed(projectId){
 
             goBack()
@@ -155,7 +155,7 @@ RestoreListViewForm {
         }
 
         deleteDefinitivelyDialog.projectId = projectId
-        deleteDefinitivelyDialog.projectName = plmData.projectHub().getProjectName(projectId)
+        deleteDefinitivelyDialog.projectName = skrData.projectHub().getProjectName(projectId)
         deleteDefinitivelyDialog.treeItemIdList = idList
         deleteDefinitivelyDialog.paperNamesString = "\n- " + nameList.join("\n- ")
         deleteDefinitivelyDialog.open()

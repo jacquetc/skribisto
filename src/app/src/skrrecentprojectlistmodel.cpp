@@ -22,22 +22,22 @@
 #include "skrrecentprojectlistmodel.h"
 #include <QFileInfo>
 #include <QSettings>
-#include "plmdata.h"
+#include "skrdata.h"
 
 SKRRecentProjectListModel::SKRRecentProjectListModel(QObject *parent)
     : QAbstractListModel(parent)
 {
     this->populate();
 
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectLoaded,
             this,
             &SKRRecentProjectListModel::insertInRecentProjectsFromAnId);
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectClosed,
             this,
             &SKRRecentProjectListModel::populate);
-    connect(plmdata->projectHub(), &PLMProjectHub::projectNameChanged, this,
+    connect(skrdata->projectHub(), &PLMProjectHub::projectNameChanged, this,
             [this](int projectId, const QString& name) {
         this->insertInRecentProjectsFromAnId(projectId);
     });
@@ -179,8 +179,8 @@ void SKRRecentProjectListModel::insertInRecentProjects(const QString& title,
 
 void SKRRecentProjectListModel::insertInRecentProjectsFromAnId(int projectId)
 {
-    QString title    = plmdata->projectHub()->getProjectName(projectId);
-    QUrl    fileName = plmdata->projectHub()->getPath(projectId);
+    QString title    = skrdata->projectHub()->getProjectName(projectId);
+    QUrl    fileName = skrdata->projectHub()->getPath(projectId);
 
     this->insertInRecentProjects(title, fileName);
 }
@@ -265,9 +265,9 @@ void SKRRecentProjectListModel::populate()
         projectItem->isOpened  = false;
         projectItem->projectId = -2;
 
-        for (int projectId : plmdata->projectHub()->getProjectIdList()) {
-            QString projectName = plmdata->projectHub()->getProjectName(projectId);
-            QUrl    projectPath = plmdata->projectHub()->getPath(projectId);
+        for (int projectId : skrdata->projectHub()->getProjectIdList()) {
+            QString projectName = skrdata->projectHub()->getProjectName(projectId);
+            QUrl    projectPath = skrdata->projectHub()->getPath(projectId);
 
             if ((projectName == projectItem->title) &&
                 (projectPath == projectItem->fileUrl)) {

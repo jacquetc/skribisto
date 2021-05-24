@@ -33,33 +33,33 @@ SKRSearchTagListProxyModel::SKRSearchTagListProxyModel(QObject *parent) :
 
 
     connect(
-        plmdata->projectHub(),
+        skrdata->projectHub(),
         &PLMProjectHub::projectLoaded,
         this,
         &SKRSearchTagListProxyModel::loadProjectSettings);
     connect(
-        plmdata->projectHub(),
+        skrdata->projectHub(),
         &PLMProjectHub::projectToBeClosed,
         this,
         &SKRSearchTagListProxyModel::saveProjectSettings,
         Qt::DirectConnection);
-    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
+    connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->invalidateFilter();
     });
 
 
-    connect(plmdata->tagHub(), &SKRTagHub::tagRelationshipAdded, this, [this]() {
+    connect(skrdata->tagHub(), &SKRTagHub::tagRelationshipAdded, this, [this]() {
         this->populateRelationshipList();
         this->invalidateFilter();
     });
 
 
-    connect(plmdata->tagHub(), &SKRTagHub::tagRelationshipRemoved, this, [this]() {
+    connect(skrdata->tagHub(), &SKRTagHub::tagRelationshipRemoved, this, [this]() {
         this->populateRelationshipList();
         this->invalidateFilter();
     });
 
-    connect(plmdata->tagHub(), &SKRTagHub::tagRelationshipChanged, this, [this]() {
+    connect(skrdata->tagHub(), &SKRTagHub::tagRelationshipChanged, this, [this]() {
         this->populateRelationshipList();
         this->invalidateFilter();
     });
@@ -206,7 +206,7 @@ void SKRSearchTagListProxyModel::setCurrentPaperId(int projectId, int tagId)
     SKRTagItem *item       = this->getItem(projectId, tagId);
 
     if (!item) {
-        tagId = plmdata->tagHub()->getTopPaperId(projectId);
+        tagId = skrdata->tagHub()->getTopPaperId(projectId);
     }
 
     this->setForcedCurrentIndex(projectId, tagId);
@@ -303,7 +303,7 @@ SKRTagItem * SKRSearchTagListProxyModel::getItem(int projectId, int tagId)
 
 void SKRSearchTagListProxyModel::loadProjectSettings(int projectId)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
 
     settings.beginGroup("project_" + unique_identifier);
@@ -322,7 +322,7 @@ void SKRSearchTagListProxyModel::saveProjectSettings(int projectId)
         return;
     }
 
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
 
     settings.beginGroup("project_" + unique_identifier);
@@ -339,7 +339,7 @@ void SKRSearchTagListProxyModel::populateRelationshipList()
     m_relationshipList.clear();
 
     if (m_treeItemIdFilter != -2) {
-        m_relationshipList.append(plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter,
+        m_relationshipList.append(skrdata->tagHub()->getTagsFromItemId(m_projectIdFilter,
                                                                        m_treeItemIdFilter));
     }
 }

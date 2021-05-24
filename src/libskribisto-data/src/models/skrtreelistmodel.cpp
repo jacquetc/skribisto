@@ -24,19 +24,19 @@
 SKRTreeListModel::SKRTreeListModel(QObject *parent)
     : QAbstractTableModel(parent), m_headerData(QVariant())
 {
-    m_treeHub     = plmdata->treeHub();
-    m_propertyHub = plmdata->treePropertyHub();
+    m_treeHub     = skrdata->treeHub();
+    m_propertyHub = skrdata->treePropertyHub();
 
 
     //    m_rootItem = new SKRTreeItem();
     //    m_rootItem->setIsRootItem();
 
 
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectLoaded,
             this,
             &SKRTreeListModel::populate);
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectClosed,
             this,
             &SKRTreeListModel::populate);
@@ -68,17 +68,17 @@ SKRTreeListModel::SKRTreeListModel(QObject *parent)
             this,
             &SKRTreeListModel::refreshAfterTrashedStateChanged);
 
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectIsBackupChanged,
             this,
             &SKRTreeListModel::refreshAfterProjectIsBackupChanged);
 
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::activeProjectChanged,
             this,
             &SKRTreeListModel::refreshAfterProjectIsActiveChanged);
 
-    this->connectToPLMDataSignals();
+    this->connectToSKRDataSignals();
 }
 
 QVariant SKRTreeListModel::headerData(int section, Qt::Orientation orientation,
@@ -286,11 +286,11 @@ bool SKRTreeListModel::setData(const QModelIndex& index, const QVariant& value, 
         int treeItemId    = item->treeItemId();
         SKRResult result(this);
 
-        this->disconnectFromPLMDataSignals();
+        this->disconnectFromSKRDataSignals();
 
         switch (role) {
         case SKRTreeItem::Roles::ProjectNameRole:
-            result = plmdata->projectHub()->setProjectName(projectId, value.toString());
+            result = skrdata->projectHub()->setProjectName(projectId, value.toString());
             break;
 
         case SKRTreeItem::Roles::ProjectIdRole:
@@ -374,12 +374,12 @@ bool SKRTreeListModel::setData(const QModelIndex& index, const QVariant& value, 
 
         case SKRTreeItem::Roles::ProjectIsActiveRole:
 
-            plmdata->projectHub()->setActiveProject(projectId);
+            skrdata->projectHub()->setActiveProject(projectId);
             break;
         }
 
 
-        this->connectToPLMDataSignals();
+        this->connectToSKRDataSignals();
 
         if (!result.isSuccess()) {
             return false;
@@ -447,7 +447,7 @@ void SKRTreeListModel::resetAllTreeItemsList()
 {
     m_allTreeItems.clear();
 
-    for (int projectId : plmdata->projectHub()->getProjectIdList()) {
+    for (int projectId : skrdata->projectHub()->getProjectIdList()) {
         auto idList         = m_treeHub->getAllIds(projectId);
         auto sortOrdersHash = m_treeHub->getAllSortOrders(projectId);
         auto indentsHash    = m_treeHub->getAllIndents(projectId);
@@ -601,8 +601,8 @@ void SKRTreeListModel::refreshAfterDataRemove(int projectId, int treeItemId)
     for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
         item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
         item->invalidateData(SKRTreeItem::Roles::HasChildrenRole);
-        this->exploitSignalFromPLMData(projectId, item->treeItemId(), SKRTreeItem::Roles::SortOrderRole);
-        this->exploitSignalFromPLMData(projectId, item->treeItemId(), SKRTreeItem::Roles::HasChildrenRole);
+        this->exploitSignalFromSKRData(projectId, item->treeItemId(), SKRTreeItem::Roles::SortOrderRole);
+        this->exploitSignalFromSKRData(projectId, item->treeItemId(), SKRTreeItem::Roles::HasChildrenRole);
     }
 }
 
@@ -624,14 +624,14 @@ void SKRTreeListModel::refreshAfterDataMove(int       sourceProjectId,
     //    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
     //        qDebug() << "sortOrder" << item->sortOrder();
 
-    // this->exploitSignalFromPLMData(targetProjectId, item->treeItemId(),
+    // this->exploitSignalFromSKRData(targetProjectId, item->treeItemId(),
     // SKRTreeItem::Roles::SortOrderRole);
     //    }
 
-    //    this->exploitSignalFromPLMData(targetProjectId, targetTreeItemId,
+    //    this->exploitSignalFromSKRData(targetProjectId, targetTreeItemId,
     // SKRTreeItem::Roles::SortOrderRole);
     //    for(int sourceTreeItemId : sourceTreeItemIds){
-    //    this->exploitSignalFromPLMData(sourceProjectId, sourceTreeItemId,
+    //    this->exploitSignalFromSKRData(sourceProjectId, sourceTreeItemId,
     // SKRTreeItem::Roles::SortOrderRole);
     //    }
 
@@ -763,7 +763,7 @@ void SKRTreeListModel::sortAllTreeItemItems() {
 
 // --------------------------------------------------------------------
 
-void SKRTreeListModel::exploitSignalFromPLMData(int                projectId,
+void SKRTreeListModel::exploitSignalFromSKRData(int                projectId,
                                                 int                treeItemId,
                                                 SKRTreeItem::Roles role)
 {
@@ -800,22 +800,22 @@ void SKRTreeListModel::exploitSignalFromPLMData(int                projectId,
 
 // ---------------------------------------------------------------------------
 
-void SKRTreeListModel::connectToPLMDataSignals()
+void SKRTreeListModel::connectToSKRDataSignals()
 {
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::titleChanged, this,
                                            [this](int projectId, int treeItemId,
                                                   const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId, SKRTreeItem::Roles::TitleRole);
+        this->exploitSignalFromSKRData(projectId, treeItemId, SKRTreeItem::Roles::TitleRole);
     });
 
-    m_dataConnectionsList << this->connect(plmdata->projectHub(),
+    m_dataConnectionsList << this->connect(skrdata->projectHub(),
                                            &PLMProjectHub::projectNameChanged, this,
                                            [this](int projectId,
                                                   const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, 0,
+        this->exploitSignalFromSKRData(projectId, 0,
                                        SKRTreeItem::Roles::ProjectNameRole);
     });
 
@@ -828,7 +828,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "label") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "label") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                             SKRTreeItem::Roles::LabelRole);
     });
 
@@ -837,7 +837,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
                                            [this](int projectId, int treeItemId,
                                                   int value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::TreeItemIdRole);
     });
 
@@ -846,7 +846,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
                                            [this](int projectId, int treeItemId,
                                                   int value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::IndentRole);
     });
 
@@ -855,7 +855,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
                                            [this](int projectId, int treeItemId,
                                                   int value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::SortOrderRole);
     });
 
@@ -865,7 +865,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
                                            [this](int projectId, int treeItemId,
                                                   const QDateTime& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::UpdateDateRole);
     });
 
@@ -874,7 +874,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
                                            [this](int projectId, int treeItemId,
                                                   bool value) {
         Q_UNUSED(value)
-        this->exploitSignalFromPLMData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::TrashedRole);
     });
 
@@ -887,7 +887,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "char_count") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "char_count") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                  SKRTreeItem::Roles::
                                                                  CharCountRole);
     });
@@ -901,7 +901,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "word_count") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "word_count") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                  SKRTreeItem::Roles::
                                                                  WordCountRole);
     });
@@ -915,7 +915,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "char_count_with_children") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "char_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                                SKRTreeItem::Roles::
                                                                                CharCountWithChildrenRole);
     });
@@ -929,18 +929,18 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "word_count_with_children") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "word_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                                SKRTreeItem::Roles::
                                                                                WordCountWithChildrenRole);
     });
 
-    m_dataConnectionsList << this->connect(plmdata->projectHub(),
+    m_dataConnectionsList << this->connect(skrdata->projectHub(),
                                            &PLMProjectHub::activeProjectChanged, this,
                                            [this](int projectId) {
         Q_UNUSED(projectId)
 
-        for (int _projectId : plmdata->projectHub()->getProjectIdList()) {
-            this->exploitSignalFromPLMData(_projectId, -1,
+        for (int _projectId : skrdata->projectHub()->getProjectIdList()) {
+            this->exploitSignalFromSKRData(_projectId, -1,
                                            SKRTreeItem::Roles::ProjectIsActiveRole);
         }
     });
@@ -954,7 +954,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "is_renamable") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "is_renamable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                    SKRTreeItem::Roles::
                                                                    IsRenamableRole);
     });
@@ -968,7 +968,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "is_movable") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "is_movable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                  SKRTreeItem::Roles::
                                                                  IsMovableRole);
     });
@@ -982,7 +982,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "can_add_sibling_tree_item") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "can_add_sibling_tree_item") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                                 SKRTreeItem::Roles::
                                                                                 CanAddSiblingTreeItemRole);
     });
@@ -996,7 +996,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "can_add_child_tree_item") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "can_add_child_tree_item") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                               SKRTreeItem::Roles::
                                                                               CanAddChildTreeItemRole);
     });
@@ -1010,7 +1010,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "is_trashable") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "is_trashable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                    SKRTreeItem::Roles::
                                                                    IsTrashableRole);
     });
@@ -1024,7 +1024,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "is_openable") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "is_openable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                   SKRTreeItem::Roles::
                                                                   IsOpenableRole);
     });
@@ -1038,7 +1038,7 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "is_copyable") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "is_copyable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                   SKRTreeItem::Roles::
                                                                   IsCopyableRole);
     });
@@ -1052,13 +1052,13 @@ void SKRTreeListModel::connectToPLMDataSignals()
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 
-        if (name == "attributes") this->exploitSignalFromPLMData(projectId, treeItemCode,
+        if (name == "attributes") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                  SKRTreeItem::Roles::
                                                                  AttributesRole);
     });
 }
 
-void SKRTreeListModel::disconnectFromPLMDataSignals()
+void SKRTreeListModel::disconnectFromSKRDataSignals()
 {
     // disconnect from SKRTreeHub signals :
     for (const QMetaObject::Connection& connection : qAsConst(m_dataConnectionsList)) {

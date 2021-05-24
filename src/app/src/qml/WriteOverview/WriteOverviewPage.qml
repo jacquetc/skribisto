@@ -22,7 +22,7 @@ WriteOverviewPageForm {
     }
 
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectClosed(projectId){
 
         }
@@ -60,7 +60,7 @@ WriteOverviewPageForm {
 
             topFilteringBanner.visible = true
 
-            var title = plmData.sheetHub().getTitle(currentProjectId, sheetOverviewProxyModel.parentIdFilter)
+            var title = skrData.sheetHub().getTitle(currentProjectId, sheetOverviewProxyModel.parentIdFilter)
             topFilteringBannerLabel.text = qsTr("The focus is currently on %1").arg(title)
 
         }

@@ -2,7 +2,7 @@
 *   Copyright (C) 2016 by Cyril Jacquet                                   *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmdata.h                                 *
+*  Filename: skrdata.h                                 *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,8 +18,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMDATA_H
-#define PLMDATA_H
+#ifndef SKRDATA_H
+#define SKRDATA_H
 
 #include <QObject>
 
@@ -35,19 +35,19 @@
 #include "skrstathub.h"
 #include "tasks/plmprojectmanager.h"
 
-#define plmdata PLMData::instance()
-#define plmpluginhub PLMData::instance()->pluginHub()
+#define skrdata SKRData::instance()
+#define plmpluginhub SKRData::instance()->pluginHub()
 
 
-class EXPORT PLMData : public QObject {
+class EXPORT SKRData : public QObject {
     Q_OBJECT
 
 public:
 
-    explicit PLMData(QObject *parent = nullptr);
-    ~PLMData();
+    explicit SKRData(QObject *parent = nullptr);
+    ~SKRData();
 
-    static PLMData* instance()
+    static SKRData* instance()
     {
         return m_instance;
     }
@@ -68,7 +68,7 @@ public slots:
 
 private:
 
-    static PLMData *m_instance;
+    static SKRData *m_instance;
 
     SKRErrorHub *m_errorHub;
     PLMSignalHub *m_signalHub;
@@ -82,4 +82,4 @@ private:
     SKRStatHub *m_statHub;
 };
 
-#endif // PLMDATA_H
+#endif // SKRDATA_H

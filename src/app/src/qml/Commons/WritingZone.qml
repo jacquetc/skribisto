@@ -398,7 +398,7 @@ WritingZoneForm {
         Connections {
             target: textContextMenu
             function onSuggestionToBeLearned(word) {
-                plmData.projectDictHub().addWordToProjectDict(root.projectId , word)
+                skrData.projectDictHub().addWordToProjectDict(root.projectId , word)
 
             }
 
@@ -633,7 +633,7 @@ WritingZoneForm {
     }
 
     Connections{
-        target: plmData.projectDictHub()
+        target: skrData.projectDictHub()
         enabled: !spellCheckerKilled
         function onProjectDictWordAdded(projectId, newWord){
             if(root.projectId === projectId){
@@ -643,7 +643,7 @@ WritingZoneForm {
     }
 
     Connections{
-        target: plmData.projectDictHub()
+        target: skrData.projectDictHub()
         enabled: !spellCheckerKilled
         function onProjectDictWordRemoved(projectId, removedWord){
             if(root.projectId === projectId){
@@ -654,7 +654,7 @@ WritingZoneForm {
 
     Connections{
 
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         enabled: !spellCheckerKilled
         function onLangCodeChanged(projectId, langCode){
             if(root.projectId === projectId){
@@ -687,8 +687,8 @@ WritingZoneForm {
         if(projectId === -2){ // use default lang from settings
             langCode = SkrSettings.spellCheckingSettings.spellCheckingLangCode
         }
-        else if (plmData.projectHub().getLangCode(projectId) !== "") {
-            langCode = plmData.projectHub().getLangCode(projectId)
+        else if (skrData.projectHub().getLangCode(projectId) !== "") {
+            langCode = skrData.projectHub().getLangCode(projectId)
         }
         else{ // use default lang from settings
             langCode = SkrSettings.spellCheckingSettings.spellCheckingLangCode
@@ -708,7 +708,7 @@ WritingZoneForm {
     function setProjectDictInSpellChecker(projectId){
 
         highlighter.spellChecker.clearUserDict()
-        var projectDictList = plmData.projectDictHub().getProjectDictList(projectId)
+        var projectDictList = skrData.projectDictHub().getProjectDictList(projectId)
         highlighter.spellChecker.setUserDict(projectDictList)
     }
 

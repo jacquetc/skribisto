@@ -117,7 +117,7 @@ SkrPopup {
                                 if(langComboBox.activeFocus){
                                     skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
                                     skrWindowManager.retranslate()
-                                    //plmData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
+                                    //skrData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
 
                                     checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(langComboBox.currentValue)
                                 }
@@ -200,7 +200,7 @@ SkrPopup {
                                 for(var i = 0; i < pluginsPage.pluginModel.count; i++){
                                     var item = pluginsPage.pluginModel.get(i)
 
-                                    plmData.pluginHub().setPluginEnabled(item.pluginName, item.enabled)
+                                    skrData.pluginHub().setPluginEnabled(item.pluginName, item.enabled)
                                 }
 
 

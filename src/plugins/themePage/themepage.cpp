@@ -19,7 +19,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "themepage.h"
-#include "plmdata.h"
+#include "skrdata.h"
 
 ThemePage::ThemePage(QObject *parent) : QObject(parent)
 {}

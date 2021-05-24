@@ -68,10 +68,10 @@ FocusScope {
         enabled: control.activeFocus && control.treeItemId > -1
         sequence: "Ctrl+Return"
         onActivated: {
-            var result = plmData.treeHub().addTreeItemBelow(control.projectId, control.treeItemId, control.pageType)
+            var result = skrData.treeHub().addTreeItemBelow(control.projectId, control.treeItemId, control.pageType)
             var newTreeItemAdded = result.getData("treeItemId", -1)
             if(newTreeItemAdded === -1){
-                plmData.errorHub().addWarning(qsTr("newIdenticalPageShortcut: Item not created"))
+                skrData.errorHub().addWarning(qsTr("newIdenticalPageShortcut: Item not created"))
             }
             else {
                 viewManager.loadTreeItem(control.projectId, newTreeItemAdded)
@@ -97,7 +97,7 @@ FocusScope {
             if(control.projectId !== -2){
             renameDialog.projectId = control.projectId
             renameDialog.treeItemId = control.treeItemId
-            renameDialog.treeItemTitle = plmData.treeHub().getTitle(control.projectId, control.treeItemId)
+            renameDialog.treeItemTitle = skrData.treeHub().getTitle(control.projectId, control.treeItemId)
             renameDialog.open()
             }
         }
@@ -135,7 +135,7 @@ FocusScope {
         }
 
         onAccepted: {
-            plmData.treeHub().setTitle(renameDialog.projectId, renameDialog.treeItemId, renameTextField.text)
+            skrData.treeHub().setTitle(renameDialog.projectId, renameDialog.treeItemId, renameTextField.text)
 
             renameDialog.treeItemTitle = ""
         }

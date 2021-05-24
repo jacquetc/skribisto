@@ -23,7 +23,7 @@ SheetOverviewToolForm {
     function populateProjectComboBox(){
         projectComboBoxModel.clear()
 
-        var projectIdList = plmData.projectHub().getProjectIdList()
+        var projectIdList = skrData.projectHub().getProjectIdList()
 
         if(projectIdList.length === 0){
             return
@@ -32,13 +32,13 @@ SheetOverviewToolForm {
         // populate model
         var i;
         for(i = 0 ; i < projectIdList.length ; i++){
-            projectComboBoxModel.append({"projectName": plmData.projectHub().getProjectName(projectIdList[i]), "projectId": projectIdList[i]})
+            projectComboBoxModel.append({"projectName": skrData.projectHub().getProjectName(projectIdList[i]), "projectId": projectIdList[i]})
         }
 
         // set value
         if(currentProjectId == -2){
 
-            var value = plmData.projectHub().getActiveProject()
+            var value = skrData.projectHub().getActiveProject()
             projectComboBox.currentIndex = projectComboBox.indexOfValue(value)
             currentProjectId = value
             Globals.sheetOverviewCurrentProjectId = currentProjectId
@@ -47,7 +47,7 @@ SheetOverviewToolForm {
             var index = projectComboBox.indexOfValue(currentProjectId)
 
             if(index === -1){ // not found (maybe closed)
-                value = plmData.projectHub().getActiveProject()
+                value = skrData.projectHub().getActiveProject()
                 projectComboBox.currentIndex = projectComboBox.indexOfValue(value)
                 currentProjectId = value
                 Globals.sheetOverviewCurrentProjectId = currentProjectId
@@ -81,7 +81,7 @@ SheetOverviewToolForm {
 
 
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectLoaded(projectId) {
             populateProjectComboBox()
         }
@@ -89,7 +89,7 @@ SheetOverviewToolForm {
 
 
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectNameChanged(projectId, projectName) {
 
             var index = projectComboBox.indexOfValue(projectId)

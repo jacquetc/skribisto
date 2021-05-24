@@ -33,7 +33,7 @@ ApplicationWindow {
         id: timer
         interval: 100
         onTriggered: {
-            var result = plmData.projectHub().loadProject(testProjectFileName)
+            var result = skrData.projectHub().loadProject(testProjectFileName)
             multiViewArea.viewManager.loadProjectIndependantPage("OVERVIEW")
 
         }
