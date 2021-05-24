@@ -16,7 +16,7 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Network Sql Xml CONFIG RE
 
 
 set(data_SRCS
-    plmdata.cpp
+    skrdata.cpp
     skrresult.cpp
     skrerrorhub.cpp
     skrpluginhub.cpp
@@ -55,7 +55,7 @@ set(data_SRCS
 set(data_HDR
     skrcoreinterface.h
     skrinterfacesettings.h
-    plmdata.h
+    skrdata.h
     skrresult.h
     skrerrorhub.h
     skrpluginhub.h

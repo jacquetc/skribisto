@@ -19,7 +19,7 @@ UserDictPageForm {
     }
 
     Connections {
-        target: plmData.projectDictHub()
+        target: skrData.projectDictHub()
         function onProjectDictFullyChanged(projectId, projectDictList) {
             if(root.projectId === projectId){
                 populateList()
@@ -30,7 +30,7 @@ UserDictPageForm {
 
 
     Connections {
-        target: plmData.projectDictHub()
+        target: skrData.projectDictHub()
         function onProjectDictWordAdded(projectId, newWord) {
             if(root.projectId === projectId){
                 populateList()
@@ -39,7 +39,7 @@ UserDictPageForm {
     }
 
     Connections {
-        target: plmData.projectDictHub()
+        target: skrData.projectDictHub()
         function onProjectDictWordRemoved(projectId, wordToRemove) {
             if(root.projectId === projectId){
                 populateList()
@@ -56,7 +56,7 @@ UserDictPageForm {
     function populateList(){
         listModel.clear()
 
-        var dictList = plmData.projectDictHub().getProjectDictList(root.projectId)
+        var dictList = skrData.projectDictHub().getProjectDictList(root.projectId)
 
         dictList.forEach(word => listModel.append({"word": word}))
     }
@@ -165,10 +165,10 @@ UserDictPageForm {
         id : spellChecker
 
         Component.onCompleted: {
-            var lang = plmData.projectHub().getLangCode(root.projectId)
+            var lang = skrData.projectHub().getLangCode(root.projectId)
             if(lang){
-                spellChecker.setLangCode(plmData.projectHub().getLangCode(root.projectId))
-                spellChecker.setUserDict(plmData.projectDictHub().getProjectDictList(root.projectId))
+                spellChecker.setLangCode(skrData.projectHub().getLangCode(root.projectId))
+                spellChecker.setUserDict(skrData.projectDictHub().getProjectDictList(root.projectId))
 
 
         }
@@ -177,11 +177,11 @@ UserDictPageForm {
 
 
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onLangCodeChanged(projectId, newLang){
             if(projectId === root.projectId){
                 spellChecker.setLangCode(newLang)
-                spellChecker.setUserDict(plmData.projectDictHub().getProjectDictList(root.projectId))
+                spellChecker.setUserDict(skrData.projectDictHub().getProjectDictList(root.projectId))
             }
         }
     }
@@ -243,7 +243,7 @@ UserDictPageForm {
 
         onAccepted: {
 
-            plmData.projectDictHub().addWordToProjectDict(root.projectId, addWordTextField.text)
+            skrData.projectDictHub().addWordToProjectDict(root.projectId, addWordTextField.text)
             addWordTextField.text = ""
         }
 
@@ -272,7 +272,7 @@ UserDictPageForm {
         text: qsTr("Remove word from dictionary")
         icon.source: "qrc:///icons/backup/list-remove.svg"
         onTriggered: {
-            plmData.projectDictHub().removeWordFromProjectDict(root.projectId, priv.selectedWord)
+            skrData.projectDictHub().removeWordFromProjectDict(root.projectId, priv.selectedWord)
         }
     }
     removeWordButton.action: removeWordAction

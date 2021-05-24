@@ -246,8 +246,8 @@ RightDockForm {
     }
     propertyPadViewToolButton.action: propertyPadViewAction
 
-    propertyPadView.propertyHub: plmData.sheetPropertyHub()
-    propertyPadView.paperHub: plmData.sheetHub()
+    propertyPadView.propertyHub: skrData.sheetPropertyHub()
+    propertyPadView.paperHub: skrData.sheetHub()
 
 
     //-----------------------------------------------------------
@@ -287,7 +287,7 @@ RightDockForm {
     Connections{
         target: tagPadView
         function onCallRemoveTagRelationship(projectId, itemId, tagId){
-            plmData.tagHub().removeTagRelationship(projectId, SKR.Note , itemId, tagId)
+            skrData.tagHub().removeTagRelationship(projectId, SKR.Note , itemId, tagId)
         }
     }
 
@@ -296,16 +296,16 @@ RightDockForm {
         function onCallAddTagRelationship(projectId, itemId, tagName){
             var result;
             // verify if name doesn't already exist :
-            var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
+            var tagId = skrData.tagHub().getTagIdWithName(projectId, tagName)
 
             if(tagId === -2){
                 //if not, create tag
-                result = plmData.tagHub().addTag(projectId, tagName)
-                tagId = plmData.tagHub().getLastAddedId()
+                result = skrData.tagHub().addTag(projectId, tagName)
+                tagId = skrData.tagHub().getLastAddedId()
             }
 
             // set relationship
-            result = plmData.tagHub().setTagRelationship(projectId, SKR.Note, itemId, tagId)
+            result = skrData.tagHub().setTagRelationship(projectId, SKR.Note, itemId, tagId)
             if (!result){
                 console.log("result onCallAddTagRelationship")
                 //TODO: add notification

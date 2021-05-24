@@ -93,7 +93,7 @@ OutlinePadForm {
     property bool isModifiable: true
 
     Connections{
-        target: plmData.treePropertyHub()
+        target: skrData.treePropertyHub()
         function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
             if(projectId === root.projectId && treeItemId === root.treeItemId){
 
@@ -118,7 +118,7 @@ OutlinePadForm {
 
     function determineModifiable(){
 
-        root.isModifiable = plmData.treePropertyHub().getProperty(projectId, treeItemId, "modifiable", "true") === "true"
+        root.isModifiable = skrData.treePropertyHub().getProperty(projectId, treeItemId, "modifiable", "true") === "true"
 
         if(!root.isModifiable !== outlineWritingZone.textArea.readOnly){
             saveCurrentCursorPositionAndY()
@@ -158,7 +158,7 @@ OutlinePadForm {
 
         if(milestone === -2){
 
-                outlineWritingZone.text = plmData.treeHub().getSecondaryContent(_projectId, _treeItemId)
+                outlineWritingZone.text = skrData.treeHub().getSecondaryContent(_projectId, _treeItemId)
 
 
         }
@@ -268,7 +268,7 @@ OutlinePadForm {
 
         //avoid first text change, when blank HTML is inserted
         if(outlineWritingZone.textArea.length === 0
-                && plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                && skrData.projectHub().isProjectNotModifiedOnce(projectId)){
             return
         }
 
@@ -289,7 +289,7 @@ OutlinePadForm {
     function saveContent(){
         //console.log("saving text")
         var result
-            result = plmData.treeHub().setSecondaryContent(projectId, treeItemId, outlineWritingZone.text)
+            result = skrData.treeHub().setSecondaryContent(projectId, treeItemId, outlineWritingZone.text)
 
 
         if (!result.success){

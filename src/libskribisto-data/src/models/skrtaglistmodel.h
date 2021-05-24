@@ -23,7 +23,7 @@
 #define SKRTAGLISTMODEL_H
 
 #include <QObject>
-#include "plmdata.h"
+#include "skrdata.h"
 #include "skrtagitem.h"
 #include "./skribisto_data_global.h"
 
@@ -83,7 +83,7 @@ private slots:
 
     void populate();
     void clear();
-    void exploitSignalFromPLMData(int               projectId,
+    void exploitSignalFromSKRData(int               projectId,
                                   int               paperId,
                                   SKRTagItem::Roles role);
     void refreshAfterDataAddition(int projectId,
@@ -91,8 +91,8 @@ private slots:
 
 private:
 
-    void connectToPLMDataSignals();
-    void disconnectFromPLMDataSignals();
+    void connectToSKRDataSignals();
+    void disconnectFromSKRDataSignals();
 
 private:
 

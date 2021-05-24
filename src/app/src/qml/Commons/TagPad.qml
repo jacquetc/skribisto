@@ -112,7 +112,7 @@ TagPadForm {
             if(projectId !== root.projectId && treeItemId !== root.treeItemId){
                 return
             }
-            plmData.tagHub().removeTagRelationship(projectId, treeItemId, tagId)
+            skrData.tagHub().removeTagRelationship(projectId, treeItemId, tagId)
         }
     }
     //----------------------------------------------------------------
@@ -126,21 +126,21 @@ TagPadForm {
 
             var result;
             // verify if name doesn't already exist :
-            var tagId = plmData.tagHub().getTagIdWithName(projectId, tagName)
+            var tagId = skrData.tagHub().getTagIdWithName(projectId, tagName)
 
             if(tagId === -2){
                 //if not, create tag
-                result = plmData.tagHub().addTag(projectId, tagName)
-                tagId = plmData.tagHub().getLastAddedId()
+                result = skrData.tagHub().addTag(projectId, tagName)
+                tagId = skrData.tagHub().getLastAddedId()
             }
             // set color if different
-            if(colorCode !== plmData.tagHub().getTagColor(projectId, tagId)){
-                plmData.tagHub().setTagColor(projectId, tagId, colorCode)
-                plmData.tagHub().setTagTextColor(projectId, tagId, textColorCode)
+            if(colorCode !== skrData.tagHub().getTagColor(projectId, tagId)){
+                skrData.tagHub().setTagColor(projectId, tagId, colorCode)
+                skrData.tagHub().setTagTextColor(projectId, tagId, textColorCode)
             }
 
             // set relationship
-            result = plmData.tagHub().setTagRelationship(projectId, treeItemId, tagId)
+            result = skrData.tagHub().setTagRelationship(projectId, treeItemId, tagId)
             if (!result.success){
                 console.log("result onCallAddTagRelationship")
                 //TODO: add notification
@@ -157,12 +157,12 @@ TagPadForm {
             if(projectId !== root.projectId){
                 return
             }
-            var result = plmData.tagHub().addTag(projectId, tagName)
+            var result = skrData.tagHub().addTag(projectId, tagName)
             var tagId = result.getData("tagId", -2)
 
             if(tagId !== -2){
-                plmData.tagHub().setTagColor(projectId, tagId, colorCode)
-                plmData.tagHub().setTagTextColor(projectId, tagId, textColorCode)
+                skrData.tagHub().setTagColor(projectId, tagId, colorCode)
+                skrData.tagHub().setTagTextColor(projectId, tagId, textColorCode)
             }
         }
     }
@@ -175,7 +175,7 @@ TagPadForm {
             if(projectId !== root.projectId){
                 return
             }
-            plmData.tagHub().removeTag(projectId, tagId)
+            skrData.tagHub().removeTag(projectId, tagId)
         }
     }
     //----------------------------------------------------------------
@@ -410,7 +410,7 @@ TagPadForm {
                 standardButtons: Dialog.Yes  | Dialog.Cancel
 
                 onOpened: {
-                    var list = plmData.tagHub().getItemIdsFromTag(projectId, tagId)
+                    var list = skrData.tagHub().getItemIdsFromTag(projectId, tagId)
 
                     var separator
                     var i
@@ -429,13 +429,13 @@ TagPadForm {
                         //                            separator = -31
                         //                            continue
                         //                        }
-                        relatedItemNames += "- " + plmData.treeHub().getTitle(projectId, list[i]) + "\n"
+                        relatedItemNames += "- " + skrData.treeHub().getTitle(projectId, list[i]) + "\n"
 
                         //                        if(separator === -30){
-                        //                            relatedItemNames += "- " + plmData.sheetHub().getTitle(projectId, list[i]) + "\n"
+                        //                            relatedItemNames += "- " + skrData.sheetHub().getTitle(projectId, list[i]) + "\n"
                         //                        }
                         //                        else if(separator === -31){
-                        //                            relatedItemNames += "- " + plmData.noteHub().getTitle(projectId, list[i]) + "\n"
+                        //                            relatedItemNames += "- " + skrData.noteHub().getTitle(projectId, list[i]) + "\n"
                         //                        }
 
                     }
@@ -482,7 +482,7 @@ TagPadForm {
 
                     //TODO: ask confirmation before erasing
 
-                    //plmData.tagHub().removePaperTagRelationship(projectId, treeItemId, model.itemTagId)
+                    //skrData.tagHub().removePaperTagRelationship(projectId, treeItemId, model.itemTagId)
 
                 }
 
@@ -862,7 +862,7 @@ TagPadForm {
                                     //                                //create relationship with tag
 
                                     //                                var tagId = model.paperId
-                                    //                                var result = plmData.tagHub().setPaperTagRelationship(model.projectId, paperId, tagId )
+                                    //                                var result = skrData.tagHub().setPaperTagRelationship(model.projectId, paperId, tagId )
 
                                     //                                if (!result.success){
                                     //                                    //TODO: add notification
@@ -1010,7 +1010,7 @@ TagPadForm {
 
             onOpened: {
                 inner_titleTextField.clear()
-                var name = plmData.tagHub().getTagName(projectId, tagId)
+                var name = skrData.tagHub().getTagName(projectId, tagId)
                 inner_titleTextField.text = name
                 inner_titleTextField.selectAll()
             }
@@ -1042,7 +1042,7 @@ TagPadForm {
                         }
 
                         //create basic note
-                        var result = plmData.tagHub().setTagName(renamePopup.projectId, renamePopup.tagId, inner_titleTextField.text)
+                        var result = skrData.tagHub().setTagName(renamePopup.projectId, renamePopup.tagId, inner_titleTextField.text)
                         if (!result.success){
                             //TODO: add notification
                             return

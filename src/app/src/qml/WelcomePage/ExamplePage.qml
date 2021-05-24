@@ -74,7 +74,7 @@ ExamplePageForm {
                 repeat: false
                 interval: 100
                 onTriggered: {
-                    plmData.projectHub().loadProject(model.skribistoFile)
+                    skrData.projectHub().loadProject(model.skribistoFile)
 
                 }
 

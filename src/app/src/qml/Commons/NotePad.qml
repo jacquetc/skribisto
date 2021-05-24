@@ -362,7 +362,7 @@ NotePadForm {
                         if(currentNoteId === model.itemNoteId){
                             openSynopsis()
                         }
-                        plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                        skrData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
                     }
                 }
                 SkrMenuItem {
@@ -401,8 +401,8 @@ NotePadForm {
                     if(currentNoteId === model.itemNoteId){
                         openSynopsis()
                     }
-                    plmData.noteHub().setTrashedWithChildren(projectId, noteId, true)
-                    plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, noteId)
+                    skrData.noteHub().setTrashedWithChildren(projectId, noteId, true)
+                    skrData.noteHub().removeSheetNoteRelationship(projectId, sheetId, noteId)
 
                 }
             }
@@ -454,7 +454,7 @@ NotePadForm {
                     if(currentNoteId === model.itemNoteId){
                         openSynopsis()
                     }
-                    plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                    skrData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
 
                 }
 
@@ -564,7 +564,7 @@ NotePadForm {
                             if(currentNoteId === model.itemNoteId){
                                 openSynopsis()
                             }
-                            plmData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
+                            skrData.noteHub().removeSheetNoteRelationship(projectId, sheetId, model.itemNoteId)
 
                         }
 
@@ -629,14 +629,14 @@ NotePadForm {
 
         noteListModel.clear()
 
-        var noteList = plmData.noteHub().getNotesFromSheetId(projectId, sheetId)
-        var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+        var noteList = skrData.noteHub().getNotesFromSheetId(projectId, sheetId)
+        var synopsisId = skrData.noteHub().getSynopsisNoteId(projectId, sheetId)
 
         var i;
         for (i = 0; i < noteList.length ; i++){
             var noteId = noteList[i]
 
-            var title = plmData.noteHub().getTitle(projectId, noteId)
+            var title = skrData.noteHub().getTitle(projectId, noteId)
 
 
             // ignore synopsis
@@ -682,7 +682,7 @@ NotePadForm {
             //console.log("notped :", notePadPrivateObject.newText)
 
             //create basic note
-            var result = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
+            var result = skrData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
             if (!result.success){
                 //TODO: add notification
                 return
@@ -692,7 +692,7 @@ NotePadForm {
 
             // set title
             var title = titleTextField.text
-            plmData.noteHub().setTitle(projectId, noteId, qsTr("New note"))
+            skrData.noteHub().setTitle(projectId, noteId, qsTr("New note"))
 
 
 
@@ -736,7 +736,7 @@ NotePadForm {
         interval: 0
         onTriggered: {
             noteWritingZone.text = notePadPrivateObject.newText
-            plmData.noteHub().setContent(projectId, noteIdToOpen, notePadPrivateObject.newText)
+            skrData.noteHub().setContent(projectId, noteIdToOpen, notePadPrivateObject.newText)
             noteWritingZone.textArea.cursorPosition = 1
         }
     }
@@ -755,20 +755,20 @@ NotePadForm {
     function saveContent(){
         if(projectId !== -2 && currentNoteId !== -2 && sheetId !== -2 && !minimalMode){
             //console.log("saving note in notepad", "projectId", projectId,  "currentNoteId", currentNoteId, "sheetId", sheetId)
-            plmData.noteHub().setContent(projectId, currentNoteId, noteWritingZone.text)
+            skrData.noteHub().setContent(projectId, currentNoteId, noteWritingZone.text)
         }
     }
 
 
     //    noteWritingZone.onActiveFocusChanged: {
-    //            noteWritingZone.text = plmData.sheetHub().getContent(projectId, currentNoteId)
+    //            noteWritingZone.text = skrData.sheetHub().getContent(projectId, currentNoteId)
     //            restoreCurrentPaperCursorPositionAndY()
     //}
 
 
     // project to be closed :
     Connections{
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectToBeClosed(projectId) {
 
             if (projectId === root.projectId){
@@ -805,7 +805,7 @@ NotePadForm {
     property bool isModifiable: true
 
     Connections{
-        target: plmData.notePropertyHub()
+        target: skrData.notePropertyHub()
         function onPropertyChanged(projectId, propertyId, paperId, name, value){
             if(projectId === root.projectId && paperId === root.currentNoteId){
 
@@ -830,7 +830,7 @@ NotePadForm {
 
     function determineModifiable(){
 
-        root.isModifiable = plmData.notePropertyHub().getProperty(projectId, root.currentNoteId, "modifiable", "true") === "true"
+        root.isModifiable = skrData.notePropertyHub().getProperty(projectId, root.currentNoteId, "modifiable", "true") === "true"
 
         if(!root.isModifiable !== noteWritingZone.textArea.readOnly){
             saveCurrentPaperCursorPositionAndY()
@@ -856,7 +856,7 @@ NotePadForm {
 
 
         noteWritingZone.setCursorPosition(0)
-        noteWritingZone.text = plmData.noteHub().getContent(_projectId, _noteId)
+        noteWritingZone.text = skrData.noteHub().getContent(_projectId, _noteId)
 
         // apply format
         noteWritingZone.documentHandler.indentEverywhere = SkrSettings.notePadSettings.textIndent
@@ -880,12 +880,12 @@ NotePadForm {
         notePadPrivateObject.contentSaveTimerEnabled = true
 
 
-        var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+        var synopsisId = skrData.noteHub().getSynopsisNoteId(projectId, sheetId)
         if (synopsisId === currentNoteId){
             currentNoteTitleLabel.text = qsTr("Outline")
         }
         else{
-            currentNoteTitleLabel.text = plmData.noteHub().getTitle(_projectId, _noteId)
+            currentNoteTitleLabel.text = skrData.noteHub().getTitle(_projectId, _noteId)
         }
 
 
@@ -966,7 +966,7 @@ NotePadForm {
     //--------------------------------------------
 
     Connections{
-        target: plmData.noteHub()
+        target: skrData.noteHub()
         function onTitleChanged(projectId, noteId, newTitle){
             if(projectId !== root.projectId){
                 return
@@ -980,7 +980,7 @@ NotePadForm {
 
                     noteListModel.setProperty(i, "title", newTitle)
 
-                    var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+                    var synopsisId = skrData.noteHub().getSynopsisNoteId(projectId, sheetId)
                     if (item.itemNoteId === currentNoteId && synopsisId === currentNoteId){
                         currentNoteTitleLabel.text = qsTr("Outline")
                     }
@@ -1010,7 +1010,7 @@ NotePadForm {
                 return
             }
 
-            var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+            var synopsisId = skrData.noteHub().getSynopsisNoteId(projectId, sheetId)
             if(synopsisId === currentNoteId){
                 return;
             }
@@ -1049,7 +1049,7 @@ NotePadForm {
     //--------------------------------------------
 
     Connections{
-        target: plmData.noteHub()
+        target: skrData.noteHub()
         function sheetNoteRelationshipChanged(projectId, sheetId, noteId){
             if(projectId !== root.projectId){
                 return
@@ -1058,7 +1058,7 @@ NotePadForm {
                 return
             }
             // ignore synopsis
-            var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+            var synopsisId = skrData.noteHub().getSynopsisNoteId(projectId, sheetId)
             if (synopsisId === noteId){
                 return
             }
@@ -1091,7 +1091,7 @@ NotePadForm {
 
 
     Connections{
-        target: plmData.noteHub()
+        target: skrData.noteHub()
         function onSheetNoteRelationshipAdded(projectId, sheetId, noteId){
             if(projectId !== root.projectId){
                 return
@@ -1100,12 +1100,12 @@ NotePadForm {
                 return
             }
             // ignore synopsis
-            var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+            var synopsisId = skrData.noteHub().getSynopsisNoteId(projectId, sheetId)
             if (synopsisId === noteId){
                 return
             }
 
-            var title = plmData.noteHub().getTitle(projectId, noteId)
+            var title = skrData.noteHub().getTitle(projectId, noteId)
             noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
 
         }
@@ -1245,7 +1245,7 @@ NotePadForm {
                     onAccepted: {
 
                         //create basic note
-                        var result = plmData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
+                        var result = skrData.noteHub().addNoteRelatedToSheet(projectId, sheetId)
                         if (!result.success){
                             //TODO: add notification
                             return
@@ -1255,7 +1255,7 @@ NotePadForm {
 
                         // set title
                         var title = inner_titleTextField.text
-                        plmData.noteHub().setTitle(projectId, noteId, title)
+                        skrData.noteHub().setTitle(projectId, noteId, title)
 
                         // add to model
                         //noteListModel.append({title: title, itemProjectId: projectId, itemSheetId: sheetId, itemNoteId: noteId})
@@ -1330,7 +1330,7 @@ NotePadForm {
                                         //create relationship with note
 
                                         var noteId = model.paperId
-                                        var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                                        var result = skrData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
                                         if (!result.success){
                                             //TODO: add notification
@@ -1373,7 +1373,7 @@ NotePadForm {
                                 //                                //create relationship with note
 
                                 //                                var noteId = model.paperId
-                                //                                var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                                //                                var result = skrData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
                                 //                                if (!result.success){
                                 //                                    //TODO: add notification
@@ -1396,7 +1396,7 @@ NotePadForm {
                                         //create relationship with note
 
                                         var noteId = model.paperId
-                                        var result = plmData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
+                                        var result = skrData.noteHub().setSheetNoteRelationship(model.projectId, sheetId, noteId )
 
                                         if (!result.success){
                                             //TODO: add notification
@@ -1489,7 +1489,7 @@ NotePadForm {
     //--------------------------------------------
 
     Connections{
-        target: plmData.noteHub()
+        target: skrData.noteHub()
         function onSheetNoteRelationshipRemoved(projectId, sheetId, noteId){
             if(projectId !== root.projectId){
                 return
@@ -1555,7 +1555,7 @@ NotePadForm {
             onOpened: {
                 inner_titleTextField.clear()
 
-                var title = plmData.noteHub().getTitle(projectId, noteId)
+                var title = skrData.noteHub().getTitle(projectId, noteId)
                 inner_titleTextField.text = title
                 inner_titleTextField.selectAll()
             }
@@ -1587,7 +1587,7 @@ NotePadForm {
                         }
 
                         //create basic note
-                        var result = plmData.noteHub().setTitle(renamePopup.projectId, renamePopup.noteId, inner_titleTextField.text)
+                        var result = skrData.noteHub().setTitle(renamePopup.projectId, renamePopup.noteId, inner_titleTextField.text)
                         if (!result.success){
                             //TODO: add notification
                             return

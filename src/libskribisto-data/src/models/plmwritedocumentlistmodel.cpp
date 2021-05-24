@@ -1,13 +1,13 @@
 #include "plmwritedocumentlistmodel.h"
 
 #include "skrtreehub.h"
-#include <plmdata.h>
+#include <skrdata.h>
 
 PLMWriteDocumentListModel::PLMWriteDocumentListModel(QObject *parent) :
     PLMDocumentListModel(parent, "tbl_user_writewindow_doc_list"), m_tableName(
         "tbl_user_writewindow_doc_list")
 {
-    connect(plmdata->treeHub(),
+    connect(skrdata->treeHub(),
             &SKRTreeHub::titleChanged,
             [ = ](int            projectId,
                   int            paperId,
@@ -15,7 +15,7 @@ PLMWriteDocumentListModel::PLMWriteDocumentListModel(QObject *parent) :
         QList<int>documentIds = this->getDocumentIdEverywhere(projectId, paperId);
 
         //        for(int docId : documentIds){
-        //            plmdata->userHub()->set(projectId, m_tableName, docId,
+        //            skrdata->userHub()->set(projectId, m_tableName, docId,
         // "t_title", newTitle, true);
         //        }
     }
@@ -36,7 +36,7 @@ const
 
     QString roleString = this->translateRole(role);
 
-    //    hash = plmdata->userHub()->getValueByIdsWhere(projectId,
+    //    hash = skrdata->userHub()->getValueByIdsWhere(projectId,
     // m_tableName, roleString, where);
 
     if (hash.isEmpty()) { // create a new document
@@ -56,7 +56,7 @@ int PLMWriteDocumentListModel::closeDocument(int projectId, int paperId, int sub
 
     QString roleString = this->translateRole(PLMDocumentListModel::Roles::PropertyRole);
 
-    //    hash = plmdata->userHub()->getValueByIdsWhere(projectId,
+    //    hash = skrdata->userHub()->getValueByIdsWhere(projectId,
     // m_tableName, roleString, where);
 
     int documentId = hash.keys().first();

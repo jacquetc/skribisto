@@ -165,7 +165,7 @@ LeftDockForm {
     navigationView.navigationListProxyModel: navigationProxyModel
 
     Connections {
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onActiveProjectChanged(projectId){
             navigationProxyModel.projectIdFilter = projectId
             navigationProxyModel.parentIdFilter = -1
@@ -201,7 +201,7 @@ LeftDockForm {
 
         var i
         for(i = 0 ; i < sheetIdList.length ; i++){
-            plmData.sheetHub().untrashOnlyOnePaper(projectId, sheetIdList[i])
+            skrData.sheetHub().untrashOnlyOnePaper(projectId, sheetIdList[i])
         }
 
 

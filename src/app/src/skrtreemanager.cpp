@@ -20,22 +20,22 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "skrtreemanager.h"
-#include "plmdata.h"
+#include "skrdata.h"
 #include "skrpageinterface.h"
 #include "skrpagetoolboxinterface.h"
 
 SKRTreeManager::SKRTreeManager(QObject *parent) : QObject(parent)
 {
-    plmdata->pluginHub()->addPluginType<SKRPageInterface>();
-    plmdata->pluginHub()->addPluginType<SKRPageToolboxInterface>();
+    skrdata->pluginHub()->addPluginType<SKRPageInterface>();
+    skrdata->pluginHub()->addPluginType<SKRPageToolboxInterface>();
 
-    connect(plmdata->treeHub(), &SKRTreeHub::treeItemAdded, this, [this](int projectId, int treeItemId) {
-        QString pageType = plmdata->treeHub()->getType(projectId, treeItemId);
+    connect(skrdata->treeHub(), &SKRTreeHub::treeItemAdded, this, [this](int projectId, int treeItemId) {
+        QString pageType = skrdata->treeHub()->getType(projectId, treeItemId);
         this->finaliseAfterCreationOfTreeItem(projectId, treeItemId, pageType);
     });
 
 
-    connect(plmdata->projectHub(), &PLMProjectHub::projectLoaded, this, [this](int projectId) {
+    connect(skrdata->projectHub(), &PLMProjectHub::projectLoaded, this, [this](int projectId) {
         this->updateAllCharAndWordCount(projectId);
     });
 }
@@ -56,7 +56,7 @@ QUrl SKRTreeManager::getIconUrlFromPageType(const QString& pageType) const
         url = "qrc:///icons/backup/data-warning.svg";
     }
 
-    QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
+    QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
 
     for (SKRPageInterface *plugin: qAsConst(pluginList)) {
         if (pageType == plugin->pageType()) {
@@ -81,7 +81,7 @@ QStringList SKRTreeManager::getPageTypeList(bool constructibleOnly = true) const
     stringList << "FOLDER";
 
 
-    QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
+    QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
 
     for (SKRPageInterface *plugin: qAsConst(pluginList)) {
         if (constructibleOnly && !plugin->isConstructible()) {
@@ -108,7 +108,7 @@ QString SKRTreeManager::getPageTypeText(const QString& pageType) const
         text = tr("Folder");
     }
 
-    QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
+    QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
 
     for (SKRPageInterface *plugin: qAsConst(pluginList)) {
         if (pageType == plugin->pageType()) {
@@ -125,7 +125,7 @@ QString SKRTreeManager::getPageDetailText(const QString& pageType) const
 {
     QString text;
 
-    QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
+    QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
 
     for (SKRPageInterface *plugin: qAsConst(pluginList)) {
         if (pageType == plugin->pageType()) {
@@ -141,7 +141,7 @@ QString SKRTreeManager::getPageDetailText(const QString& pageType) const
 
 void SKRTreeManager::updateCharAndWordCount(int projectId, int treeItemId, const QString& pageType, bool sameThread)
 {
-    QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
+    QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
 
     for (SKRPageInterface *plugin: qAsConst(pluginList)) {
         if (pageType == plugin->pageType()) {
@@ -155,10 +155,10 @@ void SKRTreeManager::updateCharAndWordCount(int projectId, int treeItemId, const
 
 void SKRTreeManager::updateAllCharAndWordCount(int projectId)
 {
-    QList<int> allIds = plmdata->treeHub()->getAllIds(projectId);
+    QList<int> allIds = skrdata->treeHub()->getAllIds(projectId);
 
     for (int treeItemId : qAsConst(allIds)) {
-        QString pageType = plmdata->treeHub()->getType(projectId, treeItemId);
+        QString pageType = skrdata->treeHub()->getType(projectId, treeItemId);
         this->updateCharAndWordCount(projectId, treeItemId, pageType);
     }
 }
@@ -169,7 +169,7 @@ void SKRTreeManager::updateAllCharAndWordCount(int projectId)
 QStringList SKRTreeManager::findToolboxUrlsForPage(const QString &pageType) const
 {
     QStringList list;
-    QList<SKRPageToolboxInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageToolboxInterface>();
+    QList<SKRPageToolboxInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageToolboxInterface>();
 
     for (SKRPageToolboxInterface *plugin: qAsConst(pluginList)) {
         if (plugin->associatedPageTypes().contains(pageType)) {
@@ -187,7 +187,7 @@ SKRResult SKRTreeManager::finaliseAfterCreationOfTreeItem(int projectId, int tre
 {
     SKRResult result(this);
 
-    QList<SKRPageInterface *> pluginList = plmdata->pluginHub()->pluginsByType<SKRPageInterface>();
+    QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
 
     for (SKRPageInterface *plugin: qAsConst(pluginList)) {
         if (pageType == plugin->pageType()) {

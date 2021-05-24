@@ -15,8 +15,8 @@ ProjectPageForm {
     Component.onCompleted: {
         editTitleTextFieldLoader.sourceComponent = editTitleTextFieldComponent
 
-        titleLabel.text = plmData.projectHub().getProjectName(projectId)
-        locationLabel.text = plmData.projectHub().getPath(projectId)
+        titleLabel.text = skrData.projectHub().getProjectName(projectId)
+        locationLabel.text = skrData.projectHub().getPath(projectId)
 
         dictNotFoundLabel.visible = false
         populateDictComboBox()
@@ -47,7 +47,7 @@ ProjectPageForm {
     //---------------------------------------------------------------
 
     Connections {
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectNameChanged(projectId, newName){
             if(projectId === root.projectId){
                 titleLabel.text = newName
@@ -86,7 +86,7 @@ ProjectPageForm {
 
             onEditingFinished: {
 
-                plmData.projectHub().setProjectName(projectId, editTitleTextField.text)
+                skrData.projectHub().setProjectName(projectId, editTitleTextField.text)
 
                 // reset
                 editTitleTextField.visible = false
@@ -149,7 +149,7 @@ ProjectPageForm {
             dictComboBoxModel.append({"text": dictList[i], "dictCode": dictList[i]})
         }
 
-        var projectDictCode = plmData.projectHub().getLangCode(projectId)
+        var projectDictCode = skrData.projectHub().getLangCode(projectId)
         if(dictComboBox.indexOfValue(projectDictCode) === -1){
             dictComboBoxModel.append({"text": projectDictCode, "dictCode": projectDictCode})
             privateObject.originalLangCode = projectDictCode
@@ -159,7 +159,7 @@ ProjectPageForm {
 
     function determineCurrentDictComboBoxValue(){
 
-        var langCode = plmData.projectHub().getLangCode(projectId)
+        var langCode = skrData.projectHub().getLangCode(projectId)
 
 
         if(langCode === ""){
@@ -179,7 +179,7 @@ ProjectPageForm {
 
     dictComboBox.onCurrentValueChanged: {
         if(dictComboBox.activeFocus){
-            plmData.projectHub().setLangCode(projectId, dictComboBox.currentValue)
+            skrData.projectHub().setLangCode(projectId, dictComboBox.currentValue)
         }
         if(privateObject.showDictNotFoundLabel && privateObject.originalLangCode === dictComboBox.currentValue){
             dictNotFoundLabel.visible = true
@@ -192,7 +192,7 @@ ProjectPageForm {
 
 
     Connections {
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onLangCodeChanged(projectId, newLangCode){
             if(projectId === root.projectId){
                 dictComboBox.currentIndex = dictComboBox.indexOfValue(newLangCode)
@@ -206,16 +206,16 @@ ProjectPageForm {
     //---------------------------------------------------------------
 
     function populateStatistics(){
-        var countString = skrRootItem.toLocaleIntString(plmData.statHub().getTreeItemTotalCount(SKRStatHub.Character, root.projectId))
+        var countString = skrRootItem.toLocaleIntString(skrData.statHub().getTreeItemTotalCount(SKRStatHub.Character, root.projectId))
 
         charCountLabel.text = qsTr("Character count : %1").arg(countString)
-        countString = skrRootItem.toLocaleIntString(plmData.statHub().getTreeItemTotalCount(SKRStatHub.Word, root.projectId))
+        countString = skrRootItem.toLocaleIntString(skrData.statHub().getTreeItemTotalCount(SKRStatHub.Word, root.projectId))
         wordCountLabel.text = qsTr("Word count : %1").arg(countString)
     }
 
 
     Connections {
-        target: plmData.statHub()
+        target: skrData.statHub()
         function onStatsChanged(statType, projectId, count){
             if(projectId !== root.projectId){
                 return

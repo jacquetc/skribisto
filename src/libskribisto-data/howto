@@ -17,10 +17,10 @@ make
 charger la libraire depuis python (si n'est pas dans le chemin par défaut)
 
 from ctypes import cdll
-cdll.LoadLibrary("./libplmdata.so.0")
-import plmdata
+cdll.LoadLibrary("./libskrdata.so.0")
+import skrdata
 
-data = plmdata.PLMData(None)
+data = skrdata.SKRData(None)
 data.write().sendHello()
 
 Hello !

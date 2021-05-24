@@ -961,7 +961,7 @@ OverviewTreeForm {
 
                                         // project to be closed :
                                         Connections{
-                                            target: plmData.projectHub()
+                                            target: skrData.projectHub()
                                             function onProjectToBeClosed(projectId) {
 
                                                 if (projectId === currentProjectId){
@@ -990,13 +990,13 @@ OverviewTreeForm {
                                         //---------------------------------------------------------
 
                                         function openSynopsisFromSheetId(projectId, sheetId){
-                                            var synopsisId = plmData.noteHub().getSynopsisNoteId(projectId, sheetId)
+                                            var synopsisId = skrData.noteHub().getSynopsisNoteId(projectId, sheetId)
 
                                             if(synopsisId === -2){ // no synopsis, create one
-                                                var result = plmData.noteHub().createSynopsis(projectId, sheetId)
+                                                var result = skrData.noteHub().createSynopsis(projectId, sheetId)
                                                 synopsisId = result.getData("noteId", -2);
-                                                plmData.noteHub().setTitle(projectId, synopsisId, model.name)
-                                                //plmData.notePropertyHub().setProperty(projectId, synopsisId, "label", qsTr("Outline"))
+                                                skrData.noteHub().setTitle(projectId, synopsisId, model.name)
+                                                //skrData.notePropertyHub().setProperty(projectId, synopsisId, "label", qsTr("Outline"))
                                                 if(synopsisId === -2){
                                                     console.warn("can't find synopsis of", projectId, sheetId)
                                                     //TODO: add notification
@@ -1034,7 +1034,7 @@ OverviewTreeForm {
 
                                             //console.log("opening note :", _projectId, _treeItemId)
                                             writingZone.setCursorPosition(0)
-                                            writingZone.text = plmData.noteHub().getContent(_projectId, _treeItemId)
+                                            writingZone.text = skrData.noteHub().getContent(_projectId, _treeItemId)
 
                                             skrTextBridge.subscribeTextDocument(writingZone.pageType, projectId, treeItemId, writingZone.textArea.objectName, writingZone.textArea.textDocument)
 
@@ -1066,7 +1066,7 @@ OverviewTreeForm {
                                         property bool isModifiable: true
 
                                         Connections{
-                                            target: plmData.treePropertyHub()
+                                            target: skrData.treePropertyHub()
                                             function onPropertyChanged(_projectId, propertyId, _treeItemId, name, value){
                                                 if(_projectId === writingZone.projectId && _treeItemId === writingZone.treeItemId){
 
@@ -1091,7 +1091,7 @@ OverviewTreeForm {
 
                                         function determineModifiable(){
 
-                                            isModifiable = plmData.notePropertyHub().getProperty(writingZone.projectId, writingZone.treeItemId, "modifiable", "true") === "true"
+                                            isModifiable = skrData.notePropertyHub().getProperty(writingZone.projectId, writingZone.treeItemId, "modifiable", "true") === "true"
 
                                             if(!isModifiable !== writingZone.textArea.readOnly){
                                                 saveCurrentPaperCursorPositionAndY()
@@ -1174,7 +1174,7 @@ OverviewTreeForm {
 
                                             //avoid first text change, when blank HTML is inserted
                                             if(writingZone.textArea.length === 0
-                                                    && plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                                                    && skrData.projectHub().isProjectNotModifiedOnce(projectId)){
                                                 return
                                             }
 
@@ -1199,7 +1199,7 @@ OverviewTreeForm {
 
 
                                             //console.log("saving note")
-                                            var result = plmData.noteHub().setContent(projectId, treeItemId, writingZone.text)
+                                            var result = skrData.noteHub().setContent(projectId, treeItemId, writingZone.text)
                                             if (!result.success){
                                                 console.log("saving note failed", projectId, treeItemId)
                                             }
@@ -1919,7 +1919,7 @@ OverviewTreeForm {
                 enabled: listView.enabled && currentTreeItemId !== -1
                 onTriggered: {
                     console.log("add before action", currentProjectId, currentTreeItemId)
-                    var result = plmData.sheetHub().addPaperAbove(currentProjectId, currentTreeItemId)
+                    var result = skrData.sheetHub().addPaperAbove(currentProjectId, currentTreeItemId)
                     // edit it :
                     if(result){
                         listView.itemAtIndex(currentIndex).treeItemIdToEdit = result.getData("sheetId", -2) //start when treeItemIdToEdit changes
@@ -1943,7 +1943,7 @@ OverviewTreeForm {
                 enabled: listView.enabled && currentTreeItemId !== -1
                 onTriggered: {
                     console.log("add after action", currentProjectId, currentTreeItemId)
-                    var result = plmData.sheetHub().addPaperBelow(currentProjectId, currentTreeItemId)
+                    var result = skrData.sheetHub().addPaperBelow(currentProjectId, currentTreeItemId)
                     // edit it :
                     if(result){
                         listView.itemAtIndex(currentIndex).treeItemIdToEdit = result.getData("sheetId", -2)
@@ -1964,7 +1964,7 @@ OverviewTreeForm {
             onTriggered: {
                 console.log("add child action", currentProjectId, currentTreeItemId)
 
-                var result = plmData.sheetHub().addChildPaper(currentProjectId, currentTreeItemId)
+                var result = skrData.sheetHub().addChildPaper(currentProjectId, currentTreeItemId)
                 // edit it :
                 if(result){
                     listView.itemAtIndex(currentIndex).treeItemIdToEdit = result.getData("sheetId", -2)

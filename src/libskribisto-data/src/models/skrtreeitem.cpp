@@ -20,13 +20,13 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "skrtreeitem.h"
-#include "plmdata.h"
+#include "skrdata.h"
 
 SKRTreeItem::SKRTreeItem() :
     m_invalidatedRoles(), m_isRootItem(false)
 {
-    m_treeHub     = plmdata->treeHub();
-    m_propertyHub = plmdata->treePropertyHub();
+    m_treeHub     = skrdata->treeHub();
+    m_propertyHub = skrdata->treePropertyHub();
 
 
     m_data.insert(Roles::ProjectIdRole,  -2);
@@ -42,8 +42,8 @@ SKRTreeItem::SKRTreeItem(int projectId,
 
     m_invalidatedRoles(), m_isRootItem(false)
 {
-    m_treeHub     = plmdata->treeHub();
-    m_propertyHub = plmdata->treePropertyHub();
+    m_treeHub     = skrdata->treeHub();
+    m_propertyHub = skrdata->treePropertyHub();
 
     m_data.insert(Roles::ProjectIdRole,  projectId);
     m_data.insert(Roles::TreeItemIdRole, treeItemId);
@@ -91,7 +91,7 @@ QVariant SKRTreeItem::data(int role)
 
         switch (role) {
         case Roles::ProjectNameRole:
-            m_data.insert(role, plmdata->projectHub()->getProjectName(projectId));
+            m_data.insert(role, skrdata->projectHub()->getProjectName(projectId));
             break;
 
         case Roles::ProjectIdRole:
@@ -168,12 +168,12 @@ QVariant SKRTreeItem::data(int role)
 
 
         case Roles::ProjectIsBackupRole:
-            m_data.insert(role, plmdata->projectHub()->isThisProjectABackup(projectId));
+            m_data.insert(role, skrdata->projectHub()->isThisProjectABackup(projectId));
             break;
 
 
         case Roles::ProjectIsActiveRole:
-            m_data.insert(role, plmdata->projectHub()->isThisProjectActive(projectId));
+            m_data.insert(role, skrdata->projectHub()->isThisProjectActive(projectId));
             break;
 
         case Roles::IsRenamableRole:

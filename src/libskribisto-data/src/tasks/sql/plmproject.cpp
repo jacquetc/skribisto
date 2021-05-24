@@ -2,7 +2,7 @@
 *   Copyright (C) 2015 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmdatabase.cpp                                                   *
+*  Filename: skrdatabase.cpp                                                   *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *

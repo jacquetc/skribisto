@@ -11,29 +11,29 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
 {
     this->setSourceModel(skrmodels->treeListModel());
 
-    m_treeHub     = plmdata->treeHub();
-    m_propertyHub = plmdata->treePropertyHub();
+    m_treeHub     = skrdata->treeHub();
+    m_propertyHub = skrdata->treePropertyHub();
 
 
     this->setSortRole(SKRTreeItem::SortOrderRole);
     this->setDynamicSortFilter(true);
 
 
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectLoaded,
             this,
             &SKRSearchTreeListProxyModel::loadProjectSettings);
-    connect(plmdata->projectHub(),
+    connect(skrdata->projectHub(),
             &PLMProjectHub::projectToBeClosed,
             this,
             &SKRSearchTreeListProxyModel::saveProjectSettings,
             Qt::DirectConnection);
-    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this,
+    connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this,
             [this](int
                    projectId) {
         this->clearHistory(projectId);
     });
-    connect(plmdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
+    connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->invalidateFilter();
     });
 
@@ -683,7 +683,7 @@ bool SKRSearchTreeListProxyModel::filterAcceptsRow(int                sourceRow,
     // tagId filtering
 
     if (value && !m_tagIdListFilter.isEmpty() && (m_projectIdFilter != -2)) {
-        QList<int> tagIds = plmdata->tagHub()->getTagsFromItemId(m_projectIdFilter, treeItemId);
+        QList<int> tagIds = skrdata->tagHub()->getTagsFromItemId(m_projectIdFilter, treeItemId);
 
         value = false;
 
@@ -916,7 +916,7 @@ SKRTreeItem * SKRSearchTreeListProxyModel::getItem(int projectId, int treeItemId
 
 void SKRSearchTreeListProxyModel::loadProjectSettings(int projectId)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
 
     settings.beginGroup("project_" + unique_identifier);
@@ -936,7 +936,7 @@ void SKRSearchTreeListProxyModel::saveProjectSettings(int projectId)
         return;
     }
 
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
     QSettings settings;
 
     settings.beginGroup("project_" + unique_identifier);
@@ -1187,7 +1187,7 @@ QString SKRSearchTreeListProxyModel::getItemName(int projectId, int treeItemId)
     QString name = "";
 
     if (treeItemId == -1) {
-        name = plmdata->projectHub()->getProjectName(projectId);
+        name = skrdata->projectHub()->getProjectName(projectId);
     }
     else {
         SKRTreeItem *item = this->getItem(projectId, treeItemId);

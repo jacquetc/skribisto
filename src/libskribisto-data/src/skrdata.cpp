@@ -1,8 +1,8 @@
-#include "plmdata.h"
+#include "skrdata.h"
 #include <QDebug>
 #include <QCoreApplication>
 
-PLMData::PLMData(QObject *parent) : QObject(parent)
+SKRData::SKRData(QObject *parent) : QObject(parent)
 {
     m_instance = this;
 
@@ -56,19 +56,19 @@ PLMData::PLMData(QObject *parent) : QObject(parent)
 
 // -----------------------------------------------------------------------------
 
-PLMData::~PLMData()
+SKRData::~SKRData()
 {}
 
 // -----------------------------------------------------------------------------
 
-PLMSignalHub * PLMData::signalHub()
+PLMSignalHub * SKRData::signalHub()
 {
     return m_signalHub;
 }
 
 // -----------------------------------------------------------------------------
 
-SKRErrorHub * PLMData::errorHub()
+SKRErrorHub * SKRData::errorHub()
 {
     return m_errorHub;
 }
@@ -76,7 +76,7 @@ SKRErrorHub * PLMData::errorHub()
 // -----------------------------------------------------------------------------
 
 
-PLMProjectHub * PLMData::projectHub()
+PLMProjectHub * SKRData::projectHub()
 {
     return m_projectHub;
 }
@@ -84,46 +84,46 @@ PLMProjectHub * PLMData::projectHub()
 // -----------------------------------------------------------------------------
 
 
-PLMData *PLMData::m_instance = nullptr;
+SKRData *SKRData::m_instance = nullptr;
 
 // -----------------------------------------------------------------------------
 
 
-SKRTreeHub * PLMData::treeHub()
+SKRTreeHub * SKRData::treeHub()
 {
     return m_treeHub;
 }
 
 // -----------------------------------------------------------------------------
 
-SKRPropertyHub * PLMData::treePropertyHub()
+SKRPropertyHub * SKRData::treePropertyHub()
 {
     return m_treePropertyHub;
 }
 
 // -----------------------------------------------------------------------------
-SKRPluginHub * PLMData::pluginHub()
+SKRPluginHub * SKRData::pluginHub()
 {
     return m_pluginHub;
 }
 
 // -----------------------------------------------------------------------------
 
-SKRTagHub * PLMData::tagHub()
+SKRTagHub * SKRData::tagHub()
 {
     return m_tagHub;
 }
 
 // -----------------------------------------------------------------------------
 
-SKRProjectDictHub * PLMData::projectDictHub()
+SKRProjectDictHub * SKRData::projectDictHub()
 {
     return m_projectDictHub;
 }
 
 // -----------------------------------------------------------------------------
 
-SKRStatHub * PLMData::statHub()
+SKRStatHub * SKRData::statHub()
 {
     return m_statHub;
 }

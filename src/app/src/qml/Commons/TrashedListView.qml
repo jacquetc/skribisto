@@ -82,11 +82,11 @@ TrashedListViewForm {
 
     Connections {
 
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectLoaded(projectId){
 
 
-            var name =  plmData.projectHub().getProjectName(projectId)
+            var name =  skrData.projectHub().getProjectName(projectId)
 
             projectComboBoxModel.append({projectId: projectId, name: name})
 
@@ -104,13 +104,13 @@ TrashedListViewForm {
 
         // populate
 
-        var projectList = plmData.projectHub().getProjectIdList()
+        var projectList = skrData.projectHub().getProjectIdList()
 
         var i;
         for(i = 0 ; i < projectList.length ; i++ ){
             var projectId = projectList[i]
 
-            var name =  plmData.projectHub().getProjectName(projectId)
+            var name =  skrData.projectHub().getProjectName(projectId)
 
             projectComboBoxModel.append({projectId: projectId, name: name})
             //console.log("projectList")
@@ -130,7 +130,7 @@ TrashedListViewForm {
 
         if(trashProjectComboBox.currentValue === undefined){
 
-            var projectList = plmData.projectHub().getProjectIdList()
+            var projectList = skrData.projectHub().getProjectIdList()
             trashProjectComboBox.currentIndex = projectList.length - 1;
             var _projectId = trashProjectComboBox.valueAt(projectList.length - 1)
             proxyModel.projectIdFilter = _projectId
@@ -152,7 +152,7 @@ TrashedListViewForm {
 
     Connections {
 
-        target: plmData.projectHub()
+        target: skrData.projectHub()
         function onProjectClosed(projectId){
 
             goBack()
@@ -191,7 +191,7 @@ TrashedListViewForm {
         }
 
         deleteDefinitivelyDialog.projectId = projectId
-        deleteDefinitivelyDialog.projectName = plmData.projectHub().getProjectName(projectId)
+        deleteDefinitivelyDialog.projectName = skrData.projectHub().getProjectName(projectId)
         deleteDefinitivelyDialog.treeItemIdList = idList
         deleteDefinitivelyDialog.paperNamesString = "\n- " + nameList.join("\n- ")
         deleteDefinitivelyDialog.open()

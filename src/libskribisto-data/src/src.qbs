@@ -11,13 +11,13 @@ DynamicLibrary {
     cpp.includePaths: ['.']
     cpp.cxxLanguageVersion: "c++14"
     files: [
-        "plmdata.cpp",
+        "skrdata.cpp",
         "plmerror.h",
         "plmnotehub.cpp",
         "plmpaperhub.h",
         "plmpropertyhub.cpp",
         "plmsheethub.h",
-        "plmdata.h",
+        "skrdata.h",
         "plmerrorhub.cpp",
         "plmnotehub.h",
         "plmprojecthub.cpp",

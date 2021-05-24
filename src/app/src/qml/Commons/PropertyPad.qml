@@ -32,7 +32,7 @@ PropertyPadForm {
     }
 
     Connections{
-        target: plmData.treePropertyHub()
+        target: skrData.treePropertyHub()
         function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
             if(projectId === root.projectId && treeItemId === root.treeItemId){
                 if(name === "printable"){
@@ -60,7 +60,7 @@ PropertyPadForm {
     function determinePrintableToolButton(){
         switchPrivate.updateBlocked = true
 
-        printableToolButton.checked = plmData.treePropertyHub().getProperty(projectId, treeItemId, "printable", "true") === "true"
+        printableToolButton.checked = skrData.treePropertyHub().getProperty(projectId, treeItemId, "printable", "true") === "true"
 
         switchPrivate.updateBlocked = false
     }
@@ -70,12 +70,12 @@ PropertyPadForm {
             return
         }
         var checked = printableToolButton.checked ? "true" : "false"
-        plmData.treePropertyHub().setProperty(projectId, treeItemId, "printable", checked)
+        skrData.treePropertyHub().setProperty(projectId, treeItemId, "printable", checked)
 
-        var childrenList = plmData.treeHub().getAllChildren(projectId, treeItemId)
+        var childrenList = skrData.treeHub().getAllChildren(projectId, treeItemId)
 
         childrenList.forEach(function(childId, index, array) {
-            plmData.treePropertyHub().setProperty(projectId, childId, "printable", checked)
+            skrData.treePropertyHub().setProperty(projectId, childId, "printable", checked)
         })
     }
     printableToolButton.icon.source: "qrc:///icons/backup/document-print.svg"
@@ -87,7 +87,7 @@ PropertyPadForm {
     function determineModifiableToolButton(){
         switchPrivate.updateBlocked = true
 
-        modifiableToolButton.checked = plmData.treePropertyHub().getProperty(projectId, treeItemId, "modifiable", "true") === "true"
+        modifiableToolButton.checked = skrData.treePropertyHub().getProperty(projectId, treeItemId, "modifiable", "true") === "true"
 
         switchPrivate.updateBlocked = false
     }
@@ -97,12 +97,12 @@ PropertyPadForm {
             return
         }
         var checked = modifiableToolButton.checked ? "true" : "false"
-        plmData.treePropertyHub().setProperty(projectId, treeItemId, "modifiable", checked)
+        skrData.treePropertyHub().setProperty(projectId, treeItemId, "modifiable", checked)
 
-        var childrenList = plmData.treeHub().getAllChildren(projectId, treeItemId)
+        var childrenList = skrData.treeHub().getAllChildren(projectId, treeItemId)
 
         childrenList.forEach(function(childId, index, array) {
-            plmData.treePropertyHub().setProperty(projectId, childId, "modifiable", checked)
+            skrData.treePropertyHub().setProperty(projectId, childId, "modifiable", checked)
         })
 
     }
@@ -122,7 +122,7 @@ PropertyPadForm {
                 return
             }
             var checked = favoriteAction.checked ? "true" : "false"
-            plmData.treePropertyHub().setProperty(projectId, treeItemId, "favorite", checked)
+            skrData.treePropertyHub().setProperty(projectId, treeItemId, "favorite", checked)
 
         }
     }
@@ -131,7 +131,7 @@ PropertyPadForm {
     function determineFavoriteToolButton(){
         switchPrivate.updateBlocked = true
 
-        favoriteAction.checked = plmData.treePropertyHub().getProperty(projectId, treeItemId, "favorite", "false") === "true"
+        favoriteAction.checked = skrData.treePropertyHub().getProperty(projectId, treeItemId, "favorite", "false") === "true"
 
         switchPrivate.updateBlocked = false
     }

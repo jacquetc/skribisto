@@ -41,7 +41,7 @@ OverviewPageForm {
         showTrashedFilter: false
         showNotTrashedFilter: true
         navigateByBranchesEnabled: false
-        projectIdFilter: plmData.projectHub().activeProjectId
+        projectIdFilter: skrData.projectHub().activeProjectId
     }
 
     overviewTree.proxyModel: overviewProxyModel

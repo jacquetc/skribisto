@@ -50,7 +50,7 @@ PlumeImporterForm {
 
         if(plumeProjectFileTextField.text.length !== 0){
 
-            plmData.projectHub().importPlumeCreatorProject(plumeFileName, targetFileName)
+            skrData.projectHub().importPlumeCreatorProject(plumeFileName, targetFileName)
             closeCalled()
         }
     }

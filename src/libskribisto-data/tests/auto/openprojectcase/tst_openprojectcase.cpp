@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QUrl>
 
-#include "plmdata.h"
+#include "skrdata.h"
 
 class OpenProjectCase : public QObject {
     Q_OBJECT
@@ -38,7 +38,7 @@ private Q_SLOTS:
 
 private:
 
-    PLMData *m_data;
+    SKRData *m_data;
     QUrl m_testProjectPath;
     QTemporaryFile *m_tempFile1;
     QTemporaryFile *m_tempFile2;
@@ -70,51 +70,51 @@ void OpenProjectCase::cleanupTestCase()
 
 void OpenProjectCase::init()
 {
-    m_data = new PLMData(this);
+    m_data = new SKRData(this);
 }
 
 void OpenProjectCase::cleanup()
 {
-    QSignalSpy spy(plmdata->projectHub(), SIGNAL(allProjectsClosed()));
+    QSignalSpy spy(skrdata->projectHub(), SIGNAL(allProjectsClosed()));
 
-    plmdata->projectHub()->closeAllProjects();
+    skrdata->projectHub()->closeAllProjects();
     QCOMPARE(spy.count(), 1);
     m_data->deleteLater();
 }
 
 void OpenProjectCase::openOneProject()
 {
-    QSignalSpy spy(plmdata->projectHub(), SIGNAL(projectLoaded(int)));
+    QSignalSpy spy(skrdata->projectHub(), SIGNAL(projectLoaded(int)));
 
-    plmdata->projectHub()->loadProject(m_testProjectPath);
+    skrdata->projectHub()->loadProject(m_testProjectPath);
     QCOMPARE(spy.count(), 1);
 }
 
 void OpenProjectCase::closeOneProject()
 {
-    QSignalSpy spy(plmdata->projectHub(), SIGNAL(projectLoaded(int)));
+    QSignalSpy spy(skrdata->projectHub(), SIGNAL(projectLoaded(int)));
 
-    plmdata->projectHub()->loadProject(m_testProjectPath);
+    skrdata->projectHub()->loadProject(m_testProjectPath);
     QCOMPARE(spy.count(), 1);
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
     int projectId             = arguments.at(0).toInt();
-    QSignalSpy spy2(plmdata->projectHub(), SIGNAL(projectClosed(int)));
+    QSignalSpy spy2(skrdata->projectHub(), SIGNAL(projectClosed(int)));
 
-    plmdata->projectHub()->closeProject(projectId);
+    skrdata->projectHub()->closeProject(projectId);
     QCOMPARE(spy2.count(), 1);
 }
 
 void OpenProjectCase::openTwoProjects()
 {
-    QSignalSpy spy(plmdata->projectHub(), SIGNAL(projectLoaded(int)));
+    QSignalSpy spy(skrdata->projectHub(), SIGNAL(projectLoaded(int)));
 
-    plmdata->projectHub()->loadProject(m_testProjectPath);
+    skrdata->projectHub()->loadProject(m_testProjectPath);
     QCOMPARE(spy.count(), 1);
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
     int projectId1            = arguments.at(0).toInt();
-    QSignalSpy spy2(plmdata->projectHub(), SIGNAL(projectLoaded(int)));
+    QSignalSpy spy2(skrdata->projectHub(), SIGNAL(projectLoaded(int)));
 
-    plmdata->projectHub()->loadProject(m_testProjectPath);
+    skrdata->projectHub()->loadProject(m_testProjectPath);
     QCOMPARE(spy.count(), 1);
     QList<QVariant> arguments2 = spy2.takeFirst(); // take the first signal
     int projectId2             = arguments2.at(0).toInt();
@@ -125,13 +125,13 @@ void OpenProjectCase::openTwoProjects()
 void OpenProjectCase::closeTwoProjects()
 {
     openTwoProjects();
-    QSignalSpy spy1(plmdata->projectHub(), SIGNAL(projectClosed(int)));
+    QSignalSpy spy1(skrdata->projectHub(), SIGNAL(projectClosed(int)));
 
-    plmdata->projectHub()->closeProject(1);
+    skrdata->projectHub()->closeProject(1);
     QCOMPARE(spy1.count(), 1);
-    QSignalSpy spy2(plmdata->projectHub(), SIGNAL(projectClosed(int)));
+    QSignalSpy spy2(skrdata->projectHub(), SIGNAL(projectClosed(int)));
 
-    plmdata->projectHub()->closeProject(2);
+    skrdata->projectHub()->closeProject(2);
     QCOMPARE(spy2.count(), 1);
 }
 
@@ -140,7 +140,7 @@ void OpenProjectCase::closeTwoProjects()
 void OpenProjectCase::getPath()
 {
     openOneProject();
-    QList<int> idList = plmdata->projectHub()->getProjectIdList();
+    QList<int> idList = skrdata->projectHub()->getProjectIdList();
 
     if (idList.isEmpty()) {
         qDebug() << "no project id";
@@ -148,7 +148,7 @@ void OpenProjectCase::getPath()
         return;
     }
 
-    QUrl value = plmdata->projectHub()->getPath(idList.first());
+    QUrl value = skrdata->projectHub()->getPath(idList.first());
 
     QCOMPARE(value, QUrl(m_testProjectPath));
 }
@@ -156,7 +156,7 @@ void OpenProjectCase::getPath()
 void OpenProjectCase::getProjectIdList()
 {
     openOneProject();
-    QList<int> list = plmdata->projectHub()->getProjectIdList();
+    QList<int> list = skrdata->projectHub()->getProjectIdList();
 
     QVERIFY(!list.isEmpty());
 }
@@ -164,7 +164,7 @@ void OpenProjectCase::getProjectIdList()
 void OpenProjectCase::getLastLoaded()
 {
     openOneProject();
-    int id = plmdata->projectHub()->getLastLoaded();
+    int id = skrdata->projectHub()->getLastLoaded();
 
     QVERIFY(id > 0);
 }
@@ -172,9 +172,9 @@ void OpenProjectCase::getLastLoaded()
 void OpenProjectCase::saveOneProject()
 {
     openOneProject();
-    QSignalSpy spy1(plmdata->projectHub(), SIGNAL(projectSaved(int)));
+    QSignalSpy spy1(skrdata->projectHub(), SIGNAL(projectSaved(int)));
 
-    plmdata->projectHub()->saveProjectAs(1, "SQLITE",
+    skrdata->projectHub()->saveProjectAs(1, "SQLITE",
                                          QUrl::fromLocalFile(m_tempFile1->fileName()));
     QCOMPARE(spy1.count(), 1);
 }
@@ -182,23 +182,23 @@ void OpenProjectCase::saveOneProject()
 void OpenProjectCase::saveTwoProjects()
 {
     openTwoProjects();
-    QSignalSpy spy1(plmdata->projectHub(), SIGNAL(projectSaved(int)));
+    QSignalSpy spy1(skrdata->projectHub(), SIGNAL(projectSaved(int)));
 
-    plmdata->projectHub()->saveProjectAs(1, "SQLITE",
+    skrdata->projectHub()->saveProjectAs(1, "SQLITE",
                                          QUrl::fromLocalFile(m_tempFile1->fileName()));
     QCOMPARE(spy1.count(), 1);
-    QSignalSpy spy2(plmdata->projectHub(), SIGNAL(projectSaved(int)));
+    QSignalSpy spy2(skrdata->projectHub(), SIGNAL(projectSaved(int)));
 
-    plmdata->projectHub()->saveProjectAs(2, "SQLITE",
+    skrdata->projectHub()->saveProjectAs(2, "SQLITE",
                                          QUrl::fromLocalFile(m_tempFile2->fileName()));
     QCOMPARE(spy2.count(), 1);
 }
 
 void OpenProjectCase::openEmptyProject()
 {
-    QSignalSpy spy(plmdata->projectHub(), SIGNAL(projectLoaded(int)));
+    QSignalSpy spy(skrdata->projectHub(), SIGNAL(projectLoaded(int)));
 
-    plmdata->projectHub()->loadProject(QUrl(""));
+    skrdata->projectHub()->loadProject(QUrl(""));
     QCOMPARE(spy.count(), 1);
 }
 

@@ -9,7 +9,7 @@
 #include "tasks/plmprojectmanager.h"
 #include "tasks/plmsqlqueries.h"
 #include <tasks/sql/plmimporter.h>
-#include "plmdata.h"
+#include "skrdata.h"
 
 PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent),
     m_tableName("tbl_project"), m_activeProject(-2), m_isProjectToBeClosed(-2)
@@ -34,7 +34,7 @@ SKRResult PLMProjectHub::loadProject(const QUrl& urlFilePath, bool hidden)
     result.addData("projectId", projectId);
 
     IFOK(result) {
-        plmdata->treeHub()->renumberSortOrders(projectId);
+        skrdata->treeHub()->renumberSortOrders(projectId);
 
         if (!hidden) {
             m_projectsNotModifiedOnceList.append(projectId);
@@ -65,7 +65,7 @@ SKRResult PLMProjectHub::createNewEmptyProject(const QUrl& path, bool hidden)
     result.addData("projectId", projectId);
 
     IFOK(result) {
-        plmdata->treeHub()->renumberSortOrders(projectId);
+        skrdata->treeHub()->renumberSortOrders(projectId);
 
         if (!hidden) {
             m_projectsNotModifiedOnceList.append(projectId);
@@ -97,7 +97,7 @@ SKRResult PLMProjectHub::createSilentlyNewSpecificEmptyProject(const QUrl& path,
     result.addData("projectId", projectId);
 
     IFOK(result) {
-        plmdata->treeHub()->renumberSortOrders(projectId);
+        skrdata->treeHub()->renumberSortOrders(projectId);
     }
     IFOK(result) {
         if (path.isValid()) {

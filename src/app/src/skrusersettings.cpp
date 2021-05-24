@@ -8,7 +8,7 @@ SKRUserSettings::SKRUserSettings(QObject *parent) : QObject(parent)
 
 void SKRUserSettings::setProjectSetting(int projectId, const QString& key, QVariant value)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
 
     setSetting("project_" + unique_identifier, key, value);
 
@@ -17,7 +17,7 @@ void SKRUserSettings::setProjectSetting(int projectId, const QString& key, QVari
 QVariant SKRUserSettings::getProjectSetting(int projectId, const QString& key,
                                        QVariant defaultValue)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
 
     return getSetting("project_" + unique_identifier, key, defaultValue);
 
@@ -25,7 +25,7 @@ QVariant SKRUserSettings::getProjectSetting(int projectId, const QString& key,
 
 void SKRUserSettings::removeProjectSetting(int projectId, const QString& key)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
 
     removeSetting("project_" + unique_identifier, key);
 }
@@ -89,7 +89,7 @@ void SKRUserSettings::insertInProjectSettingHash(int             projectId,
                                                  const QString & hashKey,
                                                  const QVariant& value)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
 insertInSomeGroupSettingHash("project_" + unique_identifier, key, hashKey, value);
 }
 
@@ -98,7 +98,7 @@ QVariant SKRUserSettings::getFromProjectSettingHash(int             projectId,
                                                     const QString & hashKey,
                                                     const QVariant& defaultValue)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
     return getFromSomeGroupSettingHash("project_" + unique_identifier, key, hashKey, defaultValue);
 
 }
@@ -107,7 +107,7 @@ void SKRUserSettings::removeFromProjectSettingHash(int            projectId,
                                                    const QString& key,
                                                    const QString& hashKey)
 {
-    QString   unique_identifier = plmdata->projectHub()->getProjectUniqueId(projectId);
+    QString   unique_identifier = skrdata->projectHub()->getProjectUniqueId(projectId);
     removeFromSomeGroupSettingHash("project_" + unique_identifier, key, hashKey);
 
 }

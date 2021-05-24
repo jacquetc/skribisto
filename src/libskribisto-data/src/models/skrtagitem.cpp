@@ -19,7 +19,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "skrtagitem.h"
-#include "plmdata.h"
+#include "skrdata.h"
 
 SKRTagItem::SKRTagItem()
 {
@@ -99,24 +99,24 @@ QVariant SKRTagItem::data(int role)
             break;
 
         case Roles::NameRole:
-            m_data.insert(role, plmdata->tagHub()->getTagName(projectId, tagId));
+            m_data.insert(role, skrdata->tagHub()->getTagName(projectId, tagId));
             break;
 
 
         case Roles::ColorRole:
-            m_data.insert(role, plmdata->tagHub()->getTagColor(projectId, tagId));
+            m_data.insert(role, skrdata->tagHub()->getTagColor(projectId, tagId));
             break;
 
         case Roles::TextColorRole:
-            m_data.insert(role, plmdata->tagHub()->getTagTextColor(projectId, tagId));
+            m_data.insert(role, skrdata->tagHub()->getTagTextColor(projectId, tagId));
             break;
 
         case Roles::CreationDateRole:
-            m_data.insert(role, plmdata->tagHub()->getCreationDate(projectId, tagId));
+            m_data.insert(role, skrdata->tagHub()->getCreationDate(projectId, tagId));
             break;
 
         case Roles::UpdateDateRole:
-            m_data.insert(role, plmdata->tagHub()->getUpdateDate(projectId, tagId));
+            m_data.insert(role, skrdata->tagHub()->getUpdateDate(projectId, tagId));
             break;
         }
         m_invalidatedRoles.removeAll(role);

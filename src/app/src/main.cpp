@@ -19,7 +19,7 @@ using namespace std;
 #include <stdlib.h>
 
 #include "skrpluginloader.h"
-#include "plmdata.h"
+#include "skrdata.h"
 #include "skrtreehub.h"
 #include "skrtaghub.h"
 #include "skrresult.h"
@@ -106,7 +106,7 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QS
 
 //// -------------------------------------------------------
 
-// void openProjectInArgument(PLMData *data)
+// void openProjectInArgument(SKRData *data)
 // {
 //    // open directly a project if *.skribisto path is the first argument :
 //    // TODO: add ignore --qml
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine(qApp);
 
-    PLMData *data         = new PLMData(&engine);
+    SKRData *data         = new SKRData(&engine);
     SKRRootItem *rootItem = new SKRRootItem(&engine);
     rootItem->applyLanguageFromSettings();
 
@@ -361,7 +361,7 @@ int main(int argc, char *argv[])
 
     SKRWindowManager *skrWindowManager = new SKRWindowManager(qApp, &engine, url);
 
-    engine.rootContext()->setContextProperty("plmData", data);
+    engine.rootContext()->setContextProperty("skrData", data);
     engine.rootContext()->setContextProperty("skrRootItem", rootItem);
     engine.rootContext()->setContextProperty("skrModels", models);
     engine.rootContext()->setContextProperty("skrFonts", skrFonts);

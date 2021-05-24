@@ -26,7 +26,7 @@ ApplicationWindow {
     property url testProjectFileName: "qrc:/testfiles/skribisto_test_project.skrib"
 
     Component.onCompleted:{
-    var result = plmData.projectHub().loadProject(testProjectFileName)
+    var result = skrData.projectHub().loadProject(testProjectFileName)
         noteOverviewSearchProxyModel.projectIdFilter = 1
 
     }

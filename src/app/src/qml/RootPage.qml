@@ -106,7 +106,7 @@ RootPageForm {
         }
 
         Connections{
-            target: plmData.errorHub()
+            target: skrData.errorHub()
             function onSendNotification(errorType, content){
                 notificationListModel.append({"errorType": errorType, "content": content})
 

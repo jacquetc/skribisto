@@ -33,7 +33,7 @@ DEFINES += SKRIBISTO_DATA_LIBRARY
 #}
 
 SOURCES += \
-    plmdata.cpp \
+    skrdata.cpp \
     plmpaperhub.cpp \
     plmprojecthub.cpp \
     tasks/sql/plmexporter.cpp \
@@ -75,7 +75,7 @@ SOURCES += \
     models/plmwritedocumentlistmodel.cpp
 
 HEADERS += \
-    plmdata.h \
+    skrdata.h \
     plmsignalhub.h \
     plmpaperhub.h \
     plmprojecthub.h \

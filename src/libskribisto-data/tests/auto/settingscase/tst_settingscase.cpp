@@ -4,7 +4,7 @@
 #include <QVariant>
 #include <QByteArray>
 
-#include "plmdata.h"
+#include "skrdata.h"
 
 class SettingsCase : public QObject {
     Q_OBJECT
@@ -31,7 +31,7 @@ private Q_SLOTS:
 
 private:
 
-    PLMData *m_data;
+    SKRData *m_data;
     QUrl m_testProjectPath;
     int m_currentProjectId;
 };
@@ -41,7 +41,7 @@ SettingsCase::SettingsCase()
 
 void SettingsCase::initTestCase()
 {
-    m_data            = new PLMData(this);
+    m_data            = new SKRData(this);
     m_testProjectPath = "qrc:/testfiles/skribisto_test_project.skrib";
 }
 
@@ -50,11 +50,11 @@ void SettingsCase::cleanupTestCase()
 
 void SettingsCase::init()
 {
-    QSignalSpy spy(plmdata->projectHub(), SIGNAL(projectLoaded(int)));
+    QSignalSpy spy(skrdata->projectHub(), SIGNAL(projectLoaded(int)));
 
-    plmdata->projectHub()->loadProject(m_testProjectPath);
+    skrdata->projectHub()->loadProject(m_testProjectPath);
     QCOMPARE(spy.count(), 1);
-    QList<int> idList = plmdata->projectHub()->getProjectIdList();
+    QList<int> idList = skrdata->projectHub()->getProjectIdList();
 
     if (idList.isEmpty()) {
         qDebug() << "no project id";
@@ -67,9 +67,9 @@ void SettingsCase::init()
 
 void SettingsCase::cleanup()
 {
-    QSignalSpy spy(plmdata->projectHub(), SIGNAL(projectClosed(int)));
+    QSignalSpy spy(skrdata->projectHub(), SIGNAL(projectClosed(int)));
 
-    plmdata->projectHub()->closeAllProjects();
+    skrdata->projectHub()->closeAllProjects();
     QCOMPARE(spy.count(), 1);
 
     while (!spy.isEmpty()) {
@@ -82,15 +82,15 @@ void SettingsCase::cleanup()
 
 void SettingsCase::userDBLoaded()
 {
-    // plmdata->projectHub()->
+    // skrdata->projectHub()->
 }
 
 // void SettingsCase::setSplitterState()
 // {
-//    QSignalSpy spy(plmdata->sheetHub(),
+//    QSignalSpy spy(skrdata->sheetHub(),
 // SIGNAL(settings_settingChanged(PLMPaperHub::Stack, PLMPaperHub::Setting,
 // QVariant)));
-//    plmdata->sheetHub()->settings_setStackSetting(PLMPaperHub::Zero,
+//    skrdata->sheetHub()->settings_setStackSetting(PLMPaperHub::Zero,
 // PLMPaperHub::SplitterState, QByteArray("0"));
 //    QCOMPARE(spy.count(), 1);
 //    // make sure the signal was emitted exactly one time
@@ -101,16 +101,16 @@ void SettingsCase::userDBLoaded()
 // void SettingsCase::getSplitterState()
 // {
 //    QByteArray value =
-// plmdata->sheetHub()->settings_getStackSetting(PLMPaperHub::Zero,
+// skrdata->sheetHub()->settings_getStackSetting(PLMPaperHub::Zero,
 // PLMPaperHub::SplitterState).toByteArray();
 //    QCOMPARE(value, QByteArray("0"));
 // }
 
 // void SettingsCase::setDocVisibleState()
 // {
-//    QSignalSpy spy(plmdata->sheetHub(), SIGNAL(settings_docSettingChanged(int,
+//    QSignalSpy spy(skrdata->sheetHub(), SIGNAL(settings_docSettingChanged(int,
 // int, PLMPaperHub::OpenedDocSetting, QVariant)));
-//    plmdata->sheetHub()->settings_setDocSetting(m_currentProjectId, 3,
+//    skrdata->sheetHub()->settings_setDocSetting(m_currentProjectId, 3,
 // PLMPaperHub::Visible, false);
 //    QCOMPARE(spy.count(), 1);
 //    // make sure the signal was emitted exactly one time
@@ -121,7 +121,7 @@ void SettingsCase::userDBLoaded()
 // void SettingsCase::getDocVisibleState()
 // {
 //    bool value =
-// plmdata->sheetHub()->settings_getDocSetting(m_currentProjectId, 3,
+// skrdata->sheetHub()->settings_getDocSetting(m_currentProjectId, 3,
 // PLMPaperHub::Visible).toBool();
 //    QCOMPARE(value, true);
 // }

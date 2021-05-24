@@ -22,7 +22,7 @@
 #include "plmimporter.h"
 #include "plmupgrader.h"
 #include "tasks/plmsqlqueries.h"
-#include "plmdata.h"
+#include "skrdata.h"
 #include "skrsqltools.h"
 
 #include <QtSql/QSqlQuery>
@@ -291,7 +291,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
 SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, const QUrl& skribistoFileName)
 {
     QString   sqlFile = ":/sql/sqlite_project_1_6.sql";
-    SKRResult result  = plmdata->projectHub()->createSilentlyNewSpecificEmptyProject(skribistoFileName, sqlFile);
+    SKRResult result  = skrdata->projectHub()->createSilentlyNewSpecificEmptyProject(skribistoFileName, sqlFile);
 
     int projectId = -2;
 
@@ -324,43 +324,43 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     // ----------- create text folder---------------------------------------
 
 
-    result = plmdata->treeHub()->addChildTreeItem(projectId, 0, "FOLDER");
+    result = skrdata->treeHub()->addChildTreeItem(projectId, 0, "FOLDER");
     IFKO(result) {
         result = SKRResult(SKRResult::Critical, this, "text_folder_creation");
         return result;
     }
     int textFolderId = result.getData("treeItemId", -2).toInt();
 
-    IFOKDO(result, plmdata->treeHub()->setSortOrder(projectId, textFolderId, 1000));
-    IFOKDO(result, plmdata->treeHub()->setTitle(projectId, textFolderId, "text"));
+    IFOKDO(result, skrdata->treeHub()->setSortOrder(projectId, textFolderId, 1000));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, textFolderId, "text"));
 
 
     // ----------- create attend folder---------------------------------------
 
 
-    result = plmdata->treeHub()->addChildTreeItem(projectId, 0, "FOLDER");
+    result = skrdata->treeHub()->addChildTreeItem(projectId, 0, "FOLDER");
     IFKO(result) {
         result = SKRResult(SKRResult::Critical, this, "attend_folder_creation");
         return result;
     }
     int attendFolderId = result.getData("treeItemId", -2).toInt();
 
-    IFOKDO(result, plmdata->treeHub()->setSortOrder(projectId, attendFolderId, 80000000));
-    IFOKDO(result, plmdata->treeHub()->setTitle(projectId, attendFolderId, "attendance"));
+    IFOKDO(result, skrdata->treeHub()->setSortOrder(projectId, attendFolderId, 80000000));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, attendFolderId, "attendance"));
 
 
     // ----------- create note folder---------------------------------------
 
 
-    result = plmdata->treeHub()->addChildTreeItem(projectId, 0, "FOLDER");
+    result = skrdata->treeHub()->addChildTreeItem(projectId, 0, "FOLDER");
     IFKO(result) {
         result = SKRResult(SKRResult::Critical, this, "note_creation");
         return result;
     }
     int noteFolderId = result.getData("treeItemId", -2).toInt();
 
-    IFOKDO(result, plmdata->treeHub()->setSortOrder(projectId, noteFolderId, 90000000));
-    IFOKDO(result, plmdata->treeHub()->setTitle(projectId, noteFolderId, "note"));
+    IFOKDO(result, skrdata->treeHub()->setSortOrder(projectId, noteFolderId, 90000000));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, noteFolderId, "note"));
 
 
     // ----------------------------- read
@@ -437,7 +437,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
                     QString objQuickDetail = attendXml.attributes().value("quickDetails").toString();
 
-                    plmdata->treePropertyHub()->setProperty(projectId, objNoteId, "label", objQuickDetail);
+                    skrdata->treePropertyHub()->setProperty(projectId, objNoteId, "label", objQuickDetail);
                 }
 
                 attendXml.readElementText();
@@ -476,7 +476,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
     while (xml.readNextStartElement() && xml.name().toString() == "plume-tree") {
         // pick project name
         QString projectName = xml.attributes().value("projectName").toString();
-        IFOKDO(result, plmdata->projectHub()->setProjectName(projectId, projectName));
+        IFOKDO(result, skrdata->projectHub()->setProjectName(projectId, projectName));
 
 
         while (xml.readNextStartElement()) {
@@ -540,7 +540,7 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
     QStringList dictWords = dictString.split(";", Qt::SkipEmptyParts);
 
-    plmdata->projectDictHub()->setProjectDictList(projectId, dictWords);
+    skrdata->projectDictHub()->setProjectDictList(projectId, dictWords);
 
 
     // transform texts with children in folders
@@ -550,13 +550,13 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
     // save
 
-    IFOKDO(result, plmdata->projectHub()->saveProject(projectId));
+    IFOKDO(result, skrdata->projectHub()->saveProject(projectId));
 
-    QUrl url = plmdata->projectHub()->getPath(projectId);
+    QUrl url = skrdata->projectHub()->getPath(projectId);
 
-    IFOKDO(result, plmdata->projectHub()->closeProject(projectId));
+    IFOKDO(result, skrdata->projectHub()->closeProject(projectId));
 
-    IFOKDO(result, plmdata->projectHub()->loadProject(url));
+    IFOKDO(result, skrdata->projectHub()->loadProject(url));
 
     return result;
 }
@@ -761,18 +761,18 @@ SKRResult PLMImporter::createPapersAndAssociations(int projectId,
 
     // create sheet
 
-    result = plmdata->treeHub()->addChildTreeItem(projectId, textFolderId, "TEXT");
+    result = skrdata->treeHub()->addChildTreeItem(projectId, textFolderId, "TEXT");
     IFKO(result) {
         result = SKRResult(SKRResult::Critical, this, "text_creation");
         return result;
     }
     int sheetId = result.getData("treeItemId", -2).toInt();
 
-    int textFolderIndent = plmdata->treeHub()->getIndent(projectId, textFolderId);
+    int textFolderIndent = skrdata->treeHub()->getIndent(projectId, textFolderId);
 
-    IFOKDO(result, plmdata->treeHub()->setIndent(projectId, sheetId, textFolderIndent + indent));
-    IFOKDO(result, plmdata->treeHub()->setTitle(projectId, sheetId, name));
-    IFOKDO(result, plmdata->treeHub()->setType(projectId, sheetId, "TEXT"));
+    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, sheetId, textFolderIndent + indent));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, sheetId, name));
+    IFOKDO(result, skrdata->treeHub()->setType(projectId, sheetId, "TEXT"));
 
 
     // - fetch text
@@ -801,7 +801,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int projectId,
 
     sheetDoc.setHtml(QString::fromUtf8(textLines));
 
-    IFOKDO(result, plmdata->treeHub()->setPrimaryContent(projectId, sheetId, sheetDoc.toHtml()));
+    IFOKDO(result, skrdata->treeHub()->setPrimaryContent(projectId, sheetId, sheetDoc.toHtml()));
 
 
     IFKO(result) {
@@ -821,7 +821,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int projectId,
     }
 
 
-    result = plmdata->treeHub()->setTreeRelationship(projectId, noteId, sheetId);
+    result = skrdata->treeHub()->setTreeRelationship(projectId, noteId, sheetId);
 
 
     IFKO(result) {
@@ -854,7 +854,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int projectId,
     QTextDocument synDoc;
 
     synDoc.setHtml(QString::fromUtf8(lines));
-    IFOKDO(result, plmdata->treeHub()->setSecondaryContent(projectId, sheetId, synDoc.toHtml()));
+    IFOKDO(result, skrdata->treeHub()->setSecondaryContent(projectId, sheetId, synDoc.toHtml()));
 
 
     // associate "attendance" notes
@@ -871,7 +871,7 @@ SKRResult PLMImporter::createPapersAndAssociations(int projectId,
         int skrNoteId = m_attendanceConversionHash.value(attendId);
 
         // associate :
-        result = plmdata->treeHub()->setTreeRelationship(projectId, skrNoteId, sheetId);
+        result = skrdata->treeHub()->setTreeRelationship(projectId, skrNoteId, sheetId);
     }
 
     IFKO(result) {
@@ -890,7 +890,7 @@ SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const 
     SKRResult result(this);
 
 
-    result = plmdata->treeHub()->addChildTreeItem(projectId, parentFolderId, "TEXT");
+    result = skrdata->treeHub()->addChildTreeItem(projectId, parentFolderId, "TEXT");
     IFKO(result) {
         result = SKRResult(SKRResult::Critical, this, "note_creation");
         return result;
@@ -898,11 +898,11 @@ SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const 
     int noteId = result.getData("treeItemId", -2).toInt();
 
 
-    int parentFolderIndent = plmdata->treeHub()->getIndent(projectId, parentFolderId);
+    int parentFolderIndent = skrdata->treeHub()->getIndent(projectId, parentFolderId);
 
-    IFOKDO(result, plmdata->treeHub()->setIndent(projectId, noteId, parentFolderIndent + indent));
-    IFOKDO(result, plmdata->treeHub()->setTitle(projectId, noteId, name));
-    IFOKDO(result, plmdata->treeHub()->setType(projectId, noteId, "TEXT"));
+    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, noteId, parentFolderIndent + indent));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, noteId, name));
+    IFOKDO(result, skrdata->treeHub()->setType(projectId, noteId, "TEXT"));
 
 
     // fetch text
@@ -930,7 +930,7 @@ SKRResult PLMImporter::createNote(int projectId, int indent, int plumeId, const 
     QTextDocument noteDoc;
 
     noteDoc.setHtml(QString::fromUtf8(lines));
-    IFOKDO(result, plmdata->treeHub()->setPrimaryContent(projectId, noteId, noteDoc.toHtml()));
+    IFOKDO(result, skrdata->treeHub()->setPrimaryContent(projectId, noteId, noteDoc.toHtml()));
 
 
     return result;
@@ -965,9 +965,9 @@ SKRResult PLMImporter::createTagsFromAttend(int                     projectId,
 
 
     IFOK(result) {
-        result = plmdata->tagHub()->addTag(projectId, values.at(index));
+        result = skrdata->tagHub()->addTag(projectId, values.at(index));
         IFOK(result) {
-            result = plmdata->tagHub()->setTagRelationship(projectId,
+            result = skrdata->tagHub()->setTagRelationship(projectId,
                                                            noteId,
                                                            result.getData("tagId", -2).toInt());
         }

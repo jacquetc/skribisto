@@ -23,7 +23,7 @@
 #define SKRPAPERLISTMODEL_H
 
 #include <QAbstractTableModel>
-#include "plmdata.h"
+#include "skrdata.h"
 #include "skrtreeitem.h"
 #include "skr.h"
 #include "./skribisto_data_global.h"
@@ -77,7 +77,7 @@ private slots:
 
     void populate();
     void clear();
-    void exploitSignalFromPLMData(int                projectId,
+    void exploitSignalFromSKRData(int                projectId,
                                   int                treeItemId,
                                   SKRTreeItem::Roles role);
 
@@ -105,8 +105,8 @@ signals:
 
 private:
 
-    void connectToPLMDataSignals();
-    void disconnectFromPLMDataSignals();
+    void connectToSKRDataSignals();
+    void disconnectFromSKRDataSignals();
     void resetAllTreeItemsList();
 
 private:

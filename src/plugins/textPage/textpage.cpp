@@ -19,18 +19,18 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "textpage.h"
-#include "plmdata.h"
+#include "skrdata.h"
 
 TextPage::TextPage(QObject *parent) : QObject(parent)
 {
 
     m_wordMeter = new SKRWordMeter(this);
 
-    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, plmdata->statHub(),
+    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, skrdata->statHub(),
             &SKRStatHub::updateCharacterStats);
     connect(m_wordMeter,
             &SKRWordMeter::wordCountCalculated,
-            plmdata->statHub(),
+            skrdata->statHub(),
             &SKRStatHub::updateWordStats);
 }
 
@@ -45,7 +45,7 @@ SKRResult TextPage::finaliseAfterCreationOfTreeItem(int projectId, int treeItemI
 {
     SKRResult result(this);
 
-    result = plmdata->treePropertyHub()->setProperty(projectId, treeItemId, "can_add_child_paper", "false", true);
+    result = skrdata->treePropertyHub()->setProperty(projectId, treeItemId, "can_add_child_paper", "false", true);
 
 
     return result;
@@ -55,7 +55,7 @@ SKRResult TextPage::finaliseAfterCreationOfTreeItem(int projectId, int treeItemI
 
 void TextPage::updateCharAndWordCount(int projectId, int treeItemId, bool sameThread)
 {
-    QString primaryContent = plmdata->treeHub()->getPrimaryContent(projectId, treeItemId);
+    QString primaryContent = skrdata->treeHub()->getPrimaryContent(projectId, treeItemId);
 
     m_wordMeter->countText(projectId, treeItemId, primaryContent, sameThread, false);
 }

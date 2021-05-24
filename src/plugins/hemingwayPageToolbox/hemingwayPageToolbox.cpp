@@ -19,7 +19,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "hemingwaypagetoolbox.h"
-#include "plmdata.h"
+#include "skrdata.h"
 
 HemingwayPageToolbox::HemingwayPageToolbox(QObject *parent) : QObject(parent)
 {

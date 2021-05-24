@@ -14,7 +14,7 @@
 # include <QPrinterInfo>
 #endif // SKR_PRINT_SUPPORT
 
-#include "plmdata.h"
+#include "skrdata.h"
 #include "skr.h"
 #include "skrexporterinterface.h"
 
@@ -23,7 +23,7 @@ SKRExporter::SKRExporter(QObject *parent) : QObject(parent), m_projectId(-2), m_
         false),
     m_quick(false)
 {
-    plmdata->pluginHub()->addPluginType<SKRExporterInterface>();
+    skrdata->pluginHub()->addPluginType<SKRExporterInterface>();
 
     m_fontFamily    = qGuiApp->font().family().replace(", ", "");
     m_fontPointSize = qGuiApp->font().pointSize();
@@ -49,7 +49,7 @@ void SKRExporter::run()
 
 
     QTextDocument *finalDocument = new QTextDocument(this);
-    QString projectTitle         = plmdata->projectHub()->getProjectName(m_projectId);
+    QString projectTitle         = skrdata->projectHub()->getProjectName(m_projectId);
 
     QTextCursor textCursor(finalDocument);
 
@@ -183,7 +183,7 @@ void SKRExporter::run()
 
 void SKRExporter::createContent(QTextDocument *textDocument, int projectId,
                                 int treeItemId, QList<int> *numbers) {
-    SKRTreeHub *treeHub = plmdata->treeHub();
+    SKRTreeHub *treeHub = skrdata->treeHub();
 
     QString type = treeHub->getType(projectId, treeItemId);
 
@@ -251,14 +251,14 @@ void SKRExporter::createContent(QTextDocument *textDocument, int projectId,
 
     if (m_tagsEnabled) {
         QTextDocument tagsDoc;
-        QList<int>    tagsIdList = plmdata->tagHub()->getTagsFromItemId(projectId, treeItemId);
+        QList<int>    tagsIdList = skrdata->tagHub()->getTagsFromItemId(projectId, treeItemId);
 
 
         if (!tagsIdList.isEmpty()) {
             QStringList tagsStringList;
 
             for (int tagId : qAsConst(tagsIdList)) {
-                tagsStringList.append(plmdata->tagHub()->getTagName(projectId, tagId));
+                tagsStringList.append(skrdata->tagHub()->getTagName(projectId, tagId));
             }
             tagsStringList.sort(Qt::CaseInsensitive);
 
@@ -290,7 +290,7 @@ void SKRExporter::createContent(QTextDocument *textDocument, int projectId,
 
     if (m_includeSynopsis) {
         QTextDocument synopsisDoc;
-        QString synopsisMd = plmdata->treeHub()->getSecondaryContent(projectId, treeItemId);
+        QString synopsisMd = skrdata->treeHub()->getSecondaryContent(projectId, treeItemId);
         synopsisIsEmpty = synopsisMd.isEmpty();
 
         if (!synopsisIsEmpty) {

@@ -15,7 +15,7 @@ TextPageForm {
     property string title: {return getTitle()}
 
     function getTitle(){
-        var fetchedTitle =  plmData.treeHub().getTitle(projectId, treeItemId)
+        var fetchedTitle =  skrData.treeHub().getTitle(projectId, treeItemId)
 
         if(isSecondary){
             return qsTr("Plan of %1").arg(fetchedTitle)
@@ -30,7 +30,7 @@ TextPageForm {
     }
 
     Connections {
-        target: plmData.treeHub()
+        target: skrData.treeHub()
         function onTitleChanged(_projectId, _treeItemId, newTitle){
             if(projectId === _projectId && treeItemId === _treeItemId){
                 title = getTitle()
@@ -77,7 +77,7 @@ TextPageForm {
     //--------------------------------------------------------
 
     Connections{
-        target: plmData.treePropertyHub()
+        target: skrData.treePropertyHub()
         function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
             if(projectId === root.projectId && treeItemId === root.treeItemId){
 
@@ -90,7 +90,7 @@ TextPageForm {
     }
 
     Connections{
-        target: plmData.treePropertyHub()
+        target: skrData.treePropertyHub()
         function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
             if(projectId === root.projectId && treeItemId === root.treeItemId){
 
@@ -184,7 +184,7 @@ TextPageForm {
     property bool isModifiable: true
 
     Connections{
-        target: plmData.treePropertyHub()
+        target: skrData.treePropertyHub()
         function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
             if(projectId === root.projectId && treeItemId === root.treeItemId){
 
@@ -209,7 +209,7 @@ TextPageForm {
 
     function determineModifiable(){
 
-        root.isModifiable = plmData.treePropertyHub().getProperty(projectId, treeItemId, "modifiable", "true") === "true"
+        root.isModifiable = skrData.treePropertyHub().getProperty(projectId, treeItemId, "modifiable", "true") === "true"
 
         if(!root.isModifiable !== writingZone.textArea.readOnly){
             saveCurrentCursorPositionAndY()
@@ -379,10 +379,10 @@ TextPageForm {
         if(milestone === -2){
 
             if(isSecondary){
-                writingZone.text = skrRootItem.cleanUpHtml(plmData.treeHub().getSecondaryContent(_projectId, _treeItemId))
+                writingZone.text = skrRootItem.cleanUpHtml(skrData.treeHub().getSecondaryContent(_projectId, _treeItemId))
             }
             else {
-                writingZone.text = skrRootItem.cleanUpHtml(plmData.treeHub().getPrimaryContent(_projectId, _treeItemId))
+                writingZone.text = skrRootItem.cleanUpHtml(skrData.treeHub().getPrimaryContent(_projectId, _treeItemId))
             }
 
         }
@@ -531,7 +531,7 @@ TextPageForm {
 
         //avoid first text change, when blank HTML is inserted
         if(writingZone.textArea.length === 0
-                && plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                && skrData.projectHub().isProjectNotModifiedOnce(projectId)){
             return
         }
 
@@ -557,10 +557,10 @@ TextPageForm {
 
 
         if(isSecondary){
-            result = plmData.treeHub().setSecondaryContent(projectId, treeItemId, text)
+            result = skrData.treeHub().setSecondaryContent(projectId, treeItemId, text)
         }
         else {
-            result = plmData.treeHub().setPrimaryContent(projectId, treeItemId, text)
+            result = skrData.treeHub().setPrimaryContent(projectId, treeItemId, text)
             if(!contentSaveTimer.running)
                 skrTreeManager.updateCharAndWordCount(projectId, treeItemId, root.pageType, true)
 
@@ -774,7 +774,7 @@ TextPageForm {
             }
 
             Component.onCompleted: {
-                var previousTextItemTreeItemId = plmData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
+                var previousTextItemTreeItemId = skrData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
                 openPreviousDocument(root.projectId, previousTextItemTreeItemId, root.isSecondary, root.milestone)
 
                 previousWritingZone.setCursorPosition(previousWritingZone.textArea.length)
@@ -813,7 +813,7 @@ TextPageForm {
             property bool isModifiable: true
 
             Connections{
-                target: plmData.treePropertyHub()
+                target: skrData.treePropertyHub()
                 function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
                     if(projectId === root.projectId && treeItemId === previousWritingZone.previousTextItemTreeItemId){
 
@@ -838,7 +838,7 @@ TextPageForm {
 
             function determineModifiable(){
 
-                previousWritingZone.isModifiable = plmData.treePropertyHub().getProperty(projectId, previousTextItemTreeItemId, "modifiable", "true") === "true"
+                previousWritingZone.isModifiable = skrData.treePropertyHub().getProperty(projectId, previousTextItemTreeItemId, "modifiable", "true") === "true"
 
                 if(!previousWritingZone.isModifiable !== previousWritingZone.textArea.readOnly){
                     previousWritingZone.textArea.readOnly = !previousWritingZone.isModifiable
@@ -859,7 +859,7 @@ TextPageForm {
 
                 //avoid first text change, when blank HTML is inserted
                 if(previousWritingZone.textArea.length === 0
-                        && plmData.projectHub().isProjectNotModifiedOnce(projectId)){
+                        && skrData.projectHub().isProjectNotModifiedOnce(projectId)){
                     return
                 }
 
@@ -885,10 +885,10 @@ TextPageForm {
 
 
                 if(isSecondary){
-                    result = plmData.treeHub().setSecondaryContent(projectId, previousTextItemTreeItemId, text)
+                    result = skrData.treeHub().setSecondaryContent(projectId, previousTextItemTreeItemId, text)
                 }
                 else {
-                    result = plmData.treeHub().setPrimaryContent(projectId, previousTextItemTreeItemId, text)
+                    result = skrData.treeHub().setPrimaryContent(projectId, previousTextItemTreeItemId, text)
                     if(!previousContentSaveTimer.running)
                         skrTreeManager.updateCharAndWordCount(projectId, previousTextItemTreeItemId, root.pageType, true)
 
@@ -923,10 +923,10 @@ TextPageForm {
                 if(milestone === -2){
 
                     if(isSecondary){
-                        previousWritingZone.text = skrRootItem.cleanUpHtml(plmData.treeHub().getSecondaryContent(_projectId, _treeItemId))
+                        previousWritingZone.text = skrRootItem.cleanUpHtml(skrData.treeHub().getSecondaryContent(_projectId, _treeItemId))
                     }
                     else {
-                        previousWritingZone.text = skrRootItem.cleanUpHtml(plmData.treeHub().getPrimaryContent(_projectId, _treeItemId))
+                        previousWritingZone.text = skrRootItem.cleanUpHtml(skrData.treeHub().getPrimaryContent(_projectId, _treeItemId))
                     }
 
                 }
@@ -981,32 +981,32 @@ TextPageForm {
         }
 
         onClicked:{
-            if(plmData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId) > 0){
+            if(skrData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId) > 0){
                 loader_previousWritingZone.active = true
             }
         }
     }
 
     Connections{
-        target: plmData.treeHub()
+        target: skrData.treeHub()
         function onTrashedChanged(projectId, treeItemId, newTrashedState){
             determineIfPreviousWritingTreeItemIdChanged()
         }
     }
     Connections{
-        target: plmData.treeHub()
+        target: skrData.treeHub()
         function onTreeItemAdded(projectId, treeItemId){
             determineIfPreviousWritingTreeItemIdChanged()
         }
     }
     Connections{
-        target: plmData.treeHub()
+        target: skrData.treeHub()
         function onTreeItemRemoved(projectId, treeItemId){
             determineIfPreviousWritingTreeItemIdChanged()
         }
     }
     Connections{
-        target: plmData.treeHub()
+        target: skrData.treeHub()
         function onTreeItemMoved(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId){
             determineIfPreviousWritingTreeItemIdChanged()
         }
@@ -1014,7 +1014,7 @@ TextPageForm {
 
     function determineIfPreviousWritingTreeItemIdChanged(){
         if(loader_previousWritingZone.active){
-            var newTreeItemId = plmData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
+            var newTreeItemId = skrData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
             if(loader_previousWritingZone.item.previousTextItemTreeItemId !== newTreeItemId){
 
                 if(newTreeItemId === -1){
@@ -1030,7 +1030,7 @@ TextPageForm {
         }
     }
     function determineIfPreviousWritingMustBeVisible(){
-        var newTreeItemId = plmData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
+        var newTreeItemId = skrData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
         if(newTreeItemId === -1){
         loader_previousWritingZone.active = false
             openPreviousWritingZoneButton.visible = false
