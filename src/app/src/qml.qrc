@@ -91,7 +91,6 @@
         <file>qml/RightDockForm.ui.qml</file>
         <file>qml/ProjectPage/ProjectPage.qml</file>
         <file>qml/ProjectPage/ProjectPageForm.ui.qml</file>
-        <file>qml/Items/SkrToolbox.qml</file>
         <file>qml/WelcomePage/SettingsPageForm.ui.qml</file>
         <file>qml/WelcomePage/SettingsPage.qml</file>
         <file>qml/WelcomePage/FileMenuPage.qml</file>
@@ -135,5 +134,6 @@
         <file>qml/FirstStepsWizard.qml</file>
         <file>qml/Commons/PluginPage.qml</file>
         <file>qml/Commons/PluginPageForm.ui.qml</file>
+        <file>qml/Items/SkrToolbox.qml</file>
     </qresource>
 </RCC>
