@@ -655,6 +655,7 @@ NavigationListForm {
                             SkrLabel {
                                 anchors.left: parent.left
                                 anchors.right: parent.right
+                                activeFocusOnTab: false
                                 text: p_section.parentTitle
                                 font.bold: true
                                 horizontalAlignment: Qt.AlignHCenter
@@ -1648,6 +1649,7 @@ NavigationListForm {
 
                                                     SkrLabel {
                                                         id: titleLabel
+                                                        activeFocusOnTab: false
 
                                                         Layout.fillWidth: true
                                                         Layout.topMargin: 2
@@ -1778,6 +1780,7 @@ NavigationListForm {
 
                                                         SkrLabel {
                                                             id: labelLabel
+                                                            activeFocusOnTab: false
                                                             text:  model.label === undefined ? "" : model.label
                                                             visible: text.length === 0 ? false : true
                                                             Layout.bottomMargin: 2
@@ -1797,6 +1800,7 @@ NavigationListForm {
 
                                             SkrLabel {
                                                 id: devLabel
+                                                activeFocusOnTab: false
                                                 text:  model.index + "-" + model.treeItemId + "-" + model.sortOrder
                                                 visible: + priv.devModeEnabled
                                                 elide: Text.ElideNone

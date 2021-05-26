@@ -418,6 +418,7 @@ SettingsPageForm {
 
                 SkrLabel {
                     id: pathLabel
+                    activeFocusOnTab: false
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     text: model.localPath
