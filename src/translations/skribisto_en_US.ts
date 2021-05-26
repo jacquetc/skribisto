@@ -598,28 +598,6 @@
     </message>
 </context>
 <context>
-    <name>HemingwayPageToolbox</name>
-    <message>
-        <source>Hemingway Page Toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Hemingway toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>HemingwayPageToolboxForm.ui</name>
-    <message>
-        <source>Forbid erasing</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hemingway</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>ImporterPageForm.ui</name>
     <message>
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
@@ -1418,6 +1396,14 @@
     </message>
 </context>
 <context>
+    <name>S:</name>
+    <message>
+        <source></source>
+        <comment>the capital letters are shortcuts, mark one letter similarly in your translation and translate the standalone letter accordingly later</comment>
+        <translation></translation>
+    </message>
+</context>
+<context>
     <name>SKRExporter</name>
     <message>
         <source>Tags:</source>
@@ -1605,6 +1591,10 @@
     </message>
     <message>
         <source>Manage plugins</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the first steps dialog</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2267,6 +2257,28 @@
     <name>WriteOverviewPageForm.ui</name>
     <message>
         <source>Unfocus</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WritingGamesPageToolbox</name>
+    <message>
+        <source>Show WritingGames toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Writing Games Page Toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WritingGamesPageToolboxForm.ui</name>
+    <message>
+        <source>WritingGames</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forbid erasing</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

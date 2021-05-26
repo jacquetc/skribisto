@@ -6,11 +6,11 @@ import "../../Items"
 import "../../Commons"
 import "../.."
 
-HemingwayPageToolboxForm {
+WritingGamesPageToolboxForm {
     id: root
 
     iconSource: "qrc:///icons/backup/story-editor.svg"
-    showButtonText: qsTr( "Show Hemingway toolbox")
+    showButtonText: qsTr( "Show WritingGames toolbox")
 
     //required property var writingZone
     property var page: root.ApplicationWindow.window.viewManager.focusedPage

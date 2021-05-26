@@ -50,7 +50,7 @@ WelcomePageForm {
 
     importButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
-        var item = stackView.push("ImporterPage.qml", StackView.Immediate)
+        var item = stackView.push("ImporterPage.qml")
         item.closeCalled.connect(welcomePage.closeCalled)
         item.forceActiveFocus()
 
@@ -58,26 +58,26 @@ WelcomePageForm {
 
     exportButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
-        var item = stackView.push("ExporterPage.qml", StackView.Immediate)
+        var item = stackView.push("ExporterPage.qml")
         item.forceActiveFocus()
 
     }
 
     printButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
-        var item = stackView.push("ExporterPage.qml", {"printEnabled": true}, StackView.Immediate)
+        var item = stackView.push("ExporterPage.qml", {"printEnabled": true})
         item.forceActiveFocus()
     }
     settingsButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
-        var item = stackView.push("SettingsPage.qml", StackView.Immediate)
+        var item = stackView.push("SettingsPage.qml")
         item.closeCalled.connect(welcomePage.closeCalled)
         item.forceActiveFocus()
 
     }
     helpButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false
-        var item = stackView.push("HelpPage.qml", StackView.Immediate)
+        var item = stackView.push("HelpPage.qml")
         item.forceActiveFocus()
 
     }
@@ -225,7 +225,7 @@ WelcomePageForm {
 
     onActiveFocusChanged: {
         if (activeFocus) {
-            newButton.forceActiveFocus()
+            recentButton.forceActiveFocus()
         }
     }
 

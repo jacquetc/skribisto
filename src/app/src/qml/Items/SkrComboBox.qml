@@ -69,8 +69,8 @@ ComboBox {
 
     Connections{
         id: modelCountConnection
-        target: model
-        enabled: false
+        target: Qt.isQtObject(model) ? model : null
+        enabled: Qt.isQtObject(model)
         function onCountChanged(){
             determineModelWidth()
         }

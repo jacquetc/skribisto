@@ -2,7 +2,7 @@
 *   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: hemingwaypagetoolbox.h                                                   *
+*  Filename: writingGamespagetoolbox.h                                                   *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,35 +18,34 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef HEMINGWAYPAGETOOLBOX_H
-#define HEMINGWAYPAGETOOLBOX_H
+#ifndef WRITINGGAMESPAGETOOLBOX_H
+#define WRITINGGAMESPAGETOOLBOX_H
 
 #include <QObject>
 #include "skrpagetoolboxinterface.h"
 
-class HemingwayPageToolbox : public QObject,
-//                 public SKRCoreInterface,
+class WritingGamesPageToolbox : public QObject,
                  public SKRPageToolboxInterface{
     Q_OBJECT
     Q_PLUGIN_METADATA(
-        IID "eu.skribisto.HemingwayPageToolboxPlugin/1.0" FILE
+        IID "eu.skribisto.WritingGamesPageToolboxPlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(/*SKRCoreInterface, */SKRPageToolboxInterface)
+    Q_INTERFACES(SKRPageToolboxInterface)
 
 public:
 
-    explicit HemingwayPageToolbox(QObject *parent = nullptr);
-    ~HemingwayPageToolbox();
+    explicit WritingGamesPageToolbox(QObject *parent = nullptr);
+    ~WritingGamesPageToolbox();
     QString name() const override {
-        return "HemingwayPageToolbox";
+        return "WritingGamesPageToolbox";
     }
 
     QString displayedName() const override {
-        return tr("Hemingway Page Toolbox");
+        return tr("Writing Games Page Toolbox");
     }
 
     QString use() const override {
-        return "Display a toolbox for Hemingway writing game";
+        return "Display a toolbox offering some writing game";
     }
 
     QStringList  associatedPageTypes() const override {
@@ -56,7 +55,7 @@ public:
     }
 
     QString qmlUrl() const override {
-        return "qrc:///qml/plugins/HemingwayPageToolbox/HemingwayPageToolbox.qml";
+        return "qrc:///qml/plugins/WritingGamesPageToolbox/WritingGamesPageToolbox.qml";
     }
 
 
@@ -66,4 +65,4 @@ private:
 
 };
 
-#endif // HEMINGWAYPAGETOOLBOX_H
+#endif // WRITINGGAMESPAGETOOLBOX_H

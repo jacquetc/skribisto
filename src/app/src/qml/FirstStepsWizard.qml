@@ -228,6 +228,7 @@ SkrPopup {
                     text: qsTr("Previous")
                     display: AbstractButton.IconOnly
                     Layout.alignment: Qt.AlignLeft
+                    visible: swipeView.currentIndex !== 0
                     icon {
                         source: "qrc:///icons/backup/go-previous.svg"
                     }
@@ -258,6 +259,7 @@ SkrPopup {
                     text: qsTr("Next")
                     display: AbstractButton.TextBesideIcon
                     Layout.alignment: Qt.AlignRight
+                    visible: swipeView.currentIndex !== swipeView.count - 1
                     icon {
                         source: "qrc:///icons/backup/go-next.svg"
                     }
@@ -268,6 +270,21 @@ SkrPopup {
 
                 }
 
+                SkrToolButton {
+                    id: closeButton2
+                    text: qsTr("Close")
+                    display: AbstractButton.TextBesideIcon
+                    Layout.alignment: Qt.AlignRight
+                    visible: swipeView.currentIndex === swipeView.count - 1
+                    icon {
+                        source: "qrc:///icons/backup/arrow-down.svg"
+                    }
+
+                    onClicked: {
+                        root.close()
+                    }
+
+                }
             }
 
 

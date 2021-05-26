@@ -25,7 +25,6 @@ Item {
     property alias showPropertiesCheckBox: showPropertiesCheckBox
     property alias resetDockConfButton: resetDockConfButton
     property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
-    readonly property int columnWidth: 550
     property alias langComboBox: langComboBox
     property alias checkSpellingCheckBox: checkSpellingCheckBox
     property alias checkSpellingComboBox: checkSpellingComboBox
@@ -38,6 +37,7 @@ Item {
     property alias textIndentSlider: textIndentSlider
     property alias devModeCheckBox: devModeCheckBox
     property alias pluginPageButton: pluginPageButton
+    property alias firstStepsButton: firstStepsButton
 
     SkrPane {
         id: pane2
@@ -139,6 +139,11 @@ Item {
                         SkrButton {
                             id: pluginPageButton
                             text: qsTr("Manage plugins")
+                        }
+
+                        SkrButton{
+                            id: firstStepsButton
+                            text: qsTr("Show the first steps dialog")
                         }
                     }
                 }
