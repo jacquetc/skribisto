@@ -5,11 +5,12 @@ import ".."
 
 Label {
     id:control
+    activeFocusOnTab: true
+
     Material.foreground: SkrTheme.buttonForeground
 
     SkrFocusIndicator {
-        parent: control.background
-        anchors.fill: control.background
+        anchors.fill: parent
         visible: control.activeFocus & Globals.focusVisible
 
     }

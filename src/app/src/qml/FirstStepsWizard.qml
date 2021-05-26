@@ -34,12 +34,19 @@ SkrPopup {
         populateCheckSpellingComboBox()
         checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(SkrSettings.spellCheckingSettings.spellCheckingLangCode)
 
+        for(var i = 0; i < swipeView.count; i++){
+
+            swipeView.itemAt(i).enabled = i === swipeView.currentIndex
+        }
+
+        setPage("")
     }
 
     function setPage(pageName){
         if(pageName === "pluginPage"){
             swipeView.currentIndex = 2
         }
+        swipeView.currentItem.forceActiveFocus()
     }
 
     contentItem: SkrPane {
@@ -70,8 +77,7 @@ SkrPopup {
 
 
                 onCurrentIndexChanged: {
-                    var i = 0
-                    for(i = 0; i < swipeView.count; i++){
+                    for(var i = 0; i < swipeView.count; i++){
 
                         swipeView.itemAt(i).enabled = i === swipeView.currentIndex
                     }
@@ -267,6 +273,8 @@ SkrPopup {
                     onClicked: {
                         swipeView.incrementCurrentIndex()
                     }
+
+                    KeyNavigation.tab: swipeView.currentItem
 
                 }
 

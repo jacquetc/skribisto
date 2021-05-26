@@ -14,7 +14,9 @@ GroupBox {
         width: parent.width
         height: parent.height - control.topPadding + control.bottomPadding
         color: "transparent"
+
     }
+
 
     Keys.onPressed: {
         if (event.key === Qt.Key_Tab){
