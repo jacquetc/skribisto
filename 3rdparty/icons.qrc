@@ -104,5 +104,6 @@
         <file>icons/backup/document-print-none.svg</file>
         <file>icons/backup/whitebalance.svg</file>
         <file>icons/backup/color-picker-black.svg</file>
+        <file>icons/backup/question.svg</file>
     </qresource>
 </RCC>

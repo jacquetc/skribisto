@@ -570,6 +570,14 @@
         <source>Please restart to apply changes</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>User manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frequently Asked Questions</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>HelpContentsForm.ui</name>

@@ -181,6 +181,42 @@ SkrPopup {
                 ColumnLayout {
                     id: shortcutsPage
 
+                    ColumnLayout{
+
+                        RowLayout{
+                            SkrButton {
+                                id: userManualToolButton
+                                text: qsTr("User manual")
+                                action: showUserManualAction
+                                icon.height: 90
+                                icon.width: 90
+
+                                Layout.minimumHeight: 100
+                                Layout.minimumWidth: 200
+                                Layout.fillWidth: true
+                                Layout.maximumWidth: 500
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                            }
+
+
+
+                            SkrButton {
+                                id: faqToolButton
+                                text: qsTr("Frequently Asked Questions")
+                                action: showFaqAction
+
+                                icon.height: 90
+                                icon.width: 90
+
+                                Layout.minimumHeight: 100
+                                Layout.minimumWidth: 200
+                                Layout.fillWidth: true
+                                Layout.maximumWidth: 500
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                            }
+                        }
+                    }
+
                 }
 
                 Item{
