@@ -7,9 +7,12 @@
 #include <QDate>
 #include <QDebug>
 
+#include <QtGui/QTextDocument>
+
 
 #include "skrdata.h"
 #include "skrresult.h"
+#include "models/skrtreelistmodel.h"
 
 class WriteCase : public QObject {
     Q_OBJECT
@@ -64,6 +67,7 @@ private Q_SLOTS:
     void setTag();
 
     void cleanUpHtml();
+    void sortAlphabetically();
 
 private:
 
@@ -305,8 +309,10 @@ void WriteCase::setPrimaryContent()
 void WriteCase::getPrimaryContent()
 {
     QString value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 1);
+    QTextDocument doc;
 
-    QCOMPARE(value, QString("fir**st** *content* test_project_dict_word badword\n\n"));
+    doc.setHtml(value);
+    QCOMPARE(doc.toPlainText(), QString("first content test_project_dict_word badword"));
 
     // lorem ipsum :
     value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 8);
@@ -514,6 +520,17 @@ void WriteCase::cleanUpHtml() {
     html.remove(QRegularExpression(" font-family:.*?;"));
 
     qDebug() << html;
+}
+
+void WriteCase::sortAlphabetically() {
+    SKRResult result = skrdata->treeHub()->sortAlphabetically(m_currentProjectId, 0);
+
+    QCOMPARE(result.isSuccess(), true);
+
+    QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
+    QList<int> wantedIds;
+    wantedIds << 0 << 1 << 52 << 50 << 51 << 2 <<  55 << 4 << 54 << 5 << 6 << 7 << 3 << 8 << 24;
+    QCOMPARE(ids, wantedIds);
 }
 
 QTEST_GUILESS_MAIN(WriteCase)

@@ -252,6 +252,14 @@ NavigationListForm {
             Action {
                 text: qsTr("Sort alphabetically")
                 icon.source: "qrc:///icons/backup/view-sort-ascending-name.svg"
+                enabled: currentParentId !== -2
+
+                onTriggered: {
+                    var result = skrData.treeHub().sortAlphabetically(currentProjectId, currentParentId)
+                    if(result.isSuccess()){
+                        console.log("sorted")
+                    }
+                }
             }
         }
 
@@ -627,7 +635,7 @@ NavigationListForm {
                     }
 
                     moveDisplaced: Transition {
-                        NumberAnimation { properties: "x,y"; duration: 250 }
+                        NumberAnimation { properties: "x,y"; duration: 100 }
                     }
                     QtObject{
                         id: p_section
@@ -680,6 +688,7 @@ NavigationListForm {
                         SwipeDelegate {
                             id: swipeDelegate
                             property int indent: model.indent
+                            property alias dropArea: dropArea
                             focus: true
 
                             Accessible.name: labelLabel.text.length === 0 ? titleLabel.text  +  ( model.hasChildren ? " " +qsTr("is a folder") :  "" ):
@@ -1003,17 +1012,16 @@ NavigationListForm {
                                 onEntered: {
 
                                     //console.log("entered")
-                                    content.sourceIndex = drag.source.visualIndex
+                                    //content.sourceIndex = drag.source.visualIndex
                                     visualModel.items.move(drag.source.visualIndex,
                                                            content.visualIndex)
                                 }
                                 onExited: {
 
-                                    //console.log("exited")
+
 
                                 }
-
-                                onDropped: {
+                                onDropped: {console.log("dropped")
                                     if(drop.proposedAction === Qt.MoveAction){
 
                                         console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
@@ -1053,7 +1061,7 @@ NavigationListForm {
                                     Drag.keys: ["application/skribisto-tree-item"]
 
                                     Drag.supportedActions: Qt.MoveAction
-                                    //Drag.dragType: Drag.Automatic
+                                    //sDrag.dragType: Drag.Internal
 
                                     borderWidth: 2
                                     borderColor: touchDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
@@ -1082,12 +1090,20 @@ NavigationListForm {
                                                 cancelDragTimer.stop()
                                                 priv.dragging = false
                                                 content.dragging = false
-                                                //if(!dropArea.containsDrag){
-                                                    content.Drag.drop()
-                                                //}
+
+                                                content.Drag.drop()
+                                                proxyModel.invalidate()
+
                                             }
                                         }
                                         enabled: true
+
+                                        onCanceled: {
+                                            cancelDragTimer.stop()
+                                            priv.dragging = false
+                                            content.dragging = false
+
+                                        }
 
                                         grabPermissions: PointerHandler.CanTakeOverFromItems |PointerHandler.CanTakeOverFromAnything
                                     }
@@ -1111,13 +1127,18 @@ NavigationListForm {
                                                 cancelDragTimer.stop()
                                                 priv.dragging = false
                                                 content.dragging = false
-                                                //if(!dropArea.containsDrag){
-                                                    content.Drag.drop()
-                                               // }
+                                                content.Drag.drop()
+                                                proxyModel.invalidate()
                                             }
                                         }
                                         enabled: content.dragging
 
+                                        onCanceled: {
+                                            cancelDragTimer.stop()
+                                            priv.dragging = false
+                                            content.dragging = false
+
+                                        }
                                         grabPermissions: PointerHandler.CanTakeOverFromItems |PointerHandler.CanTakeOverFromAnything
                                     }
 
