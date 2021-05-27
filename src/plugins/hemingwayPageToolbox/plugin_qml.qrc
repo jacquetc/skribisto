@@ -1,6 +1,0 @@
-<RCC>
-    <qresource prefix="/qml/plugins">
-        <file>HemingwayPageToolbox/HemingwayPageToolbox.qml</file>
-        <file>HemingwayPageToolbox/HemingwayPageToolboxForm.ui.qml</file>
-    </qresource>
-</RCC>

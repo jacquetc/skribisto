@@ -498,11 +498,11 @@ ApplicationWindow {
 
         id: showFaqAction
         text: qsTr("&FAQ")
-        //        icon {
-        //            source: "qrc:///icons/backup/system-help.svg"
-        //            height: 50
-        //            width: 50
-        //        }
+                icon {
+                    source: "qrc:///icons/backup/question.svg"
+                    height: 50
+                    width: 50
+                }
 
         onTriggered: {
             console.log("show FAQ")

@@ -23,6 +23,8 @@
 #include "tools.h"
 #include "tasks/plmprojectmanager.h"
 
+#include <QCollator>
+
 SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree"), m_last_added_id(-1)
 {
     connect(this, &SKRTreeHub::errorSent, this, &SKRTreeHub::setError, Qt::DirectConnection);
@@ -1128,6 +1130,101 @@ int SKRTreeHub::getValidSortOrderAfterTree(int projectId, int treeItemId) const
 
 // ----------------------------------------------------------------------------------------
 
+SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
+{
+    SKRResult result(this);
+
+    QList<int> directChildren = this->getAllDirectChildren(projectId, parentTreeItemId, false, true);
+    QList<int> allIds         = this->getAllIds(projectId);
+
+    QStringList titleList;
+
+    for (int directChildId : qAsConst(directChildren)) {
+        titleList << this->getTitle(projectId, directChildId);
+    }
+
+    QCollator collator;
+    collator.setCaseSensitivity(Qt::CaseInsensitive);
+    collator.setNumericMode(true);
+    std::sort(titleList.begin(), titleList.end(), collator);
+
+
+    QMultiHash<QString, int> allTitlesWithIds;
+
+    for (int directChildId : qAsConst(directChildren)) {
+        allTitlesWithIds.insert(this->getTitle(projectId, directChildId), directChildId);
+    }
+
+    QList<int> newOrderedDirectChildrenList;
+
+    for (const QString& title : qAsConst(titleList)) {
+        QMultiHash<QString, int>::iterator i = allTitlesWithIds.begin();
+
+        while (i != allTitlesWithIds.end()) {
+            if (i.key() == title) {
+                newOrderedDirectChildrenList.append(i.value());
+                i = allTitlesWithIds.erase(i);
+            }
+            else {
+                ++i;
+            }
+        }
+    }
+
+
+    int currentParentId = -1;
+    QList<int> children;
+
+    bool parentPassed = false;
+
+    for (int id : qAsConst(allIds)) {
+        if (directChildren.contains(id)) {
+            // first loop
+            if (currentParentId != -1) {
+                int insertionIndex = newOrderedDirectChildrenList.indexOf(currentParentId) + 1;
+
+                for (int child : children) {
+                    newOrderedDirectChildrenList.insert(insertionIndex, child);
+                    insertionIndex += 1;
+                }
+            }
+            children.clear();
+            currentParentId = id;
+        }
+        else {
+            children.append(id);
+        }
+    }
+
+    int newSortOrder = this->getSortOrder(projectId, parentTreeItemId) + 1;
+
+    for (int id : qAsConst(newOrderedDirectChildrenList)) {
+        IFOKDO(result, this->setSortOrder(projectId, id, newSortOrder, true, false));
+        newSortOrder += 1;
+    }
+
+
+    IFOKDO(result, this->renumberSortOrders(projectId));
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    IFKO(result) {
+        queries.rollback();
+        emit errorSent(result);
+    }
+    IFOK(result) {
+        queries.commit();
+
+        for (int id : qAsConst(newOrderedDirectChildrenList)) {
+            emit sortOrderChanged(projectId, id, this->getSortOrder(projectId, id));
+        }
+        emit projectModified(projectId);
+    }
+
+    return result;
+}
+
+// ----------------------------------------------------------------------------------------
+
 QList<int>SKRTreeHub::getAllChildren(int projectId, int treeItemId)
 {
     QList<int> childrenList;
@@ -1153,6 +1250,55 @@ QList<int>SKRTreeHub::getAllChildren(int projectId, int treeItemId)
 
             if (idIndent > parentIndent) {
                 childrenList.append(id);
+            }
+
+            if (idIndent <= parentIndent) {
+                break;
+            }
+        }
+    }
+
+    return childrenList;
+}
+
+// ----------------------------------------------------------------------------------------
+
+QList<int>SKRTreeHub::getAllDirectChildren(int  projectId,
+                                           int  treeItemId,
+                                           bool trashedAreIncluded,
+                                           bool notTrashedAreIncluded)
+{
+    QList<int> childrenList;
+
+    // get indents
+    QHash<int, int> indentList = getAllIndents(projectId);
+    QList<int> sortedIdList    = getAllIds(projectId);
+
+
+    // determine children
+
+    int  parentIndent = indentList.value(treeItemId);
+    bool parentPassed = false;
+
+    for (int id : qAsConst(sortedIdList)) {
+        if (id == treeItemId) {
+            parentPassed = true;
+            continue;
+        }
+
+        if (parentPassed) {
+            int idIndent = indentList.value(id);
+
+            if (idIndent == parentIndent + 1) {
+                bool isTrashed = this->getTrashed(projectId, id);
+
+                if (trashedAreIncluded && isTrashed) {
+                    childrenList.append(id);
+                }
+
+                if (notTrashedAreIncluded && !isTrashed) {
+                    childrenList.append(id);
+                }
             }
 
             if (idIndent <= parentIndent) {

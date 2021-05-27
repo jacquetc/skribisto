@@ -10,8 +10,8 @@ Slider {
 
 
     SkrFocusIndicator {
-        parent: control.background
-        anchors.fill: control.background
+        parent: control
+        anchors.fill: control
         visible: control.activeFocus & Globals.focusVisible
 
     }

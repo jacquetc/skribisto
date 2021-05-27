@@ -570,6 +570,14 @@
         <source>Please restart to apply changes</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>User manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frequently Asked Questions</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>HelpContentsForm.ui</name>
@@ -594,28 +602,6 @@
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>HemingwayPageToolbox</name>
-    <message>
-        <source>Hemingway Page Toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Hemingway toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>HemingwayPageToolboxForm.ui</name>
-    <message>
-        <source>Forbid erasing</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hemingway</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1418,6 +1404,14 @@
     </message>
 </context>
 <context>
+    <name>S:</name>
+    <message>
+        <source></source>
+        <comment>the capital letters are shortcuts, mark one letter similarly in your translation and translate the standalone letter accordingly later</comment>
+        <translation></translation>
+    </message>
+</context>
+<context>
     <name>SKRExporter</name>
     <message>
         <source>Tags:</source>
@@ -1605,6 +1599,10 @@
     </message>
     <message>
         <source>Manage plugins</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the first steps dialog</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2267,6 +2265,28 @@
     <name>WriteOverviewPageForm.ui</name>
     <message>
         <source>Unfocus</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WritingGamesPageToolbox</name>
+    <message>
+        <source>Show WritingGames toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Writing Games Page Toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WritingGamesPageToolboxForm.ui</name>
+    <message>
+        <source>WritingGames</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forbid erasing</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

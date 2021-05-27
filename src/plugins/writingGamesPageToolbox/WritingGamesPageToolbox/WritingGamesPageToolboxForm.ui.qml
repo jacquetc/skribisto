@@ -33,7 +33,7 @@ SkrToolbox {
 
                     SkrLabel {
                         id: currentNoteTitleLabel
-                        text: qsTr("Hemingway")
+                        text: qsTr("WritingGames")
                         verticalAlignment: Qt.AlignVCenter
                         Layout.fillHeight: true
                         Layout.fillWidth: true

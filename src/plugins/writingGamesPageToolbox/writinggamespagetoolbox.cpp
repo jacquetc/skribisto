@@ -2,7 +2,7 @@
 *   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: hemingwaypagetoolbox.cpp                                                   *
+*  Filename: writingGamespagetoolbox.cpp                                                   *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,17 +18,17 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#include "hemingwaypagetoolbox.h"
+#include "writinggamespagetoolbox.h"
 #include "skrdata.h"
 
-HemingwayPageToolbox::HemingwayPageToolbox(QObject *parent) : QObject(parent)
+WritingGamesPageToolbox::WritingGamesPageToolbox(QObject *parent) : QObject(parent)
 {
 
 }
 
 // ---------------------------------------------------
 
-HemingwayPageToolbox::~HemingwayPageToolbox()
+WritingGamesPageToolbox::~WritingGamesPageToolbox()
 {}
 
 

@@ -224,6 +224,7 @@ SkrPane {
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+
                 SkrToolButton {
                     id: goBackToMenuButton
                     text: qsTr("Go Back to the menu")
@@ -237,7 +238,7 @@ SkrPane {
                     id: stackView
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-
+                    clip: true
                     initialItem: Item {}
 
 

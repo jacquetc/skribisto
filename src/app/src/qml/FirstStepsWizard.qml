@@ -34,12 +34,19 @@ SkrPopup {
         populateCheckSpellingComboBox()
         checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(SkrSettings.spellCheckingSettings.spellCheckingLangCode)
 
+        for(var i = 0; i < swipeView.count; i++){
+
+            swipeView.itemAt(i).enabled = i === swipeView.currentIndex
+        }
+
+        setPage("")
     }
 
     function setPage(pageName){
         if(pageName === "pluginPage"){
             swipeView.currentIndex = 2
         }
+        swipeView.currentItem.forceActiveFocus()
     }
 
     contentItem: SkrPane {
@@ -70,8 +77,7 @@ SkrPopup {
 
 
                 onCurrentIndexChanged: {
-                    var i = 0
-                    for(i = 0; i < swipeView.count; i++){
+                    for(var i = 0; i < swipeView.count; i++){
 
                         swipeView.itemAt(i).enabled = i === swipeView.currentIndex
                     }
@@ -175,6 +181,42 @@ SkrPopup {
                 ColumnLayout {
                     id: shortcutsPage
 
+                    ColumnLayout{
+
+                        RowLayout{
+                            SkrButton {
+                                id: userManualToolButton
+                                text: qsTr("User manual")
+                                action: showUserManualAction
+                                icon.height: 90
+                                icon.width: 90
+
+                                Layout.minimumHeight: 100
+                                Layout.minimumWidth: 200
+                                Layout.fillWidth: true
+                                Layout.maximumWidth: 500
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                            }
+
+
+
+                            SkrButton {
+                                id: faqToolButton
+                                text: qsTr("Frequently Asked Questions")
+                                action: showFaqAction
+
+                                icon.height: 90
+                                icon.width: 90
+
+                                Layout.minimumHeight: 100
+                                Layout.minimumWidth: 200
+                                Layout.fillWidth: true
+                                Layout.maximumWidth: 500
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                            }
+                        }
+                    }
+
                 }
 
                 Item{
@@ -228,6 +270,7 @@ SkrPopup {
                     text: qsTr("Previous")
                     display: AbstractButton.IconOnly
                     Layout.alignment: Qt.AlignLeft
+                    visible: swipeView.currentIndex !== 0
                     icon {
                         source: "qrc:///icons/backup/go-previous.svg"
                     }
@@ -258,6 +301,7 @@ SkrPopup {
                     text: qsTr("Next")
                     display: AbstractButton.TextBesideIcon
                     Layout.alignment: Qt.AlignRight
+                    visible: swipeView.currentIndex !== swipeView.count - 1
                     icon {
                         source: "qrc:///icons/backup/go-next.svg"
                     }
@@ -266,8 +310,25 @@ SkrPopup {
                         swipeView.incrementCurrentIndex()
                     }
 
+                    KeyNavigation.tab: swipeView.currentItem
+
                 }
 
+                SkrToolButton {
+                    id: closeButton2
+                    text: qsTr("Close")
+                    display: AbstractButton.TextBesideIcon
+                    Layout.alignment: Qt.AlignRight
+                    visible: swipeView.currentIndex === swipeView.count - 1
+                    icon {
+                        source: "qrc:///icons/backup/arrow-down.svg"
+                    }
+
+                    onClicked: {
+                        root.close()
+                    }
+
+                }
             }
 
 

@@ -16,7 +16,7 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
 
 
     this->setSortRole(SKRTreeItem::SortOrderRole);
-    this->setDynamicSortFilter(true);
+    this->setDynamicSortFilter(false);
 
 
     connect(skrdata->projectHub(),
@@ -36,6 +36,11 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
     connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->invalidateFilter();
     });
+    connect(skrdata->treeHub(),    &SKRTreeHub::sortOrderChanged, this, [this]() {
+        sort(0);
+        emit sortOtherProxyModelsCalled();
+        this->invalidateFilter();
+    });
 
 
     // connect this proxy model to all other proxy models using the main model
@@ -49,8 +54,8 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
     connect(listModel, &SKRTreeListModel::sortOtherProxyModelsCalled, this, [this]() {
         if (this->sender() != this) {
             QTimer::singleShot(20, this, [this] {
-                this->invalidateFilter();
                 this->sort(0);
+                this->invalidateFilter();
             });
         }
     });

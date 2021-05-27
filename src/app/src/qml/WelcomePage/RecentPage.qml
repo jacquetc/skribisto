@@ -159,6 +159,7 @@ RecentPageForm {
                                 Layout.fillHeight: true
                                 SkrLabel {
                                     id: titleLabel
+                                    activeFocusOnTab: false
 
                                     Layout.fillWidth: true
                                     Layout.topMargin: 2
@@ -180,6 +181,7 @@ RecentPageForm {
 
                                 SkrLabel {
                                     id: lastModificationLabel
+                                    activeFocusOnTab: false
 
                                     text: skrRootItem.toLocaleDateTimeFormat(model.lastModification)
                                     Layout.bottomMargin: 2
@@ -189,6 +191,7 @@ RecentPageForm {
 
                                 SkrLabel {
                                     id: fileNameLabel
+                                    activeFocusOnTab: false
 
                                     text: skrQMLTools.translateURLToLocalFile(model.fileName)
                                     elide: Text.ElideMiddle

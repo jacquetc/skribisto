@@ -580,6 +580,7 @@ ListView {
 
                                 SkrLabel {
                                     id: titleLabel
+                                    activeFocusOnTab: false
 
                                     Layout.fillWidth: true
                                     Layout.topMargin: 2
@@ -693,6 +694,7 @@ ListView {
 
                                     SkrLabel {
                                         id: labelLabel
+                                        activeFocusOnTab: false
                                         text:  model.label === undefined ? "" : model.label
                                         Layout.bottomMargin: 2
                                         Layout.rightMargin: 4

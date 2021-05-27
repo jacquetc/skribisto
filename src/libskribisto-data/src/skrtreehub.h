@@ -175,8 +175,17 @@ public:
     int                   getValidSortOrderAfterTree(int projectId,
                                                      int treeItemId) const;
 
+    Q_INVOKABLE SKRResult sortAlphabetically(int projectId,
+                                             int parentTreeItemId);
+
+
     Q_INVOKABLE QList<int>getAllChildren(int projectId,
                                          int treeItemId);
+
+    Q_INVOKABLE QList<int>getAllDirectChildren(int  projectId,
+                                               int  treeItemId,
+                                               bool trashedAreIncluded    = false,
+                                               bool notTrashedAreIncluded = true);
     Q_INVOKABLE QList<int>getAllAncestors(int projectId,
                                           int treeItemId);
     QList<int>            getAllSiblings(int projectId,
