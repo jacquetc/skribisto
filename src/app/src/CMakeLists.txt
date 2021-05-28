@@ -103,6 +103,7 @@ set(app_SRCS
     skrtreemanager.cpp
     skrtreemanager.h
     skrpagetoolboxinterface.h
+    skrprojecttoolboxinterface.h
     )
 
 set(QML qml.qrc

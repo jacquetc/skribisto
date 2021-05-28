@@ -7,14 +7,11 @@ import "Items"
 
 Item {
     id: base
-    property alias navigationViewToolButton: navigationViewToolButton
-    property alias documentViewToolButton: documentViewToolButton
-
-    property alias documentView: documentView
-    property alias navigationView: navigationView
 
     property alias scrollView: scrollView
     property alias toolboxLayout: toolboxLayout
+    property alias toolboxRepeater: toolboxRepeater
+    property alias toolButtonRepeater: toolButtonRepeater
     property alias hideDockToolButton: hideDockToolButton
 
     RowLayout {
@@ -38,15 +35,11 @@ Item {
                     Item {
                         Layout.fillWidth: true
                     }
+                    Repeater {
+                        id: toolButtonRepeater
 
-                    SkrToolButton{
-                        id: navigationViewToolButton
-                        display: AbstractButton.IconOnly
                     }
-                    SkrToolButton{
-                        id: documentViewToolButton
-                        display: AbstractButton.IconOnly
-                    }
+
                     Item {
                         Layout.fillWidth: true
                     }
@@ -65,6 +58,7 @@ Item {
                     ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
                     Flickable {
+                        id: toolboxFlickable
                         boundsBehavior: Flickable.StopAtBounds
                         contentWidth: scrollView.width
                         contentHeight: toolboxLayout.childrenRect.height
@@ -73,24 +67,14 @@ Item {
 
                         Column {
                             id: toolboxLayout
-                            spacing: 0
-                            anchors.fill: parent
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
 
-                            Navigation {
-                                id: navigationView
-                                clip: true
-
-                                width: scrollView.width
-                                height: navigationView.implicitHeight
+                            Repeater {
+                                id: toolboxRepeater
                             }
 
-                            DocumentListView {
-                                id: documentView
-                                clip: true
-
-                                width: scrollView.width
-                                height: documentView.implicitHeight
-                            }
                         }
                     }
                 }

@@ -571,7 +571,7 @@ NavigationListForm {
                     boundsBehavior: Flickable.StopAtBounds
                     spacing: 1
 
-                    Accessible.name: "Navigation list"
+                    Accessible.name: qsTr("Navigation list")
                     Accessible.role: Accessible.List
 
 
@@ -1021,10 +1021,11 @@ NavigationListForm {
 
 
                                 }
-                                onDropped: {console.log("dropped")
+                                onDropped: {
+//                                console.log("dropped")
                                     if(drop.proposedAction === Qt.MoveAction){
 
-                                        console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
+                                        //console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
                                         cancelDragTimer.stop()
                                         listView.interactive = true
                                         priv.dragging = false
@@ -2426,7 +2427,7 @@ NavigationListForm {
 
                                     ParentChange {
                                         target: content
-                                        parent: base
+                                        parent: root
                                     }
                                     AnchorChanges {
                                         target: content

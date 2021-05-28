@@ -159,7 +159,7 @@ RightDockForm {
     Action{
         id: sheetOverviewToolViewAction
         checkable: true
-        text: qsTr( "Show overview tool box")
+        text: qsTr( "Show overview toolbox")
         icon {
             source: "qrc:///icons/backup/configure.svg"
             height: 50
@@ -192,7 +192,7 @@ RightDockForm {
     Action{
         id: editViewAction
         checkable: true
-        text: qsTr( "Show edit tool box")
+        text: qsTr( "Show edit toolbox")
         icon {
             source: "qrc:///icons/backup/format-text-italic.svg"
             height: 50
@@ -228,7 +228,7 @@ RightDockForm {
     Action{
         id: propertyPadViewAction
         checkable: true
-        text: qsTr( "Show properties tool box")
+        text: qsTr( "Show properties toolbox")
         icon {
             source: "qrc:///icons/backup/configure.svg"
             height: 50
@@ -257,7 +257,7 @@ RightDockForm {
     Action{
         id: tagPadViewAction
         checkable: true
-        text: qsTr( "Show tags tool box")
+        text: qsTr( "Show tags toolbox")
         icon {
             source: "qrc:///icons/backup/tag.svg"
             height: 50

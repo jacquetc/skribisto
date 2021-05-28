@@ -447,6 +447,28 @@
     </message>
 </context>
 <context>
+    <name>FavoritesProjectToolbox</name>
+    <message>
+        <source>Show Favorites toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Favorites Project Toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FavoritesProjectToolboxForm.ui</name>
+    <message>
+        <source>Favorites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Favorites list</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>FileMenuPage</name>
     <message>
         <source>Opened</source>
@@ -733,6 +755,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Item menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -789,7 +815,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Item menu</source>
+        <source>Navigation list</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1337,23 +1363,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show overview tool box</source>
+        <source>Show overview toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show edit toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show properties toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1578,14 +1604,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset dock configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Development mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1603,6 +1621,10 @@
     </message>
     <message>
         <source>Show the first steps dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show properties toolbox</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1956,22 +1978,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show outline tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Text page</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1989,6 +1995,22 @@
     </message>
     <message>
         <source>Open quick view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show edit toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show properties toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show outline toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2271,22 +2293,22 @@
 <context>
     <name>WritingGamesPageToolbox</name>
     <message>
-        <source>Show WritingGames toolbox</source>
+        <source>Writing Games Page Toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Writing Games Page Toolbox</source>
+        <source>Show Writing Games toolbox</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>WritingGamesPageToolboxForm.ui</name>
     <message>
-        <source>WritingGames</source>
+        <source>Forbid erasing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Forbid erasing</source>
+        <source>Writing games</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

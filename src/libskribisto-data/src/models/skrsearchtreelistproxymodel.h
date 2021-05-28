@@ -32,9 +32,9 @@ class EXPORT SKRSearchTreeListProxyModel : public QSortFilterProxyModel {
     Q_PROPERTY(
         QList<int>tagIdListFilter MEMBER m_tagIdListFilter WRITE setTagIdListFilter NOTIFY tagIdListFilterChanged)
     Q_PROPERTY(
-        QStringList showOnlyWithAttributesFilter MEMBER m_showOnlyWithAttributesFilter WRITE setShowOnlyWithAttributesFilter NOTIFY showOnlyWithAttributesFilterChanged)
+        QStringList showOnlyWithPropertiesFilter MEMBER m_showOnlyWithPropertiesFilter WRITE setShowOnlyWithPropertiesFilter NOTIFY showOnlyWithPropertiesFilterChanged)
     Q_PROPERTY(
-        QStringList hideThoseWithAttributesFilter MEMBER m_hideThoseWithAttributesFilter WRITE setHideThoseWithAttributesFilter NOTIFY hideThoseWithAttributesFilterChanged)
+        QStringList hideThoseWithPropertiesFilter MEMBER m_hideThoseWithPropertiesFilter WRITE setHideThoseWithPropertiesFilter NOTIFY hideThoseWithPropertiesFilterChanged)
 
 public:
 
@@ -98,9 +98,9 @@ public:
     void                  setParentIdFilter(int parentIdFilter);
     void                  setShowParentWhenParentIdFilter(bool showParent);
 
-    void                  setHideThoseWithAttributesFilter(const QStringList& hideThoseWithAttributesFilter);
+    void                  setHideThoseWithPropertiesFilter(const QStringList& hideThoseWithPropertiesFilter);
 
-    void                  setShowOnlyWithAttributesFilter(const QStringList& showOnlyWithAttributesFilter);
+    void                  setShowOnlyWithPropertiesFilter(const QStringList& showOnlyWithPropertiesFilter);
     Q_INVOKABLE QList<int>getChildrenList(int  projectId,
                                           int  treeItemId,
                                           bool getTrashed,
@@ -177,8 +177,8 @@ signals:
     void parentIdFilterChanged(int treeItemIdFilter);
     void showParentWhenParentIdFilterChanged(bool value);
     void tagIdListFilterChanged(const QList<int>tagIdList);
-    void showOnlyWithAttributesFilterChanged(const QStringList attributes);
-    void hideThoseWithAttributesFilterChanged(const QStringList attributes);
+    void showOnlyWithPropertiesFilterChanged(const QStringList attributes);
+    void hideThoseWithPropertiesFilterChanged(const QStringList attributes);
     void sortOtherProxyModelsCalled();
 
 public slots:
@@ -216,8 +216,8 @@ private:
     QList<int>m_treeItemIdListFilter;
     QList<int>m_hideTreeItemIdListFilter;
     QList<int>m_tagIdListFilter;
-    QStringList m_showOnlyWithAttributesFilter;
-    QStringList m_hideThoseWithAttributesFilter;
+    QStringList m_showOnlyWithPropertiesFilter;
+    QStringList m_hideThoseWithPropertiesFilter;
     QHash<int, Qt::CheckState>m_checkedIdsHash;
     QHash<int, QList<int> >m_historyList;
 };

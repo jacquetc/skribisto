@@ -42,6 +42,12 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
         this->invalidateFilter();
     });
 
+    connect(this->sourceModel(), &SKRTreeListModel::dataChanged, this,
+            [this](const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles) {
+        if (roles.contains(SKRTreeItem::Roles::OtherPropertiesRole)) {
+            this->invalidateFilter();
+        }
+    });
 
     // connect this proxy model to all other proxy models using the main model
 
@@ -76,8 +82,8 @@ SKRSearchTreeListProxyModel * SKRSearchTreeListProxyModel::clone()
     newInstance->setParentIdFilter(m_parentIdFilter);
     newInstance->setShowParentWhenParentIdFilter(m_showParentWhenParentIdFilter);
     newInstance->setTagIdListFilter(m_tagIdListFilter);
-    newInstance->setShowOnlyWithAttributesFilter(m_showOnlyWithAttributesFilter);
-    newInstance->setHideThoseWithAttributesFilter(m_hideThoseWithAttributesFilter);
+    newInstance->setShowOnlyWithPropertiesFilter(m_showOnlyWithPropertiesFilter);
+    newInstance->setHideThoseWithPropertiesFilter(m_hideThoseWithPropertiesFilter);
 
     newInstance->invalidateFilter();
 
@@ -355,22 +361,22 @@ void SKRSearchTreeListProxyModel::setTagIdListFilter(const QList<int>& tagIdList
 
 // --------------------------------------------------------------
 
-void SKRSearchTreeListProxyModel::setHideThoseWithAttributesFilter(const QStringList& hideThoseWithAttributesFilter)
+void SKRSearchTreeListProxyModel::setHideThoseWithPropertiesFilter(const QStringList& hideThoseWithPropertiesFilter)
 {
-    m_hideThoseWithAttributesFilter = hideThoseWithAttributesFilter;
+    m_hideThoseWithPropertiesFilter = hideThoseWithPropertiesFilter;
 
-    emit hideThoseWithAttributesFilterChanged(hideThoseWithAttributesFilter);
+    emit hideThoseWithPropertiesFilterChanged(hideThoseWithPropertiesFilter);
 
     this->invalidateFilter();
 }
 
 // --------------------------------------------------------------
 
-void SKRSearchTreeListProxyModel::setShowOnlyWithAttributesFilter(const QStringList& showOnlyWithAttributesFilter)
+void SKRSearchTreeListProxyModel::setShowOnlyWithPropertiesFilter(const QStringList& showOnlyWithPropertiesFilter)
 {
-    m_showOnlyWithAttributesFilter = showOnlyWithAttributesFilter;
+    m_showOnlyWithPropertiesFilter = showOnlyWithPropertiesFilter;
 
-    emit showOnlyWithAttributesFilterChanged(showOnlyWithAttributesFilter);
+    emit showOnlyWithPropertiesFilterChanged(showOnlyWithPropertiesFilter);
 
     this->invalidateFilter();
 }
@@ -639,7 +645,7 @@ bool SKRSearchTreeListProxyModel::filterAcceptsRow(int                sourceRow,
 
     // treeItemIdListFiltering :
     if (value && (!m_treeItemIdListFilter.isEmpty() || !m_hideTreeItemIdListFilter.isEmpty())) {
-        int showed = false;
+        bool showed = false;
 
         if (m_treeItemIdListFilter.isEmpty()) {
             showed = true;
@@ -706,31 +712,31 @@ bool SKRSearchTreeListProxyModel::filterAcceptsRow(int                sourceRow,
         }
     }
 
-    //  attribute filtering
-    if (value && (!m_showOnlyWithAttributesFilter.isEmpty() || !m_hideThoseWithAttributesFilter.isEmpty()) &&
+    //  property filtering
+    if (value && (!m_showOnlyWithPropertiesFilter.isEmpty() || !m_hideThoseWithPropertiesFilter.isEmpty()) &&
         (m_projectIdFilter != -2)) {
-        QStringList attributes = m_propertyHub->getProperty(m_projectIdFilter, treeItemId, "attributes").split(";",
-                                                                                                               Qt::SkipEmptyParts);
+        // remove those to hide from those to show
+        QStringList showOnlyWithPropertiesFilter;
 
-        int showed = false;
-
-        if (m_showOnlyWithAttributesFilter.isEmpty()) {
-            showed = true;
-        }
-        else if (m_hideThoseWithAttributesFilter.isEmpty()) {
-            showed = false;
-        }
-        else { // both are with values
-            showed = false;
+        for (const QString& prop : qAsConst(m_showOnlyWithPropertiesFilter)) {
+            if (!m_hideThoseWithPropertiesFilter.contains(prop)) {
+                showOnlyWithPropertiesFilter.append(prop);
+            }
         }
 
-        for (const QString& attribute : qAsConst(attributes)) {
-            if (m_showOnlyWithAttributesFilter.contains(attribute)) {
+        bool showed = false;
+
+        int projectId = item->data(SKRTreeItem::Roles::ProjectIdRole).toInt();
+
+        for (const QString& prop : showOnlyWithPropertiesFilter) {
+            if (skrdata->treePropertyHub()->getProperty(projectId, treeItemId, prop) == "true") {
                 showed = true;
                 break;
             }
+        }
 
-            if (m_hideThoseWithAttributesFilter.contains(attribute)) {
+        for (const QString& prop : m_hideThoseWithPropertiesFilter) {
+            if (skrdata->treePropertyHub()->getProperty(projectId, treeItemId, prop) == "true") {
                 showed = false;
                 break;
             }
@@ -1358,9 +1364,9 @@ SKRResult SKRSearchTreeListProxyModel::moveDown(int projectId, int treeItemId, i
 /// \param to target item index number
 /// Carefull, this is only used for manually moving a visual item
 void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
-    qDebug() << "from : " << from;
-    qDebug() << "to : " << to;
-    qDebug() << "---------";
+    //    qDebug() << "from : " << from;
+    //    qDebug() << "to : " << to;
+    //    qDebug() << "---------";
 
     if (from == to) return;
 
@@ -1379,12 +1385,30 @@ void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
     int toProjectId     = this->data(toIndex, SKRTreeItem::Roles::ProjectIdRole).toInt();
     int toSortOrder     = this->data(toIndex, SKRTreeItem::Roles::SortOrderRole).toInt();
 
-    qDebug() << "fromTreeItemId : " << fromTreeItemId << this->data(fromIndex,
-                                                                    SKRTreeItem::Roles::TitleRole)
-        .toString();
-    qDebug() << "toTreeItemId : " << toTreeItemId << this->data(toIndex,
-                                                                SKRTreeItem::Roles::TitleRole).
-        toString();
+    //    qDebug() << "fromTreeItemId : " << fromTreeItemId <<
+    // this->data(fromIndex,
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //                                          SKRTreeItem::Roles::TitleRole)
+    //        .toString();
+    //    qDebug() << "toTreeItemId : " << toTreeItemId << this->data(toIndex,
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //                                         SKRTreeItem::Roles::TitleRole).
+    //        toString();
 
 
     m_treeHub->moveTreeItem(fromProjectId, fromTreeItemId, toTreeItemId, false);
@@ -1393,7 +1417,7 @@ void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
     sort(0);
     emit sortOtherProxyModelsCalled();
 
-    this->invalidate();
+    // this->invalidate();
 }
 
 // --------------------------------------------------------------

@@ -23,7 +23,6 @@ Item {
     property alias removeBackupPathButton: removeBackupPathButton
     property alias addBackupPathButton: addBackupPathButton
     property alias showPropertiesCheckBox: showPropertiesCheckBox
-    property alias resetDockConfButton: resetDockConfButton
     property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
     property alias langComboBox: langComboBox
     property alias checkSpellingCheckBox: checkSpellingCheckBox
@@ -456,12 +455,7 @@ Item {
 
                             SkrSwitch {
                                 id: showPropertiesCheckBox
-                                text: qsTr("Show properties tool box")
-                            }
-
-                            SkrButton {
-                                id: resetDockConfButton
-                                text: qsTr("Reset dock configuration")
+                                text: qsTr("Show properties toolbox")
                             }
 
                             SkrSwitch {

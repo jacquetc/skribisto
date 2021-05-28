@@ -838,12 +838,6 @@ SettingsPageForm {
     //    }
 
 
-    resetDockConfButton.onClicked: {
-
-        Globals.resetDockConfCalled()
-
-    }
-
     devModeCheckBox.checked: SkrSettings.devSettings.devModeEnabled
     Binding {
         target: SkrSettings.devSettings

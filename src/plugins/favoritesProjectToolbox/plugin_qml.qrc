@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qml/plugins">
+        <file>FavoritesProjectToolbox/FavoritesProjectToolbox.qml</file>
+        <file>FavoritesProjectToolbox/FavoritesProjectToolboxForm.ui.qml</file>
+    </qresource>
+</RCC>

@@ -721,7 +721,7 @@ void DocumentHandler::listAndSendSpellSuggestions(int cursorPosition)
 
     QStringList list = m_highlighter->getSpellChecker()->suggest(word);
 
-    qDebug() << "list;" << list;
+    //    qDebug() << "list;" << list;
     m_suggestionList = list;
     emit suggestionListChanged(list);
 
