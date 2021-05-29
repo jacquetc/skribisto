@@ -942,7 +942,14 @@ NavigationListForm {
 
                                 onHoveredChanged: {
                                     //console.log("item hovered", itemHoverHandler.hovered)
-                                    if(hovered && model.hasChildren){
+                                    if(priv.dragging){
+                                        hoveringTimer.stop()
+                                        closeSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId + 1
+                                        closeSideNavigationListPopupTimer.start()
+
+                                    }
+
+                                    else if(hovered && model.hasChildren){
 
                                         if(!rootWindow.compactMode){
 
