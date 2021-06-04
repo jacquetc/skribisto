@@ -25,7 +25,7 @@
         * [Flatpak from local source code](#flatpak-from-local-source-code)
     + [MacOS](#macos)
   * [Translation](#translation)
-  * [Transifex integration with Skribisto](#transifex-integration-with-skribisto)
+    + [Transifex integration with Skribisto](#transifex-integration-with-skribisto)
   * [To contact me](#to-contact-me)
   
 # Skribisto
@@ -81,8 +81,8 @@ Short term goal is to rejoin its ancestor Plume Creator feature-wise. A few outs
 - **character/word count**
 - **exporting to .txt/.odt/.PDF**
 - **printing**
+- **display quickly the end of the previous text**
 - advanced search/replace
-- display quickly the end of the previous text and the beginning of the next text
 - character/word goal
 
 Skribisto will add to these features with :
@@ -101,7 +101,7 @@ Skribisto will add to these features with :
 - **importing old Plume Creator projects**
 - **Windows 10 support**
 - **Examples**
-- Help page
+- **Help page**
 - project management
 - each item can take snapshots
 - on-the-fly notes from the context menu
@@ -112,7 +112,7 @@ Medium term goals are :
 - Sort of gallery to manage all external documents/images
 - Android support
 
-Other features will be implemented more for fun. Thanks to the plugin system, Skribisto can accomodate other goals than writing. I wound personally like a whiteboard on which one can draft away quickly his/her thouthgs, a bit like One Note.
+Other features will be implemented more for fun. Thanks to the plugin system, Skribisto can accomodate other goals than writing. I added "Writing Games" plugin for fun.
 
 
 ## User manual
@@ -356,7 +356,7 @@ To help with translation, go [here](https://www.transifex.com/skribisto/skribist
 
 If your language isn't listed and you want to translate it, please create an (issue)[https://github.com/jacquetc/skribisto/issues] or send me an email at cyril.jacquet@skribisto.eu and I'll add it.
 
-## Transifex integration with Skribisto
+### Transifex integration with Skribisto
 
 The source language is en_US (american english), the file is [src/translations/skribisto_en_US.ts](https://github.com/jacquetc/skribisto/blob/master/src/translations/skribisto_en_US.ts) from the "develop" branch. The en_US translation file is the only translation updated when a new to-be-translated sentence is added on the source code. 
 
