@@ -10,7 +10,6 @@ SkrPane {
     property alias goBackButton: goBackButton
     property alias goBackToMenuButton: goBackToMenuButton
 
-
     property alias stackView: stackView
     property alias separator: separator
     property alias mainButtonsPane: mainButtonsPane
@@ -29,12 +28,10 @@ SkrPane {
     property alias helpButton: helpButton
     property alias versionLabel: versionLabel
 
-
     ColumnLayout {
         id: columnLayout2
         spacing: 0
         anchors.fill: parent
-
 
         RowLayout {
             id: rowLayout
@@ -62,7 +59,7 @@ SkrPane {
                             display: AbstractButton.IconOnly
                             Layout.alignment: Qt.AlignTop | Qt.AlignLeft
                             icon {
-                                source: "qrc:///icons/backup/go-previous.svg"
+                                source: "qrc:///icons/backup/arrow-down.svg"
                             }
                         }
 
@@ -168,7 +165,6 @@ SkrPane {
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                         }
 
-
                         SkrToolButton {
                             id: helpButton
                             text: qsTr("Help")
@@ -189,8 +185,6 @@ SkrPane {
                         id: versionLabel
                         Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
                     }
-
-
                 }
             }
 
@@ -202,23 +196,22 @@ SkrPane {
                 gradient: Gradient {
                     orientation: Qt.Vertical
                     GradientStop {
-                        position: 0.00;
-                        color: "transparent";
+                        position: 0.00
+                        color: "transparent"
                     }
                     GradientStop {
-                        position: 0.30;
-                        color:  SkrTheme.divider;
+                        position: 0.30
+                        color: SkrTheme.divider
                     }
                     GradientStop {
-                        position: 0.70;
-                        color: SkrTheme.divider;
+                        position: 0.70
+                        color: SkrTheme.divider
                     }
                     GradientStop {
-                        position: 1.00;
-                        color: "transparent";
+                        position: 1.00
+                        color: "transparent"
                     }
                 }
-
             }
 
             ColumnLayout {
@@ -240,8 +233,6 @@ SkrPane {
                     Layout.fillHeight: true
                     clip: true
                     initialItem: Item {}
-
-
                 }
             }
         }

@@ -7,12 +7,9 @@ import ".."
 
 Item {
     id: base
-    width: 400
-    height: 400
 
     property alias recentListView: recentListView
     property alias groupBox: groupBox
-
 
     SkrGroupBox {
         id: groupBox
@@ -28,17 +25,11 @@ Item {
             ListView {
                 id: recentListView
                 Layout.fillWidth: true
-                Layout.minimumWidth: 400
                 clip: true
-                Layout.preferredHeight: 400
-                Layout.minimumHeight: 200
-                Layout.fillHeight: false
+                Layout.fillHeight: true
                 keyNavigationWraps: false
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-
             }
         }
     }
-
-
 }

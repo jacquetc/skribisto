@@ -7,11 +7,10 @@ import eu.skribisto.result 1.0
 import "../Items"
 import ".."
 
-
 RecentPageForm {
     id: root
 
-    signal closeCalled()
+    signal closeCalled
 
     //----------------------------------------------
     //-Recent projects list ------------------------------
@@ -23,14 +22,13 @@ RecentPageForm {
     property int contextMenuItemIndex: -2
     property int itemButtonsIndex: -2
 
-    SKRRecentProjectListModel{
+    SKRRecentProjectListModel {
         id: projectListModel
     }
 
     recentListView.model: projectListModel
 
     recentListView.delegate: delegate
-
 
     Component {
         id: delegate
@@ -52,7 +50,9 @@ RecentPageForm {
                 var openedText = model.isOpened ? qsTr("Opened") : ""
 
                 var titleText = model.title
-                var dateText = qsTr("last modified %1").arg(skrRootItem.toLocaleDateTimeFormat(model.lastModification))
+                var dateText = qsTr("last modified %1").arg(
+                            skrRootItem.toLocaleDateTimeFormat(
+                                model.lastModification))
 
                 return openedText + " " + titleText + " " + dateText
             }
@@ -73,24 +73,21 @@ RecentPageForm {
                 }
 
                 onDoubleTapped: {
-                    // open project
 
-                    if(skrData.projectHub().isURLAlreadyLoaded(model.fileName)){
+                    // open project
+                    if (skrData.projectHub().isURLAlreadyLoaded(
+                                model.fileName)) {
                         closeCalled()
-                    }
-                    else {
+                    } else {
                         //TODO: temporary until async is done
                         Globals.loadingPopupCalled()
                         //skrData.projectHub().loadProject(model.fileName)
                         loadProjectTimer.start()
                         closeCalled()
-
                     }
-
 
                     eventPoint.accepted = true
                 }
-
             }
 
             //TODO: temporary until async is done
@@ -100,9 +97,7 @@ RecentPageForm {
                 interval: 100
                 onTriggered: {
                     skrData.projectHub().loadProject(model.fileName)
-
                 }
-
             }
 
             TapHandler {
@@ -110,7 +105,7 @@ RecentPageForm {
                 acceptedButtons: Qt.RightButton
                 onTapped: {
 
-                    if(menu.visible){
+                    if (menu.visible) {
                         menu.close()
                         return
                     }
@@ -118,7 +113,7 @@ RecentPageForm {
                     menu.popup()
                 }
             }
-            ColumnLayout{
+            ColumnLayout {
                 id: columnLayout4
                 anchors.fill: parent
 
@@ -138,12 +133,11 @@ RecentPageForm {
 
                     Rectangle {
                         id: openedItemIndicator
-                        color:  SkrTheme.accent
+                        color: SkrTheme.accent
                         Layout.fillHeight: true
                         Layout.preferredWidth: 5
                         visible: model.isOpened
                     }
-
 
                     Rectangle {
                         color: "transparent"
@@ -151,39 +145,38 @@ RecentPageForm {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
 
-                        RowLayout{
+                        RowLayout {
                             id: rowLayout3
                             anchors.fill: parent
 
+                            SkrLabel {
+                                id: titleLabel
+                                activeFocusOnTab: false
 
-                                Layout.fillHeight: true
-                                SkrLabel {
-                                    id: titleLabel
-                                    activeFocusOnTab: false
+                                //Layout.fillWidth: true
+                                Layout.topMargin: 2
+                                Layout.leftMargin: 4
+                                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
-                                    Layout.fillWidth: true
-                                    Layout.topMargin: 2
-                                    Layout.leftMargin: 4
-                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-
-                                    text: model.title
-                                    font.strikeout: !model.exists
-                                    font.bold: true
-                                }
-
+                                text: model.title
+                                font.strikeout: !model.exists
+                                font.bold: true
+                            }
 
                             ColumnLayout {
                                 id: columnLayout3
                                 spacing: 1
                                 Layout.maximumWidth: rowLayout3.width / 2
+                                Layout.minimumWidth: rowLayout3.width / 3
                                 Layout.fillHeight: true
-                                //                                Layout.fillWidth: true
 
+                                //                                Layout.fillWidth: true
                                 SkrLabel {
                                     id: lastModificationLabel
                                     activeFocusOnTab: false
 
-                                    text: skrRootItem.toLocaleDateTimeFormat(model.lastModification)
+                                    text: skrRootItem.toLocaleDateTimeFormat(
+                                              model.lastModification)
                                     Layout.bottomMargin: 2
                                     Layout.rightMargin: 4
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -193,7 +186,8 @@ RecentPageForm {
                                     id: fileNameLabel
                                     activeFocusOnTab: false
 
-                                    text: skrQMLTools.translateURLToLocalFile(model.fileName)
+                                    text: skrQMLTools.translateURLToLocalFile(
+                                              model.fileName)
                                     elide: Text.ElideMiddle
                                     Layout.maximumWidth: rowLayout3.width / 2
                                     Layout.bottomMargin: 2
@@ -201,46 +195,43 @@ RecentPageForm {
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                                 }
                             }
-                        }
-                    }
 
-                    SkrToolButton {
-                        id: menuButton
-                        Layout.preferredWidth: 30
+                            SkrToolButton {
+                                id: menuButton
+                                Layout.preferredWidth: 30
 
-                        text: "..."
-                        icon.source: "qrc:///icons/backup/overflow-menu.svg"
-                        flat: true
-                        focusPolicy: Qt.NoFocus
+                                text: qsTr("Project menu")
+                                icon.source: "qrc:///icons/backup/overflow-menu.svg"
+                                flat: true
+                                focusPolicy: Qt.NoFocus
 
-                        onClicked: {
+                                onClicked: {
 
+                                    if (menu.visible) {
+                                        menu.close()
+                                        return
+                                    }
 
-                            if(menu.visible){
-                                menu.close()
-                                return
+                                    menu.popup(menuButton, 0, menuButton.height)
+                                }
+
+                                visible: hoverHandler.hovered | content.isCurrent
                             }
 
-
-                            menu.popup(menuButton, 0 , menuButton.height)
+                            SkrToolButton {
+                                id: openedToolButton
+                                flat: true
+                                Layout.preferredWidth: 30
+                                focusPolicy: Qt.NoFocus
+                                visible: model.isOpened
+                                icon.source: "qrc:///icons/backup/document-close.svg"
+                                onClicked: {
+                                    itemButtonsIndex = model.index
+                                    closeAction.trigger()
+                                }
+                                text: qsTr("Close project")
+                            }
                         }
-
-                        visible: hoverHandler.hovered | content.isCurrent
-                    }
-
-                    SkrToolButton {
-                        id: openedToolButton
-                        flat: true
-                        Layout.preferredWidth: 30
-                        focusPolicy: Qt.NoFocus
-                        visible: model.isOpened
-                        icon.source: "qrc:///icons/backup/document-close.svg"
-                        onClicked: {
-                            itemButtonsIndex = model.index
-                            closeAction.trigger()
-                        }
-                        text: qsTr("Close project")
-
                     }
 
                     SkrMenu {
@@ -263,15 +254,15 @@ RecentPageForm {
                                 icon {
                                     source: "qrc:///icons/backup/window-close.svg"
                                 }
-                                enabled: contextMenuItemIndex === model.index | itemButtonsIndex === model.index
+                                enabled: contextMenuItemIndex === model.index
+                                         | itemButtonsIndex === model.index
                                 onTriggered: {
                                     console.log("close project action")
-                                    skrData.projectHub().closeProject(model.projectId)
-
+                                    skrData.projectHub().closeProject(
+                                                model.projectId)
                                 }
                             }
                         }
-
 
                         SkrMenuItem {
                             visible: !model.isOpened
@@ -287,8 +278,8 @@ RecentPageForm {
                                 enabled: contextMenuItemIndex === model.index
                                 onTriggered: {
                                     console.log("forget action")
-                                    projectListModel.forgetProject(model.fileName)
-
+                                    projectListModel.forgetProject(
+                                                model.fileName)
                                 }
                             }
                         }
@@ -303,36 +294,31 @@ RecentPageForm {
                     gradient: Gradient {
                         orientation: Qt.Horizontal
                         GradientStop {
-                            position: 0.00;
-                            color: "transparent";
+                            position: 0.00
+                            color: "transparent"
                         }
                         GradientStop {
-                            position: 0.30;
-                            color: SkrTheme.divider;
+                            position: 0.30
+                            color: SkrTheme.divider
                         }
                         GradientStop {
-                            position: 0.70;
-                            color: SkrTheme.divider;
+                            position: 0.70
+                            color: SkrTheme.divider
                         }
                         GradientStop {
-                            position: 1.00;
-                            color: "transparent";
+                            position: 1.00
+                            color: "transparent"
                         }
                     }
-
                 }
-
-
             }
         }
     }
 
     //--------------------------------------------------
-
     onActiveFocusChanged: {
         if (activeFocus) {
             groupBox.forceActiveFocus()
         }
     }
-
 }

@@ -1297,6 +1297,10 @@
         <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Project menu</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RecentPageForm.ui</name>
