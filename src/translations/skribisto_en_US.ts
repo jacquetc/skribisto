@@ -818,6 +818,10 @@
         <source>Navigation list</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NavigationListForm.ui</name>
@@ -827,6 +831,10 @@
     </message>
     <message>
         <source>Navigation menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

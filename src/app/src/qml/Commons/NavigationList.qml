@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
@@ -15,7 +16,7 @@ NavigationListForm {
     signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
     signal openDocumentInAnotherView(int projectId, int treeItemId)
     signal openDocumentInNewWindow(int projectId, int treeItemId)
-    signal showTrashedList()
+    signal showTrashedList
 
     readonly property int currentParentId: priv.currentParentId
     readonly property int currentProjectId: priv.currentProjectId
@@ -23,17 +24,27 @@ NavigationListForm {
     property int openedProjectId: -2
     property int openedTreeItemId: -2
 
+    readonly property alias selectedTreeItemsIds: priv.selectedTreeItemsIds
+    readonly property alias selectedProjectId: priv.selectedProjectId
 
-    QtObject{
+    QtObject {
         id: priv
         property int currentParentId: -2
         property int currentProjectId: -2
         property int currentTreeItemId: -2
         property bool dragging: false
         property bool renaming: false
+        property bool selecting: false
+
+        onSelectingChanged: {
+            if (!selecting) {
+                navigationListStackView.currentItem.proxyModel.checkNone()
+            }
+        }
+        property var selectedTreeItemsIds: []
+        property int selectedProjectId: -2
 
         property bool devModeEnabled: SkrSettings.devSettings.devModeEnabled
-
     }
 
     onCurrentParentIdChanged: {
@@ -41,6 +52,7 @@ NavigationListForm {
     }
 
     onCurrentProjectIdChanged: {
+
         //        if (currentParent !== -2 & currentProject !== -2) {
         //            p_section.parentTitle = proxyModel.getItemName(
         //                        currentProject, currentParent)
@@ -54,22 +66,20 @@ NavigationListForm {
     }
 
     Component.onCompleted: {
-    }
-    function setCurrentTreeItemParentId(projectId, treeItemParentId){
 
+    }
+    function setCurrentTreeItemParentId(projectId, treeItemParentId) {
 
         //find parent id
-        var ancestorsList = proxyModel.getAncestorsList(projectId, treeItemParentId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)
-
-
+        var ancestorsList = proxyModel.getAncestorsList(
+                    projectId, treeItemParentId, proxyModel.showTrashedFilter,
+                    proxyModel.showNotTrashedFilter)
 
         //compare with current parent id
-
-        if(projectId === root.currentProjectId & treeItemParentId === root.currentParentId){
-            navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(projectId, -1)
-        }
-
-        else {
+        if (projectId === root.currentProjectId & treeItemParentId === root.currentParentId) {
+            navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(
+                        projectId, -1)
+        } else {
             navigationListStackView.pop(null)
             ancestorsList.reverse()
             ancestorsList.push(treeItemParentId)
@@ -80,39 +90,42 @@ NavigationListForm {
             navigationListStackView.get(0).init()
             navigationListStackView.get(0).setCurrent()
 
-
-            for(var i = 1 ; i < ancestorsList.length ; i++){
-                var newItem = navigationListStackView.push(stackViewComponent, {"projectId": projectId, "treeItemId": ancestorsList[i] } )
+            for (var i = 1; i < ancestorsList.length; i++) {
+                var newItem = navigationListStackView.push(stackViewComponent, {
+                                                               "projectId": projectId,
+                                                               "treeItemId": ancestorsList[i]
+                                                           })
                 newItem.setCurrent()
             }
 
-            var lastNewItem = navigationListStackView.push(stackViewComponent, {"projectId": projectId, "parentId":  treeItemParentId} )
+            var lastNewItem = navigationListStackView.push(stackViewComponent, {
+                                                               "projectId": projectId,
+                                                               "parentId": treeItemParentId
+                                                           })
             lastNewItem.setCurrent()
-            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(priv.currentProjectId, priv.currentParentId)
-
-
+            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
+                        priv.currentProjectId, priv.currentParentId)
         }
 
         sidePopupListModel.clear()
         determineIfGoUpButtonEnabled()
+        priv.selecting = false
     }
 
-    function setCurrentTreeItemId(projectId, treeItemId){
-
+    function setCurrentTreeItemId(projectId, treeItemId) {
 
         //find parent id
-        var ancestorsList = proxyModel.getAncestorsList(projectId, treeItemId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)
+        var ancestorsList = proxyModel.getAncestorsList(
+                    projectId, treeItemId, proxyModel.showTrashedFilter,
+                    proxyModel.showNotTrashedFilter)
 
         var newParentId = ancestorsList[0]
 
-
-
         //compare with current parent id
-
-        if(projectId === root.currentProjectId & newParentId === root.currentParentId){
-            navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(projectId, treeItemId)
-        }
-        //        else if(projectId === root.currentProjectId){
+        if (projectId === root.currentProjectId & newParentId === root.currentParentId) {
+            navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(
+                        projectId, treeItemId)
+        } //        else if(projectId === root.currentProjectId){
 
         //        }
         else {
@@ -126,25 +139,18 @@ NavigationListForm {
             navigationListStackView.get(0).init()
             navigationListStackView.get(0).setCurrent()
 
-
-            for(var i = 1 ; i < ancestorsList.length ; i++){
-                var newItem = navigationListStackView.push(stackViewComponent, {"projectId": projectId, "treeItemId": ancestorsList[i] } )
+            for (var i = 1; i < ancestorsList.length; i++) {
+                var newItem = navigationListStackView.push(stackViewComponent, {
+                                                               "projectId": projectId,
+                                                               "treeItemId": ancestorsList[i]
+                                                           })
                 newItem.setCurrent()
             }
-
-
-
         }
 
         sidePopupListModel.clear()
         determineIfGoUpButtonEnabled()
-
-
-        //
     }
-
-
-
 
     //-----------------------------------------------------------------------------
 
@@ -152,7 +158,6 @@ NavigationListForm {
 
     //-----------------------------------------------------------------------------
     // go up button :
-
     goUpToolButton.action: goUpAction
 
     Action {
@@ -168,36 +173,29 @@ NavigationListForm {
             //var parentTreeItemId = proxyModel.getAncestorsList(root.currentProjectId, root.currentTreeItemId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)[0]
             navigationListStackView.pop()
             navigationListStackView.currentItem.setCurrent()
-            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(priv.currentProjectId, priv.currentParentId)
-
-
+            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
+                        priv.currentProjectId, priv.currentParentId)
+            priv.selecting = false
         }
     }
     function determineIfGoUpButtonEnabled() {
 
-        if(!root.visible){
+        if (!root.visible) {
             goUpAction.enabled = false
             return
         }
 
         goUpAction.enabled = (root.currentParentId !== -2)
-
-
     }
     goUpToolButton.onPressAndHold: {
         navigationListStackView.pop(null)
         navigationListStackView.currentItem.setCurrent()
+        priv.selecting = false
     }
-
 
     onVisibleChanged: {
         determineIfGoUpButtonEnabled()
     }
-
-
-
-
-
 
     //-----------------------------------------------------------------------------
     // current parent button :
@@ -214,13 +212,10 @@ NavigationListForm {
     //currentParent: proxyModel.parentIdFilter
     //currentProject: proxyModel.projectIdFilter
 
-
-
-
     //----------------------------------------------------------------------------
     treeMenuToolButton.icon.source: "qrc:///icons/backup/overflow-menu.svg"
     treeMenuToolButton.onClicked: {
-        if(navigationMenu.visible){
+        if (navigationMenu.visible) {
             navigationMenu.close()
             return
         }
@@ -245,6 +240,10 @@ NavigationListForm {
             enabled: root.enabled && currentParentId !== -2
             shortcut: StandardKey.Paste
             icon.source: "qrc:///icons/backup/edit-paste.svg"
+            onTriggered: {
+                console.log("paste action", currentProjectId, currentParentId)
+                skrData.treeHub().paste(currentProjectId, currentParentId)
+            }
         }
         SkrMenu {
 
@@ -255,15 +254,16 @@ NavigationListForm {
                 enabled: currentParentId !== -2
 
                 onTriggered: {
-                    var result = skrData.treeHub().sortAlphabetically(currentProjectId, currentParentId)
-                    if(result.isSuccess()){
+                    var result = skrData.treeHub().sortAlphabetically(
+                                currentProjectId, currentParentId)
+                    if (result.isSuccess()) {
                         console.log("sorted")
                     }
                 }
             }
         }
 
-        MenuSeparator{}
+        MenuSeparator {}
 
         Action {
             text: qsTr("Trash")
@@ -271,18 +271,37 @@ NavigationListForm {
             icon.source: "qrc:///icons/backup/edit-delete.svg"
             onTriggered: showTrashedList()
         }
-
     }
 
     //----------------------------------------------------------------------------
-    // add button :
+    //------------------ select button :------------------------------------------
+    //----------------------------------------------------------------------------
+    Action {
+        id: selectTreeItemAction
+        text: qsTr("Select")
+        enabled: root.enabled && currentParentId !== -2
+        checkable: true
+        icon {
+            source: "qrc:///icons/backup/list-add.svg"
+            height: 100
+            width: 100
+        }
+        onCheckedChanged: {
+            priv.selecting = selectTreeItemAction.checked
+        }
+    }
 
+    selectToolButton.action: selectTreeItemAction
+
+    //----------------------------------------------------------------------------
+    //------------------ add button :---------------------------------------------
+    //----------------------------------------------------------------------------
     Action {
         id: addTreeItemAction
         text: qsTr("Add")
         shortcut: "Ctrl+T"
-        enabled:  root.enabled && currentParentId !== -2
-        icon{
+        enabled: root.enabled && currentParentId !== -2
+        icon {
             source: "qrc:///icons/backup/list-add.svg"
             height: 100
             width: 100
@@ -294,44 +313,41 @@ NavigationListForm {
 
     addToolButton.action: addTreeItemAction
 
-    function addItemAtCurrentParent(type){
-        //console.log(currentProjectId, currentParentId, navigationListStackView.currentItem.visualModel.items.count)
+    function addItemAtCurrentParent(type) {
 
-        navigationListStackView.currentItem.proxyModel.addChildItem(currentProjectId, currentParentId, type)
+        //console.log(currentProjectId, currentParentId, navigationListStackView.currentItem.visualModel.items.count)
+        navigationListStackView.currentItem.proxyModel.addChildItem(
+                    currentProjectId, currentParentId, type)
         navigationListStackView.currentItem.listView.positionViewAtEnd()
         navigationListStackView.currentItem.listView.currentItem.editName()
     }
 
-    function getIconUrlFromPageType(type){
+    function getIconUrlFromPageType(type) {
         return skrTreeManager.getIconUrlFromPageType(type)
     }
 
-    function getPageTypeText(type){
+    function getPageTypeText(type) {
         return skrTreeManager.getPageTypeText(type)
     }
 
-
-    SkrMenu{
+    SkrMenu {
         id: addItemMenu
         y: addToolButton.height
         x: addToolButton.x
 
         Repeater {
 
-            model: skrTreeManager.getPageTypeList(true);
+            model: skrTreeManager.getPageTypeList(true)
 
-            SkrMenuItem{
+            SkrMenuItem {
                 text: getPageTypeText(modelData)
                 property string type: modelData
                 icon.source: getIconUrlFromPageType(modelData)
                 onTriggered: {
                     addItemAtCurrentParent(type)
                 }
-
             }
         }
-
-
     }
 
     //----------------------------------------------------------------------------
@@ -350,31 +366,22 @@ NavigationListForm {
     //        goUpAction.trigger()
 
     //    }
-
     property bool temporarilyDisableMove: false
 
-
-    Timer{
+    Timer {
         id: temporarilyDisableMoveTimer
         repeat: false
         interval: 300
         onTriggered: {
             temporarilyDisableMove = false
         }
-
     }
 
-
-
     //----------------------------------------------------------------------------
-
-
-
 
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
-
     Component {
         id: stackViewComponent
 
@@ -382,7 +389,7 @@ NavigationListForm {
             id: stackViewBaseItem
             property alias listView: listView
             property alias visualModel: visualModel
-            property var proxyModel : root.proxyModel.clone()
+            property var proxyModel: root.proxyModel.clone()
             property int currentIndex: listView.currentIndex
             property int parentId: -2
             property int projectId: -2
@@ -401,18 +408,17 @@ NavigationListForm {
                 init()
             }
 
-
-            function init(){
+            function init() {
                 p_section.parentTitle = qsTr("Projects")
                 listView.section.delegate = sectionHeading
 
-                if(treeItemId === -2 && parentId !== -2 ){
-                    stackViewBaseItem.proxyModel.setParentFilter(projectId, parentId)
-                }
-                else{
-                    stackViewBaseItem.proxyModel.setCurrentTreeItemId(projectId, treeItemId)
+                if (treeItemId === -2 && parentId !== -2) {
+                    stackViewBaseItem.proxyModel.setParentFilter(projectId,
+                                                                 parentId)
+                } else {
+                    stackViewBaseItem.proxyModel.setCurrentTreeItemId(
+                                projectId, treeItemId)
                     parentId = stackViewBaseItem.proxyModel.parentIdFilter
-
                 }
                 determineSectionTitle()
             }
@@ -421,65 +427,53 @@ NavigationListForm {
                 delete proxyModel
             }
 
-
-            function setCurrent(){
+            function setCurrent() {
                 priv.currentProjectId = projectId
                 priv.currentParentId = parentId
                 priv.currentTreeItemId = treeItemId
 
                 listView.positionViewAtIndex(currentIndex, ListView.Contain)
-
             }
 
-
-
-
             onActiveFocusChanged: {
-                if(activeFocus){
+                if (activeFocus) {
                     listView.forceActiveFocus()
                 }
             }
 
-
-            function  determineSectionTitle(){
+            function determineSectionTitle() {
 
                 var projectId = stackViewBaseItem.projectId
                 var parentId = stackViewBaseItem.parentId
                 if (parentId === 0 && projectId !== -2) {
-                    var projectTitle = skrData.projectHub().getProjectName(projectId)
+                    var projectTitle = skrData.projectHub().getProjectName(
+                                projectId)
 
                     p_section.parentTitle = projectTitle
                     listView.section.delegate = sectionHeading
+                } else if (parentId !== -2 && projectId !== -2) {
+                    var parentTitle = proxyModel.getItemName(projectId,
+                                                             parentId)
 
-                }
-                else if (parentId !== -2 && projectId !== -2) {
-                    var parentTitle = proxyModel.getItemName(projectId, parentId)
                     //console.log("onCurrentParentChanged")
-
                     p_section.parentTitle = parentTitle
                     listView.section.delegate = sectionHeading
+                } else if (parentId === -2) {
 
-                }
-                else if (parentId === -2 ) {
                     // show "projects" section
-
                     p_section.parentTitle = qsTr("Projects")
                     listView.section.delegate = sectionHeading
-
-                }
-
-                // clear :
-                else if (parentId === -2 && root.currentProjectId === -2 ){
+                } // clear :
+                else if (parentId === -2 && root.currentProjectId === -2) {
                     listView.section.delegate = null
                 }
-
             }
 
             Item {
                 id: topDraggingMover
-                anchors.top:  scrollView.top
-                anchors.right:  scrollView.right
-                anchors.left:  scrollView.left
+                anchors.top: scrollView.top
+                anchors.right: scrollView.right
+                anchors.left: scrollView.left
                 height: 30
                 z: 1
 
@@ -487,10 +481,9 @@ NavigationListForm {
 
                 HoverHandler {
                     onHoveredChanged: {
-                        if(hovered){
+                        if (hovered) {
                             topDraggingMoverTimer.start()
-                        }
-                        else {
+                        } else {
                             topDraggingMoverTimer.stop()
                         }
                     }
@@ -501,24 +494,20 @@ NavigationListForm {
                     repeat: true
                     interval: 10
                     onTriggered: {
-                        if(listView.atYBeginning){
-                            listView.contentY  = 0
-                        }
-                        else {
-                            listView.contentY  = listView.contentY - 2
-
+                        if (listView.atYBeginning) {
+                            listView.contentY = 0
+                        } else {
+                            listView.contentY = listView.contentY - 2
                         }
                     }
-
                 }
-
             }
 
             Item {
                 id: bottomDraggingMover
-                anchors.bottom:  scrollView.bottom
-                anchors.right:  scrollView.right
-                anchors.left:  scrollView.left
+                anchors.bottom: scrollView.bottom
+                anchors.right: scrollView.right
+                anchors.left: scrollView.left
                 height: 30
                 z: 1
 
@@ -526,10 +515,9 @@ NavigationListForm {
 
                 HoverHandler {
                     onHoveredChanged: {
-                        if(hovered){
+                        if (hovered) {
                             bottomDraggingMoverTimer.start()
-                        }
-                        else {
+                        } else {
                             bottomDraggingMoverTimer.stop()
                         }
                     }
@@ -540,18 +528,14 @@ NavigationListForm {
                     repeat: true
                     interval: 10
                     onTriggered: {
-                        if(listView.atYEnd){
+                        if (listView.atYEnd) {
                             listView.positionViewAtEnd()
-                        }
-                        else {
-                            listView.contentY  = listView.contentY + 2
-
+                        } else {
+                            listView.contentY = listView.contentY + 2
                         }
                     }
-
                 }
             }
-
 
             ScrollView {
                 id: scrollView
@@ -559,11 +543,7 @@ NavigationListForm {
                 anchors.fill: parent
                 focusPolicy: Qt.StrongFocus
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded//scrollBarVerticalPolicy
-
-
-
-
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded //scrollBarVerticalPolicy
 
                 ListView {
                     id: listView
@@ -574,32 +554,27 @@ NavigationListForm {
                     Accessible.name: qsTr("Navigation list")
                     Accessible.role: Accessible.List
 
-
-
                     DelegateModel {
                         id: visualModel
                         delegate: listItemComponent
                         model: stackViewBaseItem.proxyModel
                     }
                     model: visualModel
-                    // scrollBar interactivity :
 
+                    // scrollBar interactivity :
                     onContentHeightChanged: {
                         //fix scrollbar visible at start
-                        if(scrollView.height === 0){
+                        if (scrollView.height === 0) {
                             scrollBarVerticalPolicy = ScrollBar.AlwaysOff
                             return
                         }
 
-                        if(listView.contentHeight > scrollView.height){
+                        if (listView.contentHeight > scrollView.height) {
                             scrollBarVerticalPolicy = ScrollBar.AlwaysOn
-                        }
-                        else {
+                        } else {
                             scrollBarVerticalPolicy = ScrollBar.AlwaysOff
                         }
                     }
-
-
 
                     //-----------------------------------------------------------------------------
                     onCurrentIndexChanged: {
@@ -616,28 +591,39 @@ NavigationListForm {
 
                     //----------------------------------------------------------------------------
 
-
                     // move :
-                    addDisplaced:      Transition {
-                        NumberAnimation { properties: "x,y"; duration: 250 }
+                    addDisplaced: Transition {
+                        NumberAnimation {
+                            properties: "x,y"
+                            duration: 250
+                        }
                     }
-
 
                     removeDisplaced: Transition {
                         SequentialAnimation {
-                            PauseAnimation{duration: 250}
-                            NumberAnimation { properties: "x,y"; duration: 250 }
+                            PauseAnimation {
+                                duration: 250
+                            }
+                            NumberAnimation {
+                                properties: "x,y"
+                                duration: 250
+                            }
                         }
-
                     }
                     displaced: Transition {
-                        NumberAnimation { properties: "x,y"; duration: 250 }
+                        NumberAnimation {
+                            properties: "x,y"
+                            duration: 250
+                        }
                     }
 
                     moveDisplaced: Transition {
-                        NumberAnimation { properties: "x,y"; duration: 100 }
+                        NumberAnimation {
+                            properties: "x,y"
+                            duration: 100
+                        }
                     }
-                    QtObject{
+                    QtObject {
                         id: p_section
                         property string parentTitle: ""
                     }
@@ -645,10 +631,9 @@ NavigationListForm {
                     //----------------------------------------------------------------------------
                     section.property: "indent"
                     section.criteria: ViewSection.FullString
-                    section.labelPositioning: ViewSection.CurrentLabelAtStart |
-                                              ViewSection.InlineLabels
+                    section.labelPositioning: ViewSection.CurrentLabelAtStart
+                                              | ViewSection.InlineLabels
                     section.delegate: null
-
 
                     // The delegate for each section header
                     Component {
@@ -672,33 +657,32 @@ NavigationListForm {
                         }
                     }
 
-
-
-
                     //----------------------------------------------------------------------
                     //--- Start list item component ------------------------------------------
                     //----------------------------------------------------------------------
-
-
-
                     Component {
                         id: listItemComponent
-
 
                         SwipeDelegate {
                             id: swipeDelegate
                             property int indent: model.indent
                             property alias dropArea: dropArea
+                            property alias checkState: selectionCheckBox.checkState
                             focus: true
 
-                            Accessible.name: labelLabel.text.length === 0 ? titleLabel.text  +  ( model.hasChildren ? " " +qsTr("is a folder") :  "" ):
-                                                                            titleLabel.text + " " + qsTr("label:") + " " + labelLabel.text + ( model.hasChildren ? " " +qsTr("has child") :  "" )
+                            Accessible.name: labelLabel.text.length
+                                             === 0 ? titleLabel.text + (model.hasChildren ? " " + qsTr("is a folder") : "") : titleLabel.text + " " + qsTr(
+                                                         "label:") + " " + labelLabel.text
+                                                     + (model.hasChildren ? " " + qsTr(
+                                                                                "has child") : "")
                             Accessible.role: Accessible.ListItem
                             Accessible.description: qsTr("navigation item")
 
                             anchors {
-                                left: Qt.isQtObject(parent) ? parent.left : undefined
-                                right: Qt.isQtObject(parent) ? parent.right : undefined
+                                left: Qt.isQtObject(
+                                          parent) ? parent.left : undefined
+                                right: Qt.isQtObject(
+                                           parent) ? parent.right : undefined
                                 rightMargin: 5
                             }
 
@@ -721,7 +705,8 @@ NavigationListForm {
                             }
 
                             onActiveFocusChanged: {
-                                if(listView.currentIndex === model.index && model.index !== -1 && activeFocus){
+                                if (listView.currentIndex === model.index
+                                        && model.index !== -1 && activeFocus) {
                                     stackViewBaseItem.treeItemId = model.treeItemId
                                     stackViewBaseItem.setCurrent()
                                 }
@@ -734,7 +719,7 @@ NavigationListForm {
                                 titleTextField.selectAll()
                             }
 
-                            Timer{
+                            Timer {
                                 id: titleTextFieldForceActiveFocusTimer
                                 repeat: false
                                 interval: 100
@@ -750,7 +735,7 @@ NavigationListForm {
                                 labelTextField.selectAll()
                             }
 
-                            Timer{
+                            Timer {
                                 id: labelTextFieldForceActiveFocusTimer
                                 repeat: false
                                 interval: 100
@@ -762,112 +747,161 @@ NavigationListForm {
                             Keys.priority: Keys.AfterItem
 
                             Keys.onShortcutOverride: {
-                                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
+                                if ((event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_N) {
                                     event.accepted = true
                                 }
-                                if((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N){
+                                if ((event.modifiers & Qt.ControlModifier)
+                                        && (event.modifiers & Qt.ShiftModifier)
+                                        && event.key === Qt.Key_N) {
                                     event.accepted = true
                                 }
-                                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
+                                if ((event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_C) {
                                     event.accepted = true
                                 }
-                                if(model.isMovable && ( event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
+                                if (model.isMovable
+                                        && (event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_X) {
                                     event.accepted = true
                                 }
-                                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
+                                if ((event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_V) {
                                     event.accepted = true
                                 }
-                                if( event.key === Qt.Key_Escape  && (swipeDelegate.state == "edit_name" || swipeDelegate.state == "edit_label")){
+                                if (event.key === Qt.Key_Escape
+                                        && (swipeDelegate.state == "edit_name"
+                                            || swipeDelegate.state == "edit_label")) {
                                     event.accepted = true
                                 }
                             }
 
                             Keys.onPressed: {
-                                if (event.key === Qt.Key_Right){
+                                if (event.key === Qt.Key_Right) {
                                     console.log("Right key pressed")
                                     goToChildAction.trigger()
                                     event.accepted = true
                                 }
-                                if (event.key === Qt.Key_Backspace || event.key === Qt.Key_Left){
+                                if (event.key === Qt.Key_Backspace
+                                        || event.key === Qt.Key_Left) {
                                     console.log("Backspace / Left key pressed")
                                     goUpAction.trigger()
                                     event.accepted = true
                                 }
-                                if (model.isOpenable && (event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
+                                if (model.isOpenable
+                                        && (event.modifiers & Qt.AltModifier)
+                                        && event.key === Qt.Key_Return) {
                                     console.log("Alt Return key pressed")
                                     openDocumentInAnotherViewAction.trigger()
                                     event.accepted = true
                                 }
-                                if (model.isOpenable && event.key === Qt.Key_Return && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.isOpenable
+                                        && event.key === Qt.Key_Return
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     console.log("Return key pressed")
                                     openDocumentAction.trigger()
                                     event.accepted = true
                                 }
-                                // rename
 
-                                if (model.isRenamable && event.key === Qt.Key_F2 && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                // rename
+                                if (model.isRenamable && event.key === Qt.Key_F2
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     renameAction.trigger()
                                     event.accepted = true
                                 }
 
-
-
                                 // cut
-                                if (model.isMovable && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.isMovable
+                                        && (event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_X
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     cutAction.trigger()
                                     event.accepted = true
                                 }
 
                                 // copy
-                                if (model.isCopyable && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.isCopyable
+                                        && (event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_C
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     copyAction.trigger()
                                     event.accepted = true
                                 }
 
                                 // paste
-                                if (model.canAddChildTreeItem && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.canAddChildTreeItem
+                                        && (event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_V
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     copyAction.trigger()
                                     event.accepted = true
                                 }
 
                                 // add before
-                                if (model.canAddSiblingTreeItem && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.canAddSiblingTreeItem
+                                        && (event.modifiers & Qt.ControlModifier)
+                                        && (event.modifiers & Qt.ShiftModifier)
+                                        && event.key === Qt.Key_N
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     addBeforeAction.trigger()
                                     event.accepted = true
                                 }
 
                                 // add after
-                                if (model.canAddSiblingTreeItem && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.canAddSiblingTreeItem
+                                        && (event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_N
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     addAfterAction.trigger()
                                     event.accepted = true
                                 }
 
                                 // add child
-                                if (model.canAddChildTreeItem && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Space && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.canAddChildTreeItem
+                                        && (event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_Space
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     addChildAction.trigger()
                                     event.accepted = true
                                 }
 
                                 // move up
-                                if (model.isMovable && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.isMovable
+                                        && (event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_Up
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     moveUpAction.trigger()
                                     event.accepted = true
                                 }
 
                                 // move down
-                                if (model.isMovable && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.isMovable
+                                        && (event.modifiers & Qt.ControlModifier)
+                                        && event.key === Qt.Key_Down
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     moveDownAction.trigger()
                                     event.accepted = true
                                 }
 
                                 // send to trash
-                                if (model.isTrashable && event.key === Qt.Key_Delete && swipeDelegate.state !== "edit_name" && swipeDelegate.state !== "edit_label"){
+                                if (model.isTrashable
+                                        && event.key === Qt.Key_Delete
+                                        && swipeDelegate.state !== "edit_name"
+                                        && swipeDelegate.state !== "edit_label") {
                                     sendToTrashAction.trigger()
                                     event.accepted = true
                                 }
                             }
-
-
 
                             swipe.right: RowLayout {
 
@@ -891,7 +925,6 @@ NavigationListForm {
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
                                     Layout.minimumWidth: 50
-
                                 }
 
                                 SkrToolButton {
@@ -906,7 +939,6 @@ NavigationListForm {
                                     action: openTreeItemAction
                                 }
 
-
                                 SkrToolButton {
                                     id: openMergedViewToolButton
                                     visible: model.hasChildren
@@ -920,13 +952,12 @@ NavigationListForm {
                                 }
                             }
 
-
                             swipe.onOpened: closeSwipeTimer.start()
+
                             //                            Item {
                             //                                anchors.fill: parent
                             //                                z:1
-
-                            Timer{
+                            Timer {
                                 id: closeSwipeTimer
                                 interval: 3000
                                 onTriggered: {
@@ -937,56 +968,46 @@ NavigationListForm {
                             HoverHandler {
                                 id: itemHoverHandler
                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
-                                enabled:  stackViewBaseItem.hoverEnabled
-                                //grabPermissions:  PointerHandler.CanTakeOverFromItems | PointerHandler.CanTakeOverFromHandlersOfSameType | PointerHandler.ApprovesTakeOverByAnything
+                                enabled: stackViewBaseItem.hoverEnabled
 
+                                //grabPermissions:  PointerHandler.CanTakeOverFromItems | PointerHandler.CanTakeOverFromHandlersOfSameType | PointerHandler.ApprovesTakeOverByAnything
                                 onHoveredChanged: {
                                     //console.log("item hovered", itemHoverHandler.hovered)
-                                    if(priv.dragging){
+                                    if (priv.dragging || priv.selecting) {
                                         hoveringTimer.stop()
-                                        closeSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId + 1
-                                        closeSideNavigationListPopupTimer.start()
+                                        closeSideNavigationListPopupTimer.popupId
+                                                = stackViewBaseItem.popupId + 1
+                                        closeSideNavigationListPopupTimer.start(
+                                                    )
+                                    } else if (hovered && model.hasChildren) {
 
-                                    }
-
-                                    else if(hovered && model.hasChildren){
-
-                                        if(!rootWindow.compactMode){
+                                        if (!rootWindow.compactMode) {
 
                                             hoveringTimer.start()
                                         }
-                                    }
-                                    else if(hovered && !model.hasChildren){
-                                        if(!addSideNavigationListPopupTimer.running){
+                                    } else if (hovered && !model.hasChildren) {
+                                        if (!addSideNavigationListPopupTimer.running) {
                                             hoveringTimer.stop()
                                             addSideNavigationListPopupTimer.stop()
-                                            closeSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId + 1
+                                            closeSideNavigationListPopupTimer.popupId
+                                                    = stackViewBaseItem.popupId + 1
                                             closeSideNavigationListPopupTimer.start()
                                         }
-
-
-                                    }
-                                    else if(!model.hasChildren){
-                                        if(!addSideNavigationListPopupTimer.running){
+                                    } else if (!model.hasChildren) {
+                                        if (!addSideNavigationListPopupTimer.running) {
                                             hoveringTimer.stop()
-                                            closeSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId + 1
+                                            closeSideNavigationListPopupTimer.popupId
+                                                    = stackViewBaseItem.popupId + 1
                                             closeSideNavigationListPopupTimer.start()
                                         }
-                                    }
-
-                                    else{
+                                    } else {
                                         hoveringTimer.stop()
                                         closeSideNavigationListPopupTimer.stop()
                                         //addSideNavigationListPopupTimer.stop()
                                     }
                                 }
 
-
-
-
-
                                 //                                }
-
                             }
 
                             Timer {
@@ -994,59 +1015,48 @@ NavigationListForm {
                                 interval: 200
                                 onTriggered: {
 
-
                                     addSideNavigationListPopupTimer.projectId = model.projectId
                                     addSideNavigationListPopupTimer.parentId = model.treeItemId
-                                    addSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId
+                                    addSideNavigationListPopupTimer.popupId
+                                            = stackViewBaseItem.popupId
                                     addSideNavigationListPopupTimer.parentItem = swipeDelegate
                                     addSideNavigationListPopupTimer.listView = listView
-                                    //                                            console.log("popupId", stackViewBaseItem.popupId)
 
+                                    //                                            console.log("popupId", stackViewBaseItem.popupId)
                                     addSideNavigationListPopupTimer.start()
                                 }
-
                             }
 
-
-
-                            contentItem:
-                                DropArea {
+                            contentItem: DropArea {
                                 id: dropArea
-
-
 
                                 keys: ["application/skribisto-tree-item"]
                                 onEntered: {
 
                                     //console.log("entered")
                                     //content.sourceIndex = drag.source.visualIndex
-                                    visualModel.items.move(drag.source.visualIndex,
-                                                           content.visualIndex)
+                                    visualModel.items.move(
+                                                drag.source.visualIndex,
+                                                content.visualIndex)
                                 }
                                 onExited: {
 
-
-
                                 }
                                 onDropped: {
-//                                console.log("dropped")
-                                    if(drop.proposedAction === Qt.MoveAction){
+                                    //                                console.log("dropped")
+                                    if (drop.proposedAction === Qt.MoveAction) {
 
                                         //console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
                                         cancelDragTimer.stop()
                                         listView.interactive = true
                                         priv.dragging = false
-                                        proxyModel.moveItem(moveSourceInt, content.visualIndex)
+                                        proxyModel.moveItem(moveSourceInt,
+                                                            content.visualIndex)
                                         //proxyModel.moveItemById(moveSourceProjectId, moveSourceTreeItemId, content.treeItemId)
-
-
                                     }
                                 }
 
-
-
-
-                                SkrListItemPane{
+                                SkrListItemPane {
                                     id: content
                                     property int visualIndex: 0
                                     property int sourceIndex: -2
@@ -1069,8 +1079,8 @@ NavigationListForm {
                                     Drag.keys: ["application/skribisto-tree-item"]
 
                                     Drag.supportedActions: Qt.MoveAction
-                                    //sDrag.dragType: Drag.Internal
 
+                                    //sDrag.dragType: Drag.Internal
                                     borderWidth: 2
                                     borderColor: touchDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
                                     Behavior on borderColor {
@@ -1083,9 +1093,9 @@ NavigationListForm {
                                     DragHandler {
                                         id: mouseDragHandler
                                         acceptedDevices: PointerDevice.Mouse
+
                                         //xAxis.enabled: false
                                         //grabPermissions: PointerHandler.TakeOverForbidden
-
                                         onActiveChanged: {
                                             if (active) {
                                                 listView.interactive = false
@@ -1101,7 +1111,6 @@ NavigationListForm {
 
                                                 content.Drag.drop()
                                                 proxyModel.invalidate()
-
                                             }
                                         }
                                         enabled: true
@@ -1110,18 +1119,19 @@ NavigationListForm {
                                             cancelDragTimer.stop()
                                             priv.dragging = false
                                             content.dragging = false
-
                                         }
 
-                                        grabPermissions: PointerHandler.CanTakeOverFromItems |PointerHandler.CanTakeOverFromAnything
+                                        grabPermissions: PointerHandler.CanTakeOverFromItems
+                                                         | PointerHandler.CanTakeOverFromAnything
                                     }
 
                                     DragHandler {
                                         id: touchDragHandler
-                                        acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
+                                        acceptedDevices: PointerDevice.TouchScreen
+                                                         | PointerDevice.Stylus
+
                                         //xAxis.enabled: false
                                         //grabPermissions: PointerHandler.TakeOverForbidden
-
                                         onActiveChanged: {
                                             if (active) {
                                                 listView.interactive = false
@@ -1145,12 +1155,12 @@ NavigationListForm {
                                             cancelDragTimer.stop()
                                             priv.dragging = false
                                             content.dragging = false
-
                                         }
-                                        grabPermissions: PointerHandler.CanTakeOverFromItems |PointerHandler.CanTakeOverFromAnything
+                                        grabPermissions: PointerHandler.CanTakeOverFromItems
+                                                         | PointerHandler.CanTakeOverFromAnything
                                     }
 
-                                    Timer{
+                                    Timer {
                                         id: cancelDragTimer
                                         repeat: false
                                         interval: 3000
@@ -1160,23 +1170,24 @@ NavigationListForm {
                                         }
                                     }
 
-
-
-
-
                                     TapHandler {
                                         id: tapHandler
 
                                         onSingleTapped: {
-                                            if(content.dragging){
+                                            priv.selecting = false
+                                            if (content.dragging) {
                                                 eventPoint.accepted = false
                                                 return
                                             }
-                                            if(eventPoint.event.device.type === PointerDevice.Mouse){
+                                            if (eventPoint.event.device.type
+                                                    === PointerDevice.Mouse) {
                                                 listView.interactive = false
                                             }
 
-                                            if(eventPoint.event.device.type === PointerDevice.TouchScreen | eventPoint.event.device.type === PointerDevice.Stylus ){
+                                            if (eventPoint.event.device.type
+                                                    === PointerDevice.TouchScreen
+                                                    | eventPoint.event.device.type
+                                                    === PointerDevice.Stylus) {
                                                 listView.interactive = true
                                             }
 
@@ -1184,14 +1195,16 @@ NavigationListForm {
                                             priv.currentTreeItemId = model.treeItemId
 
                                             //console.log("tapped")
-                                            if(skrData.treePropertyHub().getProperty(model.projectId, model.treeItemId,
-                                                                                     "can_add_child_paper", "true") === "true"){
+                                            if (skrData.treePropertyHub(
+                                                        ).getProperty(
+                                                        model.projectId,
+                                                        model.treeItemId,
+                                                        "can_add_child_paper",
+                                                        "true") === "true") {
                                                 goToChildTimer.start()
-                                            }
-                                            else{
+                                            } else {
                                                 openDocumentTimer.start()
                                             }
-
 
                                             //delegateRoot.forceActiveFocus()
                                             eventPoint.accepted = true
@@ -1200,15 +1213,19 @@ NavigationListForm {
                                         onDoubleTapped: {
                                             openDocumentTimer.stop()
                                             goToChildTimer.stop()
-                                            if(content.dragging){
+                                            if (content.dragging) {
                                                 eventPoint.accepted = false
                                                 return
                                             }
-                                            if(eventPoint.event.device.type === PointerDevice.Mouse ){
+                                            if (eventPoint.event.device.type
+                                                    === PointerDevice.Mouse) {
                                                 listView.interactive = false
                                             }
 
-                                            if(eventPoint.event.device.type === PointerDevice.TouchScreen | eventPoint.event.device.type === PointerDevice.Stylus ){
+                                            if (eventPoint.event.device.type
+                                                    === PointerDevice.TouchScreen
+                                                    | eventPoint.event.device.type
+                                                    === PointerDevice.Stylus) {
                                                 listView.interactive = true
                                             }
                                             //console.log("double tapped")
@@ -1220,11 +1237,8 @@ NavigationListForm {
                                             eventPoint.accepted = true
                                         }
 
-
-
                                         onGrabChanged: {
                                             point.accepted = false
-
                                         }
 
                                         grabPermissions: PointerHandler.ApprovesTakeOverByHandlersOfDifferentType
@@ -1234,7 +1248,6 @@ NavigationListForm {
                                         interval: 150
                                         onTriggered: {
                                             openDocumentAction.trigger()
-
                                         }
                                     }
 
@@ -1243,7 +1256,6 @@ NavigationListForm {
                                         interval: 150
                                         onTriggered: {
                                             goToChildAction.trigger()
-
                                         }
                                     }
 
@@ -1252,13 +1264,13 @@ NavigationListForm {
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.RightButton
                                         onTapped: {
-                                            listView.interactive = eventPoint.event.device.type === PointerDevice.Mouse
+                                            listView.interactive = eventPoint.event.device.type
+                                                    === PointerDevice.Mouse
 
-                                            if(menu.visible){
+                                            if (menu.visible) {
                                                 menu.close()
                                                 return
                                             }
-
 
                                             listView.currentIndex = model.index
                                             priv.currentTreeItemId = model.treeItemId
@@ -1274,13 +1286,13 @@ NavigationListForm {
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.MiddleButton
                                         onTapped: {
-                                            listView.interactive = eventPoint.event.device.type === PointerDevice.Mouse
+                                            listView.interactive = eventPoint.event.device.type
+                                                    === PointerDevice.Mouse
                                             listView.currentIndex = model.index
                                             priv.currentTreeItemId = model.treeItemId
                                             swipeDelegate.forceActiveFocus()
                                             openDocumentInAnotherViewAction.trigger()
                                             eventPoint.accepted = true
-
                                         }
                                         grabPermissions: PointerHandler.TakeOverForbidden
                                     }
@@ -1291,61 +1303,69 @@ NavigationListForm {
                                         acceptedButtons: Qt.NoButton
                                         onWheel: {
                                             listView.interactive = false
-                                            listView.flick(0, wheel.angleDelta.y * 50)
+                                            listView.flick(
+                                                        0,
+                                                        wheel.angleDelta.y * 50)
                                             wheel.accepted = true
                                         }
 
                                         enabled: listView.interactive === false
                                     }
 
-
                                     TapHandler {
-                                        acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
+                                        acceptedDevices: PointerDevice.TouchScreen
+                                                         | PointerDevice.Stylus
 
-                                        onLongPressed: { // needed to activate the grab handler
+                                        onLongPressed: {
+
+                                            // needed to activate the grab handler
 
                                             //                        if(content.dragging){
                                             //                            eventPoint.accepted = false
                                             //                            return
                                             //                        }
-
-
                                             content.dragging = true
                                             listView.interactive = false
                                             cancelDragTimer.start()
+                                            priv.selecting = false
                                         }
-
                                     }
-
 
                                     Action {
                                         id: goToChildAction
                                         //shortcut: "Right"
-                                        enabled: listView.enabled && listView.currentIndex === model.index && (model.type === "FOLDER" || model.type === "PROJECT")
+                                        enabled: listView.enabled
+                                                 && listView.currentIndex === model.index
+                                                 && (model.type === "FOLDER"
+                                                     || model.type === "PROJECT")
 
                                         //icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : (model.canAddChildTreeItem ? "qrc:///icons/backup/list-add.svg" : "")
-                                        text:  qsTr("See sub-items")
+                                        text: qsTr("See sub-items")
                                         onTriggered: {
                                             console.log("goToChildAction triggered")
 
                                             //                                        goToChildActionToBeTriggered = true
                                             //                                        goToChildActionCurrentIndent =  model.indent
 
-
                                             //                                        var _proxyModel = proxyModel
 
                                             //save current ids:
                                             listView.currentIndex = model.index
-                                            navigationListStackView.currentItem.treeItemId = model.treeItemId
+                                            navigationListStackView.currentItem.treeItemId
+                                                    = model.treeItemId
 
                                             sidePopupListModel.clear()
 
                                             // push new view
-
-                                            var newItem = navigationListStackView.push(stackViewComponent, {"projectId": model.projectId, "parentId":  model.treeItemId} )
+                                            var newItem = navigationListStackView.push(
+                                                        stackViewComponent, {
+                                                            "projectId": model.projectId,
+                                                            "parentId": model.treeItemId
+                                                        })
                                             newItem.setCurrent()
-                                            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(priv.currentProjectId, priv.currentParentId)
-
+                                            rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
+                                                        priv.currentProjectId,
+                                                        priv.currentParentId)
 
                                             //                                        currentProject = model.projectId
                                             //                                        currentParent = model.treeItemId
@@ -1354,7 +1374,6 @@ NavigationListForm {
                                             //                                        var _index = model.index
 
                                             //                                        var _listView = listView
-
 
                                             //                                        // change level
                                             //                                        _proxyModel.setParentFilter(_currentProject,
@@ -1372,67 +1391,63 @@ NavigationListForm {
                                             //                                            _listView.itemAtIndex(0).editName()
 
                                             //                                        }
-
-
-
                                         }
                                     }
 
-                                    Timer{
+                                    Timer {
                                         property int treeItemIdToEdit: -2
                                         onTreeItemIdToEditChanged: {
-                                            if(treeItemIdToEdit !== -2){
+                                            if (treeItemIdToEdit !== -2) {
                                                 editNameTimer.start()
                                             }
                                         }
-
 
                                         id: editNameTimer
                                         repeat: false
                                         interval: animationDuration
                                         onTriggered: {
-                                            var index = proxyModel.findVisualIndex(model.projectId, treeItemIdToEdit)
-                                            if(index !== -2){
-                                                listView.itemAtIndex(index).editName()
+                                            var index = proxyModel.findVisualIndex(
+                                                        model.projectId,
+                                                        treeItemIdToEdit)
+                                            if (index !== -2) {
+                                                listView.itemAtIndex(
+                                                            index).editName()
                                             }
                                             treeItemIdToEdit = -2
                                         }
                                     }
 
-
-                                    Timer{
+                                    Timer {
                                         property int treeItemIndexToEdit: -2
                                         onTreeItemIndexToEditChanged: {
-                                            if(treeItemIndexToEdit !== -2){
+                                            if (treeItemIndexToEdit !== -2) {
                                                 editNameWithIndexTimer.start()
                                             }
                                         }
-
 
                                         id: editNameWithIndexTimer
                                         repeat: false
                                         interval: animationDuration
                                         onTriggered: {
-                                            if(treeItemIndexToEdit !== -2){
-                                                visualModel.items.get(treeItemIndexToEdit).editName()
+                                            if (treeItemIndexToEdit !== -2) {
+                                                visualModel.items.get(
+                                                            treeItemIndexToEdit).editName()
                                                 //listView.itemAtIndex(treeItemIndexToEdit)
                                             }
                                             treeItemIndexToEdit = -2
                                         }
                                     }
 
-
-
-
                                     Action {
                                         id: openDocumentAction
                                         //shortcut: "Return"
                                         enabled: {
-                                            if(!model.isOpenable){
+                                            if (!model.isOpenable) {
                                                 return false
                                             }
 
-                                            if (listView.enabled && titleTextField.visible === false
+                                            if (listView.enabled
+                                                    && titleTextField.visible === false
                                                     && listView.currentIndex === model.index) {
                                                 return true
                                             } else
@@ -1443,7 +1458,9 @@ NavigationListForm {
                                         onTriggered: {
                                             //console.log("model.openedProjectId", openedProjectId)
                                             //console.log("model.projectId", model.projectId)
-                                            root.openDocument(openedProjectId, openedTreeItemId, model.projectId,
+                                            root.openDocument(openedProjectId,
+                                                              openedTreeItemId,
+                                                              model.projectId,
                                                               model.treeItemId)
                                         }
                                     }
@@ -1452,10 +1469,11 @@ NavigationListForm {
                                         id: openDocumentInAnotherViewAction
                                         //shortcut: "Alt+Return"
                                         enabled: {
-                                            if(!model.isOpenable){
+                                            if (!model.isOpenable) {
                                                 return false
                                             }
-                                            if (listView.enabled && titleTextField.visible === false
+                                            if (listView.enabled
+                                                    && titleTextField.visible === false
                                                     && listView.currentIndex === model.index) {
                                                 return true
                                             } else
@@ -1464,21 +1482,21 @@ NavigationListForm {
 
                                         text: qsTr("Open document in a new tab")
                                         onTriggered: {
-                                            root.openDocumentInAnotherView(model.projectId,
-                                                                           model.treeItemId)
-
+                                            root.openDocumentInAnotherView(
+                                                        model.projectId,
+                                                        model.treeItemId)
                                         }
                                     }
-
 
                                     Action {
                                         id: openDocumentInNewWindowAction
                                         //shortcut: "Alt+Return"
                                         enabled: {
-                                            if(!model.isOpenable){
+                                            if (!model.isOpenable) {
                                                 return false
                                             }
-                                            if (listView.enabled && titleTextField.visible === false
+                                            if (listView.enabled
+                                                    && titleTextField.visible === false
                                                     && listView.currentIndex === model.index) {
                                                 return true
                                             } else
@@ -1487,31 +1505,26 @@ NavigationListForm {
 
                                         text: qsTr("Open document in a window")
                                         onTriggered: {
-                                            root.openDocumentInNewWindow(model.projectId,
-                                                                         model.treeItemId)
+                                            root.openDocumentInNewWindow(
+                                                        model.projectId,
+                                                        model.treeItemId)
                                             // solve bug where this window's tree disapears
                                             setCurrentTreeItemIdTimer.projectId = model.projectId
                                             setCurrentTreeItemIdTimer.treeItemId = model.treeItemId
 
                                             setCurrentTreeItemIdTimer.start()
-
                                         }
-
-
                                     }
 
-
-                                    contentItem: ColumnLayout{
+                                    contentItem: ColumnLayout {
                                         id: columnLayout3
                                         anchors.fill: parent
-
 
                                         RowLayout {
                                             id: rowLayout
                                             spacing: 2
                                             Layout.fillHeight: true
                                             Layout.fillWidth: true
-
 
                                             Rectangle {
                                                 id: currentItemIndicator
@@ -1522,15 +1535,17 @@ NavigationListForm {
                                             }
                                             Rectangle {
                                                 id: openedItemIndicator
-                                                color:  SkrTheme.accent
+                                                color: SkrTheme.accent
                                                 Layout.fillHeight: true
                                                 Layout.preferredWidth: 5
-                                                visible: model.projectId === openedProjectId && model.treeItemId === openedTreeItemId
+                                                visible: model.projectId === openedProjectId
+                                                         && model.treeItemId === openedTreeItemId
                                             }
 
                                             SkrToolButton {
                                                 id: projectIsBackupIndicator
-                                                visible: model.projectIsBackup && model.type === 'PROJECT'
+                                                visible: model.projectIsBackup
+                                                         && model.type === 'PROJECT'
                                                 enabled: true
                                                 focusPolicy: Qt.NoFocus
                                                 implicitHeight: 32
@@ -1544,19 +1559,51 @@ NavigationListForm {
                                                 flat: true
                                                 onDownChanged: down = false
 
-
                                                 icon {
                                                     source: "qrc:///icons/backup/tools-media-optical-burn-image.svg"
                                                     height: 32
                                                     width: 32
                                                 }
 
-
                                                 hoverEnabled: true
                                                 ToolTip.delay: 1000
                                                 ToolTip.timeout: 5000
                                                 ToolTip.visible: hovered
                                                 ToolTip.text: qsTr("This project is a backup")
+                                            }
+
+                                            SkrCheckBox {
+                                                id: selectionCheckBox
+                                                visible: priv.selecting
+                                                implicitHeight: 32
+                                                implicitWidth: 32
+                                                Layout.maximumHeight: 30
+                                                padding: 0
+                                                rightPadding: 0
+                                                bottomPadding: 0
+                                                leftPadding: 0
+                                                topPadding: 0
+                                                focusPolicy: Qt.NoFocus
+
+                                                onCheckStateChanged: {
+                                                    model.checkState = selectionCheckBox.checkState
+                                                    determineSelectedTreeItems()
+                                                }
+
+                                                Binding on checkState {
+                                                    value: model.checkState
+                                                    delayed: true
+                                                    restoreMode: Binding.RestoreBindingOrValue
+                                                }
+
+                                                function determineSelectedTreeItems() {
+                                                    priv.selectedTreeItemsIds = []
+                                                    priv.selectedTreeItemsIds
+                                                            = proxyModel.getCheckedIdsList()
+                                                    priv.selectedProjectId = currentProjectId
+
+                                                    console.log(selectedTreeItemsIds)
+                                                }
                                             }
 
                                             Item {
@@ -1583,86 +1630,87 @@ NavigationListForm {
 
                                                     }
 
-
                                                     icon {
-                                                        source: getIconUrlFromPageType(model.type)
+                                                        source: getIconUrlFromPageType(
+                                                                    model.type)
 
                                                         height: 22
                                                         width: 22
                                                     }
 
-
                                                     hoverEnabled: true
+
                                                     //                                                    ToolTip.delay: 1000
                                                     //                                                    ToolTip.timeout: 5000
                                                     //                                                    ToolTip.visible: hovered
                                                     //                                                    ToolTip.text: qsTr("")
-
-
-
-
                                                     Item {
                                                         id: treeItemIconIndicatorHat
                                                         anchors.fill: treeItemIconIndicator
                                                         z: 1
 
-                                                        TapHandler{
+                                                        TapHandler {
 
                                                             onSingleTapped: {
-                                                                tapHandler.singleTapped(eventPoint)
+                                                                tapHandler.singleTapped(
+                                                                            eventPoint)
                                                             }
 
                                                             onDoubleTapped: {
-                                                                tapHandler.doubleTapped(eventPoint)
+                                                                tapHandler.doubleTapped(
+                                                                            eventPoint)
                                                             }
 
                                                             onGrabChanged: {
-                                                                tapHandler.grabChanged(transition, point)
+                                                                tapHandler.grabChanged(
+                                                                            transition,
+                                                                            point)
                                                             }
-
-
                                                         }
 
-                                                        TapHandler{
+                                                        TapHandler {
                                                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                                             acceptedButtons: Qt.RightButton
 
                                                             onSingleTapped: {
-                                                                rightClickTapHandler.singleTapped(eventPoint)
+                                                                rightClickTapHandler.singleTapped(
+                                                                            eventPoint)
                                                             }
 
                                                             onDoubleTapped: {
-                                                                rightClickTapHandler.doubleTapped(eventPoint)
+                                                                rightClickTapHandler.doubleTapped(
+                                                                            eventPoint)
                                                             }
 
                                                             onGrabChanged: {
-                                                                rightClickTapHandler.grabChanged(transition, point)
+                                                                rightClickTapHandler.grabChanged(
+                                                                            transition,
+                                                                            point)
                                                             }
-
-
                                                         }
 
-                                                        TapHandler{
+                                                        TapHandler {
                                                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                                             acceptedButtons: Qt.MiddleButton
 
                                                             onSingleTapped: {
-                                                                middleClickTapHandler.singleTapped(eventPoint)
+                                                                middleClickTapHandler.singleTapped(
+                                                                            eventPoint)
                                                             }
 
                                                             onDoubleTapped: {
-                                                                middleClickTapHandler.doubleTapped(eventPoint)
+                                                                middleClickTapHandler.doubleTapped(
+                                                                            eventPoint)
                                                             }
 
                                                             onGrabChanged: {
-                                                                middleClickTapHandler.grabChanged(transition, point)
+                                                                middleClickTapHandler.grabChanged(
+                                                                            transition,
+                                                                            point)
                                                             }
-
-
                                                         }
                                                     }
                                                 }
-
                                             }
 
                                             Rectangle {
@@ -1683,8 +1731,11 @@ NavigationListForm {
                                                         Layout.fillWidth: true
                                                         Layout.topMargin: 2
                                                         Layout.leftMargin: 4
-                                                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                                        font.bold: model.projectIsActive && model.indent === -1 ? true : false
+                                                        Layout.alignment: Qt.AlignLeft
+                                                                          | Qt.AlignVCenter
+                                                        font.bold: model.projectIsActive
+                                                                   && model.indent
+                                                                   === -1 ? true : false
                                                         text: model.type === 'PROJECT' ? model.projectName : model.title
                                                         elide: Text.ElideRight
                                                     }
@@ -1693,7 +1744,6 @@ NavigationListForm {
                                                         id: labelTextField
                                                         visible: false
 
-
                                                         Layout.fillWidth: true
                                                         Layout.fillHeight: true
                                                         text: labelLabel.text
@@ -1701,13 +1751,11 @@ NavigationListForm {
 
                                                         placeholderText: qsTr("Enter label")
 
-
                                                         onEditingFinished: {
 
                                                             console.log("editing label finished")
                                                             model.label = text
                                                             swipeDelegate.state = ""
-
 
                                                             //fix bug while new lone child
                                                             titleLabel.visible = true
@@ -1718,29 +1766,31 @@ NavigationListForm {
                                                         //Keys.priority: Keys.AfterItem
                                                         Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
                                                         Keys.onPressed: {
-                                                            if (event.key === Qt.Key_Return){
+                                                            if (event.key === Qt.Key_Return) {
                                                                 console.log("Return key pressed title")
-                                                                editingFinished()
+                                                                editingFinished(
+                                                                            )
                                                                 event.accepted = true
                                                             }
-                                                            if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                                            if ((event.modifiers & Qt.CtrlModifier)
+                                                                    && event.key
+                                                                    === Qt.Key_Return) {
                                                                 console.log("Ctrl Return key pressed title")
-                                                                editingFinished()
+                                                                editingFinished(
+                                                                            )
                                                                 event.accepted = true
                                                             }
-                                                            if (event.key === Qt.Key_Escape){
+                                                            if (event.key === Qt.Key_Escape) {
                                                                 console.log("Escape key pressed title")
                                                                 swipeDelegate.state = ""
                                                                 event.accepted = true
                                                             }
                                                         }
-
                                                     }
 
                                                     SkrTextField {
                                                         id: titleTextField
                                                         visible: false
-
 
                                                         Layout.fillWidth: true
                                                         Layout.fillHeight: true
@@ -1749,19 +1799,17 @@ NavigationListForm {
 
                                                         placeholderText: qsTr("Enter title")
 
-
                                                         onEditingFinished: {
 
                                                             console.log("editing finished")
-                                                            if(model.type === "PROJECT"){ //project item
+                                                            if (model.type === "PROJECT") {
+                                                                //project item
                                                                 model.projectName = text
-                                                            }
-                                                            else {
+                                                            } else {
                                                                 model.title = text
                                                             }
 
                                                             swipeDelegate.state = ""
-
 
                                                             //fix bug while new lone child
                                                             titleLabel.visible = true
@@ -1772,66 +1820,66 @@ NavigationListForm {
                                                         //Keys.priority: Keys.AfterItem
                                                         Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
                                                         Keys.onPressed: {
-                                                            if (event.key === Qt.Key_Return){
+                                                            if (event.key === Qt.Key_Return) {
                                                                 console.log("Return key pressed title")
-                                                                editingFinished()
+                                                                editingFinished(
+                                                                            )
                                                                 event.accepted = true
                                                             }
-                                                            if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                                            if ((event.modifiers & Qt.CtrlModifier)
+                                                                    && event.key
+                                                                    === Qt.Key_Return) {
                                                                 console.log("Ctrl Return key pressed title")
-                                                                editingFinished()
+                                                                editingFinished(
+                                                                            )
                                                                 event.accepted = true
                                                             }
-                                                            if (event.key === Qt.Key_Escape){
+                                                            if (event.key === Qt.Key_Escape) {
                                                                 console.log("Escape key pressed title")
                                                                 swipeDelegate.state = ""
                                                                 event.accepted = true
                                                             }
                                                         }
-
                                                     }
 
-                                                    RowLayout{
+                                                    RowLayout {
                                                         id: labelLayout
                                                         Layout.fillWidth: true
                                                         Layout.leftMargin: 5
 
-                                                        ListItemAttributes{
+                                                        ListItemAttributes {
                                                             id: attributes
                                                             treeItemId: model.treeItemId
                                                             projectId: model.projectId
                                                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                                             Layout.leftMargin: 4
                                                             Layout.bottomMargin: 2
-
                                                         }
-
 
                                                         SkrLabel {
                                                             id: labelLabel
                                                             activeFocusOnTab: false
-                                                            text:  model.label === undefined ? "" : model.label
-                                                            visible: text.length === 0 ? false : true
+                                                            text: model.label
+                                                                  === undefined ? "" : model.label
+                                                            visible: text.length
+                                                                     === 0 ? false : true
                                                             Layout.bottomMargin: 2
                                                             Layout.rightMargin: 4
                                                             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                                                             elide: Text.ElideRight
                                                             horizontalAlignment: Qt.AlignRight
                                                             Layout.fillWidth: true
-
-
                                                         }
                                                     }
                                                 }
-
                                             }
-
 
                                             SkrLabel {
                                                 id: devLabel
                                                 activeFocusOnTab: false
-                                                text:  model.index + "-" + model.treeItemId + "-" + model.sortOrder
-                                                visible: + priv.devModeEnabled
+                                                text: model.index + "-" + model.treeItemId
+                                                      + "-" + model.sortOrder
+                                                visible: +priv.devModeEnabled
                                                 elide: Text.ElideNone
                                                 Layout.bottomMargin: 2
                                                 Layout.rightMargin: 4
@@ -1839,8 +1887,6 @@ NavigationListForm {
                                                 horizontalAlignment: Qt.AlignRight
                                                 Layout.fillHeight: true
                                                 //Layout.preferredWidth: 30
-
-
                                             }
 
                                             SkrToolButton {
@@ -1855,34 +1901,26 @@ NavigationListForm {
 
                                                 onClicked: {
 
-                                                    if(menu.visible){
+                                                    if (menu.visible) {
                                                         menu.close()
                                                         return
                                                     }
-
 
                                                     listView.currentIndex = model.index
                                                     swipeDelegate.forceActiveFocus()
                                                     menu.open()
                                                 }
 
-                                                visible: itemHoverHandler.hovered || content.isCurrent
+                                                visible: itemHoverHandler.hovered
+                                                         || content.isCurrent
                                             }
 
                                             Rectangle {
                                                 Layout.fillHeight: true
                                                 Layout.preferredWidth: 2
 
-                                                color: model.indent === 0 ? Material.color(Material.Indigo) :
-                                                                            (model.indent === 1 ? Material.color(Material.LightBlue) :
-                                                                                                  (model.indent === 2 ? Material.color(Material.LightGreen) :
-                                                                                                                        (model.indent === 3 ? Material.color(Material.Amber) :
-                                                                                                                                              (model.indent === 4 ? Material.color(Material.DeepOrange) :
-                                                                                                                                                                    Material.color(Material.Teal)
-                                                                                                                                               ))))
+                                                color: model.indent === 0 ? Material.color(Material.Indigo) : (model.indent === 1 ? Material.color(Material.LightBlue) : (model.indent === 2 ? Material.color(Material.LightGreen) : (model.indent === 3 ? Material.color(Material.Amber) : (model.indent === 4 ? Material.color(Material.DeepOrange) : Material.color(Material.Teal)))))
                                             }
-
-
                                         }
                                         Rectangle {
                                             id: separator
@@ -1892,25 +1930,23 @@ NavigationListForm {
                                             gradient: Gradient {
                                                 orientation: Qt.Horizontal
                                                 GradientStop {
-                                                    position: 0.00;
-                                                    color: "transparent";
+                                                    position: 0.00
+                                                    color: "transparent"
                                                 }
                                                 GradientStop {
-                                                    position: 0.30;
-                                                    color: SkrTheme.divider;
+                                                    position: 0.30
+                                                    color: SkrTheme.divider
                                                 }
                                                 GradientStop {
-                                                    position: 0.70;
-                                                    color: SkrTheme.divider;
+                                                    position: 0.70
+                                                    color: SkrTheme.divider
                                                 }
                                                 GradientStop {
-                                                    position: 1.00;
-                                                    color: "transparent";
+                                                    position: 1.00
+                                                    color: "transparent"
                                                 }
                                             }
-
                                         }
-
                                     }
                                 }
                                 //            DropArea {
@@ -1941,7 +1977,6 @@ NavigationListForm {
                                 //                }
                                 //            }
 
-
                                 //            Shortcut {
                                 //                sequences: ["Ctrl+Shift+N"]
                                 //                onActivated: addBeforeAction.trigger()
@@ -1962,7 +1997,6 @@ NavigationListForm {
 
                                     }
 
-
                                     SkrMenuItem {
                                         height: !model.isOpenable ? 0 : undefined
                                         visible: model.isOpenable
@@ -1974,17 +2008,20 @@ NavigationListForm {
                                                 source: "qrc:///icons/backup/document-edit.svg"
                                             }
 
-                                            enabled: titleTextField.visible === false && listView.enabled
+                                            enabled: titleTextField.visible === false
+                                                     && listView.enabled
                                             onTriggered: {
-                                                console.log("open treeItem action", model.projectId,
+                                                console.log("open treeItem action",
+                                                            model.projectId,
                                                             model.treeItemId)
                                                 openDocumentAction.trigger()
                                             }
                                         }
                                     }
                                     SkrMenuItem {
-                                        height: !model.isOpenable ||model.treeItemId === -1 ? 0 : undefined
-                                        visible:  model.isOpenable
+                                        height: !model.isOpenable
+                                                || model.treeItemId === -1 ? 0 : undefined
+                                        visible: model.isOpenable
 
                                         action: Action {
                                             id: openTreeItemInAnotherViewAction
@@ -1993,18 +2030,19 @@ NavigationListForm {
                                             icon {
                                                 source: "qrc:///icons/backup/tab-new.svg"
                                             }
-                                            enabled: titleTextField.visible === false && listView.enabled
+                                            enabled: titleTextField.visible === false
+                                                     && listView.enabled
                                             onTriggered: {
-                                                console.log("open treeItem in another view action", model.projectId,
+                                                console.log("open treeItem in another view action",
+                                                            model.projectId,
                                                             model.treeItemId)
                                                 openDocumentInAnotherViewAction.trigger()
                                             }
                                         }
                                     }
 
-
                                     SkrMenuItem {
-                                        height: !model.isOpenable ?  0 : undefined
+                                        height: !model.isOpenable ? 0 : undefined
                                         visible: model.isOpenable
 
                                         action: Action {
@@ -2014,37 +2052,45 @@ NavigationListForm {
                                             icon {
                                                 source: "qrc:///icons/backup/window-new.svg"
                                             }
-                                            enabled: titleTextField.visible === false && listView.enabled
+                                            enabled: titleTextField.visible === false
+                                                     && listView.enabled
                                             onTriggered: {
-                                                console.log("open treeItem in new window action", model.projectId,
+                                                console.log("open treeItem in new window action",
+                                                            model.projectId,
                                                             model.treeItemId)
                                                 // solve bug where this window's tree disapears
-                                                setCurrentTreeItemIdTimer.projectId = model.projectId
-                                                setCurrentTreeItemIdTimer.treeItemId = model.treeItemId
-                                                setCurrentTreeItemIdTimer.start()
-                                                root.openDocumentInNewWindow(model.projectId, model.treeItemId)
+                                                setCurrentTreeItemIdTimer.projectId
+                                                        = model.projectId
+                                                setCurrentTreeItemIdTimer.treeItemId
+                                                        = model.treeItemId
+                                                setCurrentTreeItemIdTimer.start(
+                                                            )
+                                                root.openDocumentInNewWindow(
+                                                            model.projectId,
+                                                            model.treeItemId)
                                                 //                                                setCurrentTreeItemId(model.projectId, model.treeItemId)
-
-
                                             }
                                         }
-
                                     }
 
                                     SkrMenuItem {
-                                        height: model.treeItemId === 0 ?  undefined : 0
+                                        height: model.treeItemId === 0 ? undefined : 0
                                         visible: model.treeItemId === 0
-                                        enabled: model.projectIsActive === false && listView.enabled &&  model.treeItemId === 0
+                                        enabled: model.projectIsActive === false
+                                                 && listView.enabled
+                                                 && model.treeItemId === 0
                                         text: qsTr("Set as active project")
                                         icon {
                                             source: "qrc:///icons/backup/tab-new.svg"
                                         }
                                         onTriggered: {
-                                            console.log("set active project", model.projectId)
-                                            skrData.projectHub().setActiveProject(model.projectId)
+                                            console.log("set active project",
+                                                        model.projectId)
+                                            skrData.projectHub(
+                                                        ).setActiveProject(
+                                                        model.projectId)
                                         }
                                     }
-
 
                                     MenuSeparator {
                                         height: model.isRenamable ? undefined : 0
@@ -2054,8 +2100,7 @@ NavigationListForm {
                                     SkrMenuItem {
                                         height: model.isRenamable ? undefined : 0
                                         visible: model.isRenamable
-                                        action:
-                                            Action {
+                                        action: Action {
                                             id: renameAction
                                             text: qsTr("Rename")
                                             //shortcut: "F2"
@@ -2065,7 +2110,8 @@ NavigationListForm {
                                             enabled: listView.enabled
 
                                             onTriggered: {
-                                                console.log("rename action", model.projectId,
+                                                console.log("rename action",
+                                                            model.projectId,
                                                             model.treeItemId)
                                                 swipeDelegate.editName()
                                             }
@@ -2073,10 +2119,9 @@ NavigationListForm {
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isRenamable ? 0: undefined
+                                        height: !model.isRenamable ? 0 : undefined
                                         visible: model.isRenamable
-                                        action:
-                                            Action {
+                                        action: Action {
                                             id: setLabelAction
                                             text: qsTr("Set label")
                                             //shortcut: "F2"
@@ -2085,7 +2130,8 @@ NavigationListForm {
                                             }
                                             enabled: listView.enabled
                                             onTriggered: {
-                                                console.log("sel label", model.projectId,
+                                                console.log("sel label",
+                                                            model.projectId,
                                                             model.treeItemId)
                                                 swipeDelegate.editLabel()
                                             }
@@ -2093,59 +2139,84 @@ NavigationListForm {
                                     }
 
                                     MenuSeparator {
-                                        height: !model.isMovable || !model.isCopyable || !model.canAddChildTreeItem ? 0: undefined
-                                        visible: model.isMovable || model.isCopyable || model.canAddChildTreeItem
+                                        height: !model.isMovable
+                                                || !model.isCopyable
+                                                || !model.canAddChildTreeItem ? 0 : undefined
+                                        visible: model.isMovable
+                                                 || model.isCopyable
+                                                 || model.canAddChildTreeItem
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isMovable ? 0: undefined
+                                        height: !model.isMovable ? 0 : undefined
                                         visible: model.isMovable
-                                        action:
-                                            Action {
+                                        action: Action {
                                             id: cutAction
                                             text: qsTr("Cut")
-                                            //shortcut: StandardKey.Cut
+                                            shortcut: StandardKey.Cut
                                             icon {
                                                 source: "qrc:///icons/backup/edit-cut.svg"
                                             }
                                             enabled: listView.enabled
 
                                             onTriggered: {
-                                                console.log("cut action", model.projectId,
-                                                            model.treeItemId)
-                                                proxyModel.cut(model.projectId, model.treeItemId)
+
+                                                if (selectedTreeItemsIds) {
+                                                    console.log("cut action",
+                                                                model.projectId,
+                                                                selectedTreeItemsIds)
+                                                    skrData.treeHub().cut(
+                                                                model.projectId,
+                                                                selectedTreeItemsIds)
+                                                } else {
+                                                    console.log("cut action",
+                                                                model.projectId,
+                                                                model.treeItemId)
+                                                    skrData.treeHub().cut(
+                                                                model.projectId,
+                                                                [model.treeItemId])
+                                                }
                                             }
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isCopyable ? 0: undefined
+                                        height: !model.isCopyable ? 0 : undefined
                                         visible: model.isCopyable
-                                        action:
-                                            Action {
+                                        action: Action {
 
                                             id: copyAction
                                             text: qsTr("Copy")
-                                            //shortcut: StandardKey.Copy
+                                            shortcut: StandardKey.Copy
                                             icon {
                                                 source: "qrc:///icons/backup/edit-copy.svg"
                                             }
                                             enabled: listView.enabled
 
                                             onTriggered: {
-                                                console.log("copy action", model.projectId,
-                                                            model.treeItemId)
-                                                proxyModel.copy(model.projectId, model.treeItemId)
+                                                if (selectedTreeItemsIds) {
+                                                    console.log("copy action",
+                                                                model.projectId,
+                                                                selectedTreeItemsIds)
+                                                    skrData.treeHub().copy(
+                                                                model.projectId,
+                                                                selectedTreeItemsIds)
+                                                } else {
+                                                    console.log("copy action",
+                                                                model.projectId,
+                                                                model.treeItemId)
+                                                    skrData.treeHub().copy(
+                                                                model.projectId,
+                                                                [model.treeItemId])
+                                                }
                                             }
                                         }
                                     }
 
-
                                     SkrMenuItem {
-                                        height: !model.canAddChildTreeItem ? 0: undefined
+                                        height: !model.canAddChildTreeItem ? 0 : undefined
                                         visible: model.canAddChildTreeItem
-                                        action:
-                                            Action {
+                                        action: Action {
 
                                             id: pasteAction
                                             text: qsTr("Paste")
@@ -2156,24 +2227,27 @@ NavigationListForm {
                                             enabled: listView.enabled
 
                                             onTriggered: {
-                                                console.log("paste action", model.projectId,
+                                                console.log("paste action",
+                                                            model.projectId,
                                                             model.treeItemId)
-                                                proxyModel.paste(model.projectId, model.treeItemId)
+                                                skrData.treeHub().paste(
+                                                            model.projectId,
+                                                            model.treeItemId)
                                             }
                                         }
                                     }
 
-
                                     MenuSeparator {
-                                        height: !(model.canAddSiblingTreeItem || model.canAddChildTreeItem) ? 0: undefined
-                                        visible: (model.canAddSiblingTreeItem || model.canAddChildTreeItem)
+                                        height: !(model.canAddSiblingTreeItem
+                                                  || model.canAddChildTreeItem) ? 0 : undefined
+                                        visible: (model.canAddSiblingTreeItem
+                                                  || model.canAddChildTreeItem)
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.canAddSiblingTreeItem ? 0: undefined
+                                        height: !model.canAddSiblingTreeItem ? 0 : undefined
                                         visible: model.canAddSiblingTreeItem
-                                        action:
-                                            Action {
+                                        action: Action {
                                             id: addBeforeAction
                                             text: qsTr("Add before")
                                             //shortcut: "Ctrl+Shift+N"
@@ -2182,38 +2256,36 @@ NavigationListForm {
                                             }
                                             enabled: listView.enabled
                                             onTriggered: {
-                                                console.log("add before action", model.projectId,
+                                                console.log("add before action",
+                                                            model.projectId,
                                                             model.treeItemId)
 
-
-
-
                                                 var visualIndex = listView.currentIndex
-
 
                                                 newItemPopup.projectId = model.projectId
                                                 newItemPopup.treeItemId = model.treeItemId
                                                 newItemPopup.visualIndex = visualIndex
-                                                newItemPopup.createFunction = afterNewItemTypeIsChosen
+                                                newItemPopup.createFunction
+                                                        = afterNewItemTypeIsChosen
                                                 newItemPopup.open()
                                             }
 
-                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType){
+                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
                                                 newItemPopup.close()
-                                                proxyModel.addItemAbove(projectId, treeItemId, pageType)
-                                                listView.itemAtIndex(visualIndex).editName()
-
+                                                proxyModel.addItemAbove(
+                                                            projectId,
+                                                            treeItemId,
+                                                            pageType)
+                                                listView.itemAtIndex(
+                                                            visualIndex).editName()
                                             }
-
-
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.canAddSiblingTreeItem ? 0: undefined
+                                        height: !model.canAddSiblingTreeItem ? 0 : undefined
                                         visible: model.canAddSiblingTreeItem
-                                        action:
-                                            Action {
+                                        action: Action {
                                             id: addAfterAction
                                             text: qsTr("Add after")
                                             //shortcut: "Ctrl+N"
@@ -2222,7 +2294,8 @@ NavigationListForm {
                                             }
                                             enabled: listView.enabled
                                             onTriggered: {
-                                                console.log("add after action", model.projectId,
+                                                console.log("add after action",
+                                                            model.projectId,
                                                             model.treeItemId)
 
                                                 var visualIndex = listView.currentIndex + 1
@@ -2230,32 +2303,29 @@ NavigationListForm {
                                                 newItemPopup.projectId = model.projectId
                                                 newItemPopup.treeItemId = model.treeItemId
                                                 newItemPopup.visualIndex = visualIndex
-                                                newItemPopup.createFunction = afterNewItemTypeIsChosen
+                                                newItemPopup.createFunction
+                                                        = afterNewItemTypeIsChosen
                                                 newItemPopup.open()
 
-
-
                                                 //editNameWithIndexTimer.treeItemIndexToEdit = visualIndex
-
                                             }
 
-
-                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType){
+                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
                                                 newItemPopup.close()
-                                                proxyModel.addItemBelow(projectId, treeItemId, pageType)
-                                                listView.itemAtIndex(visualIndex).editName()
+                                                proxyModel.addItemBelow(
+                                                            projectId,
+                                                            treeItemId,
+                                                            pageType)
+                                                listView.itemAtIndex(
+                                                            visualIndex).editName()
                                             }
-
-
                                         }
-
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.canAddChildTreeItem ? 0: undefined
+                                        height: !model.canAddChildTreeItem ? 0 : undefined
                                         visible: model.canAddChildTreeItem
-                                        action:
-                                            Action {
+                                        action: Action {
                                             id: addChildAction
                                             text: qsTr("Add a sub-item")
                                             //shortcut: "Ctrl+N"
@@ -2264,126 +2334,133 @@ NavigationListForm {
                                             }
                                             enabled: listView.enabled
                                             onTriggered: {
-                                                console.log("add child action", model.projectId,
+                                                console.log("add child action",
+                                                            model.projectId,
                                                             model.treeItemId)
-
 
                                                 //save current ids:
                                                 listView.currentIndex = model.index
-                                                navigationListStackView.currentItem.treeItemId = model.treeItemId
-
+                                                navigationListStackView.currentItem.treeItemId
+                                                        = model.treeItemId
 
                                                 newItemPopup.projectId = model.projectId
                                                 newItemPopup.treeItemId = model.treeItemId
                                                 newItemPopup.visualIndex = 0
-                                                newItemPopup.createFunction = afterNewItemTypeIsChosen
+                                                newItemPopup.createFunction
+                                                        = afterNewItemTypeIsChosen
                                                 newItemPopup.open()
-
-
                                             }
 
-                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType){
+                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
 
                                                 // push new view
-
-                                                var newItem = navigationListStackView.push(stackViewComponent, {"projectId": projectId, "parentId":  treeItemId} )
+                                                var newItem = navigationListStackView.push(
+                                                            stackViewComponent,
+                                                            {
+                                                                "projectId": projectId,
+                                                                "parentId": treeItemId
+                                                            })
                                                 newItem.setCurrent()
 
                                                 addItemAtCurrentParent(pageType)
                                             }
-
                                         }
-
                                     }
                                     MenuSeparator {
-                                        height: !model.isMovable ? 0: undefined
+                                        height: !model.isMovable ? 0 : undefined
                                         visible: model.isMovable
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isMovable ? 0: undefined
+                                        height: !model.isMovable ? 0 : undefined
                                         visible: model.isMovable
-                                        action:
-                                            Action {
+                                        action: Action {
                                             id: moveUpAction
                                             text: qsTr("Move up")
                                             //shortcut: "Ctrl+Up"
                                             icon {
                                                 source: "qrc:///icons/backup/object-order-raise.svg"
                                             }
-                                            enabled: listView.enabled && model.index !== 0
+                                            enabled: listView.enabled
+                                                     && model.index !== 0
                                             onTriggered: {
-                                                console.log("move up action", model.projectId,
+                                                console.log("move up action",
+                                                            model.projectId,
                                                             model.treeItemId)
 
-                                                if(temporarilyDisableMove){
+                                                if (temporarilyDisableMove) {
                                                     return
                                                 }
                                                 temporarilyDisableMove = true
                                                 temporarilyDisableMoveTimer.start()
 
-                                                proxyModel.moveUp(model.projectId, model.treeItemId,
-                                                                  model.index)
-
-
+                                                proxyModel.moveUp(
+                                                            model.projectId,
+                                                            model.treeItemId,
+                                                            model.index)
                                             }
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isMovable ? 0: undefined
+                                        height: !model.isMovable ? 0 : undefined
                                         visible: model.isMovable
-                                        action:
-                                            Action {
+                                        action: Action {
                                             id: moveDownAction
                                             text: qsTr("Move down")
                                             //shortcut: "Ctrl+Down"
                                             icon {
                                                 source: "qrc:///icons/backup/object-order-lower.svg"
                                             }
-                                            enabled: model.index !== visualModel.items.count - 1  && listView.enabled
+                                            enabled: model.index !== visualModel.items.count - 1
+                                                     && listView.enabled
 
                                             onTriggered: {
-                                                console.log("move down action", model.projectId,
+                                                console.log("move down action",
+                                                            model.projectId,
                                                             model.treeItemId)
 
-                                                if(temporarilyDisableMove){
+                                                if (temporarilyDisableMove) {
                                                     return
                                                 }
                                                 temporarilyDisableMove = true
                                                 temporarilyDisableMoveTimer.start()
 
-                                                proxyModel.moveDown(model.projectId, model.treeItemId,
-                                                                    model.index)
+                                                proxyModel.moveDown(
+                                                            model.projectId,
+                                                            model.treeItemId,
+                                                            model.index)
                                             }
                                         }
-
                                     }
 
                                     MenuSeparator {
-                                        height: !model.isTrashable ? 0: undefined
+                                        height: !model.isTrashable ? 0 : undefined
                                         visible: model.isTrashable
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isTrashable ? 0: undefined
+                                        height: !model.isTrashable ? 0 : undefined
                                         visible: model.isTrashable
-                                        action:
-                                            Action {
+                                        action: Action {
                                             id: sendToTrashAction
                                             text: qsTr("Send to trash")
                                             //shortcut: "Del"
                                             icon {
                                                 source: "qrc:///icons/backup/edit-delete.svg"
                                             }
-                                            enabled: listView.enabled && model.indent !== -1
+                                            enabled: listView.enabled
+                                                     && model.indent !== -1
                                             onTriggered: {
-                                                console.log("sent to trash action", model.projectId,
+                                                console.log("sent to trash action",
+                                                            model.projectId,
                                                             model.treeItemId)
 
                                                 swipeDelegate.swipe.close()
                                                 removeTreeItemAnimation.start()
-                                                proxyModel.trashItemWithChildren(model.projectId, model.treeItemId)
+                                                proxyModel.trashItemWithChildren(
+                                                            model.projectId,
+                                                            model.treeItemId)
                                             }
                                         }
                                     }
@@ -2391,16 +2468,13 @@ NavigationListForm {
 
                                 //----------------------------------------------------------
 
-
                                 //                            ListView.onRemove: {
-
 
                                 //                                var goUpActionCurrentParentIndent = proxyModel.getItemIndent(currentProject, goUpActionCurrentParent)
 
                                 //                                if(goUpActionToBeTriggered && goUpActionCurrentParentIndent + 1 === delegateRoot.indent){
                                 //                                    paperGoesRightAnimation.start()
                                 //                                }
-
 
                                 //                                if(goToChildActionToBeTriggered && goToChildActionCurrentIndent === delegateRoot.indent){
                                 //                                    paperGoesLeftAnimation.start()
@@ -2417,13 +2491,10 @@ NavigationListForm {
                                 //                                    paperAppearsFromLeftAnimation.start()
                                 //                                }
 
-
-
                                 //                                if(goToChildActionToBeTriggered && goToChildActionCurrentIndent + 1 === delegateRoot.indent){
                                 //                                    paperAppearsFromRightAnimation.start()
                                 //                                }
                                 //                            }
-
                             }
                             property int animationDuration: 150
 
@@ -2505,7 +2576,6 @@ NavigationListForm {
                                         target: swipeDelegate
                                         anchors.left: undefined
                                         anchors.right: undefined
-
                                     }
                                 }
                             ]
@@ -2536,7 +2606,6 @@ NavigationListForm {
                                 ScriptAction {
                                     script: proxyModel.invalidate()
                                 }
-
                             }
                             SequentialAnimation {
                                 id: addTreeItemAtEndAnimation
@@ -2557,30 +2626,15 @@ NavigationListForm {
                         }
                     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
                     //----------------------------------------------------------------------
                     //--- End list item component ------------------------------------------
                     //----------------------------------------------------------------------
                 }
-
             }
         }
     }
 
-
-    Timer{
+    Timer {
         id: setCurrentTreeItemIdTimer
         property int projectId
         property int treeItemId
@@ -2594,20 +2648,17 @@ NavigationListForm {
     //-------------------------------------------------------------------------------------
     //---------side Navigation Popup---------------------------------------------------------
     //-------------------------------------------------------------------------------------
-
     Component {
         id: sideNavigationPopupComponent
         SkrPopup {
             id: sideNavigationPopup
 
             //enableBehavior: false
-
             property int projectId: -2
             property int parentId: -2
             property int popupId: sidePopupListModel.count - 1
             property int headerHeight: 0
             enabled: false
-
 
             width: 200
             z: 100 - popupId
@@ -2616,26 +2667,25 @@ NavigationListForm {
             padding: 0
             // start values:
             x: navigationListStackView.width + sideNavigationPopup.width * popupId
-            y: sidePopupListModel.get(popupId - 1) === undefined ? 0 : sidePopupListModel.get(popupId - 1).y
+            y: sidePopupListModel.get(
+                   popupId - 1) === undefined ? 0 : sidePopupListModel.get(
+                                                    popupId - 1).y
 
-
-            Binding{
+            Binding {
                 target: sideNavigationPopup
                 property: "height"
-                value: sideNavigationLoader.item.listView.contentHeight > navigationListStackView.height ?
-                           navigationListStackView.height : sideNavigationLoader.item.listView.contentHeight
+                value: sideNavigationLoader.item.listView.contentHeight
+                       > navigationListStackView.height ? navigationListStackView.height : sideNavigationLoader.item.listView.contentHeight
             }
 
-
-            Binding{
+            Binding {
                 target: sideNavigationPopup
                 property: "headerHeight"
-                value: sideNavigationLoader.item.listView.contentHeight -
-                       sideNavigationLoader.item.listView.count * 40
+                value: sideNavigationLoader.item.listView.contentHeight
+                       - sideNavigationLoader.item.listView.count * 40
             }
 
             //-----------------------------------
-
             Loader {
                 id: sideNavigationLoader
                 anchors.fill: parent
@@ -2643,19 +2693,16 @@ NavigationListForm {
                 sourceComponent: stackViewComponent
                 visible: status === Loader.Ready
 
-
                 onStatusChanged: {
-                    if(status === Loader.Ready){
+                    if (status === Loader.Ready) {
                         //sideNavigationLoader.item.hoverEnabled  = false
                         sideNavigationLoader.item.projectId = sideNavigationPopup.projectId
                         sideNavigationLoader.item.parentId = sideNavigationPopup.parentId
                         sideNavigationLoader.item.popupId = sideNavigationPopup.popupId
                         sideNavigationLoader.item.init()
 
-
                         sideNavigationPopup.enabled = true
                         //enableHoverTimer.start()
-
                     }
                 }
             }
@@ -2664,16 +2711,12 @@ NavigationListForm {
             //                interval: 50
             //                onTriggered: sideNavigationLoader.item.hoverEnabled = true
             //            }
-
-
         }
     }
-
 
     ListModel {
         id: sidePopupListModel
     }
-
 
     Repeater {
 
@@ -2685,54 +2728,56 @@ NavigationListForm {
             visible: status === Loader.Ready
             asynchronous: true
 
-            Binding{
+            Binding {
                 when: sidePopupLoader.status === Loader.Ready
                 target: sidePopupLoader.item
                 property: "popupId"
                 value: model.popupId
             }
 
-            Binding{
+            Binding {
                 when: sidePopupLoader.status === Loader.Ready
                 target: sidePopupLoader.item
                 property: "projectId"
                 value: model.projectId
             }
 
-            Binding{
+            Binding {
                 when: sidePopupLoader.status === Loader.Ready
                 target: sidePopupLoader.item
                 property: "parentId"
                 value: model.parentId
             }
 
-            Binding{
+            Binding {
                 when: sidePopupLoader.status === Loader.Ready
                 target: sidePopupLoader.item
                 property: "y"
-                value:   mapFromItem(model.listView, 0, model.parentItem.y).y - sidePopupLoader.item.headerHeight
+                value: mapFromItem(
+                           model.listView, 0,
+                           model.parentItem.y).y - sidePopupLoader.item.headerHeight
             }
-            Binding{
+            Binding {
                 when: sidePopupLoader.status === Loader.Ready
                 target: model
                 property: "y"
-                value:   sidePopupLoader.item.y
+                value: sidePopupLoader.item.y
             }
-            Binding{
+            Binding {
                 when: sidePopupLoader.status === Loader.Ready
                 target: sidePopupLoader.item
                 property: "x"
                 value: navigationListStackView.width + sidePopupLoader.item.width * (model.index)
             }
             onStatusChanged: {
-                if(status === Loader.Ready){
+                if (status === Loader.Ready) {
                     sidePopupLoader.item.visible = true
                 }
             }
         }
     }
 
-    Timer{
+    Timer {
         id: addSideNavigationListPopupTimer
         property int projectId: -2
         property int parentId: -2
@@ -2744,94 +2789,76 @@ NavigationListForm {
             //closeSideNavigationListPopupTimer.stop()
 
             //close next popups
-            for(var i = sidePopupListModel.count -1 ; i > popupId ; i--){
+            for (var i = sidePopupListModel.count - 1; i > popupId; i--) {
                 sidePopupListModel.remove(i)
             }
 
             // add
-            sidePopupListModel.append({"popupId": popupId + 1 , "projectId": projectId, "parentId": parentId,
-                                          "hovered": false, "parentItem": parentItem,
-                                          "listView": listView, "y": 0})
+            sidePopupListModel.append({
+                                          "popupId": popupId + 1,
+                                          "projectId": projectId,
+                                          "parentId": parentId,
+                                          "hovered": false,
+                                          "parentItem": parentItem,
+                                          "listView": listView,
+                                          "y": 0
+                                      })
             //console.log("sidePopupListModel.count", sidePopupListModel.count)
 
             //            if(sideNavigationPopup.visible){
             //                sideNavigationPopup.close()
             //            }
 
-
             //            sideNavigationPopup.open()
-
         }
-
     }
 
-
-    Timer{
+    Timer {
         id: closeSideNavigationListPopupTimer
         property int popupId: -2
         interval: 50
         onTriggered: {
 
             var hoveredPopupId = -1
+
             //            for(var i = 0 ; i < sidePopupListModel.count ; i++){
             //                if(sidePopupListModel.get(i).hovered){
             //                    hoveredPopupId = i
             //                }
             //            }
-
-
-
-            for(var k = sidePopupListModel.count -1 ; k > popupId ; k--){
+            for (var k = sidePopupListModel.count - 1; k > popupId; k--) {
                 sidePopupListModel.remove(k)
             }
-            if(popupId === -1){
+            if (popupId === -1) {
                 sidePopupListModel.clear()
             }
         }
-
     }
 
-    function determineIfSideNavigationPopupsHaveToClose(){
-        if(itemHoverHandler.hovered){
+    function determineIfSideNavigationPopupsHaveToClose() {
+        if (itemHoverHandler.hovered) {
             closeSideNavigationListPopupTimer.stop()
-
-        }
-        else{
+        } else {
             closeSideNavigationListPopupTimer.popupId = stackViewBaseItem.popupId
             closeSideNavigationListPopupTimer.start()
         }
-
-
     }
 
-
-
     //-------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------
-
-
     NewItemPopup {
         id: newItemPopup
     }
 
-
-
     //-------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------
-
-
-
     onActiveFocusChanged: {
         if (activeFocus) {
-            if(!priv.renaming){
+            if (!priv.renaming) {
                 navigationListStackView.currentItem.forceActiveFocus()
             }
         }
     }
-
-
-
-
 }

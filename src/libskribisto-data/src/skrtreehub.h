@@ -32,6 +32,37 @@
 #include "skrresult.h"
 #include "skrpropertyhub.h"
 
+struct CutCopy
+{
+    Q_GADGET
+public:
+
+    enum Type {
+        Cut,
+        Copy,
+        None
+    };
+    Q_ENUM(Type)
+
+    explicit CutCopy(CutCopy::Type type, const int projectId, const QList<int> treeItemIds){
+        this->type = type;
+        this->projectId = projectId;
+        this->treeItemIds = treeItemIds;
+    }
+    CutCopy(){
+        this->type = Type::None;
+    }
+
+
+
+    CutCopy::Type type;
+    int projectId;
+    QList<int> treeItemIds;
+
+};
+Q_DECLARE_METATYPE(CutCopy)
+
+
 class EXPORT SKRTreeHub : public QObject {
     Q_OBJECT
 
@@ -208,6 +239,11 @@ public:
     Q_INVOKABLE int getPreviousTreeItemIdOfTheSameType(int projectId,
                                                        int treeItemId);
 
+    Q_INVOKABLE SKRResult duplicateTreeItem(int projectId, int treeItemId);
+    Q_INVOKABLE void cut(int projectId, QList<int> treeItemIds);
+    Q_INVOKABLE void copy(int projectId, QList<int> treeItemIds);
+    Q_INVOKABLE SKRResult paste(int projectId, int parentTreeItemId);
+
 private:
 
     SKRResult setTrashedDateToNow(int projectId,
@@ -282,6 +318,7 @@ protected:
     QString m_tableName;
     int m_last_added_id;
     SKRPropertyHub *m_propertyHub;
+    CutCopy m_cutCopy;
 };
 
 #endif // SKRTREEHUB_H
