@@ -23,13 +23,13 @@ ApplicationWindow {
     property int projectIdToBeLoaded: -1
     property int treeItemIdToBeLoaded: -1
     property string projectIndependantPageTypeToBeLoaded: ""
-    property var additionalPropertiesForViewManager : ({})
+    property var additionalPropertiesForViewManager: ({})
 
     property int windowId: -1
 
     Connections {
         target: skrWindowManager
-        function onWindowIdsChanged(){
+        function onWindowIdsChanged() {
             windowId = skrWindowManager.getWindowId(this)
         }
     }
@@ -41,43 +41,52 @@ ApplicationWindow {
         windowId = skrWindowManager.getWindowId(this)
 
         //rootWindow.visibility = rootWindow.visibility
-        if(rootWindow.visibility === Window.FullScreen){
+        if (rootWindow.visibility === Window.FullScreen) {
             fullscreenAction.checked = true
         }
 
-        if(rootWindow.visibility === Window.Hidden){
+        if (rootWindow.visibility === Window.Hidden) {
             rootWindow.visibility = Window.AutomaticVisibility
         }
 
-        if(windowId === 0){
-            this.openArgument()
+        if (windowId === 0) {
+            var openingSomethingInArgument = this.openArgument()
         }
         rootWindow.raise()
 
         toBeLoadedTimer.start()
 
-
         // First Steps wizard
-        loader_firstStepsWizard.active =  SkrSettings.interfaceSettings.firstLaunch
+        loader_firstStepsWizard.active = SkrSettings.interfaceSettings.firstLaunch
         SkrSettings.interfaceSettings.firstLaunch = false
 
+        if (!loader_firstStepsWizard.active && windowId === 0
+                && !openingSomethingInArgument) {
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showRecentPageCalled()
+        }
     }
 
     Timer {
         id: toBeLoadedTimer
         interval: 100
         onTriggered: {
-            if(projectIdToBeLoaded !== -1 && treeItemIdToBeLoaded !== -1){
-                rootPage.viewManager.insertAdditionalPropertyDict(additionalPropertiesForViewManager)
-                rootPage.viewManager.loadTreeItemAt(projectIdToBeLoaded, treeItemIdToBeLoaded, Qt.TopLeftCorner)
-            }
-            else if(projectIdToBeLoaded === -1 && treeItemIdToBeLoaded === -1 && projectIndependantPageTypeToBeLoaded !== ""){
-                rootPage.viewManager.insertAdditionalPropertyDict(additionalPropertiesForViewManager)
-                rootPage.viewManager.loadProjectIndependantPageAt(projectIndependantPageTypeToBeLoaded, Qt.TopLeftCorner)
+            if (projectIdToBeLoaded !== -1 && treeItemIdToBeLoaded !== -1) {
+                rootPage.viewManager.insertAdditionalPropertyDict(
+                            additionalPropertiesForViewManager)
+                rootPage.viewManager.loadTreeItemAt(projectIdToBeLoaded,
+                                                    treeItemIdToBeLoaded,
+                                                    Qt.TopLeftCorner)
+            } else if (projectIdToBeLoaded === -1 && treeItemIdToBeLoaded === -1
+                       && projectIndependantPageTypeToBeLoaded !== "") {
+                rootPage.viewManager.insertAdditionalPropertyDict(
+                            additionalPropertiesForViewManager)
+                rootPage.viewManager.loadProjectIndependantPageAt(
+                            projectIndependantPageTypeToBeLoaded,
+                            Qt.TopLeftCorner)
             }
         }
     }
-
 
     Component.onDestruction: {
         skrWindowManager.unSubscribeWindow(rootWindow)
@@ -86,7 +95,6 @@ ApplicationWindow {
     //------------------------------------------------------------------
     //--------- First Steps Wizard --------------------------------------------------
     //------------------------------------------------------------------
-
     Component {
         id: component_firstStepsWizard
         FirstStepsWizard {
@@ -108,7 +116,7 @@ ApplicationWindow {
         }
     }
 
-    Action{
+    Action {
         id: firstStepsAction
         text: qsTr("First steps")
         icon {
@@ -125,12 +133,10 @@ ApplicationWindow {
     //------------------------------------------------------------------
     //--------- window actions --------------------------------------------------
     //------------------------------------------------------------------
-
     QtObject {
         id: windowActionPrivate
         property int compactWidthLimit: 1000
     }
-
 
     property bool compactMode: false
 
@@ -140,12 +146,11 @@ ApplicationWindow {
     onCompactModeChanged: console.log("compact = " + compactMode)
 
     //Menu
-    signal openMainMenuCalled()
+    signal openMainMenuCalled
     signal openSubMenuCalled(var menu)
 
-
     //Focus
-    signal forceFocusOnEscapePressed()
+    signal forceFocusOnEscapePressed
 
     Shortcut {
         sequence: "Esc"
@@ -156,71 +161,68 @@ ApplicationWindow {
     }
 
     //drawers:
-    signal closeRightDrawerCalled()
-    signal closeLeftDrawerCalled()
-
+    signal closeRightDrawerCalled
+    signal closeLeftDrawerCalled
 
     signal setNavigationTreeItemIdCalled(int projectId, int treeItemId)
     signal setNavigationTreeItemParentIdCalled(int projectId, int treeItemParentId)
-
-
 
     property alias protectedSignals: protectedSignals
     QtObject {
         id: protectedSignals
 
         // Welcome
-            signal openWelcomePopupCalled()
-            signal closeWelcomePopupCalled()
+        signal openWelcomePopupCalled
+        signal closeWelcomePopupCalled
 
         // project:
-            signal showNewProjectPageCalled()
-            signal showRecentPageCalled()
-            signal showPrintPageCalled()
-            signal showImportPageCalled()
-            signal showExportPageCalled()
+        signal showNewProjectPageCalled
+        signal showRecentPageCalled
+        signal showPrintPageCalled
+        signal showImportPageCalled
+        signal showExportPageCalled
         // examples:
-            signal showExamplePageCalled()
+        signal showExamplePageCalled
         // settings:
-            signal showSettingsPageCalled()
+        signal showSettingsPageCalled
         // help:
-            signal showHelpPageCalled()
-            signal showHelpContentsCalled()
-            signal showFaqCalled()
-            signal showAboutCalled()
-            signal showAboutQtCalled()
+        signal showHelpPageCalled
+        signal showHelpContentsCalled
+        signal showFaqCalled
+        signal showAboutCalled
+        signal showAboutQtCalled
 
-            signal showFirstStepsWizardCalled(string page)
+        signal showFirstStepsWizardCalled(string page)
 
-            signal fullScreenCalled(bool value)
+        signal fullScreenCalled(bool value)
 
-
-            signal openThemePageCalled()
-            signal setBreadcrumbCurrentTreeItemCalled(int projectId, int treeItemId)
+        signal openThemePageCalled
+        signal setBreadcrumbCurrentTreeItemCalled(int projectId, int treeItemId)
 
         Component.onCompleted: {
+
         }
     }
 
     //------------------------------------------------------------------
     //---------window title---------
     //------------------------------------------------------------------
-
-    Connections{
+    Connections {
         target: skrData.projectHub()
-        function onActiveProjectChanged(projectId){
+        function onActiveProjectChanged(projectId) {
 
-            rootWindow.title = "Skribisto - %1".arg(skrData.projectHub().getProjectName(projectId))
+            rootWindow.title = "Skribisto - %1".arg(
+                        skrData.projectHub().getProjectName(projectId))
         }
     }
 
-    Connections{
+    Connections {
         target: skrData.projectHub()
-        function onProjectNameChanged(projectId, newTitle){
+        function onProjectNameChanged(projectId, newTitle) {
             var activeProjectId = skrData.projectHub().getActiveProject()
-            if(projectId === activeProjectId){
-                rootWindow.title = "Skribisto - %1".arg(skrData.projectHub().getProjectName(projectId))
-
+            if (projectId === activeProjectId) {
+                rootWindow.title = "Skribisto - %1".arg(
+                            skrData.projectHub().getProjectName(projectId))
             }
         }
     }
@@ -228,7 +230,6 @@ ApplicationWindow {
     //-------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------
-
     property alias viewManager: rootPage.viewManager
 
     RootPage {
@@ -236,31 +237,23 @@ ApplicationWindow {
         anchors.fill: parent
     }
 
-
-
-
     Connections {
         target: protectedSignals
         function onFullScreenCalled(value) {
             console.log("fullscreen")
-            if(value){
+            if (value) {
 
                 visibility = Window.FullScreen
-            }
-            else {
+            } else {
                 visibility = Window.AutomaticVisibility
             }
             SkrTheme.setDistractionFree(value)
-
         }
     }
-
 
     //------------------------------------------------------------------
     //---------Fullscreen---------
     //------------------------------------------------------------------
-
-
     Action {
 
         id: fullscreenAction
@@ -284,42 +277,26 @@ ApplicationWindow {
         onActivated: fullscreenAction.trigger()
     }
 
-
-
-
-
-
-
-
-
-
-
     //------------------------------------------------------------------
     //--------- Read arguments ---------------------------
     //------------------------------------------------------------------
-
-
-
-
-
     property url testProjectFileName: "qrc:/testfiles/skribisto_test_project.skrib"
-    function openArgument(){
-
-
+    function openArgument() {
 
         var arg
         var arguments
         var isTestProject = false
         var oneProjectInArgument = false
         var projectInArgument = ""
+        var openingSomethingInArgument = false
 
         arguments = Qt.application.arguments
         for (arg in arguments) {
-            if(arg === 0 ){
+            if (arg === 0) {
                 continue
             }
-            //console.log("argument : " , arguments[arg])
 
+            //console.log("argument : " , arguments[arg])
             if (arguments[arg] === "--testProject") {
                 //                var result = skrData.projectHub().loadProject(
                 //                            testProjectFileName)
@@ -331,25 +308,22 @@ ApplicationWindow {
                 //show Write window
                 //                writeOverviewWindowAction.trigger()
                 isTestProject = true
+                openingSomethingInArgument = true
+            } else if (arguments[arg].slice(-6) === ".skrib") {
 
-            }
-            else if (arguments[arg].slice(-6) === ".skrib"){
+                oneProjectInArgument = true
 
-
-                    oneProjectInArgument = true
-
-                    //console.log("argument skrib : " , arguments[arg])
-                    var url = skrQMLTools.getURLFromLocalFile(arguments[arg])
-                    //console.log("argument skrib url : " , url)
-                    //TODO: temporary until async is done
-                    Globals.loadingPopupCalled()
-                    openArgumentTimer.fileName = url
-                    openArgumentTimer.start()
-
-
-            }
-            else if(arguments[arg] === "--firstStepsAtPluginPage"){
-            openFirstStepWithPluginPageTimer.start()
+                //console.log("argument skrib : " , arguments[arg])
+                var url = skrQMLTools.getURLFromLocalFile(arguments[arg])
+                //console.log("argument skrib url : " , url)
+                //TODO: temporary until async is done
+                Globals.loadingPopupCalled()
+                openArgumentTimer.fileName = url
+                openArgumentTimer.start()
+                openingSomethingInArgument = true
+            } else if (arguments[arg] === "--firstStepsAtPluginPage") {
+                openFirstStepWithPluginPageTimer.start()
+                openingSomethingInArgument = true
             }
         }
         //        if(!isTestProject & oneProjectInArgument){
@@ -360,30 +334,34 @@ ApplicationWindow {
         //        }
 
         // if create empty project at start is true :
-        if (!isTestProject & !oneProjectInArgument & skrData.projectHub().getProjectCount() === 0 & SkrSettings.behaviorSettings.createEmptyProjectAtStart === true) {
+        if (!isTestProject & !oneProjectInArgument & skrData.projectHub(
+                    ).getProjectCount(
+                    ) === 0 & SkrSettings.behaviorSettings.createEmptyProjectAtStart === true) {
             //TODO: temporary until async is done
             Globals.loadingPopupCalled()
             openArgumentTimer.fileName = ""
             openArgumentTimer.start()
+            openingSomethingInArgument = true
+
             //skrData.projectHub().loadProject("")
 
             //show Write window
             //            writeOverviewWindowAction.trigger()
-
         }
+
+        return openingSomethingInArgument
     }
 
-    Timer{
+    Timer {
         id: openFirstStepWithPluginPageTimer
         interval: 110
         onTriggered: {
             protectedSignals.showFirstStepsWizardCalled("pluginPage")
-
         }
     }
 
     //TODO: temporary until async is done
-    Timer{
+    Timer {
         id: openArgumentTimer
 
         property url fileName
@@ -393,26 +371,23 @@ ApplicationWindow {
         onTriggered: {
             var result = skrData.projectHub().loadProject(fileName)
             console.log("project loaded : " + result.success)
-            console.log("projectFileName :", testProjectFileName.toString(), "\n")
-            //skrData.projectHub().setProjectName(1, "test")
+            console.log("projectFileName :",
+                        testProjectFileName.toString(), "\n")
 
-            if(!result.success){
+            //skrData.projectHub().setProjectName(1, "test")
+            if (!result.success) {
                 return
             }
             var projectId = result.getData("projectId", -1)
 
             //            rootPage.viewManager.loadTreeItemAt(projectId, 1, Qt.TopLeftCorner)
             //            rootPage.viewManager.loadTreeItemAt(projectId, 8, Qt.BottomLeftCorner)
-
-
         }
     }
-
 
     //------------------------------------------------------------------
     //---------Center vertically text cursor---------------------------
     //------------------------------------------------------------------
-
     Action {
 
         id: centerTextCursorAction
@@ -427,7 +402,6 @@ ApplicationWindow {
         checkable: true
         onCheckedChanged: {
             SkrSettings.behaviorSettings.centerTextCursor = centerTextCursorAction.checked
-
         }
     }
 
@@ -440,8 +414,7 @@ ApplicationWindow {
     //------------------------------------------------------------------
     //--------- Themes---------------------------------------------
     //------------------------------------------------------------------
-
-    Action{
+    Action {
         id: themesColorAction
         text: qsTr("Themes")
         icon {
@@ -453,12 +426,11 @@ ApplicationWindow {
         onTriggered: {
             protectedSignals.openThemePageCalled()
         }
-
     }
 
     Connections {
         target: rootWindow.protectedSignals
-        function onOpenThemePageCalled(){
+        function onOpenThemePageCalled() {
             viewManager.loadProjectIndependantPage("THEME")
         }
     }
@@ -466,7 +438,6 @@ ApplicationWindow {
     //------------------------------------------------------------------
     //---------Help Content---------------------------------------------
     //------------------------------------------------------------------
-
     Action {
 
         id: showUserManualAction
@@ -479,13 +450,12 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show user manual")
-            Qt.openUrlExternally("https://manual.skribisto.eu/en_US/manual.html")
+            Qt.openUrlExternally(
+                        "https://manual.skribisto.eu/en_US/manual.html")
         }
-
-
     }
     Shortcut {
-        sequence:  StandardKey.HelpContents
+        sequence: StandardKey.HelpContents
         context: Qt.ApplicationShortcut
         onActivated: showUserManualAction.trigger()
     }
@@ -493,27 +463,25 @@ ApplicationWindow {
     //------------------------------------------------------------------
     //---------FAQ---------------------------------------------
     //------------------------------------------------------------------
-
     Action {
 
         id: showFaqAction
         text: qsTr("&FAQ")
-                icon {
-                    source: "qrc:///icons/backup/question.svg"
-                    height: 50
-                    width: 50
-                }
+        icon {
+            source: "qrc:///icons/backup/question.svg"
+            height: 50
+            width: 50
+        }
 
         onTriggered: {
             console.log("show FAQ")
             Qt.openUrlExternally("https://manual.skribisto.eu/en_US/faq.html")
         }
-
     }
+
     //------------------------------------------------------------------
     //--------- About---------------------------------------------
     //------------------------------------------------------------------
-
     Action {
 
         id: showAboutAction
@@ -530,36 +498,32 @@ ApplicationWindow {
             protectedSignals.showHelpPageCalled()
             protectedSignals.showAboutCalled()
         }
-
     }
 
     //------------------------------------------------------------------
     //--------- About Qt---------------------------------------------
     //------------------------------------------------------------------
-
     Action {
 
         id: showAboutQtAction
         text: qsTr("About &Qt")
+
         //        icon {
         //            source: "qrc:///icons/backup/system-help.svg"
         //            height: 50
         //            width: 50
         //        }
-
         onTriggered: {
             console.log("show about Qt")
             protectedSignals.openWelcomePopupCalled()
             protectedSignals.showHelpPageCalled()
             protectedSignals.showAboutQtCalled()
         }
-
     }
 
     //------------------------------------------------------------------
     //---------New project---------------------------------------------
     //------------------------------------------------------------------
-
     Action {
 
         id: newProjectAction
@@ -576,18 +540,16 @@ ApplicationWindow {
             protectedSignals.openWelcomePopupCalled()
             protectedSignals.showNewProjectPageCalled()
         }
-
-
     }
     Shortcut {
-        sequence:  StandardKey.New
+        sequence: StandardKey.New
         context: Qt.WindowShortcut
         onActivated: newProjectAction.trigger()
     }
+
     //------------------------------------------------------------------
     //--------- Check Spelling ---------
     //------------------------------------------------------------------
-
     Action {
 
         id: checkSpellingAction
@@ -598,9 +560,7 @@ ApplicationWindow {
             width: 50
         }
         checkable: true
-        checked:     SkrSettings.spellCheckingSettings.spellCheckingActivation
-
-
+        checked: SkrSettings.spellCheckingSettings.spellCheckingActivation
 
         onCheckedChanged: {
             console.log("check spelling", checkSpellingAction.checked)
@@ -609,9 +569,8 @@ ApplicationWindow {
         }
     }
 
-
     Shortcut {
-        sequence:  "Shift+F7"
+        sequence: "Shift+F7"
         context: Qt.ApplicationShortcut
         onActivated: checkSpellingAction.trigger()
     }
@@ -619,7 +578,6 @@ ApplicationWindow {
     //------------------------------------------------------------------
     //---------Open project---------
     //------------------------------------------------------------------
-
     Action {
 
         id: openProjectAction
@@ -634,19 +592,15 @@ ApplicationWindow {
         onTriggered: {
             console.log("Open Project")
             openFileDialog.open()
-
         }
-
-
-
     }
 
-    LabPlatform.FileDialog{
-
+    LabPlatform.FileDialog {
 
         id: openFileDialog
         title: qsTr("Open an existing project")
-        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        folder: LabPlatform.StandardPaths.writableLocation(
+                    LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.OpenFile
         selectedNameFilter.index: 0
         nameFilters: ["Skribisto file (*.skrib)"]
@@ -654,17 +608,14 @@ ApplicationWindow {
 
             var file = openFileDialog.file
 
+            if (skrData.projectHub().isURLAlreadyLoaded(file)) {
 
-            if(skrData.projectHub().isURLAlreadyLoaded(file)){
-
-            }
-            else {
+            } else {
                 //TODO: temporary until async is done
                 Globals.loadingPopupCalled()
                 openProjectTimer.fileName = file
                 openProjectTimer.start()
             }
-
         }
         onRejected: {
 
@@ -672,7 +623,7 @@ ApplicationWindow {
     }
 
     //TODO: temporary until async is done
-    Timer{
+    Timer {
         id: openProjectTimer
 
         property url fileName
@@ -686,7 +637,6 @@ ApplicationWindow {
     //------------------------------------------------------------------
     //---------Save---------
     //------------------------------------------------------------------
-
     Action {
 
         id: saveAction
@@ -703,61 +653,51 @@ ApplicationWindow {
             var projectId = skrData.projectHub().getActiveProject()
             var result = skrData.projectHub().saveProject(projectId)
 
-            if (result.containsErrorCodeDetail("no_path")){
+            if (result.containsErrorCodeDetail("no_path")) {
                 saveAsFileDialog.open()
             }
-
-
-
         }
     }
     Shortcut {
         sequence: StandardKey.Save
         context: Qt.ApplicationShortcut
         onActivated: saveAction.trigger()
-
     }
 
     Connections {
         target: skrData.projectHub()
-        function onActiveProjectChanged(projectId){
-            if (!skrData.projectHub().isProjectNotModifiedOnce(projectId)){
+        function onActiveProjectChanged(projectId) {
+            if (!skrData.projectHub().isProjectNotModifiedOnce(projectId)) {
                 saveAction.enabled = true
-            }
-            else{
+            } else {
                 saveAction.enabled = false
             }
         }
-
     }
 
     Connections {
         target: skrData.projectHub()
-        function onProjectNotSavedAnymore(projectId){
+        function onProjectNotSavedAnymore(projectId) {
             if (projectId === skrData.projectHub().getActiveProject()
-                    && !skrData.projectHub().isProjectNotModifiedOnce(projectId)){
+                    && !skrData.projectHub().isProjectNotModifiedOnce(
+                        projectId)) {
                 saveAction.enabled = true
             }
         }
-
     }
 
     Connections {
         target: skrData.projectHub()
-        function onProjectSaved(projectId){
-            if (projectId === skrData.projectHub().getActiveProject()){
+        function onProjectSaved(projectId) {
+            if (projectId === skrData.projectHub().getActiveProject()) {
                 saveAction.enabled = false
             }
         }
-
     }
-
-
 
     //------------------------------------------------------------------
     //---------Save All---------
     //------------------------------------------------------------------
-
     Action {
 
         id: saveAllAction
@@ -774,13 +714,13 @@ ApplicationWindow {
             var projectIdList = skrData.projectHub().getProjectIdList()
             var projectCount = skrData.projectHub().getProjectCount()
 
-            var i;
-            for (i = 0; i < projectCount ; i++ ){
+            var i
+            for (i = 0; i < projectCount; i++) {
                 var projectId = projectIdList[i]
                 var result = skrData.projectHub().saveProject(projectId)
 
-                if (result.containsErrorCodeDetail("no_path")){
-                    var errorProjectId = result.getData("projectId", -2);
+                if (result.containsErrorCodeDetail("no_path")) {
+                    var errorProjectId = result.getData("projectId", -2)
                     saveAsFileDialog.projectId = errorProjectId
                     saveAsFileDialog.open()
                 }
@@ -791,25 +731,20 @@ ApplicationWindow {
         sequence: qsTr("Ctrl+Shift+S")
         context: Qt.ApplicationShortcut
         onActivated: saveAllAction.trigger()
-
     }
 
     Connections {
         target: skrData.projectHub()
-        function onIsThereAnyLoadedProjectChanged(value){
+        function onIsThereAnyLoadedProjectChanged(value) {
             saveAction.enabled = value
             saveAsAction.enabled = value
             saveAllAction.enabled = value
-
         }
-
     }
-
 
     //------------------------------------------------------------------
     //---------Save As---------
     //------------------------------------------------------------------
-
     Action {
 
         id: saveAsAction
@@ -825,17 +760,19 @@ ApplicationWindow {
         onTriggered: {
             var projectId = skrData.projectHub().getActiveProject()
             saveACopyFileDialog.projectId = projectId
-            saveACopyFileDialog.projectName = skrData.projectHub().getProjectName(projectId)
+            saveACopyFileDialog.projectName = skrData.projectHub(
+                        ).getProjectName(projectId)
             saveAsFileDialog.open()
 
-
-            if(!skrData.projectHub().getPath(projectId) && skrQMLTools.isURLSchemeQRC(skrData.projectHub().getPath(projectId))){
-                saveAsFileDialog.folder = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+            if (!skrData.projectHub().getPath(projectId)
+                    && skrQMLTools.isURLSchemeQRC(skrData.projectHub().getPath(
+                                                      projectId))) {
+                saveAsFileDialog.folder = LabPlatform.StandardPaths.writableLocation(
+                            LabPlatform.StandardPaths.DocumentsLocation)
+            } else {
+                saveAsFileDialog.currentFile = skrQMLTools.translateURLToLocalFile(
+                            skrData.projectHub().getPath(projectId))
             }
-            else {
-                saveAsFileDialog.currentFile = skrQMLTools.translateURLToLocalFile(skrData.projectHub().getPath(projectId))
-            }
-
         }
     }
 
@@ -843,16 +780,16 @@ ApplicationWindow {
         sequence: StandardKey.SaveAs
         context: Qt.ApplicationShortcut
         onActivated: saveAsAction.trigger()
-
     }
 
-    LabPlatform.FileDialog{
+    LabPlatform.FileDialog {
         property int projectId: -2
         property string projectName: ""
 
         id: saveAsFileDialog
         title: qsTr("Save the \"%1\" project as …").arg(projectName)
-        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        folder: LabPlatform.StandardPaths.writableLocation(
+                    LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
         nameFilters: ["Skribisto file (*.skrib)"]
@@ -860,26 +797,26 @@ ApplicationWindow {
 
             var file = saveAsFileDialog.file.toString()
 
-            if(file.indexOf(".skrib") === -1){ // not found
+            if (file.indexOf(".skrib") === -1) {
+                // not found
                 file = file + ".skrib"
             }
-            if(projectId == -2){
+            if (projectId == -2) {
                 projectId = skrData.projectHub().getActiveProject()
             }
 
-
-            if(projectName == ""){
-                projectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
+            if (projectName == "") {
+                projectName = skrData.projectHub().getProjectName(
+                            skrData.projectHub().getActiveProject())
             }
 
-            var result = skrData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = skrData.projectHub().saveProjectAs(
+                        projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (result.containsErrorCodeDetail("path_is_readonly")){
+            if (result.containsErrorCodeDetail("path_is_readonly")) {
                 // Dialog:
                 pathIsReadOnlydialog.open()
-
             }
-
         }
         onRejected: {
 
@@ -892,12 +829,9 @@ ApplicationWindow {
         onAccepted: saveAsFileDialog.open()
     }
 
-
     //------------------------------------------------------------------
     //---------Save A Copy---------
     //------------------------------------------------------------------
-
-
     Action {
 
         id: saveACopyAction
@@ -912,19 +846,20 @@ ApplicationWindow {
         onTriggered: {
             var projectId = skrData.projectHub().getActiveProject()
             saveACopyFileDialog.projectId = projectId
-            saveACopyFileDialog.projectName = skrData.projectHub().getProjectName(projectId)
+            saveACopyFileDialog.projectName = skrData.projectHub(
+                        ).getProjectName(projectId)
             saveACopyFileDialog.open()
-
         }
     }
 
-    LabPlatform.FileDialog{
+    LabPlatform.FileDialog {
         property int projectId: -2
         property string projectName: ""
 
         id: saveACopyFileDialog
         title: qsTr("Save a copy of the \"%1\" project as …").arg(projectName)
-        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        folder: LabPlatform.StandardPaths.writableLocation(
+                    LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
         nameFilters: ["Skribisto file (*.skrib)"]
@@ -932,27 +867,27 @@ ApplicationWindow {
 
             var file = saveACopyFileDialog.file.toString()
 
-
-            if(file.indexOf(".skrib") === -1){ // not found
+            if (file.indexOf(".skrib") === -1) {
+                // not found
                 file = file + ".skrib"
             }
-            if(projectId == -2){
+            if (projectId == -2) {
                 projectId = skrData.projectHub().getActiveProject()
             }
-            console.log("FileDialog :" , projectId)
+            console.log("FileDialog :", projectId)
 
-            if(projectName == ""){
-                projectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
+            if (projectName == "") {
+                projectName = skrData.projectHub().getProjectName(
+                            skrData.projectHub().getActiveProject())
             }
 
-            var result = skrData.projectHub().saveAProjectCopy(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = skrData.projectHub().saveAProjectCopy(
+                        projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (result.containsErrorCodeDetail("path_is_readonly")){
+            if (result.containsErrorCodeDetail("path_is_readonly")) {
                 // Dialog:
                 saveACopyFileDialog.open()
-
             }
-
         }
         onRejected: {
 
@@ -964,6 +899,7 @@ ApplicationWindow {
         text: qsTr("This path is read-only, please choose another path.")
         onAccepted: saveACopyFileDialog.open()
     }
+
     //    Shortcut {
     //        sequence: StandardKey.Save
     //        context: Qt.ApplicationShortcut
@@ -984,7 +920,6 @@ ApplicationWindow {
     //-----------------------------------------------------------------------------
     //--------- Splash screen  ----------------------------------------------------
     //-----------------------------------------------------------------------------
-
     Item {
         id: splash
         parent: Overlay.overlay
@@ -998,8 +933,6 @@ ApplicationWindow {
         Image {
             id: splashImage
             source: "qrc:/pics/skribisto.svg"
-
-
 
             //                layer.enabled: true
             //                layer.samplerName: "maskSource"
@@ -1015,10 +948,11 @@ ApplicationWindow {
             //                            }
             //                        "
             //                }
-
         }
         Timer {
-            interval: splash.timeoutInterval; running: true; repeat: false
+            interval: splash.timeoutInterval
+            running: true
+            repeat: false
             onTriggered: {
                 splash.visible = false
                 splash.timeout()
@@ -1030,8 +964,6 @@ ApplicationWindow {
     //-----------------------------------------------------------------------------
     //--------- Loading Modal Popup  --------------------------------------------
     //-----------------------------------------------------------------------------
-
-
     SkrPopup {
         id: loadingPopup
         parent: Overlay.overlay
@@ -1050,17 +982,14 @@ ApplicationWindow {
 
             radius: 10
             color: SkrTheme.pageBackground
-
         }
 
-
-        contentItem: ColumnLayout{
+        contentItem: ColumnLayout {
 
             SkrLabel {
                 id: loadingPopupLabel
 
                 Layout.alignment: Qt.AlignHCenter
-
 
                 text: "<h1>" + qsTr("Loading a project") + "</h1>"
                 focus: true
@@ -1083,16 +1012,12 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignHCenter
                 running: loadingPopup.visible
             }
-
-
         }
-
-
-
 
         Timer {
             id: loadingPopupTimeoutTimer
-            interval: loadingPopup.timeoutInterval; repeat: false
+            interval: loadingPopup.timeoutInterval
+            repeat: false
             onTriggered: {
                 loadingPopup.visible = false
                 loadingPopup.timeout()
@@ -1101,24 +1026,24 @@ ApplicationWindow {
     }
 
     //TODO: temporary until async is done
-    Connections{
+    Connections {
         target: Globals
-        function onLoadingPopupCalled(){
+        function onLoadingPopupCalled() {
             loadingPopup.open()
             loadingPopupTimeoutTimer.start()
         }
     }
 
-    Connections{
+    Connections {
         target: skrData.projectHub()
-        function onProjectToBeLoaded(){
+        function onProjectToBeLoaded() {
             loadingPopup.open()
             loadingPopupTimeoutTimer.start()
         }
     }
-    Connections{
+    Connections {
         target: skrData.projectHub()
-        function onProjectLoaded(projectId){
+        function onProjectLoaded(projectId) {
             closeLoadingPopupTimer.start()
         }
     }
@@ -1132,15 +1057,11 @@ ApplicationWindow {
             loadingPopup.close()
             loadingPopupTimeoutTimer.stop()
         }
-
     }
-
-
 
     //------------------------------------------------------------
     //------------Back up-----------------------------------
     //------------------------------------------------------------
-
     Action {
 
         id: backUpAction
@@ -1154,13 +1075,14 @@ ApplicationWindow {
         //shortcut: StandardKey.SaveAs
         onTriggered: {
 
-
             var backupPaths = SkrSettings.backupSettings.paths
             var backupPathList = backupPaths.split(";")
 
             //no backup path set
-            if (backupPaths === ""){
-                skrData.errorHub().addWarning(qsTr("Back up failed: The backup is not configured"))
+            if (backupPaths === "") {
+                skrData.errorHub().addWarning(
+                            qsTr(
+                                "Back up failed: The backup is not configured"))
 
                 return
             }
@@ -1168,49 +1090,48 @@ ApplicationWindow {
             var projectIdList = skrData.projectHub().getProjectIdList()
             var projectCount = skrData.projectHub().getProjectCount()
 
-
             // all projects :
-            var i;
-            for (i = 0; i < projectCount ; i++ ){
+            var i
+            for (i = 0; i < projectCount; i++) {
                 var projectId = projectIdList[i]
 
-
                 //no project path
-                if (!skrData.projectHub().getPath(projectId)){
-                    skrData.errorHub().addWarning(qsTr("Back up failed:  the project must be saved at least once"))
+                if (!skrData.projectHub().getPath(projectId)) {
+                    skrData.errorHub().addWarning(
+                                qsTr("Back up failed:  the project must be saved at least once"))
 
                     break
                 }
 
                 // in all backup paths :
-                var j;
-                for (j = 0; j < backupPathList.length ; j++ ){
-                    var path = skrQMLTools.getURLFromLocalFile(backupPathList[j])
+                var j
+                for (j = 0; j < backupPathList.length; j++) {
+                    var path = skrQMLTools.getURLFromLocalFile(
+                                backupPathList[j])
 
-
-                    if (!path){
-                        skrData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 can't be used").arg(backupPathList[j]))
+                    if (!path) {
+                        skrData.errorHub().addWarning(
+                                    qsTr("Back up failed: The backup path %1 can't be used").arg(
+                                        backupPathList[j]))
                         continue
                     }
 
+                    var result = skrData.projectHub().backupAProject(projectId,
+                                                                     "skrib",
+                                                                     path)
 
-
-                    var result = skrData.projectHub().backupAProject(projectId, "skrib", path)
-
-                    if (result.containsErrorCodeDetail("path_is_readonly")){
-                        skrData.errorHub().addWarning(qsTr("Back up failed: The backup path %1 is read only").arg(path))
-
+                    if (result.containsErrorCodeDetail("path_is_readonly")) {
+                        skrData.errorHub().addWarning(
+                                    qsTr("Back up failed: The backup path %1 is read only").arg(
+                                        path))
                     }
-                    if(result.isSuccess()){
+                    if (result.isSuccess()) {
                         skrData.errorHub().addOk(qsTr("Back up successful"))
                     }
-
                 }
             }
-
         }
     }
-
 
     //------------------------------------------------------------
     //------------Print project-----------------------------------
@@ -1228,7 +1149,6 @@ ApplicationWindow {
         onTriggered: {
             protectedSignals.openWelcomePopupCalled()
             protectedSignals.showPrintPageCalled()
-
         }
     }
 
@@ -1272,34 +1192,33 @@ ApplicationWindow {
         onTriggered: {
 
             protectedSignals.openWelcomePopupCalled()
-            protectedSignals.showExportPageCalled()        }
+            protectedSignals.showExportPageCalled()
+        }
     }
 
     //------------------------------------------------------------
     //------------Close project-----------------------------------
     //------------------------------------------------------------
-
-
-    Connections{
+    Connections {
         target: Globals
-        function onCloseProjectCalled(projectId){
+        function onCloseProjectCalled(projectId) {
             closeProject(projectId)
         }
     }
 
-    function closeProject(projectId){
+    function closeProject(projectId) {
 
         var savedBool = skrData.projectHub().isProjectSaved(projectId)
-        if(savedBool || skrData.projectHub().isProjectNotModifiedOnce(projectId)){
+        if (savedBool || skrData.projectHub().isProjectNotModifiedOnce(
+                    projectId)) {
             skrData.projectHub().closeProject(projectId)
-        }
-        else{
+        } else {
             saveOrNotBeforeClosingProjectDialog.projectId = projectId
-            saveOrNotBeforeClosingProjectDialog.projectName = skrData.projectHub().getProjectName(projectId)
+            saveOrNotBeforeClosingProjectDialog.projectName = skrData.projectHub(
+                        ).getProjectName(projectId)
             saveOrNotBeforeClosingProjectDialog.open()
         }
     }
-
 
     SimpleDialog {
         property int projectId: -2
@@ -1307,49 +1226,46 @@ ApplicationWindow {
 
         id: saveOrNotBeforeClosingProjectDialog
         title: "Warning"
-        text: qsTr("The project %1 is not saved. Do you want to save it before quitting ?").arg(projectName)
-        standardButtons: Dialog.Save  | Dialog.Discard | Dialog.Cancel
+        text: qsTr("The project %1 is not saved. Do you want to save it before quitting ?").arg(
+                  projectName)
+        standardButtons: Dialog.Save | Dialog.Discard | Dialog.Cancel
 
         onRejected: {
             saveOrNotBeforeClosingProjectDialog.close()
-
         }
 
         onDiscarded: {
             skrData.projectHub().closeProject(projectId)
             saveOrNotBeforeClosingProjectDialog.close()
-
         }
 
         onAccepted: {
 
-
             var result = skrData.projectHub().saveProject(projectId)
-            if (result.containsErrorCodeDetail("no_path")){
-                var errorProjectId = result.getData("projectId", -2);
+            if (result.containsErrorCodeDetail("no_path")) {
+                var errorProjectId = result.getData("projectId", -2)
                 saveAsBeforeClosingProjectFileDialog.projectId = errorProjectId
-                saveAsBeforeClosingProjectFileDialog.projectName = skrData.projectHub().getProjectName(projectId)
+                saveAsBeforeClosingProjectFileDialog.projectName = skrData.projectHub(
+                            ).getProjectName(projectId)
                 saveAsBeforeClosingProjectFileDialog.open()
-                saveAsBeforeClosingProjectFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)[0]
-            }
-            else {
+                saveAsBeforeClosingProjectFileDialog.currentFile
+                        = LabPlatform.StandardPaths.writableLocation(
+                            LabPlatform.StandardPaths.DocumentsLocation)[0]
+            } else {
                 skrData.projectHub().closeProject(projectId)
             }
             saveOrNotBeforeClosingProjectDialog.close()
-
-
         }
-
-
     }
 
-    LabPlatform.FileDialog{
+    LabPlatform.FileDialog {
         property int projectId: -2
         property string projectName: ""
 
         id: saveAsBeforeClosingProjectFileDialog
         title: qsTr("Save the %1 project as …").arg(projectName)
-        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        folder: LabPlatform.StandardPaths.writableLocation(
+                    LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
         nameFilters: ["Skribisto file (*.skrib)"]
@@ -1357,26 +1273,27 @@ ApplicationWindow {
 
             var file = saveAsFileDialog.file.toString()
 
-            if(file.indexOf(".skrib") === -1){ // not found
+            if (file.indexOf(".skrib") === -1) {
+                // not found
                 file = file + ".skrib"
             }
-            if(projectId == -2){
+            if (projectId == -2) {
                 projectId = skrData.projectHub().getActiveProject()
             }
-            console.log("FileDialog :" , projectId)
+            console.log("FileDialog :", projectId)
 
-            if(projectName == ""){
-                projectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
+            if (projectName == "") {
+                projectName = skrData.projectHub().getProjectName(
+                            skrData.projectHub().getActiveProject())
             }
 
-            var result = skrData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = skrData.projectHub().saveProjectAs(
+                        projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (result.containsErrorCodeDetail("path_is_readonly")){
+            if (result.containsErrorCodeDetail("path_is_readonly")) {
                 // Dialog:
                 pathIsReadOnlydialog.open()
-
-            }
-            else{
+            } else {
                 skrData.projectHub().closeProject(projectId)
                 saveOrNotBeforeClosingProjectDialog.close()
             }
@@ -1387,11 +1304,9 @@ ApplicationWindow {
         }
     }
 
-
     //------------------------------------------------------------
     //------------Close current project-----------------------------------
     //------------------------------------------------------------
-
     property string activeProjectName: ""
     Action {
         id: closeCurrentProjectAction
@@ -1409,23 +1324,22 @@ ApplicationWindow {
             var activeProjectId = skrData.projectHub().getActiveProject()
             closeProject(activeProjectId)
         }
-
     }
 
-
-
-    Connections{
+    Connections {
         target: skrData.projectHub()
-        function onActiveProjectChanged(){
-            activeProjectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
+        function onActiveProjectChanged() {
+            activeProjectName = skrData.projectHub().getProjectName(
+                        skrData.projectHub().getActiveProject())
         }
     }
-    Connections{
+    Connections {
         target: skrData.projectHub()
-        function onProjectNameChanged(projectId, newTitle){
+        function onProjectNameChanged(projectId, newTitle) {
             var activeProjectId = skrData.projectHub().getActiveProject()
-            if(projectId === activeProjectId){
-                activeProjectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
+            if (projectId === activeProjectId) {
+                activeProjectName = skrData.projectHub().getProjectName(
+                            skrData.projectHub().getActiveProject())
             }
         }
     }
@@ -1433,16 +1347,12 @@ ApplicationWindow {
     //------------------------------------------------------------
     //------------Quit logic-----------------------------------
     //------------------------------------------------------------
-
-
-
-    Connections{
+    Connections {
         target: Globals
-        function onQuitCalled(){
+        function onQuitCalled() {
             rootWindow.close()
         }
     }
-
 
     Action {
         id: quitAction
@@ -1458,40 +1368,31 @@ ApplicationWindow {
         onTriggered: {
             console.log("quitting")
 
-
             // determine if all projects are saved
-
-
             var projectsNotSavedList = skrData.projectHub().projectsNotSaved()
-            var i;
-            for (i = 0; i < projectsNotSavedList.length ; i++ ){
+            var i
+            for (i = 0; i < projectsNotSavedList.length; i++) {
                 var projectId = projectsNotSavedList[i]
 
-                if(skrData.projectHub().isProjectNotModifiedOnce(projectId)){
+                if (skrData.projectHub().isProjectNotModifiedOnce(projectId)) {
                     continue
-                }
-                else {
+                } else {
 
                     saveOrNotBeforeQuittingDialog.projectId = projectId
-                    saveOrNotBeforeQuittingDialog.projectName = skrData.projectHub().getProjectName(projectId)
+                    saveOrNotBeforeQuittingDialog.projectName = skrData.projectHub(
+                                ).getProjectName(projectId)
                     saveOrNotBeforeQuittingDialog.open()
                     //saveAsBeforeQuittingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
-
                 }
-
             }
-            if(projectsNotSavedList.length === 0){
+            if (projectsNotSavedList.length === 0) {
 
-
-
-
-                skrUserSettings.setSetting("window", "numberOfWindows", skrWindowManager.getNumberOfWindows())
+                skrUserSettings.setSetting(
+                            "window", "numberOfWindows",
+                            skrWindowManager.getNumberOfWindows())
                 quitConfirmed = true
                 skrData.projectHub().closeAllProjects()
                 Globals.quitCalled()
-                
-
-
             }
         }
     }
@@ -1507,14 +1408,13 @@ ApplicationWindow {
         skrUserSettings.setSetting(group, "visibility", rootWindow.visibility)
         rootPage.viewManager.saveViewsToSettings()
 
-
-        if(skrWindowManager.getNumberOfWindows() === 1 && quitAction.quitConfirmed === false){
+        if (skrWindowManager.getNumberOfWindows() === 1
+                && quitAction.quitConfirmed === false) {
             quitAction.trigger()
 
             close.accepted = false
             return
         }
-
 
         skrWindowManager.deleteWindow(this)
     }
@@ -1525,15 +1425,15 @@ ApplicationWindow {
         onActivated: quitAction.trigger()
     }
 
-
     SimpleDialog {
         property int projectId: -2
         property string projectName: ""
 
         id: saveOrNotBeforeQuittingDialog
         title: "Warning"
-        text: qsTr("The project %1 is not saved. Do you want to save it before quitting ?").arg(projectName)
-        standardButtons: Dialog.Save  | Dialog.Discard | Dialog.Cancel
+        text: qsTr("The project %1 is not saved. Do you want to save it before quitting ?").arg(
+                  projectName)
+        standardButtons: Dialog.Save | Dialog.Discard | Dialog.Cancel
 
         onRejected: {
 
@@ -1546,28 +1446,27 @@ ApplicationWindow {
 
         onAccepted: {
 
-
             var result = skrData.projectHub().saveProject(projectId)
-            if (result.containsErrorCodeDetail("no_path")){
-                var errorProjectId = result.getData("projectId", -2);
+            if (result.containsErrorCodeDetail("no_path")) {
+                var errorProjectId = result.getData("projectId", -2)
                 saveAsBeforeQuittingFileDialog.projectId = errorProjectId
-                saveAsBeforeQuittingFileDialog.projectName = skrData.projectHub().getProjectName(projectId)
+                saveAsBeforeQuittingFileDialog.projectName = skrData.projectHub(
+                            ).getProjectName(projectId)
                 saveAsBeforeQuittingFileDialog.open()
-            }
-            else {
+            } else {
                 quitAction.trigger()
             }
-
         }
     }
 
-    LabPlatform.FileDialog{
+    LabPlatform.FileDialog {
         property int projectId: -2
         property string projectName: ""
 
         id: saveAsBeforeQuittingFileDialog
         title: qsTr("Save the %1 project as …").arg(projectName)
-        folder: LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
+        folder: LabPlatform.StandardPaths.writableLocation(
+                    LabPlatform.StandardPaths.DocumentsLocation)
         fileMode: LabPlatform.FileDialog.SaveFile
         selectedNameFilter.index: 0
         nameFilters: ["Skribisto file (*.skrib)"]
@@ -1575,51 +1474,46 @@ ApplicationWindow {
 
             var file = saveAsFileDialog.file.toString()
 
-            if(file.indexOf(".skrib") === -1){ // not found
+            if (file.indexOf(".skrib") === -1) {
+                // not found
                 file = file + ".skrib"
             }
-            if(projectId == -2){
+            if (projectId == -2) {
                 projectId = skrData.projectHub().getActiveProject()
             }
-            console.log("FileDialog :" , projectId)
+            console.log("FileDialog :", projectId)
 
-            if(projectName == ""){
-                projectName = skrData.projectHub().getProjectName(skrData.projectHub().getActiveProject())
+            if (projectName == "") {
+                projectName = skrData.projectHub().getProjectName(
+                            skrData.projectHub().getActiveProject())
             }
 
-            var result = skrData.projectHub().saveProjectAs(projectId, "skrib", Qt.resolvedUrl(file))
+            var result = skrData.projectHub().saveProjectAs(
+                        projectId, "skrib", Qt.resolvedUrl(file))
 
-            if (result.containsErrorCodeDetail("path_is_readonly")){
+            if (result.containsErrorCodeDetail("path_is_readonly")) {
                 // Dialog:
                 pathIsReadOnlydialog.open()
-
-            }
-            else{
+            } else {
                 quitAction.trigger()
             }
         }
         onRejected: {
             quitAction.trigger()
-
         }
     }
-
-
-
-
-
 
     //------------------------------------------------------------
     //----------------------------------------------
     //------------------------------------------------------------
     property var lastFocusedItem: undefined
     onActiveFocusItemChanged: {
-        if(!activeFocusItem){
+        if (!activeFocusItem) {
             return
         }
         var item = activeFocusItem
 
-        if(skrEditMenuSignalHub.isSubscribed(activeFocusItem.objectName)){
+        if (skrEditMenuSignalHub.isSubscribed(activeFocusItem.objectName)) {
             //console.log("activeFocusItem", activeFocusItem.objectName)
             cutTextAction.enabled = true
             copyTextAction.enabled = true
@@ -1630,24 +1524,20 @@ ApplicationWindow {
 
         //        console.log("item", activeFocusItem)
         //        console.log("objectName", activeFocusItem.objectName)
-        if(!lastFocusedItem){
+        if (!lastFocusedItem) {
             lastFocusedItem = item
         }
-        if(skrEditMenuSignalHub.isSubscribed(lastFocusedItem.objectName)){
+        if (skrEditMenuSignalHub.isSubscribed(lastFocusedItem.objectName)) {
             //console.log("lastFocusedItem", lastFocusedItem.objectName)
             cutTextAction.enabled = true
             copyTextAction.enabled = true
             pasteTextAction.enabled = true
-        }
-        else {
+        } else {
             cutTextAction.enabled = false
             copyTextAction.enabled = false
             pasteTextAction.enabled = false
-
         }
         lastFocusedItem = item
-
-
     }
 
     Action {
@@ -1662,12 +1552,12 @@ ApplicationWindow {
             skrEditMenuSignalHub.cutActionTriggered()
         }
     }
+
     //    Shortcut{
     //        sequence: StandardKey.Cut
     //        context: Qt.ApplicationShortcut
     //        onActivated: cutAction.trigger()
     //    }
-
     Action {
         id: copyTextAction
         text: qsTr("Copy")
@@ -1680,12 +1570,12 @@ ApplicationWindow {
             skrEditMenuSignalHub.copyActionTriggered()
         }
     }
+
     //    Shortcut{
     //        sequence: StandardKey.Copy
     //        context: Qt.ApplicationShortcut
     //        onActivated: copyAction.trigger()
     //    }
-
     Action {
         id: pasteTextAction
         text: qsTr("Paste")
@@ -1698,14 +1588,12 @@ ApplicationWindow {
             skrEditMenuSignalHub.pasteActionTriggered()
         }
     }
+
     //    Shortcut{
     //        sequence: StandardKey.Paste
     //        context: Qt.ApplicationShortcut
     //        onActivated: pasteAction.trigger()
     //    }
-
-
-
     Action {
         property bool preventTrigger: false
         property bool actionTriggeredVolontarily: false
@@ -1722,22 +1610,18 @@ ApplicationWindow {
         checkable: true
 
         onCheckedChanged: {
-            if(preventTrigger){
+            if (preventTrigger) {
                 return
             }
             skrEditMenuSignalHub.italicActionTriggered(italicAction.checked)
-
-
-
         }
     }
+
     //    Shortcut{
     //        sequence: StandardKey.Italic
     //        context: Qt.ApplicationShortcut
     //        onActivated: italicAction.trigger()
     //    }
-
-
     Action {
         property bool preventTrigger: false
 
@@ -1754,21 +1638,18 @@ ApplicationWindow {
 
         onCheckedChanged: {
 
-            if(preventTrigger){
+            if (preventTrigger) {
                 return
             }
             skrEditMenuSignalHub.boldActionTriggered(boldAction.checked)
-
-
         }
     }
+
     //    Shortcut{
     //        sequence: StandardKey.Bold
     //        context: Qt.ApplicationShortcut
     //        onActivated: boldAction.trigger()
     //    }
-
-
     Action {
         property bool preventTrigger: false
 
@@ -1784,21 +1665,18 @@ ApplicationWindow {
         checkable: true
 
         onCheckedChanged: {
-            if(preventTrigger){
+            if (preventTrigger) {
                 return
             }
             skrEditMenuSignalHub.strikeActionTriggered(strikeAction.checked)
-
         }
     }
+
     //        Shortcut{
     //            sequence:
     //            context: Qt.ApplicationShortcut
     //            onActivated: strikeAction.trigger()
     //        }
-
-
-
     Action {
         property bool preventTrigger: false
 
@@ -1814,11 +1692,11 @@ ApplicationWindow {
         checkable: true
 
         onCheckedChanged: {
-            if(preventTrigger){
+            if (preventTrigger) {
                 return
             }
-            skrEditMenuSignalHub.underlineActionTriggered(underlineAction.checked)
-
+            skrEditMenuSignalHub.underlineActionTriggered(
+                        underlineAction.checked)
         }
     }
     //    Shortcut{
@@ -1863,15 +1741,6 @@ ApplicationWindow {
     //        //            event.accepted = true
     //        //        }
     //    }
-
-
-
-
-
-
-
-
-
 } //}
 
 /*##^## Designer {

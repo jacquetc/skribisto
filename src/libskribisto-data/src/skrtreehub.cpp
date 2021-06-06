@@ -29,6 +29,8 @@
 SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree"), m_last_added_id(-1), m_cutCopy(CutCopy())
 {
     connect(this, &SKRTreeHub::errorSent, this, &SKRTreeHub::setError, Qt::DirectConnection);
+
+    // reset m_cutCopy
     connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this, [this](int projectId){
         if(m_cutCopy.projectId == projectId){
             m_cutCopy = CutCopy();

@@ -15,6 +15,7 @@ FocusScope {
 
     SkrPane {
         id: pane
+        padding: 1
         clip: true
         anchors.fill: parent
 

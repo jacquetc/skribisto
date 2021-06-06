@@ -20,6 +20,7 @@ Item {
 
         SkrPane {
             id: dockPane
+            padding: 1
 
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -29,7 +30,7 @@ Item {
                 spacing: 0
                 anchors.fill: parent
 
-                RowLayout{
+                RowLayout {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignTop
                     Item {
@@ -37,7 +38,6 @@ Item {
                     }
                     Repeater {
                         id: toolButtonRepeater
-
                     }
 
                     Item {
@@ -48,7 +48,6 @@ Item {
                         focusPolicy: Qt.NoFocus
                     }
                 }
-
 
                 ScrollView {
                     id: scrollView
@@ -64,9 +63,9 @@ Item {
                         contentHeight: toolboxLayout.childrenRect.height
                         clip: true
 
-
                         Column {
                             id: toolboxLayout
+                            spacing: 0
                             anchors.top: parent.top
                             anchors.left: parent.left
                             anchors.right: parent.right
@@ -74,7 +73,6 @@ Item {
                             Repeater {
                                 id: toolboxRepeater
                             }
-
                         }
                     }
                 }
