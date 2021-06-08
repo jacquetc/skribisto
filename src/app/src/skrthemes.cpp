@@ -620,8 +620,8 @@ bool SKRThemes::rename(const QString& themeName, const QString& newThemeName)
     }
     m_fileByThemeNameHash.remove(themeName);
     m_fileByThemeNameHash.insert(newThemeName, newFileInfo.absoluteFilePath());
-    bool isEditable = m_isEditableByThemeNameHash.value("isEditable");
 
+    bool isEditable = m_isEditableByThemeNameHash.value(themeName);
     m_isEditableByThemeNameHash.remove(themeName);
     m_isEditableByThemeNameHash.insert(newThemeName, isEditable);
 

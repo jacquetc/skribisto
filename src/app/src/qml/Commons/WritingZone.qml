@@ -853,7 +853,7 @@ WritingZoneForm {
 
         interval: 20
         onTriggered: {
-
+            determineVisibleRect()
             canvas.positionList = positionList
             canvas.blockBegin = blockBegin
             canvas.blockEnd = blockEnd

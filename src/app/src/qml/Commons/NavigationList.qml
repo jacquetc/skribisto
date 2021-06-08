@@ -282,7 +282,7 @@ NavigationListForm {
         enabled: root.enabled && currentParentId !== -2
         checkable: true
         icon {
-            source: "qrc:///icons/backup/list-add.svg"
+            source: "qrc:///icons/backup/dialog-ok-apply.svg"
             height: 100
             width: 100
         }

@@ -82,6 +82,9 @@ SkrPane {
                             Layout.preferredHeight: 40
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            icon {
+                                source: "qrc:///icons/backup/document-open-recent.svg"
+                            }
                         }
 
                         SkrToolButton {
@@ -127,6 +130,9 @@ SkrPane {
                             Layout.preferredHeight: 40
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            icon {
+                                source: "qrc:///icons/backup/view-group.svg"
+                            }
                         }
 
                         SkrToolButton {
@@ -136,6 +142,9 @@ SkrPane {
                             Layout.preferredHeight: 40
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            icon {
+                                source: "qrc:///icons/backup/document-import.svg"
+                            }
                         }
 
                         SkrToolButton {
@@ -145,6 +154,10 @@ SkrPane {
                             Layout.preferredHeight: 40
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            icon {
+                                source: "qrc:///icons/backup/document-export.svg"
+                            }
+
                         }
 
                         SkrToolButton {
@@ -154,6 +167,9 @@ SkrPane {
                             Layout.preferredHeight: 40
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            icon {
+                                source: "qrc:///icons/backup/document-print.svg"
+                            }
                         }
 
                         SkrToolButton {
@@ -163,6 +179,9 @@ SkrPane {
                             Layout.preferredHeight: 40
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            icon {
+                                source: "qrc:///icons/backup/configure.svg"
+                            }
                         }
 
                         SkrToolButton {
@@ -172,6 +191,9 @@ SkrPane {
                             Layout.preferredHeight: 40
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            icon {
+                                source: "qrc:///icons/backup/system-help.svg"
+                            }
                         }
 
                         Item {

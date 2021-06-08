@@ -255,6 +255,9 @@ SkrPopup {
                 NewProjectPage {
                     id: newProjectPage
 
+                    onCloseCalled:  root.close()
+
+
                 }
 
 

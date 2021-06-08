@@ -135,6 +135,8 @@
         <file>qml/Commons/PluginPage.qml</file>
         <file>qml/Commons/PluginPageForm.ui.qml</file>
         <file>qml/Items/SkrToolbox.qml</file>
+        <file>qml/Commons/FindPanel.qml</file>
+        <file>qml/Commons/FindPanelForm.ui.qml</file>
         <file>qml/Items/SkrCheckBox.qml</file>
     </qresource>
 </RCC>

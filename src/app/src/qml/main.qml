@@ -895,7 +895,7 @@ ApplicationWindow {
     }
     SimpleDialog {
         id: pathIsReadOnlySaveACopydialog
-        title: "Error"
+        title: qsTr("Error")
         text: qsTr("This path is read-only, please choose another path.")
         onAccepted: saveACopyFileDialog.open()
     }
@@ -1225,7 +1225,7 @@ ApplicationWindow {
         property string projectName: ""
 
         id: saveOrNotBeforeClosingProjectDialog
-        title: "Warning"
+        title: qsTr("Warning")
         text: qsTr("The project %1 is not saved. Do you want to save it before quitting ?").arg(
                   projectName)
         standardButtons: Dialog.Save | Dialog.Discard | Dialog.Cancel
@@ -1430,7 +1430,7 @@ ApplicationWindow {
         property string projectName: ""
 
         id: saveOrNotBeforeQuittingDialog
-        title: "Warning"
+        title: qsTr("Warning")
         text: qsTr("The project %1 is not saved. Do you want to save it before quitting ?").arg(
                   projectName)
         standardButtons: Dialog.Save | Dialog.Discard | Dialog.Cancel
