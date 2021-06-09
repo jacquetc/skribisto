@@ -15,7 +15,7 @@ OutlinePadForm {
     Component.onCompleted: {
         openDocument(projectId, treeItemId, milestone)
 
-        if(outlineWritingZone.text.length === 0){
+        if(outlineWritingZone.textArea.length === 0){
             addOutlineToolButton.visible = true
             outlineWritingZone.Layout.preferredHeight = 0
         }
