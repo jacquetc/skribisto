@@ -164,12 +164,12 @@ Each project is a SQLite3 file, more robust than the zipped projects in Plume.
    Contains all the translation sources. DO NOT TOUCH directly. See the [Translation](#translation) section for details.
 
 ### Languages used
-    - C++ with Qt 5.15 (later Qt6)
-    - QML and Qt Quick
-    - Qt's Javascript
-    - SQL basics with SQLite3 only for the skribisto-data library.
+- C++ with Qt 5.15 (later Qt6)
+- QML and Qt Quick
+- Qt's Javascript
+- SQL basics with SQLite3 only for the skribisto-data library.
 
-    C++/QML bindings are extensively used.
+C++/QML bindings are extensively used.
 
 ### Plugins
 
@@ -181,6 +181,8 @@ More and more, Skribisto allows to be extended with plugins. For now, plugins al
   - SKRCoreInterface, mandatory to allow activition/deactivation of plugins
   - SKRPageInterface, gives the details of a page, its QML view and the necessary to be an item in the navigation
   - SKRPageExporterInterface, allow a page to export their content to be exported/printed
+  - SKRPageToolboxInterface, add a toolbox on the right dock for a specific page
+  - SKRProjectToolboxInterface, add a toolbox on the left dock which will always stay
 
 Plugin interfaces to come soon :
 - exemples
