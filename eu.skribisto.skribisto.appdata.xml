@@ -28,5 +28,8 @@
   <provides>
     <binary>skribisto</binary>
   </provides>
+  <releases>
+    <release version="1.9.20" date="2021-06-10" />
+  </releases>
   <content_rating type="oars-1.1"/>
 </component>
