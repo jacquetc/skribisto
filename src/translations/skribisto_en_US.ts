@@ -620,15 +620,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Plugin selection can be changed later in settings.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please restart to apply changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

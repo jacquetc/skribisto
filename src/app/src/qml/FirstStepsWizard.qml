@@ -219,38 +219,38 @@ SkrPopup {
 
                 }
 
-                Item{
+//                Item{
 
-                    ColumnLayout{
-                        anchors.fill: parent
-                        PluginPage {
-                            id: pluginsPage
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
-                        }
-
-
-                        SkrLabel{
-                            Layout.alignment: Qt.AlignHCenter
-                            text: qsTr("Plugin selection can be changed later in settings.")
-                        }
-                        SkrButton {
-                            id: restartButton
-                            Layout.alignment: Qt.AlignHCenter
-                            text: qsTr("Please restart to apply changes")
-                            onClicked: {
-                                for(var i = 0; i < pluginsPage.pluginModel.count; i++){
-                                    var item = pluginsPage.pluginModel.get(i)
-
-                                    skrData.pluginHub().setPluginEnabled(item.pluginName, item.enabled)
-                                }
+//                    ColumnLayout{
+//                        anchors.fill: parent
+//                        PluginPage {
+//                            id: pluginsPage
+//                            Layout.fillHeight: true
+//                            Layout.fillWidth: true
+//                        }
 
 
-                                Qt.exit(-2)
-                            }
-                        }
-                    }
-                }
+//                        SkrLabel{
+//                            Layout.alignment: Qt.AlignHCenter
+//                            text: qsTr("Plugin selection can be changed later in settings.")
+//                        }
+//                        SkrButton {
+//                            id: restartButton
+//                            Layout.alignment: Qt.AlignHCenter
+//                            text: qsTr("Please restart to apply changes")
+//                            onClicked: {
+//                                for(var i = 0; i < pluginsPage.pluginModel.count; i++){
+//                                    var item = pluginsPage.pluginModel.get(i)
+
+//                                    skrData.pluginHub().setPluginEnabled(item.pluginName, item.enabled)
+//                                }
+
+
+//                                Qt.exit(-2)
+//                            }
+//                        }
+//                    }
+//                }
 
                 NewProjectPage {
                     id: newProjectPage
