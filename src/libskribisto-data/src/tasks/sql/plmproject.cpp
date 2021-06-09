@@ -112,13 +112,17 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKR
 
 PLMProject::~PLMProject()
 {
+    QString tempFileName = this->getTempFileName();
+
     // close DB :
     m_sqlDb.close();
 
-    // remove temporary files :
-    QFile tempFile(this->getTempFileName());
 
-    if (tempFile.exists() && tempFile.isWritable()) {
+    // remove temporary files :
+    QFile tempFile(tempFileName);
+    QFileInfo tempFileInfo(tempFile);
+
+    if (tempFileInfo.exists() && tempFileInfo.isWritable()) {
         tempFile.remove();
     }
 }

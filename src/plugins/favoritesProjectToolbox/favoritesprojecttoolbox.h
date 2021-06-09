@@ -2,7 +2,7 @@
 *   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: skrtreemanager.h
+*  Filename: favoritesprojecttoolbox.h
 *                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
@@ -19,38 +19,43 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRTREEMANAGER_H
-#define SKRTREEMANAGER_H
+#ifndef FAVORITESPROJECTTOOLBOX_H
+#define FAVORITESPROJECTTOOLBOX_H
 
 #include <QObject>
-#include <QQmlComponent>
-#include "skrresult.h"
+#include "skrprojecttoolboxinterface.h"
 
-class SKRTreeManager : public QObject {
+class FavoritesProjectToolbox : public QObject,
+                                public SKRProjectToolboxInterface {
     Q_OBJECT
+    Q_PLUGIN_METADATA(
+        IID "eu.skribisto.FavoritesProjectToolboxPlugin/1.0" FILE
+        "plugin_info.json")
+    Q_INTERFACES(SKRProjectToolboxInterface)
 
 public:
 
-    explicit SKRTreeManager(QObject *parent = nullptr);
-    Q_INVOKABLE QUrl        getIconUrlFromPageType(const QString& pageType) const;
-    Q_INVOKABLE QStringList getPageTypeList(bool constructibleOnly) const;
-    Q_INVOKABLE QString     getPageTypeText(const QString& pageType) const;
-    Q_INVOKABLE QString     getPageDetailText(const QString& pageType) const;
-    Q_INVOKABLE void        updateCharAndWordCount(int            projectId,
-                                                   int            treeItemId,
-                                                   const QString& pageType,
-                                                   bool           sameThread = false);
-    Q_INVOKABLE void        updateAllCharAndWordCount(int projectId);
-    Q_INVOKABLE QStringList findToolboxUrlsForPage(const QString& pageType) const;
-    Q_INVOKABLE QStringList findToolboxUrlsForProject() const;
+    explicit FavoritesProjectToolbox(QObject *parent = nullptr);
+    ~FavoritesProjectToolbox();
+    QString name() const override {
+        return "FavoritesProjectToolbox";
+    }
 
-private:
+    QString displayedName() const override {
+        return tr("Favorites Project Toolbox");
+    }
 
-    Q_INVOKABLE SKRResult finaliseAfterCreationOfTreeItem(int            projectId,
-                                                          int            treeItemId,
-                                                          const QString& pageType);
+    QString use() const override {
+        return "Display a toolbox offering access to favorite items";
+    }
+
+    QString qmlUrl() const override {
+        return "qrc:///qml/plugins/FavoritesProjectToolbox/FavoritesProjectToolbox.qml";
+    }
 
 signals:
+
+private:
 };
 
-#endif // SKRTREEMANAGER_H
+#endif // FAVORITESPROJECTTOOLBOX_H

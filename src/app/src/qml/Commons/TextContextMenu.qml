@@ -314,9 +314,9 @@ TextContextMenuForm {
                     model: root.suggestionList
 
 
-                    onModelChanged: {
-                        console.log("model:", model)
-                    }
+//                    onModelChanged: {
+//                        console.log("model:", model)
+//                    }
 
                     clip: true
                     smooth: true

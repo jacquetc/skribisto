@@ -41,7 +41,7 @@ public:
         IsTrashableRole           = Qt::UserRole + 24,
         IsOpenableRole            = Qt::UserRole + 25,
         IsCopyableRole            = Qt::UserRole + 26,
-        AttributesRole            = Qt::UserRole + 27
+        OtherPropertiesRole       = Qt::UserRole + 27
     };
     Q_ENUM(Roles)
 
@@ -89,6 +89,7 @@ private:
     QHash<int, QVariant>m_data;
     QList<int>m_invalidatedRoles;
     bool m_isRootItem;
+    int otherPropertiesIncrement;
 };
 
 #endif // SKRTREEITEM_H

@@ -10,7 +10,7 @@ WritingGamesPageToolboxForm {
     id: root
 
     iconSource: "qrc:///icons/backup/story-editor.svg"
-    showButtonText: qsTr( "Show WritingGames toolbox")
+    showButtonText: qsTr( "Show Writing Games toolbox")
 
     //required property var writingZone
     property var page: root.ApplicationWindow.window.viewManager.focusedPage

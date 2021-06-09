@@ -12,18 +12,14 @@ import ".."
 ListView {
     id: root
 
-
-
-
     signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
     signal openDocumentInAnotherView(int projectId, int treeItemId)
     signal openDocumentInNewWindow(int projectId, int treeItemId)
 
-
     signal copyCalled(int projectId, int treeItemId)
     signal deleteDefinitivelyCalled(int projectId, int treeItemId)
     //signal sendToTrashCalled(int projectId, int treeItemId)
-    signal escapeKeyPressed()
+    signal escapeKeyPressed
 
     property int currentTreeItemId: -2
     property int currentProjectId: -2
@@ -33,7 +29,6 @@ ListView {
 
     property alias visualModel: visualModel
     property var proxyModel
-
 
     DelegateModel {
         id: visualModel
@@ -46,7 +41,6 @@ ListView {
     onCurrentIndexChanged: {
         contextMenuItemIndex = root.currentIndex
     }
-
 
     // options :
     property bool treelikeIndentsVisible: false
@@ -71,18 +65,16 @@ ListView {
     leftMargin: elevationEnabled ? 5 : 0
 
     // checkButtons :
-    function getCheckedTreeItemIdList(){
+    function getCheckedTreeItemIdList() {
         return proxyModel.getCheckedIdsList()
     }
 
-    function setCheckedTreeItemIdList(checkedTreeItemIdList){
+    function setCheckedTreeItemIdList(checkedTreeItemIdList) {
         proxyModel.setCheckedIdsList(checkedTreeItemIdList)
     }
 
-
-
     // TreeView item :
-    delegate:     Component {
+    delegate: Component {
         id: dragDelegate
 
         Item {
@@ -91,35 +83,32 @@ ListView {
             Accessible.name: {
 
                 var levelText
-                if(treelikeIndentsVisible){
+                if (treelikeIndentsVisible) {
                     levelText = qsTr("Level %1").arg(model.indent)
                 }
 
                 var titleText = titleLabel.text
 
                 var checkedText
-                if(checkButtonsVisible){
-                    checkedText = model.checkState === Qt.PartiallyChecked ? qsTr("partially checked") :
-                                                                             model.checkState === Qt.Checked ? qsTr("checked") :
-                                                                                                               model.checkState === Qt.Unchecked ? qsTr("unchecked") : ""
+                if (checkButtonsVisible) {
+                    checkedText = model.checkState === Qt.PartiallyChecked ? qsTr("partially checked") : model.checkState === Qt.Checked ? qsTr("checked") : model.checkState === Qt.Unchecked ? qsTr("unchecked") : ""
                 }
 
                 var labelText = ""
-                if(labelLabel.text.length > 0){
+                if (labelLabel.text.length > 0) {
                     labelText = qsTr("label: %1").arg(labelLabel.text)
                 }
 
                 var hasChildrenText = ""
-                if(model.hasChildren){
+                if (model.hasChildren) {
                     hasChildrenText = qsTr("has children")
                 }
 
-                return levelText + " " + titleText + " " + checkedText + " " + labelText + " " + hasChildrenText
-
+                return levelText + " " + titleText + " " + checkedText + " "
+                        + labelText + " " + hasChildrenText
             }
             Accessible.role: Accessible.ListItem
             Accessible.description: qsTr("navigation item")
-
 
             property int visualIndex: {
                 return DelegateModel.itemsIndex
@@ -135,16 +124,16 @@ ListView {
                 left: Qt.isQtObject(parent) ? parent.left : undefined
                 right: Qt.isQtObject(parent) ? parent.right : undefined
                 rightMargin: 5
-                leftMargin: treelikeIndentsVisible ? model.indent * root.treeIndentMultiplier - root.treeIndentOffset * root.treeIndentMultiplier : undefined
+                leftMargin: treelikeIndentsVisible ? model.indent * root.treeIndentMultiplier
+                                                     - root.treeIndentOffset
+                                                     * root.treeIndentMultiplier : undefined
             }
-
-
 
             height: content.height
 
-
             onActiveFocusChanged: {
-                if(root.currentIndex === model.index && model.index !== -1 && activeFocus){
+                if (root.currentIndex === model.index && model.index !== -1
+                        && activeFocus) {
                     root.currentTreeItemId = model.treeItemId
                 }
             }
@@ -173,7 +162,7 @@ ListView {
                 titleTextField.selectAll()
             }
 
-            Timer{
+            Timer {
                 id: titleTextFieldForceActiveFocusTimer
                 repeat: false
                 interval: 100
@@ -188,7 +177,7 @@ ListView {
                 labelTextField.selectAll()
             }
 
-            Timer{
+            Timer {
                 id: labelTextFieldForceActiveFocusTimer
                 repeat: false
                 interval: 100
@@ -200,124 +189,170 @@ ListView {
             Keys.priority: Keys.AfterItem
 
             Keys.onShortcutOverride: {
-                if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N){
+                if ((event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_N) {
                     event.accepted = true
                 }
-                if((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N){
+                if ((event.modifiers & Qt.ControlModifier)
+                        && (event.modifiers & Qt.ShiftModifier)
+                        && event.key === Qt.Key_N) {
                     event.accepted = true
                 }
-                if(copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
+                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_C) {
                     event.accepted = true
                 }
-                if(cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X){
+                if (cutActionEnabled && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_X) {
                     event.accepted = true
                 }
-                if(pasteActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V){
+                if (pasteActionEnabled && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_V) {
                     event.accepted = true
                 }
-                if(renameActionEnabled && event.key === Qt.Key_Escape && (delegateRoot.state == "edit_title" || delegateRoot.state == "edit_label")){
+                if (renameActionEnabled && event.key === Qt.Key_Escape
+                        && (delegateRoot.state == "edit_title"
+                            || delegateRoot.state == "edit_label")) {
                     event.accepted = true
                 }
-                if( event.key === Qt.Key_Escape){
+                if (event.key === Qt.Key_Escape) {
                     event.accepted = true
                 }
             }
 
             Keys.onPressed: {
                 // avoid unwanted overshoot when taping right key
-                if (event.key === Qt.Key_Right){
+                if (event.key === Qt.Key_Right) {
                     event.accepted = true
-
                 }
-                if (model.isOpenable && openActionsEnabled && event.key === Qt.Key_Return){
+                if (model.isOpenable && openActionsEnabled
+                        && event.key === Qt.Key_Return) {
                     console.log("Return key pressed")
                     openDocumentAction.trigger()
                     event.accepted = true
                 }
-                if (model.isOpenable && openActionsEnabled && (event.modifiers & Qt.AltModifier) && event.key === Qt.Key_Return){
+                if (model.isOpenable && openActionsEnabled
+                        && (event.modifiers & Qt.AltModifier)
+                        && event.key === Qt.Key_Return) {
                     console.log("Alt Return key pressed")
                     openDocumentInAnotherViewAction.trigger()
                     event.accepted = true
                 }
 
                 // checked :
-                if(checkButtonsVisible){
-                    if (event.key === Qt.Key_Space){
+                if (checkButtonsVisible) {
+                    if (event.key === Qt.Key_Space) {
                         console.log("Space pressed")
                         selectionCheckBox.toggle()
                         event.accepted = true
                     }
                 }
 
-
-
                 // rename
-
-                if (model.isRenamable && renameActionEnabled && event.key === Qt.Key_F2 && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (model.isRenamable && renameActionEnabled
+                        && event.key === Qt.Key_F2
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     renameAction.trigger()
                     event.accepted = true
                 }
 
                 // cut
-                if (model.isMovable && cutActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_X && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && cutActionEnabled
+                        && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_X
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     cutAction.trigger()
                     event.accepted = true
                 }
 
                 // copy
-                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (copyActionEnabled && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_C
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     copyAction.trigger()
                     event.accepted = true
                 }
 
                 // paste
-                if (model.canAddChildTreeItem && addChildTreeItemActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (model.canAddChildTreeItem && addChildTreeItemActionEnabled
+                        && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_V
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     pasteAction.trigger()
                     event.accepted = true
                 }
 
                 // add before
-                if (model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (model.canAddSiblingTreeItem
+                        && addSiblingTreeItemActionEnabled
+                        && (event.modifiers & Qt.ControlModifier)
+                        && (event.modifiers & Qt.ShiftModifier)
+                        && event.key === Qt.Key_N
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     addBeforeAction.trigger()
                     event.accepted = true
                 }
 
                 // add after
-                if (model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (model.canAddSiblingTreeItem
+                        && addSiblingTreeItemActionEnabled
+                        && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_N
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     addAfterAction.trigger()
                     event.accepted = true
                 }
 
                 // add child
-                if (model.canAddChildTreeItem && addChildTreeItemActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Space && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (model.canAddChildTreeItem && addChildTreeItemActionEnabled
+                        && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_Space
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     addChildAction.trigger()
                     event.accepted = true
                 }
 
                 // move up
-                if (model.isMovable && moveActionEnabled  && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Up && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && moveActionEnabled
+                        && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_Up
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     moveUpAction.trigger()
                     event.accepted = true
                 }
 
                 // move down
-                if (model.isMovable && moveActionEnabled && (event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Down && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (model.isMovable && moveActionEnabled
+                        && (event.modifiers & Qt.ControlModifier)
+                        && event.key === Qt.Key_Down
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     moveDownAction.trigger()
                     event.accepted = true
                 }
 
                 // send to trash
-                if (model.isTrashable && sendToTrashActionEnabled && event.key === Qt.Key_Delete && delegateRoot.state !== "edit_title" && delegateRoot.state !== "edit_label"){
+                if (model.isTrashable && sendToTrashActionEnabled
+                        && event.key === Qt.Key_Delete
+                        && delegateRoot.state !== "edit_title"
+                        && delegateRoot.state !== "edit_label") {
                     sendToTrashAction.trigger()
                     event.accepted = true
                 }
 
-                if (event.key === Qt.Key_Escape){
+                if (event.key === Qt.Key_Escape) {
                     console.log("Escape key pressed")
                     root.escapeKeyPressed()
                     event.accepted = true
                 }
-
             }
 
             property bool editBugWorkaround: false
@@ -340,7 +375,6 @@ ListView {
 
                 elevation: root.elevationEnabled ? 4 : 0
 
-
                 HoverHandler {
                     id: hoverHandler
                     //                    onHoveredChanged: {
@@ -352,8 +386,6 @@ ListView {
 
                 TapHandler {
                     id: tapHandler
-
-
 
                     onSingleTapped: {
                         root.currentIndex = model.index
@@ -370,7 +402,6 @@ ListView {
 
                     onGrabChanged: {
                         point.accepted = false
-
                     }
                 }
 
@@ -381,7 +412,7 @@ ListView {
 
                         root.currentIndex = model.index
 
-                        if(menu.visible){
+                        if (menu.visible) {
                             menu.close()
                             return
                         }
@@ -397,16 +428,15 @@ ListView {
                         root.currentIndex = model.index
                         openDocumentInAnotherViewAction.trigger()
                         eventPoint.accepted = true
-
                     }
                 }
-
 
                 Action {
                     id: openDocumentAction
                     //shortcut: "Return"
                     enabled: {
-                        if (root.focus === true && titleTextField.visible === false
+                        if (root.focus === true
+                                && titleTextField.visible === false
                                 && root.currentIndex === model.index) {
                             return true
                         } else
@@ -417,8 +447,8 @@ ListView {
                     onTriggered: {
                         //console.log("model.openedProjectId", openedProjectId)
                         //console.log("model.projectId", model.projectId)
-                        root.openDocument(openedProjectId, openedTreeItemId, model.projectId,
-                                          model.treeItemId)
+                        root.openDocument(openedProjectId, openedTreeItemId,
+                                          model.projectId, model.treeItemId)
                     }
                 }
 
@@ -426,7 +456,8 @@ ListView {
                     id: openDocumentInAnotherViewAction
                     //shortcut: "Alt+Return"
                     enabled: {
-                        if (root.focus === true && titleTextField.visible === false
+                        if (root.focus === true
+                                && titleTextField.visible === false
                                 && root.currentIndex === model.index) {
                             return true
                         } else
@@ -437,11 +468,9 @@ ListView {
                     onTriggered: {
                         console.log("model.projectId", model.projectId)
                         root.openDocumentInAnotherView(model.projectId,
-                                                  model.treeItemId)
-
+                                                       model.treeItemId)
                     }
                 }
-
 
                 Action {
                     id: openDocumentInNewWindowAction
@@ -458,14 +487,12 @@ ListView {
                     onTriggered: {
                         root.openDocumentInNewWindow(model.projectId,
                                                      model.treeItemId)
-
                     }
                 }
 
-                contentItem: ColumnLayout{
+                contentItem: ColumnLayout {
                     id: columnLayout3
                     anchors.fill: parent
-
 
                     RowLayout {
                         id: rowLayout
@@ -473,8 +500,7 @@ ListView {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
-
-                        CheckBox{
+                        SkrCheckBox {
                             id: selectionCheckBox
                             //Layout.fillHeight: true
                             //Layout.preferredWidth: 5
@@ -488,21 +514,23 @@ ListView {
 
                             onCheckStateChanged: {
 
-                                if(root.currentIndex === model.index){
+                                if (root.currentIndex === model.index) {
                                     //console.log("model.hasChildren", model.hasChildren)
-                                    if(checkState === Qt.PartiallyChecked && !proxyModel.hasChildren(model.projectId, model.treeItemId)){
+                                    if (checkState === Qt.PartiallyChecked
+                                            && !proxyModel.hasChildren(
+                                                model.projectId,
+                                                model.treeItemId)) {
                                         model.checkState = Qt.Checked
-                                    }
-                                    else if(checkState === Qt.PartiallyChecked && proxyModel.hasChildren(model.projectId, model.treeItemId)){
+                                    } else if (checkState === Qt.PartiallyChecked
+                                               && proxyModel.hasChildren(
+                                                   model.projectId,
+                                                   model.treeItemId)) {
                                         model.checkState = Qt.PartiallyChecked
-                                    }
-                                    else if(checkState === Qt.Checked){
+                                    } else if (checkState === Qt.Checked) {
                                         model.checkState = Qt.Checked
-                                    }
-                                    else if(checkState === Qt.Unchecked){
+                                    } else if (checkState === Qt.Unchecked) {
                                         model.checkState = Qt.Unchecked
                                     }
-
                                 }
                             }
 
@@ -511,7 +539,6 @@ ListView {
                                 delayed: true
                                 restoreMode: Binding.RestoreBindingOrValue
                             }
-
                         }
 
                         Rectangle {
@@ -533,12 +560,14 @@ ListView {
                             color: SkrTheme.accent
                             Layout.fillHeight: true
                             Layout.preferredWidth: 5
-                            visible: model.projectId === openedProjectId && model.treeItemId === openedTreeItemId
+                            visible: model.projectId === openedProjectId
+                                     && model.treeItemId === openedTreeItemId
                         }
 
                         SkrButton {
                             id: projectIsBackupIndicator
-                            visible: model.projectIsBackup && model.treeItemId === -1
+                            visible: model.projectIsBackup
+                                     && model.treeItemId === -1
                             enabled: true
                             focusPolicy: Qt.NoFocus
                             implicitHeight: 32
@@ -558,14 +587,12 @@ ListView {
                                 width: 32
                             }
 
-
                             hoverEnabled: true
                             ToolTip.delay: 1000
                             ToolTip.timeout: 5000
                             ToolTip.visible: hovered
                             ToolTip.text: qsTr("This project is a backup")
                         }
-
 
                         Rectangle {
                             color: "transparent"
@@ -595,7 +622,6 @@ ListView {
                                     id: labelTextField
                                     visible: false
 
-
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
                                     text: labelLabel.text
@@ -613,31 +639,31 @@ ListView {
                                     }
 
                                     //Keys.priority: Keys.AfterItem
-                                    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
+                                    Keys.onShortcutOverride: event.accepted
+                                                             = (event.key === Qt.Key_Escape)
                                     Keys.onPressed: {
-                                        if (event.key === Qt.Key_Return){
+                                        if (event.key === Qt.Key_Return) {
                                             console.log("Return key pressed title")
                                             editingFinished()
                                             event.accepted = true
                                         }
-                                        if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                        if ((event.modifiers & Qt.CtrlModifier)
+                                                && event.key === Qt.Key_Return) {
                                             console.log("Ctrl Return key pressed title")
                                             editingFinished()
                                             event.accepted = true
                                         }
-                                        if (event.key === Qt.Key_Escape){
+                                        if (event.key === Qt.Key_Escape) {
                                             console.log("Escape key pressed title")
                                             delegateRoot.state = ""
                                             event.accepted = true
                                         }
                                     }
-
                                 }
 
                                 SkrTextField {
                                     id: titleTextField
                                     visible: false
-
 
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
@@ -656,54 +682,51 @@ ListView {
                                     }
 
                                     //Keys.priority: Keys.AfterItem
-                                    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
+                                    Keys.onShortcutOverride: event.accepted
+                                                             = (event.key === Qt.Key_Escape)
                                     Keys.onPressed: {
-                                        if (event.key === Qt.Key_Return){
+                                        if (event.key === Qt.Key_Return) {
                                             console.log("Return key pressed title")
                                             editingFinished()
                                             event.accepted = true
                                         }
-                                        if ((event.modifiers & Qt.CtrlModifier) && event.key === Qt.Key_Return){
+                                        if ((event.modifiers & Qt.CtrlModifier)
+                                                && event.key === Qt.Key_Return) {
                                             console.log("Ctrl Return key pressed title")
                                             editingFinished()
                                             event.accepted = true
                                         }
-                                        if (event.key === Qt.Key_Escape){
+                                        if (event.key === Qt.Key_Escape) {
                                             console.log("Escape key pressed title")
                                             delegateRoot.state = ""
                                             event.accepted = true
                                         }
                                     }
-
                                 }
-                                RowLayout{
+                                RowLayout {
                                     id: labelLayout
                                     Layout.fillWidth: true
                                     Layout.leftMargin: 5
 
-                                    ListItemAttributes{
+                                    ListItemAttributes {
                                         id: attributes
                                         treeItemId: model.treeItemId
                                         projectId: model.projectId
                                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                         Layout.leftMargin: 4
                                         Layout.bottomMargin: 2
-
                                     }
-
 
                                     SkrLabel {
                                         id: labelLabel
                                         activeFocusOnTab: false
-                                        text:  model.label === undefined ? "" : model.label
+                                        text: model.label === undefined ? "" : model.label
                                         Layout.bottomMargin: 2
                                         Layout.rightMargin: 4
                                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                                         elide: Text.ElideRight
                                         horizontalAlignment: Qt.AlignRight
                                         Layout.fillWidth: true
-
-
                                     }
                                 }
                             }
@@ -726,7 +749,7 @@ ListView {
                                 root.currentIndex = model.index
                                 delegateRoot.forceActiveFocus()
 
-                                if(menu.visible){
+                                if (menu.visible) {
                                     menu.close()
                                     return
                                 }
@@ -741,13 +764,8 @@ ListView {
                             Layout.fillHeight: true
                             Layout.preferredWidth: 2
 
-                            color: model.indent === 0 ? Material.color(Material.Indigo) :
-                                                        (model.indent === 1 ? Material.color(Material.LightBlue) :
-                                                                              (model.indent === 2 ? Material.color(Material.LightGreen) :
-                                                                                                    (model.indent === 3 ? Material.color(Material.Amber) :
-                                                                                                                          (model.indent === 4 ? Material.color(Material.DeepOrange) :
-                                                                                                                                                Material.color(Material.Teal)
-                                                                                                                           ))))
+                            color: model.indent === 0 ? Material.color(
+                                                            Material.Indigo) : (model.indent === 1 ? Material.color(Material.LightBlue) : (model.indent === 2 ? Material.color(Material.LightGreen) : (model.indent === 3 ? Material.color(Material.Amber) : (model.indent === 4 ? Material.color(Material.DeepOrange) : Material.color(Material.Teal)))))
                         }
                     }
                     Rectangle {
@@ -758,25 +776,23 @@ ListView {
                         gradient: Gradient {
                             orientation: Qt.Horizontal
                             GradientStop {
-                                position: 0.00;
-                                color: "transparent";
+                                position: 0.00
+                                color: "transparent"
                             }
                             GradientStop {
-                                position: 0.30;
-                                color: SkrTheme.divider;
+                                position: 0.30
+                                color: SkrTheme.divider
                             }
                             GradientStop {
-                                position: 0.70;
-                                color: SkrTheme.divider;
+                                position: 0.70
+                                color: SkrTheme.divider
                             }
                             GradientStop {
-                                position: 1.00;
-                                color: "transparent";
+                                position: 1.00
+                                color: "transparent"
                             }
                         }
-
                     }
-
                 }
             }
             //            DropArea {
@@ -884,7 +900,6 @@ ListView {
                         target: delegateRoot
                         anchors.left: undefined
                         anchors.right: undefined
-
                     }
                 }
             ]
@@ -906,12 +921,11 @@ ListView {
 
                 onClosed: {
                     hoveringChangingTheCurrentItemAllowed = true
-
                 }
 
-
                 SkrMenuItem {
-                    height: model.isOpenable && openActionsEnabled ? undefined : 0
+                    height: model.isOpenable
+                            && openActionsEnabled ? undefined : 0
                     visible: model.isOpenable && openActionsEnabled
                     action: Action {
                         id: openTreeItemAction
@@ -920,17 +934,21 @@ ListView {
                         icon {
                             source: "qrc:///icons/backup/document-edit.svg"
                         }
-                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.treeItemId !== -1
+                        enabled: openActionsEnabled
+                                 && contextMenuItemIndex === model.index
+                                 && titleTextField.visible === false
+                                 && root.enabled && model.treeItemId !== -1
                         onTriggered: {
-                            console.log("open treeItem action", model.projectId,
-                                        model.treeItemId)
+                            console.log("open treeItem action",
+                                        model.projectId, model.treeItemId)
                             openDocumentAction.trigger()
                         }
                     }
                 }
 
                 SkrMenuItem {
-                    height: model.isOpenable && openActionsEnabled ? undefined : 0
+                    height: model.isOpenable
+                            && openActionsEnabled ? undefined : 0
                     visible: model.isOpenable && openActionsEnabled
                     action: Action {
                         id: openTreeItemInAnotherViewAction
@@ -939,17 +957,21 @@ ListView {
                         icon {
                             source: "qrc:///icons/backup/tab-new.svg"
                         }
-                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false  && root.enabled &&  model.treeItemId !== -1
+                        enabled: openActionsEnabled
+                                 && contextMenuItemIndex === model.index
+                                 && titleTextField.visible === false
+                                 && root.enabled && model.treeItemId !== -1
                         onTriggered: {
-                            console.log("open treeItem in new tab action", model.projectId,
-                                        model.treeItemId)
+                            console.log("open treeItem in new tab action",
+                                        model.projectId, model.treeItemId)
                             openDocumentInAnotherViewAction.trigger()
                         }
                     }
                 }
 
                 SkrMenuItem {
-                    height: model.isOpenable && openActionsEnabled ? undefined : 0
+                    height: model.isOpenable
+                            && openActionsEnabled ? undefined : 0
                     visible: model.isOpenable && openActionsEnabled
                     action: Action {
                         id: openTreeItemInNewWindowAction
@@ -958,31 +980,38 @@ ListView {
                         icon {
                             source: "qrc:///icons/backup/window-new.svg"
                         }
-                        enabled: openActionsEnabled && contextMenuItemIndex === model.index && titleTextField.visible === false && root.enabled &&  model.treeItemId !== -1
+                        enabled: openActionsEnabled
+                                 && contextMenuItemIndex === model.index
+                                 && titleTextField.visible === false
+                                 && root.enabled && model.treeItemId !== -1
                         onTriggered: {
-                            console.log("open treeItem in new window action", model.projectId,
-                                        model.treeItemId)
+                            console.log("open treeItem in new window action",
+                                        model.projectId, model.treeItemId)
                             openDocumentInNewWindowAction.trigger()
                         }
                     }
                 }
 
                 MenuSeparator {
-                    height: model.isRenamable && renameActionEnabled  ? undefined : 0
+                    height: model.isRenamable
+                            && renameActionEnabled ? undefined : 0
                     visible: model.isRenamable && renameActionEnabled
                 }
 
                 SkrMenuItem {
-                    height: model.isRenamable && renameActionEnabled ? undefined : 0
+                    height: model.isRenamable
+                            && renameActionEnabled ? undefined : 0
                     visible: model.isRenamable && renameActionEnabled
-                    action :Action {
+                    action: Action {
                         id: renameAction
                         text: qsTr("Rename")
                         //shortcut: "F2"
                         icon {
                             source: "qrc:///icons/backup/edit-rename.svg"
                         }
-                        enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
+                        enabled: renameActionEnabled
+                                 && contextMenuItemIndex === model.index
+                                 && root.enabled
                         onTriggered: {
                             console.log("rename action", model.projectId,
                                         model.treeItemId)
@@ -991,18 +1020,20 @@ ListView {
                     }
                 }
 
-
                 SkrMenuItem {
-                    height: model.isRenamable && renameActionEnabled ? undefined : 0
+                    height: model.isRenamable
+                            && renameActionEnabled ? undefined : 0
                     visible: model.isRenamable && renameActionEnabled
-                    action :  Action {
+                    action: Action {
                         id: setLabelAction
                         text: qsTr("Set label")
 
                         icon {
                             source: "qrc:///icons/backup/label.svg"
                         }
-                        enabled: renameActionEnabled && contextMenuItemIndex === model.index  && root.enabled
+                        enabled: renameActionEnabled
+                                 && contextMenuItemIndex === model.index
+                                 && root.enabled
                         onTriggered: {
                             console.log("sel label", model.projectId,
                                         model.treeItemId)
@@ -1012,22 +1043,28 @@ ListView {
                 }
 
                 MenuSeparator {
-                    height: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildTreeItem && pasteActionEnabled) ? undefined : 0
-                    visible: (model.isCopyable && copyActionEnabled) || (model.isMovable && cutActionEnabled) || (model.canAddChildTreeItem && pasteActionEnabled)
+                    height: (model.isCopyable && copyActionEnabled)
+                            || (model.isMovable && cutActionEnabled)
+                            || (model.canAddChildTreeItem
+                                && pasteActionEnabled) ? undefined : 0
+                    visible: (model.isCopyable && copyActionEnabled)
+                             || (model.isMovable && cutActionEnabled)
+                             || (model.canAddChildTreeItem
+                                 && pasteActionEnabled)
                 }
 
                 SkrMenuItem {
                     height: model.isMovable && cutActionEnabled ? undefined : 0
                     visible: model.isMovable && cutActionEnabled
-                    action:
-                        Action {
+                    action: Action {
                         id: cutAction
                         text: qsTr("Cut")
                         //shortcut: StandardKey.Cut
                         icon {
                             source: "qrc:///icons/backup/edit-cut.svg"
                         }
-                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        enabled: contextMenuItemIndex === model.index
+                                 && root.enabled
 
                         onTriggered: {
                             console.log("cut action", model.projectId,
@@ -1038,16 +1075,19 @@ ListView {
                 }
 
                 SkrMenuItem {
-                    height: model.isCopyable && copyActionEnabled ? undefined : 0
+                    height: model.isCopyable
+                            && copyActionEnabled ? undefined : 0
                     visible: model.isCopyable && copyActionEnabled
-                    action :Action {
+                    action: Action {
                         id: copyAction
                         text: qsTr("Copy")
                         //shortcut: StandardKey.Copy
                         icon {
                             source: "qrc:///icons/backup/edit-copy.svg"
                         }
-                        enabled: copyActionEnabled && contextMenuItemIndex === model.index  && root.enabled
+                        enabled: copyActionEnabled
+                                 && contextMenuItemIndex === model.index
+                                 && root.enabled
 
                         onTriggered: {
                             console.log("copy action", model.projectId,
@@ -1058,16 +1098,19 @@ ListView {
                 }
 
                 SkrMenuItem {
-                    height: model.canAddChildTreeItem && pasteActionEnabled ? undefined : 0
+                    height: model.canAddChildTreeItem
+                            && pasteActionEnabled ? undefined : 0
                     visible: model.canAddChildTreeItem && pasteActionEnabled
-                    action :Action {
+                    action: Action {
                         id: pasteAction
                         text: qsTr("Paste")
                         //shortcut: StandardKey.Copy
                         icon {
                             source: "qrc:///icons/backup/edit-paste.svg"
                         }
-                        enabled: pasteActionEnabled && contextMenuItemIndex === model.index  && root.enabled
+                        enabled: pasteActionEnabled
+                                 && contextMenuItemIndex === model.index
+                                 && root.enabled
 
                         onTriggered: {
                             console.log("paste action", model.projectId,
@@ -1078,96 +1121,102 @@ ListView {
                 }
 
                 MenuSeparator {
-                    height: (model.canAddSiblingTreeItem || model.canAddChildTreeItem)
-                            && (addChildTreeItemActionEnabled || addSiblingTreeItemActionEnabled)?
-                                undefined : 0
-                    visible: (model.canAddSiblingTreeItem || model.canAddChildTreeItem)
-                             && (addChildTreeItemActionEnabled || addSiblingTreeItemActionEnabled)
+                    height: (model.canAddSiblingTreeItem
+                             || model.canAddChildTreeItem)
+                            && (addChildTreeItemActionEnabled
+                                || addSiblingTreeItemActionEnabled) ? undefined : 0
+                    visible: (model.canAddSiblingTreeItem
+                              || model.canAddChildTreeItem)
+                             && (addChildTreeItemActionEnabled
+                                 || addSiblingTreeItemActionEnabled)
                 }
 
                 SkrMenuItem {
-                    height: model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled ? undefined : 0
-                    visible: model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled
-                    action:
-                        Action {
+                    height: model.canAddSiblingTreeItem
+                            && addSiblingTreeItemActionEnabled ? undefined : 0
+                    visible: model.canAddSiblingTreeItem
+                             && addSiblingTreeItemActionEnabled
+                    action: Action {
                         id: addBeforeAction
                         text: qsTr("Add before")
                         //shortcut: "Ctrl+Shift+N"
                         icon {
                             source: "qrc:///icons/backup/document-new.svg"
                         }
-                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        enabled: contextMenuItemIndex === model.index
+                                 && root.enabled
                         onTriggered: {
                             console.log("add before action", model.projectId,
                                         model.treeItemId)
 
-                            var result =  proxyModel.addItemAbove(model.projectId,
-                                                       model.treeItemId, 0)
+                            var result = proxyModel.addItemAbove(
+                                        model.projectId, model.treeItemId, 0)
 
                             // edit it :
-                            root.itemAtIndex(currentIndex).treeItemIdToEdit = result.getData("treeItemId", -2)
-
-
+                            root.itemAtIndex(
+                                        currentIndex).treeItemIdToEdit = result.getData(
+                                        "treeItemId", -2)
                         }
                     }
                 }
 
                 SkrMenuItem {
-                    height: model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled ? undefined : 0
-                    visible: model.canAddSiblingTreeItem && addSiblingTreeItemActionEnabled
-                    action:
-                        Action {
+                    height: model.canAddSiblingTreeItem
+                            && addSiblingTreeItemActionEnabled ? undefined : 0
+                    visible: model.canAddSiblingTreeItem
+                             && addSiblingTreeItemActionEnabled
+                    action: Action {
                         id: addAfterAction
                         text: qsTr("Add after")
                         //shortcut: "Ctrl+N"
                         icon {
                             source: "qrc:///icons/backup/document-new.svg"
                         }
-                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        enabled: contextMenuItemIndex === model.index
+                                 && root.enabled
                         onTriggered: {
                             console.log("add after action", model.projectId,
                                         model.treeItemId)
 
-                            var result =  proxyModel.addItemBelow(model.projectId,
-                                                       model.treeItemId, 0)
+                            var result = proxyModel.addItemBelow(
+                                        model.projectId, model.treeItemId, 0)
 
                             // edit it :
-                            root.itemAtIndex(currentIndex).treeItemIdToEdit = result.getData("treeItemId", -2)
-
+                            root.itemAtIndex(
+                                        currentIndex).treeItemIdToEdit = result.getData(
+                                        "treeItemId", -2)
                         }
                     }
-
                 }
 
                 SkrMenuItem {
-                    height: model.canAddChildTreeItem && addChildTreeItemActionEnabled ? undefined : 0
-                    visible: model.canAddChildTreeItem && addChildTreeItemActionEnabled
-                    action:
-                        Action {
+                    height: model.canAddChildTreeItem
+                            && addChildTreeItemActionEnabled ? undefined : 0
+                    visible: model.canAddChildTreeItem
+                             && addChildTreeItemActionEnabled
+                    action: Action {
                         id: addChildAction
                         text: qsTr("Add a sub-item")
                         //shortcut: "Ctrl+N"
                         icon {
                             source: "qrc:///icons/backup/document-new.svg"
                         }
-                        enabled: contextMenuItemIndex === model.index && root.enabled
+                        enabled: contextMenuItemIndex === model.index
+                                 && root.enabled
                         onTriggered: {
                             console.log("add child action", model.projectId,
                                         model.treeItemId)
 
-                              var result =  proxyModel.addChildItem(model.projectId,
-                                                         model.treeItemId, 0)
+                            var result = proxyModel.addChildItem(
+                                        model.projectId, model.treeItemId, 0)
 
                             // edit it :
-                            root.itemAtIndex(currentIndex).treeItemIdToEdit = result.getData("treeItemId", -2)
-
-
-
+                            root.itemAtIndex(
+                                        currentIndex).treeItemIdToEdit = result.getData(
+                                        "treeItemId", -2)
                         }
                     }
-
                 }
-
 
                 MenuSeparator {
                     height: model.isMovable && moveActionEnabled ? undefined : 0
@@ -1184,12 +1233,14 @@ ListView {
                         icon {
                             source: "qrc:///icons/backup/object-order-raise.svg"
                         }
-                        enabled:root.enabled && currentIndex !== 0  && root.enabled
+                        enabled: root.enabled && currentIndex !== 0
+                                 && root.enabled
                         onTriggered: {
-                            console.log("move up action", currentProjectId, currentTreeItemId)
+                            console.log("move up action", currentProjectId,
+                                        currentTreeItemId)
 
-                            proxyModel.moveUp(currentProjectId, currentTreeItemId, currentIndex)
-
+                            proxyModel.moveUp(currentProjectId,
+                                              currentTreeItemId, currentIndex)
                         }
                     }
                 }
@@ -1197,33 +1248,37 @@ ListView {
                 SkrMenuItem {
                     height: model.isMovable && moveActionEnabled ? undefined : 0
                     visible: model.isMovable && moveActionEnabled
-                    action:
-                        Action {
+                    action: Action {
                         id: moveDownAction
                         text: qsTr("Move down")
                         //shortcut: "Ctrl+Down"
                         icon {
                             source: "qrc:///icons/backup/object-order-lower.svg"
                         }
-                        enabled: currentIndex !== visualModel.items.count - 1  && root.enabled
+                        enabled: currentIndex !== visualModel.items.count - 1
+                                 && root.enabled
 
                         onTriggered: {
-                            console.log("move down action", currentProjectId, currentTreeItemId)
+                            console.log("move down action", currentProjectId,
+                                        currentTreeItemId)
 
-                            proxyModel.moveDown(currentProjectId, currentTreeItemId, currentIndex)
+                            proxyModel.moveDown(currentProjectId,
+                                                currentTreeItemId, currentIndex)
                         }
                     }
                 }
 
-
-
                 MenuSeparator {
-                    height: model.isTrashable && (sendToTrashActionEnabled || deleteActionEnabled) ? undefined : 0
-                    visible: model.isTrashable && (sendToTrashActionEnabled || deleteActionEnabled)
+                    height: model.isTrashable
+                            && (sendToTrashActionEnabled
+                                || deleteActionEnabled) ? undefined : 0
+                    visible: model.isTrashable && (sendToTrashActionEnabled
+                                                   || deleteActionEnabled)
                 }
 
                 SkrMenuItem {
-                    height: model.isTrashable && sendToTrashActionEnabled ? undefined : 0
+                    height: model.isTrashable
+                            && sendToTrashActionEnabled ? undefined : 0
                     visible: model.isTrashable && sendToTrashActionEnabled
                     action: Action {
                         text: qsTr("Send to trash")
@@ -1231,18 +1286,22 @@ ListView {
                         icon {
                             source: "qrc:///icons/backup/edit-delete.svg"
                         }
-                        enabled: sendToTrashActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
+                        enabled: sendToTrashActionEnabled
+                                 && contextMenuItemIndex === model.index
+                                 && root.enabled && model.indent !== -1
                         onTriggered: {
-                            console.log("sent to trash action", model.projectId,
-                                        model.treeItemId)
+                            console.log("sent to trash action",
+                                        model.projectId, model.treeItemId)
                             //sendToTrashCalled(model.projectId, model.treeItemId)
-                            proxyModel.trashItemWithChildren(model.projectId, model.treeItemId)
+                            proxyModel.trashItemWithChildren(model.projectId,
+                                                             model.treeItemId)
                         }
                     }
                 }
 
                 SkrMenuItem {
-                    height: model.isTrashable && deleteActionEnabled ? undefined : 0
+                    height: model.isTrashable
+                            && deleteActionEnabled ? undefined : 0
                     visible: model.isTrashable && deleteActionEnabled
                     action: Action {
                         text: qsTr("Delete definitively")
@@ -1250,16 +1309,17 @@ ListView {
                         icon {
                             source: "qrc:///icons/backup/edit-delete-shred.svg"
                         }
-                        enabled: deleteActionEnabled && contextMenuItemIndex === model.index  && root.enabled && model.indent !== -1
+                        enabled: deleteActionEnabled
+                                 && contextMenuItemIndex === model.index
+                                 && root.enabled && model.indent !== -1
                         onTriggered: {
                             console.log("delete action", model.projectId,
                                         model.treeItemId)
-                            deleteDefinitivelyCalled(model.projectId, model.treeItemId)
+                            deleteDefinitivelyCalled(model.projectId,
+                                                     model.treeItemId)
                         }
                     }
                 }
-
-
             }
 
             ListView.onRemove: SequentialAnimation {
@@ -1282,7 +1342,6 @@ ListView {
             }
 
             //----------------------------------------------------------
-
             ListView.onAdd: SequentialAnimation {
                 PropertyAction {
                     target: delegateRoot
@@ -1301,29 +1360,26 @@ ListView {
             // edit name  :
             property int treeItemIdToEdit: -2
             onTreeItemIdToEditChanged: {
-                if(treeItemIdToEdit !== -2){
+                if (treeItemIdToEdit !== -2) {
                     editNameTimer.start()
                 }
             }
 
-            Timer{
+            Timer {
                 id: editNameTimer
                 repeat: false
                 interval: 250 //draggableContent.transitionAnimationDuration
                 onTriggered: {
-                    var index = proxyModel.findVisualIndex(model.projectId, treeItemIdToEdit)
-                    if(index !== -2){
+                    var index = proxyModel.findVisualIndex(model.projectId,
+                                                           treeItemIdToEdit)
+                    if (index !== -2) {
                         root.itemAtIndex(index).editName()
                     }
                     treeItemIdToEdit = -2
                 }
-
             }
         }
-
-
     }
-
 
     remove: Transition {
 
@@ -1353,10 +1409,13 @@ ListView {
 
     removeDisplaced: Transition {
         SequentialAnimation {
-            PauseAnimation{duration: 250}
-            NumberAnimation { properties: "x,y"; duration: 250 }
+            PauseAnimation {
+                duration: 250
+            }
+            NumberAnimation {
+                properties: "x,y"
+                duration: 250
+            }
         }
-
     }
-
 }

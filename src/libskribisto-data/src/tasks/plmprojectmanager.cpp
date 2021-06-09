@@ -144,6 +144,8 @@ SKRResult PLMProjectManager::closeProject(int projectId)
         delete project;
         QSqlDatabase::removeDatabase(QString::number(projectId));
     }
+
+
     return result;
 }
 

@@ -23,16 +23,16 @@
 #include "skrdata.h"
 
 SKRTreeItem::SKRTreeItem() :
-    m_invalidatedRoles(), m_isRootItem(false)
+    m_invalidatedRoles(), m_isRootItem(false), otherPropertiesIncrement(0)
 {
     m_treeHub     = skrdata->treeHub();
     m_propertyHub = skrdata->treePropertyHub();
 
 
-    m_data.insert(Roles::ProjectIdRole,  -2);
-    m_data.insert(Roles::TreeItemIdRole, -2);
-    m_data.insert(Roles::IndentRole,     -2);
-    m_data.insert(Roles::SortOrderRole,  99999999);
+    m_data.insert(Roles::ProjectIdRole,       -2);
+    m_data.insert(Roles::TreeItemIdRole,      -2);
+    m_data.insert(Roles::IndentRole,          -2);
+    m_data.insert(Roles::SortOrderRole, 99999999);
 }
 
 SKRTreeItem::SKRTreeItem(int projectId,
@@ -40,15 +40,15 @@ SKRTreeItem::SKRTreeItem(int projectId,
                          int indent,
                          int sortOrder) :
 
-    m_invalidatedRoles(), m_isRootItem(false)
+    m_invalidatedRoles(), m_isRootItem(false), otherPropertiesIncrement(0)
 {
     m_treeHub     = skrdata->treeHub();
     m_propertyHub = skrdata->treePropertyHub();
 
-    m_data.insert(Roles::ProjectIdRole,  projectId);
+    m_data.insert(Roles::ProjectIdRole,   projectId);
     m_data.insert(Roles::TreeItemIdRole, treeItemId);
-    m_data.insert(Roles::IndentRole,     indent);
-    m_data.insert(Roles::SortOrderRole,  sortOrder);
+    m_data.insert(Roles::IndentRole,         indent);
+    m_data.insert(Roles::SortOrderRole,   sortOrder);
 
     this->invalidateAllData();
 }
@@ -227,10 +227,8 @@ QVariant SKRTreeItem::data(int role)
                                                      "true") == "true" ? true : false);
             break;
 
-        case Roles::AttributesRole:
-            m_data.insert(role, m_propertyHub->getProperty(projectId, treeItemId,
-                                                           "attributes",
-                                                           ""));
+        case Roles::OtherPropertiesRole:
+            m_data.insert(role, otherPropertiesIncrement += 1);
             break;
         }
 
@@ -490,9 +488,9 @@ void SKRTreeItem::setIsRootItem()
 
     m_data.clear();
     m_invalidatedRoles.clear();
-    m_data.insert(Roles::TreeItemIdRole, -2);
-    m_data.insert(Roles::IndentRole,     -2);
-    m_data.insert(Roles::SortOrderRole,  -90000000);
+    m_data.insert(Roles::TreeItemIdRole,       -2);
+    m_data.insert(Roles::IndentRole,           -2);
+    m_data.insert(Roles::SortOrderRole, -90000000);
 }
 
 bool SKRTreeItem::isProjectItem()

@@ -26,6 +26,8 @@ FocusScope {
     property alias leftScrollItemVisible: leftScrollItem.visible
     property string paneStyleBackgroundColor: "#FAFAFA"
 
+    property alias findPanel: findPanel
+
     Pane {
         id: pane
         anchors.fill: parent
@@ -127,6 +129,12 @@ FocusScope {
                     }
                 }
             }
+
+            FindPanel {
+                id: findPanel
+                Layout.fillWidth: true
+            }
+
         }
     }
     states: [

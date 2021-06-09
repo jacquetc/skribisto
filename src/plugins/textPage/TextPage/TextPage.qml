@@ -618,7 +618,7 @@ TextPageForm {
 
 
     //------------------------------------------------------------------------
-    //-----tool boxes------------------------------------------------------------
+    //-----toolboxes------------------------------------------------------------
     //-----------------------------------------------------------------------
 
 
@@ -641,7 +641,7 @@ TextPageForm {
 
         SkrToolbox{
 
-            showButtonText: qsTr( "Show edit tool box")
+            showButtonText: qsTr( "Show edit toolbox")
             iconSource: "qrc:///icons/backup/format-text-italic.svg"
             EditView{
                 id: editView
@@ -656,7 +656,7 @@ TextPageForm {
 
         SkrToolbox{
 
-            showButtonText: qsTr( "Show properties tool box")
+            showButtonText: qsTr( "Show properties toolbox")
             iconSource: "qrc:///icons/backup/configure.svg"
             PropertyPad{
                 id: propertyPad
@@ -673,7 +673,7 @@ TextPageForm {
 
         SkrToolbox{
 
-            showButtonText: qsTr( "Show outline tool box")
+            showButtonText: qsTr( "Show outline toolbox")
             iconSource: "qrc:///icons/backup/story-editor.svg"
             OutlinePad{
                 id: outlinePad
@@ -693,7 +693,7 @@ TextPageForm {
 
         SkrToolbox{
 
-            showButtonText: qsTr( "Show tags tool box")
+            showButtonText: qsTr( "Show tags toolbox")
             iconSource: "qrc:///icons/backup/tag.svg"
             TagPad{
                 id: tagPad

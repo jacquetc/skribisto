@@ -1,0 +1,48 @@
+cmake_minimum_required(VERSION 3.5.0)
+
+
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++11  -pedantic -Wno-deprecated-declarations -fstrict-aliasing -pedantic-errors -Wno-unused-variable")
+#
+# Populate a CMake variable with the sources
+set(PROJECT_NAME "favoritesProjectToolbox")
+
+project(skribisto-plugin-${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION} )
+add_definitions(-DSKRIBISTO_PLUGIN_LIBRARY)
+# Find the QtWidgets library
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Quick Svg QuickControls2 CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Quick Svg QuickControls2 CONFIG REQUIRED)
+
+
+
+set(SRCS
+    plugin_info.json
+    favoritesprojecttoolbox.cpp
+    favoritesprojecttoolbox.h
+)
+
+set(QRC
+    plugin_qml.qrc
+    )
+
+qt_add_resources(RESOURCES ${QRC})
+
+# Tell CMake to create the executable
+add_library(skribisto-plugin-${PROJECT_NAME} SHARED ${SRCS} ${RESOURCES})
+add_dependencies(skribisto-plugin-${PROJECT_NAME} skribisto-data)
+add_dependencies(skribisto-plugin-${PROJECT_NAME} skribisto)
+
+target_link_libraries(skribisto-plugin-${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2)
+target_link_libraries(skribisto-plugin-${PROJECT_NAME} PUBLIC skribisto-data)
+
+
+include_directories("${CMAKE_SOURCE_DIR}/src/app/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/app/src/qml/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+install(TARGETS skribisto-plugin-${PROJECT_NAME} LIBRARY DESTINATION "${KDE_INSTALL_PLUGINDIR}/skribisto")
+message("----------------PLUGIN_INSTALL_DIR---------------")
+message("${PLUGIN_INSTALL_DIR}")
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+

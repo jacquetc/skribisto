@@ -75,9 +75,17 @@ class DocumentHandler : public QObject {
     Q_PROPERTY(QStringList suggestionList READ suggestionList NOTIFY suggestionListChanged)
     Q_PROPERTY(QString suggestionOriginalWord READ suggestionOriginalWord NOTIFY suggestionOriginalWordChanged)
 
-    Q_PROPERTY(SKRHighlighter * highlighter READ getHighlighter)
+    Q_PROPERTY(SKRHighlighter * highlighter READ getHighlighter NOTIFY highlighterChanged)
 
 public:
+
+    enum FindFlag {
+        FindBackward        = 0x00001,
+        FindCaseSensitively = 0x00002,
+        FindWholeWords      = 0x00004
+    };
+    Q_DECLARE_FLAGS(FindFlags, FindFlag)
+    Q_FLAG(FindFlags)
 
     DocumentHandler(QObject *parent = nullptr);
 
@@ -166,6 +174,21 @@ public:
     Q_INVOKABLE void removeHeadingLevel();
     int              headingLevel();
 
+    Q_INVOKABLE int  findNextPosition(const QString            & text,
+                                      int                        fromPosition,
+                                      DocumentHandler::FindFlags findFlags);
+
+    Q_INVOKABLE int findPreviousPosition(const QString            & text,
+                                         int                        fromPosition,
+                                         DocumentHandler::FindFlags findFlags);
+
+    Q_INVOKABLE void replaceWordAt(const QString& word,
+                                   const QString& newWord,
+                                   int            position);
+    Q_INVOKABLE void replaceAllWords(const QString            & word,
+                                     const QString            & newWord,
+                                     DocumentHandler::FindFlags findFlags);
+
 public slots:
 
     void replaceWord(const QString& word,
@@ -182,6 +205,7 @@ public slots:
 signals:
 
     void textDocumentChanged();
+    void highlighterChanged();
     void cursorPositionChanged();
     void formatChanged();
 
@@ -233,5 +257,6 @@ private:
     int m_blockIdCount;
     QHash<int, QList<int> >m_blockIdAndspellcheckPositionHash;
 };
+Q_DECLARE_OPERATORS_FOR_FLAGS(DocumentHandler::FindFlags)
 
 #endif // DOCUMENTHANDLER_H

@@ -1,0 +1,9 @@
+{
+    "type" :            "projectToolbox",
+    "shortname" :       "FavoritesProjectToolbox",
+    "longname" :        "Favorites Project Toolbox",
+    "version" :         "1.0",
+    "mandatory" :    true,
+    "activatedByDefault" :    true,
+    "dependencies" :    []
+}

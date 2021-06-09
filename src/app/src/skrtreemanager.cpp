@@ -23,11 +23,13 @@
 #include "skrdata.h"
 #include "skrpageinterface.h"
 #include "skrpagetoolboxinterface.h"
+#include "skrprojecttoolboxinterface.h"
 
 SKRTreeManager::SKRTreeManager(QObject *parent) : QObject(parent)
 {
     skrdata->pluginHub()->addPluginType<SKRPageInterface>();
     skrdata->pluginHub()->addPluginType<SKRPageToolboxInterface>();
+    skrdata->pluginHub()->addPluginType<SKRProjectToolboxInterface>();
 
     connect(skrdata->treeHub(), &SKRTreeHub::treeItemAdded, this, [this](int projectId, int treeItemId) {
         QString pageType = skrdata->treeHub()->getType(projectId, treeItemId);
@@ -166,7 +168,7 @@ void SKRTreeManager::updateAllCharAndWordCount(int projectId)
 // ---------------------------------------------------------------------------------
 
 
-QStringList SKRTreeManager::findToolboxUrlsForPage(const QString &pageType) const
+QStringList SKRTreeManager::findToolboxUrlsForPage(const QString& pageType) const
 {
     QStringList list;
     QList<SKRPageToolboxInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageToolboxInterface>();
@@ -179,6 +181,19 @@ QStringList SKRTreeManager::findToolboxUrlsForPage(const QString &pageType) cons
     return list;
 }
 
+// ---------------------------------------------------------------------------------
+
+
+QStringList SKRTreeManager::findToolboxUrlsForProject() const
+{
+    QStringList list;
+    QList<SKRProjectToolboxInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRProjectToolboxInterface>();
+
+    for (SKRProjectToolboxInterface *plugin: qAsConst(pluginList)) {
+        list << plugin->qmlUrl();
+    }
+    return list;
+}
 
 // ---------------------------------------------------------------------------------
 

@@ -8,12 +8,14 @@ FocusScope {
     id: base
     property int scrollBarVerticalPolicy: ScrollBar.AlwaysOff
     property alias goUpToolButton: goUpToolButton
+    property alias selectToolButton: selectToolButton
     property alias addToolButton: addToolButton
     property alias treeMenuToolButton: treeMenuToolButton
     property alias navigationListStackView: navigationListStackView
 
     SkrPane {
         id: pane
+        padding: 1
         clip: true
         anchors.fill: parent
 
@@ -27,7 +29,6 @@ FocusScope {
                 Layout.maximumHeight: 40
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
-
 
                 RowLayout {
                     id: rowLayout
@@ -43,6 +44,13 @@ FocusScope {
                     Item {
                         id: stretcher
                         Layout.fillWidth: true
+                    }
+
+                    SkrToolButton {
+                        id: selectToolButton
+                        flat: true
+                        text: qsTr("Select")
+                        display: AbstractButton.IconOnly
                     }
 
                     SkrToolButton {
@@ -68,8 +76,6 @@ FocusScope {
                 Layout.fillHeight: true
 
                 initialItem: stackViewComponent
-
-
             }
         }
     }
@@ -80,3 +86,4 @@ Designer {
     D{i:0;autoSize:true;height:480;width:640}
 }
 ##^##*/
+

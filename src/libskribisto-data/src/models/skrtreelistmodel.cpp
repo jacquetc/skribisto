@@ -266,7 +266,7 @@ QVariant SKRTreeListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
-    if (role == SKRTreeItem::Roles::AttributesRole) {
+    if (role == SKRTreeItem::Roles::OtherPropertiesRole) {
         return item->data(role);
     }
 
@@ -352,6 +352,7 @@ bool SKRTreeListModel::setData(const QModelIndex& index, const QVariant& value, 
             break;
 
         case SKRTreeItem::Roles::HasChildrenRole:
+
             // useless
             break;
 
@@ -432,7 +433,7 @@ QHash<int, QByteArray>SKRTreeListModel::roleNames() const {
     roles[SKRTreeItem::Roles::IsTrashableRole]           = "isTrashable";
     roles[SKRTreeItem::Roles::IsOpenableRole]            = "isOpenable";
     roles[SKRTreeItem::Roles::IsCopyableRole]            = "isCopyable";
-    roles[SKRTreeItem::Roles::AttributesRole]            = "attributes";
+    roles[SKRTreeItem::Roles::OtherPropertiesRole]       = "otherProperties";
     return roles;
 }
 
@@ -755,7 +756,7 @@ void SKRTreeListModel::refreshAfterIndentChanged(int projectId, int treeItemId,
 /// \brief SKRTreeListModel::sortAllTreeItemItems
 /// sort by SortOrder
 void SKRTreeListModel::sortAllTreeItemItems() {
-    std::sort(m_allTreeItems.begin(), m_allTreeItems.end(), [](SKRTreeItem *item1, SKRTreeItem *item2)->bool {
+    std::sort(m_allTreeItems.begin(), m_allTreeItems.end(), [](SKRTreeItem *item1, SKRTreeItem *item2) -> bool {
         return item1->sortOrder() < item2->sortOrder();
     }
               );
@@ -819,18 +820,6 @@ void SKRTreeListModel::connectToSKRDataSignals()
                                        SKRTreeItem::Roles::ProjectNameRole);
     });
 
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
-
-        if (name == "label") this->exploitSignalFromSKRData(projectId, treeItemCode,
-                                                            SKRTreeItem::Roles::LabelRole);
-    });
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::treeItemIdChanged, this,
@@ -878,62 +867,6 @@ void SKRTreeListModel::connectToSKRDataSignals()
                                        SKRTreeItem::Roles::TrashedRole);
     });
 
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
-
-        if (name == "char_count") this->exploitSignalFromSKRData(projectId, treeItemCode,
-                                                                 SKRTreeItem::Roles::
-                                                                 CharCountRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
-
-        if (name == "word_count") this->exploitSignalFromSKRData(projectId, treeItemCode,
-                                                                 SKRTreeItem::Roles::
-                                                                 WordCountRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
-
-        if (name == "char_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
-                                                                               SKRTreeItem::Roles::
-                                                                               CharCountWithChildrenRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
-
-        if (name == "word_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
-                                                                               SKRTreeItem::Roles::
-                                                                               WordCountWithChildrenRole);
-    });
-
     m_dataConnectionsList << this->connect(skrdata->projectHub(),
                                            &PLMProjectHub::activeProjectChanged, this,
                                            [this](int projectId) {
@@ -945,6 +878,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
         }
     });
 
+
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &SKRPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
@@ -953,108 +887,59 @@ void SKRTreeListModel::connectToSKRDataSignals()
                                                   const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
+
+
+        if (name == "label") this->exploitSignalFromSKRData(projectId, treeItemCode,
+                                                            SKRTreeItem::Roles::LabelRole);
+
+        if (name == "char_count") this->exploitSignalFromSKRData(projectId, treeItemCode,
+                                                                 SKRTreeItem::Roles::
+                                                                 CharCountRole);
+
+        if (name == "word_count") this->exploitSignalFromSKRData(projectId, treeItemCode,
+                                                                 SKRTreeItem::Roles::
+                                                                 WordCountRole);
+
+        if (name == "char_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
+                                                                               SKRTreeItem::Roles::
+                                                                               CharCountWithChildrenRole);
+
+        if (name == "word_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
+                                                                               SKRTreeItem::Roles::
+                                                                               WordCountWithChildrenRole);
 
         if (name == "is_renamable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                    SKRTreeItem::Roles::
                                                                    IsRenamableRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
 
         if (name == "is_movable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                  SKRTreeItem::Roles::
                                                                  IsMovableRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
 
         if (name == "can_add_sibling_tree_item") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                                 SKRTreeItem::Roles::
                                                                                 CanAddSiblingTreeItemRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
 
         if (name == "can_add_child_tree_item") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                               SKRTreeItem::Roles::
                                                                               CanAddChildTreeItemRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
 
         if (name == "is_trashable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                    SKRTreeItem::Roles::
                                                                    IsTrashableRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
 
         if (name == "is_openable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                   SKRTreeItem::Roles::
                                                                   IsOpenableRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
 
         if (name == "is_copyable") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                   SKRTreeItem::Roles::
                                                                   IsCopyableRole);
-    });
-
-    m_dataConnectionsList << this->connect(m_propertyHub,
-                                           &SKRPropertyHub::propertyChanged, this,
-                                           [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
-        Q_UNUSED(value)
-        Q_UNUSED(propertyId)
-
-        if (name == "attributes") this->exploitSignalFromSKRData(projectId, treeItemCode,
-                                                                 SKRTreeItem::Roles::
-                                                                 AttributesRole);
+        else {
+            this->exploitSignalFromSKRData(projectId, treeItemCode,
+                                           SKRTreeItem::Roles::
+                                           OtherPropertiesRole);
+        }
     });
 }
 
