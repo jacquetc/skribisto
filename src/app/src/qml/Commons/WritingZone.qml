@@ -973,4 +973,30 @@ WritingZoneForm {
 
         }
     }
+
+
+    //----------------------------------------------------------------------------
+    //-----Find Panel------------------------------------------------------------
+    //----------------------------------------------------------------------------
+
+
+
+
+    findPanel.documentHandler: documentHandler
+    findPanel.highlighter: documentHandler.highlighter
+    findPanel.textArea: textArea
+
+
+    Action{
+        id: findAction
+        text: qsTr("Find")
+        shortcut: "Ctrl+F"
+        icon.source: "qrc:///icons/backup/edit-find.svg"
+        onTriggered: {
+            findPanel.visible = true
+        }
+    }
+
+
+
 }

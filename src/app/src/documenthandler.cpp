@@ -23,7 +23,8 @@ DocumentHandler::DocumentHandler(QObject *parent) :
     m_projectId(-2),
     m_paperId(-2),
     m_previousBlockCount(-1),
-    m_blockIdCount(-1)
+    m_blockIdCount(-1),
+    m_highlighter(new SKRHighlighter(new QTextDocument(this)))
 {}
 
 QQuickTextDocument * DocumentHandler::textDocument() const
@@ -68,6 +69,7 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
                 &SKRHighlighter::paintUnderlineForSpellcheckCalled,
                 this,
                 &DocumentHandler::paintUnderlineForSpellcheck);
+        emit highlighterChanged();
     } else {
         m_textCursor.setPosition(0);
     }
@@ -822,4 +824,67 @@ void DocumentHandler::paintUnderlineForSpellcheck(QList<int>positionList, QTextB
 
 
     m_previousBlockCount = m_textDoc->textDocument()->blockCount();
+}
+
+// ------------------------------------------------------------------
+int DocumentHandler::findPreviousPosition(const QString& text, int fromPosition, DocumentHandler::FindFlags findFlags) {
+    findFlags.setFlag(FindFlag::FindBackward, true);
+    return findNextPosition(text, fromPosition, findFlags);
+}
+
+// ------------------------------------------------------------------
+
+int DocumentHandler::findNextPosition(const QString& text, int fromPosition, DocumentHandler::FindFlags findFlags) {
+    QVariant v = static_cast<DocumentHandler::FindFlags::Int>(findFlags);
+
+    QTextDocument::FindFlags retrieved =
+        static_cast<QTextDocument::FindFlags>(v.value<QTextDocument::FindFlags::Int>());
+
+    QTextCursor cursor = m_textDoc->textDocument()->find(text, fromPosition, retrieved);
+
+    if (cursor.isNull()) {
+        return -1;
+    }
+
+    return cursor.anchor();
+}
+
+// ------------------------------------------------------------------
+
+void DocumentHandler::replaceWordAt(const QString& word, const QString& newWord, int position)
+{
+    QTextCursor cursor(m_textDoc->textDocument());
+
+    cursor.beginEditBlock();
+    cursor.setPosition(position);
+    cursor.setPosition(position + word.count(), QTextCursor::KeepAnchor);
+    cursor.insertText(newWord);
+    cursor.endEditBlock();
+}
+
+// ------------------------------------------------------------------
+
+void DocumentHandler::replaceAllWords(const QString& word, const QString& newWord, DocumentHandler::FindFlags findFlags)
+{
+    QTextCursor cursor(m_textDoc->textDocument());
+
+    cursor.beginEditBlock();
+    cursor.setPosition(0);
+
+    int nextPosition = 0;
+
+
+    while (nextPosition != -1) {
+        nextPosition = this->findNextPosition(word, nextPosition, findFlags);
+
+        if (nextPosition != -1) {
+            cursor.setPosition(nextPosition);
+            cursor.setPosition(nextPosition + word.count(), QTextCursor::KeepAnchor);
+            cursor.insertText(newWord);
+            cursor.setPosition(nextPosition + newWord.count());
+        }
+    }
+
+
+    cursor.endEditBlock();
 }

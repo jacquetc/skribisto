@@ -34,8 +34,8 @@ class SKRHighlighter : public QSyntaxHighlighter {
 public:
 
     SKRHighlighter(QTextDocument *parentDoc);
-    void             setTextToHighlight(QString string);
-    void             setCaseSensitivity(bool isCaseSensitive);
+    Q_INVOKABLE void setTextToHighlight(QString string);
+    Q_INVOKABLE void setCaseSensitivity(bool isCaseSensitive);
     SKRSpellChecker* getSpellChecker();
 
 

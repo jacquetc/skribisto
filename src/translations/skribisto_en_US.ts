@@ -573,7 +573,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Replace All</source>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Replace all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show replace tool</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -851,6 +859,10 @@
     </message>
     <message>
         <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2352,6 +2364,13 @@
     </message>
     <message>
         <source>Writing games</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WritingZone</name>
+    <message>
+        <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

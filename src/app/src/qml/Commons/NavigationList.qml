@@ -2464,6 +2464,30 @@ NavigationListForm {
                                             }
                                         }
                                     }
+
+
+                                    MenuSeparator {
+                                        height: model.treeItemId !== 0 ? 0 : undefined
+                                        visible: model.treeItemId === 0
+                                    }
+
+                                    SkrMenuItem {
+                                        height: model.treeItemId === 0 ? undefined : 0
+                                        visible: model.treeItemId === 0
+                                        enabled: listView.enabled
+                                                 && model.treeItemId === 0
+                                        text: qsTr("Close this project")
+                                        icon {
+                                            source: "qrc:///icons/backup/document-close.svg"
+                                        }
+                                        onTriggered: {
+                                            console.log("close this project",
+                                                        model.projectId)
+
+                                            Globals.closeProjectCalled(model.projectId)
+                                        }
+                                    }
+
                                 }
 
                                 //----------------------------------------------------------
