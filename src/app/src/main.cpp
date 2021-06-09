@@ -51,7 +51,7 @@ using namespace std;
 #include "skrviewmanager.h"
 #include "skrtreemanager.h"
 
-#ifdef SKR_DEBUG
+#if SKR_DEBUG
 # include <QQmlDebuggingEnabler>
 #endif // SKR_DEBUG
 // -------------------------------------------------------
@@ -145,7 +145,7 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QS
 
 int main(int argc, char *argv[])
 {
-#ifdef SKR_DEBUG
+#if SKR_DEBUG
     QQmlDebuggingEnabler enabler;
 
     QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
