@@ -22,13 +22,14 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
         with:
-          ref: 'develop'
+          fetch-depth: 0
 
       - id: git-diff
         run: echo "::set-output name=diff-output::$(git diff origin/master...origin/develop -- NEWS.yml)"
 
       - name: Run a multi-line script
         run: |
+          git checkout develop
           git config user.name github-actions
           git config user.email github-actions@github.com
           appstreamcli news-to-metainfo --limit=6 ./NEWS.yml ./eu.skribisto.skribisto.appdata.xml
