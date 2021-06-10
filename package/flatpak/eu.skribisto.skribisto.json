@@ -8,7 +8,7 @@
     "--share=ipc",
     "--socket=fallback-x11",
     "--socket=wayland",
-    "--filesystem=host",
+    "--filesystem=home",
     "--device=dri"
   ],
   "separate-locales": false,
@@ -68,7 +68,7 @@
     },
     {
       "name": "skribisto",
-      "buildsystem": "cmake",
+      "buildsystem": "cmake-ninja",
       "builddir": true,
       "config-opts": [
         "-DCMAKE_BUILD_TYPE=MinSizeRel"
