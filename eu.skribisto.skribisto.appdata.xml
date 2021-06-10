@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component type="desktop">
+<component type="desktop-application">
   <id>eu.skribisto.skribisto</id>
-  <launchable type="desktop-id">eu.skribisto.skribisto.desktop</launchable>
+  <name>Skribisto</name>
+  <summary>Software for writing</summary>
+  <summary xml:lang="fr">Logiciel d'écriture</summary>
+  <developer_name>Cyril Jacquet</developer_name>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0</project_license>
-  <name>Skribisto</name>
-  <summary>Software for writers</summary>
   <description>
-      <p>Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or write hundreds of notes. The tools are designed to be most unobstrusive, so you can write, write and write a bit more without too much distraction.</p>
-    <p xml:lang="en-GB">Touch-friendly and dynamic, the user can create and organize text.</p>
+    <p>Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or write hundreds of notes. The tools are designed to be most unobstrusive, so you can write, write and write a bit more without too much distraction.</p>
   </description>
+  <categories>
+    <category>Office</category>
+  </categories>
+  <url type="homepage">https://github.com/jacquetc/skribisto</url>
+  <url type="bugtracker">https://github.com/jacquetc/skribisto/issues</url>
+  <url type="faq">https://manual.skribisto.eu/en_US/faq.html</url>
+  <url type="help">https://manual.skribisto.eu/en_US/manual.html</url>
+  <url type="contact">https://github.com/jacquetc/skribisto#to-contact-me</url>
+  <url type="translate">https://github.com/jacquetc/skribisto#translation</url>
+  <launchable type="desktop-id">eu.skribisto.skribisto.desktop</launchable>
   <screenshots>
     <screenshot type="default">
       <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot1.png</image>
@@ -17,19 +27,18 @@
       <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot3.png</image>
     </screenshot>
   </screenshots>
-  <categories>
-    <category>Office</category>
-    <category>Qt</category>
-  </categories>
-  <url type="homepage">https://github.com/jacquetc/skribisto</url>
-  <url type="bugtracker">https://github.com/jacquetc/skribisto/issues</url>
-  <project_group></project_group>
-  <update_contact>cyril.jacquet_AT_skribisto.eu</update_contact>
+  <releases>
+    <release type="stable" version="1.9.20" date="2021-06-10T00:00:00Z">
+      <description>
+        <p>First release on FlatHub</p>
+      </description>
+    </release>
+  </releases>
   <provides>
     <binary>skribisto</binary>
   </provides>
-  <releases>
-    <release version="1.9.20" date="2021-06-10" />
-  </releases>
   <content_rating type="oars-1.1"/>
+  <mimetypes>
+    <mimetype>application/x-skribisto</mimetype>
+  </mimetypes>
 </component>

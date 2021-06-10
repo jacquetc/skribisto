@@ -5,9 +5,9 @@ sdk: org.freedesktop.Sdk
 command: skribisto
 finish-args:
   - --share=ipc
-  - --socket=x11
+  - --socket=fallback-x11
   - --socket=wayland
-  - --filesystem=host
+  - --filesystem=home
   - --device=dri
 separate-locales: false
 modules:
@@ -89,7 +89,7 @@ modules:
           - sed -i 's|${CMAKE_ROOT}/Modules|share/cmake|' CMakeLists.txt
 
   - name: skribisto
-    buildsystem: cmake
+    buildsystem: cmake-ninja
     builddir: true
     cleanup-platform: 
       - "*"
