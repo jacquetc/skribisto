@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Generate releases in .appdata.xml fro m NEWS.yml
+name: Generate releases in .appdata.xml from NEWS.yml
 
 # Controls when the action will run. 
 on:
@@ -26,7 +26,7 @@ jobs:
           ref: 'develop'
           
       - id: git-diff
-        run: ::set-output name=diff-output::$(git diff master..develop -- NEWS.yml)
+        run: echo "::set-output name=diff-output::$(git diff master..develop -- NEWS.yml)"
 
       - name: Run a multi-line script
         run: |
