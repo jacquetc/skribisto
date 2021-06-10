@@ -20,6 +20,9 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Install AppStream
+        run: sudo apt install appstream
+
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
