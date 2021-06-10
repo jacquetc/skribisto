@@ -26,7 +26,7 @@ jobs:
           ref: 'develop'
           
       - id: git-diff
-        run: echo "::set-output name=diff-output::$(git diff master..develop -- NEWS.yml)"
+        run: echo "::set-output name=diff-output::$(git diff master...develop -- NEWS.yml)"
 
       - name: Run a multi-line script
         run: |
