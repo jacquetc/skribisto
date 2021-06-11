@@ -394,10 +394,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation type="unfinished"></translation>
     </message>
@@ -944,15 +940,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Project path :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>project path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -973,6 +961,14 @@
     </message>
     <message>
         <source>Dictionary :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project path</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
