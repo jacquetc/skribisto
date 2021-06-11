@@ -158,7 +158,7 @@ Item {
                     SkrLabel {
                         id: typeLabel
                         visible: !printEnabled
-                        text: odtButton.checked ? qsTr("OpenDocument") : (txtButton.checked ? qsTr("Text") : (mdButton.checked ? qsTr("Markdown") : (htmlButton.checked ? qsTr("HTML") : "none")))
+                        text: odtButton.checked ? qsTr("OpenDocument") : (txtButton.checked ? qsTr("Text") : (mdButton.checked ? "Markdown" : (htmlButton.checked ? qsTr("HTML") : "none")))
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignHCenter
                     }

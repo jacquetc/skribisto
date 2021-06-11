@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Generate releases in .appdata.xml fro m NEWS.yml
+name: Generate releases in .appdata.xml from NEWS.yml
 
 # Controls when the action will run. 
 on:
@@ -20,16 +20,19 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Install AppStream
+        run: sudo apt install appstream
+
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          ref: 'develop'
-          
+
       - id: git-diff
-        run: ::set-output name=diff-output::$(git diff master..develop -- NEWS.yml)
+        run: echo "::set-output name=diff-output::$(git diff origin/master...origin/develop -- NEWS.yml)"
 
       - name: Run a multi-line script
         run: |
+          git checkout develop
           git config user.name github-actions
           git config user.email github-actions@github.com
           appstreamcli news-to-metainfo --limit=6 ./NEWS.yml ./eu.skribisto.skribisto.appdata.xml

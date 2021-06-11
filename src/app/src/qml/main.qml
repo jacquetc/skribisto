@@ -106,6 +106,7 @@ ApplicationWindow {
     Loader {
         id: loader_firstStepsWizard
         sourceComponent: component_firstStepsWizard
+        active: false
     }
 
     Connections {
@@ -1578,8 +1579,8 @@ ApplicationWindow {
     //    }
     Action {
         id: pasteTextAction
-        text: qsTr("Paste")
-        shortcut: StandardKey.Paste
+        text: skrShortcutManager.description("paste")
+        shortcut: skrShortcutManager.shortcuts("paste")
         icon {
             source: "qrc:///icons/backup/edit-paste.svg"
         }

@@ -23,6 +23,7 @@ SkrBasePage {
     property alias wordCountLabel: wordCountLabel
     readonly property int columnWidth: 550
     property alias viewButtons: viewButtons
+    property alias installDictButton: installDictButton
 
 
 
@@ -177,6 +178,11 @@ SkrBasePage {
                                             color: "#ee0000"
                                             text: qsTr("Selected dictionary not found")
                                         }
+                                    }
+
+                                    SkrButton {
+                                        id: installDictButton
+                                        text: qsTr("Install new dictionaries")
                                     }
 
                                 }

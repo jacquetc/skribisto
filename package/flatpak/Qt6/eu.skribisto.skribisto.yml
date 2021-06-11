@@ -5,9 +5,10 @@ sdk: org.freedesktop.Sdk
 command: skribisto
 finish-args:
   - --share=ipc
-  - --socket=x11
+  - --share=network
+  - --socket=fallback-x11
   - --socket=wayland
-  - --filesystem=host
+  - --filesystem=home
   - --device=dri
 separate-locales: false
 modules:
@@ -89,12 +90,12 @@ modules:
           - sed -i 's|${CMAKE_ROOT}/Modules|share/cmake|' CMakeLists.txt
 
   - name: skribisto
-    buildsystem: cmake
+    buildsystem: cmake-ninja
     builddir: true
     cleanup-platform: 
       - "*"
     config-opts:
-      - -DCMAKE_BUILD_TYPE=MinSizeRel
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfos
     sources:
       - type: git
         url: https://github.com/jacquetc/skribisto.git

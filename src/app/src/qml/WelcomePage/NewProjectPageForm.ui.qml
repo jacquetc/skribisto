@@ -73,7 +73,7 @@ Item {
                     SkrTextField {
 
                         id: projectFileTextField
-                        placeholderText: qsTr("project file")
+                        placeholderText: qsTr("Project file")
                         Layout.columnSpan: 2
                         Layout.fillWidth: true
                     }
@@ -84,7 +84,7 @@ Item {
 
                     SkrTextField {
                         id: projectPathTextField
-                        placeholderText: qsTr("project path")
+                        placeholderText: qsTr("Project path")
                         Layout.fillWidth: true
                     }
 

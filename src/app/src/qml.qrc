@@ -138,5 +138,7 @@
         <file>qml/Commons/FindPanel.qml</file>
         <file>qml/Commons/FindPanelForm.ui.qml</file>
         <file>qml/Items/SkrCheckBox.qml</file>
+        <file>qml/Commons/NewDictWizard.qml</file>
+        <file>qml/Commons/NewDictWizardForm.ui.qml</file>
     </qresource>
 </RCC>

@@ -102,7 +102,6 @@ SKRResult& SKRResult::operator=(const SKRResult& iResult)
         m_dataHashList.append(iResult.getDataHashList());
     }
 
-    // m_success = iError.isSuccess();
     return *this;
 }
 

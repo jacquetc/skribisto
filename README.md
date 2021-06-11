@@ -348,13 +348,15 @@ Using the Linux Superbuild instructions, it runs.
 
 ![alt text](https://www.transifex.com/_/charts/redirects/skribisto/skribisto/image_png/ "Translation advancement")
 
+As you can see in the chart, all the main languages are translated. That's not the reality ! A first pass of translation was done with Google Translate, 
+so if you find errors or a distinct lack of logic in a few words, you now the culprit ! You are invited to fix such mistakes by following the below instructions.
 
-SKribisto uses Transifex to manage translation from english to any language.
+SKribisto uses Transifex to manage translation from english to any language. 
 
 [https://www.transifex.com/skribisto/skribisto/](https://www.transifex.com/skribisto/skribisto/)
 
 
-To help with translation, go [here](https://www.transifex.com/skribisto/skribisto/) and click on the "Help translate" button.
+To help with translation, go [here](https://www.transifex.com/skribisto/skribisto/) and click on the "Help translate" button. It's free. No tool required, nothing to install.
 
 If your language isn't listed and you want to translate it, please create an (issue)[https://github.com/jacquetc/skribisto/issues] or send me an email at cyril.jacquet@skribisto.eu and I'll add it.
 

@@ -324,7 +324,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>- Drag an drop here
+        <source>- Drag and drop here
 - Click here then select a document in Navigation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -600,10 +600,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Welcome in Skribisto</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select a language:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -629,6 +625,10 @@
     </message>
     <message>
         <source>Frequently Asked Questions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -870,6 +870,44 @@
     </message>
     <message>
         <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NewDictWizard</name>
+    <message>
+        <source>Dictionary &quot;%1&quot; successfully installed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading from %1 (%2/%3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading license from %1 for %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NewDictWizardForm.ui</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the dictionary to install:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install a new dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View license</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1290,6 +1328,10 @@
         <source>Statistics</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Install new dictionaries</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -1485,6 +1527,17 @@
     </message>
 </context>
 <context>
+    <name>SKRDownload</name>
+    <message>
+        <source>Destination file &quot;%1&quot; already exists</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while writing &quot;%1&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SKRExporter</name>
     <message>
         <source>Tags:</source>
@@ -1503,6 +1556,21 @@
     <name>SKRRootItem</name>
     <message>
         <source>No translation found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SKRShortcutManager</name>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2498,10 +2566,6 @@
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

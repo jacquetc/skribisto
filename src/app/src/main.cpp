@@ -50,6 +50,8 @@ using namespace std;
 #include "skrwindowmanager.h"
 #include "skrviewmanager.h"
 #include "skrtreemanager.h"
+#include "skrdownload.h"
+#include "skrshortcutmanager.h"
 
 #if SKR_DEBUG
 # include <QQmlDebuggingEnabler>
@@ -209,8 +211,14 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine(qApp);
 
-    SKRData *data         = new SKRData(&engine);
-    SKRRootItem *rootItem = new SKRRootItem(&engine);
+    SKRData *data = new SKRData(&engine);
+
+    SKRShortcutManager *shortcutManager = new SKRShortcutManager(&engine);
+    SKRRootItem *rootItem               = new SKRRootItem(&engine);
+    rootItem->connect(rootItem,
+                      &SKRRootItem::currentTranslationLanguageCodeChanged,
+                      shortcutManager,
+                      &SKRShortcutManager::populateShortcutList);
     rootItem->applyLanguageFromSettings();
 
 
@@ -331,6 +339,11 @@ int main(int argc, char *argv[])
                                      0,
                                      "SKRSpellChecker");
 
+    qmlRegisterType<SKRDownload>("eu.skribisto.download",
+                                 1,
+                                 0,
+                                 "Download");
+
     qmlRegisterType<SKRUserSettings>("eu.skribisto.usersettings",
                                      1,
                                      0,
@@ -362,6 +375,7 @@ int main(int argc, char *argv[])
     SKRWindowManager *skrWindowManager = new SKRWindowManager(qApp, &engine, url);
 
     engine.rootContext()->setContextProperty("skrData", data);
+    engine.rootContext()->setContextProperty("skrShortcutManager", shortcutManager);
     engine.rootContext()->setContextProperty("skrRootItem", rootItem);
     engine.rootContext()->setContextProperty("skrModels", models);
     engine.rootContext()->setContextProperty("skrFonts", skrFonts);

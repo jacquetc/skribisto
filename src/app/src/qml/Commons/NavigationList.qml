@@ -273,6 +273,7 @@ NavigationListForm {
         }
     }
 
+
     //----------------------------------------------------------------------------
     //------------------ select button :------------------------------------------
     //----------------------------------------------------------------------------
@@ -404,9 +405,12 @@ NavigationListForm {
 
             focus: false
 
+
+
             Component.onCompleted: {
                 init()
             }
+
 
             function init() {
                 p_section.parentTitle = qsTr("Projects")
@@ -537,6 +541,22 @@ NavigationListForm {
                 }
             }
 
+            Item {
+                id: focusZone
+                anchors.fill: parent
+                z:1
+
+                TapHandler {
+                    onTapped: {
+                        listView.forceActiveFocus()
+
+                    }
+                }
+
+
+            }
+
+
             ScrollView {
                 id: scrollView
                 clip: true
@@ -550,6 +570,7 @@ NavigationListForm {
                     smooth: true
                     boundsBehavior: Flickable.StopAtBounds
                     spacing: 1
+
 
                     Accessible.name: qsTr("Navigation list")
                     Accessible.role: Accessible.List
@@ -1363,34 +1384,14 @@ NavigationListForm {
                                                             "parentId": model.treeItemId
                                                         })
                                             newItem.setCurrent()
+                                            newItem.listView.currentIndex = 0
+                                            newItem.forceActiveFocus()
+
                                             rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
                                                         priv.currentProjectId,
                                                         priv.currentParentId)
 
-                                            //                                        currentProject = model.projectId
-                                            //                                        currentParent = model.treeItemId
-                                            //                                        var _currentProject = currentProject
-                                            //                                        var _currentParent = currentParent
-                                            //                                        var _index = model.index
 
-                                            //                                        var _listView = listView
-
-                                            //                                        // change level
-                                            //                                        _proxyModel.setParentFilter(_currentProject,
-                                            //                                                                    _currentParent)
-                                            //                                        _proxyModel.addHistory(_currentProject, _index)
-
-                                            //                                        // create a child if none present
-                                            //                                        if (!_proxyModel.hasChildren(_currentProject,
-                                            //                                                                     _currentParent)) {
-                                            //                                            newPaperAdded = true
-                                            //                                            _proxyModel.addChildItem(_currentProject,
-                                            //                                                                     _currentParent, 0)
-
-                                            //                                            // edit it :
-                                            //                                            _listView.itemAtIndex(0).editName()
-
-                                            //                                        }
                                         }
                                     }
 
@@ -1417,26 +1418,6 @@ NavigationListForm {
                                         }
                                     }
 
-                                    Timer {
-                                        property int treeItemIndexToEdit: -2
-                                        onTreeItemIndexToEditChanged: {
-                                            if (treeItemIndexToEdit !== -2) {
-                                                editNameWithIndexTimer.start()
-                                            }
-                                        }
-
-                                        id: editNameWithIndexTimer
-                                        repeat: false
-                                        interval: animationDuration
-                                        onTriggered: {
-                                            if (treeItemIndexToEdit !== -2) {
-                                                visualModel.items.get(
-                                                            treeItemIndexToEdit).editName()
-                                                //listView.itemAtIndex(treeItemIndexToEdit)
-                                            }
-                                            treeItemIndexToEdit = -2
-                                        }
-                                    }
 
                                     Action {
                                         id: openDocumentAction
@@ -2307,7 +2288,6 @@ NavigationListForm {
                                                         = afterNewItemTypeIsChosen
                                                 newItemPopup.open()
 
-                                                //editNameWithIndexTimer.treeItemIndexToEdit = visualIndex
                                             }
 
                                             function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {

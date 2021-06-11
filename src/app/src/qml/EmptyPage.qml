@@ -71,7 +71,7 @@ SkrBasePage {
                 }
                 SkrLabel {
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-                    text: qsTr("- Drag an drop here\n- Click here then select a document in Navigation")
+                    text: qsTr("- Drag and drop here\n- Click here then select a document in Navigation")
                     enabled: false
                 }
             }
