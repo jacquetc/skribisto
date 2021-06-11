@@ -322,10 +322,10 @@
         <translation>&lt;h2&gt;Відкрити документ&lt;/h2&gt;</translation>
     </message>
     <message>
-        <source>- Drag an drop here
+        <source>- Drag and drop here
 - Click here then select a document in Navigation</source>
-        <translation>- Перетягніть сюди та відпустіть
-- Клацніть тут, потім оберіть документ в навігації</translation>
+        <translation>- Перетягніть сюди
+- Клацніть тут, а потім виберіть документ у Навігації</translation>
     </message>
 </context>
 <context>
@@ -347,23 +347,23 @@
     </message>
     <message>
         <source>.odt</source>
-        <translation type="unfinished"/>
+        <translation>.odt</translation>
     </message>
     <message>
         <source>.txt</source>
-        <translation type="unfinished"/>
+        <translation>.txt</translation>
     </message>
     <message>
         <source>.md</source>
-        <translation type="unfinished"/>
+        <translation>.md</translation>
     </message>
     <message>
         <source>.html</source>
-        <translation type="unfinished"/>
+        <translation>.html</translation>
     </message>
     <message>
         <source>.pdf</source>
-        <translation type="unfinished"/>
+        <translation>.pdf</translation>
     </message>
     <message>
         <source>Levels with titles: %1</source>
@@ -371,7 +371,7 @@
     </message>
     <message>
         <source>Export &quot;%1&quot; project as …</source>
-        <translation type="unfinished"/>
+        <translation>Експортувати проєкт &quot;%1&quot; як ...</translation>
     </message>
 </context>
 <context>
@@ -386,7 +386,7 @@
     </message>
     <message>
         <source>OpenDocument</source>
-        <translation type="unfinished"/>
+        <translation>OpenDocument</translation>
     </message>
     <message>
         <source>Text</source>
@@ -398,7 +398,7 @@
     </message>
     <message>
         <source>HTML</source>
-        <translation type="unfinished"/>
+        <translation>HTML</translation>
     </message>
     <message>
         <source>Include outline in each sheet</source>
@@ -443,6 +443,28 @@
     <message>
         <source>Export</source>
         <translation>Експорт</translation>
+    </message>
+</context>
+<context>
+    <name>FavoritesProjectToolbox</name>
+    <message>
+        <source>Show Favorites toolbox</source>
+        <translation>Показати панель інструментів Вибране</translation>
+    </message>
+    <message>
+        <source>Favorites Project Toolbox</source>
+        <translation>Набір інструментів проекту Вибране</translation>
+    </message>
+</context>
+<context>
+    <name>FavoritesProjectToolboxForm.ui</name>
+    <message>
+        <source>Favorites</source>
+        <translation>Вибране</translation>
+    </message>
+    <message>
+        <source>Favorites list</source>
+        <translation>Список обраних</translation>
     </message>
 </context>
 <context>
@@ -524,38 +546,104 @@
     </message>
 </context>
 <context>
+    <name>FindPanelForm.ui</name>
+    <message>
+        <source>Find</source>
+        <translation>Знайдіть</translation>
+    </message>
+    <message>
+        <source>Replace with</source>
+        <translation>Замінити</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>Знайти попереднє</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>Знайти далі</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>Замінити</translation>
+    </message>
+    <message>
+        <source>Find &amp; Replace</source>
+        <translation>Знайти та замінити</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Закрити</translation>
+    </message>
+    <message>
+        <source>Replace all</source>
+        <translation>Замінити все</translation>
+    </message>
+    <message>
+        <source>Show replace tool</source>
+        <translation>Показати інструмент заміни</translation>
+    </message>
+</context>
+<context>
     <name>FirstStepsWizard</name>
     <message>
-        <source>Go Back</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <source>&lt;h1&gt;First steps with Skribisto&lt;/h1&gt;</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <source>Welcome to Skribisto !</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
         <source>Previous</source>
-        <translation type="unfinished"/>
+        <translation>Попередній</translation>
     </message>
     <message>
         <source>Next</source>
-        <translation type="unfinished"/>
+        <translation>Наступний</translation>
+    </message>
+    <message>
+        <source>First steps with Skribisto</source>
+        <translation>Перші кроки зі Скрибісто</translation>
+    </message>
+    <message>
+        <source>Select a language:</source>
+        <translation>Виберіть мову:</translation>
+    </message>
+    <message>
+        <source>Default dictionary :</source>
+        <translation>Словник за замовчуванням:</translation>
+    </message>
+    <message>
+        <source>This assistant will help you set up Skribisto to your liking. To begin with, please select the best options for your use.</source>
+        <translation>Цей помічник допоможе вам налаштувати Skribisto на свій смак. Для початку виберіть найкращі варіанти для вашого використання.</translation>
+    </message>
+    <message>
+        <source>Help with accessibility</source>
+        <translation>Допомога щодо доступності</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Закрити</translation>
+    </message>
+    <message>
+        <source>User manual</source>
+        <translation>Посібник користувача</translation>
+    </message>
+    <message>
+        <source>Frequently Asked Questions</source>
+        <translation>Питання що часто задаються</translation>
+    </message>
+    <message>
+        <source>Welcome to Skribisto</source>
+        <translation>Ласкаво просимо до Скрибісто</translation>
+    </message>
+</context>
+<context>
+    <name>HelpContentsForm.ui</name>
+    <message>
+        <source>User manual</source>
+        <translation>Посібник користувача</translation>
+    </message>
+    <message>
+        <source>Frequently Asked Questions</source>
+        <translation>Питання що часто задаються</translation>
     </message>
 </context>
 <context>
     <name>HelpPageForm.ui</name>
-    <message>
-        <source>Contents</source>
-        <translation>Зміст</translation>
-    </message>
-    <message>
-        <source>FAQ</source>
-        <translation type="unfinished"/>
-    </message>
     <message>
         <source>About</source>
         <translation>Про програму</translation>
@@ -563,6 +651,10 @@
     <message>
         <source>About Qt</source>
         <translation>Про Qt</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation>Допомога</translation>
     </message>
 </context>
 <context>
@@ -693,6 +785,10 @@
         <translation>Ввести заголовок</translation>
     </message>
     <message>
+        <source>Item menu</source>
+        <translation>Елемент меню</translation>
+    </message>
+    <message>
         <source>Open</source>
         <translation>Відкрити</translation>
     </message>
@@ -748,6 +844,18 @@
         <source>Send to trash</source>
         <translation>В смітник</translation>
     </message>
+    <message>
+        <source>Navigation list</source>
+        <translation>Список навігації</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation>Виберіть</translation>
+    </message>
+    <message>
+        <source>Close this project</source>
+        <translation>Закрийте цей проект</translation>
+    </message>
 </context>
 <context>
     <name>NavigationListForm.ui</name>
@@ -758,6 +866,48 @@
     <message>
         <source>Navigation menu</source>
         <translation>Навігаційне меню</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation>Виберіть</translation>
+    </message>
+</context>
+<context>
+    <name>NewDictWizard</name>
+    <message>
+        <source>Dictionary &quot;%1&quot; successfully installed</source>
+        <translation>Словник &quot;%1&quot; успішно встановлений</translation>
+    </message>
+    <message>
+        <source>Downloading from %1 (%2/%3)</source>
+        <translation>Завантаження з %1 (%2 / %3)</translation>
+    </message>
+    <message>
+        <source>Downloading license from %1 for %2</source>
+        <translation>Завантаження ліцензії з %1 для %2</translation>
+    </message>
+</context>
+<context>
+    <name>NewDictWizardForm.ui</name>
+    <message>
+        <source>Close</source>
+        <translation>Закрити</translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation>Встановити</translation>
+    </message>
+    <message>
+        <source>Please choose the dictionary to install:</source>
+        <translation>Виберіть словник для встановлення:</translation>
+    </message>
+    <message>
+        <source>Install a new dictionary</source>
+        <translation>Встановіть новий словник</translation>
+    </message>
+    <message>
+        <source>View license</source>
+        <translation>Переглянути ліцензію</translation>
     </message>
 </context>
 <context>
@@ -819,6 +969,10 @@
     <message>
         <source>Create</source>
         <translation>Створити</translation>
+    </message>
+    <message>
+        <source>Dictionary :</source>
+        <translation>Словник:</translation>
     </message>
 </context>
 <context>
@@ -896,7 +1050,7 @@
     </message>
     <message>
         <source>Type your note here …</source>
-        <translation type="unfinished"/>
+        <translation>Друкуйте свою нотатку тут ...</translation>
     </message>
 </context>
 <context>
@@ -941,7 +1095,7 @@
     </message>
     <message>
         <source>Type your outline here …</source>
-        <translation type="unfinished"/>
+        <translation>Друкуйте свій обрис тут ...</translation>
     </message>
 </context>
 <context>
@@ -988,7 +1142,7 @@
     </message>
     <message>
         <source>c: %1</source>
-        <translation type="unfinished"/>
+        <translation>л: %1</translation>
     </message>
     <message>
         <source>all c: %1</source>
@@ -996,7 +1150,7 @@
     </message>
     <message>
         <source>w: %1</source>
-        <translation type="unfinished"/>
+        <translation>с: %1</translation>
     </message>
     <message>
         <source>all w: %1</source>
@@ -1065,6 +1219,32 @@
     <message>
         <source>Send to trash</source>
         <translation>Перемістити до смітника</translation>
+    </message>
+</context>
+<context>
+    <name>PluginPage</name>
+    <message>
+        <source>%1 (mandatory)</source>
+        <translation>%1 (обов&apos;язково)</translation>
+    </message>
+</context>
+<context>
+    <name>PluginPageForm.ui</name>
+    <message>
+        <source>Plugins</source>
+        <translation>Плагіни</translation>
+    </message>
+    <message>
+        <source>Classic</source>
+        <translation>Класичний</translation>
+    </message>
+    <message>
+        <source>Writing</source>
+        <translation>Письмо</translation>
+    </message>
+    <message>
+        <source>Personalized</source>
+        <translation>Персоналізований</translation>
     </message>
 </context>
 <context>
@@ -1147,58 +1327,9 @@
         <source>Statistics</source>
         <translation>Статистика</translation>
     </message>
-</context>
-<context>
-    <name>ProjectSubPage</name>
     <message>
-        <source>Write this project&apos;s new name</source>
-        <translation>Напишіть нове ім’я цього проєкта</translation>
-    </message>
-    <message>
-        <source>Character count : %1</source>
-        <translation>Кількість символів: %1</translation>
-    </message>
-    <message>
-        <source>Word count : %1</source>
-        <translation>Кількість слів: %1</translation>
-    </message>
-</context>
-<context>
-    <name>ProjectSupPageForm.ui</name>
-    <message>
-        <source>Edit project name</source>
-        <translation>Редагувати ім’я проєкта</translation>
-    </message>
-    <message>
-        <source>Location :</source>
-        <translation>Місцезнаходження:</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>Мова</translation>
-    </message>
-    <message>
-        <source>Dictionary :</source>
-        <translation>Словник:</translation>
-    </message>
-    <message>
-        <source>Selected dictionary not found</source>
-        <translation>Обраний словник не існує</translation>
-    </message>
-    <message>
-        <source>Tags</source>
-        <translation>Теги</translation>
-    </message>
-    <message>
-        <source>Statistics</source>
-        <translation>Статистика</translation>
-    </message>
-</context>
-<context>
-    <name>ProjectTabForm.ui</name>
-    <message>
-        <source>Close project</source>
-        <translation>Закрити проєкт</translation>
+        <source>Install new dictionaries</source>
+        <translation>Встановіть нові словники</translation>
     </message>
 </context>
 <context>
@@ -1224,30 +1355,34 @@
     <name>RecentPage</name>
     <message>
         <source>Opened</source>
-        <translation type="unfinished"/>
+        <translation>Відкрито</translation>
     </message>
     <message>
         <source>last modified %1</source>
-        <translation type="unfinished"/>
+        <translation>останні зміни %1</translation>
     </message>
     <message>
         <source>recent projects list item</source>
-        <translation type="unfinished"/>
+        <translation>елемент списку останніх проектів</translation>
     </message>
     <message>
         <source>Close project</source>
-        <translation type="unfinished"/>
+        <translation>Закрити проект</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished"/>
+        <translation>Забути</translation>
+    </message>
+    <message>
+        <source>Project menu</source>
+        <translation>Меню проекту</translation>
     </message>
 </context>
 <context>
     <name>RecentPageForm.ui</name>
     <message>
         <source>Recent projects</source>
-        <translation type="unfinished"/>
+        <translation>Останні проекти</translation>
     </message>
 </context>
 <context>
@@ -1317,43 +1452,43 @@
         <translation>&amp;Теги</translation>
     </message>
     <message>
-        <source>Show edit tool box</source>
-        <translation>Показати тулбокс редагування</translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation>Показати тулбокс властивостей</translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation>Показати тулбокс тегів</translation>
-    </message>
-    <message>
         <source>&amp;Overview</source>
         <translation>&amp;Огляд</translation>
     </message>
     <message>
-        <source>Show overview tool box</source>
-        <translation>Показати тулбокс огляду</translation>
+        <source>Show overview toolbox</source>
+        <translation>Показати набір інструментів огляду</translation>
+    </message>
+    <message>
+        <source>Show edit toolbox</source>
+        <translation>Показати панель інструментів редагування</translation>
+    </message>
+    <message>
+        <source>Show properties toolbox</source>
+        <translation>Показати панель інструментів властивостей</translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Показати набір інструментів тегів</translation>
     </message>
 </context>
 <context>
     <name>RootPage</name>
     <message>
         <source>Ok</source>
-        <translation type="unfinished"/>
+        <translation>Гаразд</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation type="unfinished"/>
+        <translation>Увага</translation>
     </message>
     <message>
         <source>Critical</source>
-        <translation type="unfinished"/>
+        <translation>Критичний</translation>
     </message>
     <message>
         <source>Fatal</source>
-        <translation type="unfinished"/>
+        <translation>Фатальним</translation>
     </message>
     <message>
         <source>Show the welcome page</source>
@@ -1384,6 +1519,25 @@
     </message>
 </context>
 <context>
+    <name>S:</name>
+    <message>
+        <source/>
+        <comment>the capital letters are shortcuts, mark one letter similarly in your translation and translate the standalone letter accordingly later</comment>
+        <translation type="unfinished"/>
+    </message>
+</context>
+<context>
+    <name>SKRDownload</name>
+    <message>
+        <source>Destination file &quot;%1&quot; already exists</source>
+        <translation>Файл призначення &quot;%1&quot; уже існує</translation>
+    </message>
+    <message>
+        <source>Error while writing &quot;%1&quot;</source>
+        <translation>Помилка під час написання &quot;%1&quot;</translation>
+    </message>
+</context>
+<context>
     <name>SKRExporter</name>
     <message>
         <source>Tags:</source>
@@ -1402,7 +1556,22 @@
     <name>SKRRootItem</name>
     <message>
         <source>No translation found.</source>
-        <translation type="unfinished"/>
+        <translation>Перекладу не знайдено.</translation>
+    </message>
+</context>
+<context>
+    <name>SKRShortcutManager</name>
+    <message>
+        <source>Copy</source>
+        <translation>Копіювати</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Вставити</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation>Вирізати</translation>
     </message>
 </context>
 <context>
@@ -1431,8 +1600,12 @@
         <translation>Введіть шлях резервного копіювання</translation>
     </message>
     <message>
-        <source>Please restart Skribisto to apply the change</source>
-        <translation type="unfinished"/>
+        <source>Close</source>
+        <translation>Закрити</translation>
+    </message>
+    <message>
+        <source>Please restart to apply changes.</source>
+        <translation>Будь ласка, перезапустіть, щоб застосувати зміни.</translation>
     </message>
 </context>
 <context>
@@ -1442,28 +1615,12 @@
         <translation>Доступність</translation>
     </message>
     <message>
-        <source>Allow swipe gesture between tabs</source>
-        <translation>Дозволити свайп між вкладками</translation>
-    </message>
-    <message>
-        <source>Show menu bar</source>
-        <translation>Показати панель меню</translation>
-    </message>
-    <message>
         <source>Appearance</source>
         <translation>Вигляд</translation>
     </message>
     <message>
         <source>Interface language :</source>
         <translation>Мова інтерфеса:</translation>
-    </message>
-    <message>
-        <source>Set main menu in status bar</source>
-        <translation>Встановити головне меню в панелі статусу</translation>
-    </message>
-    <message>
-        <source>Minimalist menu tabs</source>
-        <translation>Мінімалістичні вкладки меню</translation>
     </message>
     <message>
         <source>Manage themes</source>
@@ -1562,12 +1719,28 @@
         <translation>Просунуті</translation>
     </message>
     <message>
-        <source>Show properties tool box</source>
-        <translation>Показати тулбокс властивостей</translation>
+        <source>Development mode</source>
+        <translation>Режим розробки</translation>
     </message>
     <message>
-        <source>Reset dock configuration</source>
-        <translation>Зкинути конфігурацію панелі</translation>
+        <source>Help with accessibility</source>
+        <translation>Допомога щодо доступності</translation>
+    </message>
+    <message>
+        <source>Show menu button</source>
+        <translation>Показати кнопку меню</translation>
+    </message>
+    <message>
+        <source>Manage plugins</source>
+        <translation>Керування плагінами</translation>
+    </message>
+    <message>
+        <source>Show the first steps dialog</source>
+        <translation>Показати діалогове вікно перших кроків</translation>
+    </message>
+    <message>
+        <source>Show properties toolbox</source>
+        <translation>Показати панель інструментів властивостей</translation>
     </message>
 </context>
 <context>
@@ -1653,19 +1826,19 @@
     </message>
     <message>
         <source>c: %1</source>
-        <translation type="unfinished"/>
+        <translation>c: %1</translation>
     </message>
     <message>
         <source>all c: %1</source>
-        <translation type="unfinished"/>
+        <translation>всі c: %1</translation>
     </message>
     <message>
         <source>w: %1</source>
-        <translation type="unfinished"/>
+        <translation>w: %1</translation>
     </message>
     <message>
         <source>all w: %1</source>
-        <translation type="unfinished"/>
+        <translation>всі w: %1</translation>
     </message>
     <message>
         <source>Open</source>
@@ -1730,6 +1903,17 @@
     <message>
         <source>Send to trash</source>
         <translation>До смітника</translation>
+    </message>
+</context>
+<context>
+    <name>SkrBasePage</name>
+    <message>
+        <source>newIdenticalPageShortcut: Item not created</source>
+        <translation>newIdenticalPageShortcut: Елемент не створено</translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
+        <translation>Перейменуйте елемент</translation>
     </message>
 </context>
 <context>
@@ -1903,27 +2087,11 @@
     <name>TextPage</name>
     <message>
         <source>Plan of %1</source>
-        <translation type="unfinished"/>
+        <translation>План %1</translation>
     </message>
     <message>
         <source>%1 words, %2 characters</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <source>Show edit tool box</source>
-        <translation>Показати тулбокс редагування</translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation>Показати тулбокс властивостей</translation>
-    </message>
-    <message>
-        <source>Show outline tool box</source>
-        <translation>Показати тулбокс обрису</translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation>Показати тулбокс тегів</translation>
+        <translation>%1 слів, %2 символів</translation>
     </message>
     <message>
         <source>Text page</source>
@@ -1935,38 +2103,94 @@
     </message>
     <message>
         <source>Write here any text, be it a scene or a note</source>
-        <translation type="unfinished"/>
+        <translation>Напишіть сюди будь-який текст, будь то сцена чи примітка</translation>
+    </message>
+    <message>
+        <source>Close quick view</source>
+        <translation>Закрити швидкий перегляд</translation>
+    </message>
+    <message>
+        <source>Open quick view</source>
+        <translation>Відкрити швидкий перегляд</translation>
+    </message>
+    <message>
+        <source>Show edit toolbox</source>
+        <translation>Показати панель інструментів редагування</translation>
+    </message>
+    <message>
+        <source>Show properties toolbox</source>
+        <translation>Показати панель інструментів властивостей</translation>
+    </message>
+    <message>
+        <source>Show outline toolbox</source>
+        <translation>Показати панель інструментів структури</translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Показати набір інструментів тегів</translation>
     </message>
 </context>
 <context>
     <name>ThemePage</name>
     <message>
         <source>Themes</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <source>Edit theme</source>
-        <translation>Редагувати тему</translation>
+        <translation>Теми</translation>
     </message>
     <message>
         <source>Edit color</source>
         <translation>Редагувати колір</translation>
     </message>
     <message>
-        <source>Distraction free</source>
-        <translation>Режим без відволікань</translation>
-    </message>
-    <message>
-        <source>Normal</source>
-        <translation>Нормальний</translation>
-    </message>
-    <message>
         <source>Theme page</source>
-        <translation type="unfinished"/>
+        <translation>Сторінка теми</translation>
     </message>
     <message>
         <source>Choose or modify your themes</source>
-        <translation type="unfinished"/>
+        <translation>Виберіть або змініть свої теми</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Світло</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Темний</translation>
+    </message>
+    <message>
+        <source>Set as light theme</source>
+        <translation>Встановити як легку тему</translation>
+    </message>
+    <message>
+        <source>Set as dark theme</source>
+        <translation>Встановити як темну тему</translation>
+    </message>
+    <message>
+        <source>Set as distraction free theme</source>
+        <translation>Встановити як безкоштовну тему, що відволікає увагу</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Перейменувати</translation>
+    </message>
+    <message>
+        <source>Rename a theme</source>
+        <translation>Перейменуйте тему</translation>
+    </message>
+    <message>
+        <source>Remove a theme</source>
+        <translation>Видаліть тему</translation>
+    </message>
+    <message>
+        <source>Do you really want to remove the theme &quot;%1&quot;?</source>
+        <translation>Ви дійсно хочете видалити тему &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Primary text %1</source>
+        <translation>Первинний текст %1</translation>
+    </message>
+    <message>
+        <source>Distraction free</source>
+        <translation>Режим без відволікань</translation>
     </message>
 </context>
 <context>
@@ -1976,16 +2200,56 @@
         <translation>Теми</translation>
     </message>
     <message>
+        <source>Color properties</source>
+        <translation>Властивості кольорів</translation>
+    </message>
+    <message>
+        <source>Colors</source>
+        <translation>Кольори</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Зберегти</translation>
+    </message>
+    <message>
+        <source>Reset theme</source>
+        <translation>Скинути тему</translation>
+    </message>
+    <message>
+        <source>Save theme</source>
+        <translation>Зберегти тему</translation>
+    </message>
+    <message>
         <source>Example</source>
         <translation>Приклад</translation>
     </message>
     <message>
-        <source>list item</source>
-        <translation>пункт списку</translation>
+        <source>Button</source>
+        <translation>Кнопка</translation>
     </message>
     <message>
-        <source>button</source>
-        <translation>кнопка</translation>
+        <source>Button (disabled)</source>
+        <translation>Кнопка (вимкнено)</translation>
+    </message>
+    <message>
+        <source>Tool Button</source>
+        <translation>Кнопка інструменту</translation>
+    </message>
+    <message>
+        <source>Tool Button (disabled)</source>
+        <translation>Кнопка інструменту (вимкнено)</translation>
+    </message>
+    <message>
+        <source>Round button</source>
+        <translation>Кругла кнопка</translation>
+    </message>
+    <message>
+        <source>Round button (disabled)</source>
+        <translation>Кругла кнопка (вимкнено)</translation>
+    </message>
+    <message>
+        <source>Switch (checked)</source>
+        <translation>Перемикач (позначений)</translation>
     </message>
     <message>
         <source>Switch</source>
@@ -1996,20 +2260,36 @@
         <translation>Обрис</translation>
     </message>
     <message>
-        <source>Primary text</source>
-        <translation>Головний текст</translation>
-    </message>
-    <message>
         <source>Secondary text</source>
         <translation>Вторинний текст</translation>
     </message>
     <message>
-        <source>Color properties</source>
-        <translation>Властивості кольорів</translation>
+        <source>Tool bar</source>
+        <translation>Панель інструментів</translation>
     </message>
     <message>
-        <source>Colors</source>
-        <translation>Кольори</translation>
+        <source>Page tool bar</source>
+        <translation>Панель інструментів сторінки</translation>
+    </message>
+    <message>
+        <source>List item</source>
+        <translation>Елемент списку</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Світло</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Темний</translation>
+    </message>
+    <message>
+        <source>Distraction free</source>
+        <translation>Без відволікання</translation>
+    </message>
+    <message>
+        <source>Force a color mode:</source>
+        <translation>Примусити кольоровий режим:</translation>
     </message>
 </context>
 <context>
@@ -2051,6 +2331,14 @@
         <translation>Додати слово до словника</translation>
     </message>
     <message>
+        <source>Add a word to the project dictionary</source>
+        <translation>Додайте слово до словника проекту</translation>
+    </message>
+    <message>
+        <source>Word already in dictionary</source>
+        <translation>Слово вже у словнику</translation>
+    </message>
+    <message>
         <source>Remove word from dictionary</source>
         <translation>Видалити слово зі словника</translation>
     </message>
@@ -2059,22 +2347,22 @@
     <name>WelcomePage</name>
     <message>
         <source>Skribisto %1 created by Cyril Jacquet</source>
-        <translation type="unfinished"/>
+        <translation>Skribisto %1 створений Cyril Jacquet</translation>
     </message>
 </context>
 <context>
     <name>WelcomePageForm.ui</name>
     <message>
         <source>Go Back</source>
-        <translation type="unfinished"/>
+        <translation>Повертайся</translation>
     </message>
     <message>
         <source>New</source>
-        <translation type="unfinished"/>
+        <translation>Новий</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"/>
+        <translation>Останні</translation>
     </message>
     <message>
         <source>Examples</source>
@@ -2082,15 +2370,15 @@
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"/>
+        <translation>Імпорт</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"/>
+        <translation>Експорт</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished"/>
+        <translation>Друк</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -2102,30 +2390,7 @@
     </message>
     <message>
         <source>Go Back to the menu</source>
-        <translation type="unfinished"/>
-    </message>
-</context>
-<context>
-    <name>WriteLeftDock</name>
-    <message>
-        <source>&amp;Navigation dock</source>
-        <translation>&amp;Навігаційна панель</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation>&amp;Навігація</translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation>&amp;Документи</translation>
-    </message>
-    <message>
-        <source>Show navigation</source>
-        <translation>Показати навігацію</translation>
-    </message>
-    <message>
-        <source>Show recent sheets</source>
-        <translation>Показати нещодавні сторінки</translation>
+        <translation>Поверніться до меню</translation>
     </message>
 </context>
 <context>
@@ -2143,42 +2408,32 @@
     </message>
 </context>
 <context>
-    <name>WriteRightDock</name>
+    <name>WritingGamesPageToolbox</name>
     <message>
-        <source>&amp;Tools dock</source>
-        <translation>&amp;Панель інструментів</translation>
+        <source>Writing Games Page Toolbox</source>
+        <translation>Набір інструментів для написання ігор</translation>
     </message>
     <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Редагувати</translation>
+        <source>Show Writing Games toolbox</source>
+        <translation>Показати набір інструментів «Написання ігор»</translation>
+    </message>
+</context>
+<context>
+    <name>WritingGamesPageToolboxForm.ui</name>
+    <message>
+        <source>Forbid erasing</source>
+        <translation>Заборонити стирання</translation>
     </message>
     <message>
-        <source>&amp;Properties</source>
-        <translation>&amp;Властивості</translation>
+        <source>Writing games</source>
+        <translation>Ігри на письмо</translation>
     </message>
+</context>
+<context>
+    <name>WritingZone</name>
     <message>
-        <source>&amp;Tags</source>
-        <translation>&amp;Теги</translation>
-    </message>
-    <message>
-        <source>&amp;Notes</source>
-        <translation>&amp;Нотатки</translation>
-    </message>
-    <message>
-        <source>Show edit tool box</source>
-        <translation>Показати тулбокс редагування</translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation>Показати тулбокс властивостей</translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation>Показати тулбокс тегів</translation>
-    </message>
-    <message>
-        <source>Show notes tool box</source>
-        <translation>Показати тулбокс нотаток</translation>
+        <source>Find</source>
+        <translation>Знайдіть</translation>
     </message>
 </context>
 <context>
@@ -2194,10 +2449,6 @@
     <message>
         <source>Themes</source>
         <translation>Теми</translation>
-    </message>
-    <message>
-        <source>&amp;Contents</source>
-        <translation>&amp;Зміст</translation>
     </message>
     <message>
         <source>&amp;FAQ</source>
@@ -2237,15 +2488,15 @@
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
-        <translation type="unfinished"/>
+        <translation>Ctrl + Shift + S</translation>
     </message>
     <message>
         <source>Save As …</source>
-        <translation type="unfinished"/>
+        <translation>Зберегти як …</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as …</source>
-        <translation type="unfinished"/>
+        <translation>Збережіть проект &quot;%1&quot; як…</translation>
     </message>
     <message>
         <source>This path is read-only, please choose another path.</source>
@@ -2257,7 +2508,7 @@
     </message>
     <message>
         <source>Save a copy of the &quot;%1&quot; project as …</source>
-        <translation type="unfinished"/>
+        <translation>Збережіть копію проекту &quot;%1&quot; як…</translation>
     </message>
     <message>
         <source>Loading a project</source>
@@ -2269,19 +2520,19 @@
     </message>
     <message>
         <source>Back up failed: The backup is not configured</source>
-        <translation type="unfinished"/>
+        <translation>Помилка резервного копіювання: резервне копіювання не налаштовано</translation>
     </message>
     <message>
         <source>Back up failed:  the project must be saved at least once</source>
-        <translation type="unfinished"/>
+        <translation>Помилка створення резервної копії: проект потрібно зберегти принаймні один раз</translation>
     </message>
     <message>
         <source>Back up failed: The backup path %1 can&apos;t be used</source>
-        <translation type="unfinished"/>
+        <translation>Помилка створення резервної копії: шлях резервної копії %1 не може бути використаний</translation>
     </message>
     <message>
         <source>Back up failed: The backup path %1 is read only</source>
-        <translation type="unfinished"/>
+        <translation>Не вдалося створити резервну копію: шлях резервної копії %1 лише для читання</translation>
     </message>
     <message>
         <source>&amp;Print</source>
@@ -2297,11 +2548,11 @@
     </message>
     <message>
         <source>The project %1 is not saved. Do you want to save it before quitting ?</source>
-        <translation type="unfinished"/>
+        <translation>Проект %1 не збережено. Ви хочете зберегти його перед виходом?</translation>
     </message>
     <message>
         <source>Save the %1 project as …</source>
-        <translation type="unfinished"/>
+        <translation>Збережіть проект %1 як…</translation>
     </message>
     <message>
         <source>&amp;Close &quot;%1&quot; project</source>
@@ -2318,10 +2569,6 @@
     <message>
         <source>Copy</source>
         <translation>Копіювати</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation>Вставити</translation>
     </message>
     <message>
         <source>Italic</source>
@@ -2341,7 +2588,23 @@
     </message>
     <message>
         <source>First steps</source>
-        <translation type="unfinished"/>
+        <translation>Перші кроки</translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
+        <translation>&amp;Посібник користувача</translation>
+    </message>
+    <message>
+        <source>Back up successful</source>
+        <translation>Резервне копіювання успішне</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation>Помилка</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation>Увага</translation>
     </message>
 </context>
 </TS>
