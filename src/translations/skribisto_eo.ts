@@ -1,2378 +1,2610 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.1" language="eo_001">
+<?xml version="1.0" ?><!DOCTYPE TS><TS language="eo" version="2.1">
 <context>
     <name>CheckableTree</name>
     <message>
         <source>Level %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nivelo %1</translation>
     </message>
     <message>
         <source>partially checked</source>
-        <translation type="unfinished"></translation>
+        <translation>parte kontrolita</translation>
     </message>
     <message>
         <source>checked</source>
-        <translation type="unfinished"></translation>
+        <translation>kontrolita</translation>
     </message>
     <message>
         <source>unchecked</source>
-        <translation type="unfinished"></translation>
+        <translation>senkontrola</translation>
     </message>
     <message>
         <source>label: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>etikedo: %1</translation>
     </message>
     <message>
         <source>has children</source>
-        <translation type="unfinished"></translation>
+        <translation>havas infanojn</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation type="unfinished"></translation>
+        <translation>navigada ero</translation>
     </message>
     <message>
         <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton en fenestro</translation>
     </message>
     <message>
         <source>This project is a backup</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉi tiu projekto estas sekurkopio</translation>
     </message>
     <message>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation>Enigu etikedon</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation type="unfinished"></translation>
+        <translation>Enigu nomon</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu en nova langeto</translation>
     </message>
     <message>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu en nova fenestro</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Alinomi</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation>Metu etikedon</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation>Tranĉi</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiu</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Algluu</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni antaŭe</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni post</translation>
     </message>
     <message>
         <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni sub-eron</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation type="unfinished"></translation>
+        <translation>Supreniĝi</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation type="unfinished"></translation>
+        <translation>Movu malsupren</translation>
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Sendu al rubujo</translation>
     </message>
     <message>
         <source>Delete definitively</source>
-        <translation type="unfinished"></translation>
+        <translation>Forigu definitive</translation>
     </message>
 </context>
 <context>
     <name>ColorChooser</name>
     <message>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>Blanka</translation>
     </message>
     <message>
         <source>Snow</source>
-        <translation type="unfinished"></translation>
+        <translation>Neĝo</translation>
     </message>
     <message>
         <source>Azure</source>
-        <translation type="unfinished"></translation>
+        <translation>Lazura</translation>
     </message>
     <message>
         <source>Beige</source>
-        <translation type="unfinished"></translation>
+        <translation>Beige</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Nigra</translation>
     </message>
     <message>
         <source>Red</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruĝa</translation>
     </message>
     <message>
         <source>Dark red</source>
-        <translation type="unfinished"></translation>
+        <translation>Malhelruĝa</translation>
     </message>
     <message>
         <source>Pale Green</source>
-        <translation type="unfinished"></translation>
+        <translation>Palverda</translation>
     </message>
     <message>
         <source>Chartreuse</source>
-        <translation type="unfinished"></translation>
+        <translation>Chartreuse</translation>
     </message>
     <message>
         <source>Green</source>
-        <translation type="unfinished"></translation>
+        <translation>Verda</translation>
     </message>
     <message>
         <source>Dark green</source>
-        <translation type="unfinished"></translation>
+        <translation>Malhela verdo</translation>
     </message>
     <message>
         <source>Light cyan</source>
-        <translation type="unfinished"></translation>
+        <translation>Hela cejano</translation>
     </message>
     <message>
         <source>Cyan</source>
-        <translation type="unfinished"></translation>
+        <translation>Cejana</translation>
     </message>
     <message>
         <source>Dark cyan</source>
-        <translation type="unfinished"></translation>
+        <translation>Malhela cejano</translation>
     </message>
     <message>
         <source>Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Blua</translation>
     </message>
     <message>
         <source>Dark blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Malhelblua</translation>
     </message>
     <message>
         <source>Light pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Hele rozkolora</translation>
     </message>
     <message>
         <source>Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozkolora</translation>
     </message>
     <message>
         <source>Hot pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Varme rozkolora</translation>
     </message>
     <message>
         <source>Magenta</source>
-        <translation type="unfinished"></translation>
+        <translation>Magenta</translation>
     </message>
     <message>
         <source>Dark magenta</source>
-        <translation type="unfinished"></translation>
+        <translation>Malhela magento</translation>
     </message>
     <message>
         <source>Light yellow</source>
-        <translation type="unfinished"></translation>
+        <translation>Helflava</translation>
     </message>
     <message>
         <source>Yellow</source>
-        <translation type="unfinished"></translation>
+        <translation>Flava</translation>
     </message>
     <message>
         <source>Gold</source>
-        <translation type="unfinished"></translation>
+        <translation>Oro</translation>
     </message>
     <message>
         <source>Orange</source>
-        <translation type="unfinished"></translation>
+        <translation>Oranĝa</translation>
     </message>
     <message>
         <source>Dark orange</source>
-        <translation type="unfinished"></translation>
+        <translation>Malhele oranĝa</translation>
     </message>
     <message>
         <source>Grey</source>
-        <translation type="unfinished"></translation>
+        <translation>Griza</translation>
     </message>
     <message>
         <source>Dark grey</source>
-        <translation type="unfinished"></translation>
+        <translation>Malhelgriza</translation>
     </message>
     <message>
         <source>Color: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Koloro: %1</translation>
     </message>
 </context>
 <context>
     <name>EditView</name>
     <message>
         <source>Sizes</source>
-        <translation type="unfinished"></translation>
+        <translation>Grandecoj</translation>
     </message>
     <message>
         <source>Go back</source>
-        <translation type="unfinished"></translation>
+        <translation>Reiru</translation>
     </message>
     <message>
         <source>Quick print</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapida presado</translation>
     </message>
 </context>
 <context>
     <name>EditViewForm.ui</name>
     <message>
         <source>Edit text</source>
-        <translation type="unfinished"></translation>
+        <translation>Redaktu tekston</translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished"></translation>
+        <translation>Kursiva</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Aŭdaca</translation>
     </message>
     <message>
         <source>Strike</source>
-        <translation type="unfinished"></translation>
+        <translation>Striko</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished"></translation>
+        <translation>Substreku</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Vidigu</translation>
     </message>
     <message>
         <source>Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Plenekrane</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Grandeco</translation>
     </message>
     <message>
         <source>Full screen Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Plenekranaj Koloroj</translation>
     </message>
     <message>
         <source>Check spelling</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolu literumon</translation>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>Centri vertikale la tekstokursoron</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunhavigi</translation>
     </message>
     <message>
         <source>Quick print</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapida presado</translation>
     </message>
     <message>
         <source>Go back</source>
-        <translation type="unfinished"></translation>
+        <translation>Reiru</translation>
     </message>
     <message>
         <source>Text width :</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksta larĝo:</translation>
     </message>
     <message>
         <source>Text size :</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksta grandeco:</translation>
     </message>
     <message>
         <source>Text indent :</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksta deŝovo:</translation>
     </message>
     <message>
         <source>Top margin :</source>
-        <translation type="unfinished"></translation>
+        <translation>Supra rando:</translation>
     </message>
 </context>
 <context>
     <name>EmptyPage</name>
     <message>
         <source>&lt;h2&gt;Open a document&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;h2&gt; Malfermu dokumenton &lt;/h2&gt;</translation>
     </message>
     <message>
-        <source>- Drag an drop here
+        <source>- Drag and drop here
 - Click here then select a document in Navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>- Trenu kaj faligu ĉi tien
+- Alklaku ĉi tie kaj elektu dokumenton en Navigado</translation>
     </message>
 </context>
 <context>
     <name>ExamplePageForm.ui</name>
     <message>
         <source>&lt;h2&gt;Examples&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;h2&gt; Ekzemploj &lt;/h2&gt;</translation>
     </message>
 </context>
 <context>
     <name>ExporterPage</name>
     <message>
         <source>Select none</source>
-        <translation type="unfinished"></translation>
+        <translation>Elektu neniun</translation>
     </message>
     <message>
         <source>Select all</source>
-        <translation type="unfinished"></translation>
+        <translation>Elekti ĉiujn</translation>
     </message>
     <message>
         <source>.odt</source>
-        <translation type="unfinished"></translation>
+        <translation>.odt</translation>
     </message>
     <message>
         <source>.txt</source>
-        <translation type="unfinished"></translation>
+        <translation>.txt</translation>
     </message>
     <message>
         <source>.md</source>
-        <translation type="unfinished"></translation>
+        <translation>.md</translation>
     </message>
     <message>
         <source>.html</source>
-        <translation type="unfinished"></translation>
+        <translation>.html</translation>
     </message>
     <message>
         <source>.pdf</source>
-        <translation type="unfinished"></translation>
+        <translation>.pdf</translation>
     </message>
     <message>
         <source>Levels with titles: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Niveloj kun titoloj: %1</translation>
     </message>
     <message>
         <source>Export &quot;%1&quot; project as …</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksporti projekton &quot;%1&quot; kiel ...</translation>
     </message>
 </context>
 <context>
     <name>ExporterPageForm.ui</name>
     <message>
         <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;h2&gt; Presi &lt;/h2&gt;</translation>
     </message>
     <message>
         <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;h2&gt; Eksporti &lt;/h2&gt;</translation>
     </message>
     <message>
         <source>OpenDocument</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenDocument</translation>
     </message>
     <message>
         <source>Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksto</translation>
     </message>
     <message>
         <source>Markdown</source>
-        <translation type="unfinished"></translation>
+        <translation>Markdown</translation>
     </message>
     <message>
         <source>HTML</source>
-        <translation type="unfinished"></translation>
+        <translation>HTML</translation>
     </message>
     <message>
         <source>Include outline in each sheet</source>
-        <translation type="unfinished"></translation>
+        <translation>Inkluzivi skizon en ĉiu folio</translation>
     </message>
     <message>
         <source>Numbered</source>
-        <translation type="unfinished"></translation>
+        <translation>Numerita</translation>
     </message>
     <message>
         <source>Add tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni etikedojn</translation>
     </message>
     <message>
         <source>Text size :</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksta grandeco:</translation>
     </message>
     <message>
         <source>Text indent :</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksta deŝovo:</translation>
     </message>
     <message>
         <source>Top margin :</source>
-        <translation type="unfinished"></translation>
+        <translation>Supra rando:</translation>
     </message>
     <message>
         <source>Destination file</source>
-        <translation type="unfinished"></translation>
+        <translation>Destina dosiero</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation>Elektu</translation>
     </message>
     <message>
         <source>Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Antaŭrigardo</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished"></translation>
+        <translation>Presi</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksporti</translation>
+    </message>
+</context>
+<context>
+    <name>FavoritesProjectToolbox</name>
+    <message>
+        <source>Show Favorites toolbox</source>
+        <translation>Montri Favoratajn ilojn</translation>
+    </message>
+    <message>
+        <source>Favorites Project Toolbox</source>
+        <translation>Favorataj Projektaj Iloj</translation>
+    </message>
+</context>
+<context>
+    <name>FavoritesProjectToolboxForm.ui</name>
+    <message>
+        <source>Favorites</source>
+        <translation>Favoratoj</translation>
+    </message>
+    <message>
+        <source>Favorites list</source>
+        <translation>Favorita listo</translation>
     </message>
 </context>
 <context>
     <name>FileMenuPage</name>
     <message>
         <source>Opened</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermita</translation>
     </message>
     <message>
         <source>last modified %1</source>
-        <translation type="unfinished"></translation>
+        <translation>laste modifita %1</translation>
     </message>
     <message>
         <source>recent projects list item</source>
-        <translation type="unfinished"></translation>
+        <translation>lastatempaj projektoj listero</translation>
     </message>
     <message>
         <source>Close project</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermu projekton</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished"></translation>
+        <translation>Forgesu</translation>
     </message>
 </context>
 <context>
     <name>FileMenuPageForm.ui</name>
     <message>
         <source>Projects</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektoj</translation>
     </message>
     <message>
         <source>New project</source>
-        <translation type="unfinished"></translation>
+        <translation>Nova projekto</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu projekton</translation>
     </message>
     <message>
         <source>Recent projects</source>
-        <translation type="unfinished"></translation>
+        <translation>Lastatempaj projektoj</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Savi</translation>
     </message>
     <message>
         <source>Save as</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservi kiel</translation>
     </message>
     <message>
         <source>Save all</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservu ĉiujn</translation>
     </message>
     <message>
         <source>Save a copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservu kopion</translation>
     </message>
     <message>
         <source>Back up</source>
-        <translation type="unfinished"></translation>
+        <translation>Rezervu</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunhavigi</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished"></translation>
+        <translation>Presi</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importi</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksporti</translation>
+    </message>
+</context>
+<context>
+    <name>FindPanelForm.ui</name>
+    <message>
+        <source>Find</source>
+        <translation>Trovu</translation>
+    </message>
+    <message>
+        <source>Replace with</source>
+        <translation>Anstataŭigu per</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>Trovi Antaŭan</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>Trovu Poste</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>Anstataŭigi</translation>
+    </message>
+    <message>
+        <source>Find &amp; Replace</source>
+        <translation>Trovi &amp; Anstataŭigi</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Fermu</translation>
+    </message>
+    <message>
+        <source>Replace all</source>
+        <translation>Anstataŭigu ĉiujn</translation>
+    </message>
+    <message>
+        <source>Show replace tool</source>
+        <translation>Montri anstataŭigan ilon</translation>
+    </message>
+</context>
+<context>
+    <name>FirstStepsWizard</name>
+    <message>
+        <source>Previous</source>
+        <translation>Antaŭa</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>Poste</translation>
+    </message>
+    <message>
+        <source>First steps with Skribisto</source>
+        <translation>Unuaj paŝoj kun Skribisto</translation>
+    </message>
+    <message>
+        <source>Select a language:</source>
+        <translation>Elektu lingvon:</translation>
+    </message>
+    <message>
+        <source>Default dictionary :</source>
+        <translation>Apriora vortaro:</translation>
+    </message>
+    <message>
+        <source>This assistant will help you set up Skribisto to your liking. To begin with, please select the best options for your use.</source>
+        <translation>Ĉi tiu asistanto helpos vin starigi Skribiston laŭ via plaĉo. Unue bonvolu elekti la plej bonajn eblojn por via uzo.</translation>
+    </message>
+    <message>
+        <source>Help with accessibility</source>
+        <translation>Helpu pri alirebleco</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Fermu</translation>
+    </message>
+    <message>
+        <source>User manual</source>
+        <translation>Uzanta manlibro</translation>
+    </message>
+    <message>
+        <source>Frequently Asked Questions</source>
+        <translation>Oftaj Demandoj</translation>
+    </message>
+    <message>
+        <source>Welcome to Skribisto</source>
+        <translation>Bonvenon al Skribisto</translation>
+    </message>
+</context>
+<context>
+    <name>HelpContentsForm.ui</name>
+    <message>
+        <source>User manual</source>
+        <translation>Uzanta manlibro</translation>
+    </message>
+    <message>
+        <source>Frequently Asked Questions</source>
+        <translation>Oftaj Demandoj</translation>
     </message>
 </context>
 <context>
     <name>HelpPageForm.ui</name>
     <message>
-        <source>Contents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>FAQ</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>About</source>
-        <translation type="unfinished"></translation>
+        <translation>Pri</translation>
     </message>
     <message>
         <source>About Qt</source>
-        <translation type="unfinished"></translation>
+        <translation>Pri Qt</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation>Helpu</translation>
     </message>
 </context>
 <context>
     <name>ImporterPageForm.ui</name>
     <message>
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;h2&gt; Importi &lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Import from Plume Creator project</source>
-        <translation type="unfinished"></translation>
+        <translation>Importi de projekto Plume Creator</translation>
     </message>
 </context>
 <context>
     <name>LeftDock</name>
     <message>
         <source>Show navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri navigadon</translation>
     </message>
     <message>
         <source>Show recent sheets</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri lastatempajn foliojn</translation>
     </message>
     <message>
         <source>&amp;Navigation dock</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Naviga doko</translation>
     </message>
     <message>
         <source>&amp;Navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Navigado</translation>
     </message>
     <message>
         <source>&amp;Documents</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Dokumentoj</translation>
     </message>
     <message>
         <source>Show recent notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri freŝajn notojn</translation>
     </message>
 </context>
 <context>
     <name>ListItemAttributes</name>
     <message>
         <source>Non printable</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne presebla</translation>
     </message>
     <message>
         <source>Locked</source>
-        <translation type="unfinished"></translation>
+        <translation>Ŝlosita</translation>
     </message>
     <message>
         <source>Favorite</source>
-        <translation type="unfinished"></translation>
+        <translation>Ŝatata</translation>
     </message>
 </context>
 <context>
     <name>NavigationList</name>
     <message>
         <source>Go up</source>
-        <translation type="unfinished"></translation>
+        <translation>Iri supren</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Algluu</translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="unfinished"></translation>
+        <translation>Altnivela</translation>
     </message>
     <message>
         <source>Sort alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordigi alfabete</translation>
     </message>
     <message>
         <source>Trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Rubujo</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni</translation>
     </message>
     <message>
         <source>Projects</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektoj</translation>
     </message>
     <message>
         <source>is a folder</source>
-        <translation type="unfinished"></translation>
+        <translation>estas dosierujo</translation>
     </message>
     <message>
         <source>label:</source>
-        <translation type="unfinished"></translation>
+        <translation>etikedo:</translation>
     </message>
     <message>
         <source>has child</source>
-        <translation type="unfinished"></translation>
+        <translation>havas infanon</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation type="unfinished"></translation>
+        <translation>navigada ero</translation>
     </message>
     <message>
         <source>See sub-items</source>
-        <translation type="unfinished"></translation>
+        <translation>Vidu sub-erojn</translation>
     </message>
     <message>
         <source>Open document</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton</translation>
     </message>
     <message>
         <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton en nova langeto</translation>
     </message>
     <message>
         <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton en fenestro</translation>
     </message>
     <message>
         <source>This project is a backup</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉi tiu projekto estas sekurkopio</translation>
     </message>
     <message>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation>Enigu etikedon</translation>
     </message>
     <message>
         <source>Enter title</source>
-        <translation type="unfinished"></translation>
+        <translation>Enigu titolon</translation>
+    </message>
+    <message>
+        <source>Item menu</source>
+        <translation>Item-menuo</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu</translation>
     </message>
     <message>
         <source>Open in another view</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu en alia vido</translation>
     </message>
     <message>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu en nova fenestro</translation>
     </message>
     <message>
         <source>Set as active project</source>
-        <translation type="unfinished"></translation>
+        <translation>Agordi kiel aktiva projekto</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Alinomi</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation>Metu etikedon</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation>Tranĉi</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiu</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni antaŭe</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni post</translation>
     </message>
     <message>
         <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni sub-eron</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation type="unfinished"></translation>
+        <translation>Supreniĝi</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation type="unfinished"></translation>
+        <translation>Movu malsupren</translation>
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Sendu al rubujo</translation>
+    </message>
+    <message>
+        <source>Navigation list</source>
+        <translation>Naviga listo</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation>Elektu</translation>
+    </message>
+    <message>
+        <source>Close this project</source>
+        <translation>Fermu ĉi tiun projekton</translation>
     </message>
 </context>
 <context>
     <name>NavigationListForm.ui</name>
     <message>
         <source>Add a document</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldonu dokumenton</translation>
     </message>
     <message>
         <source>Navigation menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Naviga menuo</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation>Elektu</translation>
+    </message>
+</context>
+<context>
+    <name>NewDictWizard</name>
+    <message>
+        <source>Dictionary &quot;%1&quot; successfully installed</source>
+        <translation>Vortaro &quot;%1&quot; sukcese instalita</translation>
+    </message>
+    <message>
+        <source>Downloading from %1 (%2/%3)</source>
+        <translation>Elŝutado de %1 (%2/%3)</translation>
+    </message>
+    <message>
+        <source>Downloading license from %1 for %2</source>
+        <translation>Elŝutanta permesilo de %1 por %2</translation>
+    </message>
+</context>
+<context>
+    <name>NewDictWizardForm.ui</name>
+    <message>
+        <source>Close</source>
+        <translation>Fermu</translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation>Instali</translation>
+    </message>
+    <message>
+        <source>Please choose the dictionary to install:</source>
+        <translation>Bonvolu elekti la vortaron por instali:</translation>
+    </message>
+    <message>
+        <source>Install a new dictionary</source>
+        <translation>Instalu novan vortaron</translation>
+    </message>
+    <message>
+        <source>View license</source>
+        <translation>Vidi permesilon</translation>
     </message>
 </context>
 <context>
     <name>NewItemPopupForm.ui</name>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Kreu</translation>
     </message>
 </context>
 <context>
     <name>NewProjectPage</name>
     <message>
         <source>Part </source>
-        <translation type="unfinished"></translation>
+        <translation>Parto</translation>
     </message>
 </context>
 <context>
     <name>NewProjectPageForm.ui</name>
     <message>
         <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;h2&gt; Nova projekto &lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Project title :</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektotitolo:</translation>
     </message>
     <message>
         <source>project title</source>
-        <translation type="unfinished"></translation>
+        <translation>projektotitolo</translation>
     </message>
     <message>
         <source>Project file :</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekta dosiero:</translation>
     </message>
     <message>
         <source>project file</source>
-        <translation type="unfinished"></translation>
+        <translation>projektodosiero</translation>
     </message>
     <message>
         <source>Project path :</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekta vojo:</translation>
     </message>
     <message>
         <source>project path</source>
-        <translation type="unfinished"></translation>
+        <translation>projekcia vojo</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation>Elektu</translation>
     </message>
     <message>
         <source>This project will be created as : </source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉi tiu projekto kreiĝos kiel:</translation>
     </message>
     <message>
         <source>Number of parts :</source>
-        <translation type="unfinished"></translation>
+        <translation>Nombro de partoj:</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Kreu</translation>
+    </message>
+    <message>
+        <source>Dictionary :</source>
+        <translation>Vortaro:</translation>
     </message>
 </context>
 <context>
     <name>NotePad</name>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Alinomi</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni</translation>
     </message>
     <message>
         <source>Dissociate</source>
-        <translation type="unfinished"></translation>
+        <translation>Disigi</translation>
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Sendu al rubujo</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation type="unfinished"></translation>
+        <translation>Averto</translation>
     </message>
     <message>
         <source>Do you want to move the note &quot;%1&quot; to the trash ?</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉu vi volas movi la noton &quot;%1&quot; en la rubujon?</translation>
     </message>
     <message>
         <source>note related to the current sheet</source>
-        <translation type="unfinished"></translation>
+        <translation>noto rilate al la nuna folio</translation>
     </message>
     <message>
         <source>New note</source>
-        <translation type="unfinished"></translation>
+        <translation>Nova noto</translation>
     </message>
     <message>
         <source>Outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Skizo</translation>
     </message>
     <message>
         <source>Show outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri skizon</translation>
     </message>
     <message>
         <source>Open current note in a new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu aktualan noton en nova langeto</translation>
     </message>
     <message>
         <source>Add note</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldonu noton</translation>
     </message>
     <message>
         <source>Note name</source>
-        <translation type="unfinished"></translation>
+        <translation>Notu nomon</translation>
     </message>
     <message>
         <source>Existing notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekzistantaj notoj</translation>
     </message>
 </context>
 <context>
     <name>NotePadForm.ui</name>
     <message>
         <source>Show outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri skizon</translation>
     </message>
     <message>
         <source>Open note</source>
-        <translation type="unfinished"></translation>
+        <translation>Malferma noto</translation>
     </message>
     <message>
         <source>Notes list</source>
-        <translation type="unfinished"></translation>
+        <translation>Notlisto</translation>
     </message>
     <message>
         <source>Type your note here …</source>
-        <translation type="unfinished"></translation>
+        <translation>Tajpu vian noton ĉi tie ...</translation>
     </message>
 </context>
 <context>
     <name>NoteSearchItemForm.ui</name>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Serĉu</translation>
     </message>
     <message>
         <source>Show tags list</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri liston de etikedoj</translation>
     </message>
     <message>
         <source>Deselect tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Malelektu etikedojn</translation>
     </message>
     <message>
         <source>Note search result list</source>
-        <translation type="unfinished"></translation>
+        <translation>Notu serĉrezultliston</translation>
     </message>
     <message>
         <source>Note overview list</source>
-        <translation type="unfinished"></translation>
+        <translation>Notu superrigardan liston</translation>
     </message>
 </context>
 <context>
     <name>OutlinePad</name>
     <message>
         <source>Open outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu skizon</translation>
     </message>
     <message>
         <source>Add outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni skizon</translation>
     </message>
 </context>
 <context>
     <name>OutlinePadForm.ui</name>
     <message>
         <source>Outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Skizo</translation>
     </message>
     <message>
         <source>Type your outline here …</source>
-        <translation type="unfinished"></translation>
+        <translation>Tajpu vian skizon ĉi tie ...</translation>
     </message>
 </context>
 <context>
     <name>OverviewTree</name>
     <message>
         <source>Level %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nivelo %1</translation>
     </message>
     <message>
         <source>label: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>etikedo: %1</translation>
     </message>
     <message>
         <source>has %1 sub-items</source>
-        <translation type="unfinished"></translation>
+        <translation>havas %1 sub-erojn</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation type="unfinished"></translation>
+        <translation>navigada ero</translation>
     </message>
     <message>
         <source>Open document</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton</translation>
     </message>
     <message>
         <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton en nova langeto</translation>
     </message>
     <message>
         <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton en fenestro</translation>
     </message>
     <message>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation>Enigu etikedon</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation type="unfinished"></translation>
+        <translation>Enigu nomon</translation>
     </message>
     <message>
         <source>Outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Skizo</translation>
     </message>
     <message>
         <source>c: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>k: %1</translation>
     </message>
     <message>
         <source>all c: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ĉiuj k: %1</translation>
     </message>
     <message>
         <source>w: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>v: %1</translation>
     </message>
     <message>
         <source>all w: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ĉiuj v: %1</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu en nova langeto</translation>
     </message>
     <message>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu en nova fenestro</translation>
     </message>
     <message>
         <source>Unset focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfari fokuson</translation>
     </message>
     <message>
         <source>Set focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Fiksu fokuson</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Alinomi</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation>Metu etikedon</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation>Tranĉi</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiu</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Algluu</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni antaŭe</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni post</translation>
     </message>
     <message>
         <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni sub-eron</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation type="unfinished"></translation>
+        <translation>Supreniĝi</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation type="unfinished"></translation>
+        <translation>Movu malsupren</translation>
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Sendu al rubujo</translation>
+    </message>
+</context>
+<context>
+    <name>PluginPage</name>
+    <message>
+        <source>%1 (mandatory)</source>
+        <translation>%1 (deviga)</translation>
+    </message>
+</context>
+<context>
+    <name>PluginPageForm.ui</name>
+    <message>
+        <source>Plugins</source>
+        <translation>Kromaĵoj</translation>
+    </message>
+    <message>
+        <source>Classic</source>
+        <translation>Klasika</translation>
+    </message>
+    <message>
+        <source>Writing</source>
+        <translation>Skribado</translation>
+    </message>
+    <message>
+        <source>Personalized</source>
+        <translation>Personigita</translation>
     </message>
 </context>
 <context>
     <name>PlumeImporterForm.ui</name>
     <message>
         <source>Go back</source>
-        <translation type="unfinished"></translation>
+        <translation>Reiru</translation>
     </message>
     <message>
         <source>&lt;h2&gt;Import Plume Creator project&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;h2&gt; Importi projekton Plume Creator &lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Plume project file (*.plume) :</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekta dosiero de Plume (* .plume):</translation>
     </message>
     <message>
         <source>plume project file</source>
-        <translation type="unfinished"></translation>
+        <translation>pluma projektodosiero</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation>Elektu</translation>
     </message>
     <message>
         <source>This project will be imported as : </source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉi tiu projekto estos importita kiel:</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importi</translation>
     </message>
 </context>
 <context>
     <name>ProjectPage</name>
     <message>
         <source>Write this project&apos;s new name</source>
-        <translation type="unfinished"></translation>
+        <translation>Skribu la novan nomon de ĉi tiu projekto</translation>
     </message>
     <message>
         <source>Character count : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Karaktero-kalkulo: %1</translation>
     </message>
     <message>
         <source>Word count : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Vortkalkulo: %1</translation>
     </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
     <message>
         <source>Edit project name</source>
-        <translation type="unfinished"></translation>
+        <translation>Redaktu projektan nomon</translation>
     </message>
     <message>
         <source>Location :</source>
-        <translation type="unfinished"></translation>
+        <translation>Loko:</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Lingvo</translation>
     </message>
     <message>
         <source>Dictionary :</source>
-        <translation type="unfinished"></translation>
+        <translation>Vortaro:</translation>
     </message>
     <message>
         <source>Selected dictionary not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Elektita vortaro ne trovita</translation>
     </message>
     <message>
         <source>Project dictionary</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekta vortaro</translation>
     </message>
     <message>
         <source>Tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Etikedoj</translation>
     </message>
     <message>
         <source>Statistics</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>ProjectSubPage</name>
-    <message>
-        <source>Write this project&apos;s new name</source>
-        <translation type="unfinished"></translation>
+        <translation>Statistikoj</translation>
     </message>
     <message>
-        <source>Character count : %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Word count : %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>ProjectSupPageForm.ui</name>
-    <message>
-        <source>Edit project name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Location :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Dictionary :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selected dictionary not found</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Statistics</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>ProjectTabForm.ui</name>
-    <message>
-        <source>Close project</source>
-        <translation type="unfinished"></translation>
+        <source>Install new dictionaries</source>
+        <translation>Instalu novajn vortarojn</translation>
     </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
     <message>
         <source>Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Ecoj</translation>
     </message>
     <message>
         <source>Printable</source>
-        <translation type="unfinished"></translation>
+        <translation>Presebla</translation>
     </message>
     <message>
         <source>Modifiable</source>
-        <translation type="unfinished"></translation>
+        <translation>Ŝanĝebla</translation>
     </message>
     <message>
         <source>Favorite</source>
-        <translation type="unfinished"></translation>
+        <translation>Ŝatata</translation>
     </message>
 </context>
 <context>
     <name>RecentPage</name>
     <message>
         <source>Opened</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermita</translation>
     </message>
     <message>
         <source>last modified %1</source>
-        <translation type="unfinished"></translation>
+        <translation>laste modifita %1</translation>
     </message>
     <message>
         <source>recent projects list item</source>
-        <translation type="unfinished"></translation>
+        <translation>lastatempaj projektoj listero</translation>
     </message>
     <message>
         <source>Close project</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermu projekton</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished"></translation>
+        <translation>Forgesu</translation>
+    </message>
+    <message>
+        <source>Project menu</source>
+        <translation>Projekta menuo</translation>
     </message>
 </context>
 <context>
     <name>RecentPageForm.ui</name>
     <message>
         <source>Recent projects</source>
-        <translation type="unfinished"></translation>
+        <translation>Lastatempaj projektoj</translation>
     </message>
 </context>
 <context>
     <name>RestoreListView</name>
     <message>
         <source>Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>Restaŭri</translation>
     </message>
     <message>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉu vi volas forigi definitive la jenajn dokumentojn de la projekto &quot;%1&quot;?
+%2</translation>
     </message>
     <message>
         <source>Empty the trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Malplenigu la rubujon</translation>
     </message>
     <message>
         <source>Select none</source>
-        <translation type="unfinished"></translation>
+        <translation>Elektu neniun</translation>
     </message>
     <message>
         <source>Select all</source>
-        <translation type="unfinished"></translation>
+        <translation>Elekti ĉiujn</translation>
     </message>
 </context>
 <context>
     <name>RestoreListViewForm.ui</name>
     <message>
         <source>Restore a document</source>
-        <translation type="unfinished"></translation>
+        <translation>Restarigu dokumenton</translation>
     </message>
     <message>
         <source>Select all</source>
-        <translation type="unfinished"></translation>
+        <translation>Elekti ĉiujn</translation>
     </message>
     <message>
         <source>Trashed menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Forĵetita menuo</translation>
     </message>
     <message>
         <source>The checked documents are those which were trashed at the same time</source>
-        <translation type="unfinished"></translation>
+        <translation>La kontrolitaj dokumentoj estas tiuj, kiujn oni forĵetis samtempe</translation>
     </message>
     <message>
         <source>List of trashed items to be restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Listo de restaŭritaj rubaĵoj</translation>
     </message>
 </context>
 <context>
     <name>RightDock</name>
     <message>
         <source>&amp;Tools dock</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Iloj dokas</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Redaktu</translation>
     </message>
     <message>
         <source>&amp;Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Ecoj</translation>
     </message>
     <message>
         <source>&amp;Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Etikedoj</translation>
     </message>
     <message>
         <source>&amp;Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Superrigardo</translation>
     </message>
     <message>
-        <source>Show overview tool box</source>
-        <translation type="unfinished"></translation>
+        <source>Show overview toolbox</source>
+        <translation>Montri superrigardan ilarkeston</translation>
+    </message>
+    <message>
+        <source>Show edit toolbox</source>
+        <translation>Montri redaktilon</translation>
+    </message>
+    <message>
+        <source>Show properties toolbox</source>
+        <translation>Montru ilojn de propraĵoj</translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Montri etikedojn por etikedoj</translation>
     </message>
 </context>
 <context>
     <name>RootPage</name>
     <message>
         <source>Ok</source>
-        <translation type="unfinished"></translation>
+        <translation>Bone</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation type="unfinished"></translation>
+        <translation>Averto</translation>
     </message>
     <message>
         <source>Critical</source>
-        <translation type="unfinished"></translation>
+        <translation>Kritikaj</translation>
     </message>
     <message>
         <source>Fatal</source>
-        <translation type="unfinished"></translation>
+        <translation>Mortiga</translation>
     </message>
     <message>
         <source>Show the welcome page</source>
-        <translation type="unfinished"></translation>
+        <translation>Montru la bonvenigan paĝon</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Dosiero</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Redaktu</translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Rigardi</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Helpu</translation>
     </message>
 </context>
 <context>
     <name>RootPageForm.ui</name>
     <message>
         <source>Main menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉefa menuo</translation>
     </message>
 </context>
 <context>
-    <name>RootPageFormOld.ui</name>
+    <name>S:</name>
     <message>
-        <source>Main menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show list of tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="unfinished"></translation>
+        <source/>
+        <comment>the capital letters are shortcuts, mark one letter similarly in your translation and translate the standalone letter accordingly later</comment>
+        <translation type="unfinished"/>
     </message>
 </context>
 <context>
-    <name>RootPageOld</name>
+    <name>SKRDownload</name>
     <message>
-        <source>Welcome</source>
-        <translation type="unfinished"></translation>
+        <source>Destination file &quot;%1&quot; already exists</source>
+        <translation>Destina dosiero &quot;%1&quot; jam ekzistas</translation>
     </message>
     <message>
-        <source>Overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Gallery</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ok</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Warning</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Critical</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Fatal</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Theme</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;View</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Skribisto %1 created by Cyril Jacquet</source>
-        <translation type="unfinished"></translation>
+        <source>Error while writing &quot;%1&quot;</source>
+        <translation>Eraro dum skribado de &quot;%1&quot;</translation>
     </message>
 </context>
 <context>
     <name>SKRExporter</name>
     <message>
         <source>Tags:</source>
-        <translation type="unfinished"></translation>
+        <translation>Etikedoj:</translation>
     </message>
     <message>
         <source>Outline:</source>
-        <translation type="unfinished"></translation>
+        <translation>Skizo:</translation>
     </message>
     <message>
         <source>Text:</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksto:</translation>
+    </message>
+</context>
+<context>
+    <name>SKRRootItem</name>
+    <message>
+        <source>No translation found.</source>
+        <translation>Neniu traduko trovita.</translation>
+    </message>
+</context>
+<context>
+    <name>SKRShortcutManager</name>
+    <message>
+        <source>Copy</source>
+        <translation>Kopiu</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Algluu</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation>Tranĉi</translation>
     </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekto</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosierujo</translation>
     </message>
 </context>
 <context>
     <name>SettingsPage</name>
     <message>
         <source>Add backup path</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni rezervan vojon</translation>
     </message>
     <message>
         <source>Remove backup path</source>
-        <translation type="unfinished"></translation>
+        <translation>Forigu rezervan vojon</translation>
     </message>
     <message>
         <source>Enter a path to back up to</source>
-        <translation type="unfinished"></translation>
+        <translation>Enigu vojon al kiu sekurkopii</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Fermu</translation>
+    </message>
+    <message>
+        <source>Please restart to apply changes.</source>
+        <translation>Bonvolu rekomenci por apliki ŝanĝojn.</translation>
     </message>
 </context>
 <context>
     <name>SettingsPageForm.ui</name>
     <message>
         <source>Accessibility</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Allow swipe gesture between tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show menu bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Alirebleco</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Aspekto</translation>
     </message>
     <message>
         <source>Interface language :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set main menu in status bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Minimalist menu tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Interfaca lingvo:</translation>
     </message>
     <message>
         <source>Manage themes</source>
-        <translation type="unfinished"></translation>
+        <translation>Administri temojn</translation>
     </message>
     <message>
         <source>Behavior</source>
-        <translation type="unfinished"></translation>
+        <translation>Konduto</translation>
     </message>
     <message>
         <source>Create an empty project at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Kreu malplenan projekton komence</translation>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>Centri vertikale la tekstokursoron</translation>
     </message>
     <message>
         <source>Spell checking</source>
-        <translation type="unfinished"></translation>
+        <translation>Literumkontrolo</translation>
     </message>
     <message>
         <source>Check spelling</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolu literumon</translation>
     </message>
     <message>
         <source>Default dictionary :</source>
-        <translation type="unfinished"></translation>
+        <translation>Apriora vortaro:</translation>
     </message>
     <message>
         <source>Backup</source>
-        <translation type="unfinished"></translation>
+        <translation>Rezerva</translation>
     </message>
     <message>
         <source>Backup paths :</source>
-        <translation type="unfinished"></translation>
+        <translation>Rezervaj vojoj:</translation>
     </message>
     <message>
         <source>Back up every</source>
-        <translation type="unfinished"></translation>
+        <translation>Rezervu ĉiun</translation>
     </message>
     <message>
         <source>hours</source>
-        <translation type="unfinished"></translation>
+        <translation>horoj</translation>
     </message>
     <message>
         <source>Back up once a day</source>
-        <translation type="unfinished"></translation>
+        <translation>Rezervu unufoje tage</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Savi</translation>
     </message>
     <message>
         <source>Save every</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservu ĉiun</translation>
     </message>
     <message>
         <source>minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>minutoj</translation>
     </message>
     <message>
         <source>Quick print</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapida presado</translation>
     </message>
     <message>
         <source>Include outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Inkluzivi skizon</translation>
     </message>
     <message>
         <source>Add tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni etikedojn</translation>
     </message>
     <message>
         <source>Text size :</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksta grandeco:</translation>
     </message>
     <message>
         <source>Text indent :</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksta deŝovo:</translation>
     </message>
     <message>
         <source>Top margin :</source>
-        <translation type="unfinished"></translation>
+        <translation>Supra rando:</translation>
     </message>
     <message>
         <source>Special E-Paper</source>
-        <translation type="unfinished"></translation>
+        <translation>Speciala E-Papero</translation>
     </message>
     <message>
         <source>Set the text cursor unblinking</source>
-        <translation type="unfinished"></translation>
+        <translation>Agordu la tekstokursoron ne palpebrumante</translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="unfinished"></translation>
+        <translation>Altnivela</translation>
     </message>
     <message>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
+        <source>Development mode</source>
+        <translation>Evolua reĝimo</translation>
     </message>
     <message>
-        <source>Reset dock configuration</source>
-        <translation type="unfinished"></translation>
+        <source>Help with accessibility</source>
+        <translation>Helpu pri alirebleco</translation>
+    </message>
+    <message>
+        <source>Show menu button</source>
+        <translation>Montri menuobutonon</translation>
+    </message>
+    <message>
+        <source>Manage plugins</source>
+        <translation>Administri kromaĵojn</translation>
+    </message>
+    <message>
+        <source>Show the first steps dialog</source>
+        <translation>Montru la dialogon pri la unuaj paŝoj</translation>
+    </message>
+    <message>
+        <source>Show properties toolbox</source>
+        <translation>Montru ilojn de propraĵoj</translation>
     </message>
 </context>
 <context>
     <name>SheetOverviewToolForm.ui</name>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekto</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Vidigu</translation>
     </message>
     <message>
         <source>Display mode :</source>
-        <translation type="unfinished"></translation>
+        <translation>Vidiga reĝimo:</translation>
     </message>
     <message>
         <source>Tree indentation :</source>
-        <translation type="unfinished"></translation>
+        <translation>Arbo deŝovo:</translation>
     </message>
     <message>
         <source>Show outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri skizon</translation>
     </message>
     <message>
         <source>Show notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri notojn</translation>
     </message>
     <message>
         <source>Show tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri etikedojn</translation>
     </message>
     <message>
         <source>Show character count</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri signan nombron</translation>
     </message>
     <message>
         <source>Show word count</source>
-        <translation type="unfinished"></translation>
+        <translation>Montri vortkalkulon</translation>
     </message>
 </context>
 <context>
     <name>SheetOverviewTree</name>
     <message>
         <source>Level %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nivelo %1</translation>
     </message>
     <message>
         <source>label: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>etikedo: %1</translation>
     </message>
     <message>
         <source>has children</source>
-        <translation type="unfinished"></translation>
+        <translation>havas infanojn</translation>
     </message>
     <message>
         <source>navigation item</source>
-        <translation type="unfinished"></translation>
+        <translation>navigada ero</translation>
     </message>
     <message>
         <source>Open document</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton</translation>
     </message>
     <message>
         <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton en nova langeto</translation>
     </message>
     <message>
         <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu dokumenton en fenestro</translation>
     </message>
     <message>
         <source>Enter label</source>
-        <translation type="unfinished"></translation>
+        <translation>Enigu etikedon</translation>
     </message>
     <message>
         <source>Enter name</source>
-        <translation type="unfinished"></translation>
+        <translation>Enigu nomon</translation>
     </message>
     <message>
         <source>Outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Skizo</translation>
     </message>
     <message>
         <source>c: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>k: %1</translation>
     </message>
     <message>
         <source>all c: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ĉiuj k: %1</translation>
     </message>
     <message>
         <source>w: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>v: %1</translation>
     </message>
     <message>
         <source>all w: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ĉiuj k: %1</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu en nova langeto</translation>
     </message>
     <message>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu en nova fenestro</translation>
     </message>
     <message>
         <source>Unset focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfari fokuson</translation>
     </message>
     <message>
         <source>Set focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Fiksu fokuson</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Alinomi</translation>
     </message>
     <message>
         <source>Set label</source>
-        <translation type="unfinished"></translation>
+        <translation>Metu etikedon</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation>Tranĉi</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiu</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Algluu</translation>
     </message>
     <message>
         <source>Add before</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni antaŭe</translation>
     </message>
     <message>
         <source>Add after</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni post</translation>
     </message>
     <message>
         <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni sub-eron</translation>
     </message>
     <message>
         <source>Move up</source>
-        <translation type="unfinished"></translation>
+        <translation>Supreniĝi</translation>
     </message>
     <message>
         <source>Move down</source>
-        <translation type="unfinished"></translation>
+        <translation>Movu malsupren</translation>
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Sendu al rubujo</translation>
+    </message>
+</context>
+<context>
+    <name>SkrBasePage</name>
+    <message>
+        <source>newIdenticalPageShortcut: Item not created</source>
+        <translation>newIdenticalPageShortcut: Artikolo ne kreita</translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
+        <translation>Renomi artikolon</translation>
     </message>
 </context>
 <context>
     <name>SkrTabButtonForm.ui</name>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermu</translation>
     </message>
 </context>
 <context>
     <name>SkrTheme</name>
     <message>
         <source>Main text background</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉefa teksta fono</translation>
     </message>
     <message>
         <source>Main text foreground</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉefa teksto malfono</translation>
     </message>
     <message>
         <source>Secondary text background</source>
-        <translation type="unfinished"></translation>
+        <translation>Malĉefa teksto fono</translation>
     </message>
     <message>
         <source>Secondary text foreground</source>
-        <translation type="unfinished"></translation>
+        <translation>Malĉefa teksto unua plano</translation>
     </message>
     <message>
         <source>Page background</source>
-        <translation type="unfinished"></translation>
+        <translation>Paĝa fono</translation>
     </message>
     <message>
         <source>Button background</source>
-        <translation type="unfinished"></translation>
+        <translation>Butona fono</translation>
     </message>
     <message>
         <source>Button foreground</source>
-        <translation type="unfinished"></translation>
+        <translation>Butona malfono</translation>
     </message>
     <message>
         <source>Button icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Butona piktogramo</translation>
     </message>
     <message>
         <source>Button icon (disabled)</source>
-        <translation type="unfinished"></translation>
+        <translation>Butona piktogramo (malŝaltita)</translation>
     </message>
     <message>
         <source>Accent</source>
-        <translation type="unfinished"></translation>
+        <translation>Akcento</translation>
     </message>
     <message>
         <source>Spellcheck</source>
-        <translation type="unfinished"></translation>
+        <translation>Literumkontrolo</translation>
     </message>
     <message>
         <source>ToolBar background</source>
-        <translation type="unfinished"></translation>
+        <translation>Ilobara fono</translation>
     </message>
     <message>
         <source>Page ToolBar background</source>
-        <translation type="unfinished"></translation>
+        <translation>Fona Paĝa Ilobreto</translation>
     </message>
     <message>
         <source>Divider</source>
-        <translation type="unfinished"></translation>
+        <translation>Disigilo</translation>
     </message>
     <message>
         <source>Menu background</source>
-        <translation type="unfinished"></translation>
+        <translation>Menuo fono</translation>
     </message>
     <message>
         <source>List item background</source>
-        <translation type="unfinished"></translation>
+        <translation>Fona listo de listero</translation>
     </message>
 </context>
 <context>
     <name>SkrViewButtons</name>
     <message>
         <source>Split</source>
-        <translation type="unfinished"></translation>
+        <translation>Disigi</translation>
     </message>
     <message>
         <source>Close view</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermi vidon</translation>
     </message>
     <message>
         <source>Split vertically</source>
-        <translation type="unfinished"></translation>
+        <translation>Disigi vertikale</translation>
     </message>
     <message>
         <source>Open in new window</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu en nova fenestro</translation>
     </message>
 </context>
 <context>
     <name>TagPad</name>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Alinomi</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Forigi</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation type="unfinished"></translation>
+        <translation>Averto</translation>
     </message>
     <message>
         <source>Do you want to delete the tag &quot;%1&quot; ?
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉu vi volas forigi la etikedon &quot;%1&quot;?
+%2</translation>
     </message>
     <message>
         <source>tag related to the current paper</source>
-        <translation type="unfinished"></translation>
+        <translation>etikedo rilate al la nuna papero</translation>
     </message>
     <message>
         <source>Add tag</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni etikedon</translation>
     </message>
     <message>
         <source>Tag name</source>
-        <translation type="unfinished"></translation>
+        <translation>Etikeda nomo</translation>
     </message>
     <message>
         <source>Existing tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekzistantaj etikedoj</translation>
     </message>
     <message>
         <source>Note name</source>
-        <translation type="unfinished"></translation>
+        <translation>Notu nomon</translation>
     </message>
 </context>
 <context>
     <name>TagPadForm.ui</name>
     <message>
         <source>Tags</source>
-        <translation type="unfinished"></translation>
+        <translation>Etikedoj</translation>
     </message>
     <message>
         <source>Tags list</source>
-        <translation type="unfinished"></translation>
+        <translation>Listo de etikedoj</translation>
     </message>
 </context>
 <context>
     <name>TextContextMenu</name>
     <message>
         <source>Learn &quot;%1&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Lernu &quot;%1&quot;</translation>
     </message>
 </context>
 <context>
     <name>TextContextMenuForm.ui</name>
     <message>
         <source>Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>Redaktu</translation>
     </message>
     <message>
         <source>Suggestions</source>
-        <translation type="unfinished"></translation>
+        <translation>Sugestoj</translation>
     </message>
 </context>
 <context>
     <name>TextPage</name>
     <message>
         <source>Plan of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Plano de %1</translation>
     </message>
     <message>
         <source>%1 words, %2 characters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show outline tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
+        <translation>% 1 vortoj, %2 signoj</translation>
     </message>
     <message>
         <source>Text page</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksta paĝo</translation>
     </message>
     <message>
         <source>Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksto</translation>
     </message>
     <message>
         <source>Write here any text, be it a scene or a note</source>
-        <translation type="unfinished"></translation>
+        <translation>Skribu ĉi tie ajnan tekston, ĉu scenon, ĉu noton</translation>
+    </message>
+    <message>
+        <source>Close quick view</source>
+        <translation>Fermu rapidan vidon</translation>
+    </message>
+    <message>
+        <source>Open quick view</source>
+        <translation>Malfermu rapidan vidon</translation>
+    </message>
+    <message>
+        <source>Show edit toolbox</source>
+        <translation>Montri redaktilon</translation>
+    </message>
+    <message>
+        <source>Show properties toolbox</source>
+        <translation>Montru ilojn de propraĵoj</translation>
+    </message>
+    <message>
+        <source>Show outline toolbox</source>
+        <translation>Montri skizan ilarkeston</translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Montri etikedojn por etikedoj</translation>
     </message>
 </context>
 <context>
     <name>ThemePage</name>
     <message>
         <source>Themes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Edit theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Temoj</translation>
     </message>
     <message>
         <source>Edit color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Distraction free</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Normal</source>
-        <translation type="unfinished"></translation>
+        <translation>Redaktu koloron</translation>
     </message>
     <message>
         <source>Theme page</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema paĝo</translation>
     </message>
     <message>
         <source>Choose or modify your themes</source>
-        <translation type="unfinished"></translation>
+        <translation>Elektu aŭ modifi viajn temojn</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Malpeza</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Malluma</translation>
+    </message>
+    <message>
+        <source>Set as light theme</source>
+        <translation>Agordu kiel malpeza temo</translation>
+    </message>
+    <message>
+        <source>Set as dark theme</source>
+        <translation>Agordu kiel malluma temo</translation>
+    </message>
+    <message>
+        <source>Set as distraction free theme</source>
+        <translation>Ŝanĝu kiel distran liberan temon</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Alinomi</translation>
+    </message>
+    <message>
+        <source>Rename a theme</source>
+        <translation>Renomi temon</translation>
+    </message>
+    <message>
+        <source>Remove a theme</source>
+        <translation>Forigi temon</translation>
+    </message>
+    <message>
+        <source>Do you really want to remove the theme &quot;%1&quot;?</source>
+        <translation>Ĉu vi vere volas forigi la temon &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Primary text %1</source>
+        <translation>Ĉefa teksto %1</translation>
+    </message>
+    <message>
+        <source>Distraction free</source>
+        <translation>Sen distro</translation>
     </message>
 </context>
 <context>
     <name>ThemePageForm.ui</name>
     <message>
         <source>Themes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Example</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>list item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>button</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Primary text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Secondary text</source>
-        <translation type="unfinished"></translation>
+        <translation>Temoj</translation>
     </message>
     <message>
         <source>Color properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Koloraj ecoj</translation>
     </message>
     <message>
         <source>Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Koloroj</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Savi</translation>
+    </message>
+    <message>
+        <source>Reset theme</source>
+        <translation>Restarigi temon</translation>
+    </message>
+    <message>
+        <source>Save theme</source>
+        <translation>Konservu temon</translation>
+    </message>
+    <message>
+        <source>Example</source>
+        <translation>Ekzemplo</translation>
+    </message>
+    <message>
+        <source>Button</source>
+        <translation>Butono</translation>
+    </message>
+    <message>
+        <source>Button (disabled)</source>
+        <translation>Butono (malebligita)</translation>
+    </message>
+    <message>
+        <source>Tool Button</source>
+        <translation>Ilobutono</translation>
+    </message>
+    <message>
+        <source>Tool Button (disabled)</source>
+        <translation>Ilo-Butono (malŝaltita)</translation>
+    </message>
+    <message>
+        <source>Round button</source>
+        <translation>Ronda butono</translation>
+    </message>
+    <message>
+        <source>Round button (disabled)</source>
+        <translation>Ronda butono (malebligita)</translation>
+    </message>
+    <message>
+        <source>Switch (checked)</source>
+        <translation>Ŝaltilo (markita)</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <translation>Ŝalti</translation>
+    </message>
+    <message>
+        <source>Outline</source>
+        <translation>Skizo</translation>
+    </message>
+    <message>
+        <source>Secondary text</source>
+        <translation>Malĉefa teksto</translation>
+    </message>
+    <message>
+        <source>Tool bar</source>
+        <translation>Ilobreto</translation>
+    </message>
+    <message>
+        <source>Page tool bar</source>
+        <translation>Paĝa ilobreto</translation>
+    </message>
+    <message>
+        <source>List item</source>
+        <translation>Listero</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Malpeza</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Malluma</translation>
+    </message>
+    <message>
+        <source>Distraction free</source>
+        <translation>Sen distro</translation>
+    </message>
+    <message>
+        <source>Force a color mode:</source>
+        <translation>Devigi koloran reĝimon:</translation>
     </message>
 </context>
 <context>
     <name>TrashedListView</name>
     <message>
         <source>Trash: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Rubujo: %1</translation>
     </message>
     <message>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉu vi volas forigi definitive la jenajn dokumentojn de la projekto &quot;%1&quot;?
+%2</translation>
     </message>
     <message>
         <source>Empty the trash</source>
-        <translation type="unfinished"></translation>
+        <translation>Malplenigu la rubujon</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>Restaŭri</translation>
     </message>
 </context>
 <context>
     <name>TrashedListViewForm.ui</name>
     <message>
         <source>Restore a document</source>
-        <translation type="unfinished"></translation>
+        <translation>Restarigu dokumenton</translation>
     </message>
     <message>
         <source>Trashed menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Forĵetita menuo</translation>
     </message>
 </context>
 <context>
     <name>UserDictPage</name>
     <message>
         <source>Add word to dictionary</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldoni vorton al vortaro</translation>
+    </message>
+    <message>
+        <source>Add a word to the project dictionary</source>
+        <translation>Aldonu vorton al la projekta vortaro</translation>
+    </message>
+    <message>
+        <source>Word already in dictionary</source>
+        <translation>Vorto jam en vortaro</translation>
     </message>
     <message>
         <source>Remove word from dictionary</source>
-        <translation type="unfinished"></translation>
+        <translation>Forigu vorton el vortaro</translation>
+    </message>
+</context>
+<context>
+    <name>WelcomePage</name>
+    <message>
+        <source>Skribisto %1 created by Cyril Jacquet</source>
+        <translation>Skribisto %1 kreita de Cyril Jacquet</translation>
     </message>
 </context>
 <context>
     <name>WelcomePageForm.ui</name>
     <message>
         <source>Go Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Reiru</translation>
     </message>
     <message>
         <source>New</source>
-        <translation type="unfinished"></translation>
+        <translation>Nova</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Lastatempa</translation>
     </message>
     <message>
         <source>Examples</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekzemploj</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importi</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksporti</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished"></translation>
+        <translation>Presi</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Agordoj</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished"></translation>
+        <translation>Helpu</translation>
     </message>
     <message>
         <source>Go Back to the menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>WriteLeftDock</name>
-    <message>
-        <source>&amp;Navigation dock</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show recent sheets</source>
-        <translation type="unfinished"></translation>
+        <translation>Reiru al la menuo</translation>
     </message>
 </context>
 <context>
     <name>WriteOverviewPage</name>
     <message>
         <source>The focus is currently on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>La fokuso estas nuntempe sur %1</translation>
     </message>
 </context>
 <context>
     <name>WriteOverviewPageForm.ui</name>
     <message>
         <source>Unfocus</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfokusigi</translation>
     </message>
 </context>
 <context>
-    <name>WriteRightDock</name>
+    <name>WritingGamesPageToolbox</name>
     <message>
-        <source>&amp;Tools dock</source>
-        <translation type="unfinished"></translation>
+        <source>Writing Games Page Toolbox</source>
+        <translation>Ilokesto de Verkado de Ludoj</translation>
     </message>
     <message>
-        <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <source>Show Writing Games toolbox</source>
+        <translation>Montri ilkeston de Verkado-Ludoj</translation>
+    </message>
+</context>
+<context>
+    <name>WritingGamesPageToolboxForm.ui</name>
+    <message>
+        <source>Forbid erasing</source>
+        <translation>Malpermesu forviŝadon</translation>
     </message>
     <message>
-        <source>&amp;Properties</source>
-        <translation type="unfinished"></translation>
+        <source>Writing games</source>
+        <translation>Skribludoj</translation>
     </message>
+</context>
+<context>
+    <name>WritingZone</name>
     <message>
-        <source>&amp;Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show edit tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show properties tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags tool box</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show notes tool box</source>
-        <translation type="unfinished"></translation>
+        <source>Find</source>
+        <translation>Trovu</translation>
     </message>
 </context>
 <context>
     <name>main</name>
     <message>
         <source>Fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>Plenekrane</translation>
     </message>
     <message>
         <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>Centri vertikale la tekstokursoron</translation>
     </message>
     <message>
         <source>Themes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Contents</source>
-        <translation type="unfinished"></translation>
+        <translation>Temoj</translation>
     </message>
     <message>
         <source>&amp;FAQ</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;OFTAJ DEMANDOJ</translation>
     </message>
     <message>
         <source>&amp;About</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Pri</translation>
     </message>
     <message>
         <source>About &amp;Qt</source>
-        <translation type="unfinished"></translation>
+        <translation>Pri &amp; Qt</translation>
     </message>
     <message>
         <source>&amp;New Project</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Nova Projekto</translation>
     </message>
     <message>
         <source>&amp;Check spelling</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Kontrolu literumon</translation>
     </message>
     <message>
         <source>&amp;Open Project</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Malfermu Projekton</translation>
     </message>
     <message>
         <source>Open an existing project</source>
-        <translation type="unfinished"></translation>
+        <translation>Malfermu ekzistantan projekton</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Savi</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservu Ĉion</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Stir + Maj + S</translation>
     </message>
     <message>
         <source>Save As …</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservi kiel …</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as …</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservu la projekton &quot;%1&quot; kiel ...</translation>
     </message>
     <message>
         <source>This path is read-only, please choose another path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ĉi tiu vojo estas nurlegebla, bonvolu elekti alian vojon.</translation>
     </message>
     <message>
         <source>Save a Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservu Kopion</translation>
     </message>
     <message>
         <source>Save a copy of the &quot;%1&quot; project as …</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservu kopion de la projekto &quot;%1&quot; kiel ...</translation>
     </message>
     <message>
         <source>Loading a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Ŝarĝante projekton</translation>
     </message>
     <message>
         <source>Back up</source>
-        <translation type="unfinished"></translation>
+        <translation>Rezervu</translation>
     </message>
     <message>
         <source>Back up failed: The backup is not configured</source>
-        <translation type="unfinished"></translation>
+        <translation>Rezervo malsukcesis: La sekurkopio ne estas agordita</translation>
     </message>
     <message>
         <source>Back up failed:  the project must be saved at least once</source>
-        <translation type="unfinished"></translation>
+        <translation>Sekurkopio malsukcesis: la projekto devas esti konservita almenaŭ unufoje</translation>
     </message>
     <message>
         <source>Back up failed: The backup path %1 can&apos;t be used</source>
-        <translation type="unfinished"></translation>
+        <translation>Rezervo malsukcesis: La rezerva vojo %1 ne uzeblas</translation>
     </message>
     <message>
         <source>Back up failed: The backup path %1 is read only</source>
-        <translation type="unfinished"></translation>
+        <translation>Sekurkopio malsukcesis: La rezerva vojo %1 estas nur leginda</translation>
     </message>
     <message>
         <source>&amp;Print</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Presi</translation>
     </message>
     <message>
         <source>&amp;Import</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Importi</translation>
     </message>
     <message>
         <source>&amp;Export</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Eksporti</translation>
     </message>
     <message>
         <source>The project %1 is not saved. Do you want to save it before quitting ?</source>
-        <translation type="unfinished"></translation>
+        <translation>La projekto %1 ne estas konservita. Ĉu vi volas konservi ĝin antaŭ ol ĉesi?</translation>
     </message>
     <message>
         <source>Save the %1 project as …</source>
-        <translation type="unfinished"></translation>
+        <translation>Konservu la %1 projekton kiel ...</translation>
     </message>
     <message>
         <source>&amp;Close &quot;%1&quot; project</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Fermi projekton &quot;%1&quot;</translation>
     </message>
     <message>
         <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp; Ĉesu</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation>Tranĉi</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiu</translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished"></translation>
+        <translation>Kursiva</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Aŭdaca</translation>
     </message>
     <message>
         <source>Strike</source>
-        <translation type="unfinished"></translation>
+        <translation>Striko</translation>
     </message>
     <message>
         <source>Underline</source>
-        <translation type="unfinished"></translation>
+        <translation>Substreku</translation>
+    </message>
+    <message>
+        <source>First steps</source>
+        <translation>Unuaj paŝoj</translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
+        <translation>&amp; Uzula manlibro</translation>
+    </message>
+    <message>
+        <source>Back up successful</source>
+        <translation>Rezerva sekurkopio</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation>Eraro</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation>Averto</translation>
     </message>
 </context>
 </TS>
