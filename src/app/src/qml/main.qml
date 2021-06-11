@@ -1135,11 +1135,35 @@ ApplicationWindow {
     }
 
     //------------------------------------------------------------
+    //------------show settings-----------------------------------
+    //------------------------------------------------------------
+    Action {
+        id: showSettingsAction
+        text: skrShortcutManager.description("settings")
+        icon {
+            source: "qrc:///icons/backup/configure.svg"
+            height: 50
+            width: 50
+        }
+
+        onTriggered: {
+            protectedSignals.openWelcomePopupCalled()
+            protectedSignals.showSettingsPageCalled()
+        }
+    }
+
+    Shortcut {
+        enabled: skrRootItem.hasPrintSupport()
+        sequences: skrShortcutManager.shortcuts("settings")
+        context: Qt.WindowShortcut
+        onActivated: showSettingsAction.trigger()
+    }
+    //------------------------------------------------------------
     //------------Print project-----------------------------------
     //------------------------------------------------------------
     Action {
         id: printAction
-        text: qsTr("&Print")
+        text: skrShortcutManager.description("print")
         icon {
             source: "qrc:///icons/backup/document-print.svg"
             height: 50
@@ -1155,7 +1179,7 @@ ApplicationWindow {
 
     Shortcut {
         enabled: skrRootItem.hasPrintSupport()
-        sequence: StandardKey.Print
+        sequence: skrShortcutManager.shortcuts("print")
         context: Qt.ApplicationShortcut
         onActivated: printAction.trigger()
     }
