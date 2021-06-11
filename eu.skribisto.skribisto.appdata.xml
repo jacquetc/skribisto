@@ -4,9 +4,9 @@
   <name>Skribisto</name>
   <summary>Software for writing</summary>
   <summary xml:lang="fr">Logiciel d'écriture</summary>
-  <developer_name>Cyril Jacquet</developer_name>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0</project_license>
+  <developer_name>Cyril Jacquet</developer_name>
   <description>
     <p>Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or write hundreds of notes. The tools are designed to be most unobstrusive, so you can write, write and write a bit more without too much distraction.</p>
   </description>
@@ -17,8 +17,8 @@
   <url type="bugtracker">https://github.com/jacquetc/skribisto/issues</url>
   <url type="faq">https://manual.skribisto.eu/en_US/faq.html</url>
   <url type="help">https://manual.skribisto.eu/en_US/manual.html</url>
-  <url type="contact">https://github.com/jacquetc/skribisto#to-contact-me</url>
   <url type="translate">https://github.com/jacquetc/skribisto#translation</url>
+  <url type="contact">https://github.com/jacquetc/skribisto#to-contact-me</url>
   <launchable type="desktop-id">eu.skribisto.skribisto.desktop</launchable>
   <screenshots>
     <screenshot type="default">
@@ -34,11 +34,11 @@
       </description>
     </release>
   </releases>
+  <mimetypes>
+    <mimetype>application/x-skribisto</mimetype>
+  </mimetypes>
   <provides>
     <binary>skribisto</binary>
   </provides>
   <content_rating type="oars-1.1"/>
-  <mimetypes>
-    <mimetype>application/x-skribisto</mimetype>
-  </mimetypes>
 </component>
