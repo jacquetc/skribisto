@@ -99,7 +99,7 @@ SkrPopup {
                     }
 
                     SkrLabel{
-                        text: qsTr("Welcome in Skribisto")
+                        text: qsTr("Welcome to Skribisto")
                         font.bold: true
                     }
 

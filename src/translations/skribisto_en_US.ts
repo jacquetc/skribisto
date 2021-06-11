@@ -324,7 +324,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>- Drag an drop here
+        <source>- Drag and drop here
 - Click here then select a document in Navigation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -600,10 +600,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Welcome in Skribisto</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select a language:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -629,6 +625,10 @@
     </message>
     <message>
         <source>Frequently Asked Questions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
