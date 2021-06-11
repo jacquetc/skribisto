@@ -135,6 +135,13 @@ void SKRShortcutManager::populateShortcutList()
         createShortcut("paste", tr("Paste"), (QStringList() << "text" << "navigation"),
                        (QStringList() <<  convertStandardKeyToList(QKeySequence::Paste)));
 
+    m_shortcutList <<
+        createShortcut("settings", tr("&Settings"), (QStringList() << "global"),
+                       (QStringList()));
+
+    m_shortcutList <<
+        createShortcut("print", tr("&Print"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::Print)));
 
     // add shortcuts from plugins
 }
@@ -227,10 +234,20 @@ SKRShortcut SKRShortcutManager::createShortcut(const QString& name, const QStrin
                                                const QStringList& groups,
                                                const QStringList& defaultShortcuts) const
 {
+    // menmonic:
+
+    QStringList finalDefaultShortcuts = defaultShortcuts;
+
+    if (description.contains("&")) {
+        finalDefaultShortcuts << QKeySequence::mnemonic(tr("&Settings")).toString();
+    }
+
+
+    // use shortcuts:
     QSettings settings;
 
     settings.beginGroup("shortcuts");
     QStringList userShortcuts = settings.value(name, QStringList()).toStringList();
 
-    return SKRShortcut(name, description, groups, defaultShortcuts, userShortcuts);
+    return SKRShortcut(name, description, groups, finalDefaultShortcuts, userShortcuts);
 }

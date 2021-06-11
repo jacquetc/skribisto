@@ -529,7 +529,7 @@ RootPageForm {
 
 
     Connections {
-        target: ApplicationWindow.window
+        target: rootWindow
         function onOpenMainMenuCalled(){
             mainMenuButton.checked = false
             mainMenuButton.checked = true
@@ -562,7 +562,7 @@ RootPageForm {
         id: fileMenuShortcut
         sequence: skrQMLTools.mnemonic(fileMenu.title)
         onActivated: {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(fileMenu)
 
         }
@@ -572,7 +572,7 @@ RootPageForm {
         id: editMenuShortcut
         sequence: skrQMLTools.mnemonic(editMenu.title)
         onActivated: {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(editMenu)
 
         }
@@ -582,7 +582,7 @@ RootPageForm {
         id: viewMenuShortcut
         sequence: skrQMLTools.mnemonic(viewMenu.title)
         onActivated: {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(viewMenu)
 
         }
@@ -592,7 +592,7 @@ RootPageForm {
         id: helpMenuShortcut
         sequence: skrQMLTools.mnemonic(helpMenu.title)
         onActivated: {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(helpMenu)
 
         }
@@ -601,7 +601,7 @@ RootPageForm {
     Connections{
         target: ApplicationWindow.window
         function onOpenSubMenuCalled(menu) {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(menu)
         }
     }
@@ -744,6 +744,11 @@ RootPageForm {
 
 
         }
+
+        SkrMenuItem {
+            action: showSettingsAction
+        }
+
         SkrMenu {
             id: helpMenu
             objectName: "helpMenu"
@@ -777,7 +782,10 @@ RootPageForm {
                 }
             }
 
-            background: SkrPane { anchors.fill: parent}
+            background: SkrPane {
+                anchors.fill: parent
+                anchors.margins: 2
+            }
             contentItem:
                 RowLayout{
                 anchors.fill: parent

@@ -1569,6 +1569,14 @@
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
@@ -2375,10 +2383,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2526,10 +2530,6 @@
     </message>
     <message>
         <source>Back up failed: The backup path %1 is read only</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
