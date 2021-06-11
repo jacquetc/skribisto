@@ -30,12 +30,10 @@
   <releases>
     <release type="stable" version="1.9.22" date="2021-06-11T00:00:00Z">
       <description>
-        <ul>
-          <li>(null)</li>
-          <li>(null)</li>
-          <li>(null)</li>
-          <li>(null)</li>
-        </ul>
+        <p>Translations: add rough translations for it_IT, pt_BR, es_ES, eo, de_DE, ru_RU
+Navigation: now focus when clicking on the empty part of the list
+Navigation: now select the first item when navigating in a folder
+Dictionary: add dialog to add dictionaries from Web</p>
       </description>
     </release>
     <release type="stable" version="1.9.20" date="2021-06-10T00:00:00Z">
