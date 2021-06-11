@@ -393,10 +393,6 @@
         <translation>Text</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Abschlag</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -943,16 +939,8 @@
         <translation>Projektdatei:</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>Projektdatei</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Projektpfad:</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>Projektpfad</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +961,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Wörterbuch:</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Projektdatei</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Projektpfad</translation>
     </message>
 </context>
 <context>
