@@ -393,10 +393,6 @@
         <translation>Texte</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Réduction</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -943,16 +939,8 @@
         <translation>Dossier de projet :</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>fichier de projet</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Chemin du projet :</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>chemin du projet</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +961,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Dictionnaire :</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Dossier de projet</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Chemin du projet</translation>
     </message>
 </context>
 <context>
