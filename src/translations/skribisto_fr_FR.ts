@@ -600,7 +600,7 @@
     </message>
     <message>
         <source>Welcome in Skribisto</source>
-        <translation>Bienvenue à Skribisto</translation>
+        <translation>Bienvenue dans Skribisto</translation>
     </message>
     <message>
         <source>Select a language:</source>
@@ -718,7 +718,7 @@
     </message>
     <message>
         <source>Paste</source>
-        <translation>Pâte</translation>
+        <translation>Coller</translation>
     </message>
     <message>
         <source>Advanced</source>
@@ -822,7 +822,7 @@
     </message>
     <message>
         <source>Add before</source>
-        <translation>ajouter avant</translation>
+        <translation>Ajouter avant</translation>
     </message>
     <message>
         <source>Add after</source>
@@ -1102,7 +1102,7 @@
     <name>OverviewTree</name>
     <message>
         <source>Level %1</source>
-        <translation>Niveau 1</translation>
+        <translation>Niveau %1</translation>
     </message>
     <message>
         <source>label: %1</source>
@@ -1150,11 +1150,11 @@
     </message>
     <message>
         <source>w: %1</source>
-        <translation>w : %1</translation>
+        <translation>m : %1</translation>
     </message>
     <message>
         <source>all w: %1</source>
-        <translation>tout w : %1</translation>
+        <translation>tout m : %1</translation>
     </message>
     <message>
         <source>Open</source>
@@ -1194,7 +1194,7 @@
     </message>
     <message>
         <source>Paste</source>
-        <translation>Pâte</translation>
+        <translation>Coller</translation>
     </message>
     <message>
         <source>Add before</source>
@@ -1500,7 +1500,7 @@
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation>&amp;Editer</translation>
+        <translation>&amp;Éditer</translation>
     </message>
     <message>
         <source>&amp;View</source>
@@ -1567,7 +1567,7 @@
     </message>
     <message>
         <source>Paste</source>
-        <translation>Pâte</translation>
+        <translation>Coller</translation>
     </message>
     <message>
         <source>Cut</source>
@@ -2301,7 +2301,7 @@
     <message>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
 %2</source>
-        <translation>Voulez-vous supprimer définitivement les documents suivants du project &quot;%1&quot; ?
+        <translation>Voulez-vous supprimer définitivement les documents suivants du projet &quot;%1&quot; ?
 %2</translation>
     </message>
     <message>
