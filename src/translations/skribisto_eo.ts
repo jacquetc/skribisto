@@ -393,10 +393,6 @@
         <translation>Teksto</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Markdown</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -943,16 +939,8 @@
         <translation>Projekta dosiero:</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>projektodosiero</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Projekta vojo:</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>projekcia vojo</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +961,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Vortaro:</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Projekta dosiero</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Projekta vojo</translation>
     </message>
 </context>
 <context>
