@@ -393,10 +393,6 @@
         <translation>Текст</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Розмітка</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -943,16 +939,8 @@
         <translation>Файл проєкта:</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>файл проєкта</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Шлях до проєкта:</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>Шлях до проєкта</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +961,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Словник:</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Файл проекту</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Шлях проекту</translation>
     </message>
 </context>
 <context>
