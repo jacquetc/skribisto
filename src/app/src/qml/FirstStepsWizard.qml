@@ -32,7 +32,6 @@ SkrPopup {
         determineAvailableTranslations()
         determineCurrentTranslation()
         populateCheckSpellingComboBox()
-        checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(SkrSettings.spellCheckingSettings.spellCheckingLangCode)
 
         for(var i = 0; i < swipeView.count; i++){
 
@@ -386,8 +385,20 @@ SkrPopup {
 
         var i;
         for(i = 0 ; i < dictList.length ; i++){
-            checkSpellingComboBoxModel.append({"text": dictList[i], "dictCode": dictList[i]})
+            checkSpellingComboBoxModel.append({"text": skrRootItem.getNativeLanguageNameFromLocale(dictList[i]) + " (" + dictList[i] + ")", "dictCode": dictList[i]})
         }
+
+        var value = SkrSettings.spellCheckingSettings.spellCheckingLangCode
+        var index = checkSpellingComboBox.indexOfValue(value)
+        if(index >= 0){
+            checkSpellingComboBox.currentIndex = index
+           }
+        else {
+            value = skrRootItem.getOnlyLanguageFromLocale(value);
+            index = checkSpellingComboBox.indexOfValue(value)
+            checkSpellingComboBox.currentIndex = index
+        }
+
 
     }
 

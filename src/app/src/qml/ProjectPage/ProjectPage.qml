@@ -4,6 +4,8 @@ import eu.skribisto.spellchecker 1.0
 import eu.skribisto.stathub 1.0
 import eu.skribisto.skr 1.0
 import "../Items"
+import "../Commons"
+import ".."
 
 ProjectPageForm {
     id: root
@@ -141,6 +143,7 @@ ProjectPageForm {
     dictComboBox.valueRole: "dictCode"
 
     function populateDictComboBox(){
+        dictComboBoxModel.clear()
 
         var dictList = spellChecker.dictList()
 
@@ -199,8 +202,35 @@ ProjectPageForm {
             }
         }
     }
+    //------------------------------------------------
+    // install dict
 
+    Component {
+        id: component_newDictWizard
+        NewDictWizard {
+            id: newDictWizard
 
+            onClosed: loader_newDictWizard.active = false
+        }
+    }
+    Loader {
+        id: loader_newDictWizard
+        active: false
+        sourceComponent: component_newDictWizard
+    }
+
+    installDictButton.onClicked: {
+        loader_newDictWizard.active = true
+    }
+
+    Connections {
+        target: Globals
+        function onNewDictInstalled(dictName){
+            populateDictComboBox()
+            determineCurrentDictComboBoxValue()
+
+        }
+    }
     //---------------------------------------------------------------
     //----Stats---------------------------------------------------
     //---------------------------------------------------------------

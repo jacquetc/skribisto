@@ -874,6 +874,44 @@
     </message>
 </context>
 <context>
+    <name>NewDictWizard</name>
+    <message>
+        <source>Dictionary &quot;%1&quot; successfully installed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading from %1 (%2/%3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading license from %1 for %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NewDictWizardForm.ui</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the dictionary to install:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install a new dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View license</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>NewItemPopupForm.ui</name>
     <message>
         <source>Create</source>
@@ -1290,6 +1328,10 @@
         <source>Statistics</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Install new dictionaries</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -1482,6 +1524,17 @@
         <source></source>
         <comment>the capital letters are shortcuts, mark one letter similarly in your translation and translate the standalone letter accordingly later</comment>
         <translation></translation>
+    </message>
+</context>
+<context>
+    <name>SKRDownload</name>
+    <message>
+        <source>Destination file &quot;%1&quot; already exists</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while writing &quot;%1&quot;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

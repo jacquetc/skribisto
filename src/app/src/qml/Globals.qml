@@ -33,6 +33,8 @@ QtObject {
 
     signal loadingPopupCalled()
 
+    signal newDictInstalled(string dictName)
+
     //    //Sheet overview
     //    property int sheetOverviewCurrentProjectId: -2
 

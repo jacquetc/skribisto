@@ -106,6 +106,7 @@ ApplicationWindow {
     Loader {
         id: loader_firstStepsWizard
         sourceComponent: component_firstStepsWizard
+        active: false
     }
 
     Connections {

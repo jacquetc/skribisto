@@ -53,6 +53,18 @@ public:
 
     Q_INVOKABLE static QString cleanUpHtml(const QString& html);
 
+    Q_INVOKABLE QString        getWritableAddonsPathsListDir() const;
+
+    Q_INVOKABLE QString        getTempPath() const;
+
+    Q_INVOKABLE QStringList    getDictFoldersFromGitHubTree(const QString& treeFile) const;
+
+    Q_INVOKABLE void           removeFile(const QString& fileName);
+
+    Q_INVOKABLE QString        getOnlyLanguageFromLocale(const QString& na_me) const;
+    Q_INVOKABLE QString        getNativeCountryNameFromLocale(const QString& name) const;
+    Q_INVOKABLE QString        getNativeLanguageNameFromLocale(const QString& name) const;
+
 signals:
 
     void currentTranslationLanguageCodeChanged(const QString& langCode);

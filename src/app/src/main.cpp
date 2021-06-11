@@ -50,6 +50,7 @@ using namespace std;
 #include "skrwindowmanager.h"
 #include "skrviewmanager.h"
 #include "skrtreemanager.h"
+#include "skrdownload.h"
 
 #if SKR_DEBUG
 # include <QQmlDebuggingEnabler>
@@ -330,6 +331,11 @@ int main(int argc, char *argv[])
                                      1,
                                      0,
                                      "SKRSpellChecker");
+
+    qmlRegisterType<SKRDownload>("eu.skribisto.download",
+                                 1,
+                                 0,
+                                 "Download");
 
     qmlRegisterType<SKRUserSettings>("eu.skribisto.usersettings",
                                      1,

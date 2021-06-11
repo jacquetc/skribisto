@@ -33,7 +33,6 @@ QString SKRRootItem::getLanguageFromSettings() const {
     return langCode;
 }
 
-
 void SKRRootItem::setCurrentTranslationLanguageCode(const QString& langCode)
 {
     QSettings settings;
@@ -67,7 +66,7 @@ void SKRRootItem::setCurrentTranslationLanguageCode(const QString& langCode)
         qApp->removeTranslator(skribistoTranslator);
     }
 
-    //qDebug() << "findTranslationDir" << findTranslationDir();
+    // qDebug() << "findTranslationDir" << findTranslationDir();
 
     if (skribistoTranslator->load(locale, "skribisto", "_", findTranslationDir())) {
         QString name = locale.name();
@@ -173,6 +172,41 @@ QVariantMap SKRRootItem::findAvailableTranslationsMap() const {
 
 // ------------------------------------------------------
 
+QString SKRRootItem::getOnlyLanguageFromLocale(const QString& na_me) const
+{
+    return na_me.split("_").takeFirst();
+}
+
+// ------------------------------------------------------
+
+QString SKRRootItem::getNativeCountryNameFromLocale(const QString& name) const {
+    QLocale locale(name);
+
+    return locale.nativeCountryName();
+}
+
+// ------------------------------------------------------
+
+QString SKRRootItem::getNativeLanguageNameFromLocale(const QString& name) const {
+    QLocale locale(name);
+
+    return locale.nativeLanguageName();
+}
+
+// ------------------------------------------------------
+
+QString SKRRootItem::getWritableAddonsPathsListDir() const {
+    QStringList list = PLMUtils::Dir::writableAddonsPathsList();
+    QString     dir  = "";
+
+    if (!list.isEmpty()) {
+        dir = list.first();
+    }
+    return dir;
+}
+
+// ------------------------------------------------------
+
 QString SKRRootItem::cleanUpHtml(const QString& html)
 {
     QString text = html;
@@ -236,4 +270,58 @@ bool SKRRootItem::hasPrintSupport() const {
 
 QString SKRRootItem::defaultFontFamily() const {
     return qGuiApp->font().family().replace(", ", "");
+}
+
+QString SKRRootItem::getTempPath() const {
+    return QDir::tempPath();
+}
+
+QStringList SKRRootItem::getDictFoldersFromGitHubTree(const QString& treeFile) const {
+    QStringList list;
+
+    QFile file(treeFile);
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return list;
+    }
+
+    QByteArray line = file.readAll();
+
+    QJsonParseError jsonError;
+    QJsonDocument   jsonDoc = QJsonDocument::fromJson(line, &jsonError);
+
+    if (jsonError.error != QJsonParseError::NoError) {
+        qDebug() << "Error JSON in theme" << treeFile <<
+            "result :" << jsonError.errorString();
+    }
+
+    if (jsonDoc.isNull()) {
+        qDebug() << "jsonDoc.isNull";
+        return list;
+    }
+
+    QJsonObject jsonObject = jsonDoc.object();
+    QJsonArray  treeArray  = jsonObject.value("tree").toArray();
+
+    QJsonArray::const_iterator i;
+
+    QRegularExpression re("^dictionaries/.*?[^/]$");
+
+    for (i = treeArray.constBegin(); i != treeArray.constEnd(); ++i) {
+        QString path                  = i->toObject().value("path").toString();
+        QRegularExpressionMatch match = re.match(path);
+
+        if (match.hasMatch()) {
+            list.append(path.split("/").takeAt(1));
+        }
+    }
+    list.removeDuplicates();
+
+    return list;
+}
+
+void SKRRootItem::removeFile(const QString& fileName) {
+    QFile file(fileName);
+
+    file.remove();
 }
