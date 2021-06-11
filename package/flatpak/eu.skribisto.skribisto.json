@@ -6,6 +6,7 @@
   "command": "skribisto",
   "finish-args": [
     "--share=ipc",
+    "--share=network",
     "--socket=fallback-x11",
     "--socket=wayland",
     "--filesystem=home",
@@ -71,7 +72,7 @@
       "buildsystem": "cmake-ninja",
       "builddir": true,
       "config-opts": [
-        "-DCMAKE_BUILD_TYPE=MinSizeRel"
+        "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
       ],
       "sources": [
         {

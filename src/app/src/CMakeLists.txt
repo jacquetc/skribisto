@@ -106,6 +106,8 @@ set(app_SRCS
     skrprojecttoolboxinterface.h
     skrdownload.h
     skrdownload.cpp
+    skrshortcutmanager.h
+    skrshortcutmanager.cpp
     )
 
 set(QML qml.qrc

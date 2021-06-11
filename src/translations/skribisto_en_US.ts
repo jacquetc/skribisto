@@ -1560,6 +1560,21 @@
     </message>
 </context>
 <context>
+    <name>SKRShortcutManager</name>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SKRTreeManager</name>
     <message>
         <source>Project</source>
@@ -2551,10 +2566,6 @@
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -7,9 +7,9 @@
 #include <QDir>
 #include <QCoreApplication>
 
-//#ifdef Q_OS_WIN
-//# include "externals/hunspell/hunspell.hxx"
-//#endif // Q_OS_WIN
+// #ifdef Q_OS_WIN
+// # include "externals/hunspell/hunspell.hxx"
+// #endif // Q_OS_WIN
 
 #include <hunspell.hxx>
 #include "plmutils.h"
@@ -56,12 +56,17 @@ void SKRSpellChecker::setDict(const QString& dictionaryPath)
 
     //    m_isActive = true;
 }
-bool SKRSpellChecker::isHunspellLaunched() const{
+
+bool SKRSpellChecker::isHunspellLaunched() const {
     return m_hunspellLaunched;
 }
 
 bool SKRSpellChecker::spell(const QString& word)
 {
+    if (!m_hunspellLaunched) {
+        return true;
+    }
+
     //    qWarning() << "word  : " << word;
     bool f_ignore_numbers   = false;
     bool f_ignore_uppercase = true;
@@ -130,10 +135,10 @@ Letter:
         if (is_word || ((i == count) && (index != -1))) {
             if (!is_uppercase && !is_number) {
                 if (m_encodingFix == "latin1") return m_hunspell->spell(
-                            word.toLatin1().toStdString());
+                        word.toLatin1().toStdString());
 
                 if (m_encodingFix == "utf8") return m_hunspell->spell(
-                            word.toUtf8().toStdString());
+                        word.toUtf8().toStdString());
             }
             index        = -1;
             is_word      = false;
@@ -152,15 +157,15 @@ QStringList SKRSpellChecker::suggest(const QString& word)
     std::vector<std::string> suggestionsVector;
 
     if (m_encodingFix == "latin1") suggestionsVector = m_hunspell->suggest(
-                word.toLatin1().toStdString());
+            word.toLatin1().toStdString());
 
     if (m_encodingFix == "utf8") suggestionsVector = m_hunspell->suggest(
-                word.toUtf8().toStdString());
+            word.toUtf8().toStdString());
 
 
     QVector<std::string> suggestionsQVect =  QVector<std::string>(
-                suggestionsVector.begin(),
-                suggestionsVector.end());
+        suggestionsVector.begin(),
+        suggestionsVector.end());
 
     // maybe differenciate between latin1 and utf8
     QStringList suggestions;
@@ -192,9 +197,8 @@ void SKRSpellChecker::addWordToDict(const QString& word)
 
 void SKRSpellChecker::addWordToUserDict(const QString& word, bool emitSignal)
 {
-
-    //forbid if word already in the dictionary
-    if(this->spell(word)){
+    // forbid if word already in the dictionary
+    if (this->spell(word)) {
         return;
     }
 
@@ -220,18 +224,17 @@ bool SKRSpellChecker::isActive()
 
 void SKRSpellChecker::removeWordFromUserDict(const QString& word, bool emitSignal)
 {
-    // doesn't remove from spellchecker if it exists by default in the original dict
-    if(!m_langCode.isEmpty()){
-    SKRSpellChecker tempSpellChecker(this);
-    tempSpellChecker.setLangCode(m_langCode);
+    // doesn't remove from spellchecker if it exists by default in the original
+    // dict
+    if (!m_langCode.isEmpty()) {
+        SKRSpellChecker tempSpellChecker(this);
+        tempSpellChecker.setLangCode(m_langCode);
 
-    if(!tempSpellChecker.spell(word)){
+        if (!tempSpellChecker.spell(word)) {
+            if (m_encodingFix == "latin1") m_hunspell->remove(word.toLatin1().toStdString());
 
-        if (m_encodingFix == "latin1") m_hunspell->remove(word.toLatin1().toStdString());
-
-        if (m_encodingFix == "utf8") m_hunspell->remove(word.toUtf8().toStdString());
-
-    }
+            if (m_encodingFix == "utf8") m_hunspell->remove(word.toUtf8().toStdString());
+        }
     }
 
     m_userDict.removeAll(word);
@@ -337,8 +340,9 @@ QMap<QString, QString>SKRSpellChecker::dictAndPathMap()
         for (QString dict : dir.entryList(filters, QDir::Files)) {
             dict.chop(4);
 
-            if (QFile(path + "/" + dict + ".aff").exists()) map.insert(path + "/" + dict,
-                                                                       dict);
+            QString possiblePath = path + "/" + dict + ".aff";
+
+            if (QFile(possiblePath).exists()) map.insert(path + "/" + dict, dict);
         }
     }
 
@@ -381,9 +385,10 @@ void SKRSpellChecker::setLangCode(const QString& newLangCode)
         return;
     }
 
-    QString dictPath = SKRSpellChecker::dictAndPathMap().key(newLangCode, "en_US");
+    QString dictPath = SKRSpellChecker::dictAndPathMap().key(newLangCode, "");
 
-    if (newLangCode != "en_US") { // means default was used
+    if (dictPath == "") { // means default was used
+        dictPath = SKRSpellChecker::dictAndPathMap().key("en_US", "");
         qWarning() << QString("Dict %1 not found, using en_US").arg(newLangCode);
     }
     this->setDict(dictPath);
