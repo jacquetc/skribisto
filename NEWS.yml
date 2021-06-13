@@ -9,7 +9,7 @@ Version: 1.9.22
 Date: 2021-06-11
 Type: stable
 Description:
-- Translationse&#58; add rough translations for it_IT, pt_BR, es_ES, eo, de_DE, ru_RU
-- Navigatione&#58; now focus when clicking on the empty part of the list
-- Navigatione&#58; now select the first item when navigating in a folder
-- Dictionarye&#58; add dialog to add dictionaries from Web
+- "Translations: add rough translations for it_IT, pt_BR, es_ES, eo, de_DE, ru_RU"
+- "Navigation: now focus when clicking on the empty part of the list"
+- "Navigation: now select the first item when navigating in a folder"
+- "Dictionaries: add dialog to add dictionaries from Web"

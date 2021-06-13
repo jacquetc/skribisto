@@ -2231,7 +2231,6 @@ NavigationListForm {
                                         action: Action {
                                             id: addBeforeAction
                                             text: qsTr("Add before")
-                                            //shortcut: "Ctrl+Shift+N"
                                             icon {
                                                 source: "qrc:///icons/backup/document-new.svg"
                                             }
@@ -2269,7 +2268,6 @@ NavigationListForm {
                                         action: Action {
                                             id: addAfterAction
                                             text: qsTr("Add after")
-                                            //shortcut: "Ctrl+N"
                                             icon {
                                                 source: "qrc:///icons/backup/document-new.svg"
                                             }
@@ -2308,7 +2306,6 @@ NavigationListForm {
                                         action: Action {
                                             id: addChildAction
                                             text: qsTr("Add a sub-item")
-                                            //shortcut: "Ctrl+N"
                                             icon {
                                                 source: "qrc:///icons/backup/document-new.svg"
                                             }

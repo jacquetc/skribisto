@@ -42,9 +42,16 @@ NewItemPopupForm {
 
     listView.delegate: delegateComponent
 
+    createButton.enabled: chosenPageType !== ""
+
     createButton.onClicked: {
         pageTypeChosen(chosenPageType)
         root.close()
+    }
+
+    listView.onCurrentIndexChanged: {
+        chosenPageType = listView.currentItem.type
+        detailsTextArea.text = skrTreeManager.getPageDetailText(listView.currentItem.type)
     }
 
     Component{
