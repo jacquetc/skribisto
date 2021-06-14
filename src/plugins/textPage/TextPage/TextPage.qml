@@ -116,6 +116,71 @@ TextPageForm {
         countLabel.text = qsTr("%1 words, %2 characters").arg(wordCountString).arg(characterCountString)
     }
 
+
+    //-----------------------------------------------------------------
+    //----- Page menu ------------------------------------------------
+    //-----------------------------------------------------------------
+    pageMenuToolButton.onClicked: {
+        if (pageMenu.visible) {
+            pageMenu.close()
+            return
+        }
+        pageMenu.open()
+    }
+
+
+    SkrMenu {
+        id: pageMenu
+        y: pageMenuToolButton.height
+        x: pageMenuToolButton.x
+
+        SkrMenuItem{
+            action: newIdenticalPageAction
+        }
+
+
+        SkrMenuItem{
+            action: Action {
+                id: showRelationshipPanelAction
+                text: skrShortcutManager.description("show-relationship-panel")
+                icon.source: "qrc:///icons/backup/link.svg"
+                onTriggered: {
+
+                    relationshipPanel.visible = true
+
+                }
+            }
+        }
+
+        SkrMenuItem{
+            action: Action {
+                id: addQuickNoteAction
+                text: skrShortcutManager.description("add-quick-note")
+                icon.source: "qrc:///icons/backup/list-add.svg"
+                onTriggered: {
+
+
+                    //skrData.treeHub(). (projectId, treeItemId)
+                }
+            }
+        }
+
+    }
+
+    Shortcut {
+        sequences: skrShortcutManager.shortcuts("show-relationship-panel")
+        onActivated: {
+            showRelationshipPanelAction.trigger()
+        }
+    }
+    Shortcut {
+        sequences: skrShortcutManager.shortcuts("add-quick-note")
+        onActivated: {
+            addQuickNoteAction.trigger()
+        }
+    }
+
+
     //--------------------------------------------------------
     //---Writing Zone-----------------------------------------
     //--------------------------------------------------------
@@ -448,6 +513,12 @@ TextPageForm {
         //get cursor position
         var position = skrUserSettings.getFromProjectSettingHash(
                     projectId, positionKey, treeItemId, 0)
+
+        if(position > writingZone.textArea.length){
+            position = writingZone.textArea.length
+        }
+
+
         //get Y
         var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
                     projectId, yKey, treeItemId, 0)
@@ -491,6 +562,10 @@ TextPageForm {
             //save cursor position of current document :
 
             var previousCursorPosition = writingZone.textArea.cursorPosition
+
+            if(previousCursorPosition > writingZone.textArea.length){
+                previousCursorPosition = writingZone.textArea.length
+            }
             //console.log("savedCursorPosition", previousCursorPosition)
             var previousY = writingZone.flickable.contentY
             //console.log("previousContentY", previousY)
@@ -1040,5 +1115,37 @@ TextPageForm {
         }
 
     }
+
+
+
+    //-----------------------------------------------------------------
+    //----- Related Panel------------------------------------------------
+    //-----------------------------------------------------------------
+
+    relationshipPanel.projectId: root.projectId
+    relationshipPanel.treeItemId: root.treeItemId
+
+    relationshipPanel.viewManager: viewManager
+
+
+    relationshipPanel.onExtendedChanged:{
+        if(relationshipPanel.extended){
+            relationshipPanelPreferredHeight = root.height /2
+        }
+        else {
+            relationshipPanelPreferredHeight = 200
+        }
+    }
+
+
+    Behavior on relationshipPanelPreferredHeight {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
+        SpringAnimation {
+            spring: 5
+            mass: 0.2
+            damping: 0.2
+        }
+    }
+
 
 }

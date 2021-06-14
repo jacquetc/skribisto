@@ -61,5 +61,17 @@ SkrTabButtonForm {
         tabLabel.visible = textVisible
     }
 
+    Item{
+        id: clickZone
+        z:1
+        anchors.fill: parent
+        TapHandler{
+            onTapped: {
+                control.toggle()
+                control.clicked()
+            }
+        }
+    }
+
 
 }

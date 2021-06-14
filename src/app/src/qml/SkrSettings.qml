@@ -36,6 +36,7 @@ QtObject {
     property Settings ePaperSettings: Settings{
         category: "ePaper"
         property bool textCursorUnblinking: false
+        property bool animationEnabled: true
 
     }
 
@@ -69,9 +70,9 @@ QtObject {
     }
 
 
-    property Settings noteSettings: Settings{
-        category: "note"
-        property int textWidth: initialTextWidth
+    property Settings relatedTextSettings: Settings{
+        category: "relatedText"
+        property int textWidth:  -2 //unused but mandatory
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
@@ -115,6 +116,11 @@ QtObject {
         property real textTopMargin: 2
         property bool includeSynopsis: false
         property bool tagsEnabled: false
+    }
+
+    property Settings relationshipPanelSettings: Settings{
+        category: "relationshipPanel"
+        property string viewMode: "notes"
     }
 
     property Settings devSettings: Settings{

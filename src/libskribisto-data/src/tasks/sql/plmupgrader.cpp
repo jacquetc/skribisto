@@ -747,6 +747,85 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
     if (dbVersion == 1.7) {
         double newDbVersion = 1.8;
 
+
+        QString queryStr =
+            R""""(PRAGMA foreign_keys = 0;
+
+                CREATE TABLE sqlitestudio_temp_table AS SELECT *
+                                                          FROM tbl_tree;
+
+                DROP TABLE tbl_tree;
+
+                CREATE TABLE tbl_tree (
+                    l_tree_id           INTEGER  PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT
+                                                 UNIQUE ON CONFLICT ROLLBACK
+                                                 NOT NULL ON CONFLICT ROLLBACK,
+                    t_title             TEXT,
+                    t_internal_title    TEXT,
+                    l_sort_order        INTEGER  NOT NULL ON CONFLICT ROLLBACK
+                                                 DEFAULT (9999999999),
+                    l_indent            INTEGER  NOT NULL ON CONFLICT ROLLBACK
+                                                 DEFAULT (0),
+                    t_type              TEXT,
+                    m_primary_content   BLOB,
+                    m_secondary_content BLOB,
+                    dt_created          DATETIME NOT NULL ON CONFLICT ROLLBACK
+                                                 DEFAULT (CURRENT_TIMESTAMP),
+                    dt_updated          DATETIME NOT NULL ON CONFLICT ROLLBACK
+                                                 DEFAULT (CURRENT_TIMESTAMP),
+                    dt_trashed          DATETIME,
+                    b_trashed           BOOLEAN  NOT NULL ON CONFLICT ROLLBACK
+                                                 DEFAULT (0)
+                );
+
+                INSERT INTO tbl_tree (
+                                         l_tree_id,
+                                         t_title,
+                                         l_sort_order,
+                                         l_indent,
+                                         t_type,
+                                         m_primary_content,
+                                         m_secondary_content,
+                                         dt_created,
+                                         dt_updated,
+                                         dt_trashed,
+                                         b_trashed
+                                     )
+                                     SELECT l_tree_id,
+                                            t_title,
+                                            l_sort_order,
+                                            l_indent,
+                                            t_type,
+                                            m_primary_content,
+                                            m_secondary_content,
+                                            dt_created,
+                                            dt_updated,
+                                            dt_trashed,
+                                            b_trashed
+                                       FROM sqlitestudio_temp_table;
+
+                DROP TABLE sqlitestudio_temp_table;
+
+                PRAGMA foreign_keys = 1;
+        )"""";
+
+
+        IFOKDO(result, SKRSqlTools::executeSQLString(queryStr, sqlDb));
+
+
+        // fill here
+    }
+    IFKO(result) {
+        return result;
+    }
+
+    // ---------------------------------
+
+    // from 1.7 to 1.8
+    if (dbVersion == 1.8) {
+        double newDbVersion = 1.9;
+
+
         // fill here
     }
     IFKO(result) {

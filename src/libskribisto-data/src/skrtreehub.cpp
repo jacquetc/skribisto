@@ -26,13 +26,14 @@
 
 #include <QCollator>
 
-SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree"), m_last_added_id(-1), m_cutCopy(CutCopy())
+SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree"), m_last_added_id(-1), m_cutCopy(
+        CutCopy())
 {
-    connect(this, &SKRTreeHub::errorSent, this, &SKRTreeHub::setError, Qt::DirectConnection);
+    connect(this,                  &SKRTreeHub::errorSent,        this, &SKRTreeHub::setError, Qt::DirectConnection);
 
     // reset m_cutCopy
-    connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this, [this](int projectId){
-        if(m_cutCopy.projectId == projectId){
+    connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this, [this](int projectId) {
+        if (m_cutCopy.projectId == projectId) {
             m_cutCopy = CutCopy();
         }
     });
@@ -128,18 +129,56 @@ QString SKRTreeHub::getTitle(int projectId, int treeItemId) const
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setInternalTitle(int projectId, int treeItemId, const QString& newTitle)
+SKRResult SKRTreeHub::setInternalTitle(int projectId, int treeItemId, const QString& internalTitle)
 {
-    SKRResult result = set(projectId, treeItemId, "t_internal_title", newTitle);
+    SKRResult result = set(projectId, treeItemId, "t_internal_title", internalTitle);
 
     IFOK(result) {
-        emit internalTitleChanged(projectId, treeItemId, newTitle);
+        emit internalTitleChanged(projectId, treeItemId, internalTitle);
         emit projectModified(projectId);
     }
     IFKO(result) {
         emit errorSent(result);
     }
     return result;
+}
+
+// ----------------------------------------------------------------------------------------
+
+SKRResult SKRTreeHub::removeInternalTitleFromAll(int projectId, const QString& internalTitle)
+{
+    SKRResult result(this);
+
+    QList<int> idList = this->getAllIds(projectId);
+
+    for (int id : qAsConst(idList)) {
+        if (this->getInternalTitle(projectId, id) == internalTitle) {
+            result = this->setInternalTitle(projectId, id, "");
+        }
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// ----------------------------------------------------------------------------------------
+
+QList<int>SKRTreeHub::getIdsWithInternalTitle(int projectId, const QString& internalTitle) const
+{
+    SKRResult result(this);
+    QHash<int, QVariant> out;
+
+    QHash<QString, QVariant> where;
+
+    where.insert("t_internal_title", internalTitle);
+
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    result = queries.getValueByIdsWhere("t_title", out, where);
+
+    return out.keys();
 }
 
 // ----------------------------------------------------------------------------------------
@@ -832,7 +871,7 @@ SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId, in
 
     IFOKDO(result, queries.renumberSortOrder())
 
-            IFKO(result) {
+    IFKO(result) {
         queries.rollback();
         emit errorSent(result);
     }
@@ -888,7 +927,7 @@ SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
 
             if (this->getIndent(projectId,
                                 possibleTargetTreeItemId) ==
-                    this->getIndent(projectId, treeItemId)) {
+                this->getIndent(projectId, treeItemId)) {
                 targetTreeItemId = possibleTargetTreeItemId;
                 break;
             }
@@ -909,7 +948,7 @@ SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
     IFOKDO(result, this->moveTreeItem(projectId, treeItemId, targetTreeItemId))
 
 
-            IFKO(result) {
+    IFKO(result) {
         emit errorSent(result);
     }
     return result;
@@ -952,7 +991,7 @@ SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
 
             if (this->getIndent(projectId,
                                 possibleTargetTreeItemId) ==
-                    this->getIndent(projectId, treeItemId)) {
+                this->getIndent(projectId, treeItemId)) {
                 targetTreeItemId = possibleTargetTreeItemId;
                 break;
             }
@@ -973,7 +1012,7 @@ SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
     IFOKDO(result, this->moveTreeItem(projectId, treeItemId, targetTreeItemId, true))
 
 
-            IFKO(result) {
+    IFKO(result) {
         emit errorSent(result);
     }
     return result;
@@ -1411,7 +1450,7 @@ QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId)
 
     // alone, so no siblings
     if ((minSiblingIndex == treeItemSortedIdIndex) &&
-            (maxSiblingIndex == treeItemSortedIdIndex)) {
+        (maxSiblingIndex == treeItemSortedIdIndex)) {
         return siblingsList;
     }
 
@@ -1629,17 +1668,17 @@ SKRResult SKRTreeHub::duplicateTreeItem(int projectId, int treeItemId)
 {
     SKRResult result(this);
 
-    //TODO: create duplicate
+    // TODO: create duplicate
     int newItemId = -2;
 
 
     QHash<QString, QVariant> values;
 
-    values.insert("t_title", getTitle(projectId, treeItemId));
-    values.insert("l_indent", getIndent(projectId, treeItemId));
-    values.insert("l_sort_order", getSortOrder(projectId, treeItemId) + 1);
-    values.insert("t_type", getType(projectId, treeItemId));
-    values.insert("m_primary_content", getPrimaryContent(projectId, treeItemId));
+    values.insert("t_title",             getTitle(projectId, treeItemId));
+    values.insert("l_indent",            getIndent(projectId, treeItemId));
+    values.insert("l_sort_order",        getSortOrder(projectId, treeItemId) + 1);
+    values.insert("t_type",              getType(projectId, treeItemId));
+    values.insert("m_primary_content",   getPrimaryContent(projectId, treeItemId));
     values.insert("m_secondary_content", getSecondaryContent(projectId, treeItemId));
 
     result = this->addTreeItem(values, projectId);
@@ -1654,22 +1693,20 @@ SKRResult SKRTreeHub::duplicateTreeItem(int projectId, int treeItemId)
         emit errorSent(result);
     }
     return result;
-
 }
 
 // ----------------------------------------------------------------------------------------
 
-void SKRTreeHub::cut(int projectId, QList<int> treeItemIds)
+void SKRTreeHub::cut(int projectId, QList<int>treeItemIds)
 {
     m_cutCopy = CutCopy(CutCopy::Cut, projectId, treeItemIds);
 }
 
 // ----------------------------------------------------------------------------------------
 
-void SKRTreeHub::copy(int projectId, QList<int> treeItemIds)
+void SKRTreeHub::copy(int projectId, QList<int>treeItemIds)
 {
     m_cutCopy = CutCopy(CutCopy::Copy, projectId, treeItemIds);
-
 }
 
 // ----------------------------------------------------------------------------------------
@@ -1677,26 +1714,28 @@ void SKRTreeHub::copy(int projectId, QList<int> treeItemIds)
 SKRResult SKRTreeHub::paste(int projectId, int parentTreeItemId)
 {
     SKRResult result(this);
-    if(m_cutCopy.type != CutCopy::Type::None){
-        if(m_cutCopy.type == CutCopy::Type::Cut){
-            for(int treeItemId : qAsConst(m_cutCopy.treeItemIds)){
+
+    if (m_cutCopy.type != CutCopy::Type::None) {
+        if (m_cutCopy.type == CutCopy::Type::Cut) {
+            for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
                 result = this->moveTreeItemAsChildOf(m_cutCopy.projectId, treeItemId, parentTreeItemId);
             }
         }
-        else if(m_cutCopy.type == CutCopy::Type::Copy){
-            for(int treeItemId : qAsConst(m_cutCopy.treeItemIds)){
+        else if (m_cutCopy.type == CutCopy::Type::Copy) {
+            for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
                 result = this->duplicateTreeItem(m_cutCopy.projectId, treeItemId);
                 int newTreeItemId = result.getData("treeItemId", -2).toInt();
 
                 IFOKDO(result, this->moveTreeItemAsChildOf(m_cutCopy.projectId, newTreeItemId, parentTreeItemId))
             }
-
         }
-
+    }
+    IFKO(result) {
+        emit errorSent(result);
     }
 
-    return result;
 
+    return result;
 }
 
 // ----------------------------------------------------------------------------------------

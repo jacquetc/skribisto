@@ -1558,6 +1558,7 @@ OverviewTreeForm {
 
                 transitions: [
                     Transition {
+                        enabled: SkrSettings.ePaperSettings.animationEnabled
                         SequentialAnimation{
                             PropertyAnimation {
                                 properties: "height"
@@ -1667,6 +1668,7 @@ OverviewTreeForm {
     }
 
     listView.remove: Transition {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
 
         SequentialAnimation {
             id: removePaperAnimation
@@ -1693,6 +1695,7 @@ OverviewTreeForm {
     }
 
     listView.removeDisplaced: Transition {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
         SequentialAnimation {
             PauseAnimation{duration: 250}
             NumberAnimation { properties: "x,y"; duration: 250 }

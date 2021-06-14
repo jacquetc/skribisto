@@ -24,6 +24,7 @@ Item {
     property alias addBackupPathButton: addBackupPathButton
     property alias showPropertiesCheckBox: showPropertiesCheckBox
     property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
+    property alias animationEnabledCheckBox: animationEnabledCheckBox
     property alias langComboBox: langComboBox
     property alias checkSpellingCheckBox: checkSpellingCheckBox
     property alias checkSpellingComboBox: checkSpellingComboBox
@@ -428,11 +429,24 @@ Item {
                     focusPolicy: Qt.TabFocus
                     title: qsTr("Special E-Paper")
 
-                    SkrSwitch {
-                        id: setTextCursorUnblinkingCheckBox
-                        text: qsTr("Set the text cursor unblinking")
+                    ColumnLayout {
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+
+                        SkrSwitch {
+                            id: setTextCursorUnblinkingCheckBox
+                            text: qsTr("Set the text cursor unblinking")
+
+                        }
+
+                        SkrSwitch {
+                            id: animationEnabledCheckBox
+                            text: qsTr("Enable animations")
+
+                        }
 
                     }
+
                 }
 
 

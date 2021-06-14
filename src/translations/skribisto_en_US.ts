@@ -730,11 +730,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigation list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -839,14 +847,6 @@
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigation list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1328,6 +1328,14 @@
         <source>Install new dictionaries</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -1379,6 +1387,60 @@
     <name>RecentPageForm.ui</name>
     <message>
         <source>Recent projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanel</name>
+    <message>
+        <source>Type your text here …</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in another view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanelForm.ui</name>
+    <message>
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extend this panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide the sub panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close this panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Proposed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1577,6 +1639,86 @@
         <source>&amp;Print</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save As …</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Quit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Q</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new page of the same type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a quick note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show relationships</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+R</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
@@ -1744,6 +1886,10 @@
     </message>
     <message>
         <source>Show properties toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable animations</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2134,6 +2280,13 @@
     </message>
 </context>
 <context>
+    <name>TextPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ThemePage</name>
     <message>
         <source>Themes</source>
@@ -2437,14 +2590,6 @@
 <context>
     <name>main</name>
     <message>
-        <source>Fullscreen</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Center vertically the text cursor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2461,35 +2606,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;New Project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Check spelling</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Open Project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open an existing project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save As …</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2553,18 +2670,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Italic</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2582,10 +2687,6 @@
     </message>
     <message>
         <source>First steps</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;User manual</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -63,11 +63,13 @@ FocusScope {
 
     }
 
-    Shortcut{
-        id: newIdenticalPageShortcut
-        enabled: control.activeFocus && control.treeItemId > -1
-        sequence: "Ctrl+Return"
-        onActivated: {
+    property alias newIdenticalPageAction: newIdenticalPageAction
+    Action {
+        id: newIdenticalPageAction
+        text: skrShortcutManager.description("create-new-identical-page")
+        enabled: control.treeItemId > 0
+        icon.source: "qrc:///icons/backup/document-new.svg"
+        onTriggered: {
             var result = skrData.treeHub().addTreeItemBelow(control.projectId, control.treeItemId, control.pageType)
             var newTreeItemAdded = result.getData("treeItemId", -1)
             if(newTreeItemAdded === -1){
@@ -76,6 +78,14 @@ FocusScope {
             else {
                 viewManager.loadTreeItem(control.projectId, newTreeItemAdded)
             }
+        }
+    }
+    Shortcut{
+        id: newIdenticalPageShortcut
+        enabled: control.activeFocus && control.treeItemId > 0
+        sequences: skrShortcutManager.shortcuts("create-new-identical-page")
+        onActivated: {
+            newIdenticalPageAction.trigger()
         }
 
     }

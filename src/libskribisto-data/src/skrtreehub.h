@@ -35,6 +35,7 @@
 struct CutCopy
 {
     Q_GADGET
+
 public:
 
     enum Type {
@@ -44,21 +45,19 @@ public:
     };
     Q_ENUM(Type)
 
-    explicit CutCopy(CutCopy::Type type, const int projectId, const QList<int> treeItemIds){
-        this->type = type;
-        this->projectId = projectId;
+    explicit CutCopy(CutCopy::Type type, const int projectId, const QList<int>treeItemIds) {
+        this->type        = type;
+        this->projectId   = projectId;
         this->treeItemIds = treeItemIds;
     }
-    CutCopy(){
+
+    CutCopy() {
         this->type = Type::None;
     }
 
-
-
     CutCopy::Type type;
-    int projectId;
-    QList<int> treeItemIds;
-
+    int           projectId;
+    QList<int>    treeItemIds;
 };
 Q_DECLARE_METATYPE(CutCopy)
 
@@ -71,7 +70,7 @@ public:
     explicit SKRTreeHub(QObject *parent = nullptr);
     QHash<int, int>       getAllSortOrders(int projectId) const;
     QHash<int, int>       getAllIndents(int projectId) const;
-    QList<int>            getAllIds(int projectId) const;
+    Q_INVOKABLE QList<int>getAllIds(int projectId) const;
 
     Q_INVOKABLE SKRResult setTitle(int            projectId,
                                    int            treeItemId,
@@ -81,7 +80,13 @@ public:
 
     Q_INVOKABLE SKRResult setInternalTitle(int            projectId,
                                            int            treeItemId,
-                                           const QString& newTitle);
+                                           const QString& internalTitle);
+
+    Q_INVOKABLE SKRResult removeInternalTitleFromAll(int            projectId,
+                                                     const QString& internalTitle);
+
+    Q_INVOKABLE QList<int>getIdsWithInternalTitle(int            projectId,
+                                                  const QString& internalTitle) const;
     Q_INVOKABLE QString   getInternalTitle(int projectId,
                                            int treeItemId) const;
 
@@ -236,13 +241,17 @@ public:
                                                  int sourceTreeItemId,
                                                  int receiverTreeItemId);
 
-    Q_INVOKABLE int getPreviousTreeItemIdOfTheSameType(int projectId,
-                                                       int treeItemId);
+    Q_INVOKABLE int       getPreviousTreeItemIdOfTheSameType(int projectId,
+                                                             int treeItemId);
 
-    Q_INVOKABLE SKRResult duplicateTreeItem(int projectId, int treeItemId);
-    Q_INVOKABLE void cut(int projectId, QList<int> treeItemIds);
-    Q_INVOKABLE void copy(int projectId, QList<int> treeItemIds);
-    Q_INVOKABLE SKRResult paste(int projectId, int parentTreeItemId);
+    Q_INVOKABLE SKRResult duplicateTreeItem(int projectId,
+                                            int treeItemId);
+    Q_INVOKABLE void      cut(int       projectId,
+                              QList<int>treeItemIds);
+    Q_INVOKABLE void      copy(int       projectId,
+                               QList<int>treeItemIds);
+    Q_INVOKABLE SKRResult paste(int projectId,
+                                int parentTreeItemId);
 
 private:
 

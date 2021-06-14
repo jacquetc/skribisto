@@ -1382,6 +1382,7 @@ ListView {
     }
 
     remove: Transition {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
 
         SequentialAnimation {
             id: removeTreeItemAnimation
@@ -1408,6 +1409,7 @@ ListView {
     }
 
     removeDisplaced: Transition {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
         SequentialAnimation {
             PauseAnimation {
                 duration: 250

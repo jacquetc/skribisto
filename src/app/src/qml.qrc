@@ -140,5 +140,7 @@
         <file>qml/Items/SkrCheckBox.qml</file>
         <file>qml/Commons/NewDictWizard.qml</file>
         <file>qml/Commons/NewDictWizardForm.ui.qml</file>
+        <file>qml/Commons/RelationshipPanel.qml</file>
+        <file>qml/Commons/RelationshipPanelForm.ui.qml</file>
     </qresource>
 </RCC>

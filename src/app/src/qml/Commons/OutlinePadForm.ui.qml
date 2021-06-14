@@ -83,6 +83,7 @@ Item {
                 textAreaStyleAccentColor: SkrTheme.accent
 
                 Behavior on Layout.preferredHeight {
+                    enabled: SkrSettings.ePaperSettings.animationEnabled
                     SpringAnimation {
                         spring: 5
                         mass: 0.2

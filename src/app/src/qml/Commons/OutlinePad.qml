@@ -210,6 +210,11 @@ OutlinePadForm {
         //get cursor position
         var position = skrUserSettings.getFromProjectSettingHash(
                     projectId, "outlineTextPositionHash", treeItemId, 0)
+
+        if(position > outlineWritingZone.textArea.length){
+            position = outlineWritingZone.textArea.length
+        }
+
         //get Y
         var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
                     projectId, "outlineTextYHash", treeItemId, 0)
@@ -241,6 +246,11 @@ OutlinePadForm {
             //save cursor position of current document :
 
             var previousCursorPosition = outlineWritingZone.textArea.cursorPosition
+
+            if(previousCursorPosition > outlineWritingZone.textArea.length){
+                previousCursorPosition = outlineWritingZone.textArea.length
+            }
+
             //console.log("previousCursorPosition", previousCursorPosition)
             var previousY = outlineWritingZone.flickable.contentY
             //console.log("previousContentY", previousY)

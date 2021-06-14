@@ -108,5 +108,16 @@
         <file>icons/backup/dialog-ok-apply.svg</file>
         <file>icons/backup/dialog-cancel.svg</file>
         <file>icons/backup/view-group.svg</file>
+        <file>icons/backup/go-up.svg</file>
+        <file>icons/backup/go-up-skip.svg</file>
+        <file>icons/backup/go-top.svg</file>
+        <file>icons/backup/go-last.svg</file>
+        <file>icons/backup/go-jump.svg</file>
+        <file>icons/backup/go-first.svg</file>
+        <file>icons/backup/go-down.svg</file>
+        <file>icons/backup/go-down-skip.svg</file>
+        <file>icons/backup/go-bottom.svg</file>
+        <file>icons/backup/cursor-cross.svg</file>
+        <file>icons/backup/link.svg</file>
     </qresource>
 </RCC>

@@ -75,7 +75,7 @@ public:
     }
 
     QString pageTypeIconUrl() const override {
-        return "qrc:///icons/backup/story-editor.svg";
+        return "qrc:///icons/backup/document-edit-sign.svg";
     }
 
     SKRResult finaliseAfterCreationOfTreeItem(int projectId,

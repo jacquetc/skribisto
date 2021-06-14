@@ -45,7 +45,7 @@ Popup {
     }
 
     Behavior on x {
-        enabled: enableBehavior
+        enabled: enableBehavior && SkrSettings.ePaperSettings.animationEnabled
         SpringAnimation {
             spring: 5
             mass: 0.2
@@ -54,7 +54,7 @@ Popup {
     }
 
     Behavior on y {
-        enabled: enableBehavior
+        enabled: enableBehavior  && SkrSettings.ePaperSettings.animationEnabled
         SpringAnimation {
             spring: 5
             mass: 0.2

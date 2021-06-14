@@ -10,7 +10,6 @@ QtObject {
 
     signal quitCalled()
 
-
     // multiple projects ? :
     property bool multipleProjects: false
 

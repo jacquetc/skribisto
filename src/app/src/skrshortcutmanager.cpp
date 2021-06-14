@@ -143,6 +143,66 @@ void SKRShortcutManager::populateShortcutList()
         createShortcut("print", tr("&Print"), (QStringList() << "global"),
                        (QStringList() << convertStandardKeyToList(QKeySequence::Print)));
 
+    m_shortcutList <<
+        createShortcut("fullscreen", tr("Fullscreen"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::FullScreen)));
+
+    m_shortcutList <<
+        createShortcut("center-vert-text-cursor", tr("Center vertically the text cursor"), (QStringList() << "global"),
+                       (QStringList() << tr("Alt+C")));
+
+    m_shortcutList <<
+        createShortcut("user-manual", tr("&User manual"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::HelpContents)));
+
+    m_shortcutList <<
+        createShortcut("new-project", tr("&New Project"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::New)));
+
+    m_shortcutList <<
+        createShortcut("check-spelling", tr("&Check spelling"), (QStringList() << "global"),
+                       (QStringList() << tr("Shift+F7")));
+
+
+    m_shortcutList <<
+        createShortcut("open-project", tr("&Open"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::Open)));
+
+    m_shortcutList <<
+        createShortcut("save-project", tr("&Save"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::Save)));
+
+    m_shortcutList <<
+        createShortcut("save-all-project", tr("&Save All"), (QStringList() << "global"),
+                       (QStringList() << tr("Ctrl+Shift+S")));
+
+    m_shortcutList <<
+        createShortcut("save-as-project", tr("&Save As …"), (QStringList() << "global"),
+                       (QStringList() <<  convertStandardKeyToList(QKeySequence::SaveAs)));
+
+    m_shortcutList <<
+        createShortcut("quit", tr("&Quit"), (QStringList() << "global"),
+                       (QStringList() <<  convertStandardKeyToList(QKeySequence::Quit) << tr("Ctrl+Q")));
+
+    m_shortcutList <<
+        createShortcut("create-new-identical-page",
+                       tr("Create a new page of the same type"),
+                       (QStringList() << "global"),
+                       (QStringList() << tr("Ctrl+Return")));
+
+    m_shortcutList <<
+        createShortcut("show-relationship-panel",
+                       tr("Show relationships"),
+                       (QStringList() << "page"),
+                       (QStringList() << tr("Alt+R")));
+
+
+    m_shortcutList <<
+        createShortcut("add-quick-note",
+                       tr("Add a quick note"),
+                       (QStringList() << "page"),
+                       (QStringList() << tr("Alt+N")));
+
     // add shortcuts from plugins
 }
 

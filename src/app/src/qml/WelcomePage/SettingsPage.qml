@@ -813,6 +813,17 @@ SettingsPageForm {
         value: setTextCursorUnblinkingCheckBox.checked
         restoreMode: Binding.RestoreBindingOrValue
     }
+
+
+    animationEnabledCheckBox.checked: SkrSettings.ePaperSettings.animationEnabled
+    Binding {
+        target: SkrSettings.ePaperSettings
+        property: "animationEnabled"
+        value: animationEnabledCheckBox.checked
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
     // --------------------------------------------
     // ---- advanced --------------------------------
     // --------------------------------------------

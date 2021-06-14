@@ -616,9 +616,11 @@ RootPageForm {
         function findMenuIndex(menu){
             var i
             for(i = 0; i< mainMenu.count ; i++){
-                if(menu.title === mainMenu.menuAt(i).title){
+                if(mainMenu.menuAt(i)){
+                    if(menu.title === mainMenu.menuAt(i).title){
 
-                    return i
+                        return i
+                    }
                 }
             }
         }
@@ -635,6 +637,7 @@ RootPageForm {
 
         SkrMenu {
             id: fileMenu
+            objectName: "fileMenu"
             title: qsTr("&File")
 
             SkrMenuItem{

@@ -796,6 +796,7 @@ WritingZoneForm {
 
     Behavior on flickable.contentY {
         id: contentYBehavior
+        enabled: SkrSettings.ePaperSettings.animationEnabled
         NumberAnimation {
             duration: 200
             easing.type: Easing.OutQuad

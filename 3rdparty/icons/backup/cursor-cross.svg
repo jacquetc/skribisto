@@ -11,8 +11,7 @@
   </defs>
   <path
      style="fill:currentColor;fill-opacity:1;stroke:none" 
-     d="M 4 4 L 4 28 L 18 28 L 18 27 L 5 27 L 5 14 L 10 14 L 13 11 L 27 11 L 27 16 L 28 16 L 28 7 L 18 7 L 15 4 L 4 4 z M 23 16 L 18 21 L 18.707031 21.707031 L 22.5 17.914062 L 22.5 28.003906 L 23.5 28.003906 L 23.5 17.914062 L 27.292969 21.707031 L 28 21 L 24 17 L 23 16 z "
-     id="path71" 
+     d="M 14 4 L 14 14 L 4 14 L 4 18 L 14 18 L 14 28 L 18 28 L 18 18 L 28 18 L 28 14 L 18 14 L 18 4 L 14 4 z "
      class="ColorScheme-Text"
      />
 </svg>

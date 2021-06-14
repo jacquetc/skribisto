@@ -13,7 +13,7 @@ WritingGamesPageToolboxForm {
     showButtonText: qsTr( "Show Writing Games toolbox")
 
     //required property var writingZone
-    property var page: root.ApplicationWindow.window.viewManager.focusedPage
+    property var page: rootWindow.viewManager.focusedPage
     property var writingZone: page.writingZone
 
     forbidErasingSwitch.onCheckedChanged: {

@@ -606,6 +606,7 @@ NotePadForm {
 
                 transitions: [
                     Transition {
+                        enabled: SkrSettings.ePaperSettings.animationEnabled
                         from: ""
                         to: "visible_removeRelationshipButton"
                         reversible: true

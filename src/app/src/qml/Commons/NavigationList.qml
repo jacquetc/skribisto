@@ -35,6 +35,8 @@ NavigationListForm {
         property bool dragging: false
         property bool renaming: false
         property bool selecting: false
+        property bool animationEnabled: SkrSettings.ePaperSettings.animationEnabled
+        property int transitionOperation: animationEnabled ? StackView.Transition : StackView.Immediate
 
         onSelectingChanged: {
             if (!selecting) {
@@ -80,9 +82,9 @@ NavigationListForm {
             navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(
                         projectId, -1)
         } else {
-            navigationListStackView.pop(null)
+            navigationListStackView.pop(null, priv.transitionOperation)
             ancestorsList.reverse()
-            ancestorsList.push(treeItemParentId)
+            ancestorsList.push(treeItemParentId, priv.transitionOperation)
 
             //project item
             navigationListStackView.get(0).projectId = projectId
@@ -94,14 +96,14 @@ NavigationListForm {
                 var newItem = navigationListStackView.push(stackViewComponent, {
                                                                "projectId": projectId,
                                                                "treeItemId": ancestorsList[i]
-                                                           })
+                                                           }, priv.transitionOperation)
                 newItem.setCurrent()
             }
 
             var lastNewItem = navigationListStackView.push(stackViewComponent, {
                                                                "projectId": projectId,
                                                                "parentId": treeItemParentId
-                                                           })
+                                                           }, priv.transitionOperation)
             lastNewItem.setCurrent()
             rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
                         priv.currentProjectId, priv.currentParentId)
@@ -122,16 +124,16 @@ NavigationListForm {
         var newParentId = ancestorsList[0]
 
         //compare with current parent id
-        if (projectId === root.currentProjectId & newParentId === root.currentParentId) {
+       if (projectId === root.currentProjectId & newParentId === root.currentParentId) {
             navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(
                         projectId, treeItemId)
         } //        else if(projectId === root.currentProjectId){
 
         //        }
         else {
-            navigationListStackView.pop(null)
+            navigationListStackView.pop(null, priv.transitionOperation)
             ancestorsList.reverse()
-            ancestorsList.push(treeItemId)
+            ancestorsList.push(treeItemId, priv.transitionOperation)
 
             //project item
             navigationListStackView.get(0).projectId = projectId
@@ -143,13 +145,14 @@ NavigationListForm {
                 var newItem = navigationListStackView.push(stackViewComponent, {
                                                                "projectId": projectId,
                                                                "treeItemId": ancestorsList[i]
-                                                           })
+                                                           }, priv.transitionOperation)
                 newItem.setCurrent()
             }
         }
 
         sidePopupListModel.clear()
         determineIfGoUpButtonEnabled()
+       priv.selecting = false
     }
 
     //-----------------------------------------------------------------------------
@@ -163,7 +166,6 @@ NavigationListForm {
     Action {
         id: goUpAction
         text: qsTr("Go up")
-        //shortcut: "Left,Backspace" Doesn't work well
         icon {
             source: "qrc:///icons/backup/go-parent-folder.svg"
         }
@@ -171,8 +173,25 @@ NavigationListForm {
         onTriggered: {
 
             //var parentTreeItemId = proxyModel.getAncestorsList(root.currentProjectId, root.currentTreeItemId, proxyModel.showTrashedFilter, proxyModel.showNotTrashedFilter)[0]
-            navigationListStackView.pop()
+            navigationListStackView.pop(priv.transitionOperation)
             navigationListStackView.currentItem.setCurrent()
+            //console.log("index", navigationListStackView.currentItem.currentIndex)
+            navigationListStackView.currentItem.listView.currentItem.forceActiveFocus()
+
+            var index = navigationListStackView.currentItem.listView.currentIndex
+            var item = navigationListStackView.currentItem.listView.itemAtIndex(index)
+            if(item){
+                item.forceActiveFocus()
+            }
+            else{
+                navigationListStackView.currentItem.listView.forceActiveFocus()
+            }
+            priv.currentProjectId = navigationListStackView.currentItem.projectId
+            priv.currentParentId= navigationListStackView.currentItem.parentId
+            console.log("priv.currentProjectId", priv.currentProjectId)
+            console.log("priv.currentParentId", priv.currentParentId)
+            console.log("priv.currentTreeItemId", priv.currentTreeItemId)
+
             rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
                         priv.currentProjectId, priv.currentParentId)
             priv.selecting = false
@@ -188,7 +207,7 @@ NavigationListForm {
         goUpAction.enabled = (root.currentParentId !== -2)
     }
     goUpToolButton.onPressAndHold: {
-        navigationListStackView.pop(null)
+        navigationListStackView.pop(null, priv.transitionOperation)
         navigationListStackView.currentItem.setCurrent()
         priv.selecting = false
     }
@@ -378,7 +397,7 @@ NavigationListForm {
         }
     }
 
-    //----------------------------------------------------------------------------
+
 
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
@@ -543,14 +562,33 @@ NavigationListForm {
 
             Item {
                 id: focusZone
-                anchors.fill: parent
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: listView.height - listView.contentHeight > 0 ? listView.height - listView.contentHeight : 0
                 z:1
+
+
 
                 TapHandler {
                     onTapped: {
                         listView.forceActiveFocus()
+                        console.log("focusZone", "forceActiveFocus")
+
+
+                        var index = listView.currentIndex
+                        var item = listView.itemAtIndex(index)
+                        if(item){
+                            item.forceActiveFocus()
+                        }
+                        else{
+                            listView.forceActiveFocus()
+                        }
+
+                        eventPoint.accepted = false
 
                     }
+                    grabPermissions: PointerHandler.ApprovesTakeOverByAnything
                 }
 
 
@@ -614,6 +652,7 @@ NavigationListForm {
 
                     // move :
                     addDisplaced: Transition {
+                        enabled: SkrSettings.ePaperSettings.animationEnabled
                         NumberAnimation {
                             properties: "x,y"
                             duration: 250
@@ -621,6 +660,7 @@ NavigationListForm {
                     }
 
                     removeDisplaced: Transition {
+                        enabled: SkrSettings.ePaperSettings.animationEnabled
                         SequentialAnimation {
                             PauseAnimation {
                                 duration: 250
@@ -632,6 +672,7 @@ NavigationListForm {
                         }
                     }
                     displaced: Transition {
+                        enabled: SkrSettings.ePaperSettings.animationEnabled
                         NumberAnimation {
                             properties: "x,y"
                             duration: 250
@@ -639,6 +680,7 @@ NavigationListForm {
                     }
 
                     moveDisplaced: Transition {
+                        enabled: SkrSettings.ePaperSettings.animationEnabled
                         NumberAnimation {
                             properties: "x,y"
                             duration: 100
@@ -677,6 +719,62 @@ NavigationListForm {
                             }
                         }
                     }
+
+
+
+                    //----------------------------------------------------------------------
+                    //---  listview keys ------------------------------------------
+                    //----------------------------------------------------------------------
+                    Keys.onShortcutOverride: {
+                        if ((event.modifiers & Qt.ControlModifier)
+                                && event.key === Qt.Key_N) {
+                            event.accepted = true
+                        }
+                        if ((event.modifiers & Qt.ControlModifier)
+                                && event.key === Qt.Key_V) {
+                            event.accepted = true
+                        }
+                    }
+                    Keys.onPressed: {
+//                        if (event.key === Qt.Key_Up) {
+//                            listView.currentItem.forceActiveFocus()
+//                            event.accepted = false
+//                                                    }
+                        if (event.key === Qt.Key_Backspace
+                                || event.key === Qt.Key_Left) {
+                            console.log("Backspace / Left key pressed")
+                            goUpAction.trigger()
+                            event.accepted = true
+                        }
+                        // paste
+                        if ((event.modifiers & Qt.ControlModifier)
+                                && event.key === Qt.Key_V) {
+                            skrData.treeHub().paste(currentProjectId, currentParentId)
+                            event.accepted = true
+                        }
+
+                        // add
+                        if ((event.modifiers & Qt.ControlModifier)
+                                && event.key === Qt.Key_N) {
+
+
+                            newItemPopup.projectId = currentProjectId
+                            newItemPopup.treeItemId = currentParentId
+                            newItemPopup.visualIndex = 0
+                            newItemPopup.createFunction
+                                    = afterNewItemTypeIsChosen
+                            newItemPopup.open()
+
+
+                            event.accepted = true
+                        }
+                    }
+
+                function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
+
+                    addItemAtCurrentParent(pageType)
+                }
+
 
                     //----------------------------------------------------------------------
                     //--- Start list item component ------------------------------------------
@@ -859,7 +957,7 @@ NavigationListForm {
                                         && event.key === Qt.Key_V
                                         && swipeDelegate.state !== "edit_name"
                                         && swipeDelegate.state !== "edit_label") {
-                                    copyAction.trigger()
+                                    pasteAction.trigger()
                                     event.accepted = true
                                 }
 
@@ -1105,6 +1203,7 @@ NavigationListForm {
                                     borderWidth: 2
                                     borderColor: touchDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
                                     Behavior on borderColor {
+                                        enabled: SkrSettings.ePaperSettings.animationEnabled
                                         ColorAnimation {
                                             duration: 200
                                         }
@@ -1125,6 +1224,7 @@ NavigationListForm {
                                                 moveSourceProjectId = content.projectId
                                                 priv.dragging = true
                                                 cancelDragTimer.stop()
+
                                             } else {
                                                 cancelDragTimer.stop()
                                                 priv.dragging = false
@@ -1132,6 +1232,7 @@ NavigationListForm {
 
                                                 content.Drag.drop()
                                                 proxyModel.invalidate()
+
                                             }
                                         }
                                         enabled: true
@@ -1196,6 +1297,8 @@ NavigationListForm {
 
                                         onSingleTapped: {
                                             priv.selecting = false
+
+
                                             if (content.dragging) {
                                                 eventPoint.accepted = false
                                                 return
@@ -1262,7 +1365,7 @@ NavigationListForm {
                                             point.accepted = false
                                         }
 
-                                        grabPermissions: PointerHandler.ApprovesTakeOverByHandlersOfDifferentType
+                                        grabPermissions: PointerHandler.TakeOverForbidden
                                     }
                                     Timer {
                                         id: openDocumentTimer
@@ -1382,7 +1485,7 @@ NavigationListForm {
                                                         stackViewComponent, {
                                                             "projectId": model.projectId,
                                                             "parentId": model.treeItemId
-                                                        })
+                                                        }, priv.transitionOperation)
                                             newItem.setCurrent()
                                             newItem.listView.currentIndex = 0
                                             newItem.forceActiveFocus()
@@ -1890,10 +1993,12 @@ NavigationListForm {
                                                     listView.currentIndex = model.index
                                                     swipeDelegate.forceActiveFocus()
                                                     menu.open()
+
                                                 }
 
                                                 visible: itemHoverHandler.hovered
                                                          || content.isCurrent
+
                                             }
 
                                             Rectangle {
@@ -2134,7 +2239,7 @@ NavigationListForm {
                                         action: Action {
                                             id: cutAction
                                             text: qsTr("Cut")
-                                            shortcut: StandardKey.Cut
+                                            //shortcut: StandardKey.Cut
                                             icon {
                                                 source: "qrc:///icons/backup/edit-cut.svg"
                                             }
@@ -2168,7 +2273,7 @@ NavigationListForm {
 
                                             id: copyAction
                                             text: qsTr("Copy")
-                                            shortcut: StandardKey.Copy
+                                            //shortcut: StandardKey.Copy
                                             icon {
                                                 source: "qrc:///icons/backup/edit-copy.svg"
                                             }
@@ -2201,7 +2306,7 @@ NavigationListForm {
 
                                             id: pasteAction
                                             text: qsTr("Paste")
-                                            //shortcut: StandardKey.Copy
+                                            //shortcut: StandardKey.Paste
                                             icon {
                                                 source: "qrc:///icons/backup/edit-paste.svg"
                                             }
@@ -2211,9 +2316,14 @@ NavigationListForm {
                                                 console.log("paste action",
                                                             model.projectId,
                                                             model.treeItemId)
-                                                skrData.treeHub().paste(
+                                                var result = skrData.treeHub().paste(
                                                             model.projectId,
                                                             model.treeItemId)
+
+                                                if(!result.success){
+                                                    console.debug("paste action: error")
+
+                                                }
                                             }
                                         }
                                     }
@@ -2329,6 +2439,7 @@ NavigationListForm {
                                             }
 
                                             function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
+                                                newItemPopup.close()
 
                                                 // push new view
                                                 var newItem = navigationListStackView.push(
@@ -2336,7 +2447,7 @@ NavigationListForm {
                                                             {
                                                                 "projectId": projectId,
                                                                 "parentId": treeItemId
-                                                            })
+                                                            }, priv.transitionOperation)
                                                 newItem.setCurrent()
 
                                                 addItemAtCurrentParent(pageType)
