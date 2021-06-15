@@ -393,10 +393,6 @@
         <translation>Text</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Abschlag</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -733,12 +729,20 @@
         <translation>Müll</translation>
     </message>
     <message>
+        <source>Select</source>
+        <translation>Wählen</translation>
+    </message>
+    <message>
         <source>Add</source>
         <translation>Hinzufügen</translation>
     </message>
     <message>
         <source>Projects</source>
         <translation>Projekte</translation>
+    </message>
+    <message>
+        <source>Navigation list</source>
+        <translation>Navigationsliste</translation>
     </message>
     <message>
         <source>is a folder</source>
@@ -845,14 +849,6 @@
         <translation>In den Papierkorb senden</translation>
     </message>
     <message>
-        <source>Navigation list</source>
-        <translation>Navigationsliste</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation>Wählen</translation>
-    </message>
-    <message>
         <source>Close this project</source>
         <translation>Schließen Sie dieses Projekt</translation>
     </message>
@@ -870,6 +866,17 @@
     <message>
         <source>Select</source>
         <translation>Wählen</translation>
+    </message>
+</context>
+<context>
+    <name>NavigationProjectToolbox</name>
+    <message>
+        <source>Show navigation toolbox</source>
+        <translation>Navigations-Toolbox anzeigen</translation>
+    </message>
+    <message>
+        <source>Navigation Project Toolbox</source>
+        <translation>Navigationsprojekt-Toolbox</translation>
     </message>
 </context>
 <context>
@@ -943,16 +950,8 @@
         <translation>Projektdatei:</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>Projektdatei</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Projektpfad:</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>Projektpfad</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +972,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Wörterbuch:</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Projektdatei</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Projektpfad</translation>
     </message>
 </context>
 <context>
@@ -1331,6 +1338,14 @@
         <source>Install new dictionaries</source>
         <translation>Neue Wörterbücher installieren</translation>
     </message>
+    <message>
+        <source>Notes</source>
+        <translation>Anmerkungen</translation>
+    </message>
+    <message>
+        <source>Note folder:</source>
+        <translation>Hinweis Ordner:</translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -1383,6 +1398,80 @@
     <message>
         <source>Recent projects</source>
         <translation>Letzte Projekte</translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanel</name>
+    <message>
+        <source>Note</source>
+        <translation>Hinweis</translation>
+    </message>
+    <message>
+        <source>Type your text here …</source>
+        <translation>Type your text here …</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Öffnen</translation>
+    </message>
+    <message>
+        <source>Open in another view</source>
+        <translation>In einer anderen Ansicht öffnen</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation>In neuem Fenster öffnen</translation>
+    </message>
+    <message>
+        <source>Dissociate</source>
+        <translation>Dissoziieren</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Umbenennen</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation>In den Papierkorb senden</translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
+        <translation>Umbenennen eines Elements</translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanelForm.ui</name>
+    <message>
+        <source>All</source>
+        <translation>Alle</translation>
+    </message>
+    <message>
+        <source>Extend this panel</source>
+        <translation>Dieses Panel erweitern</translation>
+    </message>
+    <message>
+        <source>Hide the sub panel</source>
+        <translation>Ausblenden des Unterbereichs</translation>
+    </message>
+    <message>
+        <source>Open item</source>
+        <translation>Offener Artikel</translation>
+    </message>
+    <message>
+        <source>Close this panel</source>
+        <translation>Dieses Panel schließen</translation>
+    </message>
+    <message>
+        <source>Proposed</source>
+        <translation>Vorgeschlagen</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation>Anmerkungen</translation>
+    </message>
+    <message>
+        <source>Relationship list</source>
+        <translation>Beziehungsliste</translation>
     </message>
 </context>
 <context>
@@ -1573,6 +1662,94 @@
         <source>Cut</source>
         <translation>Schnitt</translation>
     </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation>&amp;Die Einstellungen</translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation>&amp;Drucken</translation>
+    </message>
+    <message>
+        <source>Fullscreen</source>
+        <translation>Vollbild</translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
+        <translation>Zentrieren Sie den Textcursor vertikal</translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <translation>Alt+C</translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
+        <translation>&amp;Benutzerhandbuch</translation>
+    </message>
+    <message>
+        <source>&amp;New Project</source>
+        <translation>&amp;Neues Projekt</translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation>&amp;Überprüfen Sie die Schreibweise</translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <translation>Umschalt+F7</translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation>&amp;Öffnen</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation>&amp;Speichern</translation>
+    </message>
+    <message>
+        <source>&amp;Save All</source>
+        <translation>&amp;Rette alle</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <translation>Strg+Umschalt+S</translation>
+    </message>
+    <message>
+        <source>&amp;Save As …</source>
+        <translation>&amp;Speichern als …</translation>
+    </message>
+    <message>
+        <source>&amp;Quit</source>
+        <translation>&amp;Verlassen</translation>
+    </message>
+    <message>
+        <source>Ctrl+Q</source>
+        <translation>Strg+Q</translation>
+    </message>
+    <message>
+        <source>Create a new page of the same type</source>
+        <translation>Erstellen Sie eine neue Seite des gleichen Typs</translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <translation>Strg+Return</translation>
+    </message>
+    <message>
+        <source>Add a quick note</source>
+        <translation>Kurze Notiz hinzufügen</translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <translation>Alt+N</translation>
+    </message>
+    <message>
+        <source>Show relationships</source>
+        <translation>Beziehungen anzeigen</translation>
+    </message>
+    <message>
+        <source>Alt+R</source>
+        <translation>Alt+R</translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
@@ -1741,6 +1918,10 @@
     <message>
         <source>Show properties toolbox</source>
         <translation>Eigenschaften-Toolbox anzeigen</translation>
+    </message>
+    <message>
+        <source>Enable animations</source>
+        <translation>Animationen aktivieren</translation>
     </message>
 </context>
 <context>
@@ -2129,6 +2310,17 @@
         <source>Show tags toolbox</source>
         <translation>Tags-Toolbox anzeigen</translation>
     </message>
+    <message>
+        <source>Note</source>
+        <translation>Hinweis</translation>
+    </message>
+</context>
+<context>
+    <name>TextPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation>Seitenmenü</translation>
+    </message>
 </context>
 <context>
     <name>ThemePage</name>
@@ -2381,10 +2573,6 @@
         <translation>Drucken</translation>
     </message>
     <message>
-        <source>Settings</source>
-        <translation>die Einstellungen</translation>
-    </message>
-    <message>
         <source>Help</source>
         <translation>Hilfe</translation>
     </message>
@@ -2439,14 +2627,6 @@
 <context>
     <name>main</name>
     <message>
-        <source>Fullscreen</source>
-        <translation>Vollbild</translation>
-    </message>
-    <message>
-        <source>Center vertically the text cursor</source>
-        <translation>Zentrieren Sie den Textcursor vertikal</translation>
-    </message>
-    <message>
         <source>Themes</source>
         <translation>Themen</translation>
     </message>
@@ -2463,36 +2643,8 @@
         <translation>Über &amp;Qt</translation>
     </message>
     <message>
-        <source>&amp;New Project</source>
-        <translation>&amp;Neues Projekt</translation>
-    </message>
-    <message>
-        <source>&amp;Check spelling</source>
-        <translation>&amp;Überprüfen Sie die Schreibweise</translation>
-    </message>
-    <message>
-        <source>&amp;Open Project</source>
-        <translation>&amp;Offenes Projekt</translation>
-    </message>
-    <message>
         <source>Open an existing project</source>
         <translation>Öffnen Sie ein vorhandenes Projekt</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation>speichern</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation>Rette alle</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation>Strg+Umschalt+S</translation>
-    </message>
-    <message>
-        <source>Save As …</source>
-        <translation>Speichern als …</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as …</source>
@@ -2535,10 +2687,6 @@
         <translation>Backup fehlgeschlagen: Der Backup-Pfad %1 ist schreibgeschützt</translation>
     </message>
     <message>
-        <source>&amp;Print</source>
-        <translation>&amp;Drucken</translation>
-    </message>
-    <message>
         <source>&amp;Import</source>
         <translation>&amp;Importieren</translation>
     </message>
@@ -2559,18 +2707,6 @@
         <translation>&amp;Projekt &quot;%1&quot; schließen</translation>
     </message>
     <message>
-        <source>&amp;Quit</source>
-        <translation>&amp;Verlassen</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Schnitt</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Kopieren</translation>
-    </message>
-    <message>
         <source>Italic</source>
         <translation>Kursiv</translation>
     </message>
@@ -2589,10 +2725,6 @@
     <message>
         <source>First steps</source>
         <translation>Erste Schritte</translation>
-    </message>
-    <message>
-        <source>&amp;User manual</source>
-        <translation>&amp;Benutzerhandbuch</translation>
     </message>
     <message>
         <source>Back up successful</source>
