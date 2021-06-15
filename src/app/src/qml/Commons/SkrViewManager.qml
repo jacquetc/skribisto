@@ -259,19 +259,39 @@ Item {
         //load tree items
         if(loader_top_left.visible && topLeftTreeId !== -2){
             insertAdditionalPropertyDict(top_left_additionalProperties)
-            loadTreeItemAt(projectId, topLeftTreeId, Qt.TopLeftCorner)
+            if(typeof topLeftTreeId === "string"){
+                loadProjectDependantPageAt(projectId, topLeftTreeId, Qt.TopLeftCorner)
+            }
+            else {
+               loadTreeItemAt(projectId, topLeftTreeId, Qt.TopLeftCorner)
+            }
         }
         if(loader_top_right.visible && topRightTreeId !== -2){
             insertAdditionalPropertyDict(top_right_additionalProperties)
-            loadTreeItemAt(projectId, topRightTreeId, Qt.TopRightCorner)
+            if(typeof topRightTreeId === "string"){
+                loadProjectDependantPageAt(projectId, topRightTreeId, Qt.TopRightCorner)
+            }
+            else {
+                loadTreeItemAt(projectId, topRightTreeId, Qt.TopRightCorner)
+            }
         }
         if(loader_bottom_left.visible && bottomLeftTreeId !== -2){
             insertAdditionalPropertyDict(bottom_left_additionalProperties)
-            loadTreeItemAt(projectId, bottomLeftTreeId, Qt.BottomLeftCorner)
+            if(typeof bottomLeftTreeId === "string"){
+                loadProjectDependantPageAt(projectId, bottomLeftTreeId, Qt.BottomLeftCorner)
+            }
+            else {
+                loadTreeItemAt(projectId, bottomLeftTreeId, Qt.BottomLeftCorner)
+            }
         }
         if(loader_bottom_right.visible && bottomRightTreeId !== -2){
             insertAdditionalPropertyDict(bottom_right_additionalProperties)
-            loadTreeItemAt(projectId, bottomRightTreeId, Qt.BottomRightCorner)
+            if(typeof bottomRightTreeId === "string"){
+                loadProjectDependantPageAt(projectId, bottomRightTreeId, Qt.BottomRightCorner)
+            }
+            else {
+                loadTreeItemAt(projectId, bottomRightTreeId, Qt.BottomRightCorner)
+            }
         }
     }
 
@@ -296,6 +316,9 @@ Item {
         if(item){
             if(item.projectId === projectId){
                 top_left_treeItemId = item.treeItemId
+                if(top_left_treeItemId == -1){
+                    top_left_treeItemId = item.pageType
+                }
                 top_left_additionalProperties = item.additionalPropertiesForSavingView
             }
         }
@@ -305,6 +328,9 @@ Item {
         if(item){
             if(item.projectId === projectId){
                 top_right_treeItemId = item.treeItemId
+                if(top_right_treeItemId == -1){
+                    top_right_treeItemId = item.pageType
+                }
                 top_right_additionalProperties = item.additionalPropertiesForSavingView
             }
         }
@@ -314,6 +340,9 @@ Item {
         if(item){
             if(item.projectId === projectId){
                 bottom_left_treeItemId = item.treeItemId
+                if(bottom_left_treeItemId == -1){
+                    bottom_left_treeItemId = item.pageType
+                }
                 bottom_left_additionalProperties = item.additionalPropertiesForSavingView
             }
         }
@@ -323,6 +352,9 @@ Item {
         if(item){
             if(item.projectId === projectId){
                 bottom_right_treeItemId = item.treeItemId
+                if(bottom_right_treeItemId == -1){
+                    bottom_right_treeItemId = item.pageType
+                }
                 bottom_right_additionalProperties = item.additionalPropertiesForSavingView
             }
         }
@@ -495,6 +527,15 @@ Item {
 
     function loadTreeItemAtAnotherView(projectId, treeItemId){
 
+        var otherPosition = getAnotherPosition()
+        openView(otherPosition)
+        loadTreeItemAt(projectId, treeItemId, otherPosition)
+    }
+
+    //---------------------------------------------------------------
+
+    function getAnotherPosition(){
+
         var otherPosition
         switch(focusedPosition){
 
@@ -512,8 +553,7 @@ Item {
             break;
         }
 
-        openView(otherPosition)
-        loadTreeItemAt(projectId, treeItemId, otherPosition)
+        return otherPosition
     }
 
     //---------------------------------------------------------------
@@ -556,8 +596,64 @@ Item {
 
         loadProjectIndependantPageAt(pageType, focusedPosition)
     }
+    //---------------------------------------------------------------
+
+    function loadProjectIndependantPageAtAnotherView(pageType){
+
+        var otherPosition = getAnotherPosition()
+        openView(otherPosition)
+        loadProjectIndependantPageAt(pageType, otherPosition)
+    }
 
     //---------------------------------------------------------------
+
+    function loadProjectDependantPageAt(projectId, pageType, focusedPosition){
+
+        if(!isViewVisible(position)){
+            return
+        }
+
+        var qmlUrl = viewManagerCpp.getQmlUrlFromPageType(pageType)
+
+        var properties = {"position": position, "viewManager": viewManager, "projectId": projectId,
+            "treeItemId": -1, "pageType": pageType}
+
+        for(var additionalProperty in priv.additionalProperties){
+            properties[additionalProperty] = priv.additionalProperties[additionalProperty]
+        }
+        priv.additionalProperties = ({})
+
+
+        var loader = getLoaderFrom(position)
+        var object = loader.setSource(qmlUrl, properties)
+
+        if(loader.status === Loader.Error){
+            console.log("Error while loading" ,pageType)
+            return
+        }
+
+        if(position === focusedPosition){
+            prepareAndCallFocusedChangedSignal()
+        }
+    }
+
+    //---------------------------------------------------------------
+
+    function loadProjectDependantPage(projectId, pageType){
+
+        loadProjectDependantPageAt(projectId, pageType, focusedPosition)
+    }
+
+    //---------------------------------------------------------------
+
+    function loadProjectDependantPageAtAnotherView(projectId, pageType){
+        var otherPosition = getAnotherPosition()
+        openView(otherPosition)
+        loadProjectIndependantPageAt(projectId, pageType, otherPosition)
+    }
+
+    //---------------------------------------------------------------
+
 
     function getToolboxesFrom(position){
 

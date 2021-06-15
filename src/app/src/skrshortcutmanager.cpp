@@ -149,7 +149,7 @@ void SKRShortcutManager::populateShortcutList()
 
     m_shortcutList <<
         createShortcut("center-vert-text-cursor", tr("Center vertically the text cursor"), (QStringList() << "global"),
-                       (QStringList() << tr("Alt+C")));
+                       (QStringList() << tr("Alt+C", "center-vert-text-cursor")));
 
     m_shortcutList <<
         createShortcut("user-manual", tr("&User manual"), (QStringList() << "global"),
@@ -161,7 +161,7 @@ void SKRShortcutManager::populateShortcutList()
 
     m_shortcutList <<
         createShortcut("check-spelling", tr("&Check spelling"), (QStringList() << "global"),
-                       (QStringList() << tr("Shift+F7")));
+                       (QStringList() << tr("Shift+F7", "check-spelling")));
 
 
     m_shortcutList <<
@@ -174,7 +174,7 @@ void SKRShortcutManager::populateShortcutList()
 
     m_shortcutList <<
         createShortcut("save-all-project", tr("&Save All"), (QStringList() << "global"),
-                       (QStringList() << tr("Ctrl+Shift+S")));
+                       (QStringList() << tr("Ctrl+Shift+S", "save-all-project")));
 
     m_shortcutList <<
         createShortcut("save-as-project", tr("&Save As …"), (QStringList() << "global"),
@@ -188,20 +188,20 @@ void SKRShortcutManager::populateShortcutList()
         createShortcut("create-new-identical-page",
                        tr("Create a new page of the same type"),
                        (QStringList() << "global"),
-                       (QStringList() << tr("Ctrl+Return")));
+                       (QStringList() << tr("Ctrl+Return", "create-new-identical-page")));
 
     m_shortcutList <<
         createShortcut("show-relationship-panel",
                        tr("Show relationships"),
                        (QStringList() << "page"),
-                       (QStringList() << tr("Alt+R")));
+                       (QStringList() << tr("Alt+R", "show-relationship-panel")));
 
 
     m_shortcutList <<
         createShortcut("add-quick-note",
                        tr("Add a quick note"),
                        (QStringList() << "page"),
-                       (QStringList() << tr("Alt+N")));
+                       (QStringList() << tr("Alt+N", "add-quick-note")));
 
     // add shortcuts from plugins
 }

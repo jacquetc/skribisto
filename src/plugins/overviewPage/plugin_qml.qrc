@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qml/plugins">
+        <file>OverviewPage/OverviewPage.qml</file>
+        <file>OverviewPage/OverviewPageForm.ui.qml</file>
+    </qresource>
+</RCC>

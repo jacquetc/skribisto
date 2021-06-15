@@ -1107,6 +1107,17 @@
     </message>
 </context>
 <context>
+    <name>OverviewPage</name>
+    <message>
+        <source>Overview page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>OverviewTree</name>
     <message>
         <source>Level %1</source>
@@ -1679,10 +1690,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+C</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;User manual</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1695,10 +1702,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Shift+F7</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1708,10 +1711,6 @@
     </message>
     <message>
         <source>&amp;Save All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1731,15 +1730,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ctrl+Return</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Add a quick note</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+N</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1747,7 +1738,33 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Alt+C</source>
+        <comment>center-vert-text-cursor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <comment>check-spelling</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <comment>save-all-project</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <comment>create-new-identical-page</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Alt+R</source>
+        <comment>show-relationship-panel</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <comment>add-quick-note</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

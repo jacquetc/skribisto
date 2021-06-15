@@ -5,8 +5,7 @@ cmake_minimum_required(VERSION 3.5.0)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++11  -pedantic -Wno-deprecated-declarations -fstrict-aliasing -pedantic-errors -Wno-unused-variable")
 #
 # Populate a CMake variable with the sources
-
-set(PROJECT_NAME "themePage")
+set(PROJECT_NAME "overviewPage")
 
 project(skribisto-plugin-${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION} )
 add_definitions(-DSKRIBISTO_PLUGIN_LIBRARY)
@@ -18,8 +17,8 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Quick Svg QuickControls2 
 
 set(SRCS
     plugin_info.json
-    themepage.cpp
-    themepage.h
+    overviewpage.cpp
+    overviewpage.h
 )
 
 set(QRC
