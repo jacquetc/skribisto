@@ -1622,6 +1622,43 @@ SKRResult SKRTreeHub::removeTreeRelationship(int projectId, int sourceTreeItemId
 }
 
 // ----------------------------------------------------------------------------------------
+SKRResult SKRTreeHub::addQuickNote(int projectId, int receiverTreeItemId, const QString& type, const QString& noteName)
+{
+    SKRResult result(this);
+
+    QList<int> noteFolders = this->getIdsWithInternalTitle(projectId, "note_folder");
+
+    int noteFolderId = -2;
+
+    if (noteFolders.isEmpty()) {
+        noteFolderId = 0; // project item id
+    }
+    else {
+        noteFolderId = noteFolders.takeFirst();
+    }
+
+    result = this->addChildTreeItem(projectId, noteFolderId, type);
+
+    int noteId = -2;
+    IFOK(result) {
+        noteId = result.getData("treeItemId", -2).toInt();
+
+        if (noteId == -2) {
+            result = SKRResult(SKRResult::Critical, this, "add_quick_note_error");
+        }
+    }
+    IFOK(result) {
+        result = this->setTitle(projectId, noteId, noteName);
+    }
+    IFOK(result) {
+        result = this->setTreeRelationship(projectId, noteId, receiverTreeItemId);
+    }
+
+
+    return result;
+}
+
+// ----------------------------------------------------------------------------------------
 
 int SKRTreeHub::getPreviousTreeItemIdOfTheSameType(int projectId, int treeItemId)
 {
@@ -1683,9 +1720,6 @@ SKRResult SKRTreeHub::duplicateTreeItem(int projectId, int treeItemId)
 
     result = this->addTreeItem(values, projectId);
 
-    IFKO(result) {
-        emit errorSent(result);
-    }
     IFOK(result) {
         result.addData("treeItemId", result.getData("treeItemId", -2));
     }

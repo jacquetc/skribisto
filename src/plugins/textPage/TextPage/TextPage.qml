@@ -147,36 +147,47 @@ TextPageForm {
                 onTriggered: {
 
                     relationshipPanel.visible = true
+                    relationshipPanel.forceActiveFocus()
 
                 }
             }
         }
 
         SkrMenuItem{
-            action: Action {
-                id: addQuickNoteAction
-                text: skrShortcutManager.description("add-quick-note")
-                icon.source: "qrc:///icons/backup/list-add.svg"
-                onTriggered: {
+            action:
+                Action {
+                    id: addQuickNoteAction
+                    text: skrShortcutManager.description("add-quick-note")
+                    icon.source: "qrc:///icons/backup/list-add.svg"
+                    onTriggered: {
+                        relationshipPanel.visible = true
+                        var result = skrData.treeHub().addQuickNote(projectId, treeItemId, "TEXT", qsTr("Note"))
+                        if(result.success){
+                            var newId = result.getData("treeItemId", -2)
 
+                            relationshipPanel.openTreeItemInPanel(projectId, newId)
+                            relationshipPanel.forceActiveFocus()
+                        }
 
-                    //skrData.treeHub(). (projectId, treeItemId)
+                    }
                 }
-            }
         }
 
     }
 
-    Shortcut {
-        sequences: skrShortcutManager.shortcuts("show-relationship-panel")
-        onActivated: {
-            showRelationshipPanelAction.trigger()
-        }
-    }
+
     Shortcut {
         sequences: skrShortcutManager.shortcuts("add-quick-note")
+        enabled: root.activeFocus
         onActivated: {
             addQuickNoteAction.trigger()
+        }
+    }
+    Shortcut {
+        sequences: skrShortcutManager.shortcuts("show-relationship-panel")
+        enabled: root.activeFocus
+        onActivated: {
+            showRelationshipPanelAction.trigger()
         }
     }
 

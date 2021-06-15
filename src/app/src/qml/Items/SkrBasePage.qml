@@ -105,10 +105,10 @@ FocusScope {
     Keys.onPressed: {
         if (event.key === Qt.Key_F2){
             if(control.projectId !== -2){
-            renameDialog.projectId = control.projectId
-            renameDialog.treeItemId = control.treeItemId
-            renameDialog.treeItemTitle = skrData.treeHub().getTitle(control.projectId, control.treeItemId)
-            renameDialog.open()
+                renameDialog.projectId = control.projectId
+                renameDialog.treeItemId = control.treeItemId
+                renameDialog.treeItemTitle = skrData.treeHub().getTitle(control.projectId, control.treeItemId)
+                renameDialog.open()
             }
         }
     }
@@ -122,11 +122,11 @@ FocusScope {
         title: qsTr("Rename an item")
         contentItem: SkrTextField {
             id: renameTextField
-                text: renameDialog.treeItemTitle
+            text: renameDialog.treeItemTitle
 
-                onAccepted: {
-                    renameDialog.accept()
-                }
+            onAccepted: {
+                renameDialog.accept()
+            }
 
         }
 
@@ -158,9 +158,11 @@ FocusScope {
         }
 
         onOpened: {
-                        contentItem.forceActiveFocus()
-                        renameTextField.selectAll()
+            contentItem.forceActiveFocus()
+            renameTextField.selectAll()
         }
 
     }
+
+
 }

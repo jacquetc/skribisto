@@ -1,8 +1,9 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import "../Items"
-import ".."
+import "../../Commons"
+import "../../Items"
+import "../.."
 
 Item {
     id: base

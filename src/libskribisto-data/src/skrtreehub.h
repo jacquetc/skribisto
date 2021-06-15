@@ -253,6 +253,11 @@ public:
     Q_INVOKABLE SKRResult paste(int projectId,
                                 int parentTreeItemId);
 
+    Q_INVOKABLE SKRResult addQuickNote(int            projectId,
+                                       int            receiverTreeItemId,
+                                       const QString& type,
+                                       const QString& noteName);
+
 private:
 
     SKRResult setTrashedDateToNow(int projectId,

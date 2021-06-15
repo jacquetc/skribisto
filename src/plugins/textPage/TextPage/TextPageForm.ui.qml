@@ -51,9 +51,9 @@ SkrBasePage {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 30
 
-
                 RowLayout {
                     anchors.fill: parent
+
 
                     SkrLabel{
                         id: titleLabel
@@ -68,6 +68,8 @@ SkrBasePage {
                         id: pageMenuToolButton
                         text: qsTr("Page menu")
                         icon.source: "qrc:///icons/backup/overflow-menu.svg"
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.preferredHeight: 30
 
                     }
 
@@ -75,6 +77,7 @@ SkrBasePage {
                         id: countLabel
                         verticalAlignment: Qt.AlignVCenter
                         horizontalAlignment: Qt.AlignHCenter
+                        Layout.alignment: Qt.AlignCenter
                     }
 
                     SkrViewButtons {

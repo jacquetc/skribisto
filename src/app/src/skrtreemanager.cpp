@@ -170,14 +170,25 @@ void SKRTreeManager::updateAllCharAndWordCount(int projectId)
 
 QStringList SKRTreeManager::findToolboxUrlsForPage(const QString& pageType) const
 {
-    QStringList list;
     QList<SKRPageToolboxInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageToolboxInterface>();
+
+    // reorder by weight, lightest is top, heavier is last
+
+    std::sort(pluginList.begin(), pluginList.end(),
+              [](SKRPageToolboxInterface *plugin1, SKRPageToolboxInterface *plugin2) -> bool {
+        return plugin1->weight() < plugin2->weight();
+    }
+              );
+
+    QStringList list;
 
     for (SKRPageToolboxInterface *plugin: qAsConst(pluginList)) {
         if (plugin->associatedPageTypes().contains(pageType)) {
             list << plugin->qmlUrl();
         }
     }
+
+
     return list;
 }
 
@@ -186,12 +197,23 @@ QStringList SKRTreeManager::findToolboxUrlsForPage(const QString& pageType) cons
 
 QStringList SKRTreeManager::findToolboxUrlsForProject() const
 {
-    QStringList list;
     QList<SKRProjectToolboxInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRProjectToolboxInterface>();
+
+    // reorder by weight, lightest is top, heavier is last
+
+    std::sort(pluginList.begin(),
+              pluginList.end(),
+              [](SKRProjectToolboxInterface *plugin1, SKRProjectToolboxInterface *plugin2) -> bool {
+        return plugin1->weight() < plugin2->weight();
+    }
+              );
+
+    QStringList list;
 
     for (SKRProjectToolboxInterface *plugin: qAsConst(pluginList)) {
         list << plugin->qmlUrl();
     }
+
     return list;
 }
 

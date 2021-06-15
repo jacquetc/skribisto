@@ -5,8 +5,9 @@ import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import QtQuick.Controls.Material 2.15
 import eu.skribisto.searchtreelistproxymodel 1.0
-import "../Items"
-import ".."
+import "../../Commons"
+import "../../Items"
+import "../.."
 
 NavigationListForm {
     id: root

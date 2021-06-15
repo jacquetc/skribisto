@@ -2,13 +2,13 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
-import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
-import "../Items"
+import QtQuick.Controls.Material 2.15
+import "../../Commons"
+import "../../Items"
+import "../.."
 
-
-RestoreListViewForm {
-
+TrashedListViewForm {
     id: root
 
     property var proxyModel
@@ -16,30 +16,22 @@ RestoreListViewForm {
     onModelChanged: {
         listView.visualModel.model = model
         proxyModel.projectIdFilter = currentProjectId
-
     }
     signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
     signal openDocumentInAnotherView(int projectId, int treeItemId)
     signal openDocumentInNewWindow(int projectId, int treeItemId)
-    signal restoreDocumentList(int projectId, var treeItemIdList)
+    signal restoreDocument(int projectId, int treeItemId)
 
-    property var trashedChildrenList: []
-    onTrashedChildrenListChanged: {
-        proxyModel.treeItemIdListFilter = trashedChildrenList
-    }
-
-    property int parentTreeItemIdToBeRestored: -2
-    property int treeIndentOffset: listView.treeIndentOffset
 
 
     property int currentProjectId: listView.currentProjectId
     property int currentTreeItemId: listView.currentTreeItemId
-
-
     property int currentIndex: listView.currentIndex
     property int openedProjectId: -2
     property int openedTreeItemId: -2
     property bool hoveringChangingTheCurrentItemAllowed: listView.hoveringChangingTheCurrentItemAllowed
+
+
 
     // scrollBar interactivity :
 
@@ -58,12 +50,13 @@ RestoreListViewForm {
         }
     }
 
-    //-----------------------------------------------------------------------------
-
 
     //-----------------------------------------------------------------------------
 
     Component.onCompleted: {
+        trashProjectComboBox.textRole = "name"
+        trashProjectComboBox.valueRole = "projectId"
+        populateProjectComboBoxModel()
 
         listView.openDocument.connect(root.openDocument)
         listView.openDocumentInAnotherView.connect(root.openDocumentInAnotherView)
@@ -72,47 +65,91 @@ RestoreListViewForm {
         listView.deleteDefinitivelyCalled.connect(root.prepareDeleteDefinitivelyDialog)
 
         listView.proxyModel = proxyModel
-        listView.treeIndentOffset = treeIndentOffset
         listView.currentProjectId = currentProjectId
         proxyModel.projectIdFilter = currentProjectId
-        listView.currentTreeItemId = parentTreeItemIdToBeRestored
         listView.currentIndex = currentIndex
 
-
-        //pre-check same time trashed :
-        var idList = proxyModel.findIdsTrashedAtTheSameTimeThan(currentProjectId, parentTreeItemIdToBeRestored)
-        proxyModel.setCheckedIdsList(idList)
-
     }
 
     //-----------------------------------------------------------------------------
-    // restore button :
+    // project comboBox :
 
-    Action {
-        id: restoreAction
-        text: qsTr("Restore")
-        //shortcut: ""
-        icon{
-            source: "qrc:///icons/backup/edit-undo.svg"
-            height: 100
-            width: 100
-        }
-        onTriggered: {
-            var treeItemIdListToBeFinallyRestored = listView.getCheckedTreeItemIdList()
 
-            restoreDocumentList(currentProjectId, treeItemIdListToBeFinallyRestored)
-            //console.log('finally restore list', currentProjectId, treeItemIdListToBeFinallyRestored)
 
+    trashProjectComboBox.model: ListModel {
+        id: projectComboBoxModel
+    }
+
+
+    Connections {
+
+        target: skrData.projectHub()
+        function onProjectLoaded(projectId){
+
+
+            var name =  skrData.projectHub().getProjectName(projectId)
+
+            projectComboBoxModel.append({projectId: projectId, name: name})
+
+            trashProjectComboBox.currentIndex = trashProjectComboBox.count -1
         }
     }
 
-    restoreToolButton.action: restoreAction
+
+
+    trashProjectComboBox.displayText: qsTr("Trash: %1").arg(trashProjectComboBox.currentText)
+
+    function populateProjectComboBoxModel(){
+
+        projectComboBoxModel.clear()
+
+        // populate
+
+        var projectList = skrData.projectHub().getProjectIdList()
+
+        var i;
+        for(i = 0 ; i < projectList.length ; i++ ){
+            var projectId = projectList[i]
+
+            var name =  skrData.projectHub().getProjectName(projectId)
+
+            projectComboBoxModel.append({projectId: projectId, name: name})
+            //console.log("projectList")
+
+        }
+
+        // select last :
+        if (projectList.length > 0){
+            trashProjectComboBox.currentIndex = projectList.length - 1;
+            var _projectId = trashProjectComboBox.valueAt(projectList.length - 1)
+            proxyModel.projectIdFilter = _projectId
+            currentProjectId = _projectId
+        }
+    }
+    trashProjectComboBox.onCurrentIndexChanged: {
+        //console.log("onCurrentIndexChanged")
+
+        if(trashProjectComboBox.currentValue === undefined){
+
+            var projectList = skrData.projectHub().getProjectIdList()
+            trashProjectComboBox.currentIndex = projectList.length - 1;
+            var _projectId = trashProjectComboBox.valueAt(projectList.length - 1)
+            proxyModel.projectIdFilter = _projectId
+            currentProjectId = _projectId
+        }
+        else {
+            proxyModel.projectIdFilter = trashProjectComboBox.currentValue
+            currentProjectId = trashProjectComboBox.currentValue
+
+        }
+
+
+    }
+
 
     //-----------------------------------------------------------------------------
-
-
     // go back button :
-
+    signal goBack()
 
     Connections {
 
@@ -125,8 +162,6 @@ RestoreListViewForm {
     }
 
 
-    signal goBack()
-
     goBackToolButton.action: Action {
         id: goBackAction
         text: "<"
@@ -135,6 +170,8 @@ RestoreListViewForm {
             goBack()
         }
     }
+
+
 
 
     //----------------------------------------------------------------------------
@@ -188,13 +225,14 @@ RestoreListViewForm {
             }
 
         }
-
-
-
-
     }
+
+
     //----------------------------------------------------------------------------
-    listMenuToolButton.icon.name: "overflow-menu"
+
+
+    //----------------------------------------------------------------------------
+    listMenuToolButton.icon.source: "qrc:///icons/backup/overflow-menu.svg"
     listMenuToolButton.onClicked: navigationMenu.open()
 
     SkrMenu {
@@ -224,47 +262,34 @@ RestoreListViewForm {
     }
 
     //----------------------------------------------------------------------------
+    // restore button :
 
     Action {
-        id: selectAllAction
-        text: selectAllAction.checked ? qsTr("Select none") : qsTr("Select all")
-        //enabled: navigationMenu.opened
-        //shortcut: "Ctrl+Shift+Del"
-        icon.source: selectAllAction.checked ? "qrc:///icons/backup/edit-select-none.svg" : "qrc:///icons/backup/edit-select-all.svg"
-        checkable: true
+        id: restoreAction
+        text: qsTr("Restore")
+        //shortcut: ""
+        enabled: listView.focus === true
+        icon{
+            source: "qrc:///icons/backup/edit-undo.svg"
+            height: 100
+            width: 100
+        }
         onTriggered: {
 
-            if(selectAllAction.checked){
-                proxyModel.checkAll()
-            }
-            else {
-                proxyModel.checkNone()
-
-            }
-
+            console.log('restore', currentProjectId, currentTreeItemId)
+            restoreDocument(currentProjectId, currentTreeItemId)
 
         }
     }
 
-    selectAllToolButton.action: selectAllAction
-
+    restoreToolButton.action: restoreAction
 
     //----------------------------------------------------------------------------
 
     // shortcuts
 
-    //listView.focus: true
-    //    listView.Keys.onLeftPressed: {
 
-    //        console.log("onLeftPressed")
-    //        goUpAction.trigger()
-    //    }
-    //    listView.Keys.onBackPressed: {
 
-    //        console.log("onBackPressed")
-    //        goUpAction.trigger()
-
-    //    }
     Shortcut {
         enabled: listView.enabled
         sequences: ["Left", "Backspace"]
@@ -273,6 +298,7 @@ RestoreListViewForm {
     }
     //-----------------------------------------------------------------------------
 
+    property int contextMenuItemIndex: -2
 
     Binding {
         target: listView
@@ -289,10 +315,6 @@ RestoreListViewForm {
         }
     }
 
-    //----------------------------------------------------------------------------
-
-
-
-
+    //---------------------------------------------------------------------------
 
 }

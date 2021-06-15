@@ -34,6 +34,9 @@ public:
     virtual ~SKRProjectToolboxInterface() {}
 
     virtual QString qmlUrl() const = 0;
+    virtual int     weight() const {
+        return 500;
+    }
 };
 
 #define SKRProjectToolboxInterface_iid "com.skribisto.ProjectToolboxInterface/1.0"

@@ -2,7 +2,7 @@
 *   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: writingGamespagetoolbox.h
+*  Filename: navigationprojecttoolbox.h
 *                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
@@ -19,49 +19,42 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef WRITINGGAMESPAGETOOLBOX_H
-#define WRITINGGAMESPAGETOOLBOX_H
+#ifndef NAVIGATIONPROJECTTOOLBOX_H
+#define NAVIGATIONPROJECTTOOLBOX_H
 
 #include <QObject>
-#include "skrpagetoolboxinterface.h"
+#include "skrprojecttoolboxinterface.h"
 
-class WritingGamesPageToolbox : public QObject,
-                                public SKRPageToolboxInterface {
+class NavigationProjectToolbox : public QObject,
+                                 public SKRProjectToolboxInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
-        IID "eu.skribisto.WritingGamesPageToolboxPlugin/1.0" FILE
+        IID "eu.skribisto.NavigationProjectToolboxPlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(SKRPageToolboxInterface)
+    Q_INTERFACES(SKRProjectToolboxInterface)
 
 public:
 
-    explicit WritingGamesPageToolbox(QObject *parent = nullptr);
-    ~WritingGamesPageToolbox();
+    explicit NavigationProjectToolbox(QObject *parent = nullptr);
+    ~NavigationProjectToolbox();
     QString name() const override {
-        return "WritingGamesPageToolbox";
+        return "NavigationProjectToolbox";
     }
 
     QString displayedName() const override {
-        return tr("Writing Games Page Toolbox");
+        return tr("Navigation Project Toolbox");
     }
 
     QString use() const override {
-        return "Display a toolbox offering some writing game";
-    }
-
-    QStringList associatedPageTypes() const override {
-        QStringList list;
-
-        list << "TEXT";
-        return list;
+        return "Display a toolbox offering access to navigation by list";
     }
 
     QString qmlUrl() const override {
-        return "qrc:///qml/plugins/WritingGamesPageToolbox/WritingGamesPageToolbox.qml";
+        return "qrc:///qml/plugins/NavigationProjectToolbox/NavigationProjectToolbox.qml";
     }
 
     int weight() const override {
-        return 600;
+        return 100;
     }
 
 signals:
@@ -69,4 +62,4 @@ signals:
 private:
 };
 
-#endif // WRITINGGAMESPAGETOOLBOX_H
+#endif // NAVIGATIONPROJECTTOOLBOX_H

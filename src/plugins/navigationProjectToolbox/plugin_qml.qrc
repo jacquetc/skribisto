@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/qml/plugins">
+        <file>NavigationProjectToolbox/NavigationProjectToolbox.qml</file>
+        <file>NavigationProjectToolbox/NavigationList.qml</file>
+        <file>NavigationProjectToolbox/NavigationListForm.ui.qml</file>
+        <file>NavigationProjectToolbox/NavigationForm.ui.qml</file>
+        <file>NavigationProjectToolbox/TrashedListViewForm.ui.qml</file>
+        <file>NavigationProjectToolbox/TrashedListView.qml</file>
+        <file>NavigationProjectToolbox/RestoreListViewForm.ui.qml</file>
+        <file>NavigationProjectToolbox/RestoreListView.qml</file>
+        <file>NavigationProjectToolbox/Navigation.qml</file>
+    </qresource>
+</RCC>

@@ -53,6 +53,10 @@ public:
         return "qrc:///qml/plugins/FavoritesProjectToolbox/FavoritesProjectToolbox.qml";
     }
 
+    int weight() const override {
+        return 600;
+    }
+
 signals:
 
 private:

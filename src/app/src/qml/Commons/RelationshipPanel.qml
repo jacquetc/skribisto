@@ -38,8 +38,37 @@ RelationshipPanelForm {
     }
 
 
+    openTreeItemButton.onClicked: {
+        viewManager.loadTreeItem(subPanelLoader.item.projectId, subPanelLoader.item.treeItemId)
+
+    }
     Component.onCompleted: {
         populateTreeItemIdListFilter()
+    }
+
+    addQuickNoteItemButton.text: skrShortcutManager.description("add-quick-note")
+    addQuickNoteItemButton.onClicked: {
+        var result = skrData.treeHub().addQuickNote(projectId, treeItemId, "TEXT", qsTr("Note"))
+        if(result.success){
+            var newId = result.getData("treeItemId", -2)
+
+            openTreeItemInPanel(projectId, newId)
+        }
+    }
+
+    function openTreeItemInPanel(projectId, treeItemId){
+
+        priv.currentTreeItemId = treeItemId
+
+        if(skrData.treeHub().getType(projectId, treeItemId) === "TEXT"){
+
+            subPanel.visible = true
+            subPanelLoader.active = true
+            subPanelLoader.item.clearWritingZone()
+            subPanelLoader.item.openDocument(projectId, treeItemId, false, -2)
+
+
+        }
     }
 
 
@@ -582,14 +611,9 @@ RelationshipPanelForm {
             onTapped: {
                 control.forceActiveFocus()
                 gridView.currentIndex = model.index
-                priv.currentTreeItemId = model.treeItemId
 
-                if(skrData.treeHub().getType(projectId, model.treeItemId) === "TEXT"){
-                    subPanel.visible = true
-                    subPanelLoader.active = true
-                    subPanelLoader.item.clearWritingZone()
-                    subPanelLoader.item.openDocument(root.projectId, model.treeItemId, false, -2)
-                }
+                root.openTreeItemInPanel(projectId, model.treeItemId)
+
             }
 
 
@@ -640,6 +664,31 @@ RelationshipPanelForm {
 
             grabPermissions: PointerHandler.TakeOverForbidden
         }
+
+        //----------------------------------------------------------------------
+        //-----------touch handler--------------------------------------------------
+        //----------------------------------------------------------------------
+        TapHandler {
+            id: touchHandler
+            acceptedDevices: PointerDevice.TouchScreen
+            acceptedPointerTypes: PointerDevice.Finger
+
+            onLongPressed: {
+                control.forceActiveFocus()
+                gridView.currentIndex = model.index
+                priv.currentTreeItemId = model.treeItemId
+
+                if (menu.visible) {
+                    menu.close()
+                    return
+                }
+
+                menu.open()
+                eventPoint.accepted = true
+            }
+        }
+
+
 
         //----------------------------------------
         //----------menu--------------------------
@@ -712,6 +761,46 @@ RelationshipPanelForm {
             }
 
             MenuSeparator {
+            }
+            SkrMenuItem {
+                action: Action {
+                    text: qsTr("Dissociate")
+                    icon {
+                        source: "qrc:///icons/backup/remove-link.svg"
+                    }
+
+                    onTriggered: {
+                        skrData.treeHub().removeTreeRelationship(model.projectId, model.treeItemId, root.treeItemId)
+                    }
+                }
+
+            }
+
+
+            MenuSeparator {
+                height: model.isRenamable ? undefined : 0
+                visible: model.isRenamable
+            }
+
+            SkrMenuItem {
+                height: model.isRenamable ? undefined : 0
+                visible: model.isRenamable
+                action: Action {
+                    id: renameAction
+                    text: qsTr("Rename")
+                    shortcut: "F2"
+                    icon {
+                        source: "qrc:///icons/backup/edit-rename.svg"
+                    }
+
+                    onTriggered: {
+                        loader_renameDialog.active = true
+                    }
+                }
+            }
+
+
+            MenuSeparator {
                 height: !model.isTrashable ? 0 : undefined
                 visible: model.isTrashable
             }
@@ -742,6 +831,76 @@ RelationshipPanelForm {
 
         }
 
+        //----------------------------------------
+        //--------Rename -------------------------
+        //----------------------------------------
+
+        Component {
+            id: component_renameDialog
+            SimpleDialog {
+                property alias renameTextField: inner_renameTextField
+
+                id: renameDialog
+                property int projectId: model.projectId
+                property int treeItemId: model.treeItemId
+                property string treeItemTitle: model.title
+                title: qsTr("Rename an item")
+                contentItem: SkrTextField {
+                    id: inner_renameTextField
+                    text: renameDialog.treeItemTitle
+
+                    onAccepted: {
+                        renameDialog.accept()
+                    }
+
+                }
+
+                Component.onCompleted: {
+                    renameDialog.open()
+                }
+
+                onClosed: loader_renameDialog.active = false
+
+                standardButtons: Dialog.Ok  | Dialog.Cancel
+
+                onRejected: {
+                    renameDialog.treeItemTitle = ""
+
+                }
+
+                onDiscarded: {
+
+
+                    renameDialog.treeItemTitle = ""
+
+                }
+
+                onAccepted: {
+                    skrData.treeHub().setTitle(renameDialog.projectId, renameDialog.treeItemId, renameTextField.text)
+
+                    renameDialog.treeItemTitle = ""
+                }
+
+                onActiveFocusChanged: {
+                    if(activeFocus){
+                        contentItem.forceActiveFocus()
+                    }
+
+                }
+
+                onOpened: {
+                    contentItem.forceActiveFocus()
+                    renameTextField.selectAll()
+                }
+
+            }
+        }
+        Loader {
+            id: loader_renameDialog
+            sourceComponent: component_renameDialog
+            active: false
+        }
+
 
         //----------------------------------------
         //----------UI--------------------------
@@ -750,6 +909,8 @@ RelationshipPanelForm {
 
         ColumnLayout {
             anchors.fill: parent
+            focus: true
+
             Image {
                 source: skrTreeManager.getIconUrlFromPageType(type)
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
@@ -760,12 +921,23 @@ RelationshipPanelForm {
                 text: title
                 Layout.alignment: Qt.AlignHCenter
                 Layout.maximumWidth: control.width
+                activeFocusOnTab: false
                 maximumLineCount: 2
                 wrapMode: Text.Wrap
             }
+
+
+            Rectangle {
+                id: currentItemIndicator
+                Layout.alignment: Qt.AlignBottom
+                Layout.fillWidth: true
+                Layout.preferredHeight: 5
+                color: priv.currentTreeItemId === model.treeItemId ? "lightsteelblue" : "transparent"
+
+
+            }
+
         }
-
-
 
     }
 
@@ -805,7 +977,7 @@ RelationshipPanelForm {
 
         onDropped: {
             if(drop.proposedAction === Qt.MoveAction){
-                   skrData.treeHub().setTreeRelationship(drag.source.projectId, drag.source.treeItemId, root.treeItemId)
+                skrData.treeHub().setTreeRelationship(drag.source.projectId, drag.source.treeItemId, root.treeItemId)
             }
             dropIndicator.visible = false
         }
@@ -813,4 +985,14 @@ RelationshipPanelForm {
 
 
     }
+
+
+
+    onActiveFocusChanged: {
+        if (activeFocus) {
+            notesTabButton.forceActiveFocus()
+        }
+    }
+
+
 }

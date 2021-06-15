@@ -5,9 +5,6 @@
         <file>qml/main.qml</file>
         <file>qml/qmldir</file>
         <file>qml/SkrSettings.qml</file>
-        <file>qml/Commons/Navigation.qml</file>
-        <file>qml/Commons/NavigationForm.ui.qml</file>
-        <file>qml/Commons/NavigationListForm.ui.qml</file>
         <file>qml/Commons/DocumentListView.qml</file>
         <file>qml/Commons/DocumentListViewForm.ui.qml</file>
         <file>qml/Gallery/GalleryPageForm.ui.qml</file>
@@ -24,15 +21,10 @@
         <file>qml/NoteOverview/LeftDockForm.ui.qml</file>
         <file>qml/NoteOverview/NoteOverviewPageForm.ui.qml</file>
         <file>qml/Commons/SimpleDialog.qml</file>
-        <file>qml/Commons/NavigationList.qml</file>
-        <file>qml/Commons/TrashedListView.qml</file>
-        <file>qml/Commons/TrashedListViewForm.ui.qml</file>
         <file>qml/Commons/SKRTextArea.qml</file>
         <file>qml/Commons/TagPad.qml</file>
         <file>qml/Commons/TagPadForm.ui.qml</file>
         <file>qml/Commons/SkrDrawer.qml</file>
-        <file>qml/Commons/RestoreListView.qml</file>
-        <file>qml/Commons/RestoreListViewForm.ui.qml</file>
         <file>qml/Commons/CheckableTree.qml</file>
         <file>qml/Commons/SKRPillarLayout.qml</file>
         <file>qml/WriteOverview/SheetOverviewTree.qml</file>

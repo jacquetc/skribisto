@@ -870,6 +870,17 @@
     </message>
 </context>
 <context>
+    <name>NavigationProjectToolbox</name>
+    <message>
+        <source>Show navigation toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigation Project Toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>NewDictWizard</name>
     <message>
         <source>Dictionary &quot;%1&quot; successfully installed</source>
@@ -1393,6 +1404,10 @@
 <context>
     <name>RelationshipPanel</name>
     <message>
+        <source>Note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Type your text here …</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1409,7 +1424,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Dissociate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1441,6 +1468,10 @@
     </message>
     <message>
         <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Relationship list</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2276,6 +2307,10 @@
     </message>
     <message>
         <source>Show tags toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
