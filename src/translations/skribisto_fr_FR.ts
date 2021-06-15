@@ -393,10 +393,6 @@
         <translation>Texte</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Réduction</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -733,12 +729,20 @@
         <translation>Poubelle</translation>
     </message>
     <message>
+        <source>Select</source>
+        <translation>Sélectionner</translation>
+    </message>
+    <message>
         <source>Add</source>
         <translation>Ajouter</translation>
     </message>
     <message>
         <source>Projects</source>
         <translation>Projets</translation>
+    </message>
+    <message>
+        <source>Navigation list</source>
+        <translation>Liste de navigation</translation>
     </message>
     <message>
         <source>is a folder</source>
@@ -758,7 +762,7 @@
     </message>
     <message>
         <source>See sub-items</source>
-        <translation>Voir les sous-articles</translation>
+        <translation>Voir les sous-éléments</translation>
     </message>
     <message>
         <source>Open document</source>
@@ -786,7 +790,7 @@
     </message>
     <message>
         <source>Item menu</source>
-        <translation>Menu d&apos;articles</translation>
+        <translation>Menu de l&apos;élément</translation>
     </message>
     <message>
         <source>Open</source>
@@ -845,14 +849,6 @@
         <translation>Envoyer à la corbeille</translation>
     </message>
     <message>
-        <source>Navigation list</source>
-        <translation>Liste de navigation</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation>Sélectionner</translation>
-    </message>
-    <message>
         <source>Close this project</source>
         <translation>Fermer ce projet</translation>
     </message>
@@ -870,6 +866,17 @@
     <message>
         <source>Select</source>
         <translation>Sélectionner</translation>
+    </message>
+</context>
+<context>
+    <name>NavigationProjectToolbox</name>
+    <message>
+        <source>Show navigation toolbox</source>
+        <translation>Afficher la boîte à outils de navigation</translation>
+    </message>
+    <message>
+        <source>Navigation Project Toolbox</source>
+        <translation>Boîte à outils de projet de navigation</translation>
     </message>
 </context>
 <context>
@@ -943,16 +950,8 @@
         <translation>Dossier de projet :</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>fichier de projet</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Chemin du projet :</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>chemin du projet</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +972,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Dictionnaire :</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Dossier de projet</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Chemin du projet</translation>
     </message>
 </context>
 <context>
@@ -1331,6 +1338,14 @@
         <source>Install new dictionaries</source>
         <translation>Installer de nouveaux dictionnaires</translation>
     </message>
+    <message>
+        <source>Notes</source>
+        <translation>Remarques</translation>
+    </message>
+    <message>
+        <source>Note folder:</source>
+        <translation>Dossier de notes :</translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -1383,6 +1398,80 @@
     <message>
         <source>Recent projects</source>
         <translation>Les projets récents</translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanel</name>
+    <message>
+        <source>Note</source>
+        <translation>Noter</translation>
+    </message>
+    <message>
+        <source>Type your text here …</source>
+        <translation>Écrivez votre texte ici …</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Ouvert</translation>
+    </message>
+    <message>
+        <source>Open in another view</source>
+        <translation>Ouvrir dans une autre vue</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation>Ouvrir dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Dissociate</source>
+        <translation>Dissocier</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Renommer</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation>Envoyer à la corbeille</translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
+        <translation>Renommer un élément</translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanelForm.ui</name>
+    <message>
+        <source>All</source>
+        <translation>Tout</translation>
+    </message>
+    <message>
+        <source>Extend this panel</source>
+        <translation>Étendre ce panneau</translation>
+    </message>
+    <message>
+        <source>Hide the sub panel</source>
+        <translation>Masquer le sous-panneau</translation>
+    </message>
+    <message>
+        <source>Open item</source>
+        <translation>Élément ouvert</translation>
+    </message>
+    <message>
+        <source>Close this panel</source>
+        <translation>Fermer ce panneau</translation>
+    </message>
+    <message>
+        <source>Proposed</source>
+        <translation>Proposé</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation>Remarques</translation>
+    </message>
+    <message>
+        <source>Relationship list</source>
+        <translation>Liste de relations</translation>
     </message>
 </context>
 <context>
@@ -1573,6 +1662,94 @@
         <source>Cut</source>
         <translation>Couper</translation>
     </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation>&amp;Paramètres</translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation>&amp;Imprimer</translation>
+    </message>
+    <message>
+        <source>Fullscreen</source>
+        <translation>Plein écran</translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
+        <translation>Centrer verticalement le curseur de texte</translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <translation>Alt+C</translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
+        <translation>&amp;Manuel de l&apos;Utilisateur</translation>
+    </message>
+    <message>
+        <source>&amp;New Project</source>
+        <translation>&amp;Nouveau projet</translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation>&amp;Vérifier l&apos;orthographe</translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <translation>Maj+F7</translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation>&amp;Ouvert</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation>&amp;Sauvegarder</translation>
+    </message>
+    <message>
+        <source>&amp;Save All</source>
+        <translation>&amp;Sauver tous</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <translation>Ctrl+Maj+S</translation>
+    </message>
+    <message>
+        <source>&amp;Save As …</source>
+        <translation>&amp;Enregistrer sous …</translation>
+    </message>
+    <message>
+        <source>&amp;Quit</source>
+        <translation>&amp;Quitter</translation>
+    </message>
+    <message>
+        <source>Ctrl+Q</source>
+        <translation>Ctrl+Q</translation>
+    </message>
+    <message>
+        <source>Create a new page of the same type</source>
+        <translation>Créer une nouvelle page du même type</translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <translation>Ctrl+Retour</translation>
+    </message>
+    <message>
+        <source>Add a quick note</source>
+        <translation>Ajouter une note rapide</translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <translation>Alt+N</translation>
+    </message>
+    <message>
+        <source>Show relationships</source>
+        <translation>Afficher les relations</translation>
+    </message>
+    <message>
+        <source>Alt+R</source>
+        <translation>Alt+R</translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
@@ -1741,6 +1918,10 @@
     <message>
         <source>Show properties toolbox</source>
         <translation>Afficher la boîte à outils des propriétés</translation>
+    </message>
+    <message>
+        <source>Enable animations</source>
+        <translation>Activer les animations</translation>
     </message>
 </context>
 <context>
@@ -2129,6 +2310,17 @@
         <source>Show tags toolbox</source>
         <translation>Afficher la boîte à outils des balises</translation>
     </message>
+    <message>
+        <source>Note</source>
+        <translation>Noter</translation>
+    </message>
+</context>
+<context>
+    <name>TextPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation>Menu de la page</translation>
+    </message>
 </context>
 <context>
     <name>ThemePage</name>
@@ -2381,10 +2573,6 @@
         <translation>Imprimer</translation>
     </message>
     <message>
-        <source>Settings</source>
-        <translation>Paramètres</translation>
-    </message>
-    <message>
         <source>Help</source>
         <translation>Aide</translation>
     </message>
@@ -2439,14 +2627,6 @@
 <context>
     <name>main</name>
     <message>
-        <source>Fullscreen</source>
-        <translation>Plein écran</translation>
-    </message>
-    <message>
-        <source>Center vertically the text cursor</source>
-        <translation>Centrer verticallement le curseur de texte</translation>
-    </message>
-    <message>
         <source>Themes</source>
         <translation>Thèmes</translation>
     </message>
@@ -2463,36 +2643,8 @@
         <translation>A propos de &amp;Qt</translation>
     </message>
     <message>
-        <source>&amp;New Project</source>
-        <translation>&amp;Nouveau projet</translation>
-    </message>
-    <message>
-        <source>&amp;Check spelling</source>
-        <translation>Vérifier l&apos;orthographe</translation>
-    </message>
-    <message>
-        <source>&amp;Open Project</source>
-        <translation>&amp;Ouvrir un projet</translation>
-    </message>
-    <message>
         <source>Open an existing project</source>
         <translation>Ouvrir un projet existant</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation>Enregistrer</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation>Enregistrer tout</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation>Ctrl+Shift+S</translation>
-    </message>
-    <message>
-        <source>Save As …</source>
-        <translation>Enregistrer sous …</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as …</source>
@@ -2535,10 +2687,6 @@
         <translation>Échec de la sauvegarde : le chemin de sauvegarde %1 est en lecture seule</translation>
     </message>
     <message>
-        <source>&amp;Print</source>
-        <translation>Im&amp;primer</translation>
-    </message>
-    <message>
         <source>&amp;Import</source>
         <translation>&amp;Importer</translation>
     </message>
@@ -2559,18 +2707,6 @@
         <translation>&amp;Fermer le projet &quot;%1&quot;</translation>
     </message>
     <message>
-        <source>&amp;Quit</source>
-        <translation>&amp;Quitter</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Couper</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Copier</translation>
-    </message>
-    <message>
         <source>Italic</source>
         <translation>Italique</translation>
     </message>
@@ -2589,10 +2725,6 @@
     <message>
         <source>First steps</source>
         <translation>Premiers pas</translation>
-    </message>
-    <message>
-        <source>&amp;User manual</source>
-        <translation>&amp;Manuel de l&apos;Utilisateur</translation>
     </message>
     <message>
         <source>Back up successful</source>
