@@ -64,7 +64,7 @@ OverviewTreeForm {
     property int displayMode: SkrSettings.overviewTreeSettings.treeItemDisplayMode
 
     //tree-like onTreelikeIndents
-    property int treeIndentOffset: 0
+    property int treeIndentOffset: 1
     property int treeIndentMultiplier: SkrSettings.overviewTreeSettings.treeIndentation
 
     // focus :
@@ -539,6 +539,7 @@ OverviewTreeForm {
                                         Layout.topMargin: 2
                                         Layout.leftMargin: 4
                                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                        activeFocusOnTab: false
                                         font.bold: model.projectIsActive
                                                    && model.indent === -1 ? true : false
                                         text: model.indent === 0 ? model.projectName : model.title
@@ -650,6 +651,7 @@ OverviewTreeForm {
 
                                         SkrLabel {
                                             id: labelLabel
+                                            activeFocusOnTab: false
                                             text: model.label === undefined ? "" : model.label
                                             Layout.bottomMargin: 2
                                             Layout.rightMargin: 4
@@ -794,10 +796,10 @@ OverviewTreeForm {
                                         textArea.placeholderText: qsTr(
                                                                       "Outline")
 
-                                        textPointSize: SkrSettings.overviewTreeNoteSettings.textPointSize
-                                        textFontFamily: SkrSettings.overviewTreeNoteSettings.textFontFamily
-                                        textIndent: SkrSettings.overviewTreeNoteSettings.textIndent
-                                        textTopMargin: SkrSettings.overviewTreeNoteSettings.textTopMargin
+                                        textPointSize: SkrSettings.overviewTreeOutlineSettings.textPointSize
+                                        textFontFamily: SkrSettings.overviewTreeOutlineSettings.textFontFamily
+                                        textIndent: SkrSettings.overviewTreeOutlineSettings.textIndent
+                                        textTopMargin: SkrSettings.overviewTreeOutlineSettings.textTopMargin
 
                                         stretch: true
 
@@ -866,9 +868,11 @@ OverviewTreeForm {
 
                                             //console.log("opening note :", _projectId, _treeItemId)
                                             writingZone.setCursorPosition(0)
-                                            writingZone.text = skrData.treeHub(
-                                                        ).getSecondaryContent(
-                                                        _projectId, _treeItemId)
+                                            writingZone.text = skrRootItem.cleanUpHtml(
+                                                        skrData.treeHub(
+                                                            ).getSecondaryContent(
+                                                            _projectId,
+                                                            _treeItemId))
 
                                             var uniqueDocumentReference = _projectId + "_"
                                                     + _treeItemId + "_secondary"
@@ -878,8 +882,8 @@ OverviewTreeForm {
                                                         writingZone.textArea.textDocument)
 
                                             // apply format
-                                            writingZone.documentHandler.indentEverywhere = SkrSettings.overviewTreeNoteSettings.textIndent
-                                            writingZone.documentHandler.topMarginEverywhere = SkrSettings.overviewTreeNoteSettings.textTopMargin
+                                            writingZone.documentHandler.indentEverywhere = SkrSettings.overviewTreeOutlineSettings.textIndent
+                                            writingZone.documentHandler.topMarginEverywhere = SkrSettings.overviewTreeOutlineSettings.textTopMargin
 
                                             //restoreCurrentPaperCursorPositionAndY()
 
@@ -1047,7 +1051,8 @@ OverviewTreeForm {
                                                         ).setSecondaryContent(
                                                         model.projectId,
                                                         model.treeItemId,
-                                                        writingZone.text)
+                                                        skrRootItem.cleanUpHtml(
+                                                            writingZone.text))
                                             if (!result.success) {
                                                 console.log("saving note failed",
                                                             model.projectId,
@@ -1535,28 +1540,39 @@ OverviewTreeForm {
             }
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isOpenable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isOpenable ? undefined : 0
                 action: openPaperAction
             }
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isOpenable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isOpenable ? undefined : 0
 
                 action: openPaperInNewTabAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isOpenable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isOpenable ? undefined : 0
 
                 action: openPaperInNewWindowAction
             }
 
-            MenuSeparator {}
+            MenuSeparator {
+                visible: listView.currentItem.canAddChildTreeItem
+                height: listView.currentItem.canAddChildTreeItem ? undefined : 0
+            }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.canAddChildTreeItem
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.canAddChildTreeItem ? undefined : 0
 
                 action: focusOnbranchAction
             }
@@ -1565,33 +1581,43 @@ OverviewTreeForm {
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isRenamable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isRenamable ? undefined : 0
 
                 action: renameAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isRenamable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isRenamable ? undefined : 0
                 action: setLabelAction
             }
 
             MenuSeparator {}
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isMovable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isMovable ? undefined : 0
                 action: cutAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isCopyable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isCopyable ? undefined : 0
                 action: copyAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.canAddChildTreeItem
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.canAddChildTreeItem ? undefined : 0
                 action: pasteAction
             }
 
@@ -1599,19 +1625,24 @@ OverviewTreeForm {
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.canAddSiblingTreeItem
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.canAddSiblingTreeItem ? undefined : 0
                 action: addBeforeAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.canAddSiblingTreeItem
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.canAddSiblingTreeItem ? undefined : 0
                 action: addAfterAction
             }
             SkrMenuItem {
-
-                height: !listView.currentItem.canAddChildTreeItem ? 0 : undefined
-                visible: listView.currentItem.canAddChildTreeItem
+                visible: currentTreeItemId !== -1
+                         && listView.currentItem.canAddChildTreeItem
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.canAddChildTreeItem ? undefined : 0
 
                 action: addChildAction
             }
@@ -1619,20 +1650,26 @@ OverviewTreeForm {
             MenuSeparator {}
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isMovable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isMovable ? undefined : 0
                 action: moveUpAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isMovable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isMovable ? undefined : 0
                 action: moveDownAction
             }
             MenuSeparator {}
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                height: currentTreeItemId === -1 ? 0 : undefined
+                         && listView.currentItem.isTrashable
+                height: currentTreeItemId !== -1
+                        && listView.currentItem.isTrashable ? undefined : 0
                 action: sendToTrashAction
             }
         }

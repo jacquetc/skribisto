@@ -643,10 +643,10 @@ TextPageForm {
 
 
         if(isSecondary){
-            result = skrData.treeHub().setSecondaryContent(projectId, treeItemId, text)
+            result = skrData.treeHub().setSecondaryContent(projectId, treeItemId, skrRootItem.cleanUpHtml(text))
         }
         else {
-            result = skrData.treeHub().setPrimaryContent(projectId, treeItemId, text)
+            result = skrData.treeHub().setPrimaryContent(projectId, treeItemId, skrRootItem.cleanUpHtml(text))
             if(!contentSaveTimer.running)
                 skrTreeManager.updateCharAndWordCount(projectId, treeItemId, root.pageType, true)
 

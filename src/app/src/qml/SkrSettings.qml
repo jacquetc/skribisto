@@ -1,58 +1,55 @@
 pragma Singleton
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
 
 QtObject {
 
-    property Settings interfaceSettings: Settings{
+    property Settings interfaceSettings: Settings {
         category: "interface"
         property bool firstLaunch: true
     }
 
-    property Settings backupSettings: Settings{
+    property Settings backupSettings: Settings {
         category: "backup"
         property string paths: ""
         property bool backUpEveryCheckBoxChecked: false
         property int backUpEveryHours: 10
         property bool backUpOnceADay: false
-
     }
 
-    property Settings saveSettings: Settings{
+    property Settings saveSettings: Settings {
         category: "save"
         property string paths: ""
         property bool saveEveryCheckBoxChecked: false
         property int saveEveryMinutes: 10
-
     }
-    property Settings accessibilitySettings: Settings{
+    property Settings accessibilitySettings: Settings {
         category: "accessibility"
         property bool accessibilityEnabled: false
         property bool showMenuButton: false
-
     }
 
-    property Settings ePaperSettings: Settings{
+    property Settings ePaperSettings: Settings {
         category: "ePaper"
         property bool textCursorUnblinking: false
         property bool animationEnabled: true
-
     }
 
-    property Settings behaviorSettings: Settings{
+    property Settings behaviorSettings: Settings {
         category: "behavior"
         property bool createEmptyProjectAtStart: false
         property bool centerTextCursor: false
     }
 
-    property Settings spellCheckingSettings: Settings{
+    property Settings spellCheckingSettings: Settings {
         category: "spellChecking"
         property bool spellCheckingActivation: true
         property string spellCheckingLangCode: "en_US"
     }
 
-    property Settings textSettings: Settings{
+    property Settings textSettings: Settings {
         category: "text"
         property int textWidth: 500
         property int textPointSize: Qt.application.font.pointSize
@@ -61,7 +58,7 @@ QtObject {
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
-    property Settings outlineSettings: Settings{
+    property Settings outlineSettings: Settings {
         category: "outline"
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
@@ -69,17 +66,16 @@ QtObject {
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
-
-    property Settings relatedTextSettings: Settings{
+    property Settings relatedTextSettings: Settings {
         category: "relatedText"
-        property int textWidth:  -2 //unused but mandatory
+        property int textWidth: -2 //unused but mandatory
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
-    property Settings notePadSettings: Settings{
+    property Settings notePadSettings: Settings {
         category: "notePad"
         property int textWidth: -2 //unused but mandatory
         property int textPointSize: Qt.application.font.pointSize
@@ -88,16 +84,16 @@ QtObject {
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
-    property Settings overviewTreeNoteSettings: Settings{
-        category: "overviewTreeNote"
+    property Settings overviewTreeOutlineSettings: Settings {
+        category: "overviewTreeOutline"
         property int textWidth: -2 //unused but mandatory
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
-        property real textTopMargin: 2
+        property real textTopMargin: 1
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
-    property Settings overviewTreeSettings: Settings{
+    property Settings overviewTreeSettings: Settings {
         category: "overviewTree"
         property int treeItemDisplayMode: 1
         property int treeIndentation: 30
@@ -108,7 +104,7 @@ QtObject {
         property bool wordCountBoxVisible: true
     }
 
-    property Settings quickPrintSettings: Settings{
+    property Settings quickPrintSettings: Settings {
         category: "quickPrint"
         property string textFontFamily: skrRootItem.defaultFontFamily()
         property int textPointSize: Qt.application.font.pointSize
@@ -118,16 +114,15 @@ QtObject {
         property bool tagsEnabled: false
     }
 
-    property Settings relationshipPanelSettings: Settings{
+    property Settings relationshipPanelSettings: Settings {
         category: "relationshipPanel"
         property string viewMode: "notes"
     }
 
-    property Settings devSettings: Settings{
+    property Settings devSettings: Settings {
         category: "dev"
         property bool devModeEnabled: false
     }
 
     property int initialTextWidth: 0
-
 }

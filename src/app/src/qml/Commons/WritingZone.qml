@@ -975,20 +975,14 @@ WritingZoneForm {
         }
     }
 
-
     //----------------------------------------------------------------------------
     //-----Find Panel------------------------------------------------------------
     //----------------------------------------------------------------------------
-
-
-
-
     findPanel.documentHandler: documentHandler
     findPanel.highlighter: documentHandler.highlighter
     findPanel.textArea: textArea
 
-
-    Action{
+    Action {
         id: findAction
         text: qsTr("Find")
         shortcut: "Ctrl+F"
@@ -997,7 +991,4 @@ WritingZoneForm {
             findPanel.visible = true
         }
     }
-
-
-
 }

@@ -1952,6 +1952,7 @@ NavigationListForm {
                                                             Layout.rightMargin: 4
                                                             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                                                             elide: Text.ElideRight
+                                                            font.italic: true
                                                             horizontalAlignment: Qt.AlignRight
                                                             Layout.fillWidth: true
                                                         }

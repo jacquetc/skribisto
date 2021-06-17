@@ -3,43 +3,38 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import ".."
 
-
 OutlinePadForm {
     id: root
     property int projectId: -2
     property int treeItemId: -2
     property int milestone: -2
 
-
-//---------------------------------------------------------
+    //---------------------------------------------------------
     Component.onCompleted: {
         openDocument(projectId, treeItemId, milestone)
 
-        if(outlineWritingZone.textArea.length === 0){
+        if (outlineWritingZone.textArea.length === 0) {
             addOutlineToolButton.visible = true
             outlineWritingZone.Layout.preferredHeight = 0
         }
-
-
     }
 
-//---------------------------------------------------------
-
+    //---------------------------------------------------------
     Action {
         id: openOutlineAction
         text: qsTr("Open outline")
         icon.source: "qrc:///icons/backup/quickopen-file.svg"
         onTriggered: {
-             saveContent()
-             saveCurrentCursorPositionAndY()
-             rootWindow.viewManager.insertAdditionalProperty("isSecondary", true)
-             rootWindow.viewManager.loadTreeItemAtAnotherView(projectId, treeItemId)
+            saveContent()
+            saveCurrentCursorPositionAndY()
+            rootWindow.viewManager.insertAdditionalProperty("isSecondary", true)
+            rootWindow.viewManager.loadTreeItemAtAnotherView(projectId,
+                                                             treeItemId)
         }
     }
     openOutlineToolButton.action: openOutlineAction
 
-//---------------------------------------------------------
-
+    //---------------------------------------------------------
     Action {
         id: addOutlineAction
         text: qsTr("Add outline")
@@ -54,17 +49,18 @@ OutlinePadForm {
 
     //---------------------------------------------------------
 
-
     //---------------------------------------------------------
-
-    function clearWritingZone(){
-        if(treeItemId !== -2 && projectId !== -2 && milestone === -2){
+    function clearWritingZone() {
+        if (treeItemId !== -2 && projectId !== -2 && milestone === -2) {
             contentSaveTimer.stop()
             saveContent()
             saveCurrentCursorPositionAndYTimer.stop()
             saveCurrentCursorPositionAndY()
             var uniqueDocumentReference = projectId + "_" + treeItemId + "_secondary"
-            skrTextBridge.unsubscribeTextDocument(uniqueDocumentReference, outlineWritingZone.textArea.objectName, outlineWritingZone.textArea.textDocument)
+            skrTextBridge.unsubscribeTextDocument(
+                        uniqueDocumentReference,
+                        outlineWritingZone.textArea.objectName,
+                        outlineWritingZone.textArea.textDocument)
 
             root.projectId = -2
             root.treeItemId = -2
@@ -75,8 +71,8 @@ OutlinePadForm {
         outlineWritingZone.setCursorPosition(0)
         outlineWritingZone.clear()
     }
-    //---------------------------------------------------------
 
+    //---------------------------------------------------------
     function runActionsBeforeDestruction() {
         clearWritingZone()
     }
@@ -89,22 +85,22 @@ OutlinePadForm {
 
     //---------------------------------------------------------
     // modifiable :
-
     property bool isModifiable: true
 
-    Connections{
+    Connections {
         target: skrData.treePropertyHub()
-        function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
-            if(projectId === root.projectId && treeItemId === root.treeItemId){
+        function onPropertyChanged(projectId, propertyId, treeItemId, name, value) {
+            if (projectId === root.projectId
+                    && treeItemId === root.treeItemId) {
 
-                if(name === "modifiable"){
+                if (name === "modifiable") {
                     determineModifiable()
                 }
             }
         }
     }
 
-    Timer{
+    Timer {
         id: determineModifiableTimer
         repeat: false
         interval: 200
@@ -113,35 +109,32 @@ OutlinePadForm {
         }
     }
 
+    function determineModifiable() {
 
+        root.isModifiable = skrData.treePropertyHub().getProperty(
+                    projectId, treeItemId, "modifiable", "true") === "true"
 
-
-    function determineModifiable(){
-
-        root.isModifiable = skrData.treePropertyHub().getProperty(projectId, treeItemId, "modifiable", "true") === "true"
-
-        if(!root.isModifiable !== outlineWritingZone.textArea.readOnly){
+        if (!root.isModifiable !== outlineWritingZone.textArea.readOnly) {
             saveCurrentCursorPositionAndY()
             outlineWritingZone.textArea.readOnly = !root.isModifiable
             restoreCurrentPaperCursorPositionAndY()
         }
-
     }
-    //---------------------------------------------------------
 
     //---------------------------------------------------------
 
+    //---------------------------------------------------------
     QtObject {
         id: documentPrivate
         property bool contentSaveTimerAllowedToStart: true
         property bool saveCurrentCursorPositionAndYTimerAllowedToStart: true
     }
+
     //---------------------------------------------------------
-
-
     function openDocument(_projectId, _treeItemId, milestone) {
         // save current
-        if(projectId !== _projectId || treeItemId !== _treeItemId ){ //meaning it hasn't just used the constructor
+        if (projectId !== _projectId || treeItemId !== _treeItemId) {
+            //meaning it hasn't just used the constructor
             clearWritingZone()
         }
 
@@ -156,35 +149,37 @@ OutlinePadForm {
         //console.log("opening sheet :", _projectId, _paperId)
         outlineWritingZone.setCursorPosition(0)
 
-        if(milestone === -2){
+        if (milestone === -2) {
 
-                outlineWritingZone.text = skrData.treeHub().getSecondaryContent(_projectId, _treeItemId)
+            outlineWritingZone.text = skrRootItem.cleanUpHtml(
+                        skrData.treeHub().getSecondaryContent(_projectId,
+                                                              _treeItemId))
+        } else {
 
-
-        }
-        else {
             //TODO: if milestone
         }
 
+        if (milestone === -2) {
 
-        if(milestone === -2){
             var uniqueDocumentReference = projectId + "_" + treeItemId + "_secondary"
-            skrTextBridge.subscribeTextDocument(uniqueDocumentReference,
-                                                outlineWritingZone.textArea.objectName,
-                                                outlineWritingZone.textArea.textDocument)
+            skrTextBridge.subscribeTextDocument(
+                        uniqueDocumentReference,
+                        outlineWritingZone.textArea.objectName,
+                        outlineWritingZone.textArea.textDocument)
         }
 
         outlineWritingZone.documentHandler.indentEverywhere = SkrSettings.outlineSettings.textIndent
-        outlineWritingZone.documentHandler.topMarginEverywhere = SkrSettings.outlineSettings.textTopMargin
+        outlineWritingZone.documentHandler.topMarginEverywhere
+                = SkrSettings.outlineSettings.textTopMargin
 
         restoreCurrentPaperCursorPositionAndY()
 
-//        forceActiveFocusTimer.start()
+        //        forceActiveFocusTimer.start()
 
         // start the timer for automatic position saving
-        if(milestone === -2){
+        if (milestone === -2) {
             documentPrivate.saveCurrentCursorPositionAndYTimerAllowedToStart = true
-            if(!saveCurrentCursorPositionAndYTimer.running){
+            if (!saveCurrentCursorPositionAndYTimer.running) {
                 saveCurrentCursorPositionAndYTimer.start()
             }
 
@@ -193,25 +188,22 @@ OutlinePadForm {
 
         //        leftDock.setCurrentPaperId(projectId, paperId)
         //        leftDock.setOpenedPaperId(projectId, paperId)
-
         determineModifiableTimer.start()
-
     }
 
-//    Timer{
-//        id: forceActiveFocusTimer
-//        repeat: false
-//        interval: 100
-//        onTriggered:  outlineWritingZone.forceActiveFocus()
-//    }
-
-    function restoreCurrentPaperCursorPositionAndY(){
+    //    Timer{
+    //        id: forceActiveFocusTimer
+    //        repeat: false
+    //        interval: 100
+    //        onTriggered:  outlineWritingZone.forceActiveFocus()
+    //    }
+    function restoreCurrentPaperCursorPositionAndY() {
 
         //get cursor position
         var position = skrUserSettings.getFromProjectSettingHash(
                     projectId, "outlineTextPositionHash", treeItemId, 0)
 
-        if(position > outlineWritingZone.textArea.length){
+        if (position > outlineWritingZone.textArea.length) {
             position = outlineWritingZone.textArea.length
         }
 
@@ -225,10 +217,9 @@ OutlinePadForm {
 
         writingZoneFlickableContentYTimer.y = visibleAreaY
         writingZoneFlickableContentYTimer.start()
-
     }
 
-    Timer{
+    Timer {
 
         property int y: 0
         id: writingZoneFlickableContentYTimer
@@ -239,15 +230,14 @@ OutlinePadForm {
         }
     }
 
+    function saveCurrentCursorPositionAndY() {
 
-    function saveCurrentCursorPositionAndY(){
+        if (treeItemId !== -2 || projectId !== -2) {
 
-        if(treeItemId !== -2 || projectId !== -2){
             //save cursor position of current document :
-
             var previousCursorPosition = outlineWritingZone.textArea.cursorPosition
 
-            if(previousCursorPosition > outlineWritingZone.textArea.length){
+            if (previousCursorPosition > outlineWritingZone.textArea.length) {
                 previousCursorPosition = outlineWritingZone.textArea.length
             }
 
@@ -259,56 +249,52 @@ OutlinePadForm {
                         previousCursorPosition)
             skrUserSettings.insertInProjectSettingHash(projectId,
                                                        "outlineTextYHash",
-                                                       treeItemId,
-                                                       previousY)
+                                                       treeItemId, previousY)
         }
     }
 
-    Timer{
+    Timer {
         id: saveCurrentCursorPositionAndYTimer
         repeat: true
         interval: 10000
         onTriggered: saveCurrentCursorPositionAndY()
     }
 
-
-
     // save content once after writing:
     outlineWritingZone.textArea.onTextChanged: {
 
         //avoid first text change, when blank HTML is inserted
-        if(outlineWritingZone.textArea.length === 0
-                && skrData.projectHub().isProjectNotModifiedOnce(projectId)){
+        if (outlineWritingZone.textArea.length === 0 && skrData.projectHub(
+                    ).isProjectNotModifiedOnce(projectId)) {
             return
         }
 
-        if(contentSaveTimer.running){
+        if (contentSaveTimer.running) {
             contentSaveTimer.stop()
         }
-        if(documentPrivate.contentSaveTimerAllowedToStart){
+        if (documentPrivate.contentSaveTimerAllowedToStart) {
             contentSaveTimer.start()
         }
     }
-    Timer{
+    Timer {
         id: contentSaveTimer
         repeat: false
         interval: 200
         onTriggered: saveContent()
     }
 
-    function saveContent(){
+    function saveContent() {
         //console.log("saving text")
         var result
-            result = skrData.treeHub().setSecondaryContent(projectId, treeItemId, outlineWritingZone.text)
+        result = skrData.treeHub().setSecondaryContent(
+                    projectId, treeItemId,
+                    skrRootItem.cleanUpHtml(outlineWritingZone.text))
 
-
-        if (!result.success){
+        if (!result.success) {
             console.log("saving outline text failed", projectId, treeItemId)
-        }
-        else {
-            //console.log("saving text success", projectId, treeItemId)
+        } else {
 
+            //console.log("saving text success", projectId, treeItemId)
         }
     }
-
 }
