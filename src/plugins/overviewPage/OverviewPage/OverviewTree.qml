@@ -17,24 +17,23 @@ OverviewTreeForm {
 
     readonly property int currentTreeItemId: priv.currentTreeItemId
     readonly property int currentProjectId: priv.currentProjectId
+    readonly property bool dragging: priv.dragging
     property int currentIndex: listView.currentIndex
 
     property alias visualModel: visualModel
     property var proxyModel
+
+    readonly property alias selectedTreeItemsIds: priv.selectedTreeItemsIds
+    readonly property alias selectedProjectId: priv.selectedProjectId
     required property var viewManager
 
     DelegateModel {
         id: visualModel
 
-        delegate: dragDelegate
+        delegate: swipeDelegateComponent
         model: proxyModel
     }
     listView.model: visualModel
-
-    property int contextMenuItemIndex: -2
-    onCurrentIndexChanged: {
-        contextMenuItemIndex = listView.currentIndex
-    }
 
     Binding {
         target: listView
@@ -68,7 +67,7 @@ OverviewTreeForm {
     property int treeIndentMultiplier: SkrSettings.overviewTreeSettings.treeIndentation
 
     // focus :
-    onActiveFocusChanged: {
+    listView.onActiveFocusChanged: {
         if (activeFocus) {
             listView.currentItem.forceActiveFocus()
         }
@@ -78,13 +77,19 @@ OverviewTreeForm {
 
     // used to remember the source when moving an item
     property int moveSourceInt: -2
+    property int moveSourceTreeItemId: -2
+    property int moveSourceProjectId: -2
 
     // TreeView item :
     listView.delegate: Component {
-        id: dragDelegate
+        id: swipeDelegateComponent
 
-        DropArea {
-            id: delegateRoot
+        SwipeDelegate {
+            id: swipeDelegate
+            property int indent: model.indent
+            property alias dropArea: dropArea
+            //property alias checkState: selectionCheckBox.checkState
+            focus: true
 
             property int treeItemId: model.treeItemId
             property int projectId: model.projectId
@@ -120,19 +125,6 @@ OverviewTreeForm {
             Accessible.role: Accessible.ListItem
             Accessible.description: qsTr("navigation item")
 
-            onEntered: {
-
-                draggableContent.sourceIndex = drag.source.visualIndex
-                visualModel.items.move(drag.source.visualIndex,
-                                       draggableContent.visualIndex)
-            }
-
-            onDropped: {
-                console.log("dropped : ", moveSourceInt,
-                            draggableContent.visualIndex)
-                proxyModel.moveItem(moveSourceInt, draggableContent.visualIndex)
-            }
-
             property int visualIndex: {
                 return DelegateModel.itemsIndex
             }
@@ -152,8 +144,13 @@ OverviewTreeForm {
                                                      * root.treeIndentMultiplier : undefined
             }
 
-            height: draggableContent.height
+            height: draggableContent.height + 4
 
+            //            padding: 0
+            //            topPadding: 0
+            //            bottomPadding: 0
+            //            topInset: 0
+            //            bottomInset: 0
             onActiveFocusChanged: {
                 if (listView.currentIndex === model.index) {
                     priv.currentTreeItemId = model.treeItemId
@@ -211,7 +208,7 @@ OverviewTreeForm {
                     event.accepted = true
                 }
                 if (event.key === Qt.Key_Escape
-                        && delegateRoot.state == "edit_name") {
+                        && swipeDelegate.state == "edit_name") {
                     event.accepted = true
                 }
                 if (event.key === Qt.Key_Escape && priv.renaming) {
@@ -220,6 +217,25 @@ OverviewTreeForm {
             }
 
             Keys.onPressed: {
+
+                if (event.key === Qt.Key_Right) {
+                    console.log("Right key pressed")
+                    event.accepted = true
+                }
+
+                if ((event.modifiers ^ Qt.ControlModifier)
+                        && event.key === Qt.Key_Up) {
+                    console.log("Up key pressed")
+                    listView.decrementCurrentIndex()
+                    event.accepted = true
+                }
+
+                if ((event.modifiers ^ Qt.ControlModifier)
+                        && event.key === Qt.Key_Down) {
+                    console.log("Down key pressed")
+                    listView.incrementCurrentIndex()
+                    event.accepted = true
+                }
                 if (model.isOpenable && !priv.renaming
                         && event.key === Qt.Key_Return) {
                     console.log("Return key pressed")
@@ -237,7 +253,7 @@ OverviewTreeForm {
                 // rename
                 if (model.isRenamable && !priv.renaming
                         && event.key === Qt.Key_F2
-                        && delegateRoot.state !== "edit_name") {
+                        && swipeDelegate.state !== "edit_name") {
                     renameAction.trigger()
                     event.accepted = true
                 }
@@ -246,8 +262,8 @@ OverviewTreeForm {
                 if (model.isMovable && !priv.renaming
                         && (event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_X
-                        && delegateRoot.state !== "edit_name"
-                        && delegateRoot.state !== "edit_label") {
+                        && swipeDelegate.state !== "edit_name"
+                        && swipeDelegate.state !== "edit_label") {
                     cutAction.trigger()
                     event.accepted = true
                 }
@@ -256,8 +272,8 @@ OverviewTreeForm {
                 if (model.isCopyable && !priv.renaming
                         && (event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_C
-                        && delegateRoot.state !== "edit_name"
-                        && delegateRoot.state !== "edit_label") {
+                        && swipeDelegate.state !== "edit_name"
+                        && swipeDelegate.state !== "edit_label") {
                     copyAction.trigger()
                     event.accepted = true
                 }
@@ -266,8 +282,8 @@ OverviewTreeForm {
                 if (model.canAddChildTreeItem && !priv.renaming
                         && (event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_V
-                        && delegateRoot.state !== "edit_name"
-                        && delegateRoot.state !== "edit_label") {
+                        && swipeDelegate.state !== "edit_name"
+                        && swipeDelegate.state !== "edit_label") {
                     pasteAction.trigger()
                     event.accepted = true
                 }
@@ -277,8 +293,8 @@ OverviewTreeForm {
                         && (event.modifiers & Qt.ControlModifier)
                         && (event.modifiers & Qt.ShiftModifier)
                         && event.key === Qt.Key_N
-                        && delegateRoot.state !== "edit_name"
-                        && delegateRoot.state !== "edit_label") {
+                        && swipeDelegate.state !== "edit_name"
+                        && swipeDelegate.state !== "edit_label") {
                     addBeforeAction.trigger()
                     event.accepted = true
                 }
@@ -287,8 +303,8 @@ OverviewTreeForm {
                 if (model.canAddSiblingTreeItem && !priv.renaming
                         && (event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_N
-                        && delegateRoot.state !== "edit_name"
-                        && delegateRoot.state !== "edit_label") {
+                        && swipeDelegate.state !== "edit_name"
+                        && swipeDelegate.state !== "edit_label") {
                     addAfterAction.trigger()
                     event.accepted = true
                 }
@@ -297,8 +313,8 @@ OverviewTreeForm {
                 if (model.canAddChildTreeItem && !priv.renaming
                         && (event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_Space
-                        && delegateRoot.state !== "edit_name"
-                        && delegateRoot.state !== "edit_label") {
+                        && swipeDelegate.state !== "edit_name"
+                        && swipeDelegate.state !== "edit_label") {
                     addChildAction.trigger()
                     event.accepted = true
                 }
@@ -307,8 +323,8 @@ OverviewTreeForm {
                 if (model.isMovable && !priv.renaming
                         && (event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_Up
-                        && delegateRoot.state !== "edit_name"
-                        && delegateRoot.state !== "edit_label") {
+                        && swipeDelegate.state !== "edit_name"
+                        && swipeDelegate.state !== "edit_label") {
                     moveUpAction.trigger()
                     event.accepted = true
                 }
@@ -317,8 +333,8 @@ OverviewTreeForm {
                 if (model.isMovable && !priv.renaming
                         && (event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_Down
-                        && delegateRoot.state !== "edit_name"
-                        && delegateRoot.state !== "edit_label") {
+                        && swipeDelegate.state !== "edit_name"
+                        && swipeDelegate.state !== "edit_label") {
                     moveDownAction.trigger()
                     event.accepted = true
                 }
@@ -326,8 +342,8 @@ OverviewTreeForm {
                 // send to trash
                 if (model.isTrashable && !priv.renaming
                         && event.key === Qt.Key_Delete
-                        && delegateRoot.state !== "edit_name"
-                        && delegateRoot.state !== "edit_label") {
+                        && swipeDelegate.state !== "edit_name"
+                        && swipeDelegate.state !== "edit_label") {
                     sendToTrashAction.trigger()
                     event.accepted = true
                 }
@@ -340,421 +356,1041 @@ OverviewTreeForm {
 
             property bool focusOnBranchChecked: false
 
-            Rectangle {
-                id: draggableContent
-                property int visualIndex: 0
-                property int sourceIndex: -2
+            contentItem: DropArea {
+                id: dropArea
 
-                property bool isCurrent: model.index === listView.currentIndex ? true : false
+                keys: ["application/skribisto-overview-tree-item"]
+                onEntered: {
 
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    verticalCenter: parent.verticalCenter
+                    console.log("entered")
+                    console.log(drag.source.visualIndex,
+                                draggableContent.visualIndex)
+                    visualModel.items.move(drag.source.visualIndex,
+                                           draggableContent.visualIndex)
                 }
-                width: delegateRoot.width - 2
 
-                height: content.height + 2
-
-                Drag.active: dragHandler.active
-                Drag.source: draggableContent
-                Drag.hotSpot.x: width / 2
-                Drag.hotSpot.y: height / 2
-
-                color: dragHandler.active | !tapHandler.enabled ? SkrTheme.accent : "transparent"
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 200
+                onDropped: {
+                    console.log("dropped")
+                    if (drop.proposedAction === Qt.MoveAction) {
+                        cancelDragTimer.stop()
+                        listView.interactive = true
+                        priv.dragging = false
+                        console.log(moveSourceInt, draggableContent.visualIndex)
+                        proxyModel.moveItem(moveSourceInt,
+                                            draggableContent.visualIndex)
                     }
                 }
 
-                DragHandler {
-                    id: dragHandler
-                    //acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
-                    //xAxis.enabled: false
-                    //grabPermissions: PointerHandler.TakeOverForbidden
-                    onActiveChanged: {
-                        if (active) {
-                            moveSourceInt = draggableContent.visualIndex
-                        } else {
-                            draggableContent.Drag.drop()
-                            tapHandler.enabled = true
-                        }
-                    }
-                    enabled: !tapHandler.enabled && root.dragDropEnabled
+                onExited: {
+                    console.log('exited')
                 }
 
-                /// without MouseArea, it breaks while dragging and scrolling:
-                MouseArea {
-                    anchors.fill: parent
-                    onWheel: {
-                        listView.flick(0, wheel.angleDelta.y * 50)
-                        wheel.accepted = true
-                    }
+                Rectangle {
+                    id: draggableContent
+                    property int visualIndex: model.index
+                    property int sourceIndex: -2
+                    property int projectId: model.projectId
+                    property int treeItemId: model.treeItemId
 
-                    enabled: dragHandler.enabled && root.dragDropEnabled
-                }
-
-                SkrListItemPane {
-                    id: content
-
-                    property alias tapHandler: tapHandler
+                    property bool isCurrent: model.index === listView.currentIndex ? true : false
 
                     anchors {
                         horizontalCenter: parent.horizontalCenter
                         verticalCenter: parent.verticalCenter
                     }
-                    height: 60
-                    width: draggableContent.width
+                    width: parent.width
 
-                    padding: 1
+                    height: content.height
 
-                    elevation: 4
+                    Drag.active: mouseDragHandler.active | touchDragHandler.active
+                    Drag.source: draggableContent
+                    Drag.hotSpot.x: width / 2
+                    Drag.hotSpot.y: height / 2
+                    Drag.keys: ["application/skribisto-overview-tree-item"]
 
-                    //Material.backgroundColor: Material.
+                    Drag.supportedActions: Qt.MoveAction
 
-                    //                    background: Rectangle {
-                    //                        color: Material.backgroundColor
-                    //                        radius: 5
-                    //                    }
-                    HoverHandler {
-                        id: hoverHandler
-                    }
+                    opacity: mouseDragHandler.active | touchDragHandler.active ? 0.2 : 1.0
 
-                    TapHandler {
-                        id: tapHandler
+                    border.width: 2
+                    border.color: mouseDragHandler.active
+                                  | draggableContent.dragging ? SkrTheme.accent : "transparent"
 
-                        onSingleTapped: {
-                            priv.currentTreeItemId = model.treeItemId
-                            priv.currentProjectId = model.projectId
-                            listView.currentIndex = model.index
-                            delegateRoot.forceActiveFocus()
-                            eventPoint.accepted = true
-                        }
-
-                        onDoubleTapped: {
-
-                            //console.log("double tapped")
-                            priv.currentTreeItemId = model.treeItemId
-                            priv.currentProjectId = model.projectId
-                            listView.currentIndex = model.index
-                            openDocumentAction.trigger()
-                            eventPoint.accepted = true
-                        }
-
-                        onLongPressed: {
-                            // needed to activate the grab handler
-                            priv.currentTreeItemId = model.treeItemId
-                            priv.currentProjectId = model.projectId
-                            if (root.dragDropEnabled) {
-                                enabled = false
-                            }
-                        }
-
-                        onGrabChanged: {
-                            point.accepted = false
+                    Behavior on border.color {
+                        enabled: SkrSettings.ePaperSettings.animationEnabled
+                        ColorAnimation {
+                            duration: 200
                         }
                     }
 
-                    TapHandler {
-                        id: rightClickHandler
-                        acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
-                        acceptedButtons: Qt.RightButton
-                        onTapped: {
+                    property bool dragging: false
 
-                            //console.log("right clicked")
-                            if (loader_menu.active) {
-                                if (loader_menu.item.visible) {
-                                    loader_menu.item.close()
+                    Timer {
+                        id: cancelDragTimer
+                        repeat: false
+                        interval: 3000
+                        onTriggered: {
+                            priv.dragging = false
+                            draggableContent.dragging = false
+                        }
+                    }
+
+                    /// without MouseArea, it breaks while dragging and scrolling:
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.NoButton
+                        onWheel: {
+                            listView.interactive = false
+                            listView.flick(0, wheel.angleDelta.y * 50)
+                            wheel.accepted = true
+                        }
+
+                        enabled: listView.interactive === false
+                    }
+
+                    SkrListItemPane {
+                        id: content
+
+                        property alias tapHandler: tapHandler
+
+                        anchors {
+                            horizontalCenter: parent.horizontalCenter
+                            verticalCenter: parent.verticalCenter
+                        }
+                        height: 60
+                        width: draggableContent.width
+
+                        padding: 1
+
+                        elevation: 4
+
+                        //Material.backgroundColor: Material.
+
+                        //                    background: Rectangle {
+                        //                        color: Material.backgroundColor
+                        //                        radius: 5
+                        //                    }
+                        HoverHandler {
+                            id: hoverHandler
+                        }
+
+                        TapHandler {
+                            id: tapHandler
+
+                            onSingleTapped: {
+                                priv.selecting = false
+
+                                if (draggableContent.dragging) {
+                                    eventPoint.accepted = false
                                     return
                                 }
-                            }
-
-                            priv.currentTreeItemId = model.treeItemId
-                            priv.currentProjectId = model.projectId
-
-                            // necessary to differenciate between all items
-                            contextMenuItemIndex = model.index
-                            listView.currentIndex = model.index
-
-                            loader_menu.active = true
-                            loader_menu.item.popup(content,
-                                                   eventPoint.position.x,
-                                                   eventPoint.position.y)
-                            eventPoint.accepted = true
-                        }
-                    }
-                    TapHandler {
-                        acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
-                        acceptedButtons: Qt.MiddleButton
-                        onTapped: {
-                            priv.currentTreeItemId = model.treeItemId
-                            priv.currentProjectId = model.projectId
-                            listView.currentIndex = model.index
-                            delegateRoot.forceActiveFocus()
-                            openDocumentInNewTabAction.trigger()
-                            eventPoint.accepted = true
-                        }
-                    }
-
-                    contentItem: RowLayout {
-                        id: rowLayout3
-                        anchors.fill: parent
-
-                        //---------------------------------------------------------
-                        //--------Title----------------------------------------
-                        //---------------------------------------------------------
-                        Item {
-                            id: titleBox
-                            clip: true
-                            //Layout.minimumWidth: 50
-                            Layout.preferredWidth: 200
-                            //Layout.maximumWidth: 150
-                            Layout.fillHeight: true
-
-                            //Layout.fillWidth: true
-                            RowLayout {
-                                id: rowLayout
-                                anchors.fill: parent
-                                spacing: 2
-
-                                Rectangle {
-                                    id: currentItemIndicator
-                                    color: listView.currentIndex
-                                           === model.index ? "lightsteelblue" : "transparent"
-                                    Layout.fillHeight: true
-                                    Layout.preferredWidth: 5
-                                    //visible: listView.currentIndex === model.index
+                                if (eventPoint.event.device.type === PointerDevice.Mouse) {
+                                    listView.interactive = false
                                 }
 
-                                ColumnLayout {
-                                    id: columnLayout2
-                                    spacing: 1
-                                    Layout.fillHeight: true
-                                    Layout.fillWidth: true
+                                if (eventPoint.event.device.type === PointerDevice.TouchScreen
+                                        | eventPoint.event.device.type === PointerDevice.Stylus) {
+                                    listView.interactive = true
+                                }
 
-                                    SkrLabel {
-                                        id: titleLabel
+                                priv.currentTreeItemId = model.treeItemId
+                                priv.currentProjectId = model.projectId
+                                listView.currentIndex = model.index
+                                swipeDelegate.forceActiveFocus()
+                                eventPoint.accepted = true
+                            }
 
-                                        Layout.topMargin: 2
-                                        Layout.leftMargin: 4
-                                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                        activeFocusOnTab: false
-                                        font.bold: model.projectIsActive
-                                                   && model.indent === -1 ? true : false
-                                        text: model.indent === 0 ? model.projectName : model.title
-                                        elide: Text.ElideRight
+                            onDoubleTapped: {
 
-                                        Layout.fillWidth: true
+                                if (draggableContent.dragging) {
+                                    eventPoint.accepted = false
+                                    return
+                                }
+                                if (eventPoint.event.device.type === PointerDevice.Mouse) {
+                                    listView.interactive = false
+                                }
+
+                                if (eventPoint.event.device.type === PointerDevice.TouchScreen
+                                        | eventPoint.event.device.type === PointerDevice.Stylus) {
+                                    listView.interactive = true
+                                }
+
+                                //console.log("double tapped")
+                                priv.currentTreeItemId = model.treeItemId
+                                priv.currentProjectId = model.projectId
+                                listView.currentIndex = model.index
+                                openDocumentAction.trigger()
+                                eventPoint.accepted = true
+                            }
+
+                            //                            onLongPressed: {
+                            //                                // needed to activate the grab handler
+                            //                                priv.currentTreeItemId = model.treeItemId
+                            //                                priv.currentProjectId = model.projectId
+                            //                                if (root.dragDropEnabled) {
+                            //                                    enabled = false
+                            //                                }
+                            //                            }
+                            onGrabChanged: {
+                                point.accepted = false
+                            }
+                            grabPermissions: PointerHandler.TakeOverForbidden
+                        }
+
+                        TapHandler {
+                            id: rightClickTapHandler
+                            acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                            acceptedButtons: Qt.RightButton
+                            onTapped: {
+                                listView.interactive = eventPoint.event.device.type
+                                        === PointerDevice.Mouse
+
+                                //console.log("right clicked")
+                                if (loader_menu.active) {
+                                    if (loader_menu.item.visible) {
+                                        loader_menu.item.close()
+                                        return
+                                    }
+                                }
+
+                                priv.currentTreeItemId = model.treeItemId
+                                priv.currentProjectId = model.projectId
+
+                                listView.currentIndex = model.index
+
+                                loader_menu.active = true
+                                loader_menu.item.popup(content,
+                                                       eventPoint.position.x,
+                                                       eventPoint.position.y)
+                                eventPoint.accepted = true
+                            }
+                            grabPermissions: PointerHandler.TakeOverForbidden
+                        }
+                        TapHandler {
+                            id: middleClickTapHandler
+                            acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                            acceptedButtons: Qt.MiddleButton
+                            onTapped: {
+                                listView.interactive = eventPoint.event.device.type
+                                        === PointerDevice.Mouse
+                                priv.currentTreeItemId = model.treeItemId
+                                priv.currentProjectId = model.projectId
+                                listView.currentIndex = model.index
+                                swipeDelegate.forceActiveFocus()
+                                openDocumentInAnotherViewAction.trigger()
+                                eventPoint.accepted = true
+                            }
+                        }
+
+                        /// without MouseArea, it breaks while dragging and scrolling:
+                        MouseArea {
+                            anchors.fill: parent
+                            acceptedButtons: Qt.NoButton
+                            onWheel: {
+                                listView.interactive = false
+                                listView.flick(0, wheel.angleDelta.y * 50)
+                                wheel.accepted = true
+                            }
+
+                            enabled: listView.interactive === false
+                        }
+
+                        //---------------------------------------------------------
+                        //------------------------------------------------
+                        //---------------------------------------------------------
+                        contentItem: RowLayout {
+                            id: rowLayout3
+                            anchors.fill: parent
+
+                            //---------------------------------------------------------
+                            //--------Title----------------------------------------
+                            //---------------------------------------------------------
+                            Item {
+                                id: titleBox
+                                clip: true
+                                //Layout.minimumWidth: 50
+                                Layout.preferredWidth: 200
+                                //Layout.maximumWidth: 150
+                                Layout.fillHeight: true
+
+                                //Layout.fillWidth: true
+                                RowLayout {
+                                    id: rowLayout
+                                    anchors.fill: parent
+                                    spacing: 2
+
+                                    Rectangle {
+                                        id: currentItemIndicator
+                                        color: listView.currentIndex
+                                               === model.index ? "lightsteelblue" : "transparent"
+                                        Layout.fillHeight: true
+                                        Layout.preferredWidth: 5
+                                        //visible: listView.currentIndex === model.index
                                     }
 
-                                    SkrTextField {
-                                        id: labelTextField
-                                        visible: false
-
-                                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                    ColumnLayout {
+                                        id: columnLayout2
+                                        spacing: 1
+                                        Layout.fillHeight: true
                                         Layout.fillWidth: true
-                                        text: labelLabel.text
-                                        maximumLength: 50
-
-                                        placeholderText: qsTr("Enter label")
-
-                                        onEditingFinished: {
-                                            console.log("editing label finished")
-                                            model.label = text
-                                            titleBox.state = ""
-                                        }
-
-                                        //Keys.priority: Keys.AfterItem
-                                        Keys.onShortcutOverride: event.accepted
-                                                                 = (event.key === Qt.Key_Escape)
-                                        Keys.onPressed: {
-                                            if (event.key === Qt.Key_Return) {
-                                                console.log("Return key pressed title")
-                                                editingFinished()
-                                                event.accepted = true
-                                            }
-                                            if ((event.modifiers & Qt.CtrlModifier)
-                                                    && event.key === Qt.Key_Return) {
-                                                console.log("Ctrl Return key pressed title")
-                                                editingFinished()
-                                                event.accepted = true
-                                            }
-                                            if (event.key === Qt.Key_Escape) {
-                                                console.log("Escape key pressed title")
-                                                delegateRoot.state = ""
-                                                event.accepted = true
-                                            }
-                                        }
-                                    }
-
-                                    SkrTextField {
-                                        id: titleTextField
-                                        visible: false
-
-                                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                        Layout.fillWidth: true
-                                        text: titleLabel.text
-                                        maximumLength: 50
-
-                                        placeholderText: qsTr("Enter name")
-
-                                        onEditingFinished: {
-
-                                            console.log("editing finished")
-                                            if (model.indent === 0) {
-                                                //project item
-                                                model.projectName = text
-                                            } else {
-                                                model.title = text
-                                            }
-
-                                            titleBox.state = ""
-                                        }
-
-                                        //Keys.priority: Keys.AfterItem
-                                        Keys.onShortcutOverride: event.accepted
-                                                                 = (event.key === Qt.Key_Escape)
-                                        Keys.onPressed: {
-                                            if (event.key === Qt.Key_Return) {
-                                                console.log("Return key pressed title")
-                                                editingFinished()
-                                                event.accepted = true
-                                            }
-                                            if ((event.modifiers & Qt.CtrlModifier)
-                                                    && event.key === Qt.Key_Return) {
-                                                console.log("Ctrl Return key pressed title")
-                                                editingFinished()
-                                                event.accepted = true
-                                            }
-                                            if (event.key === Qt.Key_Escape) {
-                                                console.log("Escape key pressed title")
-                                                titleBox.state = ""
-                                                event.accepted = true
-                                            }
-                                        }
-                                    }
-
-                                    RowLayout {
-                                        id: labelLayout
-                                        Layout.fillWidth: true
-                                        Layout.leftMargin: 5
-
-                                        ListItemAttributes {
-                                            id: attributes
-                                            treeItemId: model.treeItemId
-                                            projectId: model.projectId
-                                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                            Layout.leftMargin: 4
-                                            Layout.bottomMargin: 2
-                                        }
 
                                         SkrLabel {
-                                            id: labelLabel
+                                            id: titleLabel
+
+                                            Layout.topMargin: 2
+                                            Layout.leftMargin: 4
+                                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                             activeFocusOnTab: false
-                                            text: model.label === undefined ? "" : model.label
-                                            Layout.bottomMargin: 2
-                                            Layout.rightMargin: 4
-                                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                            font.bold: model.projectIsActive
+                                                       && model.indent === -1 ? true : false
+                                            text: model.indent
+                                                  === 0 ? model.projectName : model.title
                                             elide: Text.ElideRight
-                                            visible: text.length === 0 ? false : true
-                                            font.italic: true
-                                            horizontalAlignment: Qt.AlignRight
+
                                             Layout.fillWidth: true
                                         }
+
+                                        SkrTextField {
+                                            id: labelTextField
+                                            visible: false
+
+                                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                            Layout.fillWidth: true
+                                            text: labelLabel.text
+                                            maximumLength: 50
+
+                                            placeholderText: qsTr("Enter label")
+
+                                            onEditingFinished: {
+                                                console.log("editing label finished")
+                                                model.label = text
+                                                titleBox.state = ""
+                                            }
+
+                                            //Keys.priority: Keys.AfterItem
+                                            Keys.onShortcutOverride: event.accepted
+                                                                     = (event.key === Qt.Key_Escape)
+                                            Keys.onPressed: {
+                                                if (event.key === Qt.Key_Return) {
+                                                    console.log("Return key pressed title")
+                                                    editingFinished()
+                                                    event.accepted = true
+                                                }
+                                                if ((event.modifiers & Qt.CtrlModifier)
+                                                        && event.key === Qt.Key_Return) {
+                                                    console.log("Ctrl Return key pressed title")
+                                                    editingFinished()
+                                                    event.accepted = true
+                                                }
+                                                if (event.key === Qt.Key_Escape) {
+                                                    console.log("Escape key pressed title")
+                                                    swipeDelegate.state = ""
+                                                    event.accepted = true
+                                                }
+                                            }
+                                        }
+
+                                        SkrTextField {
+                                            id: titleTextField
+                                            visible: false
+
+                                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                            Layout.fillWidth: true
+                                            text: titleLabel.text
+                                            maximumLength: 50
+
+                                            placeholderText: qsTr("Enter name")
+
+                                            onEditingFinished: {
+
+                                                console.log("editing finished")
+                                                if (model.indent === 0) {
+                                                    //project item
+                                                    model.projectName = text
+                                                } else {
+                                                    model.title = text
+                                                }
+
+                                                titleBox.state = ""
+                                            }
+
+                                            //Keys.priority: Keys.AfterItem
+                                            Keys.onShortcutOverride: event.accepted
+                                                                     = (event.key === Qt.Key_Escape)
+                                            Keys.onPressed: {
+                                                if (event.key === Qt.Key_Return) {
+                                                    console.log("Return key pressed title")
+                                                    editingFinished()
+                                                    event.accepted = true
+                                                }
+                                                if ((event.modifiers & Qt.CtrlModifier)
+                                                        && event.key === Qt.Key_Return) {
+                                                    console.log("Ctrl Return key pressed title")
+                                                    editingFinished()
+                                                    event.accepted = true
+                                                }
+                                                if (event.key === Qt.Key_Escape) {
+                                                    console.log("Escape key pressed title")
+                                                    titleBox.state = ""
+                                                    event.accepted = true
+                                                }
+                                            }
+                                        }
+
+                                        RowLayout {
+                                            id: labelLayout
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 5
+
+                                            ListItemAttributes {
+                                                id: attributes
+                                                treeItemId: model.treeItemId
+                                                projectId: model.projectId
+                                                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                                Layout.leftMargin: 4
+                                                Layout.bottomMargin: 2
+                                            }
+
+                                            SkrLabel {
+                                                id: labelLabel
+                                                activeFocusOnTab: false
+                                                text: model.label === undefined ? "" : model.label
+                                                Layout.bottomMargin: 2
+                                                Layout.rightMargin: 4
+                                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                                elide: Text.ElideRight
+                                                visible: text.length === 0 ? false : true
+                                                font.italic: true
+                                                horizontalAlignment: Qt.AlignRight
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        id: coloredIndicator
+
+                                        radius: 10
+                                        Layout.fillHeight: true
+                                        Layout.preferredWidth: moveHoverHandler.hovered ? 30 : 2
+                                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+
+                                        color: model.indent === 0 ? Material.color(
+                                                                        Material.Indigo) : (model.indent === 1 ? Material.color(Material.LightBlue) : (model.indent === 2 ? Material.color(Material.LightGreen) : (model.indent === 3 ? Material.color(Material.Amber) : (model.indent === 4 ? Material.color(Material.DeepOrange) : Material.color(Material.Teal)))))
+
+//                                        MouseArea {
+//                                                anchors.fill: parent
+//                                                cursorShape: Qt.PointingHandCursor
+//                                                hoverEnabled: true
+//                                                acceptedButtons: Qt.NoButton
+
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            visible: moveHoverHandler.hovered
+
+                                            Repeater {
+
+                                                model: 8
+
+                                                Rectangle {
+                                                    Layout.preferredHeight: 1
+                                                    Layout.preferredWidth: 15
+                                                    Layout.alignment: Qt.AlignHCenter
+
+                                                    color: SkrTheme.buttonBackground
+                                                }
+                                            }
+
+
+                                        }
+//                                        }
+
+
+
+
+                                        DragHandler {
+                                            id: mouseDragHandler
+                                            acceptedDevices: PointerDevice.Mouse
+                                            target: draggableContent
+
+                                            //xAxis.enabled: false
+                                            //grabPermissions: PointerHandler.TakeOverForbidden
+                                            onActiveChanged: {
+                                                console.log("onActiveChanged",
+                                                            active)
+                                                if (active) {
+                                                    listView.interactive = false
+                                                    moveSourceInt = draggableContent.visualIndex
+                                                    moveSourceTreeItemId
+                                                            = draggableContent.treeItemId
+                                                    moveSourceProjectId = draggableContent.projectId
+                                                    priv.dragging = true
+                                                    cancelDragTimer.stop()
+                                                } else {
+                                                    cancelDragTimer.stop()
+                                                    priv.dragging = false
+                                                    draggableContent.dragging = false
+                                                    draggableContent.Drag.drop()
+
+                                                    proxyModel.invalidate()
+                                                }
+                                            }
+                                            enabled: true
+
+                                            onCanceled: {
+                                                console.log("onCanceled")
+                                                cancelDragTimer.stop()
+                                                priv.dragging = false
+                                                draggableContent.dragging = false
+                                            }
+
+                                            grabPermissions: PointerHandler.CanTakeOverFromAnything
+                                        }
+
+                                        DragHandler {
+                                            id: touchDragHandler
+                                            acceptedDevices: PointerDevice.TouchScreen
+                                                             | PointerDevice.Stylus
+                                            target: draggableContent
+
+                                            //xAxis.enabled: false
+                                            //grabPermissions: PointerHandler.TakeOverForbidden
+                                            onActiveChanged: {
+                                                if (active) {
+                                                    listView.interactive = false
+                                                    moveSourceInt = draggableContent.visualIndex
+                                                    moveSourceTreeItemId
+                                                            = draggableContent.treeItemId
+                                                    moveSourceProjectId = draggableContent.projectId
+                                                    priv.dragging = true
+                                                    cancelDragTimer.stop()
+                                                } else {
+                                                    listView.interactive = true
+                                                    cancelDragTimer.stop()
+                                                    priv.dragging = false
+                                                    draggableContent.dragging = false
+                                                    draggableContent.Drag.drop()
+                                                    proxyModel.invalidate()
+                                                }
+                                            }
+                                            enabled: draggableContent.dragging
+
+                                            onCanceled: {
+                                                cancelDragTimer.stop()
+                                                priv.dragging = false
+                                                draggableContent.dragging = false
+                                            }
+                                            grabPermissions: PointerHandler.CanTakeOverFromItems | PointerHandler.CanTakeOverFromAnything
+                                        }
+
+                                        TapHandler {
+                                            acceptedDevices: PointerDevice.TouchScreen
+                                                             | PointerDevice.Stylus
+
+                                            onLongPressed: {
+
+                                                // needed to activate the grab handler
+
+                                                //                        if(draggableContent.dragging){
+                                                //                            eventPoint.accepted = false
+                                                //                            return
+                                                //                        }
+                                                draggableContent.dragging = true
+                                                listView.interactive = false
+                                                cancelDragTimer.start()
+                                                priv.selecting = false
+                                            }
+                                        }
+                                    }
+
+                                    HoverHandler {
+                                        id: moveHoverHandler
+
+
                                     }
                                 }
 
-                                Rectangle {
-                                    Layout.fillHeight: true
-                                    Layout.preferredWidth: 2
-                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                states: [
+                                    State {
+                                        name: "edit_name"
+                                        PropertyChanges {
+                                            target: priv
+                                            renaming: true
+                                        }
+                                        PropertyChanges {
+                                            target: menuButton
+                                            visible: false
+                                        }
+                                        PropertyChanges {
+                                            target: titleLabel
+                                            visible: false
+                                        }
+                                        PropertyChanges {
+                                            target: labelLabel
+                                            visible: false
+                                        }
+                                        PropertyChanges {
+                                            target: titleTextField
+                                            visible: true
+                                        }
+                                        PropertyChanges {
+                                            target: labelTextField
+                                            visible: false
+                                        }
+                                    },
+                                    State {
+                                        name: "edit_label"
+                                        PropertyChanges {
+                                            target: priv
+                                            renaming: true
+                                        }
+                                        PropertyChanges {
+                                            target: menuButton
+                                            visible: false
+                                        }
+                                        PropertyChanges {
+                                            target: titleLabel
+                                            visible: false
+                                        }
+                                        PropertyChanges {
+                                            target: labelLabel
+                                            visible: false
+                                        }
+                                        PropertyChanges {
+                                            target: titleTextField
+                                            visible: false
+                                        }
+                                        PropertyChanges {
+                                            target: labelTextField
+                                            visible: true
+                                        }
+                                    }
+                                ]
+                            }
 
-                                    color: model.indent === 0 ? Material.color(
-                                                                    Material.Indigo) : (model.indent === 1 ? Material.color(Material.LightBlue) : (model.indent === 2 ? Material.color(Material.LightGreen) : (model.indent === 3 ? Material.color(Material.Amber) : (model.indent === 4 ? Material.color(Material.DeepOrange) : Material.color(Material.Teal)))))
+                            //------------------------------------------------------
+                            //--------Outline--------------------------------------
+                            //------------------------------------------------------
+                            Item {
+                                id: outlineBox
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 100
+
+                                //Layout.maximumWidth: 600
+                                property var writingZone: noteWritingZoneLoader.item
+
+                                onWidthChanged: {
+                                    if (width === 50
+                                            && Component.status === Component.Ready) {
+                                        SkrSettings.overviewTreeSettings.outlineBoxVisible = false
+                                    }
+                                }
+                                visible: SkrSettings.overviewTreeSettings.outlineBoxVisible
+
+                                RowLayout {
+                                    anchors.fill: parent
+
+                                    Rectangle {
+                                        Layout.preferredWidth: 1
+                                        Layout.preferredHeight: content.height / 2
+                                        Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                        gradient: Gradient {
+                                            orientation: Qt.Vertical
+                                            GradientStop {
+                                                position: 0.00
+                                                color: "transparent"
+                                            }
+                                            GradientStop {
+                                                position: 0.30
+                                                color: SkrTheme.divider
+                                            }
+                                            GradientStop {
+                                                position: 0.70
+                                                color: SkrTheme.divider
+                                            }
+                                            GradientStop {
+                                                position: 1.00
+                                                color: "transparent"
+                                            }
+                                        }
+                                    }
+
+                                    Component {
+                                        id: noteWritingZoneComponent
+
+                                        WritingZone {
+                                            id: writingZone
+
+                                            property string pageType: model.type
+                                            clip: true
+                                            projectId: model.projectId
+                                            treeItemId: model.treeItemId
+                                            spellCheckerKilled: true
+                                            leftScrollItemVisible: false
+                                            textArea.placeholderText: qsTr("Outline")
+
+                                            textPointSize: SkrSettings.overviewTreeOutlineSettings.textPointSize
+                                            textFontFamily: SkrSettings.overviewTreeOutlineSettings.textFontFamily
+                                            textIndent: SkrSettings.overviewTreeOutlineSettings.textIndent
+                                            textTopMargin: SkrSettings.overviewTreeOutlineSettings.textTopMargin
+
+                                            stretch: true
+
+                                            textAreaStyleBackgroundColor: SkrTheme.secondaryTextAreaBackground
+                                            textAreaStyleForegroundColor: SkrTheme.secondaryTextAreaForeground
+                                            paneStyleBackgroundColor: SkrTheme.listItemBackground
+                                            textAreaStyleAccentColor: SkrTheme.accent
+
+                                            Component.onCompleted: {
+                                                openOutline(model.projectId,
+                                                            model.treeItemId)
+                                            }
+
+                                            // project to be closed :
+                                            Connections {
+                                                target: skrData.projectHub()
+                                                function onProjectToBeClosed(projectId) {
+
+                                                    if (projectId === currentProjectId) {
+                                                        // save
+                                                        writingZone.clearNoteWritingZone()
+                                                    }
+                                                }
+                                            }
+
+                                            function clearNoteWritingZone() {
+                                                if (treeItemId !== -2
+                                                        && projectId !== -2) {
+                                                    contentSaveTimer.stop()
+                                                    saveContent()
+                                                    saveCurrentPaperCursorPositionAndYTimer.stop()
+                                                    saveCurrentPaperCursorPositionAndY()
+                                                    var uniqueDocumentReference = projectId + "_"
+                                                            + treeItemId + "_secondary"
+                                                    skrTextBridge.unsubscribeTextDocument(
+                                                                uniqueDocumentReference,
+                                                                writingZone.textArea.objectName,
+                                                                writingZone.textArea.textDocument)
+                                                }
+
+                                                writingZone.setCursorPosition(0)
+                                                writingZone.clear()
+                                            }
+
+                                            //---------------------------------------------------------
+                                            QtObject {
+                                                id: documentPrivate
+                                                property bool contentSaveTimerAllowedToStart: true
+                                                property bool saveCurrentPaperCursorPositionAndYTimerAllowedToStart: true
+                                            }
+
+                                            //---------------------------------------------------------
+                                            function openOutline(_projectId, _treeItemId) {
+                                                // save current
+                                                if (projectId !== _projectId
+                                                        && treeItemId !== _treeItemId) {
+                                                    //meaning it hasn't just used the constructor
+                                                    clearNoteWritingZone()
+                                                }
+
+                                                documentPrivate.contentSaveTimerAllowedToStart
+                                                        = false
+                                                documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = false
+
+                                                //                                            treeItemId = _treeItemId
+                                                //                                            projectId = _projectId
+
+                                                //console.log("opening note :", _projectId, _treeItemId)
+                                                writingZone.setCursorPosition(0)
+                                                writingZone.text = skrRootItem.cleanUpHtml(
+                                                            skrData.treeHub(
+                                                                ).getSecondaryContent(
+                                                                _projectId,
+                                                                _treeItemId))
+
+                                                var uniqueDocumentReference = _projectId + "_"
+                                                        + _treeItemId + "_secondary"
+                                                skrTextBridge.subscribeTextDocument(
+                                                            uniqueDocumentReference,
+                                                            writingZone.textArea.objectName,
+                                                            writingZone.textArea.textDocument)
+
+                                                // apply format
+                                                writingZone.documentHandler.indentEverywhere = SkrSettings.overviewTreeOutlineSettings.textIndent
+                                                writingZone.documentHandler.topMarginEverywhere = SkrSettings.overviewTreeOutlineSettings.textTopMargin
+
+                                                //restoreCurrentPaperCursorPositionAndY()
+
+                                                //writingZone.forceActiveFocus()
+                                                //save :
+                                                skrUserSettings.setProjectSetting(
+                                                            projectId,
+                                                            "overViewTreeNoteCurrentTreeItemId",
+                                                            treeItemId)
+
+                                                // start the timer for automatic position saving
+                                                documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = true
+                                                if (!saveCurrentPaperCursorPositionAndYTimer.running) {
+                                                    saveCurrentPaperCursorPositionAndYTimer.start()
+                                                }
+                                                documentPrivate.contentSaveTimerAllowedToStart
+                                                        = true
+
+                                                determineModifiableTimer.start()
+                                            }
+
+                                            //---------------------------------------------------------
+                                            // modifiable :
+                                            property bool isModifiable: true
+
+                                            Connections {
+                                                target: skrData.treePropertyHub(
+                                                            )
+                                                function onPropertyChanged(_projectId, propertyId, _treeItemId, name, value) {
+                                                    if (_projectId === writingZone.projectId
+                                                            && _treeItemId
+                                                            === writingZone.treeItemId) {
+
+                                                        if (name === "modifiable") {
+                                                            determineModifiable(
+                                                                        )
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            Timer {
+                                                id: determineModifiableTimer
+                                                repeat: false
+                                                interval: 200
+                                                onTriggered: {
+                                                    determineModifiable()
+                                                }
+                                            }
+
+                                            function determineModifiable() {
+
+                                                isModifiable = skrData.treePropertyHub(
+                                                            ).getProperty(
+                                                            writingZone.projectId,
+                                                            writingZone.treeItemId,
+                                                            "modifiable",
+                                                            "true") === "true"
+
+                                                if (!isModifiable
+                                                        !== writingZone.textArea.readOnly) {
+                                                    saveCurrentPaperCursorPositionAndY()
+                                                    writingZone.textArea.readOnly = !isModifiable
+                                                    restoreCurrentPaperCursorPositionAndY()
+                                                }
+                                            }
+
+                                            //--------------------------------------------------------
+                                            function restoreCurrentPaperCursorPositionAndY() {
+
+                                                //get cursor position
+                                                var position = skrUserSettings.getFromProjectSettingHash(
+                                                            projectId,
+                                                            "overViewTreeNotePositionHash",
+                                                            treeItemId, 0)
+                                                //get Y
+                                                var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
+                                                            projectId,
+                                                            "overViewTreeNoteYHash",
+                                                            treeItemId, 0)
+
+                                                // set positions :
+                                                if (position > writingZone.textArea.length) {
+                                                    position = writingZone.textArea.length
+                                                }
+
+                                                //                                            writingZone.setCursorPosition(position)
+                                                writingZoneFlickableContentYTimer.y = visibleAreaY
+                                                writingZoneFlickableContentYTimer.start()
+                                            }
+
+                                            Timer {
+
+                                                property int y: 0
+                                                id: writingZoneFlickableContentYTimer
+                                                repeat: false
+                                                interval: 50
+                                                onTriggered: {
+                                                    writingZone.flickable.contentY = y
+                                                }
+                                            }
+
+                                            function saveCurrentPaperCursorPositionAndY() {
+
+                                                if (writingZone.treeItemId !== -2
+                                                        || writingZone.projectId !== -2) {
+
+                                                    //save cursor position of current document :
+                                                    var previousCursorPosition = writingZone.textArea.cursorPosition
+                                                    //console.log("previousCursorPosition", previousCursorPosition)
+                                                    var previousY = writingZone.flickable.contentY
+                                                    //console.log("previousContentY", previousY)
+                                                    skrUserSettings.insertInProjectSettingHash(
+                                                                projectId,
+                                                                "overViewTreeNotePositionHash",
+                                                                treeItemId,
+                                                                previousCursorPosition)
+                                                    skrUserSettings.insertInProjectSettingHash(
+                                                                projectId,
+                                                                "overViewTreeNoteYHash",
+                                                                treeItemId,
+                                                                previousY)
+                                                }
+                                            }
+
+                                            Timer {
+                                                id: saveCurrentPaperCursorPositionAndYTimer
+                                                repeat: true
+                                                interval: 10000
+                                                onTriggered: saveCurrentPaperCursorPositionAndY()
+                                            }
+
+                                            //------------------------------------------------------------
+                                            //------------------------------------------------------------
+                                            //------------------------------------------------------------
+
+                                            // save content once after writing:
+                                            textArea.onTextChanged: {
+
+                                                //avoid first text change, when blank HTML is inserted
+                                                if (writingZone.textArea.length === 0
+                                                        && skrData.projectHub(
+                                                            ).isProjectNotModifiedOnce(
+                                                            projectId)) {
+                                                    return
+                                                }
+
+                                                if (contentSaveTimer.running) {
+                                                    contentSaveTimer.stop()
+                                                }
+                                                if (documentPrivate.contentSaveTimerAllowedToStart) {
+                                                    contentSaveTimer.start()
+                                                }
+                                            }
+                                            Timer {
+                                                id: contentSaveTimer
+                                                repeat: false
+                                                interval: 200
+                                                onTriggered: saveContent()
+                                            }
+
+                                            function saveContent() {
+                                                if (model.treeItemId === -2
+                                                        || model.projectId === -2) {
+                                                    return
+                                                }
+
+                                                //console.log("saving note")
+                                                var result = skrData.treeHub(
+                                                            ).setSecondaryContent(
+                                                            model.projectId,
+                                                            model.treeItemId,
+                                                            skrRootItem.cleanUpHtml(
+                                                                writingZone.text))
+                                                if (!result.success) {
+                                                    console.log("saving note failed",
+                                                                model.projectId,
+                                                                model.treeItemId)
+                                                } else {
+
+                                                    //console.log("saving note success", projectId, treeItemId)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Loader {
+                                        id: noteWritingZoneLoader
+                                        sourceComponent: noteWritingZoneComponent
+                                        asynchronous: false
+
+                                        Layout.fillHeight: true
+                                        Layout.fillWidth: true
+                                    }
                                 }
                             }
 
-                            states: [
-                                State {
-                                    name: "edit_name"
-                                    PropertyChanges {
-                                        target: priv
-                                        renaming: true
-                                    }
-                                    PropertyChanges {
-                                        target: menuButton
-                                        visible: false
-                                    }
-                                    PropertyChanges {
-                                        target: titleLabel
-                                        visible: false
-                                    }
-                                    PropertyChanges {
-                                        target: labelLabel
-                                        visible: false
-                                    }
-                                    PropertyChanges {
-                                        target: titleTextField
-                                        visible: true
-                                    }
-                                    PropertyChanges {
-                                        target: labelTextField
-                                        visible: false
-                                    }
-                                },
-                                State {
-                                    name: "edit_label"
-                                    PropertyChanges {
-                                        target: priv
-                                        renaming: true
-                                    }
-                                    PropertyChanges {
-                                        target: menuButton
-                                        visible: false
-                                    }
-                                    PropertyChanges {
-                                        target: titleLabel
-                                        visible: false
-                                    }
-                                    PropertyChanges {
-                                        target: labelLabel
-                                        visible: false
-                                    }
-                                    PropertyChanges {
-                                        target: titleTextField
-                                        visible: false
-                                    }
-                                    PropertyChanges {
-                                        target: labelTextField
-                                        visible: true
-                                    }
-                                }
-                            ]
-                        }
+                            //-----------------------------------------------------------
+                            //-------------- Notes :---------------------------------------------
+                            //-----------------------------------------------------------
 
-                        //------------------------------------------------------
-                        //--------Outline--------------------------------------
-                        //------------------------------------------------------
-                        Item {
-                            id: outlineBox
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
-                            Layout.minimumWidth: 100
+                            //                        RowLayout{
+                            //                            id: noteBox
+                            //                            Layout.minimumWidth: 50
+                            //                            Layout.maximumWidth: 400
+                            //                            Layout.fillHeight: true
+                            //                            Layout.fillWidth: true
 
-                            //Layout.maximumWidth: 600
-                            property var writingZone: noteWritingZoneLoader.item
+                            //                            onWidthChanged: {
+                            //                                if(width === 50 && Component.status === Component.Ready){
+                            //                                    SkrSettings.overviewTreeSettings.noteBoxVisible = false
+                            //                                }
+                            //                            }
+                            //                            visible: SkrSettings.overviewTreeSettings.noteBoxVisible
 
-                            onWidthChanged: {
-                                if (width === 50
-                                        && Component.status === Component.Ready) {
-                                    SkrSettings.overviewTreeSettings.outlineBoxVisible = false
-                                }
-                            }
-                            visible: SkrSettings.overviewTreeSettings.outlineBoxVisible
+                            //                            Rectangle {
+                            //                                Layout.preferredWidth: 1
+                            //                                Layout.preferredHeight: content.height / 2
+                            //                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                            //                                gradient: Gradient {
+                            //                                    orientation: Qt.Vertical
+                            //                                    GradientStop {
+                            //                                        position: 0.00;
+                            //                                        color: "transparent";
+                            //                                    }
+                            //                                    GradientStop {
+                            //                                        position: 0.30;
+                            //                                        color: SkrTheme.divider;
+                            //                                    }
+                            //                                    GradientStop {
+                            //                                        position: 0.70;
+                            //                                        color: SkrTheme.divider;
+                            //                                    }
+                            //                                    GradientStop {
+                            //                                        position: 1.00;
+                            //                                        color: "transparent";
+                            //                                    }
+                            //                                }
 
+                            //                            }
+
+                            //                            NotePad {
+                            //                                id: notePad
+                            //                                Layout.fillWidth: true
+                            //                                Layout.fillHeight: true
+
+                            //                                Layout.alignment: Qt.AlignVCenter
+
+                            //                                minimalMode: true
+                            //                                projectId: model.projectId
+                            //                                sheetId: model.treeItemId
+                            //                            }
+
+                            //                        }
+
+                            //-----------------------------------------------------------
+                            //---------------Tags :---------------------------------------------
+                            //-----------------------------------------------------------
                             RowLayout {
-                                anchors.fill: parent
+                                id: tagBox
+                                Layout.minimumWidth: 50
+                                Layout.maximumWidth: 400
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
+
+                                onWidthChanged: {
+                                    if (width === 50
+                                            && Component.status === Component.Ready) {
+                                        SkrSettings.overviewTreeSettings.tagBoxVisible = false
+                                    }
+                                }
+                                visible: SkrSettings.overviewTreeSettings.tagBoxVisible
 
                                 Rectangle {
                                     Layout.preferredWidth: 1
@@ -781,707 +1417,317 @@ OverviewTreeForm {
                                     }
                                 }
 
-                                Component {
-                                    id: noteWritingZoneComponent
+                                TagPad {
+                                    id: tagPad
 
-                                    WritingZone {
-                                        id: writingZone
-
-                                        property string pageType: model.type
-                                        clip: true
-                                        projectId: model.projectId
-                                        treeItemId: model.treeItemId
-                                        spellCheckerKilled: true
-                                        leftScrollItemVisible: false
-                                        textArea.placeholderText: qsTr(
-                                                                      "Outline")
-
-                                        textPointSize: SkrSettings.overviewTreeOutlineSettings.textPointSize
-                                        textFontFamily: SkrSettings.overviewTreeOutlineSettings.textFontFamily
-                                        textIndent: SkrSettings.overviewTreeOutlineSettings.textIndent
-                                        textTopMargin: SkrSettings.overviewTreeOutlineSettings.textTopMargin
-
-                                        stretch: true
-
-                                        textAreaStyleBackgroundColor: SkrTheme.secondaryTextAreaBackground
-                                        textAreaStyleForegroundColor: SkrTheme.secondaryTextAreaForeground
-                                        paneStyleBackgroundColor: SkrTheme.listItemBackground
-                                        textAreaStyleAccentColor: SkrTheme.accent
-
-                                        Component.onCompleted: {
-                                            openOutline(model.projectId,
-                                                        model.treeItemId)
-                                        }
-
-                                        // project to be closed :
-                                        Connections {
-                                            target: skrData.projectHub()
-                                            function onProjectToBeClosed(projectId) {
-
-                                                if (projectId === currentProjectId) {
-                                                    // save
-                                                    writingZone.clearNoteWritingZone()
-                                                }
-                                            }
-                                        }
-
-                                        function clearNoteWritingZone() {
-                                            if (treeItemId !== -2
-                                                    && projectId !== -2) {
-                                                contentSaveTimer.stop()
-                                                saveContent()
-                                                saveCurrentPaperCursorPositionAndYTimer.stop()
-                                                saveCurrentPaperCursorPositionAndY()
-                                                var uniqueDocumentReference = projectId + "_"
-                                                        + treeItemId + "_secondary"
-                                                skrTextBridge.unsubscribeTextDocument(
-                                                            uniqueDocumentReference,
-                                                            writingZone.textArea.objectName,
-                                                            writingZone.textArea.textDocument)
-                                            }
-
-                                            writingZone.setCursorPosition(0)
-                                            writingZone.clear()
-                                        }
-
-                                        //---------------------------------------------------------
-                                        QtObject {
-                                            id: documentPrivate
-                                            property bool contentSaveTimerAllowedToStart: true
-                                            property bool saveCurrentPaperCursorPositionAndYTimerAllowedToStart: true
-                                        }
-
-                                        //---------------------------------------------------------
-                                        function openOutline(_projectId, _treeItemId) {
-                                            // save current
-                                            if (projectId !== _projectId
-                                                    && treeItemId !== _treeItemId) {
-                                                //meaning it hasn't just used the constructor
-                                                clearNoteWritingZone()
-                                            }
-
-                                            documentPrivate.contentSaveTimerAllowedToStart = false
-                                            documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = false
-
-                                            //                                            treeItemId = _treeItemId
-                                            //                                            projectId = _projectId
-
-                                            //console.log("opening note :", _projectId, _treeItemId)
-                                            writingZone.setCursorPosition(0)
-                                            writingZone.text = skrRootItem.cleanUpHtml(
-                                                        skrData.treeHub(
-                                                            ).getSecondaryContent(
-                                                            _projectId,
-                                                            _treeItemId))
-
-                                            var uniqueDocumentReference = _projectId + "_"
-                                                    + _treeItemId + "_secondary"
-                                            skrTextBridge.subscribeTextDocument(
-                                                        uniqueDocumentReference,
-                                                        writingZone.textArea.objectName,
-                                                        writingZone.textArea.textDocument)
-
-                                            // apply format
-                                            writingZone.documentHandler.indentEverywhere = SkrSettings.overviewTreeOutlineSettings.textIndent
-                                            writingZone.documentHandler.topMarginEverywhere = SkrSettings.overviewTreeOutlineSettings.textTopMargin
-
-                                            //restoreCurrentPaperCursorPositionAndY()
-
-                                            //writingZone.forceActiveFocus()
-                                            //save :
-                                            skrUserSettings.setProjectSetting(
-                                                        projectId,
-                                                        "overViewTreeNoteCurrentTreeItemId",
-                                                        treeItemId)
-
-                                            // start the timer for automatic position saving
-                                            documentPrivate.saveCurrentPaperCursorPositionAndYTimerAllowedToStart = true
-                                            if (!saveCurrentPaperCursorPositionAndYTimer.running) {
-                                                saveCurrentPaperCursorPositionAndYTimer.start()
-                                            }
-                                            documentPrivate.contentSaveTimerAllowedToStart = true
-
-                                            determineModifiableTimer.start()
-                                        }
-
-                                        //---------------------------------------------------------
-                                        // modifiable :
-                                        property bool isModifiable: true
-
-                                        Connections {
-                                            target: skrData.treePropertyHub()
-                                            function onPropertyChanged(_projectId, propertyId, _treeItemId, name, value) {
-                                                if (_projectId === writingZone.projectId
-                                                        && _treeItemId === writingZone.treeItemId) {
-
-                                                    if (name === "modifiable") {
-                                                        determineModifiable()
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        Timer {
-                                            id: determineModifiableTimer
-                                            repeat: false
-                                            interval: 200
-                                            onTriggered: {
-                                                determineModifiable()
-                                            }
-                                        }
-
-                                        function determineModifiable() {
-
-                                            isModifiable = skrData.treePropertyHub(
-                                                        ).getProperty(
-                                                        writingZone.projectId,
-                                                        writingZone.treeItemId,
-                                                        "modifiable",
-                                                        "true") === "true"
-
-                                            if (!isModifiable !== writingZone.textArea.readOnly) {
-                                                saveCurrentPaperCursorPositionAndY()
-                                                writingZone.textArea.readOnly = !isModifiable
-                                                restoreCurrentPaperCursorPositionAndY()
-                                            }
-                                        }
-
-                                        //--------------------------------------------------------
-                                        function restoreCurrentPaperCursorPositionAndY() {
-
-                                            //get cursor position
-                                            var position = skrUserSettings.getFromProjectSettingHash(
-                                                        projectId,
-                                                        "overViewTreeNotePositionHash",
-                                                        treeItemId, 0)
-                                            //get Y
-                                            var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
-                                                        projectId,
-                                                        "overViewTreeNoteYHash",
-                                                        treeItemId, 0)
-
-                                            // set positions :
-                                            if (position > writingZone.textArea.length) {
-                                                position = writingZone.textArea.length
-                                            }
-
-                                            //                                            writingZone.setCursorPosition(position)
-                                            writingZoneFlickableContentYTimer.y = visibleAreaY
-                                            writingZoneFlickableContentYTimer.start()
-                                        }
-
-                                        Timer {
-
-                                            property int y: 0
-                                            id: writingZoneFlickableContentYTimer
-                                            repeat: false
-                                            interval: 50
-                                            onTriggered: {
-                                                writingZone.flickable.contentY = y
-                                            }
-                                        }
-
-                                        function saveCurrentPaperCursorPositionAndY() {
-
-                                            if (writingZone.treeItemId !== -2
-                                                    || writingZone.projectId !== -2) {
-
-                                                //save cursor position of current document :
-                                                var previousCursorPosition = writingZone.textArea.cursorPosition
-                                                //console.log("previousCursorPosition", previousCursorPosition)
-                                                var previousY = writingZone.flickable.contentY
-                                                //console.log("previousContentY", previousY)
-                                                skrUserSettings.insertInProjectSettingHash(
-                                                            projectId,
-                                                            "overViewTreeNotePositionHash",
-                                                            treeItemId,
-                                                            previousCursorPosition)
-                                                skrUserSettings.insertInProjectSettingHash(
-                                                            projectId,
-                                                            "overViewTreeNoteYHash",
-                                                            treeItemId,
-                                                            previousY)
-                                            }
-                                        }
-
-                                        Timer {
-                                            id: saveCurrentPaperCursorPositionAndYTimer
-                                            repeat: true
-                                            interval: 10000
-                                            onTriggered: saveCurrentPaperCursorPositionAndY()
-                                        }
-
-                                        //------------------------------------------------------------
-                                        //------------------------------------------------------------
-                                        //------------------------------------------------------------
-
-                                        // save content once after writing:
-                                        textArea.onTextChanged: {
-
-                                            //avoid first text change, when blank HTML is inserted
-                                            if (writingZone.textArea.length === 0
-                                                    && skrData.projectHub(
-                                                        ).isProjectNotModifiedOnce(
-                                                        projectId)) {
-                                                return
-                                            }
-
-                                            if (contentSaveTimer.running) {
-                                                contentSaveTimer.stop()
-                                            }
-                                            if (documentPrivate.contentSaveTimerAllowedToStart) {
-                                                contentSaveTimer.start()
-                                            }
-                                        }
-                                        Timer {
-                                            id: contentSaveTimer
-                                            repeat: false
-                                            interval: 200
-                                            onTriggered: saveContent()
-                                        }
-
-                                        function saveContent() {
-                                            if (model.treeItemId === -2
-                                                    || model.projectId === -2) {
-                                                return
-                                            }
-
-                                            //console.log("saving note")
-                                            var result = skrData.treeHub(
-                                                        ).setSecondaryContent(
-                                                        model.projectId,
-                                                        model.treeItemId,
-                                                        skrRootItem.cleanUpHtml(
-                                                            writingZone.text))
-                                            if (!result.success) {
-                                                console.log("saving note failed",
-                                                            model.projectId,
-                                                            model.treeItemId)
-                                            } else {
-
-                                                //console.log("saving note success", projectId, treeItemId)
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Loader {
-                                    id: noteWritingZoneLoader
-                                    sourceComponent: noteWritingZoneComponent
-                                    asynchronous: false
-
-                                    Layout.fillHeight: true
                                     Layout.fillWidth: true
-                                }
-                            }
-                        }
+                                    Layout.fillHeight: true
+                                    Layout.alignment: Qt.AlignVCenter
 
-                        //-----------------------------------------------------------
-                        //-------------- Notes :---------------------------------------------
-                        //-----------------------------------------------------------
+                                    minimalMode: true
+                                    projectId: model.projectId
+                                    treeItemId: model.treeItemId
 
-                        //                        RowLayout{
-                        //                            id: noteBox
-                        //                            Layout.minimumWidth: 50
-                        //                            Layout.maximumWidth: 400
-                        //                            Layout.fillHeight: true
-                        //                            Layout.fillWidth: true
-
-                        //                            onWidthChanged: {
-                        //                                if(width === 50 && Component.status === Component.Ready){
-                        //                                    SkrSettings.overviewTreeSettings.noteBoxVisible = false
-                        //                                }
-                        //                            }
-                        //                            visible: SkrSettings.overviewTreeSettings.noteBoxVisible
-
-                        //                            Rectangle {
-                        //                                Layout.preferredWidth: 1
-                        //                                Layout.preferredHeight: content.height / 2
-                        //                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                        //                                gradient: Gradient {
-                        //                                    orientation: Qt.Vertical
-                        //                                    GradientStop {
-                        //                                        position: 0.00;
-                        //                                        color: "transparent";
-                        //                                    }
-                        //                                    GradientStop {
-                        //                                        position: 0.30;
-                        //                                        color: SkrTheme.divider;
-                        //                                    }
-                        //                                    GradientStop {
-                        //                                        position: 0.70;
-                        //                                        color: SkrTheme.divider;
-                        //                                    }
-                        //                                    GradientStop {
-                        //                                        position: 1.00;
-                        //                                        color: "transparent";
-                        //                                    }
-                        //                                }
-
-                        //                            }
-
-                        //                            NotePad {
-                        //                                id: notePad
-                        //                                Layout.fillWidth: true
-                        //                                Layout.fillHeight: true
-
-                        //                                Layout.alignment: Qt.AlignVCenter
-
-                        //                                minimalMode: true
-                        //                                projectId: model.projectId
-                        //                                sheetId: model.treeItemId
-                        //                            }
-
-                        //                        }
-
-                        //-----------------------------------------------------------
-                        //---------------Tags :---------------------------------------------
-                        //-----------------------------------------------------------
-                        RowLayout {
-                            id: tagBox
-                            Layout.minimumWidth: 50
-                            Layout.maximumWidth: 400
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
-
-                            onWidthChanged: {
-                                if (width === 50
-                                        && Component.status === Component.Ready) {
-                                    SkrSettings.overviewTreeSettings.tagBoxVisible = false
-                                }
-                            }
-                            visible: SkrSettings.overviewTreeSettings.tagBoxVisible
-
-                            Rectangle {
-                                Layout.preferredWidth: 1
-                                Layout.preferredHeight: content.height / 2
-                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                                gradient: Gradient {
-                                    orientation: Qt.Vertical
-                                    GradientStop {
-                                        position: 0.00
-                                        color: "transparent"
+                                    //proxy model for tag list :
+                                    SKRSearchTagListProxyModel {
+                                        id: tagProxyModel
+                                        projectIdFilter: model.projectId
+                                        treeItemIdFilter: model.treeItemId
                                     }
-                                    GradientStop {
-                                        position: 0.30
-                                        color: SkrTheme.divider
-                                    }
-                                    GradientStop {
-                                        position: 0.70
-                                        color: SkrTheme.divider
-                                    }
-                                    GradientStop {
-                                        position: 1.00
-                                        color: "transparent"
-                                    }
+                                    tagListModel: tagProxyModel
                                 }
                             }
 
-                            TagPad {
-                                id: tagPad
-
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                Layout.alignment: Qt.AlignVCenter
-
-                                minimalMode: true
-                                projectId: model.projectId
-                                treeItemId: model.treeItemId
-
-                                //proxy model for tag list :
-                                SKRSearchTagListProxyModel {
-                                    id: tagProxyModel
-                                    projectIdFilter: model.projectId
-                                    treeItemIdFilter: model.treeItemId
-                                }
-                                tagListModel: tagProxyModel
-                            }
-                        }
-
-                        //-----------------------------------------------------------
-                        //---------------Counts :---------------------------------------------
-                        //-----------------------------------------------------------
-                        ColumnLayout {
-                            id: countBox
-                            visible: SkrSettings.overviewTreeSettings.characterCountBoxVisible
-                                     || SkrSettings.overviewTreeSettings.wordCountBoxVisible
-                            //Layout.minimumWidth: 50
-                            //Layout.maximumWidth: 100
-                            Layout.fillHeight: true
-                            Layout.fillWidth: false
-
+                            //-----------------------------------------------------------
+                            //---------------Counts :---------------------------------------------
+                            //-----------------------------------------------------------
                             ColumnLayout {
-                                id: characterCountLayout
+                                id: countBox
                                 visible: SkrSettings.overviewTreeSettings.characterCountBoxVisible
+                                         || SkrSettings.overviewTreeSettings.wordCountBoxVisible
+                                //Layout.minimumWidth: 50
+                                //Layout.maximumWidth: 100
                                 Layout.fillHeight: true
-                                Layout.fillWidth: true
+                                Layout.fillWidth: false
 
-                                SkrLabel {
-                                    id: characterCountLabel
+                                ColumnLayout {
+                                    id: characterCountLayout
+                                    visible: SkrSettings.overviewTreeSettings.characterCountBoxVisible
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
-                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                    text: qsTr("c: %1").arg(
-                                              skrRootItem.toLocaleIntString(
-                                                  model.charCount))
-                                    verticalAlignment: Qt.AlignVCenter
-                                }
-                                SkrLabel {
-                                    id: characterCountWithChildrenLabel
-                                    visible: model.hasChildren
-                                    Layout.fillHeight: true
-                                    Layout.fillWidth: true
-                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                    text: qsTr("all c: %1").arg(
-                                              skrRootItem.toLocaleIntString(
-                                                  model.charCountWithChildren))
-                                    verticalAlignment: Qt.AlignVCenter
-                                }
-                            }
 
-                            ColumnLayout {
-                                id: wordCountLayout
-                                visible: SkrSettings.overviewTreeSettings.wordCountBoxVisible
-                                Layout.fillHeight: true
-                                Layout.fillWidth: true
-
-                                SkrLabel {
-                                    id: wordCountLabel
-                                    Layout.fillHeight: true
-                                    Layout.fillWidth: true
-                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                    text: qsTr("w: %1").arg(
-                                              skrRootItem.toLocaleIntString(
-                                                  model.wordCount))
-                                    verticalAlignment: Qt.AlignVCenter
-                                }
-                                SkrLabel {
-                                    id: wordCountWithChildrenLabel
-                                    visible: model.hasChildren
-                                    Layout.fillHeight: true
-                                    Layout.fillWidth: true
-                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                    text: qsTr("all w: %1").arg(
-                                              skrRootItem.toLocaleIntString(
-                                                  model.wordCountWithChildren))
-                                    verticalAlignment: Qt.AlignVCenter
-                                }
-                            }
-                        }
-
-                        RowLayout {
-                            id: buttonsBox
-                            Layout.preferredWidth: 40
-                            visible: hoverHandler.hovered | draggableContent.isCurrent
-
-                            Rectangle {
-                                Layout.preferredWidth: 1
-                                Layout.preferredHeight: content.height / 2
-                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                                gradient: Gradient {
-                                    orientation: Qt.Vertical
-                                    GradientStop {
-                                        position: 0.00
-                                        color: "transparent"
+                                    SkrLabel {
+                                        id: characterCountLabel
+                                        Layout.fillHeight: true
+                                        Layout.fillWidth: true
+                                        Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+                                        text: qsTr("c: %1").arg(
+                                                  skrRootItem.toLocaleIntString(
+                                                      model.charCount))
+                                        verticalAlignment: Qt.AlignVCenter
                                     }
-                                    GradientStop {
-                                        position: 0.30
-                                        color: SkrTheme.divider
+                                    SkrLabel {
+                                        id: characterCountWithChildrenLabel
+                                        visible: model.hasChildren
+                                        Layout.fillHeight: true
+                                        Layout.fillWidth: true
+                                        Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+                                        text: qsTr("all c: %1").arg(
+                                                  skrRootItem.toLocaleIntString(
+                                                      model.charCountWithChildren))
+                                        verticalAlignment: Qt.AlignVCenter
                                     }
-                                    GradientStop {
-                                        position: 0.70
-                                        color: SkrTheme.divider
+                                }
+
+                                ColumnLayout {
+                                    id: wordCountLayout
+                                    visible: SkrSettings.overviewTreeSettings.wordCountBoxVisible
+                                    Layout.fillHeight: true
+                                    Layout.fillWidth: true
+
+                                    SkrLabel {
+                                        id: wordCountLabel
+                                        Layout.fillHeight: true
+                                        Layout.fillWidth: true
+                                        Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+                                        text: qsTr("w: %1").arg(
+                                                  skrRootItem.toLocaleIntString(
+                                                      model.wordCount))
+                                        verticalAlignment: Qt.AlignVCenter
                                     }
-                                    GradientStop {
-                                        position: 1.00
-                                        color: "transparent"
+                                    SkrLabel {
+                                        id: wordCountWithChildrenLabel
+                                        visible: model.hasChildren
+                                        Layout.fillHeight: true
+                                        Layout.fillWidth: true
+                                        Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+                                        text: qsTr("all w: %1").arg(
+                                                  skrRootItem.toLocaleIntString(
+                                                      model.wordCountWithChildren))
+                                        verticalAlignment: Qt.AlignVCenter
                                     }
                                 }
                             }
 
-                            ColumnLayout {
-                                Layout.preferredWidth: 30
+                            RowLayout {
+                                id: buttonsBox
+                                Layout.preferredWidth: 40
+                                visible: hoverHandler.hovered | draggableContent.isCurrent
 
-                                SkrToolButton {
-                                    id: menuButton
-                                    Layout.fillHeight: true
+                                Rectangle {
+                                    Layout.preferredWidth: 1
+                                    Layout.preferredHeight: content.height / 2
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                    gradient: Gradient {
+                                        orientation: Qt.Vertical
+                                        GradientStop {
+                                            position: 0.00
+                                            color: "transparent"
+                                        }
+                                        GradientStop {
+                                            position: 0.30
+                                            color: SkrTheme.divider
+                                        }
+                                        GradientStop {
+                                            position: 0.70
+                                            color: SkrTheme.divider
+                                        }
+                                        GradientStop {
+                                            position: 1.00
+                                            color: "transparent"
+                                        }
+                                    }
+                                }
+
+                                ColumnLayout {
                                     Layout.preferredWidth: 30
 
-                                    text: qsTr("Item menu")
-                                    icon.source: "qrc:///icons/backup/overflow-menu.svg"
-                                    focusPolicy: Qt.NoFocus
+                                    SkrToolButton {
+                                        id: menuButton
+                                        Layout.fillHeight: true
+                                        Layout.preferredWidth: 30
 
-                                    onClicked: {
-                                        priv.currentTreeItemId = model.treeItemId
-                                        priv.currentProjectId = model.projectId
-                                        contextMenuItemIndex = model.index
-                                        listView.currentIndex = model.index
-                                        delegateRoot.forceActiveFocus()
+                                        text: qsTr("Item menu")
+                                        icon.source: "qrc:///icons/backup/overflow-menu.svg"
+                                        focusPolicy: Qt.NoFocus
 
-                                        if (loader_menu.active) {
-                                            if (loader_menu.item.visible) {
-                                                loader_menu.item.close()
-                                                return
+                                        onClicked: {
+                                            priv.currentTreeItemId = model.treeItemId
+                                            priv.currentProjectId = model.projectId
+                                            listView.currentIndex = model.index
+                                            swipeDelegate.forceActiveFocus()
+
+                                            if (loader_menu.active) {
+                                                if (loader_menu.item.visible) {
+                                                    loader_menu.item.close()
+                                                    return
+                                                }
                                             }
+
+                                            loader_menu.active = true
+
+                                            loader_menu.item.popup(
+                                                        menuButton,
+                                                        menuButton.x,
+                                                        menuButton.height)
                                         }
 
-                                        loader_menu.active = true
-
-                                        loader_menu.item.popup(
-                                                    menuButton, menuButton.x,
-                                                    menuButton.height)
+                                        visible: hoverHandler.hovered | draggableContent.isCurrent
                                     }
 
-                                    visible: hoverHandler.hovered | draggableContent.isCurrent
-                                }
+                                    SkrToolButton {
+                                        id: focusOnBranchButton
+                                        Layout.fillHeight: true
+                                        Layout.preferredWidth: 30
 
-                                SkrToolButton {
-                                    id: focusOnBranchButton
-                                    Layout.fillHeight: true
-                                    Layout.preferredWidth: 30
+                                        text: "focus"
+                                        icon.source: "qrc:///icons/backup/edit-find.svg"
+                                        display: AbstractButton.IconOnly
+                                        flat: true
+                                        visible: false
+                                        checkable: true
+                                        checked: swipeDelegate.focusOnBranchChecked
 
-                                    text: "focus"
-                                    icon.source: "qrc:///icons/backup/edit-find.svg"
-                                    display: AbstractButton.IconOnly
-                                    flat: true
-                                    visible: false
-                                    checkable: true
-                                    checked: delegateRoot.focusOnBranchChecked
+                                        onCheckedChanged: {
 
-                                    onCheckedChanged: {
+                                            if (focusOnBranchButton.activeFocus) {
 
-                                        if (focusOnBranchButton.activeFocus) {
+                                                listView.currentIndex = model.index
+                                                swipeDelegate.forceActiveFocus()
 
-                                            contextMenuItemIndex = model.index
-                                            listView.currentIndex = model.index
-                                            delegateRoot.forceActiveFocus()
-
-                                            focusOnbranchAction.trigger()
+                                                focusOnbranchAction.trigger()
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                    states: [
+                        State {
+                            name: "displayMode_1"
+                            when: root.displayMode === 1
+
+                            PropertyChanges {
+                                target: content
+                                height: 100
+                            }
+                            PropertyChanges {
+                                target: focusOnBranchButton
+                                visible: hoverHandler.hovered | draggableContent.isCurrent
+                            }
+                        },
+                        State {
+                            name: "displayMode_2"
+                            when: root.displayMode === 2
+
+                            PropertyChanges {
+                                target: content
+                                height: 200
+                            }
+                            PropertyChanges {
+                                target: focusOnBranchButton
+                                visible: hoverHandler.hovered | draggableContent.isCurrent
+                            }
+                        }
+                    ]
+
+                    property int transitionAnimationDuration: 150
+
+                    transitions: [
+                        Transition {
+                            enabled: priv.animationEnabled
+                            SequentialAnimation {
+                                PropertyAnimation {
+                                    properties: "height"
+                                    duration: draggableContent.transitionAnimationDuration
+                                    easing.type: Easing.InOutQuad
+                                }
+                                ScriptAction {
+                                    script: {
+                                        // shakes the writingZone to avoid blanks when resizing
+                                        outlineBox.writingZone.flickable.contentY = 1
+                                        outlineBox.writingZone.flickable.contentY = 0
+                                    }
+                                }
+                            }
+                        }
+                    ]
                 }
+
                 states: [
                     State {
-                        name: "displayMode_1"
-                        when: root.displayMode === 1
+                        name: "drag_active"
+                        when: draggableContent.Drag.active
+
+                        ParentChange {
+                            target: draggableContent
+                            parent: Overlay.overlay
+                        }
+                        AnchorChanges {
+                            target: draggableContent
+                            anchors {
+                                horizontalCenter: undefined
+                                verticalCenter: undefined
+                            }
+                        }
 
                         PropertyChanges {
-                            target: content
-                            height: 100
-                        }
-                        PropertyChanges {
-                            target: focusOnBranchButton
-                            visible: hoverHandler.hovered | draggableContent.isCurrent
+                            target: swipeDelegate
+                            z: 2
                         }
                     },
+
                     State {
-                        name: "displayMode_2"
-                        when: root.displayMode === 2
-
-                        PropertyChanges {
-                            target: content
-                            height: 200
-                        }
-                        PropertyChanges {
-                            target: focusOnBranchButton
-                            visible: hoverHandler.hovered | draggableContent.isCurrent
+                        name: "unset_anchors"
+                        AnchorChanges {
+                            target: swipeDelegate
+                            anchors.left: undefined
+                            anchors.right: undefined
                         }
                     }
                 ]
 
-                property int transitionAnimationDuration: 150
+                property int treeItemIdToEdit: -2
+                onTreeItemIdToEditChanged: {
+                    if (treeItemIdToEdit !== -2) {
+                        editNameTimer.start()
+                    }
+                }
 
-                transitions: [
-                    Transition {
-                        enabled: priv.animationEnabled
-                        SequentialAnimation {
-                            PropertyAnimation {
-                                properties: "height"
-                                duration: draggableContent.transitionAnimationDuration
-                                easing.type: Easing.InOutQuad
-                            }
-                            ScriptAction {
-                                script: {
-                                    // shakes the writingZone to avoid blanks when resizing
-                                    outlineBox.writingZone.flickable.contentY = 1
-                                    outlineBox.writingZone.flickable.contentY = 0
-                                }
-                            }
+                Timer {
+                    id: editNameTimer
+                    repeat: false
+                    interval: draggableContent.transitionAnimationDuration
+                    onTriggered: {
+                        var index = proxyModel.findVisualIndex(model.projectId,
+                                                               treeItemIdToEdit)
+                        if (index !== -2) {
+                            listView.itemAtIndex(index).editName()
                         }
-                    }
-                ]
-            }
-            states: [
-                State {
-                    name: "drag_active"
-                    when: draggableContent.Drag.active
-
-                    ParentChange {
-                        target: draggableContent
-                        parent: base
-                    }
-                    AnchorChanges {
-                        target: draggableContent
-                        anchors {
-                            horizontalCenter: undefined
-                            verticalCenter: undefined
-                        }
-                    }
-                },
-
-                State {
-                    name: "unset_anchors"
-                    AnchorChanges {
-                        target: delegateRoot
-                        anchors.left: undefined
-                        anchors.right: undefined
+                        treeItemIdToEdit = -2
                     }
                 }
-            ]
 
-            property int treeItemIdToEdit: -2
-            onTreeItemIdToEditChanged: {
-                if (treeItemIdToEdit !== -2) {
-                    editNameTimer.start()
-                }
-            }
-
-            Timer {
-                id: editNameTimer
-                repeat: false
-                interval: draggableContent.transitionAnimationDuration
-                onTriggered: {
-                    var index = proxyModel.findVisualIndex(model.projectId,
-                                                           treeItemIdToEdit)
-                    if (index !== -2) {
-                        listView.itemAtIndex(index).editName()
+                SequentialAnimation {
+                    id: removePaperAnimation
+                    PropertyAction {
+                        target: swipeDelegate
+                        property: "ListView.delayRemove"
+                        value: true
                     }
-                    treeItemIdToEdit = -2
-                }
-            }
-
-            SequentialAnimation {
-                id: removePaperAnimation
-                PropertyAction {
-                    target: delegateRoot
-                    property: "ListView.delayRemove"
-                    value: true
-                }
-                NumberAnimation {
-                    target: delegateRoot
-                    property: "height"
-                    to: 0
-                    duration: 250
-                    easing.type: Easing.InOutQuad
-                }
-                PropertyAction {
-                    target: delegateRoot
-                    property: "ListView.delayRemove"
-                    value: false
+                    NumberAnimation {
+                        target: swipeDelegate
+                        property: "height"
+                        to: 0
+                        duration: 250
+                        easing.type: Easing.InOutQuad
+                    }
+                    PropertyAction {
+                        target: swipeDelegate
+                        property: "ListView.delayRemove"
+                        value: false
+                    }
                 }
             }
         }
@@ -1526,6 +1772,30 @@ OverviewTreeForm {
         }
     }
 
+    listView.addDisplaced: Transition {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
+        NumberAnimation {
+            properties: "x,y"
+            duration: 250
+        }
+    }
+
+    listView.displaced: Transition {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
+        NumberAnimation {
+            properties: "x,y"
+            duration: 250
+        }
+    }
+
+    listView.moveDisplaced: Transition {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
+        NumberAnimation {
+            properties: "x,y"
+            duration: 100
+        }
+    }
+
     Component {
         id: component_menu
         SkrMenu {
@@ -1543,7 +1813,7 @@ OverviewTreeForm {
                          && listView.currentItem.isOpenable
                 height: currentTreeItemId !== -1
                         && listView.currentItem.isOpenable ? undefined : 0
-                action: openPaperAction
+                action: openDocumentAction
             }
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
@@ -1551,7 +1821,7 @@ OverviewTreeForm {
                 height: currentTreeItemId !== -1
                         && listView.currentItem.isOpenable ? undefined : 0
 
-                action: openPaperInNewTabAction
+                action: openDocumentInAnotherViewAction
             }
 
             SkrMenuItem {
@@ -1684,7 +1954,7 @@ OverviewTreeForm {
     //------Actions------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------
     Action {
-        id: openPaperAction
+        id: openDocumentAction
         text: qsTr("Open")
         //shortcut: "Return"
         icon {
@@ -1706,7 +1976,7 @@ OverviewTreeForm {
 
     //-------------------------------------------------------------------------------------
     Action {
-        id: openPaperInNewTabAction
+        id: openDocumentInAnotherViewAction
         text: qsTr("Open in new tab")
         //shortcut: "Alt+Return"
         icon {

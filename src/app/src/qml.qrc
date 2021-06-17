@@ -116,5 +116,6 @@
         <file>qml/Commons/NewDictWizardForm.ui.qml</file>
         <file>qml/Commons/RelationshipPanel.qml</file>
         <file>qml/Commons/RelationshipPanelForm.ui.qml</file>
+        <file>qml/Items/SkrBusyIndicator.qml</file>
     </qresource>
 </RCC>

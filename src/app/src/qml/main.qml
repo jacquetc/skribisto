@@ -977,11 +977,9 @@ ApplicationWindow {
     SkrPopup {
         id: loadingPopup
         parent: Overlay.overlay
-        property int timeoutInterval: 10000
+        property int timeoutInterval: 5000
         signal timeout
-        x: (Overlay.overlay.width - width) / 2
-        y: (Overlay.overlay.height - height) / 2
-        width: 300
+        anchors.centerIn: Overlay.overlay
         height: 200
 
         modal: true
@@ -995,6 +993,7 @@ ApplicationWindow {
         }
 
         contentItem: ColumnLayout {
+            implicitWidth: childrenRect.width
 
             SkrLabel {
                 id: loadingPopupLabel
@@ -1018,7 +1017,7 @@ ApplicationWindow {
             //                source: "qrc:///icons/backup/process-working.svg"
 
             //            }
-            BusyIndicator {
+            SkrBusyIndicator {
                 Layout.alignment: Qt.AlignHCenter
                 running: loadingPopup.visible
             }

@@ -93,4 +93,6 @@ OverviewPageForm {
     unsetFilteringParentToolButton.onClicked: {
         overviewProxyModel.parentIdFilter = -2
     }
+
+    dropAreaEnabled: !overviewTree.dragging
 }

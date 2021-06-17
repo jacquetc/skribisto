@@ -14,10 +14,6 @@ SkrBasePage {
     property alias writingZone: writingZone
     property alias loader_previousWritingZone: loader_previousWritingZone
     property alias minimap: minimap
-    property alias rightPaneScrollMouseArea: rightPaneScrollMouseArea
-    property alias rightPaneScrollTouchArea: rightPaneScrollTouchArea
-    property alias leftPaneScrollMouseArea: leftPaneScrollMouseArea
-    property alias leftPaneScrollTouchArea: leftPaneScrollTouchArea
     property alias middleBase: middleBase
     property alias viewButtons: viewButtons
     property alias pageMenuToolButton: pageMenuToolButton
@@ -27,7 +23,6 @@ SkrBasePage {
     property alias relationshipPanel: relationshipPanel
     property int relationshipPanelPreferredHeight: 200
 
-
     clip: true
 
     ColumnLayout {
@@ -35,18 +30,15 @@ SkrBasePage {
         spacing: 0
         anchors.fill: parent
 
-
         ColumnLayout {
             id: columnLayout
             spacing: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-
             //-------------------------------------------------
             //--- Tool bar  ----------------------------------
             //-------------------------------------------------
-
             SkrPageToolBar {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 30
@@ -54,26 +46,23 @@ SkrBasePage {
                 RowLayout {
                     anchors.fill: parent
 
-
-                    SkrLabel{
+                    SkrLabel {
                         id: titleLabel
                         verticalAlignment: Qt.AlignVCenter
                         horizontalAlignment: Qt.AlignHCenter
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-
                     }
 
-                    SkrToolButton{
+                    SkrToolButton {
                         id: pageMenuToolButton
                         text: qsTr("Page menu")
                         icon.source: "qrc:///icons/backup/overflow-menu.svg"
                         Layout.alignment: Qt.AlignCenter
                         Layout.preferredHeight: 30
-
                     }
 
-                    SkrLabel{
+                    SkrLabel {
                         id: countLabel
                         verticalAlignment: Qt.AlignVCenter
                         horizontalAlignment: Qt.AlignHCenter
@@ -85,14 +74,11 @@ SkrBasePage {
                         Layout.fillHeight: true
                     }
                 }
-
             }
 
-
             //-------------------------------------------------
             //-------------------------------------------------
             //-------------------------------------------------
-
             RowLayout {
                 id: rowLayout2
                 Layout.fillHeight: true
@@ -109,38 +95,35 @@ SkrBasePage {
 
                     z: 1
 
+                    //                    RowLayout {
+                    //                        spacing: 0
+                    //                        anchors.fill: parent
 
-                    RowLayout {
-                        spacing: 0
-                        anchors.fill: parent
+                    //                        SkrPane {
+                    //                            id: leftPane
+                    //                            Layout.fillHeight: true
+                    //                            Layout.fillWidth: true
 
-                        SkrPane {
-                            id: leftPane
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
+                    //                            MultiPointTouchArea {
+                    //                                id: leftPaneScrollTouchArea
+                    //                                z: 1
+                    //                                anchors.fill: parent
+                    //                                mouseEnabled: false
+                    //                                maximumTouchPoints: 1
+                    //                                touchPoints: [
+                    //                                    TouchPoint {
+                    //                                        id: leftTouch1
+                    //                                    }
+                    //                                ]
+                    //                            }
 
-
-                            MultiPointTouchArea {
-                                id: leftPaneScrollTouchArea
-                                z: 1
-                                anchors.fill: parent
-                                mouseEnabled: false
-                                maximumTouchPoints: 1
-                                touchPoints: [
-                                    TouchPoint {
-                                        id: leftTouch1
-                                    }
-                                ]
-                            }
-
-                            MouseArea {
-                                id: leftPaneScrollMouseArea
-                                z: 0
-                                anchors.fill: parent
-                            }
-                        }
-                    }
-
+                    //                            MouseArea {
+                    //                                id: leftPaneScrollMouseArea
+                    //                                z: 0
+                    //                                anchors.fill: parent
+                    //                            }
+                    //                        }
+                    //                    }
                 }
 
                 Item {
@@ -161,7 +144,6 @@ SkrBasePage {
                             active: false
                         }
 
-
                         WritingZone {
                             id: writingZone
                             Layout.fillHeight: true
@@ -174,14 +156,9 @@ SkrBasePage {
                             textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
                             textAreaStyleAccentColor: SkrTheme.accent
                             paneStyleBackgroundColor: SkrTheme.pageBackground
-
                         }
-
                     }
-
-
                 }
-
 
                 Item {
                     id: rightBase
@@ -193,38 +170,9 @@ SkrBasePage {
                     //Layout.maximumWidth: 300
                     z: 1
 
-
                     RowLayout {
                         spacing: 0
                         anchors.fill: parent
-
-                        SkrPane {
-                            id: rightPane
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
-
-
-
-                            MultiPointTouchArea {
-                                id: rightPaneScrollTouchArea
-                                z: 1
-                                anchors.fill: parent
-                                mouseEnabled: false
-                                maximumTouchPoints: 1
-                                touchPoints: [
-                                    TouchPoint {
-                                        id: leftTouch2
-                                    }
-                                ]
-
-                            }
-
-                            MouseArea {
-                                id: rightPaneScrollMouseArea
-                                z: 0
-                                anchors.fill: parent
-                            }
-                        }
 
                         Minimap {
                             Layout.fillHeight: true
@@ -237,12 +185,10 @@ SkrBasePage {
                             sourceWidth: writingZone.textArea.width
                             sourcePointSize: writingZone.textArea.font.pointSize
                         }
-
                     }
                 }
             }
         }
-
 
         RelationshipPanel {
             id: relationshipPanel
@@ -250,10 +196,5 @@ SkrBasePage {
             Layout.fillWidth: true
             visible: false
         }
-
-
     }
-
-
-
 }

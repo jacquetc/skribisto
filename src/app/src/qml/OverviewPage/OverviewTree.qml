@@ -331,6 +331,7 @@ OverviewTreeForm {
                 color: dragHandler.active | !tapHandler.enabled ? SkrTheme.accent : "transparent"
 
                 Behavior on color {
+                    enabled: SkrSettings.ePaperSettings.animationEnabled
                     ColorAnimation {
                         duration: 200
                     }

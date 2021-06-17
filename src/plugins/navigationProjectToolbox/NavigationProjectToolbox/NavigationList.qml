@@ -74,19 +74,34 @@ NavigationListForm {
     function setCurrentTreeItemParentId(projectId, treeItemParentId) {
 
         //find parent id
-        var ancestorsList = proxyModel.getAncestorsList(
-                    projectId, treeItemParentId, proxyModel.showTrashedFilter,
-                    proxyModel.showNotTrashedFilter)
+        if (projectId > -1 & treeItemParentId > -1) {
+            var ancestorsList = proxyModel.getAncestorsList(
+                        projectId, treeItemParentId,
+                        proxyModel.showTrashedFilter,
+                        proxyModel.showNotTrashedFilter)
+        }
 
         //compare with current parent id
         if (projectId === root.currentProjectId & treeItemParentId === root.currentParentId) {
-            navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(
-                        projectId, -1)
+
+            //            navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(
+            //                        projectId, -1)
+        } else if (projectId === -1 & treeItemParentId === -1) {
+            navigationListStackView.pop(null, priv.transitionOperation)
+            //project item
+            navigationListStackView.get(0).projectId = -2
+            navigationListStackView.get(0).parentId = -2
+            navigationListStackView.get(0).treeItemId = -2
+            navigationListStackView.get(0).init()
+            navigationListStackView.get(0).setCurrent()
         } else {
             navigationListStackView.pop(null, priv.transitionOperation)
             ancestorsList.reverse()
             ancestorsList.push(treeItemParentId, priv.transitionOperation)
 
+            if (ancestorsList[ancestorsList.length - 1] === -1) {
+                ancestorsList.pop()
+            }
             //project item
             navigationListStackView.get(0).projectId = projectId
             navigationListStackView.get(0).treeItemId = 0
@@ -97,14 +112,16 @@ NavigationListForm {
                 var newItem = navigationListStackView.push(stackViewComponent, {
                                                                "projectId": projectId,
                                                                "treeItemId": ancestorsList[i]
-                                                           }, priv.transitionOperation)
+                                                           },
+                                                           priv.transitionOperation)
                 newItem.setCurrent()
             }
 
             var lastNewItem = navigationListStackView.push(stackViewComponent, {
                                                                "projectId": projectId,
                                                                "parentId": treeItemParentId
-                                                           }, priv.transitionOperation)
+                                                           },
+                                                           priv.transitionOperation)
             lastNewItem.setCurrent()
             rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
                         priv.currentProjectId, priv.currentParentId)
@@ -125,7 +142,7 @@ NavigationListForm {
         var newParentId = ancestorsList[0]
 
         //compare with current parent id
-       if (projectId === root.currentProjectId & newParentId === root.currentParentId) {
+        if (projectId === root.currentProjectId & newParentId === root.currentParentId) {
             navigationListStackView.currentItem.proxyModel.setCurrentTreeItemId(
                         projectId, treeItemId)
         } //        else if(projectId === root.currentProjectId){
@@ -135,6 +152,10 @@ NavigationListForm {
             navigationListStackView.pop(null, priv.transitionOperation)
             ancestorsList.reverse()
             ancestorsList.push(treeItemId, priv.transitionOperation)
+
+            if (ancestorsList[ancestorsList.length - 1] === -1) {
+                ancestorsList.pop()
+            }
 
             //project item
             navigationListStackView.get(0).projectId = projectId
@@ -146,14 +167,15 @@ NavigationListForm {
                 var newItem = navigationListStackView.push(stackViewComponent, {
                                                                "projectId": projectId,
                                                                "treeItemId": ancestorsList[i]
-                                                           }, priv.transitionOperation)
+                                                           },
+                                                           priv.transitionOperation)
                 newItem.setCurrent()
             }
         }
 
         sidePopupListModel.clear()
         determineIfGoUpButtonEnabled()
-       priv.selecting = false
+        priv.selecting = false
     }
 
     //-----------------------------------------------------------------------------
@@ -180,15 +202,15 @@ NavigationListForm {
             navigationListStackView.currentItem.listView.currentItem.forceActiveFocus()
 
             var index = navigationListStackView.currentItem.listView.currentIndex
-            var item = navigationListStackView.currentItem.listView.itemAtIndex(index)
-            if(item){
+            var item = navigationListStackView.currentItem.listView.itemAtIndex(
+                        index)
+            if (item) {
                 item.forceActiveFocus()
-            }
-            else{
+            } else {
                 navigationListStackView.currentItem.listView.forceActiveFocus()
             }
             priv.currentProjectId = navigationListStackView.currentItem.projectId
-            priv.currentParentId= navigationListStackView.currentItem.parentId
+            priv.currentParentId = navigationListStackView.currentItem.parentId
             console.log("priv.currentProjectId", priv.currentProjectId)
             console.log("priv.currentParentId", priv.currentParentId)
             console.log("priv.currentTreeItemId", priv.currentTreeItemId)
@@ -292,7 +314,6 @@ NavigationListForm {
             onTriggered: showTrashedList()
         }
     }
-
 
     //----------------------------------------------------------------------------
     //------------------ select button :------------------------------------------
@@ -398,8 +419,6 @@ NavigationListForm {
         }
     }
 
-
-
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
@@ -425,18 +444,15 @@ NavigationListForm {
 
             focus: false
 
-
-
             Component.onCompleted: {
                 init()
             }
-
 
             function init() {
                 p_section.parentTitle = qsTr("Projects")
                 listView.section.delegate = sectionHeading
 
-                if (treeItemId === -2 && parentId !== -2) {
+                if (treeItemId < 0 && parentId >= -1) {
                     stackViewBaseItem.proxyModel.setParentFilter(projectId,
                                                                  parentId)
                 } else {
@@ -566,35 +582,28 @@ NavigationListForm {
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
-                height: listView.height - listView.contentHeight > 0 ? listView.height - listView.contentHeight : 0
-                z:1
-
-
+                height: listView.height - listView.contentHeight
+                        > 0 ? listView.height - listView.contentHeight : 0
+                z: 1
 
                 TapHandler {
                     onTapped: {
                         listView.forceActiveFocus()
                         console.log("focusZone", "forceActiveFocus")
 
-
                         var index = listView.currentIndex
                         var item = listView.itemAtIndex(index)
-                        if(item){
+                        if (item) {
                             item.forceActiveFocus()
-                        }
-                        else{
+                        } else {
                             listView.forceActiveFocus()
                         }
 
                         eventPoint.accepted = false
-
                     }
                     grabPermissions: PointerHandler.ApprovesTakeOverByAnything
                 }
-
-
             }
-
 
             ScrollView {
                 id: scrollView
@@ -609,7 +618,6 @@ NavigationListForm {
                     smooth: true
                     boundsBehavior: Flickable.StopAtBounds
                     spacing: 1
-
 
                     Accessible.name: qsTr("Navigation list")
                     Accessible.role: Accessible.List
@@ -721,8 +729,6 @@ NavigationListForm {
                         }
                     }
 
-
-
                     //----------------------------------------------------------------------
                     //---  listview keys ------------------------------------------
                     //----------------------------------------------------------------------
@@ -737,10 +743,10 @@ NavigationListForm {
                         }
                     }
                     Keys.onPressed: {
-//                        if (event.key === Qt.Key_Up) {
-//                            listView.currentItem.forceActiveFocus()
-//                            event.accepted = false
-//                                                    }
+                        //                        if (event.key === Qt.Key_Up) {
+                        //                            listView.currentItem.forceActiveFocus()
+                        //                            event.accepted = false
+                        //                                                    }
                         if (event.key === Qt.Key_Backspace
                                 || event.key === Qt.Key_Left) {
                             console.log("Backspace / Left key pressed")
@@ -750,7 +756,8 @@ NavigationListForm {
                         // paste
                         if ((event.modifiers & Qt.ControlModifier)
                                 && event.key === Qt.Key_V) {
-                            skrData.treeHub().paste(currentProjectId, currentParentId)
+                            skrData.treeHub().paste(currentProjectId,
+                                                    currentParentId)
                             event.accepted = true
                         }
 
@@ -758,24 +765,20 @@ NavigationListForm {
                         if ((event.modifiers & Qt.ControlModifier)
                                 && event.key === Qt.Key_N) {
 
-
                             newItemPopup.projectId = currentProjectId
                             newItemPopup.treeItemId = currentParentId
                             newItemPopup.visualIndex = 0
-                            newItemPopup.createFunction
-                                    = afterNewItemTypeIsChosen
+                            newItemPopup.createFunction = afterNewItemTypeIsChosen
                             newItemPopup.open()
-
 
                             event.accepted = true
                         }
                     }
 
-                function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
+                    function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
 
-                    addItemAtCurrentParent(pageType)
-                }
-
+                        addItemAtCurrentParent(pageType)
+                    }
 
                     //----------------------------------------------------------------------
                     //--- Start list item component ------------------------------------------
@@ -1178,7 +1181,7 @@ NavigationListForm {
 
                                 SkrListItemPane {
                                     id: content
-                                    property int visualIndex: 0
+                                    property int visualIndex: model.index
                                     property int sourceIndex: -2
                                     property int projectId: model.projectId
                                     property int treeItemId: model.treeItemId
@@ -1200,9 +1203,10 @@ NavigationListForm {
 
                                     Drag.supportedActions: Qt.MoveAction
 
+                                    opacity: mouseDragHandler.active | touchDragHandler.active ? 0.2 : 1.0
                                     //sDrag.dragType: Drag.Internal
                                     borderWidth: 2
-                                    borderColor: touchDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
+                                    borderColor: mouseDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
                                     Behavior on borderColor {
                                         enabled: SkrSettings.ePaperSettings.animationEnabled
                                         ColorAnimation {
@@ -1225,7 +1229,6 @@ NavigationListForm {
                                                 moveSourceProjectId = content.projectId
                                                 priv.dragging = true
                                                 cancelDragTimer.stop()
-
                                             } else {
                                                 cancelDragTimer.stop()
                                                 priv.dragging = false
@@ -1233,7 +1236,6 @@ NavigationListForm {
 
                                                 content.Drag.drop()
                                                 proxyModel.invalidate()
-
                                             }
                                         }
                                         enabled: true
@@ -1298,7 +1300,6 @@ NavigationListForm {
 
                                         onSingleTapped: {
                                             priv.selecting = false
-
 
                                             if (content.dragging) {
                                                 eventPoint.accepted = false
@@ -1461,8 +1462,7 @@ NavigationListForm {
                                         //shortcut: "Right"
                                         enabled: listView.enabled
                                                  && listView.currentIndex === model.index
-                                                 && (model.type === "FOLDER"
-                                                     || model.type === "PROJECT")
+                                                 && model.canAddChildTreeItem
 
                                         //icon.source: model.hasChildren ? "qrc:///icons/backup/go-next.svg" : (model.canAddChildTreeItem ? "qrc:///icons/backup/list-add.svg" : "")
                                         text: qsTr("See sub-items")
@@ -1486,7 +1486,8 @@ NavigationListForm {
                                                         stackViewComponent, {
                                                             "projectId": model.projectId,
                                                             "parentId": model.treeItemId
-                                                        }, priv.transitionOperation)
+                                                        },
+                                                        priv.transitionOperation)
                                             newItem.setCurrent()
                                             newItem.listView.currentIndex = 0
                                             newItem.forceActiveFocus()
@@ -1494,8 +1495,6 @@ NavigationListForm {
                                             rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
                                                         priv.currentProjectId,
                                                         priv.currentParentId)
-
-
                                         }
                                     }
 
@@ -1521,7 +1520,6 @@ NavigationListForm {
                                             treeItemIdToEdit = -2
                                         }
                                     }
-
 
                                     Action {
                                         id: openDocumentAction
@@ -1995,12 +1993,10 @@ NavigationListForm {
                                                     listView.currentIndex = model.index
                                                     swipeDelegate.forceActiveFocus()
                                                     menu.open()
-
                                                 }
 
                                                 visible: itemHoverHandler.hovered
                                                          || content.isCurrent
-
                                             }
 
                                             Rectangle {
@@ -2180,6 +2176,23 @@ NavigationListForm {
                                         }
                                     }
 
+                                    SkrMenuItem {
+                                        height: model.treeItemId === 0 ? undefined : 0
+                                        visible: model.treeItemId === 0
+                                        enabled: listView.enabled
+                                                 && model.treeItemId === 0
+                                        text: qsTr("Close this project")
+                                        icon {
+                                            source: "qrc:///icons/backup/document-close.svg"
+                                        }
+                                        onTriggered: {
+                                            console.log("close project",
+                                                        model.projectId)
+                                            sidePopupListModel.clear()
+                                            Globals.closeProjectCalled(
+                                                        model.projectId)
+                                        }
+                                    }
                                     MenuSeparator {
                                         height: model.isRenamable ? undefined : 0
                                         visible: model.isRenamable
@@ -2318,13 +2331,14 @@ NavigationListForm {
                                                 console.log("paste action",
                                                             model.projectId,
                                                             model.treeItemId)
-                                                var result = skrData.treeHub().paste(
+                                                var result = skrData.treeHub(
+                                                            ).paste(
                                                             model.projectId,
                                                             model.treeItemId)
 
-                                                if(!result.success){
-                                                    console.debug("paste action: error")
-
+                                                if (!result.success) {
+                                                    console.debug(
+                                                                "paste action: error")
                                                 }
                                             }
                                         }
@@ -2397,7 +2411,6 @@ NavigationListForm {
                                                 newItemPopup.createFunction
                                                         = afterNewItemTypeIsChosen
                                                 newItemPopup.open()
-
                                             }
 
                                             function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
@@ -2449,7 +2462,8 @@ NavigationListForm {
                                                             {
                                                                 "projectId": projectId,
                                                                 "parentId": treeItemId
-                                                            }, priv.transitionOperation)
+                                                            },
+                                                            priv.transitionOperation)
                                                 newItem.setCurrent()
 
                                                 addItemAtCurrentParent(pageType)
@@ -2555,7 +2569,6 @@ NavigationListForm {
                                         }
                                     }
 
-
                                     MenuSeparator {
                                         height: model.treeItemId !== 0 ? 0 : undefined
                                         visible: model.treeItemId === 0
@@ -2574,10 +2587,10 @@ NavigationListForm {
                                             console.log("close this project",
                                                         model.projectId)
 
-                                            Globals.closeProjectCalled(model.projectId)
+                                            Globals.closeProjectCalled(
+                                                        model.projectId)
                                         }
                                     }
-
                                 }
 
                                 //----------------------------------------------------------
@@ -2619,7 +2632,7 @@ NavigationListForm {
 
                                     ParentChange {
                                         target: content
-                                        parent: root
+                                        parent: Overlay.overlay
                                     }
                                     AnchorChanges {
                                         target: content

@@ -13,10 +13,7 @@ SkrToolbox {
     id: root
 
     iconSource: "qrc:///icons/backup/compass.svg"
-    showButtonText: qsTr( "Show navigation toolbox")
-
-
-
+    showButtonText: qsTr("Show navigation toolbox")
 
     Navigation {
         id: navigationView
@@ -28,9 +25,7 @@ SkrToolbox {
         navigationListProxyModel: navigationProxyModel
         trashedListViewProxyModel: trashedTreeProxyModel
         restoreListViewProxyModel: restoreTreeProxyModel
-
     }
-
 
     //    Connections {
     //        target: navigationView
@@ -38,7 +33,6 @@ SkrToolbox {
     //            Globals.openTreeInAnotherViewCalled(_projectId, _treeItemId)
     //        }
     //    }
-
     Connections {
         target: navigationView
         function onOpenDocument(openedProjectId, openedPaperId, _projectId, _treeItemId) {
@@ -58,7 +52,7 @@ SkrToolbox {
         }
     }
 
-    function initNavigationView(){
+    function initNavigationView() {
         //navigationView.openDocumentInAnotherView.connect(Globals.openTreeInAnotherViewCalled)
         //navigationView.openDocumentInNewWindow.connect(Globals.openTreeInNewWindowCalled)
         navigationView.restoreDocumentList.connect(root.restoreTreeItemList)
@@ -71,21 +65,18 @@ SkrToolbox {
         navigateByBranchesEnabled: true
     }
 
-
     Connections {
         target: skrData.projectHub()
-        function onActiveProjectChanged(projectId){
+        function onActiveProjectChanged(projectId) {
             navigationProxyModel.projectIdFilter = projectId
             navigationProxyModel.parentIdFilter = -1
         }
     }
 
-
     SKRSearchTreeListProxyModel {
         id: trashedTreeProxyModel
         showTrashedFilter: true
         showNotTrashedFilter: false
-
     }
 
     SKRSearchTreeListProxyModel {
@@ -94,63 +85,49 @@ SkrToolbox {
         showNotTrashedFilter: false
     }
 
+    function restoreTreeItemList(projectId, treeItemIdList) {
 
-
-
-    function restoreTreeItemList(projectId, treeItemIdList){
         // restore is difficult to explain : a restored parent will restore its children, even those trashed years before. To avoid that,
         // children trashed at the same minute will be checked to allow restore. The older ones will stay unchecked by default.
         // All that is done in RestoreView.qml
-
         var i
-        for(i = 0 ; i < treeItemIdList.length ; i++){
-            skrData.treeHub().untrashOnlyOneTreeItem(projectId, treeItemIdList[i])
+        for (i = 0; i < treeItemIdList.length; i++) {
+            skrData.treeHub().untrashOnlyOneTreeItem(projectId,
+                                                     treeItemIdList[i])
         }
-
 
         //console.log("restored: sheet:", sheetIdList)
     }
 
-    Connections{
+    Connections {
         target: rootWindow
-        function onSetNavigationTreeItemIdCalled(projectId, treeItemId){
+        function onSetNavigationTreeItemIdCalled(projectId, treeItemId) {
             navigationView.setNavigationTreeItemId(projectId, treeItemId)
         }
     }
 
-    Connections{
+    Connections {
         target: rootWindow
-        function onSetNavigationTreeItemParentIdCalled(projectId, treeItemParentId){
-            navigationView.setNavigationTreeItemParentId(projectId, treeItemParentId)
+        function onSetNavigationTreeItemParentIdCalled(projectId, treeItemParentId) {
+            navigationView.setNavigationTreeItemParentId(projectId,
+                                                         treeItemParentId)
         }
     }
 
-
-    Connections{
+    Connections {
         target: viewManager
-        function onFocusedChanged(position, projectId, treeItemId, pageType){
-            if(projectId !== -1 && treeItemId !== -1){
+        function onFocusedChanged(position, projectId, treeItemId, pageType) {
+            if (projectId !== -1 && treeItemId !== -1) {
                 navigationView.setNavigationTreeItemId(projectId, treeItemId)
             }
         }
     }
 
     //----------------------------------------------------------
-
     Connections {
-        target:skrData.projectHub()
+        target: skrData.projectHub()
         function onProjectLoaded(_projectId) {
-            onProjectLoadedTimer.projectId = _projectId
-            onProjectLoadedTimer.start()
+            navigationView.setNavigationTreeItemId(_projectId, 0)
         }
-
     }
-    Timer {
-        id: onProjectLoadedTimer
-        property int projectId
-        interval: 100
-        onTriggered: navigationView.setNavigationTreeItemId(projectId, 0)
-
-    }
-
 }

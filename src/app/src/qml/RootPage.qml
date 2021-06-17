@@ -347,6 +347,7 @@ RootPageForm {
 
     showLeftDockButton.visible: showLeftDockButtonWidth !== 0
     Behavior on showLeftDockButtonWidth {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
         SpringAnimation {
             spring: 5
             mass: 0.2
@@ -402,6 +403,7 @@ RootPageForm {
 
     showRightDockButton.visible: showRightDockButtonWidth !== 0
     Behavior on showRightDockButtonWidth {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
         SpringAnimation {
             spring: 5
             mass: 0.2

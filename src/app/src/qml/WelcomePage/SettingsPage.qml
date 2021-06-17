@@ -515,6 +515,7 @@ SettingsPageForm {
             border.width: 2
             visible: backupPathListView.activeFocus
             Behavior on y {
+                enabled: SkrSettings.ePaperSettings.animationEnabled
                 SpringAnimation {
                     spring: 3
                     damping: 0.2

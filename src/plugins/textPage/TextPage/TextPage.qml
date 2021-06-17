@@ -11,77 +11,71 @@ TextPageForm {
 
     pageType: "TEXT"
 
+    property string title: {
+        return getTitle()
+    }
 
-    property string title: {return getTitle()}
+    function getTitle() {
+        var fetchedTitle = skrData.treeHub().getTitle(projectId, treeItemId)
 
-    function getTitle(){
-        var fetchedTitle =  skrData.treeHub().getTitle(projectId, treeItemId)
-
-        if(isSecondary){
+        if (isSecondary) {
             return qsTr("Plan of %1").arg(fetchedTitle)
-        }
-        else {
+        } else {
             return fetchedTitle
         }
-
-
-
-
     }
 
     Connections {
         target: skrData.treeHub()
-        function onTitleChanged(_projectId, _treeItemId, newTitle){
-            if(projectId === _projectId && treeItemId === _treeItemId){
+        function onTitleChanged(_projectId, _treeItemId, newTitle) {
+            if (projectId === _projectId && treeItemId === _treeItemId) {
                 title = getTitle()
             }
-
         }
-
     }
 
     titleLabel.text: title
 
     //--------------------------------------------------------
-
     additionalPropertiesForSavingView: {
-        return {"isSecondary": isSecondary, "milestone": milestone}
+        return {
+            "isSecondary": isSecondary,
+            "milestone": milestone
+        }
     }
 
     //--------------------------------------------------------
     //---View buttons-----------------------------------------
     //--------------------------------------------------------
-
     viewButtons.viewManager: root.viewManager
     viewButtons.position: root.position
 
     viewButtons.onOpenInNewWindowCalled: {
         saveContent()
         saveCurrentCursorPositionAndY()
-        skrWindowManager.insertAdditionalPropertyForViewManager("isSecondary", isSecondary)
+        skrWindowManager.insertAdditionalPropertyForViewManager("isSecondary",
+                                                                isSecondary)
         skrWindowManager.addWindowForItemId(projectId, treeItemId)
         rootWindow.setNavigationTreeItemIdCalled(projectId, treeItemId)
     }
 
-    viewButtons.onSplitCalled: function(position){
+    viewButtons.onSplitCalled: function (position) {
         saveContent()
         saveCurrentCursorPositionAndY()
         viewManager.insertAdditionalProperty("isSecondary", isSecondary)
         viewManager.loadTreeItemAt(projectId, treeItemId, position)
     }
 
-
-
     //--------------------------------------------------------
     //---Tool bar-----------------------------------------
     //--------------------------------------------------------
-
-    Connections{
+    Connections {
         target: skrData.treePropertyHub()
-        function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
-            if(projectId === root.projectId && treeItemId === root.treeItemId){
+        function onPropertyChanged(projectId, propertyId, treeItemId, name, value) {
+            if (projectId === root.projectId
+                    && treeItemId === root.treeItemId) {
 
-                if(name === "word_count"){
+                if (name === "word_count") {
                     countPriv.wordCount = value
                     updateCountLabel()
                 }
@@ -89,33 +83,34 @@ TextPageForm {
         }
     }
 
-    Connections{
+    Connections {
         target: skrData.treePropertyHub()
-        function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
-            if(projectId === root.projectId && treeItemId === root.treeItemId){
+        function onPropertyChanged(projectId, propertyId, treeItemId, name, value) {
+            if (projectId === root.projectId
+                    && treeItemId === root.treeItemId) {
 
-                if(name === "char_count"){
+                if (name === "char_count") {
                     countPriv.characterCount = value
                     updateCountLabel()
-
                 }
             }
         }
     }
 
-    QtObject{
+    QtObject {
         id: countPriv
         property string wordCount: ""
         property string characterCount: ""
     }
 
-    function updateCountLabel(){
+    function updateCountLabel() {
         var wordCountString = skrRootItem.toLocaleIntString(countPriv.wordCount)
-        var characterCountString = skrRootItem.toLocaleIntString(countPriv.characterCount)
+        var characterCountString = skrRootItem.toLocaleIntString(
+                    countPriv.characterCount)
 
-        countLabel.text = qsTr("%1 words, %2 characters").arg(wordCountString).arg(characterCountString)
+        countLabel.text = qsTr("%1 words, %2 characters").arg(
+                    wordCountString).arg(characterCountString)
     }
-
 
     //-----------------------------------------------------------------
     //----- Page menu ------------------------------------------------
@@ -128,18 +123,16 @@ TextPageForm {
         pageMenu.open()
     }
 
-
     SkrMenu {
         id: pageMenu
         y: pageMenuToolButton.height
         x: pageMenuToolButton.x
 
-        SkrMenuItem{
+        SkrMenuItem {
             action: newIdenticalPageAction
         }
 
-
-        SkrMenuItem{
+        SkrMenuItem {
             action: Action {
                 id: showRelationshipPanelAction
                 text: skrShortcutManager.description("show-relationship-panel")
@@ -148,33 +141,31 @@ TextPageForm {
 
                     relationshipPanel.visible = true
                     relationshipPanel.forceActiveFocus()
-
                 }
             }
         }
 
-        SkrMenuItem{
-            action:
-                Action {
-                    id: addQuickNoteAction
-                    text: skrShortcutManager.description("add-quick-note")
-                    icon.source: "qrc:///icons/backup/list-add.svg"
-                    onTriggered: {
-                        relationshipPanel.visible = true
-                        var result = skrData.treeHub().addQuickNote(projectId, treeItemId, "TEXT", qsTr("Note"))
-                        if(result.success){
-                            var newId = result.getData("treeItemId", -2)
+        SkrMenuItem {
+            action: Action {
+                id: addQuickNoteAction
+                text: skrShortcutManager.description("add-quick-note")
+                icon.source: "qrc:///icons/backup/list-add.svg"
+                onTriggered: {
+                    relationshipPanel.visible = true
+                    var result = skrData.treeHub().addQuickNote(projectId,
+                                                                treeItemId,
+                                                                "TEXT",
+                                                                qsTr("Note"))
+                    if (result.success) {
+                        var newId = result.getData("treeItemId", -2)
 
-                            relationshipPanel.openTreeItemInPanel(projectId, newId)
-                            relationshipPanel.forceActiveFocus()
-                        }
-
+                        relationshipPanel.openTreeItemInPanel(projectId, newId)
+                        relationshipPanel.forceActiveFocus()
                     }
                 }
+            }
         }
-
     }
-
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("add-quick-note")
@@ -191,11 +182,9 @@ TextPageForm {
         }
     }
 
-
     //--------------------------------------------------------
     //---Writing Zone-----------------------------------------
     //--------------------------------------------------------
-
     property bool isSecondary: false
     property int milestone: -2
 
@@ -210,14 +199,12 @@ TextPageForm {
     Connections {
         enabled: viewManager.focusedPosition === position
         target: viewManager.rootWindow
-        function onForceFocusOnEscapePressed(){
+        function onForceFocusOnEscapePressed() {
             writingZone.forceActiveFocus()
         }
     }
 
-
     //---------------------------------------------------------
-
     Component.onCompleted: {
         openDocument(projectId, treeItemId, isSecondary, milestone)
         determineIfPreviousWritingMustBeVisible()
@@ -225,15 +212,19 @@ TextPageForm {
     }
 
     //---------------------------------------------------------
-
-    function clearWritingZone(){
-        if(root.treeItemId !== -2 && root.projectId !== -2 && milestone === -2){
+    function clearWritingZone() {
+        if (root.treeItemId !== -2 && root.projectId !== -2
+                && milestone === -2) {
             contentSaveTimer.stop()
             saveContent()
             saveCurrentCursorPositionAndYTimer.stop()
             saveCurrentCursorPositionAndY()
-            var uniqueDocumentReference = projectId + "_" + treeItemId + "_" + (isSecondary ? "secondary" : "primary")
-            skrTextBridge.unsubscribeTextDocument(uniqueDocumentReference, writingZone.textArea.objectName, writingZone.textArea.textDocument)
+            var uniqueDocumentReference = projectId + "_" + treeItemId + "_"
+                    + (isSecondary ? "secondary" : "primary")
+            skrTextBridge.unsubscribeTextDocument(
+                        uniqueDocumentReference,
+                        writingZone.textArea.objectName,
+                        writingZone.textArea.textDocument)
 
             root.projectId = -2
             root.treeItemId = -2
@@ -244,8 +235,8 @@ TextPageForm {
         writingZone.setCursorPosition(0)
         writingZone.clear()
     }
-    //---------------------------------------------------------
 
+    //---------------------------------------------------------
     function runActionsBeforeDestruction() {
         clearWritingZone()
     }
@@ -256,22 +247,22 @@ TextPageForm {
 
     //---------------------------------------------------------
     // modifiable :
-
     property bool isModifiable: true
 
-    Connections{
+    Connections {
         target: skrData.treePropertyHub()
-        function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
-            if(projectId === root.projectId && treeItemId === root.treeItemId){
+        function onPropertyChanged(projectId, propertyId, treeItemId, name, value) {
+            if (projectId === root.projectId
+                    && treeItemId === root.treeItemId) {
 
-                if(name === "modifiable"){
+                if (name === "modifiable") {
                     determineModifiable()
                 }
             }
         }
     }
 
-    Timer{
+    Timer {
         id: determineModifiableTimer
         repeat: false
         interval: 200
@@ -280,164 +271,84 @@ TextPageForm {
         }
     }
 
+    function determineModifiable() {
 
+        root.isModifiable = skrData.treePropertyHub().getProperty(
+                    projectId, treeItemId, "modifiable", "true") === "true"
 
-
-    function determineModifiable(){
-
-        root.isModifiable = skrData.treePropertyHub().getProperty(projectId, treeItemId, "modifiable", "true") === "true"
-
-        if(!root.isModifiable !== writingZone.textArea.readOnly){
+        if (!root.isModifiable !== writingZone.textArea.readOnly) {
             saveCurrentCursorPositionAndY()
             writingZone.textArea.readOnly = !root.isModifiable
             restoreCurrentPaperCursorPositionAndY()
         }
-
     }
-
-
 
     //--------------------------------------------------------
     //--- stretching if too small-----------------------------------------
     //--------------------------------------------------------
-
     QtObject {
         id: priv
         property int tempWritingZoneWidth: 0
     }
 
     onWidthChanged: {
-        if(!rootWindow.compactMode && !writingZone.stretch && root.width  < 450){
+        if (!rootWindow.compactMode && !writingZone.stretch
+                && root.width < 450) {
             writingZone.stretch = true
             priv.tempWritingZoneWidth = root.width
         }
-        if(!rootWindow.compactMode && writingZone.stretch && root.width > priv.tempWritingZoneWidth + 50){
+        if (!rootWindow.compactMode && writingZone.stretch
+                && root.width > priv.tempWritingZoneWidth + 50) {
             writingZone.stretch = false
-        }
-    }
-
-    //--------------------------------------------------------
-    //---Left Scroll Area-----------------------------------------
-    //--------------------------------------------------------
-
-
-
-    leftPaneScrollTouchArea.onUpdated: {
-        var deltaY = touchPoints[0].y - touchPoints[0].previousY
-        //        console.log("deltaY :", deltaY)
-
-        if (writingZone.flickable.atYBeginning && deltaY > 0) {
-            writingZone.flickable.returnToBounds()
-            return
-        }
-        if (writingZone.flickable.atYEnd && deltaY < 0) {
-            writingZone.flickable.returnToBounds()
-            return
-        }
-
-        writingZone.flickable.flick(0, deltaY * 50)
-
-    }
-
-    leftPaneScrollMouseArea.onWheel: {
-
-        var deltaY = wheel.angleDelta.y *10
-
-        writingZone.flickable.flick(0, deltaY)
-
-        if (writingZone.flickable.atYBeginning && wheel.angleDelta.y > 0) {
-            writingZone.flickable.returnToBounds()
-            return
-        }
-        if (writingZone.flickable.atYEnd && wheel.angleDelta.y < 0) {
-            writingZone.flickable.returnToBounds()
-            return
-        }
-    }
-
-    //--------------------------------------------------------
-    //---Right Scroll Area-----------------------------------------
-    //--------------------------------------------------------
-
-
-
-
-    rightPaneScrollTouchArea.onUpdated: {
-        var deltaY = touchPoints[0].y - touchPoints[0].previousY
-        //        console.log("deltaY :", deltaY)
-
-        if (writingZone.flickable.atYBeginning && deltaY > 0) {
-            writingZone.flickable.returnToBounds()
-            return
-        }
-        if (writingZone.flickable.atYEnd && deltaY < 0) {
-            writingZone.flickable.returnToBounds()
-            return
-        }
-
-        writingZone.flickable.flick(0, deltaY * 50)
-
-    }
-
-    rightPaneScrollMouseArea.onWheel: {
-
-        var deltaY = wheel.angleDelta.y *10
-
-        writingZone.flickable.flick(0, deltaY)
-
-        if (writingZone.flickable.atYBeginning && wheel.angleDelta.y > 0) {
-            writingZone.flickable.returnToBounds()
-            return
-        }
-        if (writingZone.flickable.atYEnd && wheel.angleDelta.y < 0) {
-            writingZone.flickable.returnToBounds()
-            return
         }
     }
 
     //---------------------------------------------------------
     //------Actions----------------------------------------
     //---------------------------------------------------------
-
-
-
-
     Connections {
         target: italicAction
-        function onTriggered() {closeRightDrawer()}
+        function onTriggered() {
+            closeRightDrawer()
+        }
     }
     Connections {
         target: boldAction
-        function onTriggered() {closeRightDrawer()}
+        function onTriggered() {
+            closeRightDrawer()
+        }
     }
     Connections {
         target: strikeAction
-        function onTriggered() {closeRightDrawer()}
+        function onTriggered() {
+            closeRightDrawer()
+        }
     }
     Connections {
         target: underlineAction
-        function onTriggered() {closeRightDrawer()}
+        function onTriggered() {
+            closeRightDrawer()
+        }
     }
 
-
-    function closeRightDrawer(){
-        if(viewManager.rootWindow.compactMode){
+    function closeRightDrawer() {
+        if (viewManager.rootWindow.compactMode) {
             viewManager.rootWindow.closeRightDrawerCalled()
         }
     }
-    //---------------------------------------------------------
 
+    //---------------------------------------------------------
     QtObject {
         id: documentPrivate
         property bool contentSaveTimerAllowedToStart: true
         property bool saveCurrentCursorPositionAndYTimerAllowedToStart: true
     }
+
     //---------------------------------------------------------
-
-
     function openDocument(_projectId, _treeItemId, isSecondary, milestone) {
         // save current
-        if(projectId !== _projectId || treeItemId !== _treeItemId ){ //meaning it hasn't just used the constructor
+        if (projectId !== _projectId || treeItemId !== _treeItemId) {
+            //meaning it hasn't just used the constructor
             clearWritingZone()
         }
 
@@ -452,28 +363,31 @@ TextPageForm {
         //console.log("opening sheet :", _projectId, _paperId)
         writingZone.setCursorPosition(0)
 
-        if(milestone === -2){
+        if (milestone === -2) {
 
-            if(isSecondary){
-                writingZone.text = skrRootItem.cleanUpHtml(skrData.treeHub().getSecondaryContent(_projectId, _treeItemId))
+            if (isSecondary) {
+                writingZone.text = skrRootItem.cleanUpHtml(
+                            skrData.treeHub().getSecondaryContent(_projectId,
+                                                                  _treeItemId))
+            } else {
+                writingZone.text = skrRootItem.cleanUpHtml(
+                            skrData.treeHub().getPrimaryContent(_projectId,
+                                                                _treeItemId))
             }
-            else {
-                writingZone.text = skrRootItem.cleanUpHtml(skrData.treeHub().getPrimaryContent(_projectId, _treeItemId))
-            }
+        } else {
 
-        }
-        else {
             //TODO: if milestone
         }
 
-
         title = getTitle()
 
-        if(milestone === -2){
-            var uniqueDocumentReference = projectId + "_" + treeItemId + "_" + (isSecondary ? "secondary" : "primary")
-            skrTextBridge.subscribeTextDocument(uniqueDocumentReference,
-                                                writingZone.textArea.objectName,
-                                                writingZone.textArea.textDocument)
+        if (milestone === -2) {
+            var uniqueDocumentReference = projectId + "_" + treeItemId + "_"
+                    + (isSecondary ? "secondary" : "primary")
+            skrTextBridge.subscribeTextDocument(
+                        uniqueDocumentReference,
+                        writingZone.textArea.objectName,
+                        writingZone.textArea.textDocument)
         }
 
         writingZone.documentHandler.indentEverywhere = SkrSettings.textSettings.textIndent
@@ -484,9 +398,9 @@ TextPageForm {
         forceActiveFocusTimer.start()
 
         // start the timer for automatic position saving
-        if(milestone === -2){
+        if (milestone === -2) {
             documentPrivate.saveCurrentCursorPositionAndYTimerAllowedToStart = true
-            if(!saveCurrentCursorPositionAndYTimer.running){
+            if (!saveCurrentCursorPositionAndYTimer.running) {
                 saveCurrentCursorPositionAndYTimer.start()
             }
 
@@ -495,40 +409,37 @@ TextPageForm {
 
         //        leftDock.setCurrentPaperId(projectId, paperId)
         //        leftDock.setOpenedPaperId(projectId, paperId)
-
         determineModifiableTimer.start()
-
     }
 
-    Timer{
+    Timer {
         id: forceActiveFocusTimer
         repeat: false
         interval: 100
-        onTriggered:  writingZone.forceActiveFocus()
+        onTriggered: writingZone.forceActiveFocus()
     }
 
-    function restoreCurrentPaperCursorPositionAndY(){
+    function restoreCurrentPaperCursorPositionAndY() {
 
         var positionKey
         var yKey
 
-        if(isSecondary){
+        if (isSecondary) {
             positionKey = "outlineTextPositionHash"
             yKey = "outlineTextYHash"
-        }
-        else {
+        } else {
             positionKey = "textPositionHash"
             yKey = "textYHash"
         }
 
         //get cursor position
-        var position = skrUserSettings.getFromProjectSettingHash(
-                    projectId, positionKey, treeItemId, 0)
+        var position = skrUserSettings.getFromProjectSettingHash(projectId,
+                                                                 positionKey,
+                                                                 treeItemId, 0)
 
-        if(position > writingZone.textArea.length){
+        if (position > writingZone.textArea.length) {
             position = writingZone.textArea.length
         }
-
 
         //get Y
         var visibleAreaY = skrUserSettings.getFromProjectSettingHash(
@@ -540,10 +451,9 @@ TextPageForm {
 
         writingZoneFlickableContentYTimer.y = visibleAreaY
         writingZoneFlickableContentYTimer.start()
-
     }
 
-    Timer{
+    Timer {
 
         property int y: 0
         id: writingZoneFlickableContentYTimer
@@ -554,43 +464,38 @@ TextPageForm {
         }
     }
 
+    function saveCurrentCursorPositionAndY() {
 
-    function saveCurrentCursorPositionAndY(){
-
-        if(root.treeItemId !== -2 || root.projectId !== -2){
+        if (root.treeItemId !== -2 || root.projectId !== -2) {
             var positionKey
             var yKey
 
-            if(isSecondary){
+            if (isSecondary) {
                 positionKey = "outlineTextPositionHash"
                 yKey = "outlineTextYHash"
-            }
-            else {
+            } else {
                 positionKey = "textPositionHash"
                 yKey = "textYHash"
             }
 
             //save cursor position of current document :
-
             var previousCursorPosition = writingZone.textArea.cursorPosition
 
-            if(previousCursorPosition > writingZone.textArea.length){
+            if (previousCursorPosition > writingZone.textArea.length) {
                 previousCursorPosition = writingZone.textArea.length
             }
             //console.log("savedCursorPosition", previousCursorPosition)
             var previousY = writingZone.flickable.contentY
             //console.log("previousContentY", previousY)
-            skrUserSettings.insertInProjectSettingHash(
-                        projectId, positionKey, treeItemId,
-                        previousCursorPosition)
-            skrUserSettings.insertInProjectSettingHash(projectId,
-                                                       yKey,
+            skrUserSettings.insertInProjectSettingHash(projectId, positionKey,
                                                        treeItemId,
-                                                       previousY)
+                                                       previousCursorPosition)
+            skrUserSettings.insertInProjectSettingHash(projectId, yKey,
+                                                       treeItemId, previousY)
         }
     }
 
-    Timer{
+    Timer {
         id: saveCurrentCursorPositionAndYTimer
         repeat: true
         interval: 10000
@@ -599,72 +504,69 @@ TextPageForm {
 
     //needed to adapt width to a shrinking window
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactMode && middleBase.width - 40 < writingZone.maximumTextAreaWidth
+        when: !Globals.compactMode
+              && middleBase.width - 40 < writingZone.maximumTextAreaWidth
         value: middleBase.width - 40
         restoreMode: Binding.RestoreBindingOrValue
-
     }
     Binding on writingZone.textAreaWidth {
-        when: !Globals.compactMode && middleBase.width - 40 >= writingZone.maximumTextAreaWidth
+        when: !Globals.compactMode
+              && middleBase.width - 40 >= writingZone.maximumTextAreaWidth
         value: writingZone.maximumTextAreaWidth
         restoreMode: Binding.RestoreBindingOrValue
-
     }
-
 
     // save content once after writing:
     writingZone.textArea.onTextChanged: {
 
         //avoid first text change, when blank HTML is inserted
-        if(writingZone.textArea.length === 0
-                && skrData.projectHub().isProjectNotModifiedOnce(projectId)){
+        if (writingZone.textArea.length === 0 && skrData.projectHub(
+                    ).isProjectNotModifiedOnce(projectId)) {
             return
         }
 
-        if(contentSaveTimer.running){
+        if (contentSaveTimer.running) {
             contentSaveTimer.stop()
         }
-        if(documentPrivate.contentSaveTimerAllowedToStart){
+        if (documentPrivate.contentSaveTimerAllowedToStart) {
             contentSaveTimer.start()
         }
     }
-    Timer{
+    Timer {
         id: contentSaveTimer
         repeat: false
         interval: 200
         onTriggered: saveContent()
     }
 
-    function saveContent(){
+    function saveContent() {
         //console.log("saving text")
         var result
 
         var text = skrRootItem.cleanUpHtml(writingZone.text)
 
-
-        if(isSecondary){
-            result = skrData.treeHub().setSecondaryContent(projectId, treeItemId, skrRootItem.cleanUpHtml(text))
+        if (isSecondary) {
+            result = skrData.treeHub().setSecondaryContent(
+                        projectId, treeItemId, skrRootItem.cleanUpHtml(text))
+        } else {
+            result = skrData.treeHub().setPrimaryContent(
+                        projectId, treeItemId, skrRootItem.cleanUpHtml(text))
+            if (!contentSaveTimer.running)
+                skrTreeManager.updateCharAndWordCount(projectId, treeItemId,
+                                                      root.pageType, true)
         }
-        else {
-            result = skrData.treeHub().setPrimaryContent(projectId, treeItemId, skrRootItem.cleanUpHtml(text))
-            if(!contentSaveTimer.running)
-                skrTreeManager.updateCharAndWordCount(projectId, treeItemId, root.pageType, true)
 
-        }
-
-        if (!result.success){
+        if (!result.success) {
             console.log("saving text failed", projectId, treeItemId)
-        }
-        else {
-            //console.log("saving text success", projectId, treeItemId)
+        } else {
 
+            //console.log("saving text success", projectId, treeItemId)
         }
     }
 
     //------------------------------------------------------------------------
     //-----minimap------------------------------------------------------------
     //------------------------------------------------------------------------
-
     property bool minimapVisibility: false
     minimap.visible: minimapVisibility
 
@@ -682,7 +584,7 @@ TextPageForm {
         restoreMode: Binding.RestoreBindingOrValue
         delayed: true
     }
-    Binding on  minimap.position {
+    Binding on minimap.position {
         when: minimapVisibility
         value: writingZone.internalScrollBar.position
         restoreMode: Binding.RestoreBindingOrValue
@@ -699,37 +601,31 @@ TextPageForm {
         }
     }
 
-
-
-
-
     //------------------------------------------------------------------------
     //-----toolboxes------------------------------------------------------------
     //-----------------------------------------------------------------------
-
-
-
     toolboxes: [editViewComponent, propertyPadComponent, outlinePadComponent, tagPadComponent]
 
-    function determineAndAddToolboxPlugins(){
-        var toolboxUrlList = skrTreeManager.findToolboxUrlsForPage(root.pageType)
+    function determineAndAddToolboxPlugins() {
+        var toolboxUrlList = skrTreeManager.findToolboxUrlsForPage(
+                    root.pageType)
 
-        for(var i in toolboxUrlList){
+        for (var i in toolboxUrlList) {
             var url = toolboxUrlList[i]
-            var pluginComponent = Qt.createComponent(url, Component.PreferSynchronous, root)
+            var pluginComponent = Qt.createComponent(
+                        url, Component.PreferSynchronous, root)
             toolboxes.push(pluginComponent)
         }
-
     }
 
     Component {
         id: editViewComponent
 
-        SkrToolbox{
+        SkrToolbox {
 
-            showButtonText: qsTr( "Show edit toolbox")
+            showButtonText: qsTr("Show edit toolbox")
             iconSource: "qrc:///icons/backup/format-text-italic.svg"
-            EditView{
+            EditView {
                 id: editView
                 anchors.fill: parent
                 skrSettingsGroup: SkrSettings.textSettings
@@ -740,11 +636,11 @@ TextPageForm {
     Component {
         id: propertyPadComponent
 
-        SkrToolbox{
+        SkrToolbox {
 
-            showButtonText: qsTr( "Show properties toolbox")
+            showButtonText: qsTr("Show properties toolbox")
             iconSource: "qrc:///icons/backup/configure.svg"
-            PropertyPad{
+            PropertyPad {
                 id: propertyPad
                 anchors.fill: parent
 
@@ -757,48 +653,40 @@ TextPageForm {
     Component {
         id: outlinePadComponent
 
-        SkrToolbox{
+        SkrToolbox {
 
-            showButtonText: qsTr( "Show outline toolbox")
+            showButtonText: qsTr("Show outline toolbox")
             iconSource: "qrc:///icons/backup/story-editor.svg"
-            OutlinePad{
+            OutlinePad {
                 id: outlinePad
                 anchors.fill: parent
 
                 projectId: root.projectId
                 treeItemId: root.treeItemId
-
-
             }
-
         }
     }
 
     Component {
         id: tagPadComponent
 
-        SkrToolbox{
+        SkrToolbox {
 
-            showButtonText: qsTr( "Show tags toolbox")
+            showButtonText: qsTr("Show tags toolbox")
             iconSource: "qrc:///icons/backup/tag.svg"
-            TagPad{
+            TagPad {
                 id: tagPad
                 anchors.fill: parent
 
                 projectId: root.projectId
                 treeItemId: root.treeItemId
-
-
             }
-
         }
     }
-
 
     //-----------------------------------------------------------
     //-------Previous writing zone------------------------------------------
     //-----------------------------------------------------------
-
     Component {
         id: component_previousWritingZone
         WritingZone {
@@ -815,8 +703,6 @@ TextPageForm {
             textAreaStyleAccentColor: SkrTheme.accent
             paneStyleBackgroundColor: SkrTheme.pageBackground
 
-
-
             maximumTextAreaWidth: SkrSettings.textSettings.textWidth
             textPointSize: SkrSettings.textSettings.textPointSize
             textFontFamily: SkrSettings.textSettings.textFontFamily
@@ -827,19 +713,19 @@ TextPageForm {
 
             //needed to adapt width to a shrinking window
             Binding on textAreaWidth {
-                when: !Globals.compactMode && middleBase.width - 40 < maximumTextAreaWidth
+                when: !Globals.compactMode
+                      && middleBase.width - 40 < maximumTextAreaWidth
                 value: width - 40
                 restoreMode: Binding.RestoreBindingOrValue
-
             }
             Binding on textAreaWidth {
-                when: !Globals.compactMode && middleBase.width - 40 >= maximumTextAreaWidth
+                when: !Globals.compactMode
+                      && middleBase.width - 40 >= maximumTextAreaWidth
                 value: maximumTextAreaWidth
                 restoreMode: Binding.RestoreBindingOrValue
-
             }
 
-            SkrToolButton{
+            SkrToolButton {
                 id: closePreviousWritingZoneButton
                 parent: previousWritingZone.textArea
                 anchors.right: parent.right
@@ -849,42 +735,48 @@ TextPageForm {
                 width: 30
                 height: 30
                 text: qsTr("Close quick view")
-                icon{
+                icon {
                     source: "qrc:///icons/backup/view-close.svg"
                 }
 
-                onClicked:{
+                onClicked: {
 
-                        loader_previousWritingZone.active = false
+                    loader_previousWritingZone.active = false
                 }
             }
 
             Component.onCompleted: {
-                var previousTextItemTreeItemId = skrData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
-                openPreviousDocument(root.projectId, previousTextItemTreeItemId, root.isSecondary, root.milestone)
+                var previousTextItemTreeItemId = skrData.treeHub(
+                            ).getPreviousTreeItemIdOfTheSameType(
+                            root.projectId, root.treeItemId)
+                openPreviousDocument(root.projectId,
+                                     previousTextItemTreeItemId,
+                                     root.isSecondary, root.milestone)
 
-                previousWritingZone.setCursorPosition(previousWritingZone.textArea.length)
-
-
+                previousWritingZone.setCursorPosition(
+                            previousWritingZone.textArea.length)
             }
 
-
             //---------------------------------------------------------
-
-            function clearPreviousWritingZone(){
-                if(previousTextItemTreeItemId !== -2 && root.projectId !== -2 && milestone === -2){
+            function clearPreviousWritingZone() {
+                if (previousTextItemTreeItemId !== -2 && root.projectId !== -2
+                        && milestone === -2) {
                     previousContentSaveTimer.stop()
                     savePreviousContent()
-                    var uniqueDocumentReference = projectId + "_" + previousTextItemTreeItemId + "_" + (isSecondary ? "secondary" : "primary")
-                    skrTextBridge.unsubscribeTextDocument(uniqueDocumentReference, previousWritingZone.textArea.objectName, previousWritingZone.textArea.textDocument)
+                    var uniqueDocumentReference = projectId + "_" + previousTextItemTreeItemId
+                            + "_" + (isSecondary ? "secondary" : "primary")
+                    skrTextBridge.unsubscribeTextDocument(
+                                uniqueDocumentReference,
+                                previousWritingZone.textArea.objectName,
+                                previousWritingZone.textArea.textDocument)
 
                     previousTextItemTreeItemId = -2
                 }
 
                 previousWritingZone.clear()
             }
-            //---------------------------------------------------------
 
+            //---------------------------------------------------------
             function runActionsBeforeDestruction() {
                 clearPreviousWritingZone()
             }
@@ -895,22 +787,22 @@ TextPageForm {
 
             //---------------------------------------------------------
             // modifiable :
-
             property bool isModifiable: true
 
-            Connections{
+            Connections {
                 target: skrData.treePropertyHub()
-                function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
-                    if(projectId === root.projectId && treeItemId === previousWritingZone.previousTextItemTreeItemId){
+                function onPropertyChanged(projectId, propertyId, treeItemId, name, value) {
+                    if (projectId === root.projectId
+                            && treeItemId === previousWritingZone.previousTextItemTreeItemId) {
 
-                        if(name === "modifiable"){
+                        if (name === "modifiable") {
                             determineModifiable()
                         }
                     }
                 }
             }
 
-            Timer{
+            Timer {
                 id: determineModifiableTimer
                 repeat: false
                 interval: 200
@@ -919,21 +811,21 @@ TextPageForm {
                 }
             }
 
+            function determineModifiable() {
 
+                previousWritingZone.isModifiable = skrData.treePropertyHub(
+                            ).getProperty(projectId,
+                                          previousTextItemTreeItemId,
+                                          "modifiable", "true") === "true"
 
-
-            function determineModifiable(){
-
-                previousWritingZone.isModifiable = skrData.treePropertyHub().getProperty(projectId, previousTextItemTreeItemId, "modifiable", "true") === "true"
-
-                if(!previousWritingZone.isModifiable !== previousWritingZone.textArea.readOnly){
+                if (!previousWritingZone.isModifiable !== previousWritingZone.textArea.readOnly) {
                     previousWritingZone.textArea.readOnly = !previousWritingZone.isModifiable
-                    previousWritingZone.setCursorPosition(previousWritingZone.textArea.length)
+                    previousWritingZone.setCursorPosition(
+                                previousWritingZone.textArea.length)
                 }
-
             }
 
-          //---------------------------------------------------------
+            //---------------------------------------------------------
             QtObject {
                 id: previousDocumentPrivate
                 property bool contentSaveTimerAllowedToStart: true
@@ -944,58 +836,59 @@ TextPageForm {
             textArea.onTextChanged: {
 
                 //avoid first text change, when blank HTML is inserted
-                if(previousWritingZone.textArea.length === 0
-                        && skrData.projectHub().isProjectNotModifiedOnce(projectId)){
+                if (previousWritingZone.textArea.length === 0
+                        && skrData.projectHub().isProjectNotModifiedOnce(
+                            projectId)) {
                     return
                 }
 
-                if(previousContentSaveTimer.running){
+                if (previousContentSaveTimer.running) {
                     previousContentSaveTimer.stop()
                 }
-                if(previousDocumentPrivate.contentSaveTimerAllowedToStart){
+                if (previousDocumentPrivate.contentSaveTimerAllowedToStart) {
                     previousContentSaveTimer.start()
                 }
             }
-            Timer{
+            Timer {
                 id: previousContentSaveTimer
                 repeat: false
                 interval: 200
                 onTriggered: savePreviousContent()
             }
 
-            function savePreviousContent(){
+            function savePreviousContent() {
                 //console.log("saving text")
                 var result
 
                 var text = skrRootItem.cleanUpHtml(previousWritingZone.text)
 
-
-                if(isSecondary){
-                    result = skrData.treeHub().setSecondaryContent(projectId, previousTextItemTreeItemId, text)
+                if (isSecondary) {
+                    result = skrData.treeHub().setSecondaryContent(
+                                projectId, previousTextItemTreeItemId, text)
+                } else {
+                    result = skrData.treeHub().setPrimaryContent(
+                                projectId, previousTextItemTreeItemId, text)
+                    if (!previousContentSaveTimer.running)
+                        skrTreeManager.updateCharAndWordCount(
+                                    projectId, previousTextItemTreeItemId,
+                                    root.pageType, true)
                 }
-                else {
-                    result = skrData.treeHub().setPrimaryContent(projectId, previousTextItemTreeItemId, text)
-                    if(!previousContentSaveTimer.running)
-                        skrTreeManager.updateCharAndWordCount(projectId, previousTextItemTreeItemId, root.pageType, true)
 
-                }
+                if (!result.success) {
+                    console.log("saving text failed", projectId,
+                                previousTextItemTreeItemId)
+                } else {
 
-                if (!result.success){
-                    console.log("saving text failed", projectId, previousTextItemTreeItemId)
-                }
-                else {
                     //console.log("saving text success", projectId, treeItemId)
-
                 }
             }
 
-
             //---------------------------------------------------------
-
-
             function openPreviousDocument(_projectId, _treeItemId, isSecondary, milestone) {
                 // save current
-                if(projectId !== _projectId || previousTextItemTreeItemId !== _treeItemId ){ //meaning it hasn't just used the constructor
+                if (projectId !== _projectId
+                        || previousTextItemTreeItemId !== _treeItemId) {
+                    //meaning it hasn't just used the constructor
                     clearPreviousWritingZone()
                 }
 
@@ -1006,53 +899,50 @@ TextPageForm {
 
                 previousWritingZone.setCursorPosition(0)
 
-                if(milestone === -2){
+                if (milestone === -2) {
 
-                    if(isSecondary){
-                        previousWritingZone.text = skrRootItem.cleanUpHtml(skrData.treeHub().getSecondaryContent(_projectId, _treeItemId))
+                    if (isSecondary) {
+                        previousWritingZone.text = skrRootItem.cleanUpHtml(
+                                    skrData.treeHub().getSecondaryContent(
+                                        _projectId, _treeItemId))
+                    } else {
+                        previousWritingZone.text = skrRootItem.cleanUpHtml(
+                                    skrData.treeHub().getPrimaryContent(
+                                        _projectId, _treeItemId))
                     }
-                    else {
-                        previousWritingZone.text = skrRootItem.cleanUpHtml(skrData.treeHub().getPrimaryContent(_projectId, _treeItemId))
-                    }
+                } else {
 
-                }
-                else {
                     //TODO: if milestone
                 }
 
-                previousWritingZone.setCursorPosition(previousWritingZone.textArea.length)
-
+                previousWritingZone.setCursorPosition(
+                            previousWritingZone.textArea.length)
 
                 //title = getTitle()
-
-                if(milestone === -2){
-                    var uniqueDocumentReference = projectId + "_" + previousTextItemTreeItemId + "_" + (isSecondary ? "secondary" : "primary")
-                    skrTextBridge.subscribeTextDocument(uniqueDocumentReference,
-                                                        previousWritingZone.textArea.objectName,
-                                                        previousWritingZone.textArea.textDocument)
+                if (milestone === -2) {
+                    var uniqueDocumentReference = projectId + "_" + previousTextItemTreeItemId
+                            + "_" + (isSecondary ? "secondary" : "primary")
+                    skrTextBridge.subscribeTextDocument(
+                                uniqueDocumentReference,
+                                previousWritingZone.textArea.objectName,
+                                previousWritingZone.textArea.textDocument)
                 }
 
-                previousWritingZone.documentHandler.indentEverywhere = SkrSettings.textSettings.textIndent
-                previousWritingZone.documentHandler.topMarginEverywhere = SkrSettings.textSettings.textTopMargin
+                previousWritingZone.documentHandler.indentEverywhere
+                        = SkrSettings.textSettings.textIndent
+                previousWritingZone.documentHandler.topMarginEverywhere
+                        = SkrSettings.textSettings.textTopMargin
 
-
-                if(milestone === -2){
+                if (milestone === -2) {
                     documentPrivate.contentSaveTimerAllowedToStart = true
                 }
 
-                //        leftDock.setCurrentPaperId(projectId, paperId)
-                //        leftDock.setOpenedPaperId(projectId, paperId)
-
                 determineModifiableTimer.start()
-
             }
-
-
-
         }
     }
 
-    SkrToolButton{
+    SkrToolButton {
         id: openPreviousWritingZoneButton
         parent: writingZone.textArea
         anchors.right: parent.right
@@ -1062,92 +952,86 @@ TextPageForm {
         width: 30
         height: 30
         text: qsTr("Open quick view")
-        icon{
+        icon {
             source: "qrc:///icons/backup/arrow-down.svg"
         }
 
-        onClicked:{
-            if(skrData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId) > 0){
+        onClicked: {
+            if (skrData.treeHub().getPreviousTreeItemIdOfTheSameType(
+                        root.projectId, root.treeItemId) > 0) {
                 loader_previousWritingZone.active = true
             }
         }
     }
 
-    Connections{
+    Connections {
         target: skrData.treeHub()
-        function onTrashedChanged(projectId, treeItemId, newTrashedState){
+        function onTrashedChanged(projectId, treeItemId, newTrashedState) {
             determineIfPreviousWritingTreeItemIdChanged()
         }
     }
-    Connections{
+    Connections {
         target: skrData.treeHub()
-        function onTreeItemAdded(projectId, treeItemId){
+        function onTreeItemAdded(projectId, treeItemId) {
             determineIfPreviousWritingTreeItemIdChanged()
         }
     }
-    Connections{
+    Connections {
         target: skrData.treeHub()
-        function onTreeItemRemoved(projectId, treeItemId){
+        function onTreeItemRemoved(projectId, treeItemId) {
             determineIfPreviousWritingTreeItemIdChanged()
         }
     }
-    Connections{
+    Connections {
         target: skrData.treeHub()
-        function onTreeItemMoved(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId){
+        function onTreeItemMoved(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId) {
             determineIfPreviousWritingTreeItemIdChanged()
         }
     }
 
-    function determineIfPreviousWritingTreeItemIdChanged(){
-        if(loader_previousWritingZone.active){
-            var newTreeItemId = skrData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
-            if(loader_previousWritingZone.item.previousTextItemTreeItemId !== newTreeItemId){
+    function determineIfPreviousWritingTreeItemIdChanged() {
+        if (loader_previousWritingZone.active) {
+            var newTreeItemId = skrData.treeHub(
+                        ).getPreviousTreeItemIdOfTheSameType(root.projectId,
+                                                             root.treeItemId)
+            if (loader_previousWritingZone.item.previousTextItemTreeItemId !== newTreeItemId) {
 
-                if(newTreeItemId === -1){
+                if (newTreeItemId === -1) {
                     determineIfPreviousWritingMustBeVisible()
-                }
-                else {
+                } else {
                     loader_previousWritingZone.active = false
                     loader_previousWritingZone.active = true
                 }
-
-
             }
         }
     }
-    function determineIfPreviousWritingMustBeVisible(){
-        var newTreeItemId = skrData.treeHub().getPreviousTreeItemIdOfTheSameType(root.projectId, root.treeItemId)
-        if(newTreeItemId === -1){
-        loader_previousWritingZone.active = false
+    function determineIfPreviousWritingMustBeVisible() {
+        var newTreeItemId = skrData.treeHub(
+                    ).getPreviousTreeItemIdOfTheSameType(root.projectId,
+                                                         root.treeItemId)
+        if (newTreeItemId === -1) {
+            loader_previousWritingZone.active = false
             openPreviousWritingZoneButton.visible = false
-        }
-        else{
+        } else {
             openPreviousWritingZoneButton.visible = true
         }
-
     }
-
-
 
     //-----------------------------------------------------------------
     //----- Related Panel------------------------------------------------
     //-----------------------------------------------------------------
-
     relationshipPanel.projectId: root.projectId
     relationshipPanel.treeItemId: root.treeItemId
 
     relationshipPanel.viewManager: viewManager
 
-
-    relationshipPanel.onExtendedChanged:{
-        if(relationshipPanel.extended){
-            relationshipPanelPreferredHeight = root.height /2
-        }
-        else {
+    relationshipPanel.onExtendedChanged: {
+        if (relationshipPanel.extended) {
+            relationshipPanelPreferredHeight = root.height / 2
+        } else {
             relationshipPanelPreferredHeight = 200
         }
     }
-
 
     Behavior on relationshipPanelPreferredHeight {
         enabled: SkrSettings.ePaperSettings.animationEnabled
@@ -1157,6 +1041,4 @@ TextPageForm {
             damping: 0.2
         }
     }
-
-
 }
