@@ -607,7 +607,7 @@ Item {
 
     //---------------------------------------------------------------
 
-    function loadProjectDependantPageAt(projectId, pageType, focusedPosition){
+    function loadProjectDependantPageAt(projectId, pageType, position){
 
         if(!isViewVisible(position)){
             return

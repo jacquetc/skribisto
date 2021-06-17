@@ -2,5 +2,9 @@
     <qresource prefix="/qml/plugins">
         <file>OverviewPage/OverviewPage.qml</file>
         <file>OverviewPage/OverviewPageForm.ui.qml</file>
+        <file>OverviewPage/OverviewToolboxForm.ui.qml</file>
+        <file>OverviewPage/OverviewToolbox.qml</file>
+        <file>OverviewPage/OverviewTreeForm.ui.qml</file>
+        <file>OverviewPage/OverviewTree.qml</file>
     </qresource>
 </RCC>

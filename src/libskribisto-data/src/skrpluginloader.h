@@ -133,7 +133,7 @@ public:
             }
 
 
-            if (T *plugin = qobject_cast<T *>(object)) {
+            if (T *plugin = dynamic_cast<T *>(object)) {
                 list.push_back(plugin);
             }
         }

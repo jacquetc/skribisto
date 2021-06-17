@@ -12,14 +12,6 @@
         <file>qml/Commons/WritingZone.qml</file>
         <file>qml/Commons/WritingZoneForm.ui.qml</file>
         <file>qml/Commons/Minimap.qml</file>
-        <file>qml/WriteOverview/WriteOverviewPage.qml</file>
-        <file>qml/WriteOverview/LeftDockForm.ui.qml</file>
-        <file>qml/WriteOverview/LeftDock.qml</file>
-        <file>qml/WriteOverview/WriteOverviewPageForm.ui.qml</file>
-        <file>qml/NoteOverview/LeftDock.qml</file>
-        <file>qml/NoteOverview/NoteOverviewPage.qml</file>
-        <file>qml/NoteOverview/LeftDockForm.ui.qml</file>
-        <file>qml/NoteOverview/NoteOverviewPageForm.ui.qml</file>
         <file>qml/Commons/SimpleDialog.qml</file>
         <file>qml/Commons/SKRTextArea.qml</file>
         <file>qml/Commons/TagPad.qml</file>
@@ -27,14 +19,8 @@
         <file>qml/Commons/SkrDrawer.qml</file>
         <file>qml/Commons/CheckableTree.qml</file>
         <file>qml/Commons/SKRPillarLayout.qml</file>
-        <file>qml/WriteOverview/SheetOverviewTree.qml</file>
-        <file>qml/WriteOverview/SheetOverviewTreeForm.ui.qml</file>
-        <file>qml/WriteOverview/RightDock.qml</file>
-        <file>qml/WriteOverview/RightDockForm.ui.qml</file>
         <file>qml/Commons/EditView.qml</file>
         <file>qml/Commons/EditViewForm.ui.qml</file>
-        <file>qml/WriteOverview/SheetOverviewTool.qml</file>
-        <file>qml/WriteOverview/SheetOverviewToolForm.ui.qml</file>
         <file>qml/Commons/NotePad.qml</file>
         <file>qml/Commons/NotePadForm.ui.qml</file>
         <file>qml/SkrTheme.qml</file>
@@ -56,10 +42,6 @@
         <file>qml/Items/SkrComboBox.qml</file>
         <file>qml/Items/SkrTextField.qml</file>
         <file>qml/Items/SkrRoundButton.qml</file>
-        <file>qml/NoteOverview/NoteSearchItem.qml</file>
-        <file>qml/NoteOverview/NoteSearchItemForm.ui.qml</file>
-        <file>qml/NoteOverview/RecentNotesItem.qml</file>
-        <file>qml/NoteOverview/RecentNotesItemForm.ui.qml</file>
         <file>qml/Items/SkrToolTip.qml</file>
         <file>qml/Items/SkrTabButtonForm.ui.qml</file>
         <file>qml/Commons/ListItemAttributes.qml</file>

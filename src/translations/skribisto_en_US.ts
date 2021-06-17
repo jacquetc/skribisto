@@ -666,33 +666,6 @@
     </message>
 </context>
 <context>
-    <name>LeftDock</name>
-    <message>
-        <source>Show navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show recent sheets</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Navigation dock</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show recent notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>ListItemAttributes</name>
     <message>
         <source>Non printable</source>
@@ -1062,29 +1035,6 @@
     </message>
 </context>
 <context>
-    <name>NoteSearchItemForm.ui</name>
-    <message>
-        <source>Search</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Deselect tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Note search result list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Note overview list</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>OutlinePad</name>
     <message>
         <source>Open outline</source>
@@ -1114,6 +1064,71 @@
     </message>
     <message>
         <source>Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The focus is currently on %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Overview of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OverviewPageForm.ui</name>
+    <message>
+        <source>Unfocus</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolbox</name>
+    <message>
+        <source>Show the overview toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show word count</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1237,6 +1252,14 @@
     </message>
     <message>
         <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Item menu</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1530,45 +1553,6 @@
     </message>
     <message>
         <source>List of trashed items to be restored</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>RightDock</name>
-    <message>
-        <source>&amp;Tools dock</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Properties</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Overview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show overview toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show edit toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show properties toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags toolbox</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1938,168 +1922,6 @@
     </message>
     <message>
         <source>Enable animations</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>SheetOverviewToolForm.ui</name>
-    <message>
-        <source>Project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Display mode :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tree indentation :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show outline</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show character count</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show word count</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>SheetOverviewTree</name>
-    <message>
-        <source>Level %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>label: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>has children</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>navigation item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>c: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>all c: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>w: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>all w: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unset focus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set focus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add before</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add after</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a sub-item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2593,20 +2415,6 @@
     </message>
     <message>
         <source>Go Back to the menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPage</name>
-    <message>
-        <source>The focus is currently on %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPageForm.ui</name>
-    <message>
-        <source>Unfocus</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

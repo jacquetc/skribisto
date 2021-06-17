@@ -16,6 +16,8 @@ FocusScope {
 
     property list<Component> toolboxes
 
+    clip: true
+
     signal closeViewCalled()
 
     function closeView(){

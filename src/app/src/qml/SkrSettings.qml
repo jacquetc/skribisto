@@ -101,7 +101,7 @@ QtObject {
         category: "overviewTree"
         property int treeItemDisplayMode: 1
         property int treeIndentation: 30
-        property bool synopsisBoxVisible: true
+        property bool outlineBoxVisible: true
         property bool noteBoxVisible: true
         property bool tagBoxVisible: true
         property bool characterCountBoxVisible: true

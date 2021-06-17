@@ -17,6 +17,9 @@ RootPageForm {
     id: rootPage
 
 
+    Component.onCompleted: {
+       populateProjectPageModel()
+    }
 
     //---------------------------------------------------------
     //---------------------------------------------------------
@@ -815,5 +818,58 @@ RootPageForm {
         }
 
     }
+
+
+    //--------------------------------------------------------------
+    //----- Top toolbar-----------------------------------------------
+    //--------------------------------------------------------------
+
+
+    ListModel {
+        id: projectPageModel
+    }
+
+
+    function populateProjectPageModel(){
+        projectPageModel.clear()
+
+        var list = skrTreeManager.findProjectPageNamesForLocation("top-toolbar")
+
+        for(var i in list){
+            var name = list[i]
+            var type = skrTreeManager.findProjectPageType(name)
+            var iconSource = skrTreeManager.findProjectPageIconSource(name)
+            var showButtonText = skrTreeManager.findProjectPageShowButtonText(name)
+            var shortcutSequences = skrTreeManager.findProjectPageShortcutSequences(name)
+
+            projectPageModel.append({ "name": name, "type": type, "iconSource": iconSource, "showButtonText": showButtonText, "shortcutSequences": shortcutSequences})
+        }
+    }
+
+
+    topToolBarRepeater.model: projectPageModel
+
+    topToolBarRepeater.delegate: SkrToolButton {
+        property string name: model.name
+        text: model.showButtonText
+
+        icon.source: model.iconSource
+
+        onClicked: {
+            viewManager.loadProjectDependantPage(skrData.projectHub().getActiveProject(), model.type)
+        }
+
+        Shortcut{
+
+            sequences: model.shortcutSequences
+            onActivated: {
+
+            }
+
+        }
+
+    }
+
+
 
 }

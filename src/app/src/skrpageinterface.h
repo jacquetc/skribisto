@@ -24,9 +24,10 @@
 
 #include <QString>
 #include "skrresult.h"
+#include "skrcoreinterface.h"
 
 
-class SKRPageInterface  {
+class SKRPageInterface : public SKRCoreInterface {
 public:
 
     virtual ~SKRPageInterface() {}

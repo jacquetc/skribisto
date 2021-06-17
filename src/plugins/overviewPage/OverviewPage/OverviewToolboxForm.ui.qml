@@ -1,11 +1,11 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import ".."
-import "../Items"
+import "../.."
+import "../../Items"
 
-Item {
-    property alias projectComboBox: projectComboBox
+SkrToolbox {
+    property alias displayGroupBox: displayGroupBox
     property alias showNotePadSwitch: showNotePadSwitch
     property alias showTagPadSwitch: showTagPadSwitch
     property alias showOutlineSwitch: showOutlineSwitch
@@ -14,7 +14,6 @@ Item {
 
     property alias treeItemDisplayModeSlider: treeItemDisplayModeSlider
     property alias treeIndentationSlider: treeIndentationSlider
-    property alias projectGroupBox: projectGroupBox
 
     implicitHeight: columnLayout.childrenRect.height + columnLayout.spacing
 
@@ -31,25 +30,7 @@ Item {
             anchors.right: parent.right
 
             SkrGroupBox {
-                id: projectGroupBox
-                focusPolicy: Qt.TabFocus
-                Layout.fillWidth: true
-                title: qsTr("Project")
-                bigTitleEnabled: false
-
-                ColumnLayout {
-                    id: columnLayout2
-                    anchors.fill: parent
-
-                    SkrComboBox {
-                        id: projectComboBox
-                        Layout.fillWidth: true
-                    }
-                }
-            }
-
-            SkrGroupBox {
-                id: groupBox
+                id: displayGroupBox
                 focusPolicy: Qt.TabFocus
                 padding: 5
                 Layout.fillWidth: true
@@ -66,7 +47,7 @@ Item {
                         Layout.fillWidth: true
 
                         SkrLabel {
-                            text: qsTr("Display mode :")
+                            text: qsTr("Display mode:")
                         }
 
                         SkrSlider {
@@ -77,7 +58,7 @@ Item {
                         }
 
                         SkrLabel {
-                            text: qsTr("Tree indentation :")
+                            text: qsTr("Tree indentation:")
                         }
 
                         SkrSlider {
@@ -94,6 +75,7 @@ Item {
                         SkrSwitch {
                             id: showNotePadSwitch
                             text: qsTr("Show notes")
+                            visible: false
                         }
                         SkrSwitch {
                             id: showTagPadSwitch

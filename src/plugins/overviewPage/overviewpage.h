@@ -23,16 +23,14 @@
 
 #include <QObject>
 #include "skrprojectpageinterface.h"
-#include "skrcoreinterface.h"
 
 class OverviewPage : public QObject,
-                     public SKRCoreInterface,
                      public SKRProjectPageInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.OverviewPagePlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(SKRCoreInterface SKRProjectPageInterface)
+    Q_INTERFACES(SKRProjectPageInterface)
 
 public:
 
@@ -67,12 +65,18 @@ public:
         return "qrc:///qml/plugins/OverviewPage/OverviewPage.qml";
     }
 
-    bool isConstructible() const override {
-        return false;
+    // ---------- project page :
+
+    QString iconSource() const override {
+        return "qrc:///icons/backup/object-rows.svg";
     }
 
-    QString pageTypeIconUrl() const override {
-        return "qrc:///icons/backup/object-rows.svg";
+    QString showButtonText() const override {
+        return tr("Show the overview");
+    }
+
+    QStringList shortcutSequences() const override {
+        return QStringList() << "F5";
     }
 
     int weight() const override {

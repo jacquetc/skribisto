@@ -35,12 +35,28 @@ public:
     virtual int         weight() const    = 0;
 
 
-    SKRResult           finaliseAfterCreationOfTreeItem(int projectId,
-                                                        int treeItemId) override {}
+    virtual QString     iconSource() const = 0;
 
-    void                updateCharAndWordCount(int  projectId,
-                                               int  treeItemId,
-                                               bool sameThread = false) override {}
+    virtual QString     showButtonText() const = 0;
+
+    virtual QStringList shortcutSequences() const = 0;
+
+    bool                isConstructible() const override {
+        return false;
+    }
+
+    QString pageTypeIconUrl() const override {
+        return "";
+    }
+
+    SKRResult finaliseAfterCreationOfTreeItem(int projectId,
+                                              int treeItemId) override {
+        return SKRResult();
+    }
+
+    void updateCharAndWordCount(int  projectId,
+                                int  treeItemId,
+                                bool sameThread = false) override {}
 };
 
 #define SKRProjectPageInterface_iid "com.skribisto.ProjectPageInterface/1.0"

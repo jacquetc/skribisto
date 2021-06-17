@@ -14,7 +14,12 @@ WritingGamesPageToolboxForm {
 
     //required property var writingZone
     property var page: rootWindow.viewManager.focusedPage
-    property var writingZone: page.writingZone
+
+    property var writingZone
+    Component.onCompleted: {
+        writingZone = page.writingZone
+    }
+
 
     forbidErasingSwitch.onCheckedChanged: {
         if(forbidErasingSwitch.checked){
@@ -30,8 +35,10 @@ WritingGamesPageToolboxForm {
 
 
     Connections {
-        target: writingZone.textArea
+        id: con
+        target: Qt.isQtObject(writingZone.textArea) ? writingZone.textArea : undefined
         enabled: forbidErasingSwitch.checked
+        ignoreUnknownSignals: true
         function onCursorPositionChanged(){
              writingZone.textArea.cursorPosition = writingZone.textArea.length
         }

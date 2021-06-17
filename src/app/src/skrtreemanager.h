@@ -44,6 +44,13 @@ public:
     Q_INVOKABLE QStringList findToolboxUrlsForPage(const QString& pageType) const;
     Q_INVOKABLE QStringList findToolboxUrlsForProject() const;
 
+    Q_INVOKABLE QStringList findProjectPageNamesForLocation(const QString& location) const;
+    Q_INVOKABLE QString     findProjectPageIconSource(const QString& name) const;
+
+    Q_INVOKABLE QString     findProjectPageShowButtonText(const QString& name) const;
+    Q_INVOKABLE QString     findProjectPageType(const QString& name) const;
+    Q_INVOKABLE QStringList findProjectPageShortcutSequences(const QString& name) const;
+
 private:
 
     Q_INVOKABLE SKRResult finaliseAfterCreationOfTreeItem(int            projectId,

@@ -115,7 +115,7 @@ void SKRWindowManager::addWindow(int projectId, int treeItemId, const QString& p
           projectId                                                                                                                                                                                                                                                                                  },
         { "treeItemIdToBeLoaded",
           treeItemId                                                                                                                                                                                                                                                                                                           },
-        { "projectIndependantPageTypeToBeLoaded",
+        { "pageTypeToBeLoaded",
           pageType                                                                                                                                                                                                                                                                                                                                           },
         { "windowId",
           nextFreeWindowId                                                                                                                                                                                                                                                                                                                                   } };
@@ -144,6 +144,13 @@ void SKRWindowManager::addWindowForItemId(int projectId, int treeItemId) {
 
 void SKRWindowManager::addWindowForProjectIndependantPageType(const QString& pageType) {
     addWindow(-1, -1, pageType);
+}
+
+// -------------------------------------------------------------------------------------------
+
+void SKRWindowManager::addWindowForProjectDependantPageType(int projectId, const QString& pageType)
+{
+    addWindow(projectId, -1, pageType);
 }
 
 // -------------------------------------------------------------------------------------------

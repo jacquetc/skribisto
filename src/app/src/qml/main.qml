@@ -22,7 +22,7 @@ ApplicationWindow {
 
     property int projectIdToBeLoaded: -1
     property int treeItemIdToBeLoaded: -1
-    property string projectIndependantPageTypeToBeLoaded: ""
+    property string pageTypeToBeLoaded: ""
     property var additionalPropertiesForViewManager: ({})
 
     property int windowId: -1
@@ -77,13 +77,19 @@ ApplicationWindow {
                 rootPage.viewManager.loadTreeItemAt(projectIdToBeLoaded,
                                                     treeItemIdToBeLoaded,
                                                     Qt.TopLeftCorner)
+            } else if (projectIdToBeLoaded !== -1 && treeItemIdToBeLoaded === -1
+                       && pageTypeToBeLoaded !== "") {
+                rootPage.viewManager.insertAdditionalPropertyDict(
+                            additionalPropertiesForViewManager)
+                rootPage.viewManager.loadProjectDependantPageAt(
+                            projectIdToBeLoaded, pageTypeToBeLoaded,
+                            Qt.TopLeftCorner)
             } else if (projectIdToBeLoaded === -1 && treeItemIdToBeLoaded === -1
-                       && projectIndependantPageTypeToBeLoaded !== "") {
+                       && pageTypeToBeLoaded !== "") {
                 rootPage.viewManager.insertAdditionalPropertyDict(
                             additionalPropertiesForViewManager)
                 rootPage.viewManager.loadProjectIndependantPageAt(
-                            projectIndependantPageTypeToBeLoaded,
-                            Qt.TopLeftCorner)
+                            pageTypeToBeLoaded, Qt.TopLeftCorner)
             }
         }
     }
@@ -1581,7 +1587,7 @@ ApplicationWindow {
         }
     }
 
-    Shortcut{
+    Shortcut {
         sequences: skrShortcutManager.shortcuts("cut")
         context: Qt.ApplicationShortcut
         onActivated: cutTextAction.trigger()
@@ -1600,7 +1606,7 @@ ApplicationWindow {
         }
     }
 
-    Shortcut{
+    Shortcut {
         sequences: skrShortcutManager.shortcuts("copy")
         context: Qt.ApplicationShortcut
         onActivated: copyTextAction.trigger()

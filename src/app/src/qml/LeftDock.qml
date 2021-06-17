@@ -9,7 +9,6 @@ import "Commons"
 LeftDockForm {
     id: root
 
-
     required property var viewManager
     //-----------------------------------------------------------
     //--------------- toolboxes Behavior------------------------
@@ -56,22 +55,22 @@ LeftDockForm {
     Component {
         id: toolboxLoaderComponent
 
-        Loader{
+        Loader {
             id: toolboxLoader
             sourceComponent: modelData
-
 
             width: scrollView.width
 
             onLoaded: {
 
                 //toolboxFlickable.contentHeight = toolboxLayout.childrenRect.height
-
                 var iconSource = toolboxLoader.item.iconSource
                 var showButtonText = toolboxLoader.item.showButtonText
-                toolButtonModel.append({"iconSource": iconSource, "showButtonText": showButtonText,
-                                           "toolbox": toolboxLoader})
-
+                toolButtonModel.append({
+                                           "iconSource": iconSource,
+                                           "showButtonText": showButtonText,
+                                           "toolbox": toolboxLoader
+                                       })
             }
 
             Binding {
@@ -79,30 +78,22 @@ LeftDockForm {
                 when: toolboxLoader.status === Loader.Ready
                 property: "height"
                 value: toolboxLoader.item.implicitHeight
-
+                restoreMode: Binding.RestoreBindingOrValue
             }
-
         }
     }
     toolboxRepeater.delegate: toolboxLoaderComponent
 
-
     //--------------------------------------------------------------
     //--------------------------------------------------------------
     //--------------------------------------------------------------
-
-
-
-
     ListModel {
         id: toolButtonModel
     }
     toolButtonRepeater.model: toolButtonModel
 
-
     Component {
         id: toolButtonLoaderComponent
-
 
         Loader {
             id: toolButtonLoader
@@ -111,14 +102,11 @@ LeftDockForm {
             onLoaded: {
                 toolButtonLoader.item.iconSource = model.iconSource
                 toolButtonLoader.item.text = model.showButtonText
-                toolButtonLoader.item.toolbox =  model.toolbox
+                toolButtonLoader.item.toolbox = model.toolbox
             }
-
-
         }
     }
     toolButtonRepeater.delegate: toolButtonLoaderComponent
-
 
     Component {
         id: toolButtonComponent
@@ -134,42 +122,34 @@ LeftDockForm {
                 toolbox.visible = toolButton.checked
             }
 
-            Binding on checked{
+            Binding on checked {
                 value: toolbox.visible
                 delayed: true
                 restoreMode: Binding.RestoreBindingOrValue
             }
-
         }
-
     }
-
-
 
     //------------------------------------------------------------------------
     //-----toolboxes------------------------------------------------------------
     //-----------------------------------------------------------------------
-
-
     property var toolboxes: []
 
-    function determineAndAddToolboxPlugins(){
+    function determineAndAddToolboxPlugins() {
         var toolboxUrlList = skrTreeManager.findToolboxUrlsForProject()
 
-        for(var i in toolboxUrlList){
+        for (var i in toolboxUrlList) {
             var url = toolboxUrlList[i]
-            var pluginComponent = Qt.createComponent(url, Component.PreferSynchronous, root)
+            var pluginComponent = Qt.createComponent(
+                        url, Component.PreferSynchronous, root)
             toolboxes.push(pluginComponent)
         }
-
     }
 
-
     //-----------------------------------------------------------
     //-----------------------------------------------------------
     //-----------------------------------------------------------
-
-    signal hideDockCalled()
+    signal hideDockCalled
     hideDockToolButton.action: hideDockAction
 
     Action {
@@ -178,8 +158,5 @@ LeftDockForm {
         onTriggered: {
             hideDockCalled()
         }
-
     }
-
-
 }
