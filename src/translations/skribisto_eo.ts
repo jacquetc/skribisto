@@ -393,10 +393,6 @@
         <translation>Teksto</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Markdown</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -669,33 +665,6 @@
     </message>
 </context>
 <context>
-    <name>LeftDock</name>
-    <message>
-        <source>Show navigation</source>
-        <translation>Montri navigadon</translation>
-    </message>
-    <message>
-        <source>Show recent sheets</source>
-        <translation>Montri lastatempajn foliojn</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation dock</source>
-        <translation>&amp; Naviga doko</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation>&amp;Navigado</translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation>&amp; Dokumentoj</translation>
-    </message>
-    <message>
-        <source>Show recent notes</source>
-        <translation>Montri freŝajn notojn</translation>
-    </message>
-</context>
-<context>
     <name>ListItemAttributes</name>
     <message>
         <source>Non printable</source>
@@ -733,12 +702,20 @@
         <translation>Rubujo</translation>
     </message>
     <message>
+        <source>Select</source>
+        <translation>Elektu</translation>
+    </message>
+    <message>
         <source>Add</source>
         <translation>Aldoni</translation>
     </message>
     <message>
         <source>Projects</source>
         <translation>Projektoj</translation>
+    </message>
+    <message>
+        <source>Navigation list</source>
+        <translation>Naviga listo</translation>
     </message>
     <message>
         <source>is a folder</source>
@@ -845,14 +822,6 @@
         <translation>Sendu al rubujo</translation>
     </message>
     <message>
-        <source>Navigation list</source>
-        <translation>Naviga listo</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation>Elektu</translation>
-    </message>
-    <message>
         <source>Close this project</source>
         <translation>Fermu ĉi tiun projekton</translation>
     </message>
@@ -870,6 +839,17 @@
     <message>
         <source>Select</source>
         <translation>Elektu</translation>
+    </message>
+</context>
+<context>
+    <name>NavigationProjectToolbox</name>
+    <message>
+        <source>Show navigation toolbox</source>
+        <translation>Montri navigadan ilarkeston</translation>
+    </message>
+    <message>
+        <source>Navigation Project Toolbox</source>
+        <translation>Naviga Projekta Ilujo</translation>
     </message>
 </context>
 <context>
@@ -943,16 +923,8 @@
         <translation>Projekta dosiero:</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>projektodosiero</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Projekta vojo:</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>projekcia vojo</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +945,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Vortaro:</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Projekta dosiero</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Projekta vojo</translation>
     </message>
 </context>
 <context>
@@ -1054,29 +1034,6 @@
     </message>
 </context>
 <context>
-    <name>NoteSearchItemForm.ui</name>
-    <message>
-        <source>Search</source>
-        <translation>Serĉu</translation>
-    </message>
-    <message>
-        <source>Show tags list</source>
-        <translation>Montri liston de etikedoj</translation>
-    </message>
-    <message>
-        <source>Deselect tags</source>
-        <translation>Malelektu etikedojn</translation>
-    </message>
-    <message>
-        <source>Note search result list</source>
-        <translation>Notu serĉrezultliston</translation>
-    </message>
-    <message>
-        <source>Note overview list</source>
-        <translation>Notu superrigardan liston</translation>
-    </message>
-</context>
-<context>
     <name>OutlinePad</name>
     <message>
         <source>Open outline</source>
@@ -1096,6 +1053,82 @@
     <message>
         <source>Type your outline here …</source>
         <translation>Tajpu vian skizon ĉi tie ...</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewPage</name>
+    <message>
+        <source>Overview page</source>
+        <translation>Superrigarda paĝo</translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation>Superrigardo</translation>
+    </message>
+    <message>
+        <source>Show the overview</source>
+        <translation>Montru la superrigardon</translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Montri etikedojn por etikedoj</translation>
+    </message>
+    <message>
+        <source>The focus is currently on %1</source>
+        <translation>La fokuso estas nuntempe sur %1</translation>
+    </message>
+    <message>
+        <source>Overview of %1</source>
+        <translation>Superrigardo de %1</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewPageForm.ui</name>
+    <message>
+        <source>Unfocus</source>
+        <translation>Malfokusigi</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolbox</name>
+    <message>
+        <source>Show the overview toolbox</source>
+        <translation>Montru la superrigardan ilarkeston</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Vidigu</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Vidiga reĝimo:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Arbo deŝovo:</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Montri skizon</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Montri notojn</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Montri etikedojn</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Montri signan nombron</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Montri vortkalkulon</translation>
     </message>
 </context>
 <context>
@@ -1220,6 +1253,14 @@
         <source>Send to trash</source>
         <translation>Sendu al rubujo</translation>
     </message>
+    <message>
+        <source>has children</source>
+        <translation>havas infanojn</translation>
+    </message>
+    <message>
+        <source>Item menu</source>
+        <translation>Item-menuo</translation>
+    </message>
 </context>
 <context>
     <name>PluginPage</name>
@@ -1331,6 +1372,14 @@
         <source>Install new dictionaries</source>
         <translation>Instalu novajn vortarojn</translation>
     </message>
+    <message>
+        <source>Notes</source>
+        <translation>Notoj</translation>
+    </message>
+    <message>
+        <source>Note folder:</source>
+        <translation>Noto-dosierujo:</translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -1386,6 +1435,80 @@
     </message>
 </context>
 <context>
+    <name>RelationshipPanel</name>
+    <message>
+        <source>Note</source>
+        <translation>Notu</translation>
+    </message>
+    <message>
+        <source>Type your text here …</source>
+        <translation>Tajpu vian tekston ĉi tie ...</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Malfermu</translation>
+    </message>
+    <message>
+        <source>Open in another view</source>
+        <translation>Malfermu en alia vido</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation>Malfermu en nova fenestro</translation>
+    </message>
+    <message>
+        <source>Dissociate</source>
+        <translation>Disigi</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Alinomi</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation>Sendu al rubujo</translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
+        <translation>Renomi artikolon</translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanelForm.ui</name>
+    <message>
+        <source>All</source>
+        <translation>Ĉiuj</translation>
+    </message>
+    <message>
+        <source>Extend this panel</source>
+        <translation>Etendu ĉi tiun panelon</translation>
+    </message>
+    <message>
+        <source>Hide the sub panel</source>
+        <translation>Kaŝu la subpanelon</translation>
+    </message>
+    <message>
+        <source>Open item</source>
+        <translation>Malfermu eron</translation>
+    </message>
+    <message>
+        <source>Close this panel</source>
+        <translation>Fermu ĉi tiun panelon</translation>
+    </message>
+    <message>
+        <source>Proposed</source>
+        <translation>Proponita</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation>Notoj</translation>
+    </message>
+    <message>
+        <source>Relationship list</source>
+        <translation>Listo de rilatoj</translation>
+    </message>
+</context>
+<context>
     <name>RestoreListView</name>
     <message>
         <source>Restore</source>
@@ -1431,45 +1554,6 @@
     <message>
         <source>List of trashed items to be restored</source>
         <translation>Listo de restaŭritaj rubaĵoj</translation>
-    </message>
-</context>
-<context>
-    <name>RightDock</name>
-    <message>
-        <source>&amp;Tools dock</source>
-        <translation>&amp; Iloj dokas</translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp; Redaktu</translation>
-    </message>
-    <message>
-        <source>&amp;Properties</source>
-        <translation>&amp; Ecoj</translation>
-    </message>
-    <message>
-        <source>&amp;Tags</source>
-        <translation>&amp; Etikedoj</translation>
-    </message>
-    <message>
-        <source>&amp;Overview</source>
-        <translation>&amp; Superrigardo</translation>
-    </message>
-    <message>
-        <source>Show overview toolbox</source>
-        <translation>Montri superrigardan ilarkeston</translation>
-    </message>
-    <message>
-        <source>Show edit toolbox</source>
-        <translation>Montri redaktilon</translation>
-    </message>
-    <message>
-        <source>Show properties toolbox</source>
-        <translation>Montru ilojn de propraĵoj</translation>
-    </message>
-    <message>
-        <source>Show tags toolbox</source>
-        <translation>Montri etikedojn por etikedoj</translation>
     </message>
 </context>
 <context>
@@ -1572,6 +1656,100 @@
     <message>
         <source>Cut</source>
         <translation>Tranĉi</translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation>&amp; Agordoj</translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation>&amp; Presi</translation>
+    </message>
+    <message>
+        <source>Fullscreen</source>
+        <translation>Plenekrane</translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
+        <translation>Centri vertikale la tekstokursoron</translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
+        <translation>&amp; Uzula manlibro</translation>
+    </message>
+    <message>
+        <source>&amp;New Project</source>
+        <translation>&amp; Nova Projekto</translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation>&amp; Kontrolu literumon</translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation>&amp; Malfermu</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation>&amp;Savi</translation>
+    </message>
+    <message>
+        <source>&amp;Save All</source>
+        <translation>&amp; Konservi ĉiujn</translation>
+    </message>
+    <message>
+        <source>&amp;Save As …</source>
+        <translation>&amp;Konservi kiel …</translation>
+    </message>
+    <message>
+        <source>&amp;Quit</source>
+        <translation>&amp; Ĉesu</translation>
+    </message>
+    <message>
+        <source>Ctrl+Q</source>
+        <translation>Stir + Q</translation>
+    </message>
+    <message>
+        <source>Create a new page of the same type</source>
+        <translation>Kreu novan samspecan paĝon</translation>
+    </message>
+    <message>
+        <source>Add a quick note</source>
+        <translation>Aldonu rapidan noton</translation>
+    </message>
+    <message>
+        <source>Show relationships</source>
+        <translation>Montru rilatojn</translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <comment>center-vert-text-cursor</comment>
+        <translation>Alt+C</translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <comment>check-spelling</comment>
+        <translation>Shift+F7</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <comment>save-all-project</comment>
+        <translation>Ctrl+Maj+S</translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <comment>create-new-identical-page</comment>
+        <translation>Ctrl+Return</translation>
+    </message>
+    <message>
+        <source>Alt+R</source>
+        <comment>show-relationship-panel</comment>
+        <translation>Alt+R</translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <comment>add-quick-note</comment>
+        <translation>Alt+N</translation>
     </message>
 </context>
 <context>
@@ -1742,167 +1920,9 @@
         <source>Show properties toolbox</source>
         <translation>Montru ilojn de propraĵoj</translation>
     </message>
-</context>
-<context>
-    <name>SheetOverviewToolForm.ui</name>
     <message>
-        <source>Project</source>
-        <translation>Projekto</translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation>Vidigu</translation>
-    </message>
-    <message>
-        <source>Display mode :</source>
-        <translation>Vidiga reĝimo:</translation>
-    </message>
-    <message>
-        <source>Tree indentation :</source>
-        <translation>Arbo deŝovo:</translation>
-    </message>
-    <message>
-        <source>Show outline</source>
-        <translation>Montri skizon</translation>
-    </message>
-    <message>
-        <source>Show notes</source>
-        <translation>Montri notojn</translation>
-    </message>
-    <message>
-        <source>Show tags</source>
-        <translation>Montri etikedojn</translation>
-    </message>
-    <message>
-        <source>Show character count</source>
-        <translation>Montri signan nombron</translation>
-    </message>
-    <message>
-        <source>Show word count</source>
-        <translation>Montri vortkalkulon</translation>
-    </message>
-</context>
-<context>
-    <name>SheetOverviewTree</name>
-    <message>
-        <source>Level %1</source>
-        <translation>Nivelo %1</translation>
-    </message>
-    <message>
-        <source>label: %1</source>
-        <translation>etikedo: %1</translation>
-    </message>
-    <message>
-        <source>has children</source>
-        <translation>havas infanojn</translation>
-    </message>
-    <message>
-        <source>navigation item</source>
-        <translation>navigada ero</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Malfermu dokumenton</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Malfermu dokumenton en nova langeto</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Malfermu dokumenton en fenestro</translation>
-    </message>
-    <message>
-        <source>Enter label</source>
-        <translation>Enigu etikedon</translation>
-    </message>
-    <message>
-        <source>Enter name</source>
-        <translation>Enigu nomon</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <translation>Skizo</translation>
-    </message>
-    <message>
-        <source>c: %1</source>
-        <translation>k: %1</translation>
-    </message>
-    <message>
-        <source>all c: %1</source>
-        <translation>ĉiuj k: %1</translation>
-    </message>
-    <message>
-        <source>w: %1</source>
-        <translation>v: %1</translation>
-    </message>
-    <message>
-        <source>all w: %1</source>
-        <translation>ĉiuj k: %1</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation>Malfermu</translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation>Malfermu en nova langeto</translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation>Malfermu en nova fenestro</translation>
-    </message>
-    <message>
-        <source>Unset focus</source>
-        <translation>Malfari fokuson</translation>
-    </message>
-    <message>
-        <source>Set focus</source>
-        <translation>Fiksu fokuson</translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation>Alinomi</translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation>Metu etikedon</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Tranĉi</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Kopiu</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation>Algluu</translation>
-    </message>
-    <message>
-        <source>Add before</source>
-        <translation>Aldoni antaŭe</translation>
-    </message>
-    <message>
-        <source>Add after</source>
-        <translation>Aldoni post</translation>
-    </message>
-    <message>
-        <source>Add a sub-item</source>
-        <translation>Aldoni sub-eron</translation>
-    </message>
-    <message>
-        <source>Move up</source>
-        <translation>Supreniĝi</translation>
-    </message>
-    <message>
-        <source>Move down</source>
-        <translation>Movu malsupren</translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
-        <translation>Sendu al rubujo</translation>
+        <source>Enable animations</source>
+        <translation>Ebligu kuraĝigojn</translation>
     </message>
 </context>
 <context>
@@ -2128,6 +2148,17 @@
     <message>
         <source>Show tags toolbox</source>
         <translation>Montri etikedojn por etikedoj</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>Notu</translation>
+    </message>
+</context>
+<context>
+    <name>TextPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation>Paĝa menuo</translation>
     </message>
 </context>
 <context>
@@ -2381,30 +2412,12 @@
         <translation>Presi</translation>
     </message>
     <message>
-        <source>Settings</source>
-        <translation>Agordoj</translation>
-    </message>
-    <message>
         <source>Help</source>
         <translation>Helpu</translation>
     </message>
     <message>
         <source>Go Back to the menu</source>
         <translation>Reiru al la menuo</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPage</name>
-    <message>
-        <source>The focus is currently on %1</source>
-        <translation>La fokuso estas nuntempe sur %1</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPageForm.ui</name>
-    <message>
-        <source>Unfocus</source>
-        <translation>Malfokusigi</translation>
     </message>
 </context>
 <context>
@@ -2439,14 +2452,6 @@
 <context>
     <name>main</name>
     <message>
-        <source>Fullscreen</source>
-        <translation>Plenekrane</translation>
-    </message>
-    <message>
-        <source>Center vertically the text cursor</source>
-        <translation>Centri vertikale la tekstokursoron</translation>
-    </message>
-    <message>
         <source>Themes</source>
         <translation>Temoj</translation>
     </message>
@@ -2463,36 +2468,8 @@
         <translation>Pri &amp; Qt</translation>
     </message>
     <message>
-        <source>&amp;New Project</source>
-        <translation>&amp; Nova Projekto</translation>
-    </message>
-    <message>
-        <source>&amp;Check spelling</source>
-        <translation>&amp; Kontrolu literumon</translation>
-    </message>
-    <message>
-        <source>&amp;Open Project</source>
-        <translation>&amp; Malfermu Projekton</translation>
-    </message>
-    <message>
         <source>Open an existing project</source>
         <translation>Malfermu ekzistantan projekton</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation>Savi</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation>Konservu Ĉion</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation>Stir + Maj + S</translation>
-    </message>
-    <message>
-        <source>Save As …</source>
-        <translation>Konservi kiel …</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as …</source>
@@ -2535,10 +2512,6 @@
         <translation>Sekurkopio malsukcesis: La rezerva vojo %1 estas nur leginda</translation>
     </message>
     <message>
-        <source>&amp;Print</source>
-        <translation>&amp; Presi</translation>
-    </message>
-    <message>
         <source>&amp;Import</source>
         <translation>&amp; Importi</translation>
     </message>
@@ -2559,18 +2532,6 @@
         <translation>&amp; Fermi projekton &quot;%1&quot;</translation>
     </message>
     <message>
-        <source>&amp;Quit</source>
-        <translation>&amp; Ĉesu</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Tranĉi</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Kopiu</translation>
-    </message>
-    <message>
         <source>Italic</source>
         <translation>Kursiva</translation>
     </message>
@@ -2589,10 +2550,6 @@
     <message>
         <source>First steps</source>
         <translation>Unuaj paŝoj</translation>
-    </message>
-    <message>
-        <source>&amp;User manual</source>
-        <translation>&amp; Uzula manlibro</translation>
     </message>
     <message>
         <source>Back up successful</source>
