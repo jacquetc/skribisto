@@ -10,3 +10,4 @@ add_subdirectory(favoritesProjectToolbox)
 add_subdirectory(navigationProjectToolbox)
 #add_subdirectory(welcomewindow)
 #add_subdirectory(writewindow)
+

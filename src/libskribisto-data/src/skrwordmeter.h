@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include "skr.h"
+#include "skribisto_data_global.h"
 
 
 class SKRWordMeterWorker : public QThread {
@@ -43,7 +44,7 @@ private:
     bool m_triggerProjectModifiedSignal;
 };
 
-class SKRWordMeter : public QObject {
+class EXPORT SKRWordMeter : public QObject {
     Q_OBJECT
 
 public:

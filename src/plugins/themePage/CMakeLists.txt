@@ -6,9 +6,9 @@ cmake_minimum_required(VERSION 3.5.0)
 #
 # Populate a CMake variable with the sources
 
-set(PROJECT_NAME "themePage")
+set(PROJECT_NAME "skribisto-plugin-themePage")
 
-project(skribisto-plugin-${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION} )
+project(${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION} )
 add_definitions(-DSKRIBISTO_PLUGIN_LIBRARY)
 # Find the QtWidgets library
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Quick Svg QuickControls2 CONFIG REQUIRED)
@@ -29,12 +29,12 @@ set(QRC
 qt_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
-add_library(skribisto-plugin-${PROJECT_NAME} SHARED ${SRCS} ${RESOURCES})
-add_dependencies(skribisto-plugin-${PROJECT_NAME} skribisto-data)
-add_dependencies(skribisto-plugin-${PROJECT_NAME} skribisto)
+add_library(${PROJECT_NAME} SHARED ${SRCS} ${RESOURCES})
+add_dependencies(${PROJECT_NAME} skribisto-data)
+add_dependencies(${PROJECT_NAME} skribisto)
 
-target_link_libraries(skribisto-plugin-${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2)
-target_link_libraries(skribisto-plugin-${PROJECT_NAME} PUBLIC skribisto-data)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-data)
 
 
 include_directories("${CMAKE_SOURCE_DIR}/src/app/src/")
@@ -42,8 +42,11 @@ include_directories("${CMAKE_SOURCE_DIR}/src/app/src/qml/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-install(TARGETS skribisto-plugin-${PROJECT_NAME} LIBRARY DESTINATION "${KDE_INSTALL_PLUGINDIR}/skribisto")
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION "${KDE_INSTALL_PLUGINDIR}/skribisto")
 message("----------------PLUGIN_INSTALL_DIR---------------")
 message("${PLUGIN_INSTALL_DIR}")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "bin/plugins")
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")

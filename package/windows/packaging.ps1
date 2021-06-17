@@ -1,6 +1,11 @@
  
 $env:Path += ";C:\Qt\5.15.2\mingw81_64\bin;C:\Qt\Tools\mingw810_64\bin;C:\Qt\Tools\CMake_64\bin"
 
+
+Remove-Item -Recurse -Force -Path ../../../build_skribisto_Release
+mkdir ../../../build_skribisto_Release
+mkdir ../../../build_skribisto_Release/package
+
 # prepare
 cmake.exe -B../../../build_skribisto_Release -GNinja `
 -DCMAKE_PREFIX_PATH="C:\Qt\5.15.2\mingw81_64\lib\cmake" `
@@ -21,7 +26,11 @@ Remove-Item -Recurse -Path package
 
 # copy
 mkdir package
+mkdir package/plugins
+mkdir package/share/translations
 copy skribisto/bin/* package/
+copy skribisto/bin/plugins/* package/plugins
+copy skribisto/bin/translations/* package/share/translations
 copy 3rdparty/*/bin/* package/
 
 windeployqt.exe  package\skribisto.exe --qmldir ..\skribisto\src\app\src\qml\
@@ -39,7 +48,7 @@ Remove-Item -Recurse -Path package/QtQuick/Controls.2/Fusion
 Remove-Item -Recurse -Path package/QtQuick/Controls.2/Imagine
 Remove-Item -Recurse -Path package/QtQuick/Controls.2/Universal
 Remove-Item -Recurse -Path package/QtQml/StateMachine
-Remove-Item -Path package/translations/* -Exclude *fr*,*en*,*de*
+# Remove-Item -Path package/translations/* -Exclude *fr*,*en*,*de*,*pt*,*it*,*eo*,*sp*
 
 #create setup
 & 'C:\Program Files (x86)\Inno Setup 6\Compil32.exe' /cc ..\skribisto\package\windows\setup.iss

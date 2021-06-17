@@ -50,6 +50,10 @@ foreach(TS_FILEPATH ${TS_FILES})
           install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${QM_FILENAME}" DESTINATION "${KDE_INSTALL_DATADIR}/skribisto/translations")
       endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
+      if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+          install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${QM_FILENAME}" DESTINATION "bin/translations")
+      endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
 endforeach(TS_FILEPATH)
 
 

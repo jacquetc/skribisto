@@ -743,7 +743,15 @@ QStringList PLMUtils::Dir::addonsPathsList()
 
 #endif // ifdef Q_OS_LINUX
 #ifdef Q_OS_WIN
+
     dir.setPath(QCoreApplication::applicationDirPath() + "/share/");
+
+    if (dir.isReadable()) {
+        list.append(dir.path());
+    }
+
+
+    dir.setPath(QCoreApplication::applicationDirPath() + "/share/plugins");
 
     if (dir.isReadable()) {
         list.append(dir.path());

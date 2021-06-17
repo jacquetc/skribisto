@@ -857,6 +857,8 @@ RelationshipPanelForm {
 
                 Component.onCompleted: {
                     renameDialog.open()
+                    inner_renameTextField.selectAll()
+                    inner_renameTextField.forceActiveFocus()
                 }
 
                 onClosed: loader_renameDialog.active = false
