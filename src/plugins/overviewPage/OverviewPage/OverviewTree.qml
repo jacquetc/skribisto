@@ -486,11 +486,13 @@ OverviewTreeForm {
                                 }
                                 if (eventPoint.event.device.type === PointerDevice.Mouse) {
                                     listView.interactive = false
+                                    Globals.touchUsed = false
                                 }
 
                                 if (eventPoint.event.device.type === PointerDevice.TouchScreen
                                         | eventPoint.event.device.type === PointerDevice.Stylus) {
                                     listView.interactive = true
+                                    Globals.touchUsed = true
                                 }
 
                                 priv.currentTreeItemId = model.treeItemId
@@ -508,11 +510,13 @@ OverviewTreeForm {
                                 }
                                 if (eventPoint.event.device.type === PointerDevice.Mouse) {
                                     listView.interactive = false
+                                    Globals.touchUsed = false
                                 }
 
                                 if (eventPoint.event.device.type === PointerDevice.TouchScreen
                                         | eventPoint.event.device.type === PointerDevice.Stylus) {
                                     listView.interactive = true
+                                    Globals.touchUsed = true
                                 }
 
                                 //console.log("double tapped")
@@ -545,6 +549,7 @@ OverviewTreeForm {
                                 listView.interactive = eventPoint.event.device.type
                                         === PointerDevice.Mouse
 
+                                Globals.touchUsed = false
                                 //console.log("right clicked")
                                 if (loader_menu.active) {
                                     if (loader_menu.item.visible) {
@@ -571,6 +576,7 @@ OverviewTreeForm {
                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                             acceptedButtons: Qt.MiddleButton
                             onTapped: {
+                                Globals.touchUsed = false
                                 listView.interactive = eventPoint.event.device.type
                                         === PointerDevice.Mouse
                                 priv.currentTreeItemId = model.treeItemId
@@ -587,6 +593,7 @@ OverviewTreeForm {
                             anchors.fill: parent
                             acceptedButtons: Qt.NoButton
                             onWheel: {
+                                Globals.touchUsed = false
                                 listView.interactive = false
                                 listView.flick(0, wheel.angleDelta.y * 50)
                                 wheel.accepted = true
@@ -786,7 +793,7 @@ OverviewTreeForm {
 
                                         ColumnLayout {
                                             anchors.fill: parent
-                                            visible: moveHoverHandler.hovered
+                                            visible: moveHoverHandler.hovered | (Globals.touchUsed & draggableContent.isCurrent)
 
                                             Repeater {
 

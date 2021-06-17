@@ -25,6 +25,8 @@ QtObject {
         }
     }
 
+    property bool touchUsed: false
+
     signal resetDockConfCalled()
 
     //    signal openMainMenuCalled()
