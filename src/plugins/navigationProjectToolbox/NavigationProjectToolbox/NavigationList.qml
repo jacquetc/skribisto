@@ -587,7 +587,7 @@ NavigationListForm {
                 z: 1
 
                 TapHandler {
-                    onTapped: {
+                    onSingleTapped: function(eventPoint) {
                         listView.forceActiveFocus()
                         console.log("focusZone", "forceActiveFocus")
 
@@ -645,11 +645,7 @@ NavigationListForm {
                     }
 
                     //-----------------------------------------------------------------------------
-                    onCurrentIndexChanged: {
-                        contextMenuItemIndex = listView.currentIndex
-                    }
 
-                    property int contextMenuItemIndex: -2
 
                     Binding {
                         target: listView
@@ -732,7 +728,7 @@ NavigationListForm {
                     //----------------------------------------------------------------------
                     //---  listview keys ------------------------------------------
                     //----------------------------------------------------------------------
-                    Keys.onShortcutOverride: {
+                    Keys.onShortcutOverride: function(event)  {
                         if ((event.modifiers & Qt.ControlModifier)
                                 && event.key === Qt.Key_N) {
                             event.accepted = true
@@ -742,7 +738,7 @@ NavigationListForm {
                             event.accepted = true
                         }
                     }
-                    Keys.onPressed: {
+                    Keys.onPressed: function(event) {
                         //                        if (event.key === Qt.Key_Up) {
                         //                            listView.currentItem.forceActiveFocus()
                         //                            event.accepted = false
@@ -869,7 +865,7 @@ NavigationListForm {
 
                             Keys.priority: Keys.AfterItem
 
-                            Keys.onShortcutOverride: {
+                            Keys.onShortcutOverride: function(event)  {
                                 if ((event.modifiers & Qt.ControlModifier)
                                         && event.key === Qt.Key_N) {
                                     event.accepted = true
@@ -899,7 +895,7 @@ NavigationListForm {
                                 }
                             }
 
-                            Keys.onPressed: {
+                            Keys.onPressed: function(event) {
                                 if (event.key === Qt.Key_Right) {
                                     console.log("Right key pressed")
                                     goToChildAction.trigger()
@@ -1247,7 +1243,9 @@ NavigationListForm {
                                         }
 
                                         grabPermissions: PointerHandler.CanTakeOverFromItems
-                                                         | PointerHandler.CanTakeOverFromAnything
+                                                         | PointerHandler.CanTakeOverFromAnything | PointerHandler.TakeOverForbidden
+
+
                                     }
 
                                     DragHandler {
@@ -1298,21 +1296,22 @@ NavigationListForm {
                                     TapHandler {
                                         id: tapHandler
 
-                                        onSingleTapped: {
+                                        onSingleTapped: function(eventPoint) {
                                             priv.selecting = false
+                                            console.log("dragThreshold", mouseDragHandler.dragThreshold)
 
                                             if (content.dragging) {
                                                 eventPoint.accepted = false
                                                 return
                                             }
-                                            if (eventPoint.event.device.type
+                                            if (eventPoint.device.type
                                                     === PointerDevice.Mouse) {
                                                 listView.interactive = false
                                             }
 
-                                            if (eventPoint.event.device.type
+                                            if (eventPoint.device.type
                                                     === PointerDevice.TouchScreen
-                                                    | eventPoint.event.device.type
+                                                    | eventPoint.device.type
                                                     === PointerDevice.Stylus) {
                                                 listView.interactive = true
                                             }
@@ -1336,21 +1335,21 @@ NavigationListForm {
                                             eventPoint.accepted = true
                                         }
 
-                                        onDoubleTapped: {
+                                        onDoubleTapped: function(eventPoint) {
                                             openDocumentTimer.stop()
                                             goToChildTimer.stop()
                                             if (content.dragging) {
                                                 eventPoint.accepted = false
                                                 return
                                             }
-                                            if (eventPoint.event.device.type
+                                            if (eventPoint.device.type
                                                     === PointerDevice.Mouse) {
                                                 listView.interactive = false
                                             }
 
-                                            if (eventPoint.event.device.type
+                                            if (eventPoint.device.type
                                                     === PointerDevice.TouchScreen
-                                                    | eventPoint.event.device.type
+                                                    | eventPoint.device.type
                                                     === PointerDevice.Stylus) {
                                                 listView.interactive = true
                                             }
@@ -1363,7 +1362,7 @@ NavigationListForm {
                                             eventPoint.accepted = true
                                         }
 
-                                        onGrabChanged: {
+                                        onGrabChanged: function(transition, point) {
                                             point.accepted = false
                                         }
 
@@ -1389,8 +1388,8 @@ NavigationListForm {
                                         id: rightClickTapHandler
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.RightButton
-                                        onTapped: {
-                                            listView.interactive = eventPoint.event.device.type
+                                        onSingleTapped: function(eventPoint) {
+                                            listView.interactive = eventPoint.device.type
                                                     === PointerDevice.Mouse
 
                                             if (menu.visible) {
@@ -1400,6 +1399,20 @@ NavigationListForm {
 
                                             listView.currentIndex = model.index
                                             priv.currentTreeItemId = model.treeItemId
+
+
+                                            menu.treeItemId = model.treeItemId
+                                            menu.projectId = model.projectId
+                                            menu.isOpenable = model.isOpenable
+                                            menu.canAddChildTreeItem = model.canAddChildTreeItem
+                                            menu.canAddSiblingTreeItem = model.canAddSiblingTreeItem
+                                            menu.isCopyable = model.isCopyable
+                                            menu.isMovable = model.isMovable
+                                            menu.isRenamable = model.isRenamable
+                                            menu.isTrashable = model.isTrashable
+
+
+
                                             menu.open()
                                             eventPoint.accepted = true
                                         }
@@ -1411,8 +1424,8 @@ NavigationListForm {
                                         id: middleClickTapHandler
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.MiddleButton
-                                        onTapped: {
-                                            listView.interactive = eventPoint.event.device.type
+                                        onSingleTapped: function(eventPoint) {
+                                            listView.interactive = eventPoint.device.type
                                                     === PointerDevice.Mouse
                                             listView.currentIndex = model.index
                                             priv.currentTreeItemId = model.treeItemId
@@ -1427,7 +1440,7 @@ NavigationListForm {
                                     MouseArea {
                                         anchors.fill: parent
                                         acceptedButtons: Qt.NoButton
-                                        onWheel: {
+                                        onWheel: function(wheel) {
                                             listView.interactive = false
                                             listView.flick(
                                                         0,
@@ -1734,17 +1747,17 @@ NavigationListForm {
 
                                                         TapHandler {
 
-                                                            onSingleTapped: {
+                                                            onSingleTapped: function(eventPoint) {
                                                                 tapHandler.singleTapped(
                                                                             eventPoint)
                                                             }
 
-                                                            onDoubleTapped: {
+                                                            onDoubleTapped: function(eventPoint) {
                                                                 tapHandler.doubleTapped(
                                                                             eventPoint)
                                                             }
 
-                                                            onGrabChanged: {
+                                                            onGrabChanged: function(transition, point) {
                                                                 tapHandler.grabChanged(
                                                                             transition,
                                                                             point)
@@ -1755,17 +1768,17 @@ NavigationListForm {
                                                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                                             acceptedButtons: Qt.RightButton
 
-                                                            onSingleTapped: {
+                                                            onSingleTapped: function(eventPoint) {
                                                                 rightClickTapHandler.singleTapped(
                                                                             eventPoint)
                                                             }
 
-                                                            onDoubleTapped: {
+                                                            onDoubleTapped: function(eventPoint) {
                                                                 rightClickTapHandler.doubleTapped(
                                                                             eventPoint)
                                                             }
 
-                                                            onGrabChanged: {
+                                                            onGrabChanged: function(transition, point) {
                                                                 rightClickTapHandler.grabChanged(
                                                                             transition,
                                                                             point)
@@ -1776,17 +1789,17 @@ NavigationListForm {
                                                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                                             acceptedButtons: Qt.MiddleButton
 
-                                                            onSingleTapped: {
+                                                            onSingleTapped: function(eventPoint) {
                                                                 middleClickTapHandler.singleTapped(
                                                                             eventPoint)
                                                             }
 
-                                                            onDoubleTapped: {
+                                                            onDoubleTapped: function(eventPoint) {
                                                                 middleClickTapHandler.doubleTapped(
                                                                             eventPoint)
                                                             }
 
-                                                            onGrabChanged: {
+                                                            onGrabChanged: function(transition, point) {
                                                                 middleClickTapHandler.grabChanged(
                                                                             transition,
                                                                             point)
@@ -1847,8 +1860,8 @@ NavigationListForm {
                                                         }
 
                                                         //Keys.priority: Keys.AfterItem
-                                                        Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
-                                                        Keys.onPressed: {
+                                                        Keys.onShortcutOverride: function(event) { event.accepted = (event.key === Qt.Key_Escape)}
+                                                        Keys.onPressed: function(event) {
                                                             if (event.key === Qt.Key_Return) {
                                                                 console.log("Return key pressed title")
                                                                 editingFinished(
@@ -1901,8 +1914,8 @@ NavigationListForm {
                                                         }
 
                                                         //Keys.priority: Keys.AfterItem
-                                                        Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
-                                                        Keys.onPressed: {
+                                                        Keys.onShortcutOverride: function(event) { event.accepted = (event.key === Qt.Key_Escape)}
+                                                        Keys.onPressed: function(event) {
                                                             if (event.key === Qt.Key_Return) {
                                                                 console.log("Return key pressed title")
                                                                 editingFinished(
@@ -1992,6 +2005,22 @@ NavigationListForm {
 
                                                     listView.currentIndex = model.index
                                                     swipeDelegate.forceActiveFocus()
+
+
+
+
+                                                    menu.treeItemId = model.treeItemId
+                                                    menu.projectId = model.projectId
+                                                    menu.isOpenable = model.isOpenable
+                                                    menu.canAddChildTreeItem = model.canAddChildTreeItem
+                                                    menu.canAddSiblingTreeItem = model.canAddSiblingTreeItem
+                                                    menu.isCopyable = model.isCopyable
+                                                    menu.isMovable = model.isMovable
+                                                    menu.isRenamable = model.isRenamable
+                                                    menu.isTrashable = model.isTrashable
+
+
+
                                                     menu.open()
                                                 }
 
@@ -2072,9 +2101,19 @@ NavigationListForm {
                                     width: 300
                                     z: 101
 
+                                    property int treeItemId
+                                    property int projectId
+                                    property bool isOpenable
+                                    property bool canAddChildTreeItem
+                                    property bool canAddSiblingTreeItem
+                                    property bool isCopyable
+                                    property bool isMovable
+                                    property bool isRenamable
+                                    property bool isTrashable
+
+
                                     onOpened: {
-                                        // necessary to differenciate between all items
-                                        listView.contextMenuItemIndex = model.index
+
                                     }
 
                                     onClosed: {
@@ -2082,8 +2121,8 @@ NavigationListForm {
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isOpenable ? 0 : undefined
-                                        visible: model.isOpenable
+                                        height: !menu.isOpenable ? 0 : undefined
+                                        visible: menu.isOpenable
                                         action: Action {
                                             id: openTreeItemAction
                                             text: qsTr("Open")
@@ -2096,16 +2135,16 @@ NavigationListForm {
                                                      && listView.enabled
                                             onTriggered: {
                                                 console.log("open treeItem action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
                                                 openDocumentAction.trigger()
                                             }
                                         }
                                     }
                                     SkrMenuItem {
-                                        height: !model.isOpenable
-                                                || model.treeItemId === -1 ? 0 : undefined
-                                        visible: model.isOpenable
+                                        height: ! menu.isOpenable
+                                                ||  menu.treeItemId === -1 ? 0 : undefined
+                                        visible:  menu.isOpenable
 
                                         action: Action {
                                             id: openTreeItemInAnotherViewAction
@@ -2118,16 +2157,16 @@ NavigationListForm {
                                                      && listView.enabled
                                             onTriggered: {
                                                 console.log("open treeItem in another view action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
                                                 openDocumentInAnotherViewAction.trigger()
                                             }
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isOpenable ? 0 : undefined
-                                        visible: model.isOpenable
+                                        height: ! menu.isOpenable ? 0 : undefined
+                                        visible:  menu.isOpenable
 
                                         action: Action {
                                             id: openTreeItemInNewWindowAction
@@ -2140,67 +2179,67 @@ NavigationListForm {
                                                      && listView.enabled
                                             onTriggered: {
                                                 console.log("open treeItem in new window action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
                                                 // solve bug where this window's tree disapears
                                                 setCurrentTreeItemIdTimer.projectId
-                                                        = model.projectId
+                                                        =  menu.projectId
                                                 setCurrentTreeItemIdTimer.treeItemId
-                                                        = model.treeItemId
+                                                        =  menu.treeItemId
                                                 setCurrentTreeItemIdTimer.start(
                                                             )
                                                 root.openDocumentInNewWindow(
-                                                            model.projectId,
-                                                            model.treeItemId)
-                                                //                                                setCurrentTreeItemId(model.projectId, model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
+                                                //                                                setCurrentTreeItemId( menu.projectId,  menu.treeItemId)
                                             }
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: model.treeItemId === 0 ? undefined : 0
-                                        visible: model.treeItemId === 0
-                                        enabled: model.projectIsActive === false
+                                        height:  menu.treeItemId === 0 ? undefined : 0
+                                        visible:  menu.treeItemId === 0
+                                        enabled:  menu.projectIsActive === false
                                                  && listView.enabled
-                                                 && model.treeItemId === 0
+                                                 &&  menu.treeItemId === 0
                                         text: qsTr("Set as active project")
                                         icon {
                                             source: "qrc:///icons/backup/tab-new.svg"
                                         }
                                         onTriggered: {
                                             console.log("set active project",
-                                                        model.projectId)
+                                                         menu.projectId)
                                             skrData.projectHub(
                                                         ).setActiveProject(
-                                                        model.projectId)
+                                                         menu.projectId)
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: model.treeItemId === 0 ? undefined : 0
-                                        visible: model.treeItemId === 0
+                                        height:  menu.treeItemId === 0 ? undefined : 0
+                                        visible:  menu.treeItemId === 0
                                         enabled: listView.enabled
-                                                 && model.treeItemId === 0
+                                                 &&  menu.treeItemId === 0
                                         text: qsTr("Close this project")
                                         icon {
                                             source: "qrc:///icons/backup/document-close.svg"
                                         }
                                         onTriggered: {
                                             console.log("close project",
-                                                        model.projectId)
+                                                         menu.projectId)
                                             sidePopupListModel.clear()
                                             Globals.closeProjectCalled(
-                                                        model.projectId)
+                                                         menu.projectId)
                                         }
                                     }
                                     MenuSeparator {
-                                        height: model.isRenamable ? undefined : 0
-                                        visible: model.isRenamable
+                                        height:  menu.isRenamable ? undefined : 0
+                                        visible:  menu.isRenamable
                                     }
 
                                     SkrMenuItem {
-                                        height: model.isRenamable ? undefined : 0
-                                        visible: model.isRenamable
+                                        height:  menu.isRenamable ? undefined : 0
+                                        visible:  menu.isRenamable
                                         action: Action {
                                             id: renameAction
                                             text: qsTr("Rename")
@@ -2212,16 +2251,16 @@ NavigationListForm {
 
                                             onTriggered: {
                                                 console.log("rename action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
                                                 swipeDelegate.editName()
                                             }
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isRenamable ? 0 : undefined
-                                        visible: model.isRenamable
+                                        height: ! menu.isRenamable ? 0 : undefined
+                                        visible:  menu.isRenamable
                                         action: Action {
                                             id: setLabelAction
                                             text: qsTr("Set label")
@@ -2232,25 +2271,25 @@ NavigationListForm {
                                             enabled: listView.enabled
                                             onTriggered: {
                                                 console.log("sel label",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
                                                 swipeDelegate.editLabel()
                                             }
                                         }
                                     }
 
                                     MenuSeparator {
-                                        height: !model.isMovable
-                                                || !model.isCopyable
-                                                || !model.canAddChildTreeItem ? 0 : undefined
-                                        visible: model.isMovable
-                                                 || model.isCopyable
-                                                 || model.canAddChildTreeItem
+                                        height: ! menu.isMovable
+                                                || ! menu.isCopyable
+                                                || ! menu.canAddChildTreeItem ? 0 : undefined
+                                        visible:  menu.isMovable
+                                                 ||  menu.isCopyable
+                                                 ||  menu.canAddChildTreeItem
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isMovable ? 0 : undefined
-                                        visible: model.isMovable
+                                        height: ! menu.isMovable ? 0 : undefined
+                                        visible:  menu.isMovable
                                         action: Action {
                                             id: cutAction
                                             text: qsTr("Cut")
@@ -2264,26 +2303,26 @@ NavigationListForm {
 
                                                 if (selectedTreeItemsIds) {
                                                     console.log("cut action",
-                                                                model.projectId,
+                                                                 menu.projectId,
                                                                 selectedTreeItemsIds)
                                                     skrData.treeHub().cut(
-                                                                model.projectId,
+                                                                 menu.projectId,
                                                                 selectedTreeItemsIds)
                                                 } else {
                                                     console.log("cut action",
-                                                                model.projectId,
-                                                                model.treeItemId)
+                                                                 menu.projectId,
+                                                                 menu.treeItemId)
                                                     skrData.treeHub().cut(
-                                                                model.projectId,
-                                                                [model.treeItemId])
+                                                                 menu.projectId,
+                                                                [ menu.treeItemId])
                                                 }
                                             }
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isCopyable ? 0 : undefined
-                                        visible: model.isCopyable
+                                        height: ! menu.isCopyable ? 0 : undefined
+                                        visible:  menu.isCopyable
                                         action: Action {
 
                                             id: copyAction
@@ -2297,26 +2336,26 @@ NavigationListForm {
                                             onTriggered: {
                                                 if (selectedTreeItemsIds) {
                                                     console.log("copy action",
-                                                                model.projectId,
+                                                                 menu.projectId,
                                                                 selectedTreeItemsIds)
                                                     skrData.treeHub().copy(
-                                                                model.projectId,
+                                                                 menu.projectId,
                                                                 selectedTreeItemsIds)
                                                 } else {
                                                     console.log("copy action",
-                                                                model.projectId,
-                                                                model.treeItemId)
+                                                                 menu.projectId,
+                                                                 menu.treeItemId)
                                                     skrData.treeHub().copy(
-                                                                model.projectId,
-                                                                [model.treeItemId])
+                                                                 menu.projectId,
+                                                                [ menu.treeItemId])
                                                 }
                                             }
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.canAddChildTreeItem ? 0 : undefined
-                                        visible: model.canAddChildTreeItem
+                                        height: ! menu.canAddChildTreeItem ? 0 : undefined
+                                        visible:  menu.canAddChildTreeItem
                                         action: Action {
 
                                             id: pasteAction
@@ -2329,12 +2368,12 @@ NavigationListForm {
 
                                             onTriggered: {
                                                 console.log("paste action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
                                                 var result = skrData.treeHub(
                                                             ).paste(
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
 
                                                 if (!result.success) {
                                                     console.debug(
@@ -2345,15 +2384,15 @@ NavigationListForm {
                                     }
 
                                     MenuSeparator {
-                                        height: !(model.canAddSiblingTreeItem
-                                                  || model.canAddChildTreeItem) ? 0 : undefined
-                                        visible: (model.canAddSiblingTreeItem
-                                                  || model.canAddChildTreeItem)
+                                        height: !( menu.canAddSiblingTreeItem
+                                                  ||  menu.canAddChildTreeItem) ? 0 : undefined
+                                        visible: ( menu.canAddSiblingTreeItem
+                                                  ||  menu.canAddChildTreeItem)
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.canAddSiblingTreeItem ? 0 : undefined
-                                        visible: model.canAddSiblingTreeItem
+                                        height: ! menu.canAddSiblingTreeItem ? 0 : undefined
+                                        visible:  menu.canAddSiblingTreeItem
                                         action: Action {
                                             id: addBeforeAction
                                             text: qsTr("Add before")
@@ -2363,13 +2402,13 @@ NavigationListForm {
                                             enabled: listView.enabled
                                             onTriggered: {
                                                 console.log("add before action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
 
                                                 var visualIndex = listView.currentIndex
 
-                                                newItemPopup.projectId = model.projectId
-                                                newItemPopup.treeItemId = model.treeItemId
+                                                newItemPopup.projectId =  menu.projectId
+                                                newItemPopup.treeItemId =  menu.treeItemId
                                                 newItemPopup.visualIndex = visualIndex
                                                 newItemPopup.createFunction
                                                         = afterNewItemTypeIsChosen
@@ -2389,8 +2428,8 @@ NavigationListForm {
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.canAddSiblingTreeItem ? 0 : undefined
-                                        visible: model.canAddSiblingTreeItem
+                                        height: ! menu.canAddSiblingTreeItem ? 0 : undefined
+                                        visible:  menu.canAddSiblingTreeItem
                                         action: Action {
                                             id: addAfterAction
                                             text: qsTr("Add after")
@@ -2400,13 +2439,13 @@ NavigationListForm {
                                             enabled: listView.enabled
                                             onTriggered: {
                                                 console.log("add after action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
 
                                                 var visualIndex = listView.currentIndex + 1
 
-                                                newItemPopup.projectId = model.projectId
-                                                newItemPopup.treeItemId = model.treeItemId
+                                                newItemPopup.projectId =  menu.projectId
+                                                newItemPopup.treeItemId =  menu.treeItemId
                                                 newItemPopup.visualIndex = visualIndex
                                                 newItemPopup.createFunction
                                                         = afterNewItemTypeIsChosen
@@ -2426,8 +2465,8 @@ NavigationListForm {
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.canAddChildTreeItem ? 0 : undefined
-                                        visible: model.canAddChildTreeItem
+                                        height: ! menu.canAddChildTreeItem ? 0 : undefined
+                                        visible:  menu.canAddChildTreeItem
                                         action: Action {
                                             id: addChildAction
                                             text: qsTr("Add a sub-item")
@@ -2437,16 +2476,16 @@ NavigationListForm {
                                             enabled: listView.enabled
                                             onTriggered: {
                                                 console.log("add child action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
 
                                                 //save current ids:
-                                                listView.currentIndex = model.index
+                                                listView.currentIndex =  menu.index
                                                 navigationListStackView.currentItem.treeItemId
-                                                        = model.treeItemId
+                                                        =  menu.treeItemId
 
-                                                newItemPopup.projectId = model.projectId
-                                                newItemPopup.treeItemId = model.treeItemId
+                                                newItemPopup.projectId =  menu.projectId
+                                                newItemPopup.treeItemId =  menu.treeItemId
                                                 newItemPopup.visualIndex = 0
                                                 newItemPopup.createFunction
                                                         = afterNewItemTypeIsChosen
@@ -2471,13 +2510,13 @@ NavigationListForm {
                                         }
                                     }
                                     MenuSeparator {
-                                        height: !model.isMovable ? 0 : undefined
-                                        visible: model.isMovable
+                                        height: ! menu.isMovable ? 0 : undefined
+                                        visible:  menu.isMovable
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isMovable ? 0 : undefined
-                                        visible: model.isMovable
+                                        height: ! menu.isMovable ? 0 : undefined
+                                        visible:  menu.isMovable
                                         action: Action {
                                             id: moveUpAction
                                             text: qsTr("Move up")
@@ -2486,11 +2525,11 @@ NavigationListForm {
                                                 source: "qrc:///icons/backup/object-order-raise.svg"
                                             }
                                             enabled: listView.enabled
-                                                     && model.index !== 0
+                                                     &&  menu.index !== 0
                                             onTriggered: {
                                                 console.log("move up action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
 
                                                 if (temporarilyDisableMove) {
                                                     return
@@ -2499,16 +2538,16 @@ NavigationListForm {
                                                 temporarilyDisableMoveTimer.start()
 
                                                 proxyModel.moveUp(
-                                                            model.projectId,
-                                                            model.treeItemId,
-                                                            model.index)
+                                                             menu.projectId,
+                                                             menu.treeItemId,
+                                                             menu.index)
                                             }
                                         }
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isMovable ? 0 : undefined
-                                        visible: model.isMovable
+                                        height: ! menu.isMovable ? 0 : undefined
+                                        visible:  menu.isMovable
                                         action: Action {
                                             id: moveDownAction
                                             text: qsTr("Move down")
@@ -2516,13 +2555,13 @@ NavigationListForm {
                                             icon {
                                                 source: "qrc:///icons/backup/object-order-lower.svg"
                                             }
-                                            enabled: model.index !== visualModel.items.count - 1
+                                            enabled:  menu.index !== visualModel.items.count - 1
                                                      && listView.enabled
 
                                             onTriggered: {
                                                 console.log("move down action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
 
                                                 if (temporarilyDisableMove) {
                                                     return
@@ -2531,21 +2570,21 @@ NavigationListForm {
                                                 temporarilyDisableMoveTimer.start()
 
                                                 proxyModel.moveDown(
-                                                            model.projectId,
-                                                            model.treeItemId,
-                                                            model.index)
+                                                             menu.projectId,
+                                                             menu.treeItemId,
+                                                             menu.index)
                                             }
                                         }
                                     }
 
                                     MenuSeparator {
-                                        height: !model.isTrashable ? 0 : undefined
-                                        visible: model.isTrashable
+                                        height: ! menu.isTrashable ? 0 : undefined
+                                        visible:  menu.isTrashable
                                     }
 
                                     SkrMenuItem {
-                                        height: !model.isTrashable ? 0 : undefined
-                                        visible: model.isTrashable
+                                        height: ! menu.isTrashable ? 0 : undefined
+                                        visible:  menu.isTrashable
                                         action: Action {
                                             id: sendToTrashAction
                                             text: qsTr("Send to trash")
@@ -2554,41 +2593,41 @@ NavigationListForm {
                                                 source: "qrc:///icons/backup/edit-delete.svg"
                                             }
                                             enabled: listView.enabled
-                                                     && model.indent !== -1
+                                                     &&  menu.indent !== -1
                                             onTriggered: {
                                                 console.log("sent to trash action",
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
 
                                                 swipeDelegate.swipe.close()
                                                 removeTreeItemAnimation.start()
                                                 proxyModel.trashItemWithChildren(
-                                                            model.projectId,
-                                                            model.treeItemId)
+                                                             menu.projectId,
+                                                             menu.treeItemId)
                                             }
                                         }
                                     }
 
                                     MenuSeparator {
-                                        height: model.treeItemId !== 0 ? 0 : undefined
-                                        visible: model.treeItemId === 0
+                                        height:  menu.treeItemId !== 0 ? 0 : undefined
+                                        visible:  menu.treeItemId === 0
                                     }
 
                                     SkrMenuItem {
-                                        height: model.treeItemId === 0 ? undefined : 0
-                                        visible: model.treeItemId === 0
+                                        height:  menu.treeItemId === 0 ? undefined : 0
+                                        visible:  menu.treeItemId === 0
                                         enabled: listView.enabled
-                                                 && model.treeItemId === 0
+                                                 &&  menu.treeItemId === 0
                                         text: qsTr("Close this project")
                                         icon {
                                             source: "qrc:///icons/backup/document-close.svg"
                                         }
                                         onTriggered: {
                                             console.log("close this project",
-                                                        model.projectId)
+                                                         menu.projectId)
 
                                             Globals.closeProjectCalled(
-                                                        model.projectId)
+                                                         menu.projectId)
                                         }
                                     }
                                 }

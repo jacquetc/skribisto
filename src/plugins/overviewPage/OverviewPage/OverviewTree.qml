@@ -189,7 +189,7 @@ OverviewTreeForm {
 
             Keys.priority: Keys.AfterItem
 
-            Keys.onShortcutOverride: {
+            Keys.onShortcutOverride: function(event)  {
 
                 if ((event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_C) {
@@ -216,7 +216,7 @@ OverviewTreeForm {
                 }
             }
 
-            Keys.onPressed: {
+            Keys.onPressed: function(event) {
 
                 if (event.key === Qt.Key_Right) {
                     console.log("Right key pressed")
@@ -439,7 +439,7 @@ OverviewTreeForm {
                     MouseArea {
                         anchors.fill: parent
                         acceptedButtons: Qt.NoButton
-                        onWheel: {
+                        onWheel: function(wheel) {
                             listView.interactive = false
                             listView.flick(0, wheel.angleDelta.y * 50)
                             wheel.accepted = true
@@ -477,20 +477,20 @@ OverviewTreeForm {
                         TapHandler {
                             id: tapHandler
 
-                            onSingleTapped: {
+                            onSingleTapped: function(eventPoint) {
                                 priv.selecting = false
 
                                 if (draggableContent.dragging) {
                                     eventPoint.accepted = false
                                     return
                                 }
-                                if (eventPoint.event.device.type === PointerDevice.Mouse) {
+                                if (eventPoint.device.type === PointerDevice.Mouse) {
                                     listView.interactive = false
                                     Globals.touchUsed = false
                                 }
 
-                                if (eventPoint.event.device.type === PointerDevice.TouchScreen
-                                        | eventPoint.event.device.type === PointerDevice.Stylus) {
+                                if (eventPoint.device.type === PointerDevice.TouchScreen
+                                        | eventPoint.device.type === PointerDevice.Stylus) {
                                     listView.interactive = true
                                     Globals.touchUsed = true
                                 }
@@ -502,19 +502,19 @@ OverviewTreeForm {
                                 eventPoint.accepted = true
                             }
 
-                            onDoubleTapped: {
+                            onDoubleTapped: function(eventPoint){
 
                                 if (draggableContent.dragging) {
                                     eventPoint.accepted = false
                                     return
                                 }
-                                if (eventPoint.event.device.type === PointerDevice.Mouse) {
+                                if (eventPoint.device.type === PointerDevice.Mouse) {
                                     listView.interactive = false
                                     Globals.touchUsed = false
                                 }
 
-                                if (eventPoint.event.device.type === PointerDevice.TouchScreen
-                                        | eventPoint.event.device.type === PointerDevice.Stylus) {
+                                if (eventPoint.device.type === PointerDevice.TouchScreen
+                                        | eventPoint.device.type === PointerDevice.Stylus) {
                                     listView.interactive = true
                                     Globals.touchUsed = true
                                 }
@@ -535,7 +535,7 @@ OverviewTreeForm {
                             //                                    enabled = false
                             //                                }
                             //                            }
-                            onGrabChanged: {
+                            onGrabChanged: function(point) {
                                 point.accepted = false
                             }
                             grabPermissions: PointerHandler.TakeOverForbidden
@@ -545,8 +545,8 @@ OverviewTreeForm {
                             id: rightClickTapHandler
                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                             acceptedButtons: Qt.RightButton
-                            onTapped: {
-                                listView.interactive = eventPoint.event.device.type
+                            onSingleTapped: function(eventPoint) {
+                                listView.interactive = eventPoint.device.type
                                         === PointerDevice.Mouse
 
                                 Globals.touchUsed = false
@@ -564,6 +564,19 @@ OverviewTreeForm {
                                 listView.currentIndex = model.index
 
                                 loader_menu.active = true
+
+                                loader_menu.item.treeItemId = model.treeItemId
+                                loader_menu.item.projectId = model.projectId
+                                loader_menu.item.isOpenable = model.isOpenable
+                                loader_menu.item.canAddChildTreeItem = model.canAddChildTreeItem
+                                loader_menu.item.canAddSiblingTreeItem = model.canAddSiblingTreeItem
+                                loader_menu.item.isCopyable = model.isCopyable
+                                loader_menu.item.isMovable = model.isMovable
+                                loader_menu.item.isRenamable = model.isRenamable
+                                loader_menu.item.isTrashable = model.isTrashable
+
+
+
                                 loader_menu.item.popup(content,
                                                        eventPoint.position.x,
                                                        eventPoint.position.y)
@@ -575,9 +588,9 @@ OverviewTreeForm {
                             id: middleClickTapHandler
                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                             acceptedButtons: Qt.MiddleButton
-                            onTapped: {
+                            onSingleTapped: function(eventPoint) {
                                 Globals.touchUsed = false
-                                listView.interactive = eventPoint.event.device.type
+                                listView.interactive = eventPoint.device.type
                                         === PointerDevice.Mouse
                                 priv.currentTreeItemId = model.treeItemId
                                 priv.currentProjectId = model.projectId
@@ -592,7 +605,7 @@ OverviewTreeForm {
                         MouseArea {
                             anchors.fill: parent
                             acceptedButtons: Qt.NoButton
-                            onWheel: {
+                            onWheel: function(wheel) {
                                 Globals.touchUsed = false
                                 listView.interactive = false
                                 listView.flick(0, wheel.angleDelta.y * 50)
@@ -675,9 +688,10 @@ OverviewTreeForm {
                                             }
 
                                             //Keys.priority: Keys.AfterItem
-                                            Keys.onShortcutOverride: event.accepted
-                                                                     = (event.key === Qt.Key_Escape)
-                                            Keys.onPressed: {
+                                            Keys.onShortcutOverride: function(event)  {
+                                                event.accepted = (event.key === Qt.Key_Escape)
+                                            }
+                                            Keys.onPressed: function(event) {
                                                 if (event.key === Qt.Key_Return) {
                                                     console.log("Return key pressed title")
                                                     editingFinished()
@@ -722,9 +736,10 @@ OverviewTreeForm {
                                             }
 
                                             //Keys.priority: Keys.AfterItem
-                                            Keys.onShortcutOverride: event.accepted
-                                                                     = (event.key === Qt.Key_Escape)
-                                            Keys.onPressed: {
+                                            Keys.onShortcutOverride: function(event)  {
+                                                event.accepted = (event.key === Qt.Key_Escape)
+                                            }
+                                            Keys.onPressed: function(event) {
                                                 if (event.key === Qt.Key_Return) {
                                                     console.log("Return key pressed title")
                                                     editingFinished()
@@ -1573,6 +1588,16 @@ OverviewTreeForm {
 
                                             loader_menu.active = true
 
+                                            loader_menu.item.treeItemId = model.treeItemId
+                                            loader_menu.item.projectId = model.projectId
+                                            loader_menu.item.isOpenable = model.isOpenable
+                                            loader_menu.item.canAddChildTreeItem = model.canAddChildTreeItem
+                                            loader_menu.item.canAddSiblingTreeItem = model.canAddSiblingTreeItem
+                                            loader_menu.item.isCopyable = model.isCopyable
+                                            loader_menu.item.isMovable = model.isMovable
+                                            loader_menu.item.isRenamable = model.isRenamable
+                                            loader_menu.item.isTrashable = model.isTrashable
+
                                             loader_menu.item.popup(
                                                         menuButton,
                                                         menuButton.x,
@@ -1808,6 +1833,16 @@ OverviewTreeForm {
         SkrMenu {
             id: menu
 
+            property int treeItemId
+            property int projectId
+            property bool isOpenable
+            property bool canAddChildTreeItem
+            property bool canAddSiblingTreeItem
+            property bool isCopyable
+            property bool isMovable
+            property bool isRenamable
+            property bool isTrashable
+
             onOpened: {
 
             }
@@ -1817,39 +1852,39 @@ OverviewTreeForm {
             }
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isOpenable
+                         && menu.isOpenable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isOpenable ? undefined : 0
+                        && menu.isOpenable ? undefined : 0
                 action: openDocumentAction
             }
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isOpenable
+                         && menu.isOpenable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isOpenable ? undefined : 0
+                        && menu.isOpenable ? undefined : 0
 
                 action: openDocumentInAnotherViewAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isOpenable
+                         && menu.isOpenable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isOpenable ? undefined : 0
+                        && menu.isOpenable ? undefined : 0
 
                 action: openPaperInNewWindowAction
             }
 
             MenuSeparator {
-                visible: listView.currentItem.canAddChildTreeItem
-                height: listView.currentItem.canAddChildTreeItem ? undefined : 0
+                visible: menu.canAddChildTreeItem
+                height: menu.canAddChildTreeItem ? undefined : 0
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.canAddChildTreeItem
+                         && menu.canAddChildTreeItem
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.canAddChildTreeItem ? undefined : 0
+                        && menu.canAddChildTreeItem ? undefined : 0
 
                 action: focusOnbranchAction
             }
@@ -1858,43 +1893,43 @@ OverviewTreeForm {
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isRenamable
+                         && menu.isRenamable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isRenamable ? undefined : 0
+                        && menu.isRenamable ? undefined : 0
 
                 action: renameAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isRenamable
+                         && menu.isRenamable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isRenamable ? undefined : 0
+                        && menu.isRenamable ? undefined : 0
                 action: setLabelAction
             }
 
             MenuSeparator {}
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isMovable
+                         && menu.isMovable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isMovable ? undefined : 0
+                        && menu.isMovable ? undefined : 0
                 action: cutAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isCopyable
+                         && menu.isCopyable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isCopyable ? undefined : 0
+                        && menu.isCopyable ? undefined : 0
                 action: copyAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.canAddChildTreeItem
+                         && menu.canAddChildTreeItem
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.canAddChildTreeItem ? undefined : 0
+                        && menu.canAddChildTreeItem ? undefined : 0
                 action: pasteAction
             }
 
@@ -1902,24 +1937,24 @@ OverviewTreeForm {
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.canAddSiblingTreeItem
+                         && menu.canAddSiblingTreeItem
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.canAddSiblingTreeItem ? undefined : 0
+                        && menu.canAddSiblingTreeItem ? undefined : 0
                 action: addBeforeAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.canAddSiblingTreeItem
+                         && menu.canAddSiblingTreeItem
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.canAddSiblingTreeItem ? undefined : 0
+                        && menu.canAddSiblingTreeItem ? undefined : 0
                 action: addAfterAction
             }
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.canAddChildTreeItem
+                         && menu.canAddChildTreeItem
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.canAddChildTreeItem ? undefined : 0
+                        && menu.canAddChildTreeItem ? undefined : 0
 
                 action: addChildAction
             }
@@ -1927,26 +1962,26 @@ OverviewTreeForm {
             MenuSeparator {}
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isMovable
+                         && menu.isMovable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isMovable ? undefined : 0
+                        && menu.isMovable ? undefined : 0
                 action: moveUpAction
             }
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isMovable
+                         && menu.isMovable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isMovable ? undefined : 0
+                        && menu.isMovable ? undefined : 0
                 action: moveDownAction
             }
             MenuSeparator {}
 
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
-                         && listView.currentItem.isTrashable
+                         && menu.isTrashable
                 height: currentTreeItemId !== -1
-                        && listView.currentItem.isTrashable ? undefined : 0
+                        && menu.isTrashable ? undefined : 0
                 action: sendToTrashAction
             }
         }

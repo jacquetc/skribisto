@@ -586,7 +586,7 @@ RelationshipPanelForm {
             anchors.fill: control
             visible: control.activeFocus & Globals.focusVisible
         }
-        Keys.onPressed: {
+        Keys.onPressed: function(event) {
             if (event.key === Qt.Key_Tab) {
                 Globals.setFocusTemporarilyVisible()
             }
@@ -608,7 +608,7 @@ RelationshipPanelForm {
         TapHandler{
             id: tapHandler
 
-            onTapped: {
+            onSingleTapped: function(eventPoint) {
                 control.forceActiveFocus()
                 gridView.currentIndex = model.index
 
@@ -618,7 +618,7 @@ RelationshipPanelForm {
 
 
 
-            onDoubleTapped: {
+            onDoubleTapped: function(eventPoint) {
                 control.forceActiveFocus()
                 gridView.currentIndex = model.index
                 priv.currentTreeItemId = model.treeItemId
@@ -633,7 +633,7 @@ RelationshipPanelForm {
             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
             acceptedButtons: Qt.MiddleButton
 
-            onTapped: {
+            onSingleTapped: function(eventPoint) {
                 control.forceActiveFocus()
                 gridView.currentIndex = model.index
                 priv.currentTreeItemId = model.treeItemId
@@ -648,7 +648,7 @@ RelationshipPanelForm {
             id: rightClickTapHandler
             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
             acceptedButtons: Qt.RightButton
-            onTapped: {
+            onSingleTapped: function(eventPoint) {
                 control.forceActiveFocus()
                 gridView.currentIndex = model.index
                 priv.currentTreeItemId = model.treeItemId

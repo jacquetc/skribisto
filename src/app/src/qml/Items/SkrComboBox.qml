@@ -29,7 +29,7 @@ ComboBox {
         visible: control.activeFocus & Globals.focusVisible
 
     }
-    Keys.onPressed: {
+    Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Tab){
             Globals.setFocusTemporarilyVisible()
         }
@@ -117,13 +117,13 @@ ComboBox {
     //            TapHandler {
     //                id: inner_tapHandler
 
-    //                onSingleTapped: {
+    //                onSingleTapped: function(eventPoint) {
 
     //                    eventPoint.accepted = true
     //                }
 
 
-    //                onGrabChanged: {
+    //                onGrabChanged: function(transition, point) {
     //                    point.accepted = false
     //                }
     //            }

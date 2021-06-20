@@ -147,7 +147,7 @@ ListView {
             //                sequence: "Ctrl+Up"
             //                onActivated: moveUpAction.trigger(delegateRoot)
             //            }
-            //            Keys.onShortcutOverride: {
+            //            Keys.onShortcutOverride: function(event)  {
             //                if (event.key === Qt.Key_Backspace) {
             //                    console.log("onShortcutOverride")
             //                    event.accepted = true
@@ -188,7 +188,7 @@ ListView {
 
             Keys.priority: Keys.AfterItem
 
-            Keys.onShortcutOverride: {
+            Keys.onShortcutOverride: function(event)  {
                 if ((event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_N) {
                     event.accepted = true
@@ -220,7 +220,7 @@ ListView {
                 }
             }
 
-            Keys.onPressed: {
+            Keys.onPressed: function(event) {
                 // avoid unwanted overshoot when taping right key
                 if (event.key === Qt.Key_Right) {
                     event.accepted = true
@@ -387,20 +387,20 @@ ListView {
                 TapHandler {
                     id: tapHandler
 
-                    onSingleTapped: {
+                    onSingleTapped: function(eventPoint) {
                         root.currentIndex = model.index
                         delegateRoot.forceActiveFocus()
                         eventPoint.accepted = true
                     }
 
-                    onDoubleTapped: {
+                    onDoubleTapped: function(eventPoint) {
                         console.log("double tapped")
                         root.currentIndex = model.index
                         openDocumentAction.trigger()
                         eventPoint.accepted = true
                     }
 
-                    onGrabChanged: {
+                    onGrabChanged: function(transition, point) {
                         point.accepted = false
                     }
                 }
@@ -408,7 +408,7 @@ ListView {
                 TapHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.RightButton
-                    onTapped: {
+                    onSingleTapped: function(eventPoint) {
 
                         root.currentIndex = model.index
 
@@ -424,7 +424,7 @@ ListView {
                 TapHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                     acceptedButtons: Qt.MiddleButton
-                    onTapped: {
+                    onSingleTapped: function(eventPoint) {
                         root.currentIndex = model.index
                         openDocumentInAnotherViewAction.trigger()
                         eventPoint.accepted = true
@@ -508,7 +508,7 @@ ListView {
                             tristate: true
                             focusPolicy: Qt.NoFocus
 
-                            onPressed: {
+                            onPressed: function(event) {
                                 root.currentIndex = model.index
                             }
 
@@ -639,9 +639,10 @@ ListView {
                                     }
 
                                     //Keys.priority: Keys.AfterItem
-                                    Keys.onShortcutOverride: event.accepted
-                                                             = (event.key === Qt.Key_Escape)
-                                    Keys.onPressed: {
+                                    Keys.onShortcutOverride: function(event){
+                                        event.accepted = (event.key === Qt.Key_Escape)
+                                    }
+                                    Keys.onPressed: function(event) {
                                         if (event.key === Qt.Key_Return) {
                                             console.log("Return key pressed title")
                                             editingFinished()
@@ -682,9 +683,10 @@ ListView {
                                     }
 
                                     //Keys.priority: Keys.AfterItem
-                                    Keys.onShortcutOverride: event.accepted
-                                                             = (event.key === Qt.Key_Escape)
-                                    Keys.onPressed: {
+                                    Keys.onShortcutOverride: function(event){
+                                     event.accepted  = (event.key === Qt.Key_Escape)
+                                        }
+                                    Keys.onPressed: function(event) {
                                         if (event.key === Qt.Key_Return) {
                                             console.log("Return key pressed title")
                                             editingFinished()

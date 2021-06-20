@@ -77,7 +77,7 @@ SkrBasePage {
             }
 
             TapHandler {
-                onTapped: {
+                onSingleTapped: function(eventPoint) {
                     viewManager.focusedPosition = position
                 }
             }

@@ -783,6 +783,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Close this project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
@@ -820,10 +824,6 @@
     </message>
     <message>
         <source>Send to trash</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

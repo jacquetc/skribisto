@@ -26,7 +26,7 @@ HelpPageForm {
 
     function showAbout(){
         stackView.pop()
-        tabBar.currentIndex = 2
+        tabBar.currentIndex = 1
         var item = stackView.push(Qt.createComponent("About.qml"))
     }
 
@@ -38,7 +38,7 @@ HelpPageForm {
 
     function showAboutQt(){
         stackView.pop()
-        tabBar.currentIndex = 3
+        tabBar.currentIndex = 2
         var item = stackView.push(Qt.createComponent("About.qml"), {"qt": true})
     }
 
@@ -53,12 +53,9 @@ HelpPageForm {
                 showHelpContents()
                 break;
             case 1:
-                showFaq()
-                break;
-            case 2:
                 showAbout()
                 break;
-            case 3:
+            case 2:
                 showAboutQt()
                 break;
 

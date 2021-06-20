@@ -132,7 +132,7 @@ Item {
 
                     TapHandler {
                         id: tapHandler
-                        onTapped: eventPoint.accepted = false
+                        onSingleTapped: eventPoint.accepted = false
                     }
                 }
             }

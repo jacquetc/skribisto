@@ -67,7 +67,7 @@ ApplicationWindow {
 
 
             // avoid unwanted overshoot when taping right key
-            Keys.onPressed: {
+            Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Right){
                     event.accepted = true
 

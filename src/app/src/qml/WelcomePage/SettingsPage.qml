@@ -373,12 +373,12 @@ SettingsPageForm {
 
             TapHandler {
                 id: tapHandler
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint) {
                     backupPathListView.currentIndex = model.index
                     delegateRoot.forceActiveFocus()
                     eventPoint.accepted = true
                 }
-                onDoubleTapped: {
+                onDoubleTapped: function(eventPoint) {
 
                     // path editor :
                     //backupPathListView.currentIndex = model.index
@@ -469,7 +469,7 @@ SettingsPageForm {
 
                     //Keys.priority: Keys.AfterItem
 
-                    Keys.onPressed: {
+                    Keys.onPressed: function(event) {
                         if (event.key === Qt.Key_Return){
                             //console.log("Return key pressed path")
                             editingFinished()

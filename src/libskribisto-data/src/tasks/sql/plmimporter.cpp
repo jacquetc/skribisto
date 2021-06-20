@@ -42,6 +42,8 @@
 #include <quazip/JlCompress.h>
 #include <QTextDocument>
 
+// #include <zlib.h>
+
 PLMImporter::PLMImporter(QObject *parent) :
     QObject(parent)
 {}
@@ -257,6 +259,7 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
                 randomString.append(nextChar);
             }
         }
+
         qDebug() << "randomString" << randomString;
 
 
@@ -287,6 +290,67 @@ QSqlDatabase PLMImporter::createEmptySQLiteProject(int projectId, SKRResult& res
 }
 
 // -----------------------------------------------------------------------------------------------
+int PLMImporter::decompress(FILE *source, FILE *dest)
+{
+    int ret;
+    unsigned have;
+    z_stream strm;
+    unsigned char in[16384];
+    unsigned char out[16384];
+
+    /* allocate inflate state */
+    strm.zalloc   = Z_NULL;
+    strm.zfree    = Z_NULL;
+    strm.opaque   = Z_NULL;
+    strm.avail_in = 0;
+    strm.next_in  = Z_NULL;
+    ret           = inflateInit(&strm);
+
+    if (ret != Z_OK) return ret;
+
+    /* decompress until deflate stream ends or end of file */
+    do {
+        strm.avail_in = fread(in, 1, 16384, source);
+
+        if (ferror(source)) {
+            (void)inflateEnd(&strm);
+            return Z_ERRNO;
+        }
+
+        if (strm.avail_in == 0) break;
+        strm.next_in = in;
+
+        /* run inflate() on input until output buffer not full */
+        do {
+            strm.avail_out = 16384;
+            strm.next_out  = out;
+            ret            = inflate(&strm, Z_NO_FLUSH);
+            assert(ret != Z_STREAM_ERROR); /* state not clobbered */
+
+            switch (ret) {
+            case Z_NEED_DICT:
+                ret = Z_DATA_ERROR; /* and fall through */
+
+            case Z_DATA_ERROR:
+            case Z_MEM_ERROR:
+                (void)inflateEnd(&strm);
+                return ret;
+            }
+            have = 16384 - strm.avail_out;
+
+            if ((fwrite(out, 1, have, dest) != have) || ferror(dest)) {
+                (void)inflateEnd(&strm);
+                return Z_ERRNO;
+            }
+        } while (strm.avail_out == 0);
+
+        /* done when inflate() says it's done */
+    } while (ret != Z_STREAM_END);
+
+    /* clean up and return */
+    (void)inflateEnd(&strm);
+    return ret == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
+}
 
 SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, const QUrl& skribistoFileName)
 {
@@ -320,6 +384,25 @@ SKRResult PLMImporter::importPlumeCreatorProject(const QUrl& plumeFileName, cons
 
     JlCompress::extractDir(plumeFileName.toLocalFile(), tempDirPath);
 
+    //    QFile qf(plumeFileName.toLocalFile());
+    //    qf.open(QIODevice::ReadOnly);
+    //    int   fd        = qf.handle();
+    //    FILE *plumeFile = fdopen(dup(fd), "rb");
+
+
+    //    //    QFile tf(plumeFileName.toLocalFile());
+    //    //    tf.open(QIODevice::ReadOnly);
+    //    FILE *fp;
+    //    QByteArray  ba     = tempDirPath.toLocal8Bit();
+    //    const char *c_str2 = ba.data();
+    //    fp = fopen(c_str2, "w");
+
+    //    //    int   fd2 = tf.handle();
+    //    //    FILE *t   = fdopen(dup(fd2), "rb");
+
+    //    decompress(plumeFile, fp);
+    //    fclose(plumeFile); // correct
+    //    fclose(fp);
 
     // ----------- create text folder---------------------------------------
 

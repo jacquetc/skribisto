@@ -18,7 +18,7 @@ GroupBox {
     }
 
 
-    Keys.onPressed: {
+    Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Tab){
             Globals.setFocusTemporarilyVisible()
         }

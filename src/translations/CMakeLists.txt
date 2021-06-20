@@ -17,7 +17,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Update en_US only because it's the source lang for Transifex
 
 
-set(LUPDATE_EXECUTABLE ${Qt${QT_VERSION_MAJOR}_LUPDATE_EXECUTABLE})
+set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lupdate")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lupdate.exe")
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
 message(${LUPDATE_EXECUTABLE})
 set(EN_US_FILENAME "${CMAKE_SOURCE_DIR}/src/translations/skribisto_en_US.ts")
 message(${EN_US_FILENAME})
@@ -31,7 +35,10 @@ add_custom_target("update_ts_en_US" ALL
 
 # Release :
 
-set(LRELEASE_EXECUTABLE ${Qt${QT_VERSION_MAJOR}_LRELEASE_EXECUTABLE})
+set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease.exe")
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 message(${LRELEASE_EXECUTABLE})
 
 file(GLOB_RECURSE TS_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/translations/skribisto_*.ts")
@@ -47,7 +54,7 @@ foreach(TS_FILEPATH ${TS_FILES})
       )
 
       if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-          install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${QM_FILENAME}" DESTINATION "${KDE_INSTALL_DATADIR}/skribisto/translations")
+          install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${QM_FILENAME}" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/skribisto/translations")
       endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
       if(CMAKE_SYSTEM_NAME STREQUAL "Windows")

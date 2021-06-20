@@ -116,6 +116,6 @@ include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/" "${CMAKE_SO
 target_include_directories(overview SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
 target_include_directories(overview SYSTEM PUBLIC "${CMAKE_SOURCE_DIR}/src/app/src/")
 
-install(TARGETS overview RUNTIME DESTINATION ${KDE_INSTALL_BINDIR})
+install(TARGETS overview RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 #set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/data/Info.plist)

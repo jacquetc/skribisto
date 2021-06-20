@@ -202,7 +202,7 @@ OverviewTreeForm {
 
             Keys.priority: Keys.AfterItem
 
-            Keys.onShortcutOverride: {
+            Keys.onShortcutOverride: function(event)  {
 
                 if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C){
                     event.accepted = true
@@ -224,7 +224,7 @@ OverviewTreeForm {
                 }
             }
 
-            Keys.onPressed: {
+            Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Return){
                     console.log("Return key pressed")
                     openDocumentAction.trigger()
@@ -361,7 +361,7 @@ OverviewTreeForm {
                 /// without MouseArea, it breaks while dragging and scrolling:
                 MouseArea {
                     anchors.fill: parent
-                    onWheel: {
+                    onWheel: function(wheel) {
                         listView.flick(0, wheel.angleDelta.y * 50)
                         wheel.accepted = true
                     }
@@ -464,7 +464,7 @@ OverviewTreeForm {
                     TapHandler {
                         id: tapHandler
 
-                        onSingleTapped: {
+                        onSingleTapped: function(eventPoint) {
                             currentTreeItemId = model.treeItemId
                             currentProjectId = model.projectId
                             listView.currentIndex = model.index
@@ -473,7 +473,7 @@ OverviewTreeForm {
 
                         }
 
-                        onDoubleTapped: {
+                        onDoubleTapped: function(eventPoint) {
                             //console.log("double tapped")
 
                             currentTreeItemId = model.treeItemId
@@ -492,7 +492,7 @@ OverviewTreeForm {
                             }
                         }
 
-                        onGrabChanged: {
+                        onGrabChanged: function(transition, point) {
                             point.accepted = false
 
                         }
@@ -503,7 +503,7 @@ OverviewTreeForm {
                         id: rightClickTapHandler
                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                         acceptedButtons: Qt.RightButton
-                        onTapped: {
+                        onSingleTapped: function(eventPoint) {
                             //console.log("right clicked")
                             if(menu.visible){
                                 menu.close()
@@ -525,7 +525,7 @@ OverviewTreeForm {
                         id: middleClickTapHandler
                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                         acceptedButtons: Qt.MiddleButton
-                        onTapped: {
+                        onSingleTapped: function(eventPoint) {
                             currentTreeItemId = model.treeItemId
                             currentProjectId = model.projectId
                             listView.currentIndex = model.index
@@ -617,15 +617,15 @@ OverviewTreeForm {
 
                                             TapHandler{
 
-                                                onSingleTapped: {
+                                                onSingleTapped: function(eventPoint) {
                                                     tapHandler.singleTapped(point)
                                                 }
 
-                                                onDoubleTapped: {
+                                                onDoubleTapped: function(eventPoint) {
                                                     tapHandler.doubleTapped(point)
                                                 }
 
-                                                onGrabChanged: {
+                                                onGrabChanged: function(transition, point) {
                                                     tapHandler.grabChanged(transition, point)
                                                 }
 
@@ -636,15 +636,15 @@ OverviewTreeForm {
                                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                                 acceptedButtons: Qt.RightButton
 
-                                                onSingleTapped: {
+                                                onSingleTapped: function(eventPoint) {
                                                     rightClickTapHandler.singleTapped(point)
                                                 }
 
-                                                onDoubleTapped: {
+                                                onDoubleTapped: function(eventPoint) {
                                                     rightClickTapHandler.doubleTapped(point)
                                                 }
 
-                                                onGrabChanged: {
+                                                onGrabChanged: function(transition, point) {
                                                     rightClickTapHandler.grabChanged(transition, point)
                                                 }
 
@@ -655,15 +655,15 @@ OverviewTreeForm {
                                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                                 acceptedButtons: Qt.MiddleButton
 
-                                                onSingleTapped: {
+                                                onSingleTapped: function(eventPoint) {
                                                     middleClickTapHandler.singleTapped(point)
                                                 }
 
-                                                onDoubleTapped: {
+                                                onDoubleTapped: function(eventPoint) {
                                                     middleClickTapHandler.doubleTapped(point)
                                                 }
 
-                                                onGrabChanged: {
+                                                onGrabChanged: function(transition, point) {
                                                     middleClickTapHandler.grabChanged(transition, point)
                                                 }
 
@@ -713,8 +713,10 @@ OverviewTreeForm {
                                         }
 
                                         //Keys.priority: Keys.AfterItem
-                                        Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
-                                        Keys.onPressed: {
+                                        Keys.onShortcutOverride: function(event) {
+                                            event.accepted = (event.key === Qt.Key_Escape)
+                                        }
+                                        Keys.onPressed: function(event) {
                                             if (event.key === Qt.Key_Return){
                                                 console.log("Return key pressed title")
                                                 editingFinished()
@@ -759,8 +761,8 @@ OverviewTreeForm {
                                         }
 
                                         //Keys.priority: Keys.AfterItem
-                                        Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
-                                        Keys.onPressed: {
+                                        Keys.onShortcutOverride: function(event) { event.accepted = (event.key === Qt.Key_Escape)}
+                                        Keys.onPressed: function(event) {
                                             if (event.key === Qt.Key_Return){
                                                 console.log("Return key pressed title")
                                                 editingFinished()

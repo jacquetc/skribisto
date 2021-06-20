@@ -36,7 +36,7 @@ ExamplePageForm {
             borderColor: activeFocus ? SkrTheme.accent : "transparent"
             borderWidth:  activeFocus ? 2 : 0
 
-            Keys.onPressed: {
+            Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Return){
                     //TODO: temporary until async is done
                     Globals.loadingPopupCalled()
@@ -55,7 +55,7 @@ ExamplePageForm {
 
 
             TapHandler {
-                onTapped: {
+                onSingleTapped: function(eventPoint) {
                     //TODO: temporary until async is done
                     Globals.loadingPopupCalled()
                     loadProjectTimer.start()
@@ -63,7 +63,7 @@ ExamplePageForm {
 
                 }
 
-                onGrabChanged: {
+                onGrabChanged: function(transition, point) {
                     point.accepted = false
                 }
             }

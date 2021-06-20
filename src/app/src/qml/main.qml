@@ -993,7 +993,7 @@ ApplicationWindow {
         }
 
         contentItem: ColumnLayout {
-            implicitWidth: childrenRect.width
+            width: childrenRect.width
 
             SkrLabel {
                 id: loadingPopupLabel
@@ -1430,7 +1430,7 @@ ApplicationWindow {
         }
     }
 
-    onClosing: {
+    onClosing: function(close){
 
         var group = "window_" + windowId
         // geometry
@@ -1752,9 +1752,9 @@ ApplicationWindow {
     //        onActivated: {console.log("alt x")}
 
     //    }
-    //    Keys.onShortcutOverride: event.accepted = ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F)
+    //    Keys.onShortcutOverride: function(event)  event.accepted = ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F)
 
-    //    Keys.onPressed: {
+    //    Keys.onPressed: function(event) {
     //        if ((event.modifiers & Qt.AltModifier) && event.key === Qt.Key_F){
     //            menuBar.visible = true
 

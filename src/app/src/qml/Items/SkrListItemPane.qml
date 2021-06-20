@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
-import QtGraphicalEffects 1.15
+//import QtGraphicalEffects 1.15
 import ".."
 
 Item {
@@ -26,23 +26,23 @@ Item {
 
     }
 
-    DropShadow {
-        anchors.fill: parent
-        horizontalOffset: elevation
-        verticalOffset: elevation
-        radius: 8
-        samples: 17
-        color: "#33000000"
-        source: mainRectangle
-    }
+//    DropShadow {
+//        anchors.fill: parent
+//        horizontalOffset: elevation
+//        verticalOffset: elevation
+//        radius: 8
+//        samples: 17
+//        color: "#33000000"
+//        source: mainRectangle
+//    }
 
-    DropShadow {
-        anchors.fill: parent
-        horizontalOffset: - elevation
-        verticalOffset: elevation
-        radius: 8
-        samples: 17
-        color: "#33000000"
-        source: mainRectangle
-    }
+//    DropShadow {
+//        anchors.fill: parent
+//        horizontalOffset: - elevation
+//        verticalOffset: elevation
+//        radius: 8
+//        samples: 17
+//        color: "#33000000"
+//        source: mainRectangle
+//    }
 }

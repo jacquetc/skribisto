@@ -280,7 +280,7 @@ TagPadForm {
             TapHandler {
                 id: tapHandler
                 acceptedButtons: Qt.LeftButton
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint) {
 
                     itemBase.setFocused()
                     itemBase.setSelected()
@@ -290,7 +290,7 @@ TagPadForm {
                     eventPoint.accepted = true
 
                 }
-                onDoubleTapped: {
+                onDoubleTapped: function(eventPoint) {
                     itemBase.setFocused()
                     itemBase.setSelected()
                     itemBase.forceActiveFocus()
@@ -321,7 +321,7 @@ TagPadForm {
                 id: rightClickHandler
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint) {
 
                     itemBase.setFocused()
                     itemBase.setSelected()
@@ -451,7 +451,7 @@ TagPadForm {
                 }
             }
 
-            Keys.onShortcutOverride: {
+            Keys.onShortcutOverride: function(event)  {
                 if( event.key === Qt.Key_Escape){
                     event.accepted = true
                 }
@@ -460,7 +460,7 @@ TagPadForm {
                 }
             }
 
-            Keys.onPressed: {
+            Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Delete){
                     console.log("Delete key pressed ")
 
@@ -776,7 +776,7 @@ TagPadForm {
 
                         Keys.priority: Keys.BeforeItem
 
-                        Keys.onPressed: {
+                        Keys.onPressed: function(event) {
                             if (event.key === Qt.Key_Down){
                                 if(inner_searchResultList.count > 0){
                                     inner_searchResultList.itemAtIndex(0).forceActiveFocus()
@@ -829,14 +829,14 @@ TagPadForm {
 
                                     TapHandler {
                                         id: inner_tapHandler
-                                        //                                    onSingleTapped: {
+                                        //                                    onSingleTapped: function(eventPoint) {
                                         //                                        searchResultList.currentIndex = model.index
                                         //                                        delegateRoot.forceActiveFocus()
                                         //                                        colorChooser.selectColor(model.color)
 
                                         //                                        eventPoint.accepted = true
                                         //                                    }
-                                        onSingleTapped: {
+                                        onSingleTapped: function(eventPoint) {
 
                                             if(treeItemId === -2){
                                                 callAddTag(model.projectId, model.name, model.color, model.textColor)
@@ -850,7 +850,7 @@ TagPadForm {
                                             eventPoint.accepted = true
                                         }
 
-                                        onGrabChanged: {
+                                        onGrabChanged: function(transition, point) {
                                             point.accepted = false
                                         }
 
@@ -877,7 +877,7 @@ TagPadForm {
                                     //                            //enabled: listView.activeFocus
                                     //                        }
 
-                                    Keys.onPressed: {
+                                    Keys.onPressed: function(event) {
                                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
                                             console.log("Return key pressed title")
 

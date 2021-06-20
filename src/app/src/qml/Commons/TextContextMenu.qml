@@ -358,12 +358,12 @@ TextContextMenuForm {
 
                             TapHandler {
                                 id: tapHandler
-                                //                                onSingleTapped: {
+                                //                                onSingleTapped: function(eventPoint) {
                                 //                                    searchResultList.currentIndex = model.index
                                 //                                    delegateRoot.forceActiveFocus()
                                 //                                    eventPoint.accepted = true
                                 //                                }
-                                onSingleTapped: {
+                                onSingleTapped: function(eventPoint) {
                                     //create relationship with note
 
                                     root.suggestionChosen(root.suggestionOriginalWord, model.modelData)
@@ -373,7 +373,7 @@ TextContextMenuForm {
                                 }
 
 
-                                onGrabChanged: {
+                                onGrabChanged: function(transition, point) {
                                     point.accepted = false
                                 }
 
@@ -394,7 +394,7 @@ TextContextMenuForm {
 
 
 
-                            Keys.onPressed: {
+                            Keys.onPressed: function(event) {
                                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
                                     console.log("Return key pressed title")
 

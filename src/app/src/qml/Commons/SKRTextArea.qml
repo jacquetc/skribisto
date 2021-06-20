@@ -44,7 +44,7 @@ TextArea {
 
     property int initialCursorPositionX: -1
     property int initialCursorPosition: -1
-    Keys.onPressed: {
+    Keys.onPressed: function(event) {
         // paste :
         if (((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V)
                 || event.key === Qt.Key_Paste) {
@@ -184,7 +184,7 @@ TextArea {
         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
         acceptedButtons: Qt.LeftButton
 
-        onGrabChanged: {
+        onGrabChanged: function(transition, point) {
 
             //console.log("tapHandler", transition)
         }
@@ -351,7 +351,7 @@ TextArea {
         acceptedDevices: PointerDevice.TouchScreen
         acceptedPointerTypes: PointerDevice.Finger
 
-        onSingleTapped: {
+        onSingleTapped: function(eventPoint) {
             console.log("tapped")
             forceActiveFocus()
             priv.touchDetected = false
@@ -360,7 +360,7 @@ TextArea {
                                         eventPoint.position.y)
         }
 
-        onDoubleTapped: {
+        onDoubleTapped: function(eventPoint) {
             console.log("double tapped")
             cursorPosition = positionAt(eventPoint.position.x,
                                         eventPoint.position.y)
@@ -377,7 +377,7 @@ TextArea {
     //        acceptedDevices: PointerDevice.TouchScreen
     //        acceptedPointerTypes: PointerDevice.Finger
 
-    //        //        onGrabChanged: {
+    //        //        onGrabChanged: function(transition, point) {
     //        //            console.log("grab txtarea grabbed")
 
     //        //        }
@@ -659,7 +659,7 @@ TextArea {
     //--------Wheel---------------------------------------------
     //--------------------------------------------------------------
     WheelHandler {
-        onWheel: {
+        onWheel: function(event) {
             moveViewYCalled(-event.angleDelta.y / 2, false)
         }
     }

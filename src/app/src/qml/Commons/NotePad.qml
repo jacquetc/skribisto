@@ -209,7 +209,7 @@ NotePadForm {
             TapHandler {
                 id: touchHandler
                 acceptedDevices:  PointerDevice.TouchScreen
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint) {
                     console.log("single tapped")
                     //reset other notes :
                     var i;
@@ -246,7 +246,7 @@ NotePadForm {
                 id: tapHandler
                 acceptedDevices:  PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.LeftButton
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint) {
                     console.log("single tapped")
                     //reset other notes :
                     var i;
@@ -265,7 +265,7 @@ NotePadForm {
                     eventPoint.accepted = true
 
                 }
-                onDoubleTapped: {
+                onDoubleTapped: function(eventPoint) {
 
                     console.log("double tapped")
 
@@ -295,7 +295,7 @@ NotePadForm {
                 id: rightClickHandler
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint) {
                     var i;
                     for(i = 0; i < noteRepeater.count; i++) {
                         noteRepeater.itemAt(i).isSelected = false
@@ -412,7 +412,7 @@ NotePadForm {
                 acceptedDevices:  PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.LeftButton
                 acceptedModifiers: Qt.ShiftModifier
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint) {
                     //reset other notes :
                     var i;
                     for(i = 0; i < noteRepeater.count; i++) {
@@ -424,7 +424,7 @@ NotePadForm {
                 }
             }
 
-            Keys.onShortcutOverride: {
+            Keys.onShortcutOverride: function(event)  {
                 if( event.key === Qt.Key_Escape){
                     event.accepted = true
                 }
@@ -434,7 +434,7 @@ NotePadForm {
             }
 
 
-            Keys.onPressed: {
+            Keys.onPressed: function(event) {
                 if ((event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_Delete){
                     console.log("Shift delete key pressed ")
                     // move the note to trash
@@ -1273,7 +1273,7 @@ NotePadForm {
                     }
 
                     Keys.priority: Keys.BeforeItem
-                    Keys.onPressed: {
+                    Keys.onPressed: function(event) {
                         if (event.key === Qt.Key_Down){
                             if(inner_searchResultList.count > 0){
                                 inner_searchResultList.itemAtIndex(0).forceActiveFocus()
@@ -1322,12 +1322,12 @@ NotePadForm {
 
                                 TapHandler {
                                     id: inner_tapHandler
-                                    //                                onSingleTapped: {
+                                    //                                onSingleTapped: function(eventPoint) {
                                     //                                    searchResultList.currentIndex = model.index
                                     //                                    delegateRoot.forceActiveFocus()
                                     //                                    eventPoint.accepted = true
                                     //                                }
-                                    onSingleTapped: {
+                                    onSingleTapped: function(eventPoint) {
                                         //create relationship with note
 
                                         var noteId = model.paperId
@@ -1347,7 +1347,7 @@ NotePadForm {
                                     }
 
 
-                                    onGrabChanged: {
+                                    onGrabChanged: function(transition, point) {
                                         point.accepted = false
                                     }
 
@@ -1390,7 +1390,7 @@ NotePadForm {
 
                                 //Keys.shortcutOverride: event.accepted = (event.key === Qt.Key_Return || event.key === Qt.Key_Space)
 
-                                Keys.onPressed: {
+                                Keys.onPressed: function(event) {
                                     if (event.key === Qt.Key_Return || event.key === Qt.Key_Space){
                                         console.log("Return key pressed title")
 

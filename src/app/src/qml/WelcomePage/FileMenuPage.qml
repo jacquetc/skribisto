@@ -90,13 +90,13 @@ FileMenuPageForm {
             TapHandler {
                 id: tapHandler
 
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint) {
                     recentListView.currentIndex = model.index
                     content.forceActiveFocus()
                     eventPoint.accepted = true
                 }
 
-                onDoubleTapped: {
+                onDoubleTapped: function(eventPoint) {
                     // open project
 
                     if(skrData.projectHub().isURLAlreadyLoaded(model.fileName)){
@@ -129,7 +129,7 @@ FileMenuPageForm {
             TapHandler {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
-                onTapped: {
+                onSingleTapped: function(eventPoint) {
 
                     if(menu.visible){
                         menu.close()

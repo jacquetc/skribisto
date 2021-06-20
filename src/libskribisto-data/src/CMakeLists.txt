@@ -14,7 +14,6 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Network Sql Xml CONFIG RE
 
 
 
-
 set(data_SRCS
     skrdata.cpp
     skrresult.cpp
@@ -111,12 +110,11 @@ target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_
 
 #-------------- QUAZIP --------------------
 
-#if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 
     if(${SKR_DEV})
-    
-    	message("-------------- SKR_DEV is ON ---------------------")
+
+        message("-------------- SKR_DEV is ON ---------------------")
         set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
 
         set(QUAZIP_QT_MAJOR_VERSION ${QT_MAJOR_VERSION})
@@ -130,11 +128,10 @@ target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_
 
         set(QuaZip-Qt${QT_VERSION_MAJOR}_DIR ${QUAZIP_LIB_DIR}/cmake/QuaZip-Qt${QT_VERSION_MAJOR}-1.1)
         set(ZLIB_ROOT ${EXTERNAL_INSTALL_LOCATION}/zlib)
-     	message("-------------- QuaZip-Qt${QT_VERSION_MAJOR}_DIR  =  ${QuaZip-Qt${QT_VERSION_MAJOR}_DIR}---------------------")
+        message("-------------- QuaZip-Qt${QT_VERSION_MAJOR}_DIR  =  ${QuaZip-Qt${QT_VERSION_MAJOR}_DIR}---------------------")
     endif(${SKR_DEV})
 
 
-#endif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 
 find_package(QuaZip-Qt${QT_VERSION_MAJOR} REQUIRED)
@@ -149,7 +146,7 @@ target_include_directories(skribisto-data SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS}
 
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-install(TARGETS skribisto-data LIBRARY DESTINATION ${KDE_INSTALL_LIBDIR})
+install(TARGETS skribisto-data LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")

@@ -98,8 +98,8 @@ ProjectPageForm {
                 editTitlebutton.visible = true
             }
 
-            Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
-            Keys.onPressed: {
+            Keys.onShortcutOverride: function(event) { event.accepted = (event.key === Qt.Key_Escape) }
+            Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Return){
                     console.log("Return key pressed title")
                     editTitleTextField.editingFinished()

@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.5.0)
 #    cmake_policy(SET CMP0071 NEW)
 #endif()
 set(QT_MIN_VERSION "5.15.0")
-#set(QT_DEFAULT_MAJOR_VERSION ${QT_MAJ_VERSION})
+# set(QT_DEFAULT_MAJOR_VERSION 6)
 
 set(OpenGL_GL_PREFERENCE "GLVND")
 
@@ -46,7 +46,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
     include(ECMInstallIcons)
     include(ECMOptionalAddSubdirectory)
-    include(KDEInstallDirs)
+    include(GNUInstallDirs)
     add_subdirectory(resources/unix/icons)
 
 
@@ -64,7 +64,6 @@ endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 #include(FeatureSummary)
 
 include(CMakePackageConfigHelpers)
-
 
 include_directories(${Qt${QT_VERSION_MAJOR}Core_PRIVATE_INCLUDE_DIRS})
 
@@ -107,8 +106,8 @@ add_subdirectory(src/plugins)
 add_subdirectory(src/translations)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION ${KDE_INSTALL_APPDIR})
-    install(FILES resources/unix/mime/eu.skribisto.skribisto.xml DESTINATION ${KDE_INSTALL_MIMEDIR})
-    install(FILES eu.skribisto.skribisto.appdata.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
+    install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
+    install(FILES resources/unix/mime/eu.skribisto.skribisto.xml DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/mime/packages}")
+    install(FILES eu.skribisto.skribisto.appdata.xml DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/metainfo}")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 

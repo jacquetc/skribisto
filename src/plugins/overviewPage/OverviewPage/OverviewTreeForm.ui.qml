@@ -83,7 +83,7 @@ Item {
         z: 1
 
         TapHandler {
-            onTapped: {
+            onSingleTapped: function(eventPoint) {
                 listView.forceActiveFocus()
 
                 var index = listView.currentIndex
