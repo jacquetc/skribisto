@@ -2071,6 +2071,7 @@ NavigationListForm {
                                     y: menuButton.height
                                     width: 300
                                     z: 101
+                                    closePolicy: Popup.CloseOnPressOutside | Popup.CloseOnEscape
 
                                     onOpened: {
                                         // necessary to differenciate between all items
