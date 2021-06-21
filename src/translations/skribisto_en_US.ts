@@ -2,6 +2,92 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
 <context>
+    <name>Card</name>
+    <message>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CardForm.ui</name>
+    <message>
+        <source>Go in</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPage</name>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Card view of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Card view page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Card View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the card view</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPageForm.ui</name>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolbox</name>
+    <message>
+        <source>Show the card view toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CheckableTree</name>
     <message>
         <source>Level %1</source>
@@ -1143,23 +1229,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>has %1 sub-items</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>navigation item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -68,19 +68,29 @@ Item {
 
             }
 
-            WritingZone {
+            OutlineWritingZone {
                 id: outlineWritingZone
-                placeholderText: qsTr("Type your outline here …")
+                clip: true
                 Layout.fillWidth: true
                 Layout.preferredHeight: 400
                 stretch: true
+                placeholderText: qsTr("Type your outline here …")
                 leftScrollItemVisible: false
+                rightScrollItemVisible: Globals.touchUsed
                 visible: !minimalMode
+
+                textPointSize: SkrSettings.outlinePadSettings.textPointSize
+                textFontFamily: SkrSettings.outlinePadSettings.textFontFamily
+                textIndent: SkrSettings.outlinePadSettings.textIndent
+                textTopMargin: SkrSettings.outlinePadSettings.textTopMargin
 
                 textAreaStyleBackgroundColor: SkrTheme.secondaryTextAreaBackground
                 textAreaStyleForegroundColor: SkrTheme.secondaryTextAreaForeground
                 paneStyleBackgroundColor: SkrTheme.pageBackground
                 textAreaStyleAccentColor: SkrTheme.accent
+
+                name: "outlinePad"
+
 
                 Behavior on Layout.preferredHeight {
                     enabled: SkrSettings.ePaperSettings.animationEnabled

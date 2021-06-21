@@ -4,6 +4,7 @@ import QtQuick.Controls.Material 2.15
 
 Item {
     property alias listView: listView
+    clip: true
 
     Item {
         id: topDraggingMover

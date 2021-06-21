@@ -858,7 +858,12 @@ RootPageForm {
         icon.source: model.iconSource
 
         onClicked: {
-            viewManager.loadProjectDependantPage(skrData.projectHub().getActiveProject(), model.type)
+
+            var activeProjectId = skrData.projectHub().activeProjectId
+            if(activeProjectId === -2){
+                return
+            }
+            viewManager.loadProjectDependantPage(activeProjectId, model.type)
         }
 
         Shortcut{

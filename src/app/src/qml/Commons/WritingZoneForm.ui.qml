@@ -24,6 +24,7 @@ FocusScope {
     property alias placeholderText: textArea.placeholderText
 
     property alias leftScrollItemVisible: leftScrollItem.visible
+    property alias rightScrollItemVisible: rightScrollItem.visible
     property string paneStyleBackgroundColor: "#FAFAFA"
 
     property alias findPanel: findPanel

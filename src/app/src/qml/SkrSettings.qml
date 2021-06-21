@@ -58,8 +58,8 @@ QtObject {
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
-    property Settings outlineSettings: Settings {
-        category: "outline"
+    property Settings outlinePadSettings: Settings {
+        category: "outlinePad"
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
@@ -81,6 +81,15 @@ QtObject {
         property int textPointSize: Qt.application.font.pointSize
         property real textIndent: 2
         property real textTopMargin: 2
+        property string textFontFamily: skrRootItem.defaultFontFamily()
+    }
+
+    property Settings cardViewOutlineSettings: Settings {
+        category: "cardViewOutline"
+        property int textWidth: -2 //unused but mandatory
+        property int textPointSize: Qt.application.font.pointSize
+        property real textIndent: 2
+        property real textTopMargin: 1
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 

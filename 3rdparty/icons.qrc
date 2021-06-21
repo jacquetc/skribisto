@@ -120,5 +120,6 @@
         <file>icons/backup/cursor-cross.svg</file>
         <file>icons/backup/link.svg</file>
         <file>icons/backup/remove-link.svg</file>
+        <file>icons/backup/view-list-icons.svg</file>
     </qresource>
 </RCC>

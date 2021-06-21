@@ -348,3 +348,5 @@ QStringList SKRTreeManager::findProjectPageShortcutSequences(const QString& name
 
     return list;
 }
+
+// ---------------------------------------------------------------------------
