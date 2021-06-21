@@ -182,7 +182,8 @@ void SKRHighlighter::highlightBlock(const QString& text)
         }
 
 
-    QList<int> spellcheckPositionList;
+    // QList<int> spellcheckPositionList;
+
     for (int k = 0; k < text.length(); ++k) {
         QTextCharFormat finalFormat;
 
