@@ -8,7 +8,7 @@ RightDockForm {
     id: root
     required property var viewManager
 
-    Connections{
+    Connections {
         target: viewManager
         function onFocusedChanged(position, projectId, treeItemId, pageType) {
 
@@ -23,35 +23,30 @@ RightDockForm {
     //    property int treeItemId : -1
     //    property int paperId : -1
 
-
-
     //    viewManager.onFocusedPositionChanged: {
     //        var pageType = viewManager.focusedPositionPageType
     //    }
 
     //--------------------------------------------------------
-
-
-
     Component {
         id: toolboxLoaderComponent
 
-        Loader{
+        Loader {
             id: toolboxLoader
             sourceComponent: modelData
-
 
             width: scrollView.width
 
             onLoaded: {
 
                 //toolboxFlickable.contentHeight = toolboxLayout.childrenRect.height
-
                 var iconSource = toolboxLoader.item.iconSource
                 var showButtonText = toolboxLoader.item.showButtonText
-                toolButtonModel.append({"iconSource": iconSource, "showButtonText": showButtonText,
-                                           "toolbox": toolboxLoader})
-
+                toolButtonModel.append({
+                                           "iconSource": iconSource,
+                                           "showButtonText": showButtonText,
+                                           "toolbox": toolboxLoader
+                                       })
             }
 
             Binding {
@@ -59,30 +54,22 @@ RightDockForm {
                 when: toolboxLoader.status === Loader.Ready
                 property: "height"
                 value: toolboxLoader.item.implicitHeight
-
+                restoreMode: Binding.RestoreBindingOrValue
             }
-
         }
     }
     toolboxRepeater.delegate: toolboxLoaderComponent
 
-
     //--------------------------------------------------------------
     //--------------------------------------------------------------
     //--------------------------------------------------------------
-
-
-
-
     ListModel {
         id: toolButtonModel
     }
     toolButtonRepeater.model: toolButtonModel
 
-
     Component {
         id: toolButtonLoaderComponent
-
 
         Loader {
             id: toolButtonLoader
@@ -91,14 +78,11 @@ RightDockForm {
             onLoaded: {
                 toolButtonLoader.item.iconSource = model.iconSource
                 toolButtonLoader.item.text = model.showButtonText
-                toolButtonLoader.item.toolbox =  model.toolbox
+                toolButtonLoader.item.toolbox = model.toolbox
             }
-
-
         }
     }
     toolButtonRepeater.delegate: toolButtonLoaderComponent
-
 
     Component {
         id: toolButtonComponent
@@ -114,20 +98,18 @@ RightDockForm {
                 toolbox.visible = toolButton.checked
             }
 
-            Binding on checked{
+            Binding on checked {
                 value: toolbox.visible
                 delayed: true
                 restoreMode: Binding.RestoreBindingOrValue
             }
-
         }
-
     }
 
     //--------------------------------------------------------------
     //--------------------------------------------------------------
     //--------------------------------------------------------------
-    signal hideDockCalled()
+    signal hideDockCalled
     hideDockToolButton.action: hideDockAction
 
     Action {
@@ -136,7 +118,5 @@ RightDockForm {
         onTriggered: {
             hideDockCalled()
         }
-
     }
-
 }

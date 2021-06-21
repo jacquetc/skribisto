@@ -108,6 +108,7 @@ set(app_SRCS
     skrdownload.cpp
     skrshortcutmanager.h
     skrshortcutmanager.cpp
+    skrprojectpageinterface.h
     )
 
 set(QML qml.qrc
@@ -258,5 +259,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 install(TARGETS skribisto RUNTIME DESTINATION ${KDE_INSTALL_BINDIR})
 endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-
 #set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/data/Info.plist)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+install(TARGETS skribisto
+        RUNTIME DESTINATION ${BINDIR}
+        LIBRARY DESTINATION ${LIBDIR})
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")

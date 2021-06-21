@@ -23,18 +23,16 @@
 
 #include <QObject>
 #include "skrpageinterface.h"
-#include "skrcoreinterface.h"
 #include "skrexporterinterface.h"
 #include "skrwordmeter.h"
 
 class ThemePage : public QObject,
-                  public SKRCoreInterface,
                   public SKRPageInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.ThemePagePlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(SKRCoreInterface SKRPageInterface)
+    Q_INTERFACES(SKRPageInterface)
 
 public:
 

@@ -17,6 +17,9 @@ RootPageForm {
     id: rootPage
 
 
+    Component.onCompleted: {
+       populateProjectPageModel()
+    }
 
     //---------------------------------------------------------
     //---------------------------------------------------------
@@ -344,6 +347,7 @@ RootPageForm {
 
     showLeftDockButton.visible: showLeftDockButtonWidth !== 0
     Behavior on showLeftDockButtonWidth {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
         SpringAnimation {
             spring: 5
             mass: 0.2
@@ -399,6 +403,7 @@ RootPageForm {
 
     showRightDockButton.visible: showRightDockButtonWidth !== 0
     Behavior on showRightDockButtonWidth {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
         SpringAnimation {
             spring: 5
             mass: 0.2
@@ -529,7 +534,7 @@ RootPageForm {
 
 
     Connections {
-        target: ApplicationWindow.window
+        target: rootWindow
         function onOpenMainMenuCalled(){
             mainMenuButton.checked = false
             mainMenuButton.checked = true
@@ -562,7 +567,7 @@ RootPageForm {
         id: fileMenuShortcut
         sequence: skrQMLTools.mnemonic(fileMenu.title)
         onActivated: {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(fileMenu)
 
         }
@@ -572,7 +577,7 @@ RootPageForm {
         id: editMenuShortcut
         sequence: skrQMLTools.mnemonic(editMenu.title)
         onActivated: {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(editMenu)
 
         }
@@ -582,7 +587,7 @@ RootPageForm {
         id: viewMenuShortcut
         sequence: skrQMLTools.mnemonic(viewMenu.title)
         onActivated: {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(viewMenu)
 
         }
@@ -592,7 +597,7 @@ RootPageForm {
         id: helpMenuShortcut
         sequence: skrQMLTools.mnemonic(helpMenu.title)
         onActivated: {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(helpMenu)
 
         }
@@ -601,7 +606,7 @@ RootPageForm {
     Connections{
         target: ApplicationWindow.window
         function onOpenSubMenuCalled(menu) {
-            Globals.openMainMenuCalled()
+            rootWindow.openMainMenuCalled()
             mainMenu.openSubMenu(menu)
         }
     }
@@ -616,9 +621,11 @@ RootPageForm {
         function findMenuIndex(menu){
             var i
             for(i = 0; i< mainMenu.count ; i++){
-                if(menu.title === mainMenu.menuAt(i).title){
+                if(mainMenu.menuAt(i)){
+                    if(menu.title === mainMenu.menuAt(i).title){
 
-                    return i
+                        return i
+                    }
                 }
             }
         }
@@ -635,6 +642,7 @@ RootPageForm {
 
         SkrMenu {
             id: fileMenu
+            objectName: "fileMenu"
             title: qsTr("&File")
 
             SkrMenuItem{
@@ -744,6 +752,11 @@ RootPageForm {
 
 
         }
+
+        SkrMenuItem {
+            action: showSettingsAction
+        }
+
         SkrMenu {
             id: helpMenu
             objectName: "helpMenu"
@@ -777,7 +790,10 @@ RootPageForm {
                 }
             }
 
-            background: SkrPane { anchors.fill: parent}
+            background: SkrPane {
+                anchors.fill: parent
+                anchors.margins: 2
+            }
             contentItem:
                 RowLayout{
                 anchors.fill: parent
@@ -804,5 +820,63 @@ RootPageForm {
         }
 
     }
+
+
+    //--------------------------------------------------------------
+    //----- Top toolbar-----------------------------------------------
+    //--------------------------------------------------------------
+
+
+    ListModel {
+        id: projectPageModel
+    }
+
+
+    function populateProjectPageModel(){
+        projectPageModel.clear()
+
+        var list = skrTreeManager.findProjectPageNamesForLocation("top-toolbar")
+
+        for(var i in list){
+            var name = list[i]
+            var type = skrTreeManager.findProjectPageType(name)
+            var iconSource = skrTreeManager.findProjectPageIconSource(name)
+            var showButtonText = skrTreeManager.findProjectPageShowButtonText(name)
+            var shortcutSequences = skrTreeManager.findProjectPageShortcutSequences(name)
+
+            projectPageModel.append({ "name": name, "type": type, "iconSource": iconSource, "showButtonText": showButtonText, "shortcutSequences": shortcutSequences})
+        }
+    }
+
+
+    topToolBarRepeater.model: projectPageModel
+
+    topToolBarRepeater.delegate: SkrToolButton {
+        property string name: model.name
+        text: model.showButtonText
+
+        icon.source: model.iconSource
+
+        onClicked: {
+
+            var activeProjectId = skrData.projectHub().activeProjectId
+            if(activeProjectId === -2){
+                return
+            }
+            viewManager.loadProjectDependantPage(activeProjectId, model.type)
+        }
+
+        Shortcut{
+
+            sequences: model.shortcutSequences
+            onActivated: {
+
+            }
+
+        }
+
+    }
+
+
 
 }

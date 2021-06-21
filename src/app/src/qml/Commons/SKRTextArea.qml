@@ -13,6 +13,7 @@ TextArea {
     property string styleForegroundColor: "#000000"
     property string styleAccentColor: "#000000"
 
+
     //needed for skrtextbridge
     objectName: "SKRTextArea-" + Qt.formatDateTime(new Date(),
                                                    "yyyyMMddhhmmsszzz")

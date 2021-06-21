@@ -515,6 +515,7 @@ SettingsPageForm {
             border.width: 2
             visible: backupPathListView.activeFocus
             Behavior on y {
+                enabled: SkrSettings.ePaperSettings.animationEnabled
                 SpringAnimation {
                     spring: 3
                     damping: 0.2
@@ -813,6 +814,17 @@ SettingsPageForm {
         value: setTextCursorUnblinkingCheckBox.checked
         restoreMode: Binding.RestoreBindingOrValue
     }
+
+
+    animationEnabledCheckBox.checked: SkrSettings.ePaperSettings.animationEnabled
+    Binding {
+        target: SkrSettings.ePaperSettings
+        property: "animationEnabled"
+        value: animationEnabledCheckBox.checked
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
     // --------------------------------------------
     // ---- advanced --------------------------------
     // --------------------------------------------

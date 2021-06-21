@@ -129,6 +129,7 @@ UserDictPageForm {
             border.width: 2
             visible: listView.activeFocus
             Behavior on y {
+                enabled: SkrSettings.ePaperSettings.animationEnabled
                 SpringAnimation {
                     spring: 5
                     mass: 0.2

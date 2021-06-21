@@ -28,13 +28,34 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release type="stable" version="1.9.23" date="2021-06-21T00:00:00Z">
+      <description>
+        <ul>
+          <li>Overview: add basic plugin without move by drag &amp; drop</li>
+          <li>Card view: add basic Card view plugin without move  by drag &amp; drop nor menu</li>
+          <li>Windows 10 support: fix deployment script</li>
+          <li>Text: stop wheel when the text is smaller than the TextArea</li>
+          <li>Highlighter: bring back the colored text because of poor performance of Canvas painting, waiting for bug fix from Qt</li>
+          <li>Menu: Add show settings action</li>
+          <li>New item dialog: creating a blank item is no longer possible</li>
+          <li>Shortcuts: fix menu not appearing when using Alt+[key] shortcuts</li>
+          <li>notes: can select a folder dedicated to notes in the project page</li>
+          <li>related items: add panel to show related items</li>
+          <li>related items: add quick access to notes</li>
+          <li>related items: add drag and drop</li>
+          <li>animations: add setting for e-papers to stop animations</li>
+          <li>Navigation: converted to a plugin</li>
+          <li>Plugins: add support project-dependent pages</li>
+        </ul>
+      </description>
+    </release>
     <release type="stable" version="1.9.22" date="2021-06-11T00:00:00Z">
       <description>
         <ul>
-          <li>Translationse&amp;#58; add rough translations for it_IT, pt_BR, es_ES, eo, de_DE, ru_RU</li>
-          <li>Navigatione&amp;#58; now focus when clicking on the empty part of the list</li>
-          <li>Navigatione&amp;#58; now select the first item when navigating in a folder</li>
-          <li>Dictionarye&amp;#58; add dialog to add dictionaries from Web</li>
+          <li>Translations: add rough translations for it_IT, pt_BR, es_ES, eo, de_DE, ru_RU</li>
+          <li>Navigation: now focus when clicking on the empty part of the list</li>
+          <li>Navigation: now select the first item when navigating in a folder</li>
+          <li>Dictionaries: add dialog to add dictionaries from Web</li>
         </ul>
       </description>
     </release>

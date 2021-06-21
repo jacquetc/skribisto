@@ -518,6 +518,9 @@ void DocumentHandler::setTopMarginEverywhere(qreal topMargin)
     QTextBlockFormat f = m_textCursor.blockFormat();
 
     f.setTopMargin(topMargin);
+    f.setBottomMargin(0);
+    f.setLeftMargin(0);
+    f.setRightMargin(0);
     m_textCursor.mergeBlockFormat(f);
     m_topMarginEverywhere = topMargin;
 

@@ -24,6 +24,7 @@ SkrBasePage {
     readonly property int columnWidth: 550
     property alias viewButtons: viewButtons
     property alias installDictButton: installDictButton
+    property alias noteFolderComboBox: noteFolderComboBox
 
 
 
@@ -243,6 +244,31 @@ SkrBasePage {
 
                                 }
 
+                            }
+
+                            SkrGroupBox {
+                                id: noteGroupBox
+                                focusPolicy: Qt.TabFocus
+                                Layout.fillWidth: true
+                                title: qsTr("Notes")
+
+                                ColumnLayout {
+
+                                    RowLayout {
+                                        id: rowLayout5
+                                        Layout.fillWidth: true
+
+                                        SkrLabel {
+                                            id: label4
+                                            text: qsTr("Note folder:")
+                                        }
+
+                                        SkrComboBox {
+                                            id: noteFolderComboBox
+                                        }
+                                    }
+
+                                }
                             }
                         }
                     }

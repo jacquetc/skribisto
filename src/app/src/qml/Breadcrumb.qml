@@ -10,51 +10,67 @@ Item {
 
     Connections {
         target: rootWindow.protectedSignals
-        function onSetBreadcrumbCurrentTreeItemCalled(projectId, treeItemId){
+        function onSetBreadcrumbCurrentTreeItemCalled(projectId, treeItemId) {
             generateBreadcrumb(projectId, treeItemId)
         }
     }
 
-
-    function generateBreadcrumb(projectId, treeItemId){
+    function generateBreadcrumb(projectId, treeItemId) {
         pathModel.clear()
         // root :
-        pathModel.append({"text": "/", "projectId": -1, "treeItemId": -1, "pageType": ""})
-        if(treeItemId === -2){
-        }
-        // lone project
-        else if(projectId !== -1 &  treeItemId === 0 ){
+        if (skrData.projectHub().getProjectCount() > 1) {
+        pathModel.append({
+                             "text": "/",
+                             "projectId": -1,
+                             "treeItemId": -1,
+                             "pageType": ""
+                         })
+           }
+        if (treeItemId === -1) {
+
+        } // lone project
+        else if (projectId !== -1 & treeItemId === 0) {
 
             var projectTitle = skrData.projectHub().getProjectName(projectId)
-            pathModel.append({"text": projectTitle, "projectId": projectId, "treeItemId": treeItemId,
-                             "pageType": skrData.treeHub().getType(projectId, treeItemId)})
+            pathModel.append({
+                                 "text": projectTitle,
+                                 "projectId": projectId,
+                                 "treeItemId": treeItemId,
+                                 "pageType": skrData.treeHub().getType(
+                                                 projectId, treeItemId)
+                             })
+        } else {
 
-        }
-        else {
-
-            var ancestorList = skrData.treeHub().getAllAncestors(projectId, treeItemId)
-
+            var ancestorList = skrData.treeHub().getAllAncestors(projectId,
+                                                                 treeItemId)
             var i
-            for(i = ancestorList.length - 1; i >=0 ; i--){
+            for (i = ancestorList.length - 1; i >= 0; i--) {
                 var ancestorId = ancestorList[i]
                 var title
-                if(ancestorId === 0){
+                if (ancestorId === 0) {
                     title = skrData.projectHub().getProjectName(projectId)
-                }
-                else {
+                } else {
                     title = skrData.treeHub().getTitle(projectId, ancestorId)
                 }
 
-                pathModel.append({"text": title, "projectId": projectId, "treeItemId": ancestorId,
-                                 "pageType": skrData.treeHub().getType(projectId, ancestorId)})
+                pathModel.append({
+                                     "text": title,
+                                     "projectId": projectId,
+                                     "treeItemId": ancestorId,
+                                     "pageType": skrData.treeHub().getType(
+                                                     projectId, ancestorId)
+                                 })
             }
 
-
             var currentTitle = skrData.treeHub().getTitle(projectId, treeItemId)
-            pathModel.append({"text": currentTitle, "projectId": projectId, "treeItemId": treeItemId,
-                             "pageType": skrData.treeHub().getType(projectId, treeItemId)})
+            pathModel.append({
+                                 "text": currentTitle,
+                                 "projectId": projectId,
+                                 "treeItemId": treeItemId,
+                                 "pageType": skrData.treeHub().getType(
+                                                 projectId, treeItemId)
+                             })
         }
-
     }
 
     ListModel {
@@ -68,7 +84,7 @@ Item {
         border.color: SkrTheme.pageBackground
         color: SkrTheme.menuBackground
 
-        Row{
+        Row {
             id: row
             anchors.fill: parent
             spacing: 1
@@ -78,7 +94,8 @@ Item {
 
                 SkrToolButton {
                     text: model.text
-                    display: model.index === 0 ? AbstractButton.TextOnly : AbstractButton.TextBesideIcon
+                    display: model.index
+                             === 0 ? AbstractButton.TextOnly : AbstractButton.TextBesideIcon
                     focusPolicy: Qt.NoFocus
                     anchors.top: row.top
                     anchors.bottom: row.bottom
@@ -95,15 +112,17 @@ Item {
                     }
 
                     onClicked: {
-                        if(model.index === 0){
-                            rootWindow.setNavigationTreeItemIdCalled(projectId, treeItemId)
-                        }
-                        else if(skrData.treePropertyHub().getProperty(projectId, treeItemId,
-                                                                     "can_add_child_paper", "true") === "true"){
-                            rootWindow.setNavigationTreeItemParentIdCalled(projectId, treeItemId)
+                        if (model.index === 0) {
+                            rootWindow.setNavigationTreeItemParentIdCalled(
+                                        projectId, treeItemId)
+                        } else if (skrData.treePropertyHub().getProperty(
+                                       projectId, treeItemId,
+                                       "can_add_child_paper",
+                                       "true") === "true") {
+                            rootWindow.setNavigationTreeItemParentIdCalled(
+                                        projectId, treeItemId)
                         }
                     }
-
 
                     Rectangle {
                         anchors.top: parent.top
@@ -112,11 +131,8 @@ Item {
                         width: 2
                         color: SkrTheme.divider
                     }
-
                 }
             }
         }
     }
-
-
 }

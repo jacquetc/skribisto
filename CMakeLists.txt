@@ -112,6 +112,3 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(FILES eu.skribisto.skribisto.appdata.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
 endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
-#install(TARGETS skribisto skribisto-data
-#        RUNTIME DESTINATION ${BINDIR}
-#        LIBRARY DESTINATION ${LIBDIR})

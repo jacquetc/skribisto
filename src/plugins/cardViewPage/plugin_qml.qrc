@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/qml/plugins">
+        <file>CardViewPage/CardViewPage.qml</file>
+        <file>CardViewPage/CardViewPageForm.ui.qml</file>
+        <file>CardViewPage/CardViewToolboxForm.ui.qml</file>
+        <file>CardViewPage/CardViewToolbox.qml</file>
+        <file>CardViewPage/CardForm.ui.qml</file>
+        <file>CardViewPage/Card.qml</file>
+        <file>CardViewPage/CardViewGrid.qml</file>
+    </qresource>
+</RCC>

@@ -17,6 +17,7 @@ Item {
     property alias themeColorButton: themeColorButton
     property alias showLeftDockButton: showLeftDockButton
     property alias showRightDockButton: showRightDockButton
+    property alias topToolBarRepeater: topToolBarRepeater
 
     property int showLeftDockButtonWidth: 30
     property int showRightDockButtonWidth: 30
@@ -73,6 +74,20 @@ Item {
                 Layout.fillWidth: true
             }
 
+            RowLayout{
+                Repeater {
+                    id: topToolBarRepeater
+
+                }
+
+            }
+
+
+            Item {
+                id: stretcher
+                Layout.fillWidth: true
+
+            }
 
             SkrToolButton {
                 id: distractionFreeButton

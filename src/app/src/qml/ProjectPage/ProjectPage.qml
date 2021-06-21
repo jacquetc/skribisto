@@ -24,6 +24,8 @@ ProjectPageForm {
         populateDictComboBox()
         determineCurrentDictComboBoxValue()
         populateStatistics()
+
+        populateNoteFolderComboBox()
     }
 
 
@@ -262,6 +264,41 @@ ProjectPageForm {
         }
     }
 
+
+    //---------------------------------------------------------------
+    //----Note ---------------------------------------------------
+    //---------------------------------------------------------------
+
+    ListModel {
+        id: noteFolderModel
+    }
+
+    noteFolderComboBox.model: noteFolderModel
+    noteFolderComboBox.textRole: "text"
+    noteFolderComboBox.valueRole: "treeItemId"
+
+    function populateNoteFolderComboBox(){
+        noteFolderModel.clear()
+
+        var idList = skrData.treeHub().getAllIds(projectId)
+        for(var i in idList){
+            var treeItemId = idList[i]
+
+            if(skrData.treeHub().getType(projectId, treeItemId) === "FOLDER" &&
+                    !skrData.treeHub().getTrashed(projectId, treeItemId)){
+
+                var title = skrData.treeHub().getTitle(projectId, treeItemId)
+                noteFolderModel.append({"text": title, "treeItemId": idList[i]})
+            }
+        }
+
+
+        var foldersList = skrData.treeHub().getIdsWithInternalTitle(projectId, "note_folder")
+        for(var j in foldersList){
+            noteFolderComboBox.currentIndex = noteFolderComboBox.indexOfValue(foldersList[j])
+            break
+        }
+    }
 
 
 

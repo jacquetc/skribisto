@@ -59,6 +59,7 @@ TabButton {
             Layout.minimumWidth: 50
             topPadding: 6
             bottomPadding: 6
+            activeFocusOnTab: false
 
 
             text: base.text === "" ? (base.action === null ? base.text : action.text) : base.text

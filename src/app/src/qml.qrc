@@ -5,9 +5,6 @@
         <file>qml/main.qml</file>
         <file>qml/qmldir</file>
         <file>qml/SkrSettings.qml</file>
-        <file>qml/Commons/Navigation.qml</file>
-        <file>qml/Commons/NavigationForm.ui.qml</file>
-        <file>qml/Commons/NavigationListForm.ui.qml</file>
         <file>qml/Commons/DocumentListView.qml</file>
         <file>qml/Commons/DocumentListViewForm.ui.qml</file>
         <file>qml/Gallery/GalleryPageForm.ui.qml</file>
@@ -15,34 +12,15 @@
         <file>qml/Commons/WritingZone.qml</file>
         <file>qml/Commons/WritingZoneForm.ui.qml</file>
         <file>qml/Commons/Minimap.qml</file>
-        <file>qml/WriteOverview/WriteOverviewPage.qml</file>
-        <file>qml/WriteOverview/LeftDockForm.ui.qml</file>
-        <file>qml/WriteOverview/LeftDock.qml</file>
-        <file>qml/WriteOverview/WriteOverviewPageForm.ui.qml</file>
-        <file>qml/NoteOverview/LeftDock.qml</file>
-        <file>qml/NoteOverview/NoteOverviewPage.qml</file>
-        <file>qml/NoteOverview/LeftDockForm.ui.qml</file>
-        <file>qml/NoteOverview/NoteOverviewPageForm.ui.qml</file>
         <file>qml/Commons/SimpleDialog.qml</file>
-        <file>qml/Commons/NavigationList.qml</file>
-        <file>qml/Commons/TrashedListView.qml</file>
-        <file>qml/Commons/TrashedListViewForm.ui.qml</file>
         <file>qml/Commons/SKRTextArea.qml</file>
         <file>qml/Commons/TagPad.qml</file>
         <file>qml/Commons/TagPadForm.ui.qml</file>
         <file>qml/Commons/SkrDrawer.qml</file>
-        <file>qml/Commons/RestoreListView.qml</file>
-        <file>qml/Commons/RestoreListViewForm.ui.qml</file>
         <file>qml/Commons/CheckableTree.qml</file>
         <file>qml/Commons/SKRPillarLayout.qml</file>
-        <file>qml/WriteOverview/SheetOverviewTree.qml</file>
-        <file>qml/WriteOverview/SheetOverviewTreeForm.ui.qml</file>
-        <file>qml/WriteOverview/RightDock.qml</file>
-        <file>qml/WriteOverview/RightDockForm.ui.qml</file>
         <file>qml/Commons/EditView.qml</file>
         <file>qml/Commons/EditViewForm.ui.qml</file>
-        <file>qml/WriteOverview/SheetOverviewTool.qml</file>
-        <file>qml/WriteOverview/SheetOverviewToolForm.ui.qml</file>
         <file>qml/Commons/NotePad.qml</file>
         <file>qml/Commons/NotePadForm.ui.qml</file>
         <file>qml/SkrTheme.qml</file>
@@ -64,10 +42,6 @@
         <file>qml/Items/SkrComboBox.qml</file>
         <file>qml/Items/SkrTextField.qml</file>
         <file>qml/Items/SkrRoundButton.qml</file>
-        <file>qml/NoteOverview/NoteSearchItem.qml</file>
-        <file>qml/NoteOverview/NoteSearchItemForm.ui.qml</file>
-        <file>qml/NoteOverview/RecentNotesItem.qml</file>
-        <file>qml/NoteOverview/RecentNotesItemForm.ui.qml</file>
         <file>qml/Items/SkrToolTip.qml</file>
         <file>qml/Items/SkrTabButtonForm.ui.qml</file>
         <file>qml/Commons/ListItemAttributes.qml</file>
@@ -119,10 +93,6 @@
         <file>qml/Commons/NewItemPopupForm.ui.qml</file>
         <file>qml/Items/SkrSplitViewHandler.qml</file>
         <file>qml/Items/SkrPageToolBar.qml</file>
-        <file>qml/OverviewPage/OverviewPage.qml</file>
-        <file>qml/OverviewPage/OverviewPageForm.ui.qml</file>
-        <file>qml/OverviewPage/OverviewTree.qml</file>
-        <file>qml/OverviewPage/OverviewTreeForm.ui.qml</file>
         <file>qml/Commons/OutlinePad.qml</file>
         <file>qml/Commons/OutlinePadForm.ui.qml</file>
         <file>qml/ProjectPage/UserDictPage.qml</file>
@@ -140,5 +110,9 @@
         <file>qml/Items/SkrCheckBox.qml</file>
         <file>qml/Commons/NewDictWizard.qml</file>
         <file>qml/Commons/NewDictWizardForm.ui.qml</file>
+        <file>qml/Commons/RelationshipPanel.qml</file>
+        <file>qml/Commons/RelationshipPanelForm.ui.qml</file>
+        <file>qml/Items/SkrBusyIndicator.qml</file>
+        <file>qml/Commons/OutlineWritingZone.qml</file>
     </qresource>
 </RCC>

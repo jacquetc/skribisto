@@ -135,6 +135,73 @@ void SKRShortcutManager::populateShortcutList()
         createShortcut("paste", tr("Paste"), (QStringList() << "text" << "navigation"),
                        (QStringList() <<  convertStandardKeyToList(QKeySequence::Paste)));
 
+    m_shortcutList <<
+        createShortcut("settings", tr("&Settings"), (QStringList() << "global"),
+                       (QStringList()));
+
+    m_shortcutList <<
+        createShortcut("print", tr("&Print"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::Print)));
+
+    m_shortcutList <<
+        createShortcut("fullscreen", tr("Fullscreen"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::FullScreen)));
+
+    m_shortcutList <<
+        createShortcut("center-vert-text-cursor", tr("Center vertically the text cursor"), (QStringList() << "global"),
+                       (QStringList() << tr("Alt+C", "center-vert-text-cursor")));
+
+    m_shortcutList <<
+        createShortcut("user-manual", tr("&User manual"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::HelpContents)));
+
+    m_shortcutList <<
+        createShortcut("new-project", tr("&New Project"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::New)));
+
+    m_shortcutList <<
+        createShortcut("check-spelling", tr("&Check spelling"), (QStringList() << "global"),
+                       (QStringList() << tr("Shift+F7", "check-spelling")));
+
+
+    m_shortcutList <<
+        createShortcut("open-project", tr("&Open"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::Open)));
+
+    m_shortcutList <<
+        createShortcut("save-project", tr("&Save"), (QStringList() << "global"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::Save)));
+
+    m_shortcutList <<
+        createShortcut("save-all-project", tr("&Save All"), (QStringList() << "global"),
+                       (QStringList() << tr("Ctrl+Shift+S", "save-all-project")));
+
+    m_shortcutList <<
+        createShortcut("save-as-project", tr("&Save As …"), (QStringList() << "global"),
+                       (QStringList() <<  convertStandardKeyToList(QKeySequence::SaveAs)));
+
+    m_shortcutList <<
+        createShortcut("quit", tr("&Quit"), (QStringList() << "global"),
+                       (QStringList() <<  convertStandardKeyToList(QKeySequence::Quit) << tr("Ctrl+Q")));
+
+    m_shortcutList <<
+        createShortcut("create-new-identical-page",
+                       tr("Create a new page of the same type"),
+                       (QStringList() << "global"),
+                       (QStringList() << tr("Ctrl+Return", "create-new-identical-page")));
+
+    m_shortcutList <<
+        createShortcut("show-relationship-panel",
+                       tr("Show relationships"),
+                       (QStringList() << "page"),
+                       (QStringList() << tr("Alt+R", "show-relationship-panel")));
+
+
+    m_shortcutList <<
+        createShortcut("add-quick-note",
+                       tr("Add a quick note"),
+                       (QStringList() << "page"),
+                       (QStringList() << tr("Alt+N", "add-quick-note")));
 
     // add shortcuts from plugins
 }
@@ -227,10 +294,20 @@ SKRShortcut SKRShortcutManager::createShortcut(const QString& name, const QStrin
                                                const QStringList& groups,
                                                const QStringList& defaultShortcuts) const
 {
+    // menmonic:
+
+    QStringList finalDefaultShortcuts = defaultShortcuts;
+
+    if (description.contains("&")) {
+        finalDefaultShortcuts << QKeySequence::mnemonic(tr("&Settings")).toString();
+    }
+
+
+    // use shortcuts:
     QSettings settings;
 
     settings.beginGroup("shortcuts");
     QStringList userShortcuts = settings.value(name, QStringList()).toStringList();
 
-    return SKRShortcut(name, description, groups, defaultShortcuts, userShortcuts);
+    return SKRShortcut(name, description, groups, finalDefaultShortcuts, userShortcuts);
 }

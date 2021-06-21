@@ -606,6 +606,7 @@ NotePadForm {
 
                 transitions: [
                     Transition {
+                        enabled: SkrSettings.ePaperSettings.animationEnabled
                         from: ""
                         to: "visible_removeRelationshipButton"
                         reversible: true
@@ -1437,6 +1438,7 @@ NotePadForm {
                                 border.width: 2
                                 visible: inner_searchResultList.activeFocus
                                 Behavior on y {
+                                    enabled: SkrSettings.ePaperSettings.animationEnabled
                                     SpringAnimation {
                                         spring: 5
                                         mass: 0.2

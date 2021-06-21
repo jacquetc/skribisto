@@ -49,6 +49,8 @@ public:
     Q_INVOKABLE void addWindowForItemId(int projectId,
                                         int treeItemId);
     Q_INVOKABLE void addWindowForProjectIndependantPageType(const QString& pageType);
+    Q_INVOKABLE void addWindowForProjectDependantPageType(int            projectId,
+                                                          const QString& pageType);
     Q_INVOKABLE void insertAdditionalProperty(const QString & key,
                                               const QVariant& value);
     Q_INVOKABLE void insertAdditionalPropertyForViewManager(const QString & key,

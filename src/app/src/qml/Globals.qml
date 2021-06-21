@@ -10,7 +10,6 @@ QtObject {
 
     signal quitCalled()
 
-
     // multiple projects ? :
     property bool multipleProjects: false
 
@@ -25,6 +24,8 @@ QtObject {
             multipleProjects = false
         }
     }
+
+    property bool touchUsed: false
 
     signal resetDockConfCalled()
 

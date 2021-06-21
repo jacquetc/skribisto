@@ -5,10 +5,7 @@ import ".."
 
 Button {
     id: control
-    icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
-                                          (control.action.icon.color === "transparent" ?
-                                               (enabled ? control.action.icon.color: SkrTheme.buttonIconDisabled) :
-                                               (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
+    icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) : (control.action.icon.color === "transparent" ? (enabled ? control.action.icon.color : SkrTheme.buttonIconDisabled) : (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
 
     Material.background: SkrTheme.buttonBackground
     Material.foreground: SkrTheme.buttonForeground
@@ -18,10 +15,9 @@ Button {
         parent: control.background
         anchors.fill: control.background
         visible: control.activeFocus & Globals.focusVisible
-
     }
     Keys.onPressed: {
-        if (event.key === Qt.Key_Tab){
+        if (event.key === Qt.Key_Tab) {
             Globals.setFocusTemporarilyVisible()
         }
     }
@@ -33,5 +29,4 @@ Button {
         text: control.tip ? control.tip : control.text
         visible: control.hovered && text.length !== 0
     }
-
 }

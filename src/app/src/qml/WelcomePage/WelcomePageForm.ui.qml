@@ -174,14 +174,10 @@ SkrPane {
 
                         SkrToolButton {
                             id: settingsButton
-                            text: qsTr("Settings")
                             Layout.fillWidth: true
                             Layout.preferredHeight: 40
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            icon {
-                                source: "qrc:///icons/backup/configure.svg"
-                            }
                         }
 
                         SkrToolButton {

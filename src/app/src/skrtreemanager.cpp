@@ -24,6 +24,7 @@
 #include "skrpageinterface.h"
 #include "skrpagetoolboxinterface.h"
 #include "skrprojecttoolboxinterface.h"
+#include "skrprojectpageinterface.h"
 
 SKRTreeManager::SKRTreeManager(QObject *parent) : QObject(parent)
 {
@@ -170,14 +171,25 @@ void SKRTreeManager::updateAllCharAndWordCount(int projectId)
 
 QStringList SKRTreeManager::findToolboxUrlsForPage(const QString& pageType) const
 {
-    QStringList list;
     QList<SKRPageToolboxInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageToolboxInterface>();
+
+    // reorder by weight, lightest is top, heavier is last
+
+    std::sort(pluginList.begin(), pluginList.end(),
+              [](SKRPageToolboxInterface *plugin1, SKRPageToolboxInterface *plugin2) -> bool {
+        return plugin1->weight() < plugin2->weight();
+    }
+              );
+
+    QStringList list;
 
     for (SKRPageToolboxInterface *plugin: qAsConst(pluginList)) {
         if (plugin->associatedPageTypes().contains(pageType)) {
             list << plugin->qmlUrl();
         }
     }
+
+
     return list;
 }
 
@@ -186,12 +198,23 @@ QStringList SKRTreeManager::findToolboxUrlsForPage(const QString& pageType) cons
 
 QStringList SKRTreeManager::findToolboxUrlsForProject() const
 {
-    QStringList list;
     QList<SKRProjectToolboxInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRProjectToolboxInterface>();
+
+    // reorder by weight, lightest is top, heavier is last
+
+    std::sort(pluginList.begin(),
+              pluginList.end(),
+              [](SKRProjectToolboxInterface *plugin1, SKRProjectToolboxInterface *plugin2) -> bool {
+        return plugin1->weight() < plugin2->weight();
+    }
+              );
+
+    QStringList list;
 
     for (SKRProjectToolboxInterface *plugin: qAsConst(pluginList)) {
         list << plugin->qmlUrl();
     }
+
     return list;
 }
 
@@ -215,3 +238,115 @@ SKRResult SKRTreeManager::finaliseAfterCreationOfTreeItem(int projectId, int tre
 }
 
 // ---------------------------------------------------------------------------------
+
+QStringList SKRTreeManager::findProjectPageNamesForLocation(const QString& location) const
+{
+    QList<SKRProjectPageInterface *> pluginList =
+        skrdata->pluginHub()->pluginsByType<SKRProjectPageInterface>();
+
+    // reorder by weight, lightest is top, heavier is last
+
+    std::sort(pluginList.begin(), pluginList.end(),
+              [](SKRProjectPageInterface *plugin1, SKRProjectPageInterface
+                 *plugin2) -> bool {
+        return plugin1->weight() < plugin2->weight();
+    }
+              );
+
+    QStringList list;
+
+    for (SKRProjectPageInterface *plugin: qAsConst(pluginList)) {
+        if (plugin->locations().contains(location)) {
+            list << plugin->name();
+        }
+    }
+
+
+    return list;
+}
+
+// ---------------------------------------------------------------------------------
+
+QString SKRTreeManager::findProjectPageIconSource(const QString& name) const
+{
+    QList<SKRProjectPageInterface *> pluginList =
+        skrdata->pluginHub()->pluginsByType<SKRProjectPageInterface>();
+
+
+    QString icon;
+
+    for (SKRProjectPageInterface *plugin: qAsConst(pluginList)) {
+        if (plugin->name() == name) {
+            icon = plugin->iconSource();
+            break;
+        }
+    }
+
+
+    return icon;
+}
+
+// ---------------------------------------------------------------------------
+
+QString SKRTreeManager::findProjectPageShowButtonText(const QString& name) const
+{
+    QList<SKRProjectPageInterface *> pluginList =
+        skrdata->pluginHub()->pluginsByType<SKRProjectPageInterface>();
+
+
+    QString text;
+
+    for (SKRProjectPageInterface *plugin: qAsConst(pluginList)) {
+        if (plugin->name() == name) {
+            text = plugin->showButtonText();
+            break;
+        }
+    }
+
+
+    return text;
+}
+
+// ---------------------------------------------------------------------------
+
+QString SKRTreeManager::findProjectPageType(const QString& name) const
+{
+    QList<SKRProjectPageInterface *> pluginList =
+        skrdata->pluginHub()->pluginsByType<SKRProjectPageInterface>();
+
+
+    QString text;
+
+    for (SKRProjectPageInterface *plugin: qAsConst(pluginList)) {
+        if (plugin->name() == name) {
+            text = plugin->pageType();
+            break;
+        }
+    }
+
+
+    return text;
+}
+
+// ---------------------------------------------------------------------------
+
+QStringList SKRTreeManager::findProjectPageShortcutSequences(const QString& name) const
+{
+    QList<SKRProjectPageInterface *> pluginList =
+        skrdata->pluginHub()->pluginsByType<SKRProjectPageInterface>();
+
+
+    QStringList list;
+
+    for (SKRProjectPageInterface *plugin: qAsConst(pluginList)) {
+        if (plugin->name() == name) {
+            list << plugin->shortcutSequences();
+            break;
+        }
+    }
+
+
+    return list;
+}
+
+// ---------------------------------------------------------------------------

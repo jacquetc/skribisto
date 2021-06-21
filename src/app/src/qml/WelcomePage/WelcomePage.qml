@@ -31,6 +31,7 @@ WelcomePageForm {
     saveAsButton.action: saveAsAction
     saveACopyButton.action: saveACopyAction
     backUpButton.action: backUpAction
+    settingsButton.action: showSettingsAction
 
     recentButton.onClicked: {
         priv.mainButtonsPaneIsVisible  = false

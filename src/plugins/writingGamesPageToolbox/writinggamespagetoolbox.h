@@ -2,7 +2,8 @@
 *   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: writingGamespagetoolbox.h                                                   *
+*  Filename: writingGamespagetoolbox.h
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -25,7 +26,7 @@
 #include "skrpagetoolboxinterface.h"
 
 class WritingGamesPageToolbox : public QObject,
-                 public SKRPageToolboxInterface{
+                                public SKRPageToolboxInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.WritingGamesPageToolboxPlugin/1.0" FILE
@@ -48,8 +49,9 @@ public:
         return "Display a toolbox offering some writing game";
     }
 
-    QStringList  associatedPageTypes() const override {
+    QStringList associatedPageTypes() const override {
         QStringList list;
+
         list << "TEXT";
         return list;
     }
@@ -58,11 +60,13 @@ public:
         return "qrc:///qml/plugins/WritingGamesPageToolbox/WritingGamesPageToolbox.qml";
     }
 
+    int weight() const override {
+        return 600;
+    }
 
 signals:
 
 private:
-
 };
 
 #endif // WRITINGGAMESPAGETOOLBOX_H

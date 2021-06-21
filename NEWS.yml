@@ -9,7 +9,27 @@ Version: 1.9.22
 Date: 2021-06-11
 Type: stable
 Description:
-- Translationse&#58; add rough translations for it_IT, pt_BR, es_ES, eo, de_DE, ru_RU
-- Navigatione&#58; now focus when clicking on the empty part of the list
-- Navigatione&#58; now select the first item when navigating in a folder
-- Dictionarye&#58; add dialog to add dictionaries from Web
+- "Translations: add rough translations for it_IT, pt_BR, es_ES, eo, de_DE, ru_RU"
+- "Navigation: now focus when clicking on the empty part of the list"
+- "Navigation: now select the first item when navigating in a folder"
+- "Dictionaries: add dialog to add dictionaries from Web"
+---
+Version: 1.9.23
+Date: 2021-06-21
+Type: stable
+Description:
+- "Overview: add basic plugin without move by drag & drop"
+- "Card view: add basic Card view plugin without move  by drag & drop nor menu"
+- "Windows 10 support: fix deployment script"
+- "Text: stop wheel when the text is smaller than the TextArea"
+- "Highlighter: bring back the colored text because of poor performance of Canvas painting, waiting for bug fix from Qt"
+- "Menu: Add show settings action"
+- "New item dialog: creating a blank item is no longer possible"
+- "Shortcuts: fix menu not appearing when using Alt+[key] shortcuts"
+- "notes: can select a folder dedicated to notes in the project page"
+- "related items: add panel to show related items"
+- "related items: add quick access to notes"
+- "related items: add drag and drop"
+- "animations: add setting for e-papers to stop animations"
+- "Navigation: converted to a plugin"
+- "Plugins: add support project-dependent pages"

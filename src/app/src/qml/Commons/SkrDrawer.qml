@@ -49,6 +49,7 @@ Item {
     }
 
     Behavior on position {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
         NumberAnimation{
             easing.type: Easing.InQuad
             duration: 200

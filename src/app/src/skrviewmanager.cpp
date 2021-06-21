@@ -1,34 +1,33 @@
 /***************************************************************************
- *   Copyright (C) 2021 by Cyril Jacquet                                 *
- *   cyril.jacquet@skribisto.eu                                        *
- *                                                                         *
- *  Filename: skrviewmanager.cpp                                                   *
- *  This file is part of Skribisto.                                    *
- *                                                                         *
- *  Skribisto is free software: you can redistribute it and/or modify  *
- *  it under the terms of the GNU General Public License as published by   *
- *  the Free Software Foundation, either version 3 of the License, or      *
- *  (at your option) any later version.                                    *
- *                                                                         *
- *  Skribisto is distributed in the hope that it will be useful,       *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
- *  GNU General Public License for more details.                           *
- *                                                                         *
- *  You should have received a copy of the GNU General Public License      *
- *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
- ***************************************************************************/
+*   Copyright (C) 2021 by Cyril Jacquet                                 *
+*   cyril.jacquet@skribisto.eu                                        *
+*                                                                         *
+*  Filename: skrviewmanager.cpp
+*                                                  *
+*  This file is part of Skribisto.                                    *
+*                                                                         *
+*  Skribisto is free software: you can redistribute it and/or modify  *
+*  it under the terms of the GNU General Public License as published by   *
+*  the Free Software Foundation, either version 3 of the License, or      *
+*  (at your option) any later version.                                    *
+*                                                                         *
+*  Skribisto is distributed in the hope that it will be useful,       *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+*  GNU General Public License for more details.                           *
+*                                                                         *
+*  You should have received a copy of the GNU General Public License      *
+*  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
+***************************************************************************/
 #include "skrviewmanager.h"
 #include "skrdata.h"
 #include "skrpageinterface.h"
 
 
 SKRViewManager::SKRViewManager(QObject *parent) : QObject(parent)
-{
+{}
 
-}
-
-SKRWindowManager *SKRViewManager::windowManager() const
+SKRWindowManager * SKRViewManager::windowManager() const
 {
     return m_windowManager;
 }
@@ -39,7 +38,7 @@ void SKRViewManager::setWindowManager(SKRWindowManager *windowManager)
     emit windowManagerChanged(windowManager);
 }
 
-QObject *SKRViewManager::rootWindow() const
+QObject * SKRViewManager::rootWindow() const
 {
     return m_rootWindow;
 }
@@ -50,39 +49,33 @@ void SKRViewManager::setRootWindow(QObject *rootWindow)
     emit rootWindowChanged(rootWindow);
 }
 
-
-QUrl SKRViewManager::getQmlUrlFromPageType(const QString &pageType) const
+QUrl SKRViewManager::getQmlUrlFromPageType(const QString& pageType) const
 {
     QUrl url;
 
-    if(pageType == "PROJECT"){
+    if (pageType == "PROJECT") {
         url = "qrc:///qml/ProjectPage/ProjectPage.qml";
     }
-    else if(pageType == "SECTION"){
+    else if (pageType == "SECTION") {
         url = "qrc:///qml/SectionPage/SectionPage.qml";
     }
-    else if(pageType == "OVERVIEW"){
-        url = "qrc:///qml/OverviewPage/OverviewPage.qml";
-    }
-    else if(pageType == "WELCOME"){
+    else if (pageType == "WELCOME") {
         url = "qrc:///qml/WelcomePage/WelcomePage.qml";
     }
-    else if(pageType == "EXPORT"){
+    else if (pageType == "EXPORT") {
         url = "qrc:///qml/WelcomePage/ExporterPage.qml";
     }
-    else if(pageType == "IMPORT"){
+    else if (pageType == "IMPORT") {
         url = "qrc:///qml/WelcomePage/ImporterPage.qml";
     }
-    //    else if(pageType == "PRINT"){
-    //        url = "qrc:///qml/WelcomePage/PrintPage.qml";
-    //    }
-    else if(pageType == "SETTINGS"){
+
+    else if (pageType == "SETTINGS") {
         url = "qrc:///qml/WelcomePage/SettingsPage.qml";
     }
-    else if(pageType == "NEWPROJECT"){
+    else if (pageType == "NEWPROJECT") {
         url = "qrc:///qml/WelcomePage/NewProjectPage.qml";
     }
-    else if(pageType == "HELP"){
+    else if (pageType == "HELP") {
         url = "qrc:///qml/WelcomePage/HelpPage.qml";
     }
     else {
@@ -90,12 +83,12 @@ QUrl SKRViewManager::getQmlUrlFromPageType(const QString &pageType) const
     }
 
     QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
-    for ( SKRPageInterface *plugin: qAsConst(pluginList)){
-        if(pageType == plugin->pageType()){
+
+    for (SKRPageInterface *plugin: qAsConst(pluginList)) {
+        if (pageType == plugin->pageType()) {
             url = plugin->pageUrl();
         }
     }
 
     return url;
-
 }

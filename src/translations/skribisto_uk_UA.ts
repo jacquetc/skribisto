@@ -393,10 +393,6 @@
         <translation>Текст</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Розмітка</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -733,12 +729,20 @@
         <translation>Смітник</translation>
     </message>
     <message>
+        <source>Select</source>
+        <translation>Виберіть</translation>
+    </message>
+    <message>
         <source>Add</source>
         <translation>Додати</translation>
     </message>
     <message>
         <source>Projects</source>
         <translation>Проєкти</translation>
+    </message>
+    <message>
+        <source>Navigation list</source>
+        <translation>Список навігації</translation>
     </message>
     <message>
         <source>is a folder</source>
@@ -845,14 +849,6 @@
         <translation>В смітник</translation>
     </message>
     <message>
-        <source>Navigation list</source>
-        <translation>Список навігації</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation>Виберіть</translation>
-    </message>
-    <message>
         <source>Close this project</source>
         <translation>Закрийте цей проект</translation>
     </message>
@@ -870,6 +866,17 @@
     <message>
         <source>Select</source>
         <translation>Виберіть</translation>
+    </message>
+</context>
+<context>
+    <name>NavigationProjectToolbox</name>
+    <message>
+        <source>Show navigation toolbox</source>
+        <translation>Показати панель інструментів навігації</translation>
+    </message>
+    <message>
+        <source>Navigation Project Toolbox</source>
+        <translation>Набір інструментів проекту навігації</translation>
     </message>
 </context>
 <context>
@@ -943,16 +950,8 @@
         <translation>Файл проєкта:</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>файл проєкта</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Шлях до проєкта:</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>Шлях до проєкта</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +972,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Словник:</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Файл проекту</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Шлях проекту</translation>
     </message>
 </context>
 <context>
@@ -1331,6 +1338,14 @@
         <source>Install new dictionaries</source>
         <translation>Встановіть нові словники</translation>
     </message>
+    <message>
+        <source>Notes</source>
+        <translation>Нотатки</translation>
+    </message>
+    <message>
+        <source>Note folder:</source>
+        <translation>Папка приміток:</translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -1383,6 +1398,80 @@
     <message>
         <source>Recent projects</source>
         <translation>Останні проекти</translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanel</name>
+    <message>
+        <source>Note</source>
+        <translation>Примітка</translation>
+    </message>
+    <message>
+        <source>Type your text here …</source>
+        <translation>Впишіть ваш текст сюди …</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Відкрити</translation>
+    </message>
+    <message>
+        <source>Open in another view</source>
+        <translation>Відкрити в іншому виді</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation>Відкрити у новому вікні</translation>
+    </message>
+    <message>
+        <source>Dissociate</source>
+        <translation>Дисоціювати</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Перейменувати</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation>Надіслати в кошик</translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
+        <translation>Перейменуйте елемент</translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanelForm.ui</name>
+    <message>
+        <source>All</source>
+        <translation>Всі</translation>
+    </message>
+    <message>
+        <source>Extend this panel</source>
+        <translation>Розширте цю панель</translation>
+    </message>
+    <message>
+        <source>Hide the sub panel</source>
+        <translation>Сховати підпанель</translation>
+    </message>
+    <message>
+        <source>Open item</source>
+        <translation>Відкрити елемент</translation>
+    </message>
+    <message>
+        <source>Close this panel</source>
+        <translation>Закрийте цю панель</translation>
+    </message>
+    <message>
+        <source>Proposed</source>
+        <translation>Запропонований</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation>Примітки</translation>
+    </message>
+    <message>
+        <source>Relationship list</source>
+        <translation>Список стосунків</translation>
     </message>
 </context>
 <context>
@@ -1573,6 +1662,94 @@
         <source>Cut</source>
         <translation>Вирізати</translation>
     </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation>&amp; Налаштування</translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation>&amp; Друк</translation>
+    </message>
+    <message>
+        <source>Fullscreen</source>
+        <translation>Повноекранний</translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
+        <translation>Центрувати курсор вертикально</translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <translation>Alt + C</translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
+        <translation>&amp;Посібник користувача</translation>
+    </message>
+    <message>
+        <source>&amp;New Project</source>
+        <translation>&amp;Новий проєкт</translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation>&amp;Перевір орфографію</translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <translation>Shift + F7</translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation>&amp;Відчинено</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation>&amp; Зберегти</translation>
+    </message>
+    <message>
+        <source>&amp;Save All</source>
+        <translation>&amp;Зберегти все</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <translation>Ctrl + Shift + S</translation>
+    </message>
+    <message>
+        <source>&amp;Save As …</source>
+        <translation>&amp;Зберегти як …</translation>
+    </message>
+    <message>
+        <source>&amp;Quit</source>
+        <translation>&amp; Вийти</translation>
+    </message>
+    <message>
+        <source>Ctrl+Q</source>
+        <translation>Ctrl + Q</translation>
+    </message>
+    <message>
+        <source>Create a new page of the same type</source>
+        <translation>Створіть нову сторінку того ж типу</translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <translation>Ctrl + Return</translation>
+    </message>
+    <message>
+        <source>Add a quick note</source>
+        <translation>Додайте швидку нотатку</translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <translation>Alt + N</translation>
+    </message>
+    <message>
+        <source>Show relationships</source>
+        <translation>Показати стосунки</translation>
+    </message>
+    <message>
+        <source>Alt+R</source>
+        <translation>Alt + R</translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
@@ -1741,6 +1918,10 @@
     <message>
         <source>Show properties toolbox</source>
         <translation>Показати панель інструментів властивостей</translation>
+    </message>
+    <message>
+        <source>Enable animations</source>
+        <translation>Увімкнути анімацію</translation>
     </message>
 </context>
 <context>
@@ -2129,6 +2310,17 @@
         <source>Show tags toolbox</source>
         <translation>Показати набір інструментів тегів</translation>
     </message>
+    <message>
+        <source>Note</source>
+        <translation>Примітка</translation>
+    </message>
+</context>
+<context>
+    <name>TextPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation>Меню сторінки</translation>
+    </message>
 </context>
 <context>
     <name>ThemePage</name>
@@ -2381,10 +2573,6 @@
         <translation>Друк</translation>
     </message>
     <message>
-        <source>Settings</source>
-        <translation>Налаштування</translation>
-    </message>
-    <message>
         <source>Help</source>
         <translation>Допомога</translation>
     </message>
@@ -2439,14 +2627,6 @@
 <context>
     <name>main</name>
     <message>
-        <source>Fullscreen</source>
-        <translation>На весь екран</translation>
-    </message>
-    <message>
-        <source>Center vertically the text cursor</source>
-        <translation>Центрувати курсор по вертикалі</translation>
-    </message>
-    <message>
         <source>Themes</source>
         <translation>Теми</translation>
     </message>
@@ -2463,36 +2643,8 @@
         <translation>Про &amp;Qt</translation>
     </message>
     <message>
-        <source>&amp;New Project</source>
-        <translation>&amp;Новий проєкт</translation>
-    </message>
-    <message>
-        <source>&amp;Check spelling</source>
-        <translation>&amp;Перевірити правопис</translation>
-    </message>
-    <message>
-        <source>&amp;Open Project</source>
-        <translation>&amp;Відкрити проєкт</translation>
-    </message>
-    <message>
         <source>Open an existing project</source>
         <translation>Відкрити існуючий проєкт</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation>Зберегти</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation>Зберегти все</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation>Ctrl + Shift + S</translation>
-    </message>
-    <message>
-        <source>Save As …</source>
-        <translation>Зберегти як …</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as …</source>
@@ -2535,10 +2687,6 @@
         <translation>Не вдалося створити резервну копію: шлях резервної копії %1 лише для читання</translation>
     </message>
     <message>
-        <source>&amp;Print</source>
-        <translation>&amp;Друк</translation>
-    </message>
-    <message>
         <source>&amp;Import</source>
         <translation>&amp;Імпорт</translation>
     </message>
@@ -2559,18 +2707,6 @@
         <translation>&amp;Закрити проєкт &quot;%1&quot;</translation>
     </message>
     <message>
-        <source>&amp;Quit</source>
-        <translation>&amp;Вийти</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Вирізати</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Копіювати</translation>
-    </message>
-    <message>
         <source>Italic</source>
         <translation>Курсив</translation>
     </message>
@@ -2589,10 +2725,6 @@
     <message>
         <source>First steps</source>
         <translation>Перші кроки</translation>
-    </message>
-    <message>
-        <source>&amp;User manual</source>
-        <translation>&amp;Посібник користувача</translation>
     </message>
     <message>
         <source>Back up successful</source>

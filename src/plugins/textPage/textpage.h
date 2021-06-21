@@ -23,19 +23,17 @@
 
 #include <QObject>
 #include "skrpageinterface.h"
-#include "skrcoreinterface.h"
 #include "skrexporterinterface.h"
 #include "skrwordmeter.h"
 
 class TextPage : public QObject,
-                 public SKRCoreInterface,
                  public SKRPageInterface,
                  public SKRExporterInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.TextPagePlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(SKRCoreInterface SKRPageInterface SKRExporterInterface)
+    Q_INTERFACES(SKRPageInterface SKRExporterInterface)
 
 public:
 
@@ -75,7 +73,7 @@ public:
     }
 
     QString pageTypeIconUrl() const override {
-        return "qrc:///icons/backup/story-editor.svg";
+        return "qrc:///icons/backup/document-edit-sign.svg";
     }
 
     SKRResult finaliseAfterCreationOfTreeItem(int projectId,

@@ -33,9 +33,11 @@ public:
 
     virtual ~SKRPageToolboxInterface() {}
 
-    virtual QStringList   associatedPageTypes() const = 0;
-    virtual QString   qmlUrl() const         = 0;
-
+    virtual QStringList associatedPageTypes() const = 0;
+    virtual QString     qmlUrl() const              = 0;
+    virtual int         weight() const {
+        return 500;
+    }
 };
 
 #define SKRPageToolboxInterface_iid "com.skribisto.PageToolboxInterface/1.0"

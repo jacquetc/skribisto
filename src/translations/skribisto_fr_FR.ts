@@ -393,10 +393,6 @@
         <translation>Texte</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Réduction</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -669,33 +665,6 @@
     </message>
 </context>
 <context>
-    <name>LeftDock</name>
-    <message>
-        <source>Show navigation</source>
-        <translation>Afficher la navigation</translation>
-    </message>
-    <message>
-        <source>Show recent sheets</source>
-        <translation>Afficher les feuilles récentes</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation dock</source>
-        <translation>Dock de &amp;navigation</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation>&amp;Navigation</translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation>&amp;Documents</translation>
-    </message>
-    <message>
-        <source>Show recent notes</source>
-        <translation>Afficher les notes récentes</translation>
-    </message>
-</context>
-<context>
     <name>ListItemAttributes</name>
     <message>
         <source>Non printable</source>
@@ -733,12 +702,20 @@
         <translation>Poubelle</translation>
     </message>
     <message>
+        <source>Select</source>
+        <translation>Sélectionner</translation>
+    </message>
+    <message>
         <source>Add</source>
         <translation>Ajouter</translation>
     </message>
     <message>
         <source>Projects</source>
         <translation>Projets</translation>
+    </message>
+    <message>
+        <source>Navigation list</source>
+        <translation>Liste de navigation</translation>
     </message>
     <message>
         <source>is a folder</source>
@@ -758,7 +735,7 @@
     </message>
     <message>
         <source>See sub-items</source>
-        <translation>Voir les sous-articles</translation>
+        <translation>Voir les sous-éléments</translation>
     </message>
     <message>
         <source>Open document</source>
@@ -786,11 +763,11 @@
     </message>
     <message>
         <source>Item menu</source>
-        <translation>Menu d&apos;articles</translation>
+        <translation>Menu de l&apos;élément</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Ouvert</translation>
+        <translation>Ouvrir</translation>
     </message>
     <message>
         <source>Open in another view</source>
@@ -818,7 +795,7 @@
     </message>
     <message>
         <source>Copy</source>
-        <translation>Copie</translation>
+        <translation>Copier</translation>
     </message>
     <message>
         <source>Add before</source>
@@ -845,14 +822,6 @@
         <translation>Envoyer à la corbeille</translation>
     </message>
     <message>
-        <source>Navigation list</source>
-        <translation>Liste de navigation</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation>Sélectionner</translation>
-    </message>
-    <message>
         <source>Close this project</source>
         <translation>Fermer ce projet</translation>
     </message>
@@ -870,6 +839,17 @@
     <message>
         <source>Select</source>
         <translation>Sélectionner</translation>
+    </message>
+</context>
+<context>
+    <name>NavigationProjectToolbox</name>
+    <message>
+        <source>Show navigation toolbox</source>
+        <translation>Afficher la boîte à outils de navigation</translation>
+    </message>
+    <message>
+        <source>Navigation Project Toolbox</source>
+        <translation>Boîte à outils de projet de navigation</translation>
     </message>
 </context>
 <context>
@@ -943,16 +923,8 @@
         <translation>Dossier de projet :</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>fichier de projet</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Chemin du projet :</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>chemin du projet</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +945,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Dictionnaire :</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Dossier de projet</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Chemin du projet</translation>
     </message>
 </context>
 <context>
@@ -1054,33 +1034,10 @@
     </message>
 </context>
 <context>
-    <name>NoteSearchItemForm.ui</name>
-    <message>
-        <source>Search</source>
-        <translation>Chercher</translation>
-    </message>
-    <message>
-        <source>Show tags list</source>
-        <translation>Afficher la liste d&apos;étiquettes</translation>
-    </message>
-    <message>
-        <source>Deselect tags</source>
-        <translation>Déselectionner les étiquettes</translation>
-    </message>
-    <message>
-        <source>Note search result list</source>
-        <translation>List de résultats de la recherche de note</translation>
-    </message>
-    <message>
-        <source>Note overview list</source>
-        <translation>Liste de vue d&apos;ensemble des notes</translation>
-    </message>
-</context>
-<context>
     <name>OutlinePad</name>
     <message>
         <source>Open outline</source>
-        <translation>Contour ouvert</translation>
+        <translation>Ouvrir le contour</translation>
     </message>
     <message>
         <source>Add outline</source>
@@ -1096,6 +1053,82 @@
     <message>
         <source>Type your outline here …</source>
         <translation>Tapez votre plan ici…</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewPage</name>
+    <message>
+        <source>Overview page</source>
+        <translation>Page de présentation</translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation>Aperçu</translation>
+    </message>
+    <message>
+        <source>Show the overview</source>
+        <translation>Afficher l&apos;aperçu</translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Afficher la boîte à outils des balises</translation>
+    </message>
+    <message>
+        <source>The focus is currently on %1</source>
+        <translation>L&apos;accent est actuellement mis sur %1</translation>
+    </message>
+    <message>
+        <source>Overview of %1</source>
+        <translation>Aperçu de %1</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewPageForm.ui</name>
+    <message>
+        <source>Unfocus</source>
+        <translation>Défocaliser</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolbox</name>
+    <message>
+        <source>Show the overview toolbox</source>
+        <translation>Afficher la boîte à outils de présentation</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Affichage</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Mode d&apos;affichage:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Indentation de l&apos;arbre :</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Afficher le contour</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Afficher les notes</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Voir les étiquettes</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Afficher le nombre de caractères</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Afficher le nombre de mots</translation>
     </message>
 </context>
 <context>
@@ -1158,7 +1191,7 @@
     </message>
     <message>
         <source>Open</source>
-        <translation>Ouvert</translation>
+        <translation>Ouvrir</translation>
     </message>
     <message>
         <source>Open in new tab</source>
@@ -1190,7 +1223,7 @@
     </message>
     <message>
         <source>Copy</source>
-        <translation>Copie</translation>
+        <translation>Copier</translation>
     </message>
     <message>
         <source>Paste</source>
@@ -1219,6 +1252,14 @@
     <message>
         <source>Send to trash</source>
         <translation>Envoyer à la corbeille</translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation>a des enfants</translation>
+    </message>
+    <message>
+        <source>Item menu</source>
+        <translation>Menu d&apos;articles</translation>
     </message>
 </context>
 <context>
@@ -1331,6 +1372,14 @@
         <source>Install new dictionaries</source>
         <translation>Installer de nouveaux dictionnaires</translation>
     </message>
+    <message>
+        <source>Notes</source>
+        <translation>Remarques</translation>
+    </message>
+    <message>
+        <source>Note folder:</source>
+        <translation>Dossier de notes :</translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -1386,6 +1435,80 @@
     </message>
 </context>
 <context>
+    <name>RelationshipPanel</name>
+    <message>
+        <source>Note</source>
+        <translation>Noter</translation>
+    </message>
+    <message>
+        <source>Type your text here …</source>
+        <translation>Écrivez votre texte ici …</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Ouvrir</translation>
+    </message>
+    <message>
+        <source>Open in another view</source>
+        <translation>Ouvrir dans une autre vue</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation>Ouvrir dans une nouvelle fenêtre</translation>
+    </message>
+    <message>
+        <source>Dissociate</source>
+        <translation>Dissocier</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Renommer</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation>Envoyer à la corbeille</translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
+        <translation>Renommer un élément</translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanelForm.ui</name>
+    <message>
+        <source>All</source>
+        <translation>Tout</translation>
+    </message>
+    <message>
+        <source>Extend this panel</source>
+        <translation>Étendre ce panneau</translation>
+    </message>
+    <message>
+        <source>Hide the sub panel</source>
+        <translation>Masquer le sous-panneau</translation>
+    </message>
+    <message>
+        <source>Open item</source>
+        <translation>Élément ouvert</translation>
+    </message>
+    <message>
+        <source>Close this panel</source>
+        <translation>Fermer ce panneau</translation>
+    </message>
+    <message>
+        <source>Proposed</source>
+        <translation>Proposé</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation>Remarques</translation>
+    </message>
+    <message>
+        <source>Relationship list</source>
+        <translation>Liste de relations</translation>
+    </message>
+</context>
+<context>
     <name>RestoreListView</name>
     <message>
         <source>Restore</source>
@@ -1431,45 +1554,6 @@
     <message>
         <source>List of trashed items to be restored</source>
         <translation>Liste d&apos;éléments dans la corbeille à restorer</translation>
-    </message>
-</context>
-<context>
-    <name>RightDock</name>
-    <message>
-        <source>&amp;Tools dock</source>
-        <translation>Dock d&apos;&amp;outils</translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Editer</translation>
-    </message>
-    <message>
-        <source>&amp;Properties</source>
-        <translation>&amp;Propriétés</translation>
-    </message>
-    <message>
-        <source>&amp;Tags</source>
-        <translation>&amp;Ettiquettes</translation>
-    </message>
-    <message>
-        <source>&amp;Overview</source>
-        <translation>&amp;Vue d&apos;ensemble</translation>
-    </message>
-    <message>
-        <source>Show overview toolbox</source>
-        <translation>Afficher la boîte à outils de la vue d&apos;ensemble</translation>
-    </message>
-    <message>
-        <source>Show edit toolbox</source>
-        <translation>Afficher la boîte à outils d&apos;édition</translation>
-    </message>
-    <message>
-        <source>Show properties toolbox</source>
-        <translation>Montrer la boîte à outils des propriétés</translation>
-    </message>
-    <message>
-        <source>Show tags toolbox</source>
-        <translation>Afficher la boîte à outils d&apos;étiquettes</translation>
     </message>
 </context>
 <context>
@@ -1563,7 +1647,7 @@
     <name>SKRShortcutManager</name>
     <message>
         <source>Copy</source>
-        <translation>Copie</translation>
+        <translation>Copier</translation>
     </message>
     <message>
         <source>Paste</source>
@@ -1572,6 +1656,100 @@
     <message>
         <source>Cut</source>
         <translation>Couper</translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation>&amp;Paramètres</translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation>&amp;Imprimer</translation>
+    </message>
+    <message>
+        <source>Fullscreen</source>
+        <translation>Plein écran</translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
+        <translation>Centrer verticalement le curseur de texte</translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
+        <translation>&amp;Manuel de l&apos;Utilisateur</translation>
+    </message>
+    <message>
+        <source>&amp;New Project</source>
+        <translation>&amp;Nouveau projet</translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation>&amp;Vérifier l&apos;orthographe</translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation>&amp;Ouvrir</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation>&amp;Sauvegarder</translation>
+    </message>
+    <message>
+        <source>&amp;Save All</source>
+        <translation>&amp;Sauver tous</translation>
+    </message>
+    <message>
+        <source>&amp;Save As …</source>
+        <translation>&amp;Enregistrer sous …</translation>
+    </message>
+    <message>
+        <source>&amp;Quit</source>
+        <translation>&amp;Quitter</translation>
+    </message>
+    <message>
+        <source>Ctrl+Q</source>
+        <translation>Ctrl+Q</translation>
+    </message>
+    <message>
+        <source>Create a new page of the same type</source>
+        <translation>Créer une nouvelle page du même type</translation>
+    </message>
+    <message>
+        <source>Add a quick note</source>
+        <translation>Ajouter une note rapide</translation>
+    </message>
+    <message>
+        <source>Show relationships</source>
+        <translation>Afficher les relations</translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <comment>center-vert-text-cursor</comment>
+        <translation>Alt+C</translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <comment>check-spelling</comment>
+        <translation>Maj+F7</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <comment>save-all-project</comment>
+        <translation>Ctrl+Maj+S</translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <comment>create-new-identical-page</comment>
+        <translation>Ctrl+Retour</translation>
+    </message>
+    <message>
+        <source>Alt+R</source>
+        <comment>show-relationship-panel</comment>
+        <translation>Alt+R</translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <comment>add-quick-note</comment>
+        <translation>Alt+N</translation>
     </message>
 </context>
 <context>
@@ -1742,167 +1920,9 @@
         <source>Show properties toolbox</source>
         <translation>Afficher la boîte à outils des propriétés</translation>
     </message>
-</context>
-<context>
-    <name>SheetOverviewToolForm.ui</name>
     <message>
-        <source>Project</source>
-        <translation>Projet</translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation>Affichage</translation>
-    </message>
-    <message>
-        <source>Display mode :</source>
-        <translation>Mode d&apos;affichage :</translation>
-    </message>
-    <message>
-        <source>Tree indentation :</source>
-        <translation>Indentation de l&apos;arbre :</translation>
-    </message>
-    <message>
-        <source>Show outline</source>
-        <translation>Afficher le plan</translation>
-    </message>
-    <message>
-        <source>Show notes</source>
-        <translation>Afficher les notes</translation>
-    </message>
-    <message>
-        <source>Show tags</source>
-        <translation>Afficher les étiquettes</translation>
-    </message>
-    <message>
-        <source>Show character count</source>
-        <translation>Afficher le nombre de caractères</translation>
-    </message>
-    <message>
-        <source>Show word count</source>
-        <translation>Afficher le nombre de mots</translation>
-    </message>
-</context>
-<context>
-    <name>SheetOverviewTree</name>
-    <message>
-        <source>Level %1</source>
-        <translation>Niveau %1</translation>
-    </message>
-    <message>
-        <source>label: %1</source>
-        <translation>marque: %1</translation>
-    </message>
-    <message>
-        <source>has children</source>
-        <translation>a des enfants</translation>
-    </message>
-    <message>
-        <source>navigation item</source>
-        <translation>élément de navigation</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Ouvrir document</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Ouvrir un document dans un nouvel onglet</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Ouvrir un document dans une nouvelle fenêtre</translation>
-    </message>
-    <message>
-        <source>Enter label</source>
-        <translation>Entrer une marque</translation>
-    </message>
-    <message>
-        <source>Enter name</source>
-        <translation>Entrez un nom</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <translation>Plan</translation>
-    </message>
-    <message>
-        <source>c: %1</source>
-        <translation>c: %1</translation>
-    </message>
-    <message>
-        <source>all c: %1</source>
-        <translation>tous c: %1</translation>
-    </message>
-    <message>
-        <source>w: %1</source>
-        <translation>m: %1</translation>
-    </message>
-    <message>
-        <source>all w: %1</source>
-        <translation>tous m: %1</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation>Ouvrir</translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation>Ouvrir dans un nouvel onglet</translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation>Ouvrir dans une nouvelle fenêtre</translation>
-    </message>
-    <message>
-        <source>Unset focus</source>
-        <translation>Cesser la concentration</translation>
-    </message>
-    <message>
-        <source>Set focus</source>
-        <translation>S&apos;y concentrer</translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation>Renommer</translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation>Marquer</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Couper</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Copier</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation>Coller</translation>
-    </message>
-    <message>
-        <source>Add before</source>
-        <translation>Ajouter avant</translation>
-    </message>
-    <message>
-        <source>Add after</source>
-        <translation>Ajouter après</translation>
-    </message>
-    <message>
-        <source>Add a sub-item</source>
-        <translation>Ajouter une sous-entrée</translation>
-    </message>
-    <message>
-        <source>Move up</source>
-        <translation>Déplacer vers le haut</translation>
-    </message>
-    <message>
-        <source>Move down</source>
-        <translation>Déplacer vers le bas</translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
-        <translation>Déplacer dans la corbeille</translation>
+        <source>Enable animations</source>
+        <translation>Activer les animations</translation>
     </message>
 </context>
 <context>
@@ -2128,6 +2148,17 @@
     <message>
         <source>Show tags toolbox</source>
         <translation>Afficher la boîte à outils des balises</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>Noter</translation>
+    </message>
+</context>
+<context>
+    <name>TextPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation>Menu de la page</translation>
     </message>
 </context>
 <context>
@@ -2381,30 +2412,12 @@
         <translation>Imprimer</translation>
     </message>
     <message>
-        <source>Settings</source>
-        <translation>Paramètres</translation>
-    </message>
-    <message>
         <source>Help</source>
         <translation>Aide</translation>
     </message>
     <message>
         <source>Go Back to the menu</source>
         <translation>Retourner au menu</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPage</name>
-    <message>
-        <source>The focus is currently on %1</source>
-        <translation>La concentration est actuellement sur %1</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPageForm.ui</name>
-    <message>
-        <source>Unfocus</source>
-        <translation>Cesser la concentration</translation>
     </message>
 </context>
 <context>
@@ -2439,14 +2452,6 @@
 <context>
     <name>main</name>
     <message>
-        <source>Fullscreen</source>
-        <translation>Plein écran</translation>
-    </message>
-    <message>
-        <source>Center vertically the text cursor</source>
-        <translation>Centrer verticallement le curseur de texte</translation>
-    </message>
-    <message>
         <source>Themes</source>
         <translation>Thèmes</translation>
     </message>
@@ -2463,36 +2468,8 @@
         <translation>A propos de &amp;Qt</translation>
     </message>
     <message>
-        <source>&amp;New Project</source>
-        <translation>&amp;Nouveau projet</translation>
-    </message>
-    <message>
-        <source>&amp;Check spelling</source>
-        <translation>Vérifier l&apos;orthographe</translation>
-    </message>
-    <message>
-        <source>&amp;Open Project</source>
-        <translation>&amp;Ouvrir un projet</translation>
-    </message>
-    <message>
         <source>Open an existing project</source>
         <translation>Ouvrir un projet existant</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation>Enregistrer</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation>Enregistrer tout</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation>Ctrl+Shift+S</translation>
-    </message>
-    <message>
-        <source>Save As …</source>
-        <translation>Enregistrer sous …</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as …</source>
@@ -2535,10 +2512,6 @@
         <translation>Échec de la sauvegarde : le chemin de sauvegarde %1 est en lecture seule</translation>
     </message>
     <message>
-        <source>&amp;Print</source>
-        <translation>Im&amp;primer</translation>
-    </message>
-    <message>
         <source>&amp;Import</source>
         <translation>&amp;Importer</translation>
     </message>
@@ -2559,18 +2532,6 @@
         <translation>&amp;Fermer le projet &quot;%1&quot;</translation>
     </message>
     <message>
-        <source>&amp;Quit</source>
-        <translation>&amp;Quitter</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Couper</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Copier</translation>
-    </message>
-    <message>
         <source>Italic</source>
         <translation>Italique</translation>
     </message>
@@ -2589,10 +2550,6 @@
     <message>
         <source>First steps</source>
         <translation>Premiers pas</translation>
-    </message>
-    <message>
-        <source>&amp;User manual</source>
-        <translation>&amp;Manuel de l&apos;Utilisateur</translation>
     </message>
     <message>
         <source>Back up successful</source>
