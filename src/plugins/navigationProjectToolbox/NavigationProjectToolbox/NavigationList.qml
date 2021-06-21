@@ -1304,14 +1304,14 @@ NavigationListForm {
                                                 eventPoint.accepted = false
                                                 return
                                             }
-                                            if (eventPoint.device.type
+                                            if (eventPoint.event.device.type
                                                     === PointerDevice.Mouse) {
                                                 listView.interactive = false
                                             }
 
-                                            if (eventPoint.device.type
+                                            if (eventPoint.event.device.type
                                                     === PointerDevice.TouchScreen
-                                                    | eventPoint.device.type
+                                                    | eventPoint.event.device.type
                                                     === PointerDevice.Stylus) {
                                                 listView.interactive = true
                                             }
@@ -1342,14 +1342,14 @@ NavigationListForm {
                                                 eventPoint.accepted = false
                                                 return
                                             }
-                                            if (eventPoint.device.type
+                                            if (eventPoint.event.device.type
                                                     === PointerDevice.Mouse) {
                                                 listView.interactive = false
                                             }
 
-                                            if (eventPoint.device.type
+                                            if (eventPoint.event.device.type
                                                     === PointerDevice.TouchScreen
-                                                    | eventPoint.device.type
+                                                    | eventPoint.event.device.type
                                                     === PointerDevice.Stylus) {
                                                 listView.interactive = true
                                             }
@@ -1389,7 +1389,7 @@ NavigationListForm {
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.RightButton
                                         onSingleTapped: function(eventPoint) {
-                                            listView.interactive = eventPoint.device.type
+                                            listView.interactive = eventPoint.event.device.type
                                                     === PointerDevice.Mouse
 
                                             if (menu.visible) {
@@ -1425,7 +1425,7 @@ NavigationListForm {
                                         acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                         acceptedButtons: Qt.MiddleButton
                                         onSingleTapped: function(eventPoint) {
-                                            listView.interactive = eventPoint.device.type
+                                            listView.interactive = eventPoint.event.device.type
                                                     === PointerDevice.Mouse
                                             listView.currentIndex = model.index
                                             priv.currentTreeItemId = model.treeItemId

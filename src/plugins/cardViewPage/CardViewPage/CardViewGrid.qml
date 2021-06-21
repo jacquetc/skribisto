@@ -6,7 +6,9 @@ import "../../Items"
 import "../.."
 
 Item {
+    id: root
     property alias model: visualModel.model
+    property var proxyModel
 
     clip: true
 
@@ -21,15 +23,10 @@ Item {
         }
     }
 
-    readonly property int currentProjectId: priv.currentProjectId
+    readonly property int currentProjectId: cardViewGrid.currentProjectId
     property alias currentParentId: cardViewGrid.currentParentId
-    readonly property int currentTreeItemId: priv.currentTreeItemId
+    readonly property int currentTreeItemId: cardViewGrid.currentTreeItemId
 
-    QtObject{
-        id: priv
-        property int currentProjectId: cardViewGrid.currentProjectId
-        property int currentTreeItemId: cardViewGrid.currentTreeItemId
-    }
 
     ScrollView {
         id: scrollView
@@ -50,17 +47,59 @@ Item {
 
             cellHeight: 300
             cellWidth: 200
+            interactive: !dragging
 
             model: visualModel
+            property var proxyModel: root.proxyModel
             property int currentTreeItemId: -2
             property int currentProjectId: -2
             property int currentParentId: -2
+            property bool dragging: false
+            property var visualModel: visualModel
+            property int moveSourceIndex: -2
 
 
             onCurrentIndexChanged: {
                 //priv.currentProjectId = model.data(visualModel.modelIndex(cardViewGrid.currentIndex), SKRTreeItem.ProjectIdRole)
                 //priv.currentParentId = visualModel.modelIndex(cardViewGrid.currentIndex).
                 //priv.currentTreeItemId = model.data(visualModel.modelIndex(cardViewGrid.currentIndex), SKRTreeItem.TreeItemIdRole)
+            }
+
+            // move :
+            addDisplaced: Transition {
+                enabled: SkrSettings.ePaperSettings.animationEnabled
+                NumberAnimation {
+                    properties: "x,y"
+                    duration: 250
+                }
+            }
+
+            removeDisplaced: Transition {
+                enabled: SkrSettings.ePaperSettings.animationEnabled
+                SequentialAnimation {
+                    PauseAnimation {
+                        duration: 250
+                    }
+                    NumberAnimation {
+                        properties: "x,y"
+                        duration: 250
+                    }
+                }
+            }
+            displaced: Transition {
+                enabled: SkrSettings.ePaperSettings.animationEnabled
+                NumberAnimation {
+                    properties: "x,y"
+                    duration: 250
+                }
+            }
+
+            moveDisplaced: Transition {
+                enabled: SkrSettings.ePaperSettings.animationEnabled
+                NumberAnimation {
+                    properties: "x,y"
+                    duration: 100
+                }
             }
         }
     }
@@ -74,7 +113,7 @@ Item {
         height: 30
         z: 1
 
-        visible: false //priv.dragging
+        visible: cardViewGrid.dragging
 
         HoverHandler {
             onHoveredChanged: {
@@ -108,7 +147,7 @@ Item {
         height: 30
         z: 1
 
-        visible: false //priv.dragging
+        visible: cardViewGrid.dragging
 
         HoverHandler {
             onHoveredChanged: {
@@ -144,7 +183,7 @@ Item {
         z: 1
 
         TapHandler {
-            onTapped: {
+            onTapped: function(eventPoint){
                 cardViewGrid.forceActiveFocus()
 
                 var index = cardViewGrid.currentIndex

@@ -114,13 +114,16 @@ CardViewPageForm {
     //-------------------------------------------------------------
     //-------CardView------------------------------------------
     //-------------------------------------------------------------
-    cardViewGrid.model: SKRSearchTreeListProxyModel {
-        id: cardViewProxyModel
-        showTrashedFilter: false
-        showNotTrashedFilter: true
-        projectIdFilter: root.projectId
-        parentIdFilter: root.currentParentId
-    }
+
+    SKRSearchTreeListProxyModel {
+            id: cardViewProxyModel
+            showTrashedFilter: false
+            showNotTrashedFilter: true
+            projectIdFilter: root.projectId
+            parentIdFilter: root.currentParentId
+        }
+    cardViewGrid.model: cardViewProxyModel
+    cardViewGrid.proxyModel: cardViewProxyModel
 
     dropAreaEnabled: !cardViewGrid.dragging
 

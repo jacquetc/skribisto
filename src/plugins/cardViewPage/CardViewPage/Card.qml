@@ -23,9 +23,9 @@ CardForm {
 
     onActiveFocusChanged: {
         if(activeFocus){
-        root.GridView.view.currentProjectId = model.projectId
-        root.GridView.view.currentTreeItemId = model.treeItemId
-        root.GridView.view.currentIndex = model.index
+            root.GridView.view.currentProjectId = model.projectId
+            root.GridView.view.currentTreeItemId = model.treeItemId
+            root.GridView.view.currentIndex = model.index
         }
     }
 
@@ -70,5 +70,95 @@ CardForm {
     }
 
     goToChildToolButton.onClicked: root.GridView.view.currentParentId = model.treeItemId
+
+    //-----------------------------------------------------------
+    //-----------dropArea----------------------------------------
+    //-----------------------------------------------------------
+
+
+
+
+    dropArea.keys: ["application/skribisto-cardview-tree-item"]
+    dropArea.onEntered: function(drag) {
+        root.GridView.view.visualModel.items.move(drag.source.visualIndex, draggableContent.visualIndex)
+    }
+
+    dropArea.onDropped: function(drop)  {
+        if (drop.proposedAction === Qt.MoveAction) {
+            root.GridView.view.proxyModel.moveItem(root.GridView.view.moveSourceIndex, draggableContent.visualIndex)
+        }
+    }
+
+
+    //--------------------------------------------------------------
+
+    mouseDragHandler.onActiveChanged: {
+        //        console.log("onActiveChanged",
+        //                    mouseDragHandler.active, draggableContent.visualIndex)
+        if (mouseDragHandler.active) {
+            console.log("active")
+            root.GridView.view.moveSourceIndex = draggableContent.visualIndex
+            root.GridView.view.dragging = true
+            draggableContent.dragging = true
+            draggableContent.Drag.start()
+        } else {
+            draggableContent.Drag.drop()
+            root.GridView.view.dragging = false
+            draggableContent.dragging = false
+            root.GridView.view.moveSourceIndex = -2
+
+        }
+    }
+    mouseDragHandler.enabled: true
+
+    mouseDragHandler.onCanceled: {
+        console.log("onCanceled")
+        root.GridView.view.dragging = false
+        draggableContent.dragging = false
+        root.GridView.view.moveSourceIndex = -2
+    }
+
+
+    mouseDragHandler.grabPermissions: PointerHandler.CanTakeOverFromItems
+                                      | PointerHandler.CanTakeOverFromAnything | PointerHandler.TakeOverForbidden
+
+
+
+    //--------------------------------------------------------------
+    states: [
+        State {
+            name: "drag_active"
+            when: draggableContent.Drag.active
+
+            ParentChange {
+                target: draggableContent
+                parent: Overlay.overlay
+            }
+            AnchorChanges {
+                target: draggableContent
+
+                anchors.left: undefined
+                anchors.right: undefined
+                anchors.top: undefined
+                anchors.bottom: undefined
+            }
+
+            PropertyChanges {
+                target: root
+                z: 2
+            }
+        },
+
+        State {
+            name: "unset_anchors"
+            AnchorChanges {
+                target: draggableContent
+                anchors.left: undefined
+                anchors.right: undefined
+                anchors.top: undefined
+                anchors.bottom: undefined
+            }
+        }
+    ]
 
 }
