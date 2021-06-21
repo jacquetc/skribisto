@@ -233,8 +233,8 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<SKRResult>("eu.skribisto.result",
                                           1,
                                           0,
-                                          "skrResult",
-                                          "Can't instantiate SKRResult");
+                                          "SKRResult",
+                                          "Can't instantiate skrResult");
 
 
     qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",

@@ -27,47 +27,47 @@ Item {
 
     }
 
-    DropShadow {
-        anchors.fill: parent
-        horizontalOffset: elevation
-        verticalOffset: 0
-        cached: true
-        radius: 8
-        samples: 17
-        color: "#33000000"
-        source: mainRectangle
-    }
+//    DropShadow {
+//        anchors.fill: parent
+//        horizontalOffset: elevation
+//        verticalOffset: 0
+//        cached: true
+//        radius: 8
+//        samples: 17
+//        color: "#33000000"
+//        source: mainRectangle
+//    }
 
-    DropShadow {
-        anchors.fill: parent
-        horizontalOffset: - elevation
-        verticalOffset: 0
-        cached: true
-        radius: 8
-        samples: 17
-        color: "#33000000"
-        source: mainRectangle
-    }
+//    DropShadow {
+//        anchors.fill: parent
+//        horizontalOffset: - elevation
+//        verticalOffset: 0
+//        cached: true
+//        radius: 8
+//        samples: 17
+//        color: "#33000000"
+//        source: mainRectangle
+//    }
 
-    DropShadow {
-        anchors.fill: parent
-        horizontalOffset: elevation
-        verticalOffset: elevation
-        cached: true
-        radius: 8
-        samples: 17
-        color: "#33000000"
-        source: mainRectangle
-    }
+//    DropShadow {
+//        anchors.fill: parent
+//        horizontalOffset: elevation
+//        verticalOffset: elevation
+//        cached: true
+//        radius: 8
+//        samples: 17
+//        color: "#33000000"
+//        source: mainRectangle
+//    }
 
-    DropShadow {
-        anchors.fill: parent
-        horizontalOffset: - elevation
-        verticalOffset: elevation
-        cached: true
-        radius: 8
-        samples: 17
-        color: "#33000000"
-        source: mainRectangle
-    }
+//    DropShadow {
+//        anchors.fill: parent
+//        horizontalOffset: - elevation
+//        verticalOffset: elevation
+//        cached: true
+//        radius: 8
+//        samples: 17
+//        color: "#33000000"
+//        source: mainRectangle
+//    }
 }
