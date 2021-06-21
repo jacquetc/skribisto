@@ -14,7 +14,6 @@ WritingZoneForm {
     id: root
     stretch: true
     leftScrollItemVisible: true
-    property string name: ""
 
     textArea.persistentSelection: true
     textArea.textFormat: TextEdit.RichText
@@ -39,7 +38,10 @@ WritingZoneForm {
         //console.log("bbbb")
         documentHandler.topMarginEverywhere = textTopMargin
     }
-
+    property string placeholderText: ""
+    onPlaceholderTextChanged: {
+                textArea.placeholderText = placeholderText
+    }
     // clipboard :
     SKRClipboard {
         id: clipboard

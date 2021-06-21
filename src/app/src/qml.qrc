@@ -93,10 +93,6 @@
         <file>qml/Commons/NewItemPopupForm.ui.qml</file>
         <file>qml/Items/SkrSplitViewHandler.qml</file>
         <file>qml/Items/SkrPageToolBar.qml</file>
-        <file>qml/OverviewPage/OverviewPage.qml</file>
-        <file>qml/OverviewPage/OverviewPageForm.ui.qml</file>
-        <file>qml/OverviewPage/OverviewTree.qml</file>
-        <file>qml/OverviewPage/OverviewTreeForm.ui.qml</file>
         <file>qml/Commons/OutlinePad.qml</file>
         <file>qml/Commons/OutlinePadForm.ui.qml</file>
         <file>qml/ProjectPage/UserDictPage.qml</file>
@@ -117,5 +113,6 @@
         <file>qml/Commons/RelationshipPanel.qml</file>
         <file>qml/Commons/RelationshipPanelForm.ui.qml</file>
         <file>qml/Items/SkrBusyIndicator.qml</file>
+        <file>qml/Commons/OutlineWritingZone.qml</file>
     </qresource>
 </RCC>
