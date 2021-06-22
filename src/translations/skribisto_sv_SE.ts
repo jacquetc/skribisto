@@ -1,5 +1,99 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="sv_SE" version="2.1">
 <context>
+    <name>Card</name>
+    <message>
+        <source>Outline</source>
+        <translation>Översikt</translation>
+    </message>
+</context>
+<context>
+    <name>CardForm.ui</name>
+    <message>
+        <source>Go in</source>
+        <translation>Gå in</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPage</name>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Visa taggar verktygslåda</translation>
+    </message>
+    <message>
+        <source>Card view of %1</source>
+        <translation>Kortvy av %1</translation>
+    </message>
+    <message>
+        <source>Card view page</source>
+        <translation>Kortvy sida</translation>
+    </message>
+    <message>
+        <source>Card View</source>
+        <translation>Kortvy</translation>
+    </message>
+    <message>
+        <source>Show the card view</source>
+        <translation>Visa kortvyn</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPageForm.ui</name>
+    <message>
+        <source>Go up</source>
+        <translation>Gå upp</translation>
+    </message>
+    <message>
+        <source>Add an item</source>
+        <translation>Lägg till ett objekt</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolbox</name>
+    <message>
+        <source>Show the card view toolbox</source>
+        <translation>Visa kortvy verktygslåda</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Visa</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Visningsläge:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Trädets fördjupning:</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Visa konturer</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Visa anteckningar</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Visa taggar</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Visa teckenantal</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Visa antal ord</translation>
+    </message>
+    <message>
+        <source>Card size:</source>
+        <translation>Kortstorlek:</translation>
+    </message>
+</context>
+<context>
     <name>CheckableTree</name>
     <message>
         <source>Level %1</source>
@@ -665,33 +759,6 @@
     </message>
 </context>
 <context>
-    <name>LeftDock</name>
-    <message>
-        <source>Show navigation</source>
-        <translation>Visa navigering</translation>
-    </message>
-    <message>
-        <source>Show recent sheets</source>
-        <translation>Visa senaste ark</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation dock</source>
-        <translation>&amp; Navigationsdocka</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation>&amp;Navigering</translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation>&amp;Dokument</translation>
-    </message>
-    <message>
-        <source>Show recent notes</source>
-        <translation>Visa senaste anteckningar</translation>
-    </message>
-</context>
-<context>
     <name>ListItemAttributes</name>
     <message>
         <source>Non printable</source>
@@ -809,6 +876,10 @@
         <translation>Ställ in som aktivt projekt</translation>
     </message>
     <message>
+        <source>Close this project</source>
+        <translation>Stäng det här projektet</translation>
+    </message>
+    <message>
         <source>Rename</source>
         <translation>Döp om</translation>
     </message>
@@ -847,10 +918,6 @@
     <message>
         <source>Send to trash</source>
         <translation>Skicka till papperskorgen</translation>
-    </message>
-    <message>
-        <source>Close this project</source>
-        <translation>Stäng det här projektet</translation>
     </message>
 </context>
 <context>
@@ -922,6 +989,14 @@
     <message>
         <source>Create</source>
         <translation>Skapa</translation>
+    </message>
+    <message>
+        <source>Quantity to create:</source>
+        <translation>Mängd att skapa:</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Avbryt</translation>
     </message>
 </context>
 <context>
@@ -1061,29 +1136,6 @@
     </message>
 </context>
 <context>
-    <name>NoteSearchItemForm.ui</name>
-    <message>
-        <source>Search</source>
-        <translation>Sök</translation>
-    </message>
-    <message>
-        <source>Show tags list</source>
-        <translation>Visa tagglista</translation>
-    </message>
-    <message>
-        <source>Deselect tags</source>
-        <translation>Avmarkera taggar</translation>
-    </message>
-    <message>
-        <source>Note search result list</source>
-        <translation>Notera listan över sökresultat</translation>
-    </message>
-    <message>
-        <source>Note overview list</source>
-        <translation>Anteckningsöversikt</translation>
-    </message>
-</context>
-<context>
     <name>OutlinePad</name>
     <message>
         <source>Open outline</source>
@@ -1106,6 +1158,82 @@
     </message>
 </context>
 <context>
+    <name>OverviewPage</name>
+    <message>
+        <source>Overview page</source>
+        <translation>Översiktssida</translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation>Översikt</translation>
+    </message>
+    <message>
+        <source>Show the overview</source>
+        <translation>Visa översikten</translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Visa taggar verktygslåda</translation>
+    </message>
+    <message>
+        <source>The focus is currently on %1</source>
+        <translation>Fokus ligger för närvarande på %1</translation>
+    </message>
+    <message>
+        <source>Overview of %1</source>
+        <translation>Översikt av %1</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewPageForm.ui</name>
+    <message>
+        <source>Unfocus</source>
+        <translation>Fokusera inte</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolbox</name>
+    <message>
+        <source>Show the overview toolbox</source>
+        <translation>Visa översiktsverktygslådan</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Visa</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Visningsläge:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Trädets fördjupning:</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Visa konturer</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Visa anteckningar</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Visa taggar</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Visa teckenantal</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Visa antal ord</translation>
+    </message>
+</context>
+<context>
     <name>OverviewTree</name>
     <message>
         <source>Level %1</source>
@@ -1116,24 +1244,8 @@
         <translation>etikett: %1</translation>
     </message>
     <message>
-        <source>has %1 sub-items</source>
-        <translation>har %1 underobjekt</translation>
-    </message>
-    <message>
         <source>navigation item</source>
         <translation>navigeringsobjekt</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Öppna dokument</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Öppna dokument i en ny flik</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Öppna dokument i ett fönster</translation>
     </message>
     <message>
         <source>Enter label</source>
@@ -1226,6 +1338,14 @@
     <message>
         <source>Send to trash</source>
         <translation>Skicka till papperskorgen</translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation>har barn</translation>
+    </message>
+    <message>
+        <source>Item menu</source>
+        <translation>Objektmeny</translation>
     </message>
 </context>
 <context>
@@ -1523,45 +1643,6 @@
     </message>
 </context>
 <context>
-    <name>RightDock</name>
-    <message>
-        <source>&amp;Tools dock</source>
-        <translation>&amp; Docka för verktyg</translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Redigera</translation>
-    </message>
-    <message>
-        <source>&amp;Properties</source>
-        <translation>&amp;Egenskaper</translation>
-    </message>
-    <message>
-        <source>&amp;Tags</source>
-        <translation>&amp; Taggar</translation>
-    </message>
-    <message>
-        <source>&amp;Overview</source>
-        <translation>&amp;Översikt</translation>
-    </message>
-    <message>
-        <source>Show overview toolbox</source>
-        <translation>Visa översiktsverktygslåda</translation>
-    </message>
-    <message>
-        <source>Show edit toolbox</source>
-        <translation>Visa redigeringsverktygslåda</translation>
-    </message>
-    <message>
-        <source>Show properties toolbox</source>
-        <translation>Visa egenskaper verktygslåda</translation>
-    </message>
-    <message>
-        <source>Show tags toolbox</source>
-        <translation>Visa taggar verktygslåda</translation>
-    </message>
-</context>
-<context>
     <name>RootPage</name>
     <message>
         <source>Ok</source>
@@ -1679,10 +1760,6 @@
         <translation>Centrera textmarkören vertikalt</translation>
     </message>
     <message>
-        <source>Alt+C</source>
-        <translation>Alt + C</translation>
-    </message>
-    <message>
         <source>&amp;User manual</source>
         <translation>&amp;Användarmanual</translation>
     </message>
@@ -1695,10 +1772,6 @@
         <translation>&amp;Kontrollera stavning</translation>
     </message>
     <message>
-        <source>Shift+F7</source>
-        <translation>Skift + F7</translation>
-    </message>
-    <message>
         <source>&amp;Open</source>
         <translation>&amp;Öppna</translation>
     </message>
@@ -1709,10 +1782,6 @@
     <message>
         <source>&amp;Save All</source>
         <translation>&amp;Rädda alla</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation>Ctrl + Skift + S</translation>
     </message>
     <message>
         <source>&amp;Save As …</source>
@@ -1731,24 +1800,42 @@
         <translation>Skapa en ny sida av samma typ</translation>
     </message>
     <message>
-        <source>Ctrl+Return</source>
-        <translation>Ctrl + Retur</translation>
-    </message>
-    <message>
         <source>Add a quick note</source>
         <translation>Lägg till en snabb anteckning</translation>
-    </message>
-    <message>
-        <source>Alt+N</source>
-        <translation>Alt + N</translation>
     </message>
     <message>
         <source>Show relationships</source>
         <translation>Visa relationer</translation>
     </message>
     <message>
+        <source>Alt+C</source>
+        <comment>center-vert-text-cursor</comment>
+        <translation>Alt + C</translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <comment>check-spelling</comment>
+        <translation>Skift + F7</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <comment>save-all-project</comment>
+        <translation>Ctrl + Skift + S</translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <comment>create-new-identical-page</comment>
+        <translation>Ctrl + Retur</translation>
+    </message>
+    <message>
         <source>Alt+R</source>
+        <comment>show-relationship-panel</comment>
         <translation>Alt + R</translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <comment>add-quick-note</comment>
+        <translation>Alt + N</translation>
     </message>
 </context>
 <context>
@@ -1922,168 +2009,6 @@
     <message>
         <source>Enable animations</source>
         <translation>Aktivera animationer</translation>
-    </message>
-</context>
-<context>
-    <name>SheetOverviewToolForm.ui</name>
-    <message>
-        <source>Project</source>
-        <translation>Projekt</translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation>Visa</translation>
-    </message>
-    <message>
-        <source>Display mode :</source>
-        <translation>Visningsläge :</translation>
-    </message>
-    <message>
-        <source>Tree indentation :</source>
-        <translation>Trädets fördjupning:</translation>
-    </message>
-    <message>
-        <source>Show outline</source>
-        <translation>Visa konturer</translation>
-    </message>
-    <message>
-        <source>Show notes</source>
-        <translation>Visa anteckningar</translation>
-    </message>
-    <message>
-        <source>Show tags</source>
-        <translation>Visa taggar</translation>
-    </message>
-    <message>
-        <source>Show character count</source>
-        <translation>Visa teckenantal</translation>
-    </message>
-    <message>
-        <source>Show word count</source>
-        <translation>Visa antal ord</translation>
-    </message>
-</context>
-<context>
-    <name>SheetOverviewTree</name>
-    <message>
-        <source>Level %1</source>
-        <translation>Nivå %1</translation>
-    </message>
-    <message>
-        <source>label: %1</source>
-        <translation>etikett: %1</translation>
-    </message>
-    <message>
-        <source>has children</source>
-        <translation>har barn</translation>
-    </message>
-    <message>
-        <source>navigation item</source>
-        <translation>navigeringsobjekt</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Öppna dokument</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Öppna dokument i en ny flik</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Öppna dokument i ett fönster</translation>
-    </message>
-    <message>
-        <source>Enter label</source>
-        <translation>Ange etikett</translation>
-    </message>
-    <message>
-        <source>Enter name</source>
-        <translation>Skriv namn</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <translation>Översikt</translation>
-    </message>
-    <message>
-        <source>c: %1</source>
-        <translation>c: %1</translation>
-    </message>
-    <message>
-        <source>all c: %1</source>
-        <translation>alla c: %1</translation>
-    </message>
-    <message>
-        <source>w: %1</source>
-        <translation>w: %1</translation>
-    </message>
-    <message>
-        <source>all w: %1</source>
-        <translation>alla w: %1</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation>Öppna</translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation>Öppna i ny flik</translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation>Öppna i nytt fönster</translation>
-    </message>
-    <message>
-        <source>Unset focus</source>
-        <translation>Avstängd fokus</translation>
-    </message>
-    <message>
-        <source>Set focus</source>
-        <translation>Fokusera</translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation>Döp om</translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation>Ställ in etikett</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Skära</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Kopiera</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation>Klistra</translation>
-    </message>
-    <message>
-        <source>Add before</source>
-        <translation>Lägg till innan</translation>
-    </message>
-    <message>
-        <source>Add after</source>
-        <translation>Lägg till efter</translation>
-    </message>
-    <message>
-        <source>Add a sub-item</source>
-        <translation>Lägg till ett underobjekt</translation>
-    </message>
-    <message>
-        <source>Move up</source>
-        <translation>Flytta upp</translation>
-    </message>
-    <message>
-        <source>Move down</source>
-        <translation>Flytta ner</translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
-        <translation>Skicka till papperskorgen</translation>
     </message>
 </context>
 <context>
@@ -2579,20 +2504,6 @@
     <message>
         <source>Go Back to the menu</source>
         <translation>Gå tillbaka till menyn</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPage</name>
-    <message>
-        <source>The focus is currently on %1</source>
-        <translation>Fokus ligger för närvarande på %1</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPageForm.ui</name>
-    <message>
-        <source>Unfocus</source>
-        <translation>Fokusera inte</translation>
     </message>
 </context>
 <context>
