@@ -1181,10 +1181,17 @@ SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
 {
     SKRResult result(this);
 
-    QList<int> directChildren = this->getAllDirectChildren(projectId, parentTreeItemId, false, true);
+    QList<int> directChildren = this->getAllDirectChildren(projectId, parentTreeItemId, true, true);
+    QList<int> allChildren    = this->getAllChildren(projectId, parentTreeItemId);
     QList<int> allIds         = this->getAllIds(projectId);
 
+    int parentTreeItemIndexInAllIds = allIds.indexOf(parentTreeItemId);
+
     QStringList titleList;
+
+    if (directChildren.isEmpty()) {
+        return result;
+    }
 
     for (int directChildId : qAsConst(directChildren)) {
         titleList << this->getTitle(projectId, directChildId);
@@ -1219,33 +1226,21 @@ SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
     }
 
 
-    int currentParentId = -1;
-    QList<int> children;
+    QList<int> newOrderedIdListPlusChildren;
 
     bool parentPassed = false;
 
-    for (int id : qAsConst(allIds)) {
-        if (directChildren.contains(id)) {
-            // first loop
-            if (currentParentId != -1) {
-                int insertionIndex = newOrderedDirectChildrenList.indexOf(currentParentId) + 1;
+    for (int id : qAsConst(newOrderedDirectChildrenList)) {
+        QList<int> children = skrdata->treeHub()->getAllChildren(projectId, id);
 
-                for (int child : children) {
-                    newOrderedDirectChildrenList.insert(insertionIndex, child);
-                    insertionIndex += 1;
-                }
-            }
-            children.clear();
-            currentParentId = id;
-        }
-        else {
-            children.append(id);
-        }
+        newOrderedIdListPlusChildren.append(id);
+        newOrderedIdListPlusChildren.append(children);
     }
+
 
     int newSortOrder = this->getSortOrder(projectId, parentTreeItemId) + 1;
 
-    for (int id : qAsConst(newOrderedDirectChildrenList)) {
+    for (int id : qAsConst(newOrderedIdListPlusChildren)) {
         IFOKDO(result, this->setSortOrder(projectId, id, newSortOrder, true, false));
         newSortOrder += 1;
     }
@@ -1398,7 +1393,7 @@ QList<int>SKRTreeHub::getAllAncestors(int projectId, int treeItemId)
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId)
+QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId, bool treeItemIncluded)
 {
     QList<int> siblingsList;
 
@@ -1470,7 +1465,9 @@ QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId)
         }
     }
 
-    siblingsList.removeAll(treeItemId);
+    if (!treeItemIncluded) {
+        siblingsList.removeAll(treeItemId);
+    }
 
 
     return siblingsList;

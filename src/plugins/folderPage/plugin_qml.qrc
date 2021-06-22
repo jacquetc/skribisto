@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qml/plugins">
+        <file>FolderPage/FolderPage.qml</file>
+        <file>FolderPage/FolderPageForm.ui.qml</file>
+    </qresource>
+</RCC>

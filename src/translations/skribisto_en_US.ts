@@ -2,6 +2,17 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
 <context>
+    <name>Breadcrumb</name>
+    <message>
+        <source>Show the beginning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the end</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Card</name>
     <message>
         <source>Outline</source>
@@ -723,6 +734,36 @@
     </message>
 </context>
 <context>
+    <name>FolderPage</name>
+    <message>
+        <source>Note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Group your items in folders.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 words, %2 characters (all)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FolderPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>HelpContentsForm.ui</name>
     <message>
         <source>User manual</source>
@@ -1420,6 +1461,22 @@
         <source>Word count : %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>%1 words, %2 characters (all)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
@@ -1428,15 +1485,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Location :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1465,6 +1514,18 @@
     </message>
     <message>
         <source>Note folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Page menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dictionary:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1842,10 +1903,6 @@
     <name>SKRTreeManager</name>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Folder</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

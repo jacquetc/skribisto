@@ -49,15 +49,6 @@ QUrl SKRTreeManager::getIconUrlFromPageType(const QString& pageType) const
 {
     QUrl url;
 
-    if (pageType == "PROJECT") {
-        url = "qrc:///icons/backup/address-book-new.svg";
-    }
-    else if (pageType == "FOLDER") {
-        url = "qrc:///icons/backup/document-open.svg";
-    }
-    else {
-        url = "qrc:///icons/backup/data-warning.svg";
-    }
 
     QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
 
@@ -67,6 +58,9 @@ QUrl SKRTreeManager::getIconUrlFromPageType(const QString& pageType) const
         }
     }
 
+    if (url.isEmpty()) {
+        url = "qrc:///icons/backup/data-warning.svg";
+    }
 
     return url;
 }
@@ -76,13 +70,6 @@ QUrl SKRTreeManager::getIconUrlFromPageType(const QString& pageType) const
 QStringList SKRTreeManager::getPageTypeList(bool constructibleOnly = true) const
 {
     QStringList stringList;
-
-    if (!constructibleOnly) {
-        stringList << "PROJECT";
-    }
-
-    stringList << "FOLDER";
-
 
     QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
 
@@ -106,9 +93,6 @@ QString SKRTreeManager::getPageTypeText(const QString& pageType) const
 
     if (pageType == "PROJECT") {
         text = tr("Project");
-    }
-    else if (pageType == "FOLDER") {
-        text = tr("Folder");
     }
 
     QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();

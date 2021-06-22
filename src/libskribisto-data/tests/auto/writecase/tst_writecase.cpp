@@ -235,7 +235,7 @@ void WriteCase::setTrashed()
                                                                   true);
 
     QCOMPARE(result.isSuccess(), true);
-    QVERIFY(spy.count() == 2);
+    QVERIFY(spy.count() == 3);
 
     // make sure the signal was emitted exactly one time
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
@@ -529,7 +529,7 @@ void WriteCase::sortAlphabetically() {
 
     QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
     QList<int> wantedIds;
-    wantedIds << 0 << 1 << 52 << 50 << 51 << 2 <<  55 << 4 << 54 << 5 << 6 << 7 << 3 << 8 << 24;
+    wantedIds << 0 << 1 << 2 << 55 << 4 << 57 << 54 << 5 << 6 << 7 << 50 << 51 << 56 << 52 << 3 << 8 << 24;
     QCOMPARE(ids, wantedIds);
 }
 

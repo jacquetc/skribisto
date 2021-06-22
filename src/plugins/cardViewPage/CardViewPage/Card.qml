@@ -218,4 +218,18 @@ CardForm {
         }
     ]
 
+    //-----------------------------------------------------------
+    //---------- Keys----------------------------------------
+    //-----------------------------------------------------------
+
+
+    Keys.onPressed: function(event) {
+
+        if (event.key === Qt.Key_Right) {
+            console.log("Right key pressed")
+            event.accepted = true
+        }
+    }
+
+
 }

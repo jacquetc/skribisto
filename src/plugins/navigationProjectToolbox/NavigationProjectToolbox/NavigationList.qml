@@ -1302,7 +1302,7 @@ NavigationListForm {
 
                                         onSingleTapped: function(eventPoint) {
                                             priv.selecting = false
-                                            console.log("dragThreshold", mouseDragHandler.dragThreshold)
+                                            //console.log("dragThreshold", mouseDragHandler.dragThreshold)
 
                                             if (content.dragging) {
                                                 eventPoint.accepted = false

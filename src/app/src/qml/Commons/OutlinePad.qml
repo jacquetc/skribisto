@@ -12,7 +12,7 @@ OutlinePadForm {
     //---------------------------------------------------------
     Component.onCompleted: {
 
-        if (outlineWritingZone.textArea.length === 0) {
+        if (outlineWritingZone.writingZone.textArea.length === 0) {
             addOutlineToolButton.visible = true
             outlineWritingZone.Layout.preferredHeight = 0
         }

@@ -224,8 +224,9 @@ public:
                                                bool notTrashedAreIncluded = true);
     Q_INVOKABLE QList<int>getAllAncestors(int projectId,
                                           int treeItemId);
-    QList<int>            getAllSiblings(int projectId,
-                                         int treeItemId);
+    QList<int>            getAllSiblings(int  projectId,
+                                         int  treeItemId,
+                                         bool treetemIncluded = false);
     Q_INVOKABLE QDateTime getTrashedDate(int projectId,
                                          int treeItemId) const;
 
