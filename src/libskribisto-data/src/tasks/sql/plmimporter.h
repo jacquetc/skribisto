@@ -88,8 +88,7 @@ private:
 
     // used to track old plume id with new skribisto note id
     QHash<int, int>m_attendanceConversionHash;
-    int decompress(FILE *source,
-                   FILE *dest);
+
 };
 
 #endif // PLMIMPORTER_H

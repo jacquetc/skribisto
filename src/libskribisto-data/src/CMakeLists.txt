@@ -102,7 +102,7 @@ set(QRC
 qt_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
-add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${models_SRCS} ${RESOURCES})
+add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${RESOURCES})
 
 target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
 
