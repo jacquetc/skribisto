@@ -138,13 +138,13 @@ Item {
             id: leftTapHandler
             enabled: interactive && root.position === 0
 
-            onTapped: {
+            onSingleTapped: function(eventPoint) {
                 root.position = 1.0
             }
             // grab:
             dragThreshold: 0
             margin: 5
-            onGrabChanged: {
+            onGrabChanged: function(transition, point) {
                 root.position = 1.0
             }
         }
@@ -191,14 +191,14 @@ Item {
             id: rightTapHandler
             enabled: interactive && root.position === 0
 
-            onTapped: {
+            onSingleTapped: function(eventPoint) {
                 //console.log("rightTapHandler")
                 root.position = 1.0
             }
             // grab:
             dragThreshold: 0
             margin: 5
-            onGrabChanged: {
+            onGrabChanged: function(transition, point) {
                 root.position = 1.0
             }
 
@@ -281,7 +281,7 @@ Item {
 
                 enabled: root.interactive && root.position === 1.0
 
-                onTapped: {
+                onSingleTapped: function(eventPoint) {
                     //console.log('overlay pressed')
                     root.position = 0.0
                     eventPoint.accepted = false

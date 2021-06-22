@@ -100,14 +100,14 @@ ThemePageForm {
         TapHandler {
             id: themeTapHandler
 
-            onSingleTapped: {
+            onSingleTapped: function(eventPoint) {
                 themeListView.currentIndex = model.index
                 selectedTheme = model.text
                 themeDelegateRoot.forceActiveFocus()
                 eventPoint.accepted = true
             }
 
-            onDoubleTapped: {
+            onDoubleTapped: function(eventPoint) {
                 //console.log("double tapped")
                 themeListView.currentIndex = model.index
                 selectedTheme = model.text
@@ -402,13 +402,13 @@ ThemePageForm {
         TapHandler {
             id: tapHandler
 
-            onSingleTapped: {
+            onSingleTapped: function(eventPoint) {
                 propertiesListView.currentIndex = model.index
                 delegateRoot.forceActiveFocus()
                 eventPoint.accepted = true
             }
 
-            onDoubleTapped: {
+            onDoubleTapped: function(eventPoint) {
                 //console.log("double tapped")
                 propertiesListView.currentIndex = model.index
                 currentProperty = model.propertyExactName

@@ -119,7 +119,7 @@ WritingZoneForm {
     //        }
     //    }
 
-    //    Keys.onShortcutOverride: event.accepted = (event.key === Qt.Key_Escape)
+    //    Keys.onShortcutOverride: function(event)  event.accepted = (event.key === Qt.Key_Escape)
 
     //        console.log("escape in WritingZone z")
     //        if (event.key === Qt.Key_Escape){
@@ -181,7 +181,7 @@ WritingZoneForm {
     //-----------------------------------------------------------
     // ---------context menu :----------------------------------
     //-----------------------------------------------------------
-    textArea.onPressed: {
+    textArea.onPressed: function(event) {
         if (event.buttons === Qt.RightButton) {
             callTextAreaContextMenu(event.x, event.y)
         }
@@ -690,7 +690,7 @@ WritingZoneForm {
     //    leftScrollMouseArea.onPressAndHold: {
 
     //    }
-    //    leftScrollMouseArea.onWheel: {
+    //    leftScrollMouseArea.onWheel: function(event) {
 
     //        var deltaY = wheel.angleDelta.y *10
 
@@ -734,7 +734,7 @@ WritingZoneForm {
     //    rightScrollMouseArea.onPressAndHold: {
 
     //    }
-    //    rightScrollMouseArea.onWheel: {
+    //    rightScrollMouseArea.onWheel: function(event) {
 
     //        var deltaY = wheel.angleDelta.y *10
 
@@ -781,7 +781,8 @@ WritingZoneForm {
                 contentYBehavior.enabled = true
                 return
             } else if (!textCenteringEnabled
-                       && flickable.contentY + value + 20 > flickable.contentHeight) {
+                       && flickable.contentY + value + 20 > flickable.contentHeight
+                       && flickable.contentHeight > textArea.height) {
                 flickable.contentY = flickable.contentHeight - textArea.viewHeight
                 contentYBehavior.enabled = true
                 return
@@ -814,7 +815,7 @@ WritingZoneForm {
     WheelHandler {
         id: leftWheelHandler
         target: leftScrollItem
-        onWheel: {
+        onWheel: function(event) {
             textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
         }
     }
@@ -822,7 +823,7 @@ WritingZoneForm {
     WheelHandler {
         id: rightWheelHandler
         target: rightScrollItem
-        onWheel: {
+        onWheel: function(event) {
             textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
         }
     }

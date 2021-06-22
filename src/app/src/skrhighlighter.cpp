@@ -104,9 +104,11 @@ void SKRHighlighter::highlightBlock(const QString& text)
 
     // BUG to be uncommented when bug
     // https://bugreports.qt.io/browse/QTBUG-87260 is fixed
-    //    spellcheckFormat.setUnderlineColor(Qt::GlobalColor::red);
+    spellcheckFormat.setUnderlineColor(Qt::GlobalColor::red);
+
     //
-    //  spellcheckFormat.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
+    spellcheckFormat.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
+
     spellcheckFormat.setForeground(QBrush(Qt::GlobalColor::darkRed));
 
     if (m_spellCheckerSet)

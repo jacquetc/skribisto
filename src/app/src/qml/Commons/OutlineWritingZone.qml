@@ -25,6 +25,7 @@ Item {
 
     property alias placeholderText: writingZone.placeholderText
     required property string name
+    property alias writingZone: writingZone
 
     //---------------------------------------------------------
 

@@ -59,7 +59,7 @@ NewProjectPageForm {
 
 
     //file :
-    projectFileTextField.validator: RegExpValidator { regExp: /^[^ ][\w\s]{1,60}$/ }
+    projectFileTextField.validator: RegularExpressionValidator { regularExpression: /^[^ ][\w\s]{1,60}$/ }
     projectFileTextField.onTextChanged: {
         var file = projectPathTextField.text + "/" + projectFileTextField.text + ".skrib"
 

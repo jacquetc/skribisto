@@ -13,6 +13,7 @@ Popup {
     property bool enableBehavior: true
 
 
+    modal: true
     background: Rectangle {
         color: SkrTheme.pageBackground
     }

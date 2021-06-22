@@ -23,8 +23,6 @@ Item {
         border.width: borderWidth
         border.color: borderColor
 
-
-
     }
 
     DropShadow {

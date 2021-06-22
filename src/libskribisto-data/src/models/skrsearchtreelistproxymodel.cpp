@@ -1419,7 +1419,7 @@ void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
     sort(0);
     emit sortOtherProxyModelsCalled();
 
-    // this->invalidate();
+    this->invalidate();
 }
 
 // --------------------------------------------------------------

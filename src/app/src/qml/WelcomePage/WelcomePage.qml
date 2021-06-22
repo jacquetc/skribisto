@@ -213,7 +213,6 @@ WelcomePageForm {
             else {
                 var item = stackView.push("RecentPage.qml", StackView.Immediate)
                 item.closeCalled.connect(welcomePage.closeCalled)
-
             }
 
         }
@@ -238,7 +237,12 @@ WelcomePageForm {
 
 
 
+//    TapHandler{
+//        acceptedButtons: Qt.RightButton | Qt.MiddleButton | Qt.LeftButton
 
+//        //grabPermissions: PointerHandler.CanTakeOverFromAnything | PointerHandler.TakeOverForbidden
+//        gesturePolicy: TapHandler.WithinBounds
+//    }
 
 
 }

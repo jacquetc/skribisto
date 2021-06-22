@@ -111,16 +111,47 @@ CardViewPageForm {
         viewManager.loadProjectDependantPageAt(projectId, pageType, position)
     }
 
+    //--------------------------------------------------------
+    //--- Add Item-----------------------------------------
+    //--------------------------------------------------------
+
+    addItemToolButton.onClicked: {
+
+        newItemPopup.projectId =  root.projectId
+        newItemPopup.treeItemId =  root.currentParentId
+        newItemPopup.visualIndex = 0
+        newItemPopup.createFunction
+                = afterNewItemTypeIsChosen
+        newItemPopup.open()
+    }
+    function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
+        newItemPopup.close()
+
+        for(var i = 0; i < quantity ; i++){
+            cardViewProxyModel.addChildItem(
+                        projectId, treeItemId, pageType)
+        }
+        cardViewGrid.cardViewGrid.positionViewAtEnd()
+    }
+
+    NewItemPopup {
+        id: newItemPopup
+        anchors.centerIn: Overlay.overlay
+    }
+
     //-------------------------------------------------------------
     //-------CardView------------------------------------------
     //-------------------------------------------------------------
-    cardViewGrid.model: SKRSearchTreeListProxyModel {
-        id: cardViewProxyModel
-        showTrashedFilter: false
-        showNotTrashedFilter: true
-        projectIdFilter: root.projectId
-        parentIdFilter: root.currentParentId
-    }
+
+    SKRSearchTreeListProxyModel {
+            id: cardViewProxyModel
+            showTrashedFilter: false
+            showNotTrashedFilter: true
+            projectIdFilter: root.projectId
+            parentIdFilter: root.currentParentId
+        }
+    cardViewGrid.model: cardViewProxyModel
+    cardViewGrid.proxyModel: cardViewProxyModel
 
     dropAreaEnabled: !cardViewGrid.dragging
 

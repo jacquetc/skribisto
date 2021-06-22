@@ -15,7 +15,7 @@ SkrTabButtonForm {
         visible: control.activeFocus & Globals.focusVisible
 
     }
-    Keys.onPressed: {
+    Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Tab){
             Globals.setFocusTemporarilyVisible()
         }
@@ -66,7 +66,7 @@ SkrTabButtonForm {
         z:1
         anchors.fill: parent
         TapHandler{
-            onTapped: {
+            onSingleTapped: function(eventPoint) {
                 control.toggle()
                 control.clicked()
             }

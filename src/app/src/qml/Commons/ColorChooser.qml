@@ -108,7 +108,7 @@ Item {
                     Accessible.name: qsTr("Color: %1").arg(model.colorName)
 
                     TapHandler{
-                        onTapped: {
+                        onSingleTapped: function(eventPoint) {
                             priv.textColorCode = model.textColorCode
                             priv.colorCode = model.colorCode
                         }

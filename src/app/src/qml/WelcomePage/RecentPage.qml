@@ -15,12 +15,6 @@ RecentPageForm {
     //----------------------------------------------
     //-Recent projects list ------------------------------
     //----------------------------------------------
-    recentListView.onCurrentIndexChanged: {
-        contextMenuItemIndex = recentListView.currentIndex
-    }
-
-    property int contextMenuItemIndex: -2
-    property int itemButtonsIndex: -2
 
     SKRRecentProjectListModel {
         id: projectListModel
@@ -65,14 +59,16 @@ RecentPageForm {
 
             TapHandler {
                 id: tapHandler
+                acceptedButtons: Qt.LeftButton
 
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint)  {
+                    console.log("single tapped")
                     recentListView.currentIndex = model.index
                     content.forceActiveFocus()
-                    eventPoint.accepted = true
                 }
 
-                onDoubleTapped: {
+                onDoubleTapped: function(eventPoint)  {
+                    console.log("double tapped")
 
                     // open project
                     if (skrData.projectHub().isURLAlreadyLoaded(
@@ -86,8 +82,12 @@ RecentPageForm {
                         closeCalled()
                     }
 
-                    eventPoint.accepted = true
                 }
+
+                onGrabChanged: function(transition, point) {
+                    point.accepted = false
+                }
+
             }
 
             //TODO: temporary until async is done
@@ -103,15 +103,19 @@ RecentPageForm {
             TapHandler {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                 acceptedButtons: Qt.RightButton
-                onTapped: {
+                onSingleTapped: function(eventPoint) {
 
-                    if (menu.visible) {
-                        menu.close()
-                        return
+                    if (loader_menu.active) {
+                        loader_menu.active = false
                     }
+                    loader_menu.active = true
+                    loader_menu.item.projectId = model.projectId
+                    loader_menu.item.isOpened = model.isOpened
+                    loader_menu.item.fileName = model.fileName
 
-                    menu.popup()
+                    loader_menu.item.popup()
                 }
+
             }
             ColumnLayout {
                 id: columnLayout4
@@ -207,12 +211,16 @@ RecentPageForm {
 
                                 onClicked: {
 
-                                    if (menu.visible) {
-                                        menu.close()
-                                        return
-                                    }
+                                    if (loader_menu.active) {
+                                        loader_menu.active = false
 
-                                    menu.popup(menuButton, 0, menuButton.height)
+                                    }
+                                    loader_menu.active = true
+                                    loader_menu.item.projectId = model.projectId
+                                    loader_menu.item.isOpened = model.isOpened
+                                    loader_menu.item.fileName = model.fileName
+
+                                    loader_menu.item.popup()
                                 }
 
                                 visible: hoverHandler.hovered | content.isCurrent
@@ -226,7 +234,6 @@ RecentPageForm {
                                 visible: model.isOpened
                                 icon.source: "qrc:///icons/backup/document-close.svg"
                                 onClicked: {
-                                    itemButtonsIndex = model.index
                                     closeAction.trigger()
                                 }
                                 text: qsTr("Close project")
@@ -234,56 +241,68 @@ RecentPageForm {
                         }
                     }
 
-                    SkrMenu {
-                        id: menu
-                        y: menuButton.height
+                    Component {
+                        id: component_menu
+                        SkrMenu {
 
-                        onOpened: {
-                            // necessary to differenciate between all items
-                            contextMenuItemIndex = model.index
-                        }
+                            id: menu
+                            y: menuButton.height
 
-                        SkrMenuItem {
-                            visible: model.isOpened
-                            height: model.isOpened ? undefined : 0
+                            property int projectId
+                            property bool isOpened
+                            property url fileName
 
-                            action: Action {
-                                id: closeAction
-                                text: qsTr("Close project")
-                                //shortcut: "F2"
-                                icon {
-                                    source: "qrc:///icons/backup/window-close.svg"
-                                }
-                                enabled: contextMenuItemIndex === model.index
-                                         | itemButtonsIndex === model.index
-                                onTriggered: {
-                                    console.log("close project action")
-                                    skrData.projectHub().closeProject(
-                                                model.projectId)
+                            onOpened: {
+
+                                console.log("isOpened", menu.isOpened)
+                            }
+
+                            onClosed: loader_menu.active = false
+
+                            SkrMenuItem {
+                                visible: menu.isOpened
+                                height: menu.isOpened ? undefined : 0
+
+                                action: Action {
+                                    id: inner_closeAction
+                                    text: qsTr("Close project")
+                                    //shortcut: "F2"
+                                    icon {
+                                        source: "qrc:///icons/backup/window-close.svg"
+                                    }
+                                    onTriggered: {
+                                        console.log("close project action")
+                                        skrData.projectHub().closeProject(
+                                                    menu.projectId)
+                                    }
                                 }
                             }
-                        }
 
-                        SkrMenuItem {
-                            visible: !model.isOpened
-                            height: model.isOpened ? 0 : undefined
+                            SkrMenuItem {
+//                                visible: !menu.isOpened
+//                                height: menu.isOpened ? 0 : undefined
 
-                            action: Action {
-                                id: forgetAction
-                                text: qsTr("Forget")
-                                //shortcut: "F2"
-                                icon {
-                                    source: "qrc:///icons/backup/trash-empty.svg"
-                                }
-                                enabled: contextMenuItemIndex === model.index
-                                onTriggered: {
-                                    console.log("forget action")
-                                    projectListModel.forgetProject(
-                                                model.fileName)
+                                action: Action {
+                                    id: inner_forgetAction
+                                    text: qsTr("Forget")
+                                    //shortcut: "F2"
+                                    icon {
+                                        source: "qrc:///icons/backup/trash-empty.svg"
+                                    }
+                                    onTriggered: {
+                                        console.log("forget action")
+                                        projectListModel.forgetProject(
+                                                    menu.fileName)
+                                    }
                                 }
                             }
                         }
                     }
+                    Loader {
+                        id: loader_menu
+                        sourceComponent: component_menu
+                    }
+
                 }
 
                 Rectangle {

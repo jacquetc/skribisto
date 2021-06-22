@@ -58,26 +58,26 @@ QUrl SKRViewManager::getQmlUrlFromPageType(const QString& pageType) const
     }
     else if (pageType == "SECTION") {
         url = "qrc:///qml/SectionPage/SectionPage.qml";
-    }
-    else if (pageType == "WELCOME") {
-        url = "qrc:///qml/WelcomePage/WelcomePage.qml";
-    }
-    else if (pageType == "EXPORT") {
-        url = "qrc:///qml/WelcomePage/ExporterPage.qml";
-    }
-    else if (pageType == "IMPORT") {
-        url = "qrc:///qml/WelcomePage/ImporterPage.qml";
-    }
+    } /*
+         else if (pageType == "WELCOME") {
+         url = "qrc:///qml/WelcomePage/WelcomePage.qml";
+         }
+         else if (pageType == "EXPORT") {
+         url = "qrc:///qml/WelcomePage/ExporterPage.qml";
+         }
+         else if (pageType == "IMPORT") {
+         url = "qrc:///qml/WelcomePage/ImporterPage.qml";
+         }
 
-    else if (pageType == "SETTINGS") {
-        url = "qrc:///qml/WelcomePage/SettingsPage.qml";
-    }
-    else if (pageType == "NEWPROJECT") {
-        url = "qrc:///qml/WelcomePage/NewProjectPage.qml";
-    }
-    else if (pageType == "HELP") {
-        url = "qrc:///qml/WelcomePage/HelpPage.qml";
-    }
+         else if (pageType == "SETTINGS") {
+         url = "qrc:///qml/WelcomePage/SettingsPage.qml";
+         }
+         else if (pageType == "NEWPROJECT") {
+         url = "qrc:///qml/WelcomePage/NewProjectPage.qml";
+         }
+         else if (pageType == "HELP") {
+         url = "qrc:///qml/WelcomePage/HelpPage.qml";
+         }*/
     else {
         url = "qrc:///qml/EmptyPage.qml";
     }

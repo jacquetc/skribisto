@@ -20,7 +20,7 @@ ExternalProject_Add(zlib
 
 ExternalProject_Add(quazip
     GIT_REPOSITORY https://github.com/jacquetc/quazip.git
-    GIT_TAG v1.1
+    GIT_TAG de8125cf8cf8422dae5df87ed6b5be9305219594
     CMAKE_ARGS
     -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
     -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}

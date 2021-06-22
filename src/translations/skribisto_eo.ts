@@ -1,5 +1,99 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="eo" version="2.1">
 <context>
+    <name>Card</name>
+    <message>
+        <source>Outline</source>
+        <translation>Skizo</translation>
+    </message>
+</context>
+<context>
+    <name>CardForm.ui</name>
+    <message>
+        <source>Go in</source>
+        <translation>Eniri</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPage</name>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Montru etikedojn Montri etikedojn</translation>
+    </message>
+    <message>
+        <source>Card view of %1</source>
+        <translation>Karta vido de %1</translation>
+    </message>
+    <message>
+        <source>Card view page</source>
+        <translation>Paĝo pri kartovido</translation>
+    </message>
+    <message>
+        <source>Card View</source>
+        <translation>Karta Vido</translation>
+    </message>
+    <message>
+        <source>Show the card view</source>
+        <translation>Montru la kartan vidon</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPageForm.ui</name>
+    <message>
+        <source>Go up</source>
+        <translation>Iri supren</translation>
+    </message>
+    <message>
+        <source>Add an item</source>
+        <translation>Aldonu eron</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolbox</name>
+    <message>
+        <source>Show the card view toolbox</source>
+        <translation>Montru la ilaron de karto-vido</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Vidigu</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Vidiga reĝimo:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Arbo deŝovo:</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Montri skizon</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Montri notojn</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Montri etikedojn</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Montri signan nombron</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Montri vortkalkulon</translation>
+    </message>
+    <message>
+        <source>Card size:</source>
+        <translation>Karta grandeco:</translation>
+    </message>
+</context>
+<context>
     <name>CheckableTree</name>
     <message>
         <source>Level %1</source>
@@ -782,6 +876,10 @@
         <translation>Agordi kiel aktiva projekto</translation>
     </message>
     <message>
+        <source>Close this project</source>
+        <translation>Fermu ĉi tiun projekton</translation>
+    </message>
+    <message>
         <source>Rename</source>
         <translation>Alinomi</translation>
     </message>
@@ -820,10 +918,6 @@
     <message>
         <source>Send to trash</source>
         <translation>Sendu al rubujo</translation>
-    </message>
-    <message>
-        <source>Close this project</source>
-        <translation>Fermu ĉi tiun projekton</translation>
     </message>
 </context>
 <context>
@@ -895,6 +989,14 @@
     <message>
         <source>Create</source>
         <translation>Kreu</translation>
+    </message>
+    <message>
+        <source>Quantity to create:</source>
+        <translation>Kvanto kreota:</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Nuligi</translation>
     </message>
 </context>
 <context>
@@ -1142,24 +1244,8 @@
         <translation>etikedo: %1</translation>
     </message>
     <message>
-        <source>has %1 sub-items</source>
-        <translation>havas %1 sub-erojn</translation>
-    </message>
-    <message>
         <source>navigation item</source>
         <translation>navigada ero</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Malfermu dokumenton</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Malfermu dokumenton en nova langeto</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Malfermu dokumenton en fenestro</translation>
     </message>
     <message>
         <source>Enter label</source>
@@ -1580,19 +1666,19 @@
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp; Dosiero</translation>
+        <translation>&amp;Dosiero</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation>&amp; Redaktu</translation>
+        <translation>&amp;Redaktu</translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation>&amp; Rigardi</translation>
+        <translation>R&amp;igardi</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp; Helpu</translation>
+        <translation>&amp;Helpu</translation>
     </message>
 </context>
 <context>
@@ -1659,11 +1745,11 @@
     </message>
     <message>
         <source>&amp;Settings</source>
-        <translation>&amp; Agordoj</translation>
+        <translation>&amp;Agordoj</translation>
     </message>
     <message>
         <source>&amp;Print</source>
-        <translation>&amp; Presi</translation>
+        <translation>&amp;Presi</translation>
     </message>
     <message>
         <source>Fullscreen</source>
@@ -1675,19 +1761,19 @@
     </message>
     <message>
         <source>&amp;User manual</source>
-        <translation>&amp; Uzula manlibro</translation>
+        <translation>&amp;Uzula manlibro</translation>
     </message>
     <message>
         <source>&amp;New Project</source>
-        <translation>&amp; Nova Projekto</translation>
+        <translation>&amp;Nova Projekto</translation>
     </message>
     <message>
         <source>&amp;Check spelling</source>
-        <translation>&amp; Kontrolu literumon</translation>
+        <translation>&amp;Kontrolu literumon</translation>
     </message>
     <message>
         <source>&amp;Open</source>
-        <translation>&amp; Malfermu</translation>
+        <translation>&amp;Malfermu</translation>
     </message>
     <message>
         <source>&amp;Save</source>
@@ -1695,7 +1781,7 @@
     </message>
     <message>
         <source>&amp;Save All</source>
-        <translation>&amp; Konservi ĉiujn</translation>
+        <translation>&amp;Konservi ĉiujn</translation>
     </message>
     <message>
         <source>&amp;Save As …</source>
@@ -1707,7 +1793,7 @@
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation>Stir + Q</translation>
+        <translation>Ctrl+Q</translation>
     </message>
     <message>
         <source>Create a new page of the same type</source>

@@ -99,7 +99,7 @@ FocusScope {
         border.width: 4
     }
 
-    Keys.onPressed: {
+    Keys.onPressed: function(event) {
         if (event.key === Qt.Key_F2) {
             if (control.projectId !== -2) {
                 renameDialog.projectId = control.projectId

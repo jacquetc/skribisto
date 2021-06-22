@@ -93,6 +93,15 @@ QtObject {
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
+    property Settings cardViewSettings: Settings {
+        category: "cardView"
+        property double cardSizeMultiplier: 1.0
+        property bool outlineBoxVisible: true
+        property bool tagBoxVisible: true
+
+    }
+
+
     property Settings overviewTreeOutlineSettings: Settings {
         category: "overviewTreeOutline"
         property int textWidth: -2 //unused but mandatory

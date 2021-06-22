@@ -39,5 +39,5 @@ jobs:
           git add .
           git commit -m "releases in AppData generated"
           git push
-        if: steps.git-diff.outputs.diff-output != ''
+        if: steps.git-diff.outputs.diff-output != 0
           

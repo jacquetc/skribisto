@@ -4,9 +4,9 @@ import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import eu.skribisto.projectdicthub 1.0
 import eu.skribisto.spellchecker 1.0
-import "../Items"
-import "../Commons"
-import ".."
+import "../../Items"
+import "../../Commons"
+import "../.."
 
 
 UserDictPageForm {
@@ -83,12 +83,12 @@ UserDictPageForm {
 
             TapHandler {
                 id: tapHandler
-                //                                onSingleTapped: {
+                //                                onSingleTapped: function(eventPoint) {
                 //                                    searchResultList.currentIndex = model.index
                 //                                    delegateRoot.forceActiveFocus()
                 //                                    eventPoint.accepted = true
                 //                                }
-                onSingleTapped: {
+                onSingleTapped: function(eventPoint) {
                     //create relationship with note
                     listView.currentIndex = model.index
                     delegateRoot.forceActiveFocus()
@@ -98,7 +98,7 @@ UserDictPageForm {
                 }
 
 
-                onGrabChanged: {
+                onGrabChanged: function(transition, point) {
                     point.accepted = false
                 }
 

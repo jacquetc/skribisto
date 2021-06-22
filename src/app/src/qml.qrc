@@ -63,8 +63,6 @@
         <file>qml/LeftDockForm.ui.qml</file>
         <file>qml/RightDock.qml</file>
         <file>qml/RightDockForm.ui.qml</file>
-        <file>qml/ProjectPage/ProjectPage.qml</file>
-        <file>qml/ProjectPage/ProjectPageForm.ui.qml</file>
         <file>qml/WelcomePage/SettingsPageForm.ui.qml</file>
         <file>qml/WelcomePage/SettingsPage.qml</file>
         <file>qml/WelcomePage/FileMenuPage.qml</file>
@@ -95,8 +93,6 @@
         <file>qml/Items/SkrPageToolBar.qml</file>
         <file>qml/Commons/OutlinePad.qml</file>
         <file>qml/Commons/OutlinePadForm.ui.qml</file>
-        <file>qml/ProjectPage/UserDictPage.qml</file>
-        <file>qml/ProjectPage/UserDictPageForm.ui.qml</file>
         <file>qml/WelcomePage/RecentPage.qml</file>
         <file>qml/WelcomePage/RecentPageForm.ui.qml</file>
         <file>qml/Breadcrumb.qml</file>
