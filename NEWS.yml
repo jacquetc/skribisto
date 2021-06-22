@@ -34,7 +34,7 @@ Description:
 - "Navigation: converted to a plugin"
 - "Plugins: add support project-dependent pages"
 ---
-Version: 1.9.24
+Version: 1.9.25
 Date: 2021-06-22
 Type: stable
 Description:
@@ -43,5 +43,5 @@ Description:
 - "Card view: toolbox manages size, tag and outline"
 - "New item dialog: allow to set the quantity of the item to create"
 - "Breadcrumb: adapt to small size"
-- "Navigation: fix 'Sort Alphabetically' action"
+- "Navigation: fix Sort Alphabetically action"
 - "Navigation: Fix cut, copy, paste"
