@@ -72,7 +72,7 @@ Item {
                 id: outlineWritingZone
                 clip: true
                 Layout.fillWidth: true
-                Layout.preferredHeight: 400
+                Layout.preferredHeight: 0
                 stretch: true
                 placeholderText: qsTr("Type your outline here …")
                 leftScrollItemVisible: false
